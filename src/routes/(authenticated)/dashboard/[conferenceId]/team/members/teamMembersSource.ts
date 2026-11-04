@@ -47,7 +47,8 @@ async function memberChanges(conferenceId: string): Promise<() => string> {
 		},
 		id: true
 	});
-	return () => members.map((member) => member.id).join();
+	// how many, and the newest: any row added or removed changes one of them
+	return () => `${members.length}:${members[0]?.id ?? ''}`;
 }
 
 /** The team table's rows: the API's table engine picks and orders the members. */

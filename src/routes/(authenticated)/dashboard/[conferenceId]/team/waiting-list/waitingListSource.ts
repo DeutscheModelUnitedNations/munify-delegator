@@ -85,7 +85,8 @@ async function entryChanges(conferenceId: string): Promise<() => string> {
 		},
 		id: true
 	});
-	return () => entries.map((entry) => entry.id).join();
+	// how many, and the newest: any row added or removed changes one of them
+	return () => `${entries.length}:${entries[0]?.id ?? ''}`;
 }
 
 /** The waiting list's rows: the API's table engine picks and orders the entries. */

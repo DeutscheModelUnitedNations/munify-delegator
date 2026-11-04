@@ -46,7 +46,11 @@ const tableArgs = schemaBuilder.args((t) => ({
 	query: t
 		.field({ type: 'JSON', required: true, description: QUERY_DESCRIPTION })
 		.validate(dataTableArgSchemas.query),
-	search: t.string({ description: SEARCH_DESCRIPTION }).validate(dataTableArgSchemas.search)
+	search: t.string({ description: SEARCH_DESCRIPTION }).validate(dataTableArgSchemas.search),
+	revision: t.string({
+		description:
+			"Ignored; a new value makes the client ask again after the table's rows changed (the answers are not live, and the client's cache would answer the same arguments with the old ids)."
+	})
 }));
 
 schemaBuilder.queryFields((t) => ({

@@ -158,7 +158,7 @@
 		const rows =
 			grid.selectedCount > 0
 				? grid.selectedRows
-				: await source.all({ query: grid.query(), search: grid.search });
+				: await source.all({ query: grid.query(), search: grid.search, revision: grid.revision });
 		return tableExport({ columns: grid.visibleColumns, rows });
 	}
 </script>

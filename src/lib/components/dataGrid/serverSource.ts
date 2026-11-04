@@ -37,16 +37,28 @@ export function createServerSource<Row>({
 	const fetchPage = async ({
 		query,
 		search,
+		revision,
 		limit,
 		offset
 	}: {
 		query: Parameters<GridSource<Row>['page']>[0]['query'];
 		search: string;
+		revision?: string;
 		limit: number;
 		offset: number;
 	}) => {
 		const page = await client.query.dataTablePage({
-			__args: { table, conferenceId, query, search: search || undefined, limit, offset },
+			// `revision` keeps the client's cache from answering a request after a change with the
+			// ids it had before
+			__args: {
+				table,
+				conferenceId,
+				query,
+				search: search || undefined,
+				revision: revision || undefined,
+				limit,
+				offset
+			},
 			ids: true,
 			hasMore: true,
 			total: true,
@@ -62,19 +74,26 @@ export function createServerSource<Row>({
 
 	return {
 		changes,
-		async page({ query, search, pageIndex, pageSize }) {
+		async page({ query, search, revision, pageIndex, pageSize }) {
 			const page = await fetchPage({
 				query,
 				search,
+				revision,
 				limit: pageSize,
 				offset: pageIndex * pageSize
 			});
 			const rows = await rowsFor(page);
 			return () => ({ rows: rows(), total: page.total });
 		},
-		async groups({ query, search }) {
+		async groups({ query, search, revision }) {
 			const groups = await client.query.dataTableGroups({
-				__args: { table, conferenceId, query, search: search || undefined },
+				__args: {
+					table,
+					conferenceId,
+					query,
+					search: search || undefined,
+					revision: revision || undefined
+				},
 				value: true,
 				count: true
 			});
@@ -84,10 +103,16 @@ export function createServerSource<Row>({
 			}));
 			return () => counted;
 		},
-		async all({ query, search }) {
+		async all({ query, search, revision }) {
 			const rows: Row[] = [];
 			for (let offset = 0; ; offset += BACKEND_PAGE_LIMIT) {
-				const page = await fetchPage({ query, search, limit: BACKEND_PAGE_LIMIT, offset });
+				const page = await fetchPage({
+					query,
+					search,
+					revision,
+					limit: BACKEND_PAGE_LIMIT,
+					offset
+				});
 				rows.push(...(await rowsFor(page))());
 				if (!page.hasMore) return rows;
 			}

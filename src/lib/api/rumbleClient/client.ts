@@ -3534,6 +3534,7 @@ export type Query = {
   dataTableGroups: (p: {
     conferenceId: ID,
     query: JSON,
+    revision?: String | null | undefined,
     search?: String | null | undefined,
     table: String
   }) => DataTableGroup[],
@@ -3542,6 +3543,7 @@ export type Query = {
     limit: Int,
     offset: Int,
     query: JSON,
+    revision?: String | null | undefined,
     search?: String | null | undefined,
     table: String
   }) => DataTablePage,
