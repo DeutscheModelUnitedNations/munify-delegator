@@ -24,20 +24,20 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bun run format:check
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       # `bun run lint` caches by file content, so the last run's cache holds across checkouts and only
       # changed files are linted again. Saved under the commit, restored from the newest one; a
       # dependency or config change starts over.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .eslintcache
           key: eslint-${{ hashFiles('bun.lock', 'eslint.config.js') }}-${{ github.sha }}
@@ -47,7 +47,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       # Coverage ends in scripts/mergeCoverage.ts, which writes the HTML report to coverage/report/;
@@ -55,7 +55,7 @@ jobs:
       - run: bun run coverage
       - name: Upload unit test coverage
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: report-coverage
           path: coverage/report/
@@ -89,7 +89,7 @@ jobs:
       # (playwright.config.ts). Signing in against the plain-HTTP oidc-mock still works, since
       # src/api/services/oidc/OIDC.ts trusts a provider on the loopback address over HTTP.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       # The OIDC provider (oidc-mock) starts with the Vite dev server that Playwright launches, so
       # Postgres and the S3 bucket are the only containers. Reuse the project's compose definition.
@@ -110,7 +110,7 @@ jobs:
         env:
           PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
       - name: Upload the shard's report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: blob-report-${{ matrix.shard }}
@@ -124,9 +124,9 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: blob-report-*
           path: all-blob-reports
@@ -138,7 +138,7 @@ jobs:
         run: |
           PLAYWRIGHT_JSON_OUTPUT_NAME=e2e-report.json bunx playwright merge-reports --reporter json ./all-blob-reports
           bun scripts/e2eShards.ts record e2e-report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: e2e-durations
           path: e2e/durations.json
@@ -146,7 +146,7 @@ jobs:
       # The HTML report embeds the traces, screenshots and videos of the failed tests, so it is
       # all the publish-reports job needs to host it.
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ needs.e2e-shard.result != 'success' }}
         with:
           name: report-playwright
@@ -175,11 +175,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: .github/scripts
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: report-*
           path: reports
@@ -194,7 +194,7 @@ jobs:
       # Runs even when nothing was published, so a PR comment from an earlier e2e failure is
       # still brought up to date.
       - name: Link reports
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           REPORTS: ${{ steps.publish.outputs.reports }}
           REPORTS_PATH: ${{ steps.publish.outputs.path }}
@@ -239,7 +239,7 @@ jobs:
   i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bun run i18n:check
       - run: bun run i18n:validate
@@ -247,9 +247,9 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
-      - uses: aquasecurity/trivy-action@v0.35.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -265,7 +265,7 @@ jobs:
   typecheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
@@ -277,7 +277,7 @@ jobs:
     env:
       NODE_OPTIONS: '--max-old-space-size=8192'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
@@ -296,7 +296,7 @@ jobs:
       pull-requests: write
       checks: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # Full history: fallow scopes PR runs to the diff against the base SHA.
           fetch-depth: 0
@@ -313,7 +313,7 @@ jobs:
       - run: bun run coverage
       # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
       # with write permissions on every PR.
-      - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
+      - uses: fallow-rs/fallow@a6956af63dd896d6106a7d28361585e0ff1c250b # v3.39.0
         env:
           FALLOW_COVERAGE: coverage/coverage-final.json
         with:
@@ -348,25 +348,25 @@ jobs:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_URL: ${{ secrets.SENTRY_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - if: github.event_name == 'push'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - if: github.event_name == 'push'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ghcr.io/${{ github.repository }}
@@ -384,7 +384,7 @@ jobs:
         run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           # Publish only on push; on PRs and manual dispatch load the image
           # locally so Trivy can scan it without publishing.
@@ -404,7 +404,7 @@ jobs:
       - id: split-tags
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
 
-      - uses: aquasecurity/trivy-action@v0.35.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.split-tags.outputs.fragment }}
           format: 'table'
@@ -472,12 +472,12 @@ jobs:
     needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
       # Path filter: only build when job-relevant files changed
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
@@ -495,16 +495,16 @@ jobs:
 
       # Always build on tag push (release), conditionally on branch push
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -512,7 +512,7 @@ jobs:
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ghcr.io/${{ github.repository }}-jobs
@@ -528,7 +528,7 @@ jobs:
         run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           file: Dockerfile.jobs
           push: true
@@ -545,7 +545,7 @@ jobs:
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.split-tags.outputs.fragment }}
           format: 'table'
@@ -615,13 +615,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Extract version
         id: version
         run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           body: |
