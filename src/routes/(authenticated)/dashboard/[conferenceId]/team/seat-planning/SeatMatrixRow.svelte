@@ -22,8 +22,14 @@
 	const outsideLimits = $derived(isOutsideSizeLimits({ size, limits: sizeLimits }));
 </script>
 
-<tr class="hover:bg-base-300 {outsideLimits ? 'bg-error/10' : ''}">
-	<th class="bg-inherit font-normal">
+<tr class="group hover:bg-base-300 {outsideLimits ? 'bg-error/10' : ''}">
+	<!-- pinned, so it needs an opaque background of its own (the table's follows the zebra stripes)
+	     and has to stay above the seat buttons scrolling under it -->
+	<th
+		class="group-hover:bg-base-300 z-10 font-normal {outsideLimits
+			? 'bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-base-100))]'
+			: ''}"
+	>
 		<button
 			class="flex cursor-help items-center gap-2 text-left"
 			onmouseenter={(e) => onShowInfo(row, e.currentTarget)}
