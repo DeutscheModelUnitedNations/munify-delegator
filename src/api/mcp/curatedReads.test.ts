@@ -3,6 +3,7 @@ import {
 	assignmentDataSchema,
 	assignmentOverview,
 	countDataSchema,
+	countGroupingProblem,
 	participantCounts,
 	participantOverview,
 	participantsDataSchema
@@ -93,15 +94,14 @@ describe('participantCounts', () => {
 		]
 	});
 
-	it('hides groups of fewer than five when grouped by a redacted attribute', () => {
+	it('leaves out groups of fewer than five when grouped by a redacted attribute', () => {
 		expect(participantCounts({ rows, groupBy: ['gender'] })).toEqual({
 			total: 9,
-			groups: [
-				{ gender: 'FEMALE', count: 6 },
-				{ gender: 'DIVERSE', count: '<5' },
-				{ gender: null, count: '<5' }
-			]
+			groups: [{ gender: 'FEMALE', count: 6 }],
+			// DIVERSE (2) and unknown (1) together, still too few to say
+			suppressed: '<5'
 		});
+		expect(participantCounts({ rows, groupBy: ['gender', 'minor'] }).suppressed).toBe('<5');
 	});
 
 	it('counts exactly by attributes that are visible per person', () => {
@@ -112,6 +112,18 @@ describe('participantCounts', () => {
 				{ minor: 'true', count: 3 }
 			]
 		});
+	});
+});
+
+describe('countGroupingProblem', () => {
+	it('refuses a redacted dimension next to one an assistant reads per person', () => {
+		expect(countGroupingProblem(['gender', 'school'])).toMatch(/gender/);
+		expect(countGroupingProblem(['foodPreference', 'committeeId'])).toMatch(/committeeId/);
+	});
+
+	it('lets everything else through', () => {
+		expect(countGroupingProblem(['foodPreference', 'kind', 'minor'])).toBeUndefined();
+		expect(countGroupingProblem(['school', 'city'])).toBeUndefined();
 	});
 });
 

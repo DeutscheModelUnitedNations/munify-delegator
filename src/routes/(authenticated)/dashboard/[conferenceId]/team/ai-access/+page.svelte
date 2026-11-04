@@ -38,7 +38,8 @@
 
 	let saving = $state(false);
 
-	async function setEnabled(enabled: boolean) {
+	async function setEnabled(input: HTMLInputElement) {
+		const enabled = input.checked;
 		saving = true;
 		try {
 			const promise = Promise.resolve(
@@ -46,6 +47,9 @@
 			);
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
+		} catch {
+			// The toast shows the error; the switch goes back to what is stored.
+			input.checked = !enabled;
 		} finally {
 			saving = false;
 		}
@@ -69,7 +73,7 @@
 				class="toggle toggle-primary shrink-0"
 				checked={conference?.mcpEnabled ?? false}
 				disabled={saving || !conference}
-				onchange={(event) => setEnabled(event.currentTarget.checked)}
+				onchange={(event) => setEnabled(event.currentTarget)}
 			/>
 			<span class="label-text">{m.aiAccessEnabledLabel()}</span>
 		</label>

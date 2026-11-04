@@ -293,13 +293,40 @@ const DIMENSIONS: Record<CountDimension, (row: CountRow) => string | null> = {
 	foodPreference: (row) => row.user.foodPreference ?? null
 };
 
-/** Dimensions redacted per person: groups by them below the minimum size read `<5`. */
+/** Dimensions redacted per person: counted only in groups of at least `MIN_GROUP_SIZE`. */
 const SENSITIVE_DIMENSIONS: ReadonlySet<CountDimension> = new Set(['gender', 'foodPreference']);
 
 /**
- * Counts the registered participants by the given dimensions. When one of them is redacted per
- * person (gender, diet), a group of 1 to 4 people reads `<5`, so no count points at someone.
- * People whose value the caller may not read count under `null`.
+ * Dimensions an assistant also reads per person (`participant_overview`). A redacted dimension is
+ * never grouped together with one of them: a small school's or city's group would tell the gender
+ * or diet of the people the assistant can name by id.
+ */
+const PER_PERSON_DIMENSIONS: ReadonlySet<CountDimension> = new Set([
+	'school',
+	'city',
+	'country',
+	'committeeId',
+	'roleId'
+]);
+
+/** Why a grouping is refused: a redacted dimension next to one an assistant reads per person. */
+export function countGroupingProblem(groupBy: readonly CountDimension[]) {
+	const sensitive = groupBy.filter((dimension) => SENSITIVE_DIMENSIONS.has(dimension));
+	const perPerson = groupBy.filter((dimension) => PER_PERSON_DIMENSIONS.has(dimension));
+	if (sensitive.length === 0 || perPerson.length === 0) return undefined;
+	return `${sensitive.join(' and ')} cannot be counted together with ${perPerson.join(', ')}: those are known per person, so small groups would tell who is who.`;
+}
+
+/** Counts a group too small to show reads as: `<5`, or exactly when it is none. */
+function maskedCount(count: number) {
+	return count > 0 && count < MIN_GROUP_SIZE ? SMALL_GROUP : count;
+}
+
+/**
+ * Counts the registered participants by the given dimensions. Grouped by a dimension redacted per
+ * person (gender, diet), groups of fewer than `MIN_GROUP_SIZE` are left out, so no group points at
+ * someone; how many people they hold together is `suppressed`, `<5` when that is small too. People
+ * whose value the caller may not read count under `null`.
  */
 export function participantCounts({
 	rows,
@@ -319,15 +346,16 @@ export function participantCounts({
 		group.count += 1;
 		groups.set(id, group);
 	}
-	const sensitive = groupBy.some((dimension) => SENSITIVE_DIMENSIONS.has(dimension));
+	const all = [...groups.values()].sort((a, b) => b.count - a.count);
+	if (!groupBy.some((dimension) => SENSITIVE_DIMENSIONS.has(dimension))) {
+		return { total: registered.length, groups: all.map(({ key, count }) => ({ ...key, count })) };
+	}
+	const shown = all.filter(({ count }) => count >= MIN_GROUP_SIZE);
+	const suppressed = registered.length - shown.reduce((sum, { count }) => sum + count, 0);
 	return {
 		total: registered.length,
-		groups: [...groups.values()]
-			.sort((a, b) => b.count - a.count)
-			.map(({ key, count }) => ({
-				...key,
-				count: sensitive && count < MIN_GROUP_SIZE ? SMALL_GROUP : count
-			}))
+		groups: shown.map(({ key, count }) => ({ ...key, count })),
+		suppressed: maskedCount(suppressed)
 	};
 }
 

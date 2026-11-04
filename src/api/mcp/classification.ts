@@ -546,7 +546,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	SendPersonEmailResult: { visible: ['sent'], redacted: ['error'] },
 
-	// --- The MCP log: tool calls, which never carry personal data -------------------------------
+	// --- The MCP log --------------------------------------------------------------------------
 	Mcpauditentry: {
 		visible: [
 			'id',
@@ -556,11 +556,11 @@ const FIELDS: Record<string, TypeClassification> = {
 			'userId',
 			'clientId',
 			'tool',
-			'arguments',
 			'outcome',
-			'message',
 			'durationMs'
-		]
+		],
+		// What an assistant sent, and the refusals quoting it: a refused query can hold a name.
+		redacted: ['arguments', 'message']
 	},
 
 	// --- Lists and pages ------------------------------------------------------------------------

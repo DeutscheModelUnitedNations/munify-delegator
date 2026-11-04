@@ -22,6 +22,8 @@ import {
 } from './mutationTools';
 
 const PersonName = new GraphQLScalarType({ name: 'PersonName' });
+/** A custom scalar the MCP layer knows nothing about. */
+const Iban = new GraphQLScalarType({ name: 'Iban' });
 
 const Committee = new GraphQLObjectType({
 	name: 'Committee',
@@ -51,7 +53,7 @@ describe('mutationToolsOf', () => {
 		renamePerson: {
 			type: GraphQLBoolean,
 			extensions: mcpTool(),
-			args: { id: { type: GraphQLID }, givenName: { type: PersonName } }
+			args: { id: { type: GraphQLID }, givenName: { type: PersonName }, iban: { type: Iban } }
 		},
 		notOptedIn: { type: GraphQLBoolean, args: { id: { type: GraphQLID } } },
 		needsPersonalData: {
@@ -92,7 +94,7 @@ describe('mutationToolsOf', () => {
 		]);
 	});
 
-	it('passes declared text and plain values, never personal data or undeclared text', () => {
+	it('passes declared text and plain values, never personal data, undeclared text or unknown scalars', () => {
 		const create = tool('createCommittee');
 		expect(Object.keys(create?.inputSchema.properties ?? {}).sort()).toEqual([
 			'conferenceId',

@@ -167,7 +167,8 @@ describe('an AI assistant (MCP) reaches only the conference of its tool call', (
 		});
 	});
 
-	test('participant rules stay inside it too', () => {
-		expect(isParticipantOfConference(assistant)).toMatchObject({ conference: scope });
+	test('rules about the caller’s own part grant nothing: they could only reach other conferences', () => {
+		expect(isParticipantOfConference(assistant)).toBeUndefined();
+		expect(isOwnUser(assistant)).toBeUndefined();
 	});
 });

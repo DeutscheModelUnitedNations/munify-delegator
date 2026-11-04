@@ -31,8 +31,11 @@ const PERSONAL_SCALARS = new Set(['PersonName', 'EmailAddress', 'PhoneNumber']);
 /** Input types that hold a person's data by definition. */
 const PERSONAL_INPUTS = new Set(['AddressInput']);
 
-/** Scalars that are free text. An assistant passes them only where `textArguments` allows. */
-const FREE_TEXT_SCALARS = new Set(['String', 'JSON']);
+/**
+ * Scalars that cannot carry personal data. Every other one (`String`, `JSON`, any custom scalar)
+ * counts as free text, which an assistant passes only where `textArguments` allows.
+ */
+const PLAIN_SCALARS = new Set(['ID', 'Int', 'Float', 'Boolean', 'Date', 'DateTime']);
 
 export interface MutationTool {
 	name: string;
@@ -48,13 +51,16 @@ export interface MutationTool {
 function inputKinds(type: GraphQLInputType, seen = new Set<string>()): Set<'personal' | 'text'> {
 	const named = getNamedType(type);
 	const kinds = new Set<'personal' | 'text'>();
-	if (PERSONAL_SCALARS.has(named.name) || PERSONAL_INPUTS.has(named.name)) kinds.add('personal');
-	else if (FREE_TEXT_SCALARS.has(named.name)) kinds.add('text');
-	else if (isInputObjectType(named) && !seen.has(named.name)) {
+	if (PERSONAL_SCALARS.has(named.name) || PERSONAL_INPUTS.has(named.name)) {
+		kinds.add('personal');
+	} else if (isInputObjectType(named)) {
+		if (seen.has(named.name)) return kinds;
 		seen.add(named.name);
 		for (const field of Object.values(named.getFields())) {
 			for (const kind of inputKinds(field.type, seen)) kinds.add(kind);
 		}
+	} else if (!isEnumType(named) && !PLAIN_SCALARS.has(named.name)) {
+		kinds.add('text');
 	}
 	return kinds;
 }

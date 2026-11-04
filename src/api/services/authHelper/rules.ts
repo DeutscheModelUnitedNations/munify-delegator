@@ -54,7 +54,8 @@ export function isTeamMemberOf({ ctx, roles }: { ctx: Context; roles?: readonly 
 	const assistantScope = mcpConference(ctx);
 	if (assistantScope && ctx.mcp?.isAdmin) return assistantScope;
 	if (isSystemAdmin(ctx)) return {};
-	const id = callerUserId(ctx);
+	// The session's user, not `callerUserId`, which an assistant's request leaves empty.
+	const id = ctx.oidc.user?.sub;
 	if (!id) return undefined;
 	const teamMembers = roles ? { user: { id }, role: { in: [...roles] } } : { user: { id } };
 	return { ...assistantScope, teamMembers };
@@ -172,10 +173,9 @@ const conferenceParticipantWithRegistration = {
  */
 export function isParticipantOf(ctx: Context) {
 	const id = callerUserId(ctx);
-	if (!id) return undefined;
-	const conferenceParticipants = { userId: id, ...conferenceParticipantWithRegistration };
-	// An assistant stays inside the conference of its tool call, as in `isTeamMemberOf`.
-	return { ...mcpConference(ctx), conferenceParticipants };
+	return id
+		? { conferenceParticipants: { userId: id, ...conferenceParticipantWithRegistration } }
+		: undefined;
 }
 
 /** `isParticipantOf` one level down: matches a row whose `conference` the caller is registered in. */

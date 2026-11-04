@@ -1135,9 +1135,12 @@ bun run preview
 - **Confinement:** every tool call names a conference; `assertCanUseMcpIn` (`mcpPermissions.ts`)
   refuses unless it switched MCP on (`conference.mcpEnabled`, `setConferenceMcpEnabled`, project
   management) and the caller is on its team. The call then runs with `locals.mcp` set, which
-  `#api/context` turns into `ctx.mcp`: no system role applies, and `isTeamMemberOf` /
-  `isParticipantOf` (`authHelper/rules.ts`) match only that conference - a system admin as holding
-  every team role there. Every team rule goes through those two, so a new rule must too.
+  `#api/context` turns into `ctx.mcp`: no system role applies, `isTeamMemberOf`
+  (`authHelper/rules.ts`) matches only that conference - a system admin as holding every team role
+  there - and `callerUserId` answers nothing, so the rules about the caller's own part (their
+  registration, co-delegates, supervisors) grant nothing: in a conference they are on the team of
+  they take part in no other way, so those could only reach other conferences. Every team rule
+  goes through `isTeamMemberOf` / `teamConference`, so a new one must too.
 - **Privacy is default-deny.** `src/api/mcp/classification.ts` classifies every leaf field of the
   schema as `visible`, `aggregate` (counts by a redacted attribute: `<5` below five) or `redacted`;
   `redact.ts` rewrites every answer by it, following the operation's selection. A field not listed

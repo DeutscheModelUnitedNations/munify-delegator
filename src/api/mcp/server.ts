@@ -30,6 +30,7 @@ import {
 	COUNT_DIMENSIONS,
 	COUNT_QUERY,
 	countDataSchema,
+	countGroupingProblem,
 	MAX_PARTICIPANT_ROWS,
 	PAGE_SIZE,
 	participantCounts,
@@ -235,7 +236,7 @@ function registerReadTools({ server, call }: { server: McpServer; call: ToolCall
 	server.registerTool(
 		'participant_counts',
 		{
-			description: `Counts the conference's registered participants grouped by up to three of: ${COUNT_DIMENSIONS.join(', ')}. Grouped by gender or foodPreference, groups of fewer than five read "${SMALL_GROUP}". Needs participant care or project management.`,
+			description: `Counts the conference's registered participants grouped by up to three of: ${COUNT_DIMENSIONS.join(', ')}. Grouped by gender or foodPreference, groups of fewer than five are left out and summed up as suppressed, and those two cannot be combined with school, city, country, committeeId or roleId. Needs participant care or project management.`,
 			inputSchema: z.object({
 				conferenceId: conferenceIdSchema,
 				groupBy: z.array(z.enum(COUNT_DIMENSIONS)).min(1).max(3)
@@ -249,6 +250,8 @@ function registerReadTools({ server, call }: { server: McpServer; call: ToolCall
 				args: { groupBy },
 				conferenceId,
 				fn: async () => {
+					const problem = countGroupingProblem(groupBy);
+					if (problem) throw new McpRefusal(problem);
 					// Unredacted on purpose: only the counts leave this function, thresholded.
 					const document = parse(COUNT_QUERY);
 					const { rows, complete } = await allParticipantRows({

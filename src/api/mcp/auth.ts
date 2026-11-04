@@ -37,10 +37,16 @@ type Provider = z.infer<typeof discoverySchema> & {
 
 let provider: Promise<Provider> | undefined;
 
+/** How long the provider's discovery may take before a request gives up (and the next retries). */
+const DISCOVERY_TIMEOUT_MS = 10_000;
+
 /** The provider's discovery document and its keys, fetched once; again after a failure. */
 function oidcProvider(): Promise<Provider> {
 	provider ??= (async () => {
-		const response = await fetch(PUBLIC_OIDC_AUTHORITY);
+		// The signal also ends reading the body, so a stalled provider cannot hold every request.
+		const response = await fetch(PUBLIC_OIDC_AUTHORITY, {
+			signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS)
+		});
 		if (!response.ok) throw new Error(`OIDC discovery answered ${response.status}`);
 		const document = z.record(z.string(), z.unknown()).parse(await response.json());
 		const discovery = discoverySchema.parse(document);

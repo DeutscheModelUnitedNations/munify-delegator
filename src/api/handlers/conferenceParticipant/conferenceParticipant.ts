@@ -63,7 +63,17 @@ const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
 
 schemaBuilder.mutationFields((t) => ({
 	upsertConferenceParticipant: t.drizzleField({
-		extensions: mcpTool(),
+		// A status a mail follows from (payment received, documents complete, the certificate).
+		extensions: mcpTool({
+			outwardArguments: [
+				'paymentStatus',
+				'termsAndConditions',
+				'guardianConsent',
+				'mediaConsent',
+				'mediaConsentStatus',
+				'didAttend'
+			]
+		}),
 		description:
 			"Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries CONFLICT.",
 		type: ConferenceParticipantRef,
@@ -127,7 +137,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateAllConferenceParticipants: t.field({
-		extensions: mcpTool(),
+		// Attendance is what the certificate mails follow from.
+		extensions: mcpTool({ outward: true }),
 		description:
 			'Sets whether everybody registered in the conference attended (participant care), creating the participant rows that are missing.',
 		type: BulkStatusUpdateResult,
