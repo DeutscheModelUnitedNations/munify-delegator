@@ -413,7 +413,10 @@ bun run preview
   `<svelte:boundary>` with a skeleton as `pending` snippet, keyed by the pathname so every
   navigation creates a fresh one (a settled boundary never shows `pending` again). The snippet is
   only passed in the browser: on the server a boundary with `pending` renders nothing else, and a
-  full load still arrives with its content. A section that keeps a frame across its pages (the
+  full load still arrives with its content. A page whose fetch fails shows a retry
+  (`LoadError`) in its boundary, logged as a warning when the API was not reached: past a failed
+  `await`, Svelte still runs the template against script variables that were never assigned, so
+  the error must not escape the boundary. A section that keeps a frame across its pages (the
   assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
   outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
   registry names each page's `skeleton`, drawn after that page (`#lib/data/teamSkeletons`); `NavigationProgress` draws the bar along the top
