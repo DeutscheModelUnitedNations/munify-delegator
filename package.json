@@ -17,7 +17,7 @@
 		"@better-svelte-email/server": "^2.3.0",
 		"@bwip-js/browser": "^4.11.4",
 		"@deutschemodelunitednations/corporate-identity": "^2.1.0",
-		"@deutschemodelunitednations/docs-kit": "github:DeutscheModelUnitedNations/munify-docs-kit#cd47c32c0bbf59a6e47cb827d4b70f05fdea207f",
+		"@deutschemodelunitednations/docs-kit": "^0.1.2",
 		"@deutschemodelunitednations/munify-resolution-editor": "^0.6.0",
 		"@dipser/epc-qr-code.js": "^1.0.3",
 		"@eslint/compat": "^2.1.1",

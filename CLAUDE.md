@@ -1092,7 +1092,8 @@ bun run preview
   `{#id}` headings, `shot:` screenshots), the docs layout and page components, the help
   dropdown, the driver.js tour runner, the guard tests and the screenshot capture. What is
   DELEGATOR's lives in `src/lib/docs/` and `scripts/docs-screenshots/`. Improve the kit rather
-  than working around it here, and keep CHASE in step.
+  than working around it here: a GitHub release `v<version>` of `munify-docs-kit` publishes it to
+  npm, then bump it here and in CHASE.
 - **Every route can point at its manual page.** `routeHelp.ts` maps `RouteId`s to a page and
   section (`'user-manual/team/assignment#sighting'`) and optionally a tour, so a renamed route
   breaks the typecheck. `helpForRoute` (`#lib/docs/help.ts`) turns it into a link (the manual's
@@ -1460,10 +1461,6 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 - **@sveltejs/kit is patched** to log in `'gray'` instead of `'grey'`: Node 25 dropped the `grey`
   alias from `util.styleText`, which made every `vite build` fail at the adapter step. Drop the
   patch once SvelteKit ships the fix.
-
-- **`@deutschemodelunitednations/docs-kit` is installed from a git commit** of
-  `munify-docs-kit` (which commits its `dist/` for that), until its first npm release. Then
-  switch to the npm version, in CHASE too.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
