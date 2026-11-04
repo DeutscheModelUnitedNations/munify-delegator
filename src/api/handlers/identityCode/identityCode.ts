@@ -1,5 +1,6 @@
 import { schemaBuilder } from '#api/rumble';
 import { identityPublicKey, issueIdentityCode } from './identityKeyPair';
+import { assertCanReadIdentityKey } from './identityCodePermissions';
 
 const IdentityCode = schemaBuilder.simpleObject('IdentityCode', {
 	fields: (t) => ({ code: t.string() })
@@ -23,10 +24,10 @@ schemaBuilder.mutationFields((t) => ({
 schemaBuilder.queryFields((t) => ({
 	identityCodePublicKey: t.field({
 		description:
-			'The public key identity codes are checked against, raw and base64url. Public by nature, but only handed to signed-in callers (UNAUTHENTICATED otherwise).',
+			'The public key identity codes and NSA cards are checked against, raw and base64url. Public by nature, but only handed to signed-in callers and the linked CHASE (UNAUTHENTICATED otherwise).',
 		type: IdentityCodePublicKey,
 		resolve: async (_root, _args, ctx) => {
-			ctx.mustBeLoggedIn();
+			await assertCanReadIdentityKey(ctx);
 			return { publicKey: await identityPublicKey() };
 		}
 	})
