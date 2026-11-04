@@ -456,7 +456,9 @@ bun run preview
 
 - **`load` functions are for three things only**: redirect and 403 guards, page options like
   `ssr = false`, and cookie work that has to happen before anything renders — of which only
-  `auth/accept-invitation` is left. There are **no form-action loads any more**; every form submits
+  `auth/accept-invitation` is left (and the user manual's server loads, which serve markdown
+  bundled into the build, not API data; see "User manual, help and tours"). There are **no
+  form-action loads any more**; every form submits
   through a mutation (see Forms below). Everything else fetches in the component, and a guard
   returns nothing — route parameters come from the `params` prop, not from load data. A `load` must
   never return what the generated client gave it: those are subscribeable proxies, and `load` data
@@ -1076,6 +1078,46 @@ bun run preview
     sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
     the mails link to
 
+#### 11. User manual, help and tours
+
+- **The manual is markdown in the repository**: `docs/de/` and `docs/en/` (`docs/review/` holds
+  internal notes and is not part of it), served publicly at `/docs` (`src/routes/docs/`) in the
+  landing page's frame. A page needs a `title` in its frontmatter; the sidebar order lives in
+  `#lib/docs/nav.ts`. A page missing in English falls back to German with a notice. Links between
+  pages are relative (`./dashboard#payment`) and keep the reader's locale prefix; a section other
+  pages or the help map link to carries an explicit id in both languages
+  (`## Zahlung {#payment}`), so German and English headings share it.
+- **Everything generic is MUNify CHASE's, shared through `@deutschemodelunitednations/docs-kit`**
+  (repository `munify-docs-kit`): the markdown renderer (admonitions as `:::tip Title … :::`,
+  `{#id}` headings, `shot:` screenshots), the docs layout and page components, the help
+  dropdown, the driver.js tour runner, the guard tests and the screenshot capture. What is
+  DELEGATOR's lives in `src/lib/docs/` and `scripts/docs-screenshots/`. Improve the kit rather
+  than working around it here, and keep CHASE in step.
+- **Every route can point at its manual page.** `routeHelp.ts` maps `RouteId`s to a page and
+  section (`'user-manual/team/assignment#sighting'`) and optionally a tour, so a renamed route
+  breaks the typecheck. `helpForRoute` (`#lib/docs/help.ts`) turns it into a link (the manual's
+  start page for routes without an entry), which the header's help button
+  (`#lib/docs/HelpButton.svelte`), the footer, the team navigation and the command palette
+  (a `manual` result, opened in a new tab) all use. They read `page.route.id` only.
+- **Tours** are `*.tour.ts` files in `#lib/docs/tours/`, anchored on `data-tour="…"` attributes
+  (or the `tourAnchor` prop of `DashboardSection`). A step whose anchor is not on screen is
+  skipped. The conference dashboard picks the registration tour when the registration choice is
+  on screen, the participant tour otherwise. Messages are `tour…` keys.
+- **Screenshots are generated, never taken by hand.** Reference one as
+  `![alt](shot:team/assignment-sighting)` and list it in `scripts/docs-screenshots/shots.ts`
+  (persona, path, optional viewport, wait or clip). `bun run docs:screenshots [id-prefix]` loads
+  the dev seed into a `delegator_docs` database, starts a dev server and captures every shot in
+  German and English, light and dark, into `static/docs-assets/screenshots/` (stop your own dev
+  server first; it needs the dev bucket from `dev:docker`). `DOCS_DATABASE_URL` and
+  `DOCS_SKIP_SEED=1` reuse an already seeded database, `DOCS_CHROMIUM` points at another
+  Chromium. Shots only look, they never change data. The `Docs screenshots` workflow reruns it
+  on main and opens a PR.
+- `src/lib/docs/docs.test.ts` fails on a page missing from the sidebar or a language, broken
+  links or sections, missing or unused screenshots, help targets that do not exist and tour
+  anchors no component defines. **When a feature's UI changes, update its manual page in both
+  languages, keep the `data-tour` anchors and rerun the affected screenshots.** Manual prose:
+  concise, no semicolons or dashes, German in du-form and gender-inclusive like the UI.
+
 ### Logging
 
 - **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after
@@ -1418,6 +1460,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 - **@sveltejs/kit is patched** to log in `'gray'` instead of `'grey'`: Node 25 dropped the `grey`
   alias from `util.styleText`, which made every `vite build` fail at the adapter step. Drop the
   patch once SvelteKit ships the fix.
+
+- **`@deutschemodelunitednations/docs-kit` is installed from a git commit** of
+  `munify-docs-kit` (which commits its `dist/` for that), until its first npm release. Then
+  switch to the npm version, in CHASE too.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.

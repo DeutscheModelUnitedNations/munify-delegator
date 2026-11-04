@@ -5,6 +5,11 @@
 	import LanguageSwitcher from '#lib/components/LanguageSwitcher.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { helpForRoute } from '#lib/docs/help';
+
+	// Everyone gets the manual, signed in or not: the page of the route on screen, or its start
+	const manualHref = $derived(helpForRoute(page.route.id).manualHref);
 </script>
 
 <div class="w-full p-4 print:hidden" style:view-transition-name="app-footer">
@@ -13,6 +18,8 @@
 	>
 		<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
 			<a class="link-hover link" href={resolve('/')}>{m.home()}</a>
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- helpForRoute resolves the manual's path, then adds the locale prefix and the section -->
+			<a class="link-hover link" href={manualHref}>{m.helpManual()}</a>
 			<a class="link-hover link" href="https://dmun.de/legal" target="_blank">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 				{@html m.imprintAndPrivacy()}

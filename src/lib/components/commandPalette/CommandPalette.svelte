@@ -2,6 +2,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
@@ -13,7 +14,14 @@
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import type { TeamAccess } from '#lib/helpers/teamAccess';
-	import { getAllPages, getConfigEntries, type PageEntry, type ConfigEntry } from './pageRegistry';
+	import {
+		getAllPages,
+		getConfigEntries,
+		manualPaletteEntry,
+		matchesManual,
+		type PageEntry,
+		type ConfigEntry
+	} from './pageRegistry';
 	import {
 		describeItem,
 		flattenResults,
@@ -71,6 +79,10 @@
 		})
 	);
 
+	// The manual's page about the page on screen, offered when the search is empty or asks for help
+	const manualEntry = $derived(manualPaletteEntry(page.route.id));
+	const manualResults = $derived(matchesManual(searchInput) ? [manualEntry] : []);
+
 	let pageResults = $derived.by(() => {
 		if (!searchInput.trim()) {
 			// Show top 5 pages as quick navigation
@@ -114,7 +126,8 @@
 			transactions: transactionResults,
 			pages: pageResults,
 			configs: configResults,
-			foreignUsers: foreignUserResults
+			foreignUsers: foreignUserResults,
+			manual: manualResults
 		})
 	);
 
@@ -223,6 +236,8 @@
 		const target = resultTarget({ item, conferenceId });
 		if ('userId' in target) {
 			openUserCard(target.userId);
+		} else if ('newTab' in target) {
+			window.open(target.newTab, '_blank', 'noopener');
 		} else goto(target.href);
 	}
 
@@ -270,7 +285,8 @@
 		transaction: { title: m.payment, icon: 'fa-money-bill-transfer', fromServer: true },
 		page: { title: m.commandPalettePages, icon: 'fa-file', fromServer: false },
 		config: { title: m.commandPaletteConfiguration, icon: 'fa-gears', fromServer: false },
-		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'fa-user-xmark', fromServer: false }
+		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'fa-user-xmark', fromServer: false },
+		manual: { title: m.help, icon: 'fa-circle-question', fromServer: false }
 	};
 
 	/** `flatList` cut into its groups, each item with its index in the flat list. */

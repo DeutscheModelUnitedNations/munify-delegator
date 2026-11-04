@@ -111,7 +111,10 @@ export default defineConfig({
 		// module. esbuild's dependency pre-bundling can't compile `$state`, which
 		// drops exports like `createNativeStore`. Excluding it routes the package
 		// through vite-plugin-svelte's compiler instead.
-		exclude: ['@deutschemodelunitednations/munify-resolution-editor']
+		exclude: ['@deutschemodelunitednations/munify-resolution-editor'],
+		// Imported lazily when a tour starts; found only then, it would make Vite re-optimize and
+		// reload the page in the middle of the first tour.
+		include: ['@deutschemodelunitednations/docs-kit/tour']
 	},
 	ssr: {
 		// The OIDC library needs typebox >= 1.1, but the hoisted copy is the 1.0 one that
