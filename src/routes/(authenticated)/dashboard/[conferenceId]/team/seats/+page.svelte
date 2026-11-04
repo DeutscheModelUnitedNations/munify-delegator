@@ -20,11 +20,11 @@
 	let { params: routeParams }: PageProps = $props();
 
 	let conferenceId = $derived(routeParams.conferenceId);
-	/** New roles are made on the seat planning page, which only seat planners open */
-	const showSeatPlanningHint = $derived(canPlanSeats(await fetchTeamAccess(conferenceId)));
-
+	// before the first await: setContext only works while the component initialises
 	const assignUserParam = provideAssignUser();
 	const seatSwitch = provideSeatSwitch();
+	/** New roles are made on the seat planning page, which only seat planners open */
+	const showSeatPlanningHint = $derived(canPlanSeats(await fetchTeamAccess(conferenceId)));
 	function lookupUser(id: string) {
 		return client.query.user({ __args: { id }, id: true, familyName: true, givenName: true });
 	}

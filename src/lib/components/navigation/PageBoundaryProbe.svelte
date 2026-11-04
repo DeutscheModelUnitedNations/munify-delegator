@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PageBoundary from './PageBoundary.svelte';
+	import PageBoundaryProbePage from './PageBoundaryProbePage.svelte';
 	import { TEAM_SKELETONS } from '#lib/data/teamSkeletons';
 
 	/** A page for `PageBoundary.dom.svelte.test.ts`: its content waits for whatever promise it is handed. */
@@ -7,5 +8,5 @@
 </script>
 
 <PageBoundary {key} skeleton={TEAM_SKELETONS.participants}>
-	<p data-content>{await load()}</p>
+	<PageBoundaryProbePage {load} />
 </PageBoundary>

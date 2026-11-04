@@ -416,7 +416,10 @@ bun run preview
   `<svelte:boundary>` with a skeleton as `pending` snippet, keyed by the pathname so every
   navigation creates a fresh one (a settled boundary never shows `pending` again). The snippet is
   only passed in the browser: on the server a boundary with `pending` renders nothing else, and a
-  full load still arrives with its content. A section that keeps a frame across its pages (the
+  full load still arrives with its content. A page whose fetch fails shows a retry
+  (`LoadError`) in its boundary, logged as a warning when the API was not reached: past a failed
+  `await`, Svelte still runs the template against script variables that were never assigned, so
+  the error must not escape the boundary. A section that keeps a frame across its pages (the
   assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
   outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
   registry names each page's `skeleton`, drawn after that page (`#lib/data/teamSkeletons`); `NavigationProgress` draws the bar along the top
@@ -1240,6 +1243,7 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_POOL_SIZE` (optional) - connections each app instance holds open to Postgres (20)
 - `SECRET` - Session encryption secret
 - `NODE_ENV` - Environment (development/production/test)
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
@@ -1467,6 +1471,14 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
+
+- **graphql-sse is patched** (`lib/handler.*`, `lib/client.*`, the compiled files both bundles
+  inline) for two leaks upstream has not released fixes for. The handler disposes a stream
+  reserved with `PUT` that no `GET` connects to within `reservationTimeout` (30 s; issue #123):
+  it kept its subscriptions and their queued results forever, ~330 KB each. The client aborts its
+  event stream when an operation's request fails instead of opening a second one beside it (issue
+  #135, PR #136 ported). `src/api/sseReservations.test.ts` and `src/lib/api/sseClient.test.ts`
+  fail without the patch; drop it once a release carries both fixes.
 
 ## Development Workflow
 

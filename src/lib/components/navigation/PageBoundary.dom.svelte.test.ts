@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { CombinedError } from '@urql/core';
 import { flushSync, mount, settled, unmount } from 'svelte';
 import Probe from './PageBoundaryProbe.svelte';
+import { logger } from '#lib/logger';
 
 /** The promise's resolution reaches the boundary a few microtasks later; let them all run */
 async function resolved() {
@@ -11,10 +13,12 @@ async function resolved() {
 
 function deferred() {
 	let resolve: (value: string) => void = () => {};
-	const promise = new Promise<string>((done) => {
+	let reject: (error: unknown) => void = () => {};
+	const promise = new Promise<string>((done, fail) => {
 		resolve = done;
+		reject = fail;
 	});
-	return { promise, resolve };
+	return { promise, resolve, reject };
 }
 
 describe('PageBoundary', () => {
@@ -71,5 +75,39 @@ describe('PageBoundary', () => {
 		await resolved();
 		expect(target.querySelector('[data-skeleton]')).toBeNull();
 		expect(target.querySelector('[data-content]')?.textContent).toBe('seats');
+	});
+
+	test('shows a retry when the page fails to load, and loads again on retry', async () => {
+		const unhandled = vi.fn();
+		process.on('unhandledRejection', unhandled);
+		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+		try {
+			target = document.body.appendChild(document.createElement('div'));
+			let load = deferred();
+			app = mount(Probe, {
+				target,
+				props: { key: '/team/waiting-list', load: () => load.promise }
+			});
+			flushSync();
+
+			load.reject(new CombinedError({ networkError: new TypeError('Load failed') }));
+			await resolved();
+			expect(target.querySelector('[data-skeleton]')).toBeNull();
+			expect(target.querySelector('[data-content]')).toBeNull();
+			expect(target.querySelector('[role="alert"]')).not.toBeNull();
+			expect(warn).toHaveBeenCalledOnce();
+			expect(unhandled).not.toHaveBeenCalled();
+
+			load = deferred();
+			target.querySelector<HTMLButtonElement>('[role="alert"] button')?.click();
+			flushSync();
+			load.resolve('waiting list');
+			await resolved();
+			expect(target.querySelector('[role="alert"]')).toBeNull();
+			expect(target.querySelector('[data-content]')?.textContent).toBe('waiting list');
+		} finally {
+			process.off('unhandledRejection', unhandled);
+			warn.mockRestore();
+		}
 	});
 });

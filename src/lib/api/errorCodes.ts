@@ -57,3 +57,8 @@ export function conflictMessageOf(err: unknown) {
 	}
 	return err.graphQLErrors[0]?.message;
 }
+
+/** Whether an operation failed before the API answered: offline, aborted, the server unreachable. */
+export function isNetworkError(err: unknown) {
+	return err instanceof CombinedError && err.networkError !== undefined;
+}

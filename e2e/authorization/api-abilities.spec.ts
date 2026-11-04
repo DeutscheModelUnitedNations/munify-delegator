@@ -798,18 +798,13 @@ test('only who may delete a registration unregisters a participant', async ({ pa
 
 test('nobody registers into a conference that is not taking applications', async ({ page }) => {
 	// Registering makes the caller a participant, which opens the conference's members-only
-	// details to them; the preparation conference has closed its registration.
+	// details to them; the preparation conference has closed its registration. Supervisors are
+	// the exception, until the conference is over: e2e/authorization/late-supervisor.spec.ts.
 	await loginAs(page, makeTestUser('authz-late-registrant'));
 	const closed = /registration period is closed/;
 
 	expectRefused(
 		await gql(page, `mutation ($c: ID!) { createDelegation(conferenceId: $c) { id } }`, {
-			c: E2E_PREP_CONFERENCE_ID
-		}),
-		closed
-	);
-	expectRefused(
-		await gql(page, `mutation ($c: ID!) { createConferenceSupervisor(conferenceId: $c) { id } }`, {
 			c: E2E_PREP_CONFERENCE_ID
 		}),
 		closed

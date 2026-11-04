@@ -5,18 +5,38 @@
 	import { translateRegionalGroup } from '#lib/utils/enumTranslations';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import type { UnMember } from '#lib/helpers/seatPlanning/unMembers';
+	import { createHoverDelay } from './hoverDelay';
 
 	let popover = $state<HTMLDivElement>();
 	let member = $state<UnMember>();
 	let position = $state({ top: 0, left: 0 });
-
-	/** short delays so sweeping over the list does not flash a popover for every row, and the
-	 * pointer can move from the name into the popover without closing it */
-	const SHOW_DELAY = 250;
-	const HIDE_DELAY = 150;
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	let anchorElement: HTMLElement | undefined;
 	let open = $state(false);
+	/** the element the open popover belongs to, and the one a waiting popover will belong to */
+	let anchorElement: HTMLElement | undefined;
+	let pendingAnchor: HTMLElement | undefined;
+
+	const delay = createHoverDelay<{ target: UnMember; anchor: HTMLElement }>({
+		showDelay: 250,
+		hideDelay: 150,
+		onShow: ({ target, anchor }) => {
+			const rect = anchor.getBoundingClientRect();
+			member = target;
+			anchorElement = anchor;
+			pendingAnchor = undefined;
+			position = {
+				top: Math.min(rect.bottom + 4, window.innerHeight - 320),
+				left: rect.left
+			};
+			if (!popover?.matches(':popover-open')) popover?.showPopover();
+			open = true;
+		},
+		onHide: () => {
+			if (popover?.matches(':popover-open')) popover.hidePopover();
+			open = false;
+		}
+	});
+
+	$effect(() => () => delay.dispose());
 
 	/** a leave event alone is not reliable (a focused anchor, a popover that appears under a
 	 * resting pointer), so while open the pointer's position decides */
@@ -25,36 +45,31 @@
 		const onMove = (event: PointerEvent) => {
 			const inside = event
 				.composedPath()
-				.some((node) => node === popover || node === anchorElement);
-			if (inside) clearTimeout(timer);
-			else hide();
+				.some((node) => node === popover || node === anchorElement || node === pendingAnchor);
+			if (inside) delay.stay();
+			else delay.hide();
+		};
+		// the popover is placed once, so it would stay behind when the table scrolls under it
+		const onScroll = (event: Event) => {
+			if (!(event.target instanceof Node && popover?.contains(event.target))) delay.hide();
 		};
 		window.addEventListener('pointermove', onMove);
-		return () => window.removeEventListener('pointermove', onMove);
+		window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+		return () => {
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('scroll', onScroll, { capture: true });
+		};
 	});
 
 	/** Shows the facts about a state next to the hovered or focused element */
 	export function show(target: UnMember, anchor: HTMLElement) {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			const rect = anchor.getBoundingClientRect();
-			member = target;
-			anchorElement = anchor;
-			position = {
-				top: Math.min(rect.bottom + 4, window.innerHeight - 320),
-				left: rect.left
-			};
-			if (!popover?.matches(':popover-open')) popover?.showPopover();
-			open = true;
-		}, SHOW_DELAY);
+		pendingAnchor = anchor;
+		delay.show({ target, anchor });
 	}
 
 	export function hide() {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			popover?.hidePopover();
-			open = false;
-		}, HIDE_DELAY);
+		pendingAnchor = undefined;
+		delay.hide();
 	}
 
 	const languageNames = $derived.by(() => {
@@ -75,13 +90,15 @@
 	};
 </script>
 
+<!-- `hidden` until open: the card's `display: flex` would otherwise override the browser's
+     `display: none` for a closed popover, leaving it on the page, outside the top layer -->
 <div
 	bind:this={popover}
 	popover="manual"
 	role="tooltip"
-	onmouseenter={() => clearTimeout(timer)}
+	onmouseenter={() => delay.stay()}
 	onmouseleave={hide}
-	class="card bg-base-100 border-base-300 m-0 w-80 border shadow-xl"
+	class="card bg-base-100 border-base-300 m-0 hidden w-80 border shadow-xl open:flex"
 	style:position="fixed"
 	style:inset="auto"
 	style:top="{position.top}px"

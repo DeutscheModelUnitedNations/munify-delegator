@@ -25,7 +25,14 @@
 			? m.seatSwitchSelectTarget({ name: seatSwitch.selected.name })
 			: name
 	);
-	const variant = $derived(isSelected ? 'btn-primary' : switching ? 'btn-outline btn-primary' : '');
+	// at rest the button is base-100 with a border: the default base-200 is the colour of the zebra stripes
+	const variant = $derived(
+		isSelected
+			? 'btn-primary'
+			: switching
+				? 'btn-outline btn-primary'
+				: 'border-base-300 [--btn-color:var(--color-base-100)]'
+	);
 </script>
 
 <div class="tooltip" data-tip={tooltip}>

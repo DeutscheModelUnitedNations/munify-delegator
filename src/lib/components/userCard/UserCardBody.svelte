@@ -19,7 +19,7 @@
 	import SurveyAnswersTab from './tabs/SurveyAnswersTab.svelte';
 	import PapersTab from './tabs/PapersTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
-	import UserCardLoadError from './UserCardLoadError.svelte';
+	import LoadError from '#lib/components/LoadError.svelte';
 	import UserCardNotFound from './UserCardNotFound.svelte';
 	import TabReady from './TabReady.svelte';
 
@@ -181,7 +181,7 @@
 					{/snippet}
 
 					{#snippet failed(_error, reset)}
-						<UserCardLoadError onretry={reset} />
+						<LoadError onretry={reset} />
 					{/snippet}
 				</svelte:boundary>
 			{/key}

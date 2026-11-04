@@ -1,9 +1,8 @@
 import { GraphQLError } from 'graphql';
-import { Redis } from 'ioredis';
-import { REDIS_URL } from '$app/env/private';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 import { createCounter, createFailureLimiter } from './failureLimit';
+import { redisClient } from './redisClient';
 
 /**
  * How many codes one account may get wrong before it has to wait. A delegation's entry code and a
@@ -27,7 +26,7 @@ function isNotFound(error: unknown) {
  */
 export const codeGuessLimiter = createFailureLimiter({
 	counter: createCounter({
-		redis: REDIS_URL ? new Redis(REDIS_URL, { lazyConnect: true }) : undefined,
+		redis: redisClient({ lazyConnect: true }),
 		prefix: 'code-guess',
 		limit: LIMIT,
 		windowSeconds: WINDOW_SECONDS

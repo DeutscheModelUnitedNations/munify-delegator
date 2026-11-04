@@ -218,7 +218,9 @@
 	{@const delegation = delegations.find((d) => d.assignedRoleId === nation.roleId)}
 	{@const sumSeats = nationSeatTotal(nation)}
 	<tr>
-		<th class="z-10! bg-inherit text-left font-normal">
+		<!-- above the cells it covers when scrolled sideways (their tooltips are positioned too); its
+		     background is the table's, which follows the zebra stripes -->
+		<th class="z-10 text-left font-normal">
 			<div class="flex flex-col items-start gap-1.5">
 				<div class="flex items-center gap-2">
 					<Flag alpha2Code={nation.alpha2Code} size="xs" />
@@ -255,12 +257,14 @@
 {/snippet}
 
 <SeatsTableSection>
-	<thead>
-		<tr class="z-30!">
-			<th class="bg-base-100 z-20!"></th>
+	<!-- above the pinned first column, so the rows scroll under the header, corner included; only
+	     the corner is a <th>: the table pins every <th> to the left edge -->
+	<thead class="z-30">
+		<tr>
+			<th class="bg-base-100"></th>
 			{#each committees as committee (committee.id)}
 				{@const seats = committeeSeats.get(committee.id)}
-				<th class="bg-base-100 z-20!">
+				<td>
 					<div class="flex flex-col items-center">
 						<span class="text-lg font-bold">{committee.abbreviation}</span>
 						<span class="text-sm font-normal">
@@ -270,10 +274,10 @@
 							<span class="text-xs opacity-70">/ {seats?.total ?? 0}</span>
 						</span>
 					</div>
-				</th>
+				</td>
 			{/each}
-			<th class="bg-base-100 z-20!"><i class="fa-sharp-duotone fa-solid fa-sigma"></i></th>
-			<th class="bg-base-100 z-20!"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
+			<td><i class="fa-sharp-duotone fa-solid fa-sigma"></i></td>
+			<td><i class="fa-sharp-duotone fa-solid fa-users"></i></td>
 		</tr>
 	</thead>
 	<tbody>

@@ -2,7 +2,11 @@ import { m } from '#lib/paraglide/messages';
 import { db } from '#api/db/db';
 import type * as schema from '#api/db/schema/index';
 import { apiError } from '#api/services/errors';
-import { acceptsApplications, applicationTextsComplete } from '#lib/helpers/applicationReadiness';
+import {
+	acceptsApplications,
+	acceptsSupervisorSignups,
+	applicationTextsComplete
+} from '#lib/helpers/applicationReadiness';
 
 /** The application texts an update may change alongside applying. */
 export type ApplicationTextEdits = {
@@ -15,7 +19,7 @@ const edited = <T>({ edit, stored }: { edit: T | undefined; stored: T }) =>
 	edit === undefined ? stored : edit;
 
 /**
- * Refuses registering yourself (as head delegate, single participant or supervisor) or joining a
+ * Refuses registering yourself (as head delegate or single participant) or joining a
  * delegation outside the window applications are taken in. A registration makes the caller a
  * participant, which opens the conference's members-only details, surveys and papers to them, so
  * a conference that is not taking applications must not hand that out. The team registering
@@ -32,6 +36,26 @@ export async function assertRegistrationOpen(conferenceId: string) {
 	});
 	if (!conference || !acceptsApplications({ conference })) {
 		throw apiError({ code: 'CONFLICT', message: m.applicationTimeframeClosed() });
+	}
+}
+
+/**
+ * Whether supervisors may sign themselves up to the conference right now: until it is over
+ * (`acceptsSupervisorSignups`). Unlike delegates and single participants they are not bound to the
+ * registration window. False for a conference that does not exist.
+ */
+export async function supervisorSignupOpen(conferenceId: string) {
+	const conference = await db.query.conference.findFirst({
+		where: { id: conferenceId },
+		columns: { state: true }
+	});
+	return !!conference && acceptsSupervisorSignups({ conference });
+}
+
+/** Refuses a supervisor signing themselves up once the conference is over (`supervisorSignupOpen`). */
+export async function assertSupervisorSignupOpen(conferenceId: string) {
+	if (!(await supervisorSignupOpen(conferenceId))) {
+		throw apiError({ code: 'CONFLICT', message: m.supervisorSignupClosed() });
 	}
 }
 

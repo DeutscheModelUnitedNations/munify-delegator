@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
 	import UserCardBody from './UserCardBody.svelte';
-	import UserCardLoadError from './UserCardLoadError.svelte';
+	import LoadError from '#lib/components/LoadError.svelte';
 	import type { UserCardTab } from './userCardTabs';
 
 	interface Props {
@@ -89,7 +89,7 @@
 
 		{#snippet failed(_error, reset)}
 			<div class="p-5 md:px-10 lg:px-16">
-				<UserCardLoadError onretry={reset} />
+				<LoadError onretry={reset} />
 			</div>
 		{/snippet}
 	</svelte:boundary>
