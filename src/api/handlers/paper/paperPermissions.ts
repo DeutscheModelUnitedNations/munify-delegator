@@ -7,9 +7,11 @@ import {
 	isInOwnDelegation,
 	isSystemAdmin,
 	isTeamMemberOfConference,
+	linkedChase,
 	PAPER_ROLES,
 	participatesIn,
 	PROJECT_MANAGEMENT_ROLES,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
@@ -27,6 +29,18 @@ type RoleKind = (typeof schema.conferenceRole.$inferSelect)['kind'];
  */
 export function registerPaperAbilities() {
 	abilityBuilder.paper.allow(['read', 'update', 'delete']).when(systemAdmin);
+
+	// The linked CHASE takes accepted working papers over as drafts (`docs/plans/chase-link.md`).
+	abilityBuilder.paper.allow('read').when(
+		linkedChase({
+			where: {
+				type: 'WORKING_PAPER' as const,
+				delegation: { conference: RELEASED_MIRRORED_CONFERENCE },
+				versions: { status: 'ACCEPTED' as const }
+			},
+			columns: { id: true, delegationId: true, agendaItemId: true, type: true, status: true }
+		})
+	);
 
 	// Authors read and update their own papers, and delete one while it is still a draft.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
