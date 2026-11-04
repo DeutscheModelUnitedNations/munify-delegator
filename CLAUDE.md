@@ -1028,7 +1028,32 @@ bun run preview
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
   started the sending, or the job's `APP_URL`.
 
-#### 10. Background Tasks and Jobs
+#### 10. The CHASE link
+
+- **One MUNify CHASE instance can be linked to this one**, system-wide (`docs/plans/chase-link.md`,
+  the same plan as chase's `docs/plans/delegator-link.md`). A system admin requests it on
+  `dashboard/chase-link`, a chase global admin approves it with the confirmation code;
+  unlinking on either side freezes it. `instanceLink` holds the single row: the inbound token as a
+  SHA-256 hash, the outbound one sealed under `SECRET`.
+- **Chase reads through link read rules**, not through dedicated queries: it calls the API with
+  the `x-munify-link-token` header (`ctx.linkCaller()`), and `linkedChase(grant)`
+  (`authHelper/rules.ts`) grants it rows of mirrored conferences (`MIRRORED_CONFERENCE`, and
+  `RELEASED_MIRRORED_CONFERENCE` for anything about participants) with only the listed columns.
+  A new field chase needs is a column in such a rule.
+- **Delegator reads chase back with its link worker** (`#api/handlers/chaseLink/linkWorker.ts`):
+  one app process at a time (a Postgres advisory lock), live queries through the generated chase
+  client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`) as
+  triggers, then a fresh read: the presence into `chase_presence` (the attendance import page),
+  adopted resolutions rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
+  not deletable while linked). The worker starts from the `init` hook.
+- **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
+  the API: the custom roles' "In CHASE" column, the dashboard's CHASE card, the
+  `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
+- **NSA cards** are signed card codes (`MUC1`, `#lib/helpers/identityCode.ts`, copied into chase)
+  with a card number on the participant row; `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts`
+  prints them.
+
+#### 11. Background Tasks and Jobs
 
 - **Jobs** (`src/jobs/`) are one-shot commands of the `delegator-jobs` CLI (citty), run by a
   scheduler outside the app (a cron job, a Dokploy schedule); nothing inside the app runs on a
