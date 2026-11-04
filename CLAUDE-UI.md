@@ -938,10 +938,12 @@ filter, grouping and page size.
   synchronously in a `$derived`, never after an `await`, so `FlatGrid` / `GroupRows` await the
   request in one derived and call the reader in another: that is what makes the table follow a
   live update. The engine's answers are not live, so a reader only follows rows already on
-  screen; `changes` (a live query of the table's ids in the conference, read as one text) is what
-  tells the grid a row was added or removed elsewhere: it asks for its pages and groups again
-  (`GridRequest.revision`, sent along as the engine's ignored `revision` argument so the client cache does not answer with the old ids). The team and the waiting list pass one. A table with columns of its own (`#lib/dataGrid/tables/…`) builds its grid columns
-  with `defineColumns`, which refuses a column the API knows and the page forgot.
+  screen; `changes` (a live query of the table's rows in the conference, read as a short text:
+  how many and the newest) is what tells the grid a row was added or removed elsewhere: it asks
+  for its pages and groups again with that text as `GridRequest.revision`, which the engine takes
+  as its ignored `revision` argument, so the client's cache does not answer with the old ids. The
+  team and the waiting list pass one. A table with columns of its own (`#lib/dataGrid/tables/…`)
+  builds its grid columns with `defineColumns`, which refuses a column the API knows and the page forgot.
 
 **State.** `gridState.svelte.ts` holds the view's state, the search, the page and the selection;
 `gridUrl.svelte.ts` mirrors it into the URL (`?view=`, `state=` only when the view was changed,
