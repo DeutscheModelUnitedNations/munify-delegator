@@ -4,8 +4,8 @@ import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
 export function registerInstanceLinkAbilities() {
-	// System admins read the link, never its tokens. Everyone reads where an active link points:
-	// the dashboard links into CHASE.
+	// System admins read the link, never its tokens. Everyone reads where an active link points
+	// (the dashboard links into CHASE) and when it last read back from CHASE (the team's CHASE card).
 	abilityBuilder.instanceLink
 		.allow('read')
 		.when((ctx) =>
@@ -15,7 +15,7 @@ export function registerInstanceLinkAbilities() {
 		);
 	abilityBuilder.instanceLink.allow('read').when(() => ({
 		where: { status: 'ACTIVE' },
-		columns: { id: true, remoteUrl: true, status: true }
+		columns: { id: true, remoteUrl: true, status: true, lastReconcileAt: true }
 	}));
 	abilityBuilder.instanceLink.allow(['update', 'delete']).when(systemAdmin);
 }

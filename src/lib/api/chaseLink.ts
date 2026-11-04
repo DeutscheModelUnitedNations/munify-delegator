@@ -9,7 +9,8 @@ export async function fetchActiveChaseLink() {
 	const links = await client.liveQuery.instanceLinks({
 		__args: { where: { status: 'ACTIVE' } },
 		remoteUrl: true,
-		status: true
+		status: true,
+		lastReconcileAt: true
 	});
 	return links.at(0);
 }
