@@ -9,10 +9,11 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import ResolutionRow from './ResolutionRow.svelte';
+	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
-	const [resolutions, committees] = $derived(
+	const [resolutions, committees, chaseLink] = $derived(
 		await Promise.all([
 			client.liveQuery.resolutions({
 				__args: {
@@ -26,7 +27,8 @@
 				id: true,
 				name: true,
 				abbreviation: true
-			})
+			}),
+			fetchActiveChaseLink()
 		])
 	);
 
@@ -151,7 +153,12 @@
 				</thead>
 				<tbody>
 					{#each resolutions as resolution (resolution.id)}
-						<ResolutionRow resolutionId={resolution.id} {committees} ondelete={openDelete} />
+						<ResolutionRow
+							resolutionId={resolution.id}
+							{committees}
+							linked={chaseLink !== undefined}
+							ondelete={openDelete}
+						/>
 					{/each}
 				</tbody>
 			</table>

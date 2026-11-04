@@ -7,7 +7,7 @@ import { resolutionToTypst } from '@deutschemodelunitednations/munify-resolution
 import type { ResolutionHeaderData } from '@deutschemodelunitednations/munify-resolution-editor/schema';
 import { db, schema } from '#api/db/db';
 import { resolutionPubsub } from '#api/pubsub';
-import { compileTypst, typstAvailable } from '#api/services/typst';
+import { compileTypst } from '#api/services/typst';
 import { readStoredFile, storeGeneratedFile } from '#api/handlers/storedFile/storedFileService';
 import { filePurpose } from '#api/handlers/storedFile/storageClient';
 import { m } from '#lib/paraglide/messages';
@@ -59,7 +59,6 @@ export async function syncResolutions({
 		resolutionPubsub.removed();
 	}
 	if (render.length === 0) return;
-	if (!(await typstAvailable())) throw new Error('Typst is not installed on this server');
 
 	const context = await headerContext(conferenceId);
 	for (const resolution of render) {

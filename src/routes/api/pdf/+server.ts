@@ -21,7 +21,7 @@ import {
 } from './pdfRequest';
 import type { RequestHandler } from './$types';
 import { logger } from '#lib/logger';
-import { compileTypst, typstAvailable } from '#api/services/typst';
+import { compileTypst } from '#api/services/typst';
 
 /**
  * Compiles one account may start in ten minutes. People export a paper or resolution now and then;
@@ -65,10 +65,6 @@ async function resolutionSource({
 	return resolutionToTypst(parsed.data, header, { emblemPath });
 }
 
-async function ensureTypstAvailable() {
-	if (!(await typstAvailable())) throw error(500, 'Typst binary not available on the server');
-}
-
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const caller = assertSignedIn(locals);
 	const body = await readBody(request);
@@ -82,7 +78,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const rawTypst = readRawTypst(body);
 	const header = readHeader(body.header);
 
-	await ensureTypstAvailable();
 	await compileLimiter.take(caller);
 	const release = compileSlots.take();
 	if (!release) throw error(503, 'PDF generation is busy, please try again in a moment');

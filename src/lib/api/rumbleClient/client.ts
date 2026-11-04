@@ -4021,6 +4021,8 @@ export type RegeneratedInvitation = {
 export type RegionalbaselineEnum = "ECOSOC" | "HUMAN_RIGHTS_COUNCIL" | "MANUAL" | "SECURITY_COUNCIL" | "UN_MEMBERS";
 		
 export type Resolution = {
+  chasePaperId: ID | null,
+  chaseSnapshotId: ID | null,
   committee: (p?: {
     orderBy?: CommitteeOrderInputArgument | null | undefined,
     where?: CommitteeWhereInputArgument | null | undefined
@@ -4044,6 +4046,8 @@ export type Resolution = {
 };
 		
 export type ResolutionOrderInputArgument = {
+  chasePaperId?: SortingParameter | null | undefined,
+  chaseSnapshotId?: SortingParameter | null | undefined,
   committeeId?: SortingParameter | null | undefined,
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
@@ -4057,6 +4061,8 @@ export type ResolutionWhereInputArgument = {
   AND?: ResolutionWhereInputArgument[] | undefined,
   NOT?: ResolutionWhereInputArgument | null | undefined,
   OR?: ResolutionWhereInputArgument[] | undefined,
+  chasePaperId?: IDWhereInputArgument | null | undefined,
+  chaseSnapshotId?: IDWhereInputArgument | null | undefined,
   committee?: CommitteeWhereInputArgument | null | undefined,
   committeeId?: IDWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,

@@ -4691,6 +4691,9 @@ enum RegionalbaselineEnum {
 }
 
 type Resolution {
+  chasePaperId: ID
+  chaseSnapshotId: ID
+
   """Get the committees related to this resolution"""
   committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee
   committeeId: ID
@@ -4714,6 +4717,8 @@ type Resolution {
 }
 
 input ResolutionOrderInputArgument {
+  chasePaperId: SortingParameter
+  chaseSnapshotId: SortingParameter
   committeeId: SortingParameter
   conferenceId: SortingParameter
   createdAt: SortingParameter
@@ -4727,6 +4732,8 @@ input ResolutionWhereInputArgument {
   AND: [ResolutionWhereInputArgument!]
   NOT: ResolutionWhereInputArgument
   OR: [ResolutionWhereInputArgument!]
+  chasePaperId: IDWhereInputArgument
+  chaseSnapshotId: IDWhereInputArgument
   committee: CommitteeWhereInputArgument
   committeeId: IDWhereInputArgument
   conference: ConferenceWhereInputArgument

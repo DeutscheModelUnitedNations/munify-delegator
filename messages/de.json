@@ -2154,6 +2154,8 @@
 	"resolutionEdit": "Bearbeiten",
 	"resolutionEditor": "Resolutions-Editor",
 	"resolutionEditorNotYetAvailable": "Der Resolutions-Editor und damit für Sie die Möglichkeit, Arbeitspapiere einzureichen, stehen leider noch nicht zur Verfügung. Sie werden informiert, sobald Sie Arbeitspapiere einreichen können. Positionspapiere hingegen können Sie schon einreichen!",
+	"resolutionFromChase": "Aus CHASE",
+	"resolutionFromChaseLocked": "In CHASE angenommen. Solange die Verbindung besteht, hält CHASE sie aktuell und sie lässt sich hier nicht löschen.",
 	"resolutionHeadline": "Resolutions-Überschrift",
 	"resolutionHeadlineHint": "Individuelle Überschrift für Resolutionen (für geschlechtsspezifische Artikel in manchen Sprachen).",
 	"resolutionHeadlinePlaceholder": "z.B. Der Sicherheitsrat",

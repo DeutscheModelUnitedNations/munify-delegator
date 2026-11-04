@@ -1,7 +1,7 @@
 import { db, schema } from '#api/db/db';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import { apiError } from '#api/services/errors';
-import { instanceLinkPubsub } from '#api/pubsub';
+import { instanceLinkPubsub, resolutionPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
 import { m } from '#lib/paraglide/messages';
 import { createChaseClient } from './chaseRemote';
@@ -124,9 +124,18 @@ export async function freezeChaseLink({ notifyRemote }: { notifyRemote: boolean 
 		instanceLinkPubsub.removed();
 		return;
 	}
-	await db
-		.update(schema.instanceLink)
-		.set({ status: 'FROZEN', outboundToken: null })
-		.where(eq(schema.instanceLink.id, link.id));
+	const released = await db.transaction(async (tx) => {
+		await tx
+			.update(schema.instanceLink)
+			.set({ status: 'FROZEN', outboundToken: null })
+			.where(eq(schema.instanceLink.id, link.id));
+		// the resolutions it brought stay, as ordinary ones the team may delete
+		return tx
+			.update(schema.resolution)
+			.set({ chasePaperId: null, chaseSnapshotId: null })
+			.where(isNotNull(schema.resolution.chasePaperId))
+			.returning({ id: schema.resolution.id });
+	});
 	instanceLinkPubsub.updated(link.id);
+	if (released.length > 0) resolutionPubsub.updated(released.map(({ id }) => id));
 }

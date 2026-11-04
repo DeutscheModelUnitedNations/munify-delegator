@@ -2154,6 +2154,8 @@
 	"resolutionEdit": "Edit",
 	"resolutionEditor": "Resolution Editor",
 	"resolutionEditorNotYetAvailable": "The resolutions editor, and therefore the ability for you to submit working papers, is unfortunately not yet available. You will be notified as soon as you can submit working papers.",
+	"resolutionFromChase": "From CHASE",
+	"resolutionFromChaseLocked": "Adopted in CHASE. While the link is active, CHASE keeps it up to date and it cannot be deleted here.",
 	"resolutionHeadline": "Resolution Headline",
 	"resolutionHeadlineHint": "Custom headline for resolutions (for gender-specific articles in some languages).",
 	"resolutionHeadlinePlaceholder": "e.g. The Security Council",
