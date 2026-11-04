@@ -1426,6 +1426,14 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
 
+- **graphql-sse is patched** (`lib/handler.*`, `lib/client.*`, the compiled files both bundles
+  inline) for two leaks upstream has not released fixes for. The handler disposes a stream
+  reserved with `PUT` that no `GET` connects to within `reservationTimeout` (30 s; issue #123):
+  it kept its subscriptions and their queued results forever, ~330 KB each. The client aborts its
+  event stream when an operation's request fails instead of opening a second one beside it (issue
+  #135, PR #136 ported). `src/api/sseReservations.test.ts` and `src/lib/api/sseClient.test.ts`
+  fail without the patch; drop it once a release carries both fixes.
+
 ## Development Workflow
 
 - Never use the git commit command after a task is finished.
