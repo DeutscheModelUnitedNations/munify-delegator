@@ -47,10 +47,12 @@ describe('toWaitingListRow', () => {
 			createdAt: new Date('2026-01-02T03:04:05.000Z'),
 			position: undefined,
 			assignedAt: null,
+			seated: false,
 			family_name: 'Lovelace',
 			given_name: 'Ada',
 			email: 'ada@example.org',
 			phone: '0123',
+			birthday: new Date('2008-03-20T00:00:00Z'),
 			conferenceAge: 17,
 			participationCount: 2,
 			city: 'London',
@@ -74,6 +76,12 @@ describe('toWaitingListRow', () => {
 				startConference: null
 			}).assignedAt
 		).toEqual(new Date('2026-02-01T10:00:00.000Z'));
+		expect(
+			toWaitingListRow({
+				entry: { ...bare, assignedAt: '2026-02-01T10:00:00.000Z' },
+				startConference: null
+			}).seated
+		).toBe(true);
 	});
 
 	test('has no age without a conference start', () => {

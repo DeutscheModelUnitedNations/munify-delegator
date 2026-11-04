@@ -3,7 +3,7 @@
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import { conflictAwareToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import { TEAM_ROLES } from './teamMembersQuery';
+	import { TEAM_ROLES } from '#lib/dataGrid/tables/participants';
 
 	/**
 	 * A team member's role, changeable in place. Like the invitation dialog it offers every role and

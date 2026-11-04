@@ -8,10 +8,12 @@ export interface WaitingListRow {
 	position: number | undefined;
 	/** When the entrant was given a seat. */
 	assignedAt: Date | null;
+	seated: boolean;
 	family_name: string;
 	given_name: string;
 	email: string;
 	phone: string | null;
+	birthday: Date | null;
 	conferenceAge: number | undefined;
 	participationCount: number;
 	city: string | null;
@@ -77,10 +79,12 @@ export function toWaitingListRow({
 		createdAt: new Date(entry.createdAt),
 		position: positions.get(entry.id),
 		assignedAt: entry.assignedAt ? new Date(entry.assignedAt) : null,
+		seated: !!entry.assignedAt,
 		family_name: user.familyName,
 		given_name: user.givenName,
 		email: user.email,
 		phone: user.phone ?? null,
+		birthday: user.birthday ? new Date(user.birthday) : null,
 		conferenceAge: conferenceAge({ birthday: user.birthday, startConference }),
 		participationCount: user.conferenceParticipationsCount ?? 0,
 		city: user.city ?? null,

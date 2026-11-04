@@ -1,30 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { m } from '#lib/paraglide/messages';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { renderComponent } from '#lib/components/tanStackTable/index';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
-	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
-	import TeamMemberActions from './TeamMemberActions.svelte';
-	import TeamRoleCell from './TeamRoleCell.svelte';
-	import TeamManagementPage from '../TeamManagementPage.svelte';
-	import { translateTeamRole } from '#lib/utils/enumTranslations';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
-	import {
-		TEAM_ROLES,
-		countTeamMembers,
-		fetchAllTeamMembers,
-		fetchTeamMembersPage
-	} from './teamMembersQuery';
-	import { pageOf } from '#lib/components/tanStackTable/serverQuery';
-	import { toast } from 'svelte-sonner';
 	import { conflictMessageOf } from '#lib/api/errorCodes';
-	import { z } from 'zod';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { startImpersonation } from '#lib/api/startImpersonation';
+	import TeamMemberActions from './TeamMemberActions.svelte';
+	import TeamManagementPage from '../TeamManagementPage.svelte';
+	import { teamMemberColumns } from './columns';
+	import { teamMembersSource } from './teamMembersSource';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -34,68 +22,9 @@
 	// pending batch, which still shows `params` as `{}`, and asked for no conference.
 	const conferenceId = untrack(() => params.conferenceId);
 
-	// Search, filters, order and paging run in the backend; the table only holds this page.
-	const tableState = createTableState();
-	const fetched = $derived(await fetchTeamMembersPage({ conferenceId, state: tableState }));
-	// Sliced here rather than in the fetch: a read after an await there is not tracked, and the
-	// table would never hear of a member joining or leaving.
-	const page = $derived(pageOf({ rows: fetched.members, state: tableState }));
-	const teamMembers = $derived(page.rows);
-	// A count is not live, so it is asked again whenever the page's rows change.
-	const countFor = (_rows: unknown) =>
-		countTeamMembers({ conferenceId, state: tableState, userIds: fetched.userIds });
-	const total = $derived(await countFor(page.rows));
-	const exportRows = () => fetchAllTeamMembers({ conferenceId, state: tableState });
+	const columns = teamMemberColumns();
+	const source = teamMembersSource(conferenceId);
 	const isAdmin = $derived((await getCurrentUser()).isAdmin);
-
-	// Dedicated schema for profile completeness validation
-	const profileCompletenessSchema = z.object({
-		birthday: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null, { message: 'Birthday required' }),
-		phone: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'Phone required' }),
-		street: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'Street required' }),
-		zip: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'Zip required' }),
-		city: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'City required' }),
-		country: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'Country required' }),
-		gender: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'Gender required' }),
-		foodPreference: z
-			.string()
-			.nullable()
-			.refine((val) => val !== null && val.length > 0, { message: 'Food preference required' })
-	});
-
-	function isProfileComplete(user: {
-		birthday: Date | null;
-		phone: string | null;
-		street: string | null;
-		zip: string | null;
-		city: string | null;
-		country: string | null;
-		gender: string | null;
-		foodPreference: string | null;
-	}): boolean {
-		return profileCompletenessSchema.safeParse(user).success;
-	}
 
 	const handleDelete = async (id: string) => {
 		if (!(await confirmDialog({ text: m.confirmDeleteTeamMember(), danger: true }))) return;
@@ -109,90 +38,26 @@
 		});
 		await promise;
 	};
-
-	const columns: ManagedColumn<(typeof teamMembers)[number]>[] = [
-		{
-			id: 'family_name',
-			header: m.familyName(),
-			accessorFn: (row) => row.user.familyName,
-			enableSorting: false
-		},
-		{
-			id: 'given_name',
-			header: m.givenName(),
-			accessorFn: (row) => row.user.givenName,
-			enableSorting: false
-		},
-		{
-			id: 'email',
-			header: m.email(),
-			accessorFn: (row) => row.user.email,
-			enableSorting: false
-		},
-		{
-			id: 'role',
-			header: m.role(),
-			accessorFn: (row) => translateTeamRole(row.role),
-			filter: { type: 'enum', label: translateTeamRole, options: TEAM_ROLES },
-			cell: ({ row }) =>
-				renderComponent({
-					component: TeamRoleCell,
-					props: {
-						role: row.original.role,
-						onChange: (role) =>
-							Promise.resolve(
-								client.mutate.updateTeamMemberRole({
-									__args: { id: row.original.id, role },
-									role: true
-								})
-							)
-					}
-				})
-		},
-		{
-			id: 'profileStatus',
-			header: m.profileStatus(),
-			accessorFn: (row) => (isProfileComplete(row.user) ? m.complete() : m.incomplete()),
-			enableSorting: false,
-			cell: ({ row }) =>
-				isProfileComplete(row.original.user)
-					? renderComponent({
-							component: BadgeCell,
-							props: { label: m.complete(), variant: 'badge-success' }
-						})
-					: renderComponent({
-							component: BadgeCell,
-							props: {
-								label: m.incomplete(),
-								variant: 'badge-warning',
-								title: m.profileIncompleteHint()
-							}
-						})
-		},
-		{
-			id: 'actions',
-			header: '',
-			cell: ({ row }) =>
-				renderComponent({
-					component: TeamMemberActions,
-					props: {
-						onOpenUserCard: () => openUserCard(row.original.user.id),
-						onImpersonate: isAdmin ? () => startImpersonation(row.original.user.id) : undefined,
-						onDelete: () => handleDelete(row.original.id)
-					}
-				}),
-			enableSorting: false
-		}
-	];
 </script>
 
 <TeamManagementPage {conferenceId}>
-	<ManagedTable
+	<DataGrid
 		{columns}
-		rows={teamMembers}
-		{tableState}
-		hasMore={page.hasMore}
-		rowCount={total}
-		{exportRows}
-	/>
+		{source}
+		rowId={(row) => row.id}
+		base={{ sorting: [{ id: 'joinedAt', desc: false }], pageSize: 50 }}
+		views={{ table: 'teamMembers', conferenceId }}
+		label={m.teamManagement()}
+		exportName="team"
+		selectable
+		actionsWidth={130}
+	>
+		{#snippet actions(row)}
+			<TeamMemberActions
+				onOpenUserCard={() => openUserCard(row.userId)}
+				onImpersonate={isAdmin ? () => startImpersonation(row.userId) : undefined}
+				onDelete={() => handleDelete(row.id)}
+			/>
+		{/snippet}
+	</DataGrid>
 </TeamManagementPage>

@@ -164,6 +164,7 @@ bun run preview
     `papers.ts`, …; `index.ts` exports them all, `columns.ts` holds the shared column helpers),
     `relations.ts` (the relational API's graph), `db.ts` (client),
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
+  - `handlers/dataTable/` - The table engine behind the team's tables (see "Data tables")
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
   - `services/` - Business logic shared by several handlers or routes, and `authHelper/`, the
@@ -181,6 +182,8 @@ bun run preview
   - `components/` - Reusable Svelte components
   - `services/` - Frontend utility functions
   - `schemata/` - Zod validation schemas
+  - `dataGrid/` - The data tables' shared model (state, operators, grouping, views), used by the
+    grid components and the API's table engine alike
   - `paraglide/` - Generated i18n code
 
 - **`src/env.ts`** - Every environment variable, declared and validated by SvelteKit (3's
@@ -957,8 +960,9 @@ bun run preview
   care and project management of a conference where someone has it as their own (or waits with
   it), who also edit it (`updateSchool`) and merge duplicates (`mergeSchools`, which repoints the
   participant rows and waiting list entries of all conferences and deletes the sources).
-  `conferenceSchools` (the team's schools page) and `schoolMetrics` (per conference: registered,
-  applied, seated, attended, from the waiting list) are participant care's.
+  The team's schools page (the `schools` table of the table engine, see "Data tables") and
+  `schoolMetrics` (per conference: registered, applied, seated, attended, from the waiting list)
+  are participant care's.
 - **Seat limit per school:** `conference.maxSeatsPerSchool` (default 16, null for none). The
   assignment board counts the seats its plan gives each school - per person, by their own school
   (`schoolSeats` / `schoolsOfGroup` with `schoolLookupsOf`; someone without a school counts for
@@ -1076,6 +1080,48 @@ bun run preview
     sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
     the mails link to
 
+#### 11. Data tables and saved views
+
+- **The team's tables are one `DataGrid`** (`#lib/components/dataGrid/`, see CLAUDE-UI.md), after
+  the member table of the Mitgliedshub: a filter builder (conditions and groups, AND / OR, one
+  level of groups), sorting by several columns, grouping by up to three with collapsible groups,
+  columns to show, move and resize, pages, selection and export, and saved views.
+- **One model, shared** (`#lib/dataGrid/`, pure, unit tested): the state a view and the URL hold
+  (`stateSchema.ts`, checked by zod in the browser and the API alike), the operators per column
+  type (`operators.ts`, `dateConditions.ts` resolving relative dates for both engines), grouping
+  (`grouping.ts`: the text naming a group is the same in the browser and in SQL), the view logic
+  (`views.ts`: which view opens, what the menu offers) and the engine for rows held in the
+  browser (`localEngine.ts`). `conditionCases.ts` are the cases both engines are tested against;
+  the SQL side runs them against a real Postgres when changed (`conditionSql.test.ts` checks the
+  generated SQL).
+- **The table engine** (`#api/handlers/dataTable/`) answers the big tables - participants, waiting
+  list, team members, schools (`DATA_TABLE_KEYS`): `dataTablePage` (one page of row ids, the total,
+  and for `exposeValues` sources the rows' values) and `dataTableGroups` (one level's groups with
+  their counts). A table is a **source** (`sources/`): one `select` with an `id` and a column per
+  column id (`#lib/dataGrid/tables/…` holds their ids and types, shared with the page), and the
+  engine compiles filter, search, sort, group path and buckets against it (`sql/`). **What the
+  caller may not read never leaves the source**: a teammate's address is `null` for whoever may not
+  read it, so filtering or grouping by it reveals nothing. Who opens which table is
+  `DATA_TABLE_PERMISSION` (`dataTablePermissions.ts`), the page's own team permission. A new
+  table is a source, an entry in `DATA_TABLE_KEYS`, `DATA_TABLE_SOURCES` and
+  `DATA_TABLE_PERMISSION`, and its metas in `#lib/dataGrid/tables/`. Incomplete conditions and
+  columns a table does not have count for nothing, in either engine.
+- **Saved views** (`table_view`, `#api/handlers/tableView/`) are personal (`ownerUserId`, only the
+  owner sees them, not even a system admin) or shared (the conference's team reads them), and
+  belong to one conference or, without `conferenceId`, to every one. Shared views of a conference
+  are changed by the team permission `manageTableViews` (project management and participant care),
+  global shared views by system admins only; creating any view of a table needs that table's
+  permission. A shared view can be its conference's (or the global) default
+  (`setTableViewDefault`); everyone can pick their own default (`table_view_default`,
+  `setMyTableViewDefault`), which wins. `copyTableView` publishes a personal view as a shared one
+  or copies a shared one as one's own. A view's state is checked against `tableStateSchema` on
+  write; one that no longer fits opens as the table's base view. A default names a view of its own
+  conference or a global one (`table_view_default_same_conference`), and a view never moves to
+  another conference. `e2e/authorization/table-views.spec.ts` pins it down.
+- **A resolver that reads through an ability, writes, then reads again calls
+  `refreshAbilities(ctx.abilities)`** before the second read: rumble resolves relational rules
+  once per request, and the written row is not in that snapshot (the view mutations do).
+
 ### Logging
 
 - **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after
@@ -1137,7 +1183,7 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - Form components and `FormFieldset` grouping patterns
 - Modal and Drawer usage
 - Dashboard section layouts
-- ManagedTable configuration
+- DataGrid: columns, sources, views
 - Navigation components (Tabs, NavMenu)
 - Status indicators and badges
 - Color theming and icons

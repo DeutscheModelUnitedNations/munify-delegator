@@ -132,17 +132,18 @@ export const table = ({ rows = 8, columns = 6 }: { rows?: number; columns?: numb
 });
 
 /**
- * A `ManagedTable`: the search and its toolbar, the table, the pagination. `toolbar` are the
- * page's own controls between the search and the filter button.
+ * A `DataGrid`: the search and its toolbar (the page's own controls, the views, the filter,
+ * grouping and column buttons, settings and export), the table, the pagination.
  */
-export const managedTable = ({
+export const dataGrid = ({
 	toolbar = [],
-	filters = true,
+	views = true,
 	rows = 10,
 	columns = 7
 }: {
 	toolbar?: readonly SkeletonNode[];
-	filters?: boolean;
+	/** The table keeps saved views (the views button) */
+	views?: boolean;
 	rows?: number;
 	columns?: number;
 } = {}): SkeletonNode => ({
@@ -153,11 +154,13 @@ export const managedTable = ({
 			children: [
 				block('h-10 grow basis-full sm:basis-auto'),
 				...toolbar,
-				...(filters ? [block('h-8 w-24')] : []),
+				...(views ? [block('h-8 w-32')] : []),
+				block('h-8 w-20'),
+				block('h-8 w-24'),
 				block('h-8 w-24'),
 				{
 					class: 'flex items-center gap-2 max-sm:ml-auto',
-					children: [block('h-4 w-16 rounded-full'), block('h-8 w-8'), block('h-8 w-8')]
+					children: [block('h-8 w-8'), block('h-8 w-8')]
 				}
 			]
 		},

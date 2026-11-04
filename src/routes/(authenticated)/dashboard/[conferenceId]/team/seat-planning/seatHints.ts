@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createFuzzySearch } from '#lib/components/tanStackTable/search';
+import { createFuzzySearch } from '#lib/helpers/fuzzySearch';
 import {
 	regionalGroups,
 	type RegionalGroup,

@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-	cleanSchoolName,
-	conferenceSchoolsArgsSchema,
-	schoolRenameSchema,
-	searchSchoolsArgsSchema
-} from './schoolArgs';
+import { cleanSchoolName, schoolRenameSchema, searchSchoolsArgsSchema } from './schoolArgs';
 
 describe('cleanSchoolName', () => {
 	test('trims and collapses whitespace', () => {
@@ -29,30 +24,5 @@ describe('searchSchoolsArgsSchema', () => {
 		expect(searchSchoolsArgsSchema.parse({ search: 'x' }).limit).toBe(10);
 		expect(searchSchoolsArgsSchema.parse({ search: 'x', limit: 0 }).limit).toBe(1);
 		expect(searchSchoolsArgsSchema.parse({ search: 'x', limit: 500 }).limit).toBe(50);
-	});
-});
-
-describe('conferenceSchoolsArgsSchema', () => {
-	test('sorts by the participants, most first, when not told otherwise', () => {
-		expect(
-			conferenceSchoolsArgsSchema.parse({ conferenceId: 'c', limit: 20, offset: 0 })
-		).toMatchObject({ sortColumn: 'participants', sortDesc: true });
-	});
-
-	test('keeps the page within bounds', () => {
-		expect(
-			conferenceSchoolsArgsSchema.parse({ conferenceId: 'c', limit: 9999, offset: -5 })
-		).toMatchObject({ limit: 500, offset: 0 });
-	});
-
-	test('refuses a column the page does not have', () => {
-		expect(
-			conferenceSchoolsArgsSchema.safeParse({
-				conferenceId: 'c',
-				sortColumn: 'notes',
-				limit: 20,
-				offset: 0
-			}).success
-		).toBe(false);
 	});
 });

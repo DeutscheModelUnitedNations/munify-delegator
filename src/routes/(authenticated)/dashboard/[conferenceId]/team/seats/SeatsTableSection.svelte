@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DataTable } from '#lib/components/tanStackTable/ui/index';
+	import Table from '#lib/components/table/Table.svelte';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -22,10 +22,7 @@
 	{/if}
 
 	<!-- fits the viewport and scrolls inside itself, so the header row and the first column never leave the screen -->
-	<DataTable.Root
-		wrapperClass="max-h-[calc(100dvh-8rem)] w-full"
-		class="table-pin-cols text-center"
-	>
+	<Table wrapperClass="max-h-[calc(100dvh-8rem)] w-full" class="table-pin-cols text-center">
 		{@render children()}
-	</DataTable.Root>
+	</Table>
 </section>

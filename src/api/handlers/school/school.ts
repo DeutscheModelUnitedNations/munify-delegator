@@ -3,23 +3,12 @@ import { sql } from 'drizzle-orm';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
-	assertCanReadConferenceSchools,
 	assertCanReadSchoolMetrics,
 	assertCanUpdateSchools,
 	registerSchoolAbilities
 } from './schoolPermissions';
-import {
-	conferenceSchoolsPage,
-	mergeSchools,
-	schoolMetrics,
-	searchSchoolIds,
-	updateSchool
-} from './schoolService';
-import {
-	conferenceSchoolsArgsSchema,
-	schoolRenameSchema,
-	searchSchoolsArgsSchema
-} from './schoolArgs';
+import { mergeSchools, schoolMetrics, searchSchoolIds, updateSchool } from './schoolService';
+import { schoolRenameSchema, searchSchoolsArgsSchema } from './schoolArgs';
 
 registerSchoolAbilities();
 
@@ -40,28 +29,6 @@ const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {
 		supervisors: t.int(),
 		waitingList: t.int(),
 		fromWaitingList: t.int({ description: 'Waiting list entries that were given a seat' })
-	})
-});
-
-const ConferenceSchoolRow = schemaBuilder.simpleObject('ConferenceSchoolRow', {
-	fields: (t) => ({
-		schoolId: t.id(),
-		name: t.string(),
-		city: t.string({ nullable: true }),
-		delegations: t.int(),
-		participants: t.int({ description: 'Delegation members and single participants' }),
-		applied: t.int(),
-		seated: t.int({ description: 'Participants holding a role' }),
-		supervisors: t.int(),
-		waitingList: t.int({ description: 'Entries still waiting' })
-	})
-});
-
-const ConferenceSchoolsPage = schemaBuilder.simpleObject('ConferenceSchoolsPage', {
-	fields: (t) => ({
-		rows: t.field({ type: [ConferenceSchoolRow] }),
-		hasMore: t.boolean(),
-		total: t.int()
 	})
 });
 
@@ -92,29 +59,6 @@ schemaBuilder.queryFields((t) => ({
 						)}]::text[], ${school.id})`
 				})
 			);
-		}
-	}),
-
-	conferenceSchools: t.field({
-		description:
-			'The schools of the people in a conference (participants, supervisors, the waiting list), with how many people each sends, a page at a time. Participant care only.',
-		type: ConferenceSchoolsPage,
-		args: t.validate(
-			{
-				conferenceId: t.arg.id({ required: true }),
-				search: t.arg.string({ description: "Part of a school's name or city." }),
-				sortColumn: t.arg.string({
-					description: 'A column of the page; the participants when left out.'
-				}),
-				sortDesc: t.arg.boolean({ description: 'Descending, unless false.' }),
-				limit: t.arg.int({ required: true, description: 'At most 500.' }),
-				offset: t.arg.int({ required: true })
-			},
-			conferenceSchoolsArgsSchema
-		),
-		resolve: async (_root, args, ctx) => {
-			await assertCanReadConferenceSchools({ ctx, conferenceId: args.conferenceId });
-			return conferenceSchoolsPage(args);
 		}
 	}),
 

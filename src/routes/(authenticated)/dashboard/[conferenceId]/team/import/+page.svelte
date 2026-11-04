@@ -5,9 +5,9 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
-	import { renderComponent } from '#lib/components/tanStackTable/index';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource, type GridSource } from '#lib/components/dataGrid/dataSource';
+	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import RepresentationBadge from './RepresentationBadge.svelte';
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
@@ -68,44 +68,78 @@
 			}
 		});
 
-	const roleColumn = <T extends { representation: ChasePresenceRepresentation | null }>() =>
-		({
-			id: 'role',
-			header: m.role(),
-			accessorFn: (row) => representationLabel(row.representation),
-			cell: ({ row }) =>
-				row.original.representation
-					? renderComponent({
-							component: RepresentationBadge,
-							props: { representation: row.original.representation }
-						})
-					: 'N/A'
-		}) satisfies ManagedColumn<T>;
+	const roleColumn = <
+		T extends { representation: ChasePresenceRepresentation | null }
+	>(): GridColumn<T> => ({
+		id: 'role',
+		type: 'text',
+		label: m.role(),
+		align: 'center',
+		value: (row) => representationLabel(row.representation),
+		cell: (row) =>
+			row.representation
+				? cellOf({ component: RepresentationBadge, props: { representation: row.representation } })
+				: undefined
+	});
 
 	// TODO fetch user name from backend
-	const delegateColumns: ManagedColumn<ScoredDelegate>[] = [
-		{ id: 'email', header: m.email(), accessorFn: (row) => row.email },
+	const delegateColumns: GridColumn<ScoredDelegate>[] = [
+		{
+			id: 'email',
+			type: 'text',
+			label: m.email(),
+			alwaysVisible: true,
+			size: 260,
+			value: (row) => row.email
+		},
 		roleColumn<ScoredDelegate>(),
 		{
 			id: 'committee',
-			header: m.committee(),
-			accessorFn: (row) => committeeName(row.committeeId)
+			type: 'text',
+			label: m.committee(),
+			value: (row) => committeeName(row.committeeId)
 		},
 		{
 			id: 'attendancePercentage',
-			header: m.attendancePercentage(),
-			accessorFn: (row) => row.attendancePercentage,
-			cell: ({ row }) => `${Math.floor(row.original.attendancePercentage)}%`
+			type: 'number',
+			label: m.attendancePercentage(),
+			align: 'right',
+			value: (row) => row.attendancePercentage,
+			text: (row) => `${Math.floor(row.attendancePercentage)}%`
 		}
 	];
 
-	const nsaColumns: ManagedColumn<ScoredNsa>[] = [
-		{ id: 'email', header: m.email(), accessorFn: (row) => row.email },
+	const nsaColumns: GridColumn<ScoredNsa>[] = [
+		{
+			id: 'email',
+			type: 'text',
+			label: m.email(),
+			alwaysVisible: true,
+			size: 260,
+			value: (row) => row.email
+		},
 		roleColumn<ScoredNsa>(),
-		{ id: 'checkIns', header: m.checkIns(), accessorFn: (row) => row.checkIns }
+		{
+			id: 'checkIns',
+			type: 'number',
+			label: m.checkIns(),
+			align: 'right',
+			value: (row) => row.checkIns
+		}
 	];
 
-	const columnClasses = { role: 'text-center' };
+	const sources = {
+		delegatePresent: createLocalSource({
+			rows: () => presentDelegates ?? [],
+			columns: () => delegateColumns
+		}),
+		delegateAbsent: createLocalSource({
+			rows: () => absentDelegates ?? [],
+			columns: () => delegateColumns
+		}),
+		nsaPresent: createLocalSource({ rows: () => presentNsas ?? [], columns: () => nsaColumns }),
+		nsaAbsent: createLocalSource({ rows: () => absentNsas ?? [], columns: () => nsaColumns })
+	};
 
 	async function apply({
 		rows,
@@ -173,7 +207,14 @@
 				/>
 				{delegateThreshold}%
 			</label>
-			{@render resultTables('delegate', presentDelegates, absentDelegates, delegateColumns)}
+			{@render resultTables({
+				key: 'delegate',
+				present: presentDelegates,
+				absent: absentDelegates,
+				columns: delegateColumns,
+				presentSource: sources.delegatePresent,
+				absentSource: sources.delegateAbsent
+			})}
 		</Section>
 	{/if}
 
@@ -189,24 +230,42 @@
 					bind:value={nsaMinCheckIns}
 				/>
 			</label>
-			{@render resultTables('nsa', presentNsas, absentNsas, nsaColumns)}
+			{@render resultTables({
+				key: 'nsa',
+				present: presentNsas,
+				absent: absentNsas,
+				columns: nsaColumns,
+				presentSource: sources.nsaPresent,
+				absentSource: sources.nsaAbsent
+			})}
 		</Section>
 	{/if}
 </div>
 
-{#snippet resultTables<T extends { email: string }>(
-	key: string,
-	present: T[],
-	absent: T[],
-	columns: ManagedColumn<T>[]
-)}
+{#snippet resultTables<T extends { email: string }>({
+	key,
+	present,
+	absent,
+	columns,
+	presentSource,
+	absentSource
+}: {
+	key: string;
+	present: T[];
+	absent: T[];
+	columns: GridColumn<T>[];
+	presentSource: GridSource<T>;
+	absentSource: GridSource<T>;
+})}
 	<h2 class="mt-4 text-2xl font-bold">{m.present()}: {present.length}</h2>
-	<ManagedTable
+	<DataGrid
 		{columns}
-		rows={present}
-		{columnClasses}
+		source={presentSource}
+		rowId={(row) => row.email}
+		label={m.present()}
+		exportName="{key}-present"
 		onRowClick={selectRow}
-		queryParamKey="{key}PresentFilter"
+		urlPrefix="{key}Present-"
 	/>
 	<button
 		class="btn btn-primary"
@@ -218,12 +277,14 @@
 	</button>
 
 	<h2 class="mt-2 text-2xl font-bold">{m.absent()}: {absent.length}</h2>
-	<ManagedTable
+	<DataGrid
 		{columns}
-		rows={absent}
-		{columnClasses}
+		source={absentSource}
+		rowId={(row) => row.email}
+		label={m.absent()}
+		exportName="{key}-absent"
 		onRowClick={selectRow}
-		queryParamKey="{key}AbsentFilter"
+		urlPrefix="{key}Absent-"
 	/>
 	<button
 		class="btn btn-primary"

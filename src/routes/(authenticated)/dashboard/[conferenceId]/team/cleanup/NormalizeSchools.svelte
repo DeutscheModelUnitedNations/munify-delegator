@@ -3,9 +3,10 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { m } from '#lib/paraglide/messages';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import { toast } from 'svelte-sonner';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
+	import type { GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import SchoolSuggestions from './SchoolSuggestions.svelte';
@@ -53,40 +54,56 @@
 		}
 	});
 
-	const columns: ManagedColumn<SchoolRow>[] = [
+	const countColumn = ({
+		id,
+		label,
+		value
+	}: {
+		id: string;
+		label: string;
+		value: (row: SchoolRow) => number;
+	}): GridColumn<SchoolRow> => ({
+		id,
+		type: 'number',
+		label,
+		align: 'center',
+		size: 150,
+		value,
+		searchable: false
+	});
+
+	const columns: GridColumn<SchoolRow>[] = [
 		{
 			id: 'school',
-			header: m.cleanupNormalizeSchoolsColumnSchool(),
-			accessorFn: (row) => row.school
+			type: 'text',
+			label: m.cleanupNormalizeSchoolsColumnSchool(),
+			alwaysVisible: true,
+			size: 300,
+			value: (row) => row.school
 		},
-		{
+		countColumn({
 			id: 'delegationCount',
-			header: m.cleanupNormalizeSchoolsColumnDelegations(),
-			accessorFn: (row) => row.delegationCount
-		},
-		{
+			label: m.cleanupNormalizeSchoolsColumnDelegations(),
+			value: (row) => row.delegationCount
+		}),
+		countColumn({
 			id: 'delegationMembers',
-			header: m.cleanupNormalizeSchoolsColumnDelegationMembers(),
-			accessorFn: (row) => row.delegationMembers
-		},
-		{
+			label: m.cleanupNormalizeSchoolsColumnDelegationMembers(),
+			value: (row) => row.delegationMembers
+		}),
+		countColumn({
 			id: 'singleParticipants',
-			header: m.singleParticipants(),
-			accessorFn: (row) => row.singleParticipants
-		},
-		{
+			label: m.singleParticipants(),
+			value: (row) => row.singleParticipants
+		}),
+		countColumn({
 			id: 'sumParticipants',
-			header: m.cleanupNormalizeSchoolsColumnTotalParticipants(),
-			accessorFn: (row) => row.sumParticipants
-		}
+			label: m.cleanupNormalizeSchoolsColumnTotalParticipants(),
+			value: (row) => row.sumParticipants
+		})
 	];
 
-	const columnClasses = Object.fromEntries(
-		['delegationCount', 'delegationMembers', 'singleParticipants', 'sumParticipants'].map((id) => [
-			id,
-			'text-center'
-		])
-	);
+	const source = createLocalSource({ rows: () => schools, columns: () => columns });
 
 	function toggleSchool(row: SchoolRow) {
 		selectedSchools = isSelected(row.schoolId)
@@ -227,13 +244,16 @@
 			</div>
 		</div>
 
-		<ManagedTable
+		<DataGrid
 			{columns}
-			rows={schools}
-			{columnClasses}
+			{source}
+			rowId={(row) => row.schoolId}
+			base={{ sorting: [{ id: 'school', desc: false }], pageSize: 50 }}
+			label={m.cleanupNormalizeSchoolsColumnSchool()}
+			exportName="schools-cleanup"
 			onRowClick={toggleSchool}
-			isRowSelected={(row) => isSelected(row.schoolId)}
-			initialSorting={[{ id: 'school', desc: false }]}
+			isRowHighlighted={(row) => isSelected(row.schoolId)}
+			urlPrefix="schools-"
 		/>
 	</div>
 {:else}

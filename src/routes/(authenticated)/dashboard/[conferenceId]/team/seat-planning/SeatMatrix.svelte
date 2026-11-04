@@ -4,7 +4,7 @@
 	import { matchesSeatFilters, searchSeatRows, type SizeLimits } from './seatHints';
 	import { nextSortParams, sortSeatRows } from './sortRows';
 	import { unMembers } from '#lib/helpers/seatPlanning/unMembers';
-	import { DataTable } from '#lib/components/tanStackTable/ui/index';
+	import Table from '#lib/components/table/Table.svelte';
 	import CountryInfoPopover from './CountryInfoPopover.svelte';
 	import { useSeatPlanningParams } from './filters.svelte';
 	import SeatMatrixFilters from './SeatMatrixFilters.svelte';
@@ -77,7 +77,7 @@
 	<!-- the table is laid out out of flow, so it takes the height the sidebar gives the row instead of
 	     stretching it; stacked below xl there is no sidebar beside it, hence the minimum -->
 	<div class="relative min-h-96 grow">
-		<DataTable.Root
+		<Table
 			wrapperClass="absolute inset-0"
 			class="table-pin-cols table-fixed"
 			style="min-width: {minWidth}px"
@@ -129,7 +129,7 @@
 			<tfoot>
 				<SeatMatrixTotals committees={planner.committees} {totalSeats} />
 			</tfoot>
-		</DataTable.Root>
+		</Table>
 	</div>
 </div>
 

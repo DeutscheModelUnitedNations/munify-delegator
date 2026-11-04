@@ -1069,18 +1069,6 @@ export type ConferenceOrderInputArgument = {
   website?: SortingParameter | null | undefined    
 };
 		
-export type ConferenceSchoolRow = {
-  applied: Int,
-  city: String | null,
-  delegations: Int,
-  name: String,
-  participants: Int,
-  schoolId: ID,
-  seated: Int,
-  supervisors: Int,
-  waitingList: Int    
-};
-		
 export type ConferenceSchools = {
   delegationCount: Int,
   delegationMembers: Int,
@@ -1088,12 +1076,6 @@ export type ConferenceSchools = {
   schoolId: ID,
   singleParticipants: Int,
   sumParticipants: Int    
-};
-		
-export type ConferenceSchoolsPage = {
-  hasMore: Boolean,
-  rows: () => ConferenceSchoolRow[],
-  total: Int    
 };
 		
 export type ConferenceWhereInputArgument = {
@@ -1603,6 +1585,18 @@ export type CreatedInvitation = {
   id: ID,
   role: TeamroleEnum,
   token: String | null    
+};
+		
+export type DataTableGroup = {
+  count: Int,
+  value: String | null    
+};
+		
+export type DataTablePage = {
+  hasMore: Boolean,
+  ids: ID[],
+  total: Int,
+  values: JSON[]    
 };
 		
 export type DateTime = Date;
@@ -2143,6 +2137,14 @@ export type Mutation = {
   convertSingleParticipant: (p: {
     singleParticipantId: ID
   }) => Boolean,
+  copyTableView: (p: {
+    conferenceId: ID,
+    global?: Boolean | null | undefined,
+    id: ID,
+    isDefault?: Boolean | null | undefined,
+    name: String,
+    shared: Boolean
+  }) => Tableview,
   createAgendaItem: (p: {
     committeeId: ID,
     teaserText?: String | null | undefined,
@@ -2297,6 +2299,15 @@ export type Mutation = {
     showSelectionOnDashboard?: Boolean | null | undefined,
     title: String
   }) => Surveyquestion,
+  createTableView: (p: {
+    conferenceId: ID,
+    global?: Boolean | null | undefined,
+    isDefault?: Boolean | null | undefined,
+    name: String,
+    shared: Boolean,
+    state: JSON,
+    tableKey: String
+  }) => Tableview,
   createTeamMemberInvitations: (p: {
     conferenceId: ID,
     invitations: CreateInvitationInput[]
@@ -2369,6 +2380,9 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deleteSurveyQuestion: (p: {
+    id: ID
+  }) => Boolean,
+  deleteTableView: (p: {
     id: ID
   }) => Boolean,
   deleteTeamMember: (p: {
@@ -2503,12 +2517,21 @@ export type Mutation = {
     document: LayoutDocument,
     layout?: JSON | null | undefined
   }) => Conference,
+  setMyTableViewDefault: (p: {
+    conferenceId: ID,
+    tableKey: String,
+    viewId?: ID | null | undefined
+  }) => Boolean,
   setParticipantSchool: (p: {
     conferenceId: ID,
     id?: ID | null | undefined,
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
   }) => Conferenceparticipant,
+  setTableViewDefault: (p: {
+    id: ID,
+    isDefault: Boolean
+  }) => Tableview,
   skipOpenEmails: (p: {
     conferenceId: ID,
     kinds: EmailkindEnum[]
@@ -2736,6 +2759,11 @@ export type Mutation = {
     showSelectionOnDashboard?: Boolean | null | undefined,
     title?: String | null | undefined
   }) => Surveyquestion,
+  updateTableView: (p: {
+    id: ID,
+    name?: String | null | undefined,
+    state?: JSON | null | undefined
+  }) => Tableview,
   updateTeamMemberRole: (p: {
     id: ID,
     role: TeamroleEnum
@@ -3085,27 +3113,6 @@ export type PaperversionWhereInputArgument = {
   reviews?: PaperreviewWhereInputArgument | null | undefined,
   status?: PaperstatusEnum | null | undefined,
   version?: IntWhereInputArgument | null | undefined    
-};
-		
-export type ParticipantFilterInput = {
-  bool?: Boolean | null | undefined,
-  column: String,
-  max?: Float | null | undefined,
-  min?: Float | null | undefined,
-  mode?: String | null | undefined,
-  text?: String | null | undefined,
-  values?: String[] | undefined    
-};
-		
-export type ParticipantSortInput = {
-  column: String,
-  desc: Boolean    
-};
-		
-export type ParticipantsPage = {
-  hasMore: Boolean,
-  total: Int,
-  userIds: ID[]    
 };
 		
 export type Paymenttransaction = {
@@ -3507,14 +3514,6 @@ export type Query = {
     search?: String | null | undefined,
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole[],
-  conferenceSchools: (p: {
-    conferenceId: ID,
-    limit: Int,
-    offset: Int,
-    search?: String | null | undefined,
-    sortColumn?: String | null | undefined,
-    sortDesc?: Boolean | null | undefined
-  }) => ConferenceSchoolsPage,
   conferenceSupervisor: (p: {
     id: ID
   }) => Conferencesupervisor,
@@ -3532,6 +3531,20 @@ export type Query = {
     search?: String | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
   }) => Conference[],
+  dataTableGroups: (p: {
+    conferenceId: ID,
+    query: JSON,
+    search?: String | null | undefined,
+    table: String
+  }) => DataTableGroup[],
+  dataTablePage: (p: {
+    conferenceId: ID,
+    limit: Int,
+    offset: Int,
+    query: JSON,
+    search?: String | null | undefined,
+    table: String
+  }) => DataTablePage,
   delegation: (p: {
     id: ID
   }) => Delegation,
@@ -3655,14 +3668,6 @@ export type Query = {
   papersCount: (p?: {
     where?: PaperWhereInputArgument | null | undefined
   }) => Int,
-  participantsPage: (p: {
-    conferenceId: ID,
-    filters?: ParticipantFilterInput[] | null | undefined,
-    limit: Int,
-    offset: Int,
-    search?: String | null | undefined,
-    sort?: ParticipantSortInput[] | null | undefined
-  }) => ParticipantsPage,
   paymentTransaction: (p: {
     id: ID
   }) => Paymenttransaction,
@@ -3850,6 +3855,26 @@ export type Query = {
     search?: String | null | undefined,
     where?: SurveyquestionWhereInputArgument | null | undefined
   }) => Surveyquestion[],
+  tableView: (p: {
+    id: ID
+  }) => Tableview,
+  tableViewDefault: (p: {
+    id: ID
+  }) => Tableviewdefault,
+  tableViewDefaults: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TableviewdefaultOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: TableviewdefaultWhereInputArgument | null | undefined
+  }) => Tableviewdefault[],
+  tableViews: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TableviewOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: TableviewWhereInputArgument | null | undefined
+  }) => Tableview[],
   teamMember: (p: {
     id: ID
   }) => Teammember,
@@ -5204,6 +5229,26 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: SurveyquestionWhereInputArgument | null | undefined
   }) => Surveyquestion[],
+  tableView: (p: {
+    id: ID
+  }) => Tableview,
+  tableViewDefault: (p: {
+    id: ID
+  }) => Tableviewdefault,
+  tableViewDefaults: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TableviewdefaultOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: TableviewdefaultWhereInputArgument | null | undefined
+  }) => Tableviewdefault[],
+  tableViews: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TableviewOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: TableviewWhereInputArgument | null | undefined
+  }) => Tableview[],
   teamMember: (p: {
     id: ID
   }) => Teammember,
@@ -5429,6 +5474,106 @@ export type SurveyquestionWhereInputArgument = {
   surveyAnswers?: SurveyanswerWhereInputArgument | null | undefined,
   title?: StringWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type Tableview = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference | null,
+  conferenceId: ID | null,
+  createdAt: DateTime,
+  createdById: ID | null,
+  id: ID,
+  isDefault: Boolean,
+  name: String,
+  owner: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User | null,
+  ownerUserId: ID | null,
+  search_distance: Float | null,
+  shared: Boolean,
+  state: JSON,
+  tableKey: String,
+  updatedAt: DateTime    
+};
+		
+export type TableviewOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  createdById?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  isDefault?: SortingParameter | null | undefined,
+  name?: SortingParameter | null | undefined,
+  ownerUserId?: SortingParameter | null | undefined,
+  shared?: SortingParameter | null | undefined,
+  state?: SortingParameter | null | undefined,
+  tableKey?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type TableviewWhereInputArgument = {
+  AND?: TableviewWhereInputArgument[] | undefined,
+  NOT?: TableviewWhereInputArgument | null | undefined,
+  OR?: TableviewWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  createdById?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  isDefault?: BooleanWhereInputArgument | null | undefined,
+  name?: StringWhereInputArgument | null | undefined,
+  owner?: UserWhereInputArgument | null | undefined,
+  ownerUserId?: IDWhereInputArgument | null | undefined,
+  shared?: BooleanWhereInputArgument | null | undefined,
+  state?: JSONWhereInputArgument | null | undefined,
+  tableKey?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type Tableviewdefault = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  id: ID,
+  search_distance: Float | null,
+  tableKey: String,
+  updatedAt: DateTime,
+  userId: ID,
+  view: (p?: {
+    orderBy?: TableviewOrderInputArgument | null | undefined,
+    where?: TableviewWhereInputArgument | null | undefined
+  }) => Tableview,
+  viewId: ID    
+};
+		
+export type TableviewdefaultOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  tableKey?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  userId?: SortingParameter | null | undefined,
+  viewId?: SortingParameter | null | undefined    
+};
+		
+export type TableviewdefaultWhereInputArgument = {
+  AND?: TableviewdefaultWhereInputArgument[] | undefined,
+  NOT?: TableviewdefaultWhereInputArgument | null | undefined,
+  OR?: TableviewdefaultWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  tableKey?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  userId?: IDWhereInputArgument | null | undefined,
+  view?: TableviewWhereInputArgument | null | undefined,
+  viewId?: IDWhereInputArgument | null | undefined    
 };
 		
 export type TeamInvitationEmailStatus = "ALREADY_MEMBER" | "EXISTS" | "NEW_USER" | "PENDING_INVITATION";
@@ -5910,7 +6055,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

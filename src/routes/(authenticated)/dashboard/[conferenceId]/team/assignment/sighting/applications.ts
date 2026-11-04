@@ -1,8 +1,8 @@
 import { client } from '#lib/api/rumbleClient/client';
 import { confirmedLinkedAccounts } from '#lib/helpers/linkedNotes';
 import type { DeckWindowData, WindowEntry } from './deckPosition';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
+import { containing } from '#lib/api/queryHelpers';
+import { matchingUserIds } from '#lib/api/matchingUsers';
 
 const person = {
 	id: true,

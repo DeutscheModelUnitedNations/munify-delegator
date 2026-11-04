@@ -4,7 +4,7 @@ import {
 	fieldPair,
 	formSection,
 	line,
-	managedTable,
+	dataGrid,
 	paragraph,
 	smallButton,
 	stat,
@@ -183,7 +183,7 @@ const participants = {
 	nodes: [
 		{
 			class: 'flex w-full flex-col',
-			children: [managedTable({ toolbar: [smallButton('w-32'), smallButton('w-32')] })]
+			children: [dataGrid({ toolbar: [smallButton('w-32'), smallButton('w-32')] })]
 		}
 	]
 };
@@ -193,7 +193,7 @@ const waitingList = {
 	nodes: [
 		{
 			class: 'flex w-full flex-col',
-			children: [managedTable({ toolbar: [toggle('w-36'), toggle('w-28')] })]
+			children: [dataGrid()]
 		}
 	]
 };
@@ -203,7 +203,7 @@ const schools = {
 	nodes: [
 		{
 			class: 'flex w-full flex-col gap-4',
-			children: [block('h-8 w-40'), paragraph({ lines: 2, width: 'max-w-prose' }), managedTable()]
+			children: [block('h-8 w-40'), paragraph({ lines: 2, width: 'max-w-prose' }), dataGrid()]
 		}
 	]
 };
@@ -237,7 +237,7 @@ const teamManagement = ({
 	]
 });
 
-const members = teamManagement({ name: 'members', content: managedTable({ columns: 5 }) });
+const members = teamManagement({ name: 'members', content: dataGrid({ columns: 5 }) });
 
 const invitations = teamManagement({
 	name: 'invitations',
@@ -1133,7 +1133,7 @@ const cleanup = {
 								class: 'flex flex-col gap-2 sm:flex-row',
 								children: [block('h-10 flex-1'), block('h-10 w-40')]
 							},
-							managedTable({ filters: false, columns: 4 })
+							dataGrid({ views: false, columns: 4 })
 						]
 					}
 				])
