@@ -1,3 +1,7 @@
+import { client } from '#lib/api/rumbleClient/client';
+import outfitRegularUrl from '@fontsource/outfit/files/outfit-latin-400-normal.woff?url';
+import outfitBoldUrl from '@fontsource/outfit/files/outfit-latin-700-normal.woff?url';
+
 /**
  * Pictures for the nametag table signs. A PDF takes PNG or JPEG, while the app shows flags as SVG
  * and non-state actor icons as icon-font glyphs, so both are drawn onto a canvas here.
@@ -144,4 +148,28 @@ export async function urlToPng(url: string): Promise<Uint8Array | null> {
 	} catch {
 		return null;
 	}
+}
+
+/** The conference's name, logo and emblem and the fonts every sheet is set in. */
+export async function loadSheetAssets(conferenceId: string) {
+	const [conference, regular, bold] = await Promise.all([
+		client.query.conference({
+			__args: { id: conferenceId },
+			title: true,
+			logoFile: { url: true },
+			emblemFile: { url: true }
+		}),
+		fetch(outfitRegularUrl).then((response) => response.arrayBuffer()),
+		fetch(outfitBoldUrl).then((response) => response.arrayBuffer())
+	]);
+	const [logo, emblem] = await Promise.all([
+		fileToPng(conference.logoFile ?? conference.emblemFile),
+		fileToPng(conference.emblemFile)
+	]);
+	return { conferenceTitle: conference.title, logo, emblem, fonts: { regular, bold } };
+}
+
+/** A stored image as PNG; `null` when there is none or it cannot be read. */
+async function fileToPng(file: { url: string } | null) {
+	return file ? urlToPng(file.url) : null;
 }

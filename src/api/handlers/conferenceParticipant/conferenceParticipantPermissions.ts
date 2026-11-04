@@ -22,7 +22,8 @@ export function registerConferenceParticipantAbilities() {
 	abilityBuilder.conferenceParticipant.allow('read').when(
 		linkedChase({
 			where: { conference: RELEASED_MIRRORED_CONFERENCE },
-			columns: { id: true, userId: true, conferenceId: true }
+			// the card number, so CHASE's scanner refuses NSA cards printed before the current one
+			columns: { id: true, userId: true, conferenceId: true, nsaCardNumber: true }
 		})
 	);
 

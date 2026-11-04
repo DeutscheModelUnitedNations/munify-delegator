@@ -1304,6 +1304,7 @@ type Conferenceparticipant {
   id: ID!
   mediaConsent: AdministrativestatusEnum!
   mediaConsentStatus: MediaconsentstatusEnum!
+  nsaCardNumber: Int!
 
   """
   18 by the start of the conference, so no guardian has to consent; see `isOfAgeAtConference`.
@@ -1343,6 +1344,7 @@ input ConferenceparticipantOrderInputArgument {
   id: SortingParameter
   mediaConsent: SortingParameter
   mediaConsentStatus: SortingParameter
+  nsaCardNumber: SortingParameter
   paymentStatus: SortingParameter
   schoolId: SortingParameter
   termsAndConditions: SortingParameter
@@ -1367,6 +1369,7 @@ input ConferenceparticipantWhereInputArgument {
   id: IDWhereInputArgument
   mediaConsent: AdministrativestatusEnum
   mediaConsentStatus: MediaconsentstatusEnum
+  nsaCardNumber: IntWhereInputArgument
   paymentStatus: AdministrativestatusEnum
   school: SchoolWhereInputArgument
   schoolId: IDWhereInputArgument
@@ -2751,6 +2754,11 @@ type Mutation {
   issueIdentityCode: IdentityCode!
 
   """
+  The printable cards of the conference's NSA delegates, all of them or those of the given participant rows (participant care). A mutation so no cache hands back old codes; signing writes nothing, so a card comes out the same until its number is raised.
+  """
+  issueNsaCards(conferenceId: ID!, conferenceParticipantIds: [ID!]): [NsaCard!]!
+
+  """
   Folds duplicates into one school: everything naming one of `sourceIds` names `targetId` afterwards, across every conference, and the sources are deleted. NOT_FOUND unless the caller may update every one of them.
   """
   mergeSchools(
@@ -2805,6 +2813,11 @@ type Mutation {
   Opens an ended session again, keeping its scans; reopening a running one changes nothing.
   """
   reopenAttendanceSession(id: ID!): Boolean!
+
+  """
+  A new card for a lost one: raises the person's card number, so the earlier cards stop scanning, and answers the new card (participant care).
+  """
+  reprintNsaCard(conferenceParticipantId: ID!): NsaCard!
 
   """
   Asks a MUNify CHASE instance to link with this one. The link waits until an admin there approves it, comparing the confirmation code both sides show. CONFLICT when a link exists or CHASE does not answer.
@@ -3513,6 +3526,21 @@ input NationWhereInputArgument {
   conferenceRoles: ConferenceroleWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
+}
+
+"""
+A printed NSA card's contents: whose it is, and its signed code for the QR.
+"""
+type NsaCard {
+  cardNumber: Int!
+
+  """The signed card code (`MUC1…`), for the QR code."""
+  code: String!
+  conferenceParticipantId: ID!
+  familyName: String!
+  givenName: String!
+  nsaIcon: String
+  nsaName: String
 }
 
 enum OIDCRolesEnum {

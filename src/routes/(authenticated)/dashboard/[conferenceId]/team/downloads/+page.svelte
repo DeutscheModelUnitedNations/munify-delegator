@@ -7,6 +7,7 @@
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 	import CsvSettingsPanel from './CsvSettingsPanel.svelte';
 	import DownloadCategoryCard from './DownloadCategoryCard.svelte';
+	import NsaCards from './NsaCards.svelte';
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
 	import RegistrationModeQr from './RegistrationModeQr.svelte';
 	import type { PageProps } from './$types';
@@ -25,6 +26,7 @@
 		icon="fas fa-id-badge"
 	>
 		<BadgeData conferenceId={params.conferenceId} />
+		<NsaCards conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard

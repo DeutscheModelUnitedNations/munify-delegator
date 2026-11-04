@@ -2,7 +2,7 @@
 	import { buildNametagQrPdf } from '#lib/api/nametagQrPdf';
 	import { downloadPdf } from '#lib/api/nametagSheetsPdf';
 	import { m } from '#lib/paraglide/messages';
-	import { loadSheetAssets } from '../check-in/nametagSheets';
+	import { loadSheetAssets } from '#lib/api/nametagSheetImages';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {

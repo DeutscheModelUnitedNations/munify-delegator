@@ -1,9 +1,7 @@
 import { client } from '#lib/api/rumbleClient/client';
-import { flagPng, iconPng, urlToPng } from '#lib/api/nametagSheetImages';
+import { flagPng, iconPng } from '#lib/api/nametagSheetImages';
 import type { NametagSheet, NametagSheetEntry } from '#lib/api/nametagSheetsPdf';
 import { m } from '#lib/paraglide/messages';
-import outfitRegularUrl from '@fontsource/outfit/files/outfit-latin-400-normal.woff?url';
-import outfitBoldUrl from '@fontsource/outfit/files/outfit-latin-700-normal.woff?url';
 
 interface Bin {
 	index: number;
@@ -34,30 +32,6 @@ export function binTone(index: number) {
 	return index % 2 === 0
 		? { bar: 'bg-primary', badge: 'badge-primary' }
 		: { bar: 'bg-secondary', badge: 'badge-secondary' };
-}
-
-/** The conference's name, logo and emblem and the fonts every sheet is set in. */
-export async function loadSheetAssets(conferenceId: string) {
-	const [conference, regular, bold] = await Promise.all([
-		client.query.conference({
-			__args: { id: conferenceId },
-			title: true,
-			logoFile: { url: true },
-			emblemFile: { url: true }
-		}),
-		fetch(outfitRegularUrl).then((response) => response.arrayBuffer()),
-		fetch(outfitBoldUrl).then((response) => response.arrayBuffer())
-	]);
-	const [logo, emblem] = await Promise.all([
-		fileToPng(conference.logoFile ?? conference.emblemFile),
-		fileToPng(conference.emblemFile)
-	]);
-	return { conferenceTitle: conference.title, logo, emblem, fonts: { regular, bold } };
-}
-
-/** A stored image as PNG; `null` when there is none or it cannot be read. */
-async function fileToPng(file: { url: string } | null) {
-	return file ? urlToPng(file.url) : null;
 }
 
 /** Draws each flag or icon once, however many tables show it. */

@@ -3,6 +3,7 @@
 	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
 	import AccessCardSection from '../AccessCardSection.svelte';
 	import AttendanceSection from '../AttendanceSection.svelte';
+	import NsaCardSection from '../NsaCardSection.svelte';
 	import {
 		changeParticipantStatus,
 		fetchParticipantStatus,
@@ -48,5 +49,6 @@
 			})}
 		onNotifyFound={statusId ? () => notifyBadgeFound(statusId) : undefined}
 	/>
+	<NsaCardSection {userId} {conferenceId} />
 	<AttendanceSection {userId} {conferenceId} />
 </div>

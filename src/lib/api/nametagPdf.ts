@@ -1,5 +1,5 @@
 import fontkit from '@pdf-lib/fontkit';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, type PDFFont } from 'pdf-lib';
 
 // the corporate colours (the dmun daisyUI theme)
 export const PRIMARY = rgb(1 / 255, 84 / 255, 143 / 255);
@@ -44,4 +44,20 @@ export async function createNametagPdf(fonts: NametagFonts) {
 	const regular = await pdf.embedFont(fonts.regular, { subset: true });
 	const bold = await pdf.embedFont(fonts.bold, { subset: true });
 	return { pdf, regular, bold };
+}
+
+function isKnown({ known, char }: { known: Set<number>; char: string }): boolean {
+	return known.has(char.codePointAt(0) ?? -1);
+}
+
+function encodableChar({ char, known }: { char: string; known: Set<number> }): string {
+	if (isKnown({ known, char })) return char;
+	const plain = char.normalize('NFD').replace(/[̀-ͯ]/g, '');
+	return plain && [...plain].every((c) => isKnown({ known, char: c })) ? plain : '?';
+}
+
+/** Text the font has no glyph for loses its diacritics, or becomes a "?". */
+export function encodable({ font, text }: { font: PDFFont; text: string }): string {
+	const known = new Set(font.getCharacterSet());
+	return [...text].map((char) => encodableChar({ char, known })).join('');
 }

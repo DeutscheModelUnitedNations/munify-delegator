@@ -5,7 +5,8 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import { buildNametagQrPdf } from '#lib/api/nametagQrPdf';
 	import { buildNametagSheetsPdf, downloadPdf } from '#lib/api/nametagSheetsPdf';
-	import { binTone, buildSheets, loadSheetAssets } from './nametagSheets';
+	import { binTone, buildSheets } from './nametagSheets';
+	import { loadSheetAssets } from '#lib/api/nametagSheetImages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';

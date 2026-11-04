@@ -1359,6 +1359,7 @@ export type Conferenceparticipant = {
   id: ID,
   mediaConsent: AdministrativestatusEnum,
   mediaConsentStatus: MediaconsentstatusEnum,
+  nsaCardNumber: Int,
   ofAgeAtConference: Boolean,
   paymentStatus: AdministrativestatusEnum,
   school: (p?: {
@@ -1397,6 +1398,7 @@ export type ConferenceparticipantOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   mediaConsent?: SortingParameter | null | undefined,
   mediaConsentStatus?: SortingParameter | null | undefined,
+  nsaCardNumber?: SortingParameter | null | undefined,
   paymentStatus?: SortingParameter | null | undefined,
   schoolId?: SortingParameter | null | undefined,
   termsAndConditions?: SortingParameter | null | undefined,
@@ -1421,6 +1423,7 @@ export type ConferenceparticipantWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   mediaConsent?: AdministrativestatusEnum | null | undefined,
   mediaConsentStatus?: MediaconsentstatusEnum | null | undefined,
+  nsaCardNumber?: IntWhereInputArgument | null | undefined,
   paymentStatus?: AdministrativestatusEnum | null | undefined,
   school?: SchoolWhereInputArgument | null | undefined,
   schoolId?: IDWhereInputArgument | null | undefined,
@@ -2487,6 +2490,10 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   issueIdentityCode: () => IdentityCode,
+  issueNsaCards: (p: {
+    conferenceId: ID,
+    conferenceParticipantIds?: ID[] | null | undefined
+  }) => NsaCard[],
   mergeSchools: (p: {
     name?: String | null | undefined,
     sourceIds: ID[],
@@ -2512,6 +2519,9 @@ export type Mutation = {
   reopenAttendanceSession: (p: {
     id: ID
   }) => Boolean,
+  reprintNsaCard: (p: {
+    conferenceParticipantId: ID
+  }) => NsaCard,
   requestChaseLink: (p: {
     chaseUrl: String
   }) => ID,
@@ -2980,6 +2990,16 @@ export type NationWhereInputArgument = {
   conferenceRoles?: ConferenceroleWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type NsaCard = {
+  cardNumber: Int,
+  code: String,
+  conferenceParticipantId: ID,
+  familyName: String,
+  givenName: String,
+  nsaIcon: String | null,
+  nsaName: String | null    
 };
 		
 export type OIDCRolesEnum = "admin" | "member" | "service_user";

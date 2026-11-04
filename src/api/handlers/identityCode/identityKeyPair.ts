@@ -1,5 +1,10 @@
 import { CERTIFICATE_SECRET } from '$app/env/private';
-import { encodeIdentityCode, identityCodeMessage } from '#lib/helpers/identityCode';
+import {
+	encodeIdentityCard,
+	encodeIdentityCode,
+	identityCardMessage,
+	identityCodeMessage
+} from '#lib/helpers/identityCode';
 
 /** DER prefix of a PKCS#8 Ed25519 private key, which ends in the 32-byte seed. */
 const PKCS8_ED25519_PREFIX = Uint8Array.from([
@@ -63,4 +68,17 @@ export async function issueIdentityCode({
 		)
 	);
 	return encodeIdentityCode({ userId, issuedAtSeconds, signature });
+}
+
+/** A signed NSA card for `userId` in a conference, good until `expiresAtSeconds`. */
+export async function issueIdentityCard(card: {
+	userId: string;
+	conferenceId: string;
+	expiresAtSeconds: number;
+	cardNumber: number;
+}) {
+	const signature = new Uint8Array(
+		await crypto.subtle.sign('Ed25519', (await keys()).privateKey, identityCardMessage(card))
+	);
+	return encodeIdentityCard({ ...card, signature });
 }

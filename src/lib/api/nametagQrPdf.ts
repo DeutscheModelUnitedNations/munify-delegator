@@ -28,9 +28,12 @@ const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 44;
 
-/** The modules of the QR code, at the highest error correction so a logo can sit in the middle. */
-function qrMatrix(text: string) {
-	const [symbol] = bwipjs.raw('qrcode', text, 'eclevel=H');
+/**
+ * The modules of the QR code: at the highest error correction when a logo sits in the middle, at
+ * a medium one otherwise, which keeps a long code's modules larger.
+ */
+function qrMatrix({ text, withLogo }: { text: string; withLogo: boolean }) {
+	const [symbol] = bwipjs.raw('qrcode', text, withLogo ? 'eclevel=H' : 'eclevel=M');
 	if (!symbol || !('pixs' in symbol)) throw new Error('Could not encode the QR code');
 	return {
 		size: symbol.pixx,
@@ -138,7 +141,7 @@ async function drawEmblem({
  * markers as nested rounded squares, and room for the emblem in the middle.
  */
 // fallow-ignore-next-line complexity
-async function drawBrandedQr({
+export async function drawBrandedQr({
 	pdf,
 	page,
 	text,
@@ -151,7 +154,7 @@ async function drawBrandedQr({
 	box: { x: number; top: number; side: number };
 	emblemBytes: Uint8Array | null;
 }) {
-	const matrix = qrMatrix(text);
+	const matrix = qrMatrix({ text, withLogo: emblemBytes !== null });
 	const padding = box.side * 0.06;
 	const grid: Grid = {
 		module: (box.side - padding * 2) / matrix.size,

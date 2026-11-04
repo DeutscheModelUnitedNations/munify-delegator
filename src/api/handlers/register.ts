@@ -35,6 +35,7 @@ import './school/school';
 import './schoolSuggestion/schoolSuggestion';
 import './scanLookup/scanLookup';
 import './identityCode/identityCode';
+import './nsaCard/nsaCard';
 import './seatPlanning/seatPlanning';
 import './nametagBins/nametagBins';
 import './sightingDeck/sightingDeck';
