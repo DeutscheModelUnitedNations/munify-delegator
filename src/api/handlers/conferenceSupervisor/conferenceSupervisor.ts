@@ -21,11 +21,22 @@ import {
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertAllowed } from '#api/services/authHelper/utils';
+import { supervisorSignupOpen } from '#api/services/registration/applicationReadiness';
 
 registerConferenceSupervisorAbilities();
 
 const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
+
+schemaBuilder.queryFields((t) => ({
+	supervisorSignupOpen: t.field({
+		description:
+			'Whether supervisors may sign themselves up to the conference right now: in every stage until it is over. Readable by anyone, so the supervisor page can say so to someone who cannot read the conference; it tells nothing else about it. False for an unknown conference.',
+		type: 'Boolean',
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: (_root, args) => supervisorSignupOpen(args.conferenceId)
+	})
+}));
 
 /** The supervisor `id` as far as the caller may read it, for a `drizzleField` to answer with. */
 const readableSupervisor = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>

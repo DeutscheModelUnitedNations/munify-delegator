@@ -26,9 +26,17 @@ vi.mock('#api/db/db', () => {
 		db: {
 			query: {
 				conference: {
-					findFirst: ({ columns }: { columns: Record<string, true> }) =>
+					findFirst: ({
+						where,
+						columns
+					}: {
+						where: { id: string };
+						columns: Record<string, true>;
+					}) =>
 						Promise.resolve(
-							Object.fromEntries(Object.entries(conference).filter(([key]) => key in columns))
+							where.id === 'conference-1'
+								? Object.fromEntries(Object.entries(conference).filter(([key]) => key in columns))
+								: undefined
 						)
 				},
 				conferenceSupervisor: { findFirst: () => Promise.resolve(undefined) }
@@ -58,6 +66,7 @@ vi.mock('#api/handlers/school/schoolService', () => ({
 }));
 
 const { registerSupervisor } = await import('./conferenceSupervisorService');
+const { supervisorSignupOpen } = await import('#api/services/registration/applicationReadiness');
 
 const signUp = (selfService = true) =>
 	registerSupervisor({
@@ -91,5 +100,15 @@ describe('registerSupervisor', () => {
 	test('lets the team register a supervisor even then', async () => {
 		conference.state = 'POST';
 		await expect(signUp(false)).resolves.toBe('supervisor-1');
+	});
+});
+
+describe('supervisorSignupOpen', () => {
+	test('answers what the sign-up would meet, and false for an unknown conference', async () => {
+		conference.state = 'ACTIVE';
+		await expect(supervisorSignupOpen('conference-1')).resolves.toBe(true);
+		conference.state = 'POST';
+		await expect(supervisorSignupOpen('conference-1')).resolves.toBe(false);
+		await expect(supervisorSignupOpen('no-such-conference')).resolves.toBe(false);
 	});
 });

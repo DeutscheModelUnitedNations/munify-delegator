@@ -1,23 +1,21 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { acceptsSupervisorSignups } from '#lib/helpers/applicationReadiness';
 	import type { PageProps } from './$types';
 	import RegistrationStepPage from '../RegistrationStepPage.svelte';
 	import SupervisorSteps from '../apply/SupervisorSteps.svelte';
 
 	// Its own page as well as a path of the dashboard's form: a supervisor may sign up after
 	// registration has closed, when the dashboard does not show the conference to them yet, until
-	// the conference is over (`acceptsSupervisorSignups`, which the API applies as well).
+	// the conference is over.
 	let { params }: PageProps = $props();
 	const conferenceId = $derived(params.conferenceId);
 
-	// Only readable while it is public or the caller has a part in it. When it is not, the form
-	// stays: the conference may well still take supervisors, and the mutation says so if not.
-	const conference = $derived(
-		await client.liveQuery.conference({ __args: { id: conferenceId }, state: true })
+	// Asked of the API rather than read off the conference, which someone without a part in it
+	// cannot read once registration is over; the mutation applies the same rule.
+	const signupOpen = $derived(
+		await client.query.supervisorSignupOpen({ __args: { conferenceId } })
 	);
-	const signupOpen = $derived(!conference || acceptsSupervisorSignups({ conference }));
 </script>
 
 <RegistrationStepPage

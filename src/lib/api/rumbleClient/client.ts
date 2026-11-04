@@ -3820,6 +3820,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
+  supervisorSignupOpen: (p: {
+    conferenceId: ID
+  }) => Boolean,
   surveyAnswer: (p: {
     id: ID
   }) => Surveyanswer,

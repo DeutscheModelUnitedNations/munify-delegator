@@ -40,16 +40,21 @@ export async function assertRegistrationOpen(conferenceId: string) {
 }
 
 /**
- * Refuses a supervisor signing themselves up once the conference is over
+ * Whether supervisors may sign themselves up to the conference right now: until it is over
  * (`acceptsSupervisorSignups`). Unlike delegates and single participants they are not bound to the
- * registration window: the supervisor page stays open until then.
+ * registration window. False for a conference that does not exist.
  */
-export async function assertSupervisorSignupOpen(conferenceId: string) {
+export async function supervisorSignupOpen(conferenceId: string) {
 	const conference = await db.query.conference.findFirst({
 		where: { id: conferenceId },
 		columns: { state: true }
 	});
-	if (!conference || !acceptsSupervisorSignups({ conference })) {
+	return !!conference && acceptsSupervisorSignups({ conference });
+}
+
+/** Refuses a supervisor signing themselves up once the conference is over (`supervisorSignupOpen`). */
+export async function assertSupervisorSignupOpen(conferenceId: string) {
+	if (!(await supervisorSignupOpen(conferenceId))) {
 		throw apiError({ code: 'CONFLICT', message: m.supervisorSignupClosed() });
 	}
 }
