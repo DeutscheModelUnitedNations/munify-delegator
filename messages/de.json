@@ -649,6 +649,7 @@
 	"chaseCardOpenCommittee": "Mein Gremium in CHASE öffnen",
 	"chaseCardOpenConference": "Die Konferenz in CHASE öffnen",
 	"chaseCardTitle": "MUNify CHASE",
+	"chaseExportLinkedFallback": "Erweitert: CHASE ist verbunden und wird automatisch aktualisiert. Die Datei brauchst du nur ohne Verbindung.",
 	"chaseLinkActiveIntro": "Verbunden mit {url}.",
 	"chaseLinkAdminsOnly": "Nur Systemadministrator*innen können die Verbindung zu CHASE verwalten.",
 	"chaseLinkExists": "Diese Instanz ist bereits mit CHASE verbunden oder eine Anfrage ist offen.",

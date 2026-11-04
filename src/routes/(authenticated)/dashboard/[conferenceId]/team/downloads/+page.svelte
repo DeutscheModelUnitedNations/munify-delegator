@@ -11,8 +11,11 @@
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
 	import RegistrationModeQr from './RegistrationModeQr.svelte';
 	import type { PageProps } from './$types';
+	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
 
 	let { params }: PageProps = $props();
+
+	const chaseLink = $derived(await fetchActiveChaseLink());
 </script>
 
 <div class="mx-auto flex w-full max-w-6xl flex-col gap-6 py-4 sm:p-6 md:p-10">
@@ -74,6 +77,14 @@
 		description={m.integrationExportsDescription()}
 		icon="fas fa-plug"
 	>
-		<ChaseSeedExport conferenceId={params.conferenceId} />
+		{#if chaseLink}
+			<!-- the link keeps CHASE up to date; the file is only a fallback -->
+			<details class="w-full">
+				<summary class="cursor-pointer text-sm">{m.chaseExportLinkedFallback()}</summary>
+				<div class="mt-2"><ChaseSeedExport conferenceId={params.conferenceId} /></div>
+			</details>
+		{:else}
+			<ChaseSeedExport conferenceId={params.conferenceId} />
+		{/if}
 	</DownloadCategoryCard>
 </div>

@@ -649,6 +649,7 @@
 	"chaseCardOpenCommittee": "Open my committee in CHASE",
 	"chaseCardOpenConference": "Open the conference in CHASE",
 	"chaseCardTitle": "MUNify CHASE",
+	"chaseExportLinkedFallback": "Advanced: CHASE is linked and kept up to date automatically. You only need the file without the link.",
 	"chaseLinkActiveIntro": "Linked to {url}.",
 	"chaseLinkAdminsOnly": "Only system admins can manage the link to CHASE.",
 	"chaseLinkExists": "This instance is already linked to CHASE, or a request is pending.",
