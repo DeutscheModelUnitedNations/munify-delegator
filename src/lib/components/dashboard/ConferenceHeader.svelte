@@ -15,7 +15,7 @@
 	let { title, longTitle, state, startDate, endDate, emblemUrl, logoUrl }: Props = $props();
 </script>
 
-<header class="card bg-base-100 border-base-200 border shadow-sm">
+<header class="card bg-base-100 border-base-200 border shadow-sm" data-tour="dashboard.header">
 	<div class="card-body">
 		<div class="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
 			{#if logoUrl}

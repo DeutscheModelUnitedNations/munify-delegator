@@ -3,6 +3,9 @@ import type { ResolvedPathname } from '$app/types';
 import { m } from '#lib/paraglide/messages';
 import { teamRoutesFor } from '#lib/data/teamRoutes';
 import type { TeamAccess } from '#lib/helpers/teamAccess';
+import type { RouteId } from '$app/types';
+import { helpForRoute } from '#lib/docs/help';
+import type { ManualEntry } from './commandPaletteItems';
 
 export interface PageEntry {
 	id: string;
@@ -41,6 +44,30 @@ export function getAllPages({
 		category: route.category,
 		keywords: [...route.keywords]
 	}));
+}
+
+/** The palette's way into the manual: the page about the route on screen, or the manual's start. */
+export function manualPaletteEntry(routeId: RouteId | null): ManualEntry {
+	const help = helpForRoute(routeId);
+	return {
+		id: 'manual',
+		title: help.specific ? m.helpManualForPage : m.helpManual,
+		href: help.manualHref
+	};
+}
+
+const MANUAL_WORDS = ['hilfe', 'help', 'handbuch', 'manual', 'anleitung', 'doku', 'docs', 'tour'];
+
+/**
+ * Whether the search asks for the manual: an empty search, a word for help, or the start of one
+ * (three letters at least, so a name starting with "h" does not bring up the manual).
+ */
+export function matchesManual(search: string) {
+	const term = search.trim().toLowerCase();
+	if (term === '') return true;
+	return MANUAL_WORDS.some(
+		(word) => term.includes(word) || (term.length >= 3 && word.startsWith(term))
+	);
 }
 
 export function getConfigEntries(): ConfigEntry[] {
