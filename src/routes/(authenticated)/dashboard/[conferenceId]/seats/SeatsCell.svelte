@@ -10,9 +10,9 @@
 {#if seats > 0}
 	<div class="text-success">
 		{#each { length: seats }}
-			<i class="fa-sharp-duotone fa-solid fa-check"></i>
+			<i class="fa-sharp fa-solid fa-check"></i>
 		{/each}
 	</div>
 {:else}
-	<i class="fa-sharp-duotone fa-solid fa-minus text-base-content/20"></i>
+	<i class="fa-sharp fa-solid fa-minus text-base-content/20"></i>
 {/if}

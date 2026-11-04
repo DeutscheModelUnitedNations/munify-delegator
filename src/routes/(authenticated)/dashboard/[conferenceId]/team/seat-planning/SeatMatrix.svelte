@@ -82,7 +82,8 @@
 			class="table-pin-cols table-fixed"
 			style="min-width: {minWidth}px"
 		>
-			<thead>
+			<!-- above the pinned first column, so the rows scroll under the header and the totals -->
+			<thead class="z-30">
 				<tr>
 					<SortableHeader label={m.seatPlanningState()} pinned class="w-52" {...header('name')}>
 						{m.seatPlanningState()}
@@ -126,7 +127,7 @@
 					</tr>
 				{/each}
 			</tbody>
-			<tfoot>
+			<tfoot class="z-30">
 				<SeatMatrixTotals committees={planner.committees} {totalSeats} />
 			</tfoot>
 		</DataTable.Root>
