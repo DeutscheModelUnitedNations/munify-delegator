@@ -35,6 +35,7 @@ import { seedSeatPlanning } from './seatPlanning';
 import { seedSeats } from './seats';
 import { seedAttendance } from './attendance';
 import { seedEmailPace } from './emailPace';
+import { seedLateSupervisor } from './lateSupervisor';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -1013,6 +1014,7 @@ export default async function seed() {
 	await seedSeats(db);
 	await seedAttendance(db);
 	await seedEmailPace(db);
+	await seedLateSupervisor(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 }
