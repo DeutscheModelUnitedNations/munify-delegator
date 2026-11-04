@@ -18,7 +18,9 @@ test('the participants table filters, groups and keeps a personal view', async (
 	const rows = page.locator('table[aria-label] tbody tr');
 	await expect(rows.first()).toBeVisible({ timeout: 20_000 });
 
-	const filterButton = page.getByRole('button', { name: /^(Filter|Filters)/ });
+	// the panel's button, its name the label and the count of conditions ("Filter 2"), not
+	// "Filter leeren" beside it
+	const filterButton = page.getByRole('button', { name: /^Filters?(\s*\d+)?$/ });
 	const conditions = async () => Number((await filterButton.innerText()).replace(/\D/g, '') || 0);
 	const before = await conditions();
 
