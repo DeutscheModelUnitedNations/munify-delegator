@@ -3,6 +3,7 @@
 	import type { GroupPath } from '#lib/dataGrid/stateSchema';
 	import GroupLevel from './GroupLevel.svelte';
 	import GroupNode from './GroupNode.svelte';
+	import { groupLabel } from './groupLabel';
 	import type { GroupProps } from './groupProps';
 
 	/**
@@ -22,7 +23,16 @@
 	const desc = $derived(
 		props.grid.applied.sorting.find((entry) => entry.id === groupBy?.column)?.desc ?? false
 	);
-	const groups = $derived(column ? orderGroups({ groups: fetched, column, desc }) : []);
+	// labelled here, where the column is known to exist
+	const groups = $derived(
+		column && groupBy
+			? orderGroups({ groups: fetched, column, desc }).map((group) => ({
+					group,
+					label: groupLabel({ column, groupBy, value: group.value })
+				}))
+			: []
+	);
+	const columnLabel = $derived(column?.label ?? '');
 	const deeper = $derived(level + 1 < props.grid.applied.grouping.length);
 </script>
 
@@ -30,8 +40,6 @@
 	<GroupLevel {...props} {path} />
 {/snippet}
 
-{#if column && groupBy}
-	{#each groups as group (group.value)}
-		<GroupNode {...props} {group} {column} {groupBy} deeper={deeper ? nextLevel : undefined} />
-	{/each}
-{/if}
+{#each groups as { group, label } (group.value)}
+	<GroupNode {...props} {group} {columnLabel} {label} deeper={deeper ? nextLevel : undefined} />
+{/each}

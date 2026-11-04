@@ -2,10 +2,8 @@
 	import type { Snippet } from 'svelte';
 	import { browser } from '$app/env';
 	import type { GroupCount } from '#lib/dataGrid/grouping';
-	import type { GroupBy, GroupPath } from '#lib/dataGrid/stateSchema';
-	import type { GridColumn } from '../gridColumn';
+	import type { GroupPath } from '#lib/dataGrid/stateSchema';
 	import GroupHeaderRow from './GroupHeaderRow.svelte';
-	import { groupLabel } from './groupLabel';
 	import type { GroupProps } from './groupProps';
 	import GroupRows from './GroupRows.svelte';
 	import LoadingRow from './LoadingRow.svelte';
@@ -16,13 +14,18 @@
 	 */
 	interface Props extends GroupProps<Row> {
 		group: GroupCount;
-		column: GridColumn<Row>;
-		groupBy: GroupBy;
+		/**
+		 * What the header says: the grouping column's name and the group's. Plain text worked out by
+		 * `GroupLevel`, which knows the column: while a live update replaces the page's columns, a
+		 * group being torn down could otherwise read a column that is gone for a moment.
+		 */
+		columnLabel: string;
+		label: string;
 		/** The next level of groups, where one follows (`GroupLevel` hands itself in) */
 		deeper?: Snippet<[GroupPath]>;
 	}
 
-	let { group, column, groupBy, deeper, ...props }: Props = $props();
+	let { group, columnLabel, label, deeper, ...props }: Props = $props();
 
 	const groupPath = $derived([...props.path, group.value]);
 	const open = $derived(props.grid.isGroupOpen(groupPath));
@@ -35,8 +38,8 @@
 <GroupHeaderRow
 	colspan={props.colspan}
 	level={props.path.length}
-	columnLabel={column.label}
-	label={groupLabel({ column, groupBy, value: group.value })}
+	{columnLabel}
+	{label}
 	count={group.count}
 	{open}
 	ontoggle={() => props.grid.toggleGroup(groupPath)}

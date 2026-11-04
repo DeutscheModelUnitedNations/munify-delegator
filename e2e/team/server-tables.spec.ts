@@ -55,9 +55,10 @@ for (const route of TABLES) {
 			await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 		}
 
-		// the pager has its range and, where there is more than one page, moves on
+		// the pager has its range and, where there is more than one page (only then it has buttons),
+		// moves on
 		const next = page.getByRole('button', { name: /nächste seite|next page/i });
-		if (await next.isEnabled()) {
+		if ((await next.count()) > 0 && (await next.isEnabled())) {
 			await next.click();
 			await expect(page).toHaveURL(/page=2/);
 			await expect(rows.first()).toBeVisible({ timeout: 15_000 });
