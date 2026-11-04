@@ -33,6 +33,10 @@ FROM node:26-slim AS runner
 ARG OS_UPDATES_DATE
 RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade; \
   rm -rf /var/lib/apt/lists/*
+# The server runs on plain `node`; the npm CLI the image ships is never used, and Trivy flags
+# the dependencies it bundles (brace-expansion, undici, tar, ...), which no override reaches.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 WORKDIR /run
 COPY --from=builder /run /run
 
