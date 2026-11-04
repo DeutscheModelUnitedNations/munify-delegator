@@ -28,6 +28,7 @@ const delegation = {
 	memberCount: 3,
 	headDelegateUserId: 'u9'
 };
+const manual = { id: 'manual', title: () => 'Manual', href: '/docs/user-manual/introduction' };
 const transaction = { id: 't1', amount: 10, currency: 'EUR', recievedAt: null };
 const page: PageEntry = {
 	id: 'stats',
@@ -59,7 +60,8 @@ describe('flattenResults', () => {
 			transactions: [transaction],
 			pages: [page],
 			configs: [config],
-			foreignUsers: [foreignUser]
+			foreignUsers: [foreignUser],
+			manual: [manual]
 		});
 		expect(items.map((i) => i.type)).toEqual([
 			'user',
@@ -69,12 +71,19 @@ describe('flattenResults', () => {
 			'transaction',
 			'page',
 			'config',
-			'foreignUser'
+			'foreignUser',
+			'manual'
 		]);
 	});
 });
 
 describe('resultTarget', () => {
+	test('the manual opens in a new tab', () => {
+		expect(resultTarget({ item: { type: 'manual', data: manual }, conferenceId })).toEqual({
+			newTab: '/docs/user-manual/introduction'
+		});
+	});
+
 	test('a seat opens its holder, or the participant list when nobody holds it', () => {
 		expect(resultTarget({ item: { type: 'seat', data: seat }, conferenceId })).toEqual({
 			userId: 'u9'

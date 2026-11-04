@@ -14,6 +14,8 @@
 		collapsible?: boolean;
 		defaultCollapsed?: boolean;
 		collapsed?: boolean;
+		/** Where a guided tour points at this section (`data-tour`, see `#lib/docs/tours`) */
+		tourAnchor?: string;
 	}
 
 	let {
@@ -27,7 +29,8 @@
 		headerAction,
 		collapsible = false,
 		defaultCollapsed = false,
-		collapsed = $bindable(defaultCollapsed)
+		collapsed = $bindable(defaultCollapsed),
+		tourAnchor
 	}: Props = $props();
 
 	const cardClasses = $derived(
@@ -43,7 +46,7 @@
 	);
 </script>
 
-<section {id} class="{cardClasses} scroll-mt-24 {class_}">
+<section {id} class="{cardClasses} scroll-mt-24 {class_}" data-tour={tourAnchor}>
 	<div class="card-body max-sm:p-4">
 		{#snippet header()}
 			<div class={iconClasses}>
