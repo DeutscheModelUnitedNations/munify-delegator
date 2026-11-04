@@ -34,7 +34,7 @@ const readableSupervisor = async ({ ctx, id }: { ctx: ApiContext; id: string }) 
 schemaBuilder.mutationFields((t) => ({
 	createConferenceSupervisor: t.drizzleField({
 		description:
-			'Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT outside the registration window, or when the person takes part in the conference already or is on its team.',
+			'Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT for a sign-up of their own once the conference is over (any earlier stage takes one), or when the person takes part in the conference already or is on its team.',
 		type: ConferenceSupervisorRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

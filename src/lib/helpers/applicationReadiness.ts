@@ -57,6 +57,19 @@ export function acceptsApplications({
 }
 
 /**
+ * Whether supervisors may still sign up themselves: in every stage until the conference is over.
+ * They send no application and take no seat, so neither the registration stage nor its deadline
+ * binds them; a teacher who learns of the conference late still gets to follow their students.
+ */
+export function acceptsSupervisorSignups({
+	conference
+}: {
+	conference: { state: ConferencestateEnum };
+}) {
+	return conference.state !== 'POST';
+}
+
+/**
  * Whether the selection is running: the conference still takes registrations, but its technical
  * deadline has passed, so nobody can apply any more and the team is sighting the applications.
  */
