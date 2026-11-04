@@ -63,6 +63,40 @@ export async function requestUpload({
 }
 
 /**
+ * Stores a file the server made itself (a resolution the link rendered), without an uploader, and
+ * returns its id. The object goes first: a row whose object is missing would hand out a dead URL,
+ * while an object without a row is removed by the cleanup job.
+ */
+export async function storeGeneratedFile({
+	conferenceId,
+	purpose,
+	fileName,
+	mimeType,
+	bytes
+}: {
+	conferenceId: string;
+	purpose: string;
+	fileName: string;
+	mimeType: string;
+	bytes: Uint8Array;
+}) {
+	const id = nanoid();
+	const key = objectKey({ conferenceId, purpose, uniqueId: id });
+	await storage().put({ key, bytes, mimeType });
+	await db
+		.insert(schema.storedFile)
+		.values({ id, key, purpose, fileName, mimeType, size: bytes.byteLength });
+	storedFilePubsub.created();
+	return id;
+}
+
+/** A stored file's bytes, or null when the bucket has none under its key. */
+export async function readStoredFile(key: string) {
+	const bytes = await storage().read(key);
+	return bytes && new Uint8Array(bytes);
+}
+
+/**
  * Where the browser PUTs the file, or null once something has been uploaded under its key: a
  * stored file never changes after it arrived, which the download URLs and browsers' caches rely
  * on, so reading the row again must not hand out a way to overwrite it.

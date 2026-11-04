@@ -5,12 +5,14 @@ import { logger } from '#lib/logger';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { openLinkToken } from './linkTokens';
 import { presenceFromChase } from './presenceMirror';
+import { syncResolutions } from './resolutionSync';
 
 /**
  * The link worker (`docs/plans/chase-link.md`): reads back what the linked CHASE records about this
- * instance's conferences - their presence. It runs in one app process at a time (a Postgres
- * advisory lock), subscribes to CHASE's live queries, and on any change reads the conference's
- * presence afresh and stores it (`chase_presence`). The WebSocket's (re)connect reads everything
+ * instance's conferences - their presence and the resolutions they adopted. It runs in one app
+ * process at a time (a Postgres advisory lock), subscribes to CHASE's live queries, and on any
+ * change reads that part of the conference afresh: the presence into `chase_presence`, the
+ * adopted resolutions into `resolution` (`resolutionSync.ts`). The WebSocket's (re)connect reads everything
  * again, since updates may have been missed while it was down. There is no timer: a dead socket is
  * noticed by graphql-ws's keep-alive, and the reconnect catches up.
  */
@@ -19,6 +21,10 @@ import { presenceFromChase } from './presenceMirror';
 const LEADER_LOCK_KEY = 4_812_772;
 /** A roll call writes a record per delegate; one read after it is enough. */
 const DEBOUNCE_MS = 1_000;
+
+/** What the worker reads back, each on its own schedule: a presence change never compiles a PDF. */
+type Readback = 'presence' | 'resolutions';
+const READBACKS: Readback[] = ['presence', 'resolutions'];
 
 let running: { stop: () => void } | undefined;
 
@@ -66,27 +72,49 @@ function runWorker() {
 
 		const watchers = new Map<string, () => void>();
 		const timers = new Map<string, ReturnType<typeof setTimeout>>();
+		/** Resolution syncs run one after another: each may compile PDFs. */
+		let resolutionQueue = Promise.resolve();
 		cleanups.push(() => {
 			for (const timer of timers.values()) clearTimeout(timer);
 			for (const unwatch of watchers.values()) unwatch();
 		});
 
-		const schedule = (conferenceId: string) => {
-			clearTimeout(timers.get(conferenceId));
+		const read = ({ readback, conferenceId }: { readback: Readback; conferenceId: string }) => {
+			if (readback === 'presence') {
+				return recorded({ linkId: link.id, conferenceId, what: 'presence' }, () =>
+					readPresence({ remote, conferenceId })
+				);
+			}
+			resolutionQueue = resolutionQueue.then(() =>
+				stopped
+					? undefined
+					: recorded({ linkId: link.id, conferenceId, what: 'resolutions' }, () =>
+							syncResolutions({ remote, conferenceId })
+						)
+			);
+			return resolutionQueue;
+		};
+
+		const schedule = ({ readback, conferenceId }: { readback: Readback; conferenceId: string }) => {
+			const key = `${readback}:${conferenceId}`;
+			clearTimeout(timers.get(key));
 			timers.set(
-				conferenceId,
+				key,
 				setTimeout(() => {
-					timers.delete(conferenceId);
-					if (!stopped) void readPresence({ remote, linkId: link.id, conferenceId });
+					timers.delete(key);
+					if (!stopped) void read({ readback, conferenceId });
 				}, DEBOUNCE_MS)
 			);
+		};
+		const scheduleAll = (conferenceId: string) => {
+			for (const readback of READBACKS) schedule({ readback, conferenceId });
 		};
 
 		const remote: ChaseClient = createChaseClient({
 			url: link.remoteUrl,
 			token: openLinkToken(link.outboundToken),
 			onConnected: () => {
-				for (const conferenceId of watchers.keys()) schedule(conferenceId);
+				for (const conferenceId of watchers.keys()) scheduleAll(conferenceId);
 			}
 		});
 		cleanups.push(() => remote.dispose());
@@ -108,11 +136,29 @@ function runWorker() {
 					id: true,
 					present: true
 				});
-				watchers.set(
-					conferenceId,
-					events.subscribe(() => schedule(conferenceId))
+				// A concluded vote adds a snapshot; the outcome is set on the vote, which the nested
+				// selection listens on too.
+				const adoptions = remote.liveQuery.paperContentSnapshots({
+					__args: {
+						where: {
+							trigger: 'VOTE_CONCLUDED',
+							paper: { committee: { conferenceId: { eq: conferenceId } } }
+						}
+					},
+					id: true,
+					paper: { id: true, vote: { id: true, outcome: true } }
+				});
+				const unwatchEvents = events.subscribe(() =>
+					schedule({ readback: 'presence', conferenceId })
 				);
-				schedule(conferenceId);
+				const unwatchAdoptions = adoptions.subscribe(() =>
+					schedule({ readback: 'resolutions', conferenceId })
+				);
+				watchers.set(conferenceId, () => {
+					unwatchEvents();
+					unwatchAdoptions();
+				});
+				scheduleAll(conferenceId);
 			}
 		});
 		cleanups.push(unsubscribe);
@@ -125,58 +171,66 @@ function runWorker() {
 	return { stop };
 }
 
-/** Reads one conference's presence from CHASE as it is now and stores it. */
-async function readPresence({
-	remote,
-	linkId,
-	conferenceId
-}: {
-	remote: ChaseClient;
-	linkId: string;
-	conferenceId: string;
-}) {
+/**
+ * Runs one read-back and notes on the link how it went: when it last succeeded, or why it failed.
+ * A failure is logged and kept for the link page; the next change or reconnect tries again.
+ */
+async function recorded(
+	{ linkId, conferenceId, what }: { linkId: string; conferenceId: string; what: Readback },
+	readback: () => Promise<unknown>
+) {
 	try {
-		const representation = {
-			id: true,
-			type: true,
-			alpha2Code: true,
-			alpha3Code: true,
-			faIcon: true,
-			name: true
-		} as const;
-		const users = await remote.query.conferenceUsers({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
-			conferenceUserType: true,
-			userEmail: true,
-			committeeMember: { committeeId: true, representation },
-			conferenceMember: { representation },
-			presenceEvents: { id: true, committeeId: true, present: true, type: true, timestamp: true }
-		});
+		await readback();
 		const now = new Date();
-		const data = presenceFromChase({ conferenceId, users: Array.from(users), now });
-
-		await db
-			.insert(schema.chasePresence)
-			.values({ conferenceId, data, fetchedAt: now })
-			.onConflictDoUpdate({
-				target: schema.chasePresence.conferenceId,
-				set: { data, fetchedAt: now, updatedAt: now }
-			});
-		chasePresencePubsub.created();
-		chasePresencePubsub.updated(conferenceId);
-
 		await db
 			.update(schema.instanceLink)
 			.set({ lastEventAt: now, lastReconcileAt: now, lastError: null })
 			.where(eq(schema.instanceLink.id, linkId));
-		instanceLinkPubsub.updated(linkId);
 	} catch (error) {
-		logger.warn('Reading the presence from CHASE failed', { error, conferenceId });
+		logger.warn('Reading back from CHASE failed', { error, conferenceId, what });
 		await db
 			.update(schema.instanceLink)
 			.set({ lastError: error instanceof Error ? error.message : String(error) })
 			.where(eq(schema.instanceLink.id, linkId))
 			.catch(() => undefined);
-		instanceLinkPubsub.updated(linkId);
 	}
+	instanceLinkPubsub.updated(linkId);
+}
+
+/** Reads one conference's presence from CHASE as it is now and stores it. */
+async function readPresence({
+	remote,
+	conferenceId
+}: {
+	remote: ChaseClient;
+	conferenceId: string;
+}) {
+	const representation = {
+		id: true,
+		type: true,
+		alpha2Code: true,
+		alpha3Code: true,
+		faIcon: true,
+		name: true
+	} as const;
+	const users = await remote.query.conferenceUsers({
+		__args: { where: { conferenceId: { eq: conferenceId } } },
+		conferenceUserType: true,
+		userEmail: true,
+		committeeMember: { committeeId: true, representation },
+		conferenceMember: { representation },
+		presenceEvents: { id: true, committeeId: true, present: true, type: true, timestamp: true }
+	});
+	const now = new Date();
+	const data = presenceFromChase({ conferenceId, users: Array.from(users), now });
+
+	await db
+		.insert(schema.chasePresence)
+		.values({ conferenceId, data, fetchedAt: now })
+		.onConflictDoUpdate({
+			target: schema.chasePresence.conferenceId,
+			set: { data, fetchedAt: now, updatedAt: now }
+		});
+	chasePresencePubsub.created();
+	chasePresencePubsub.updated(conferenceId);
 }

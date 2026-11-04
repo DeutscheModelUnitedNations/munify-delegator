@@ -4,17 +4,14 @@ import {
 	type ResolutionHeaderData
 } from '@deutschemodelunitednations/munify-resolution-editor/schema';
 import { error, isHttpError } from '@sveltejs/kit';
-import { execFile } from 'node:child_process';
-import { mkdtemp, rm, writeFile, readFile, access } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import { Redis } from 'ioredis';
 import { REDIS_URL } from '$app/env/private';
 import { createAttemptLimiter, createCounter } from '#api/services/failureLimit';
 import {
 	assertSignedIn,
-	compileEnv,
 	compileErrorDetail,
 	createCompileSlots,
 	emblemSvgFor,
@@ -24,10 +21,7 @@ import {
 } from './pdfRequest';
 import type { RequestHandler } from './$types';
 import { logger } from '#lib/logger';
-
-const execFileAsync = promisify(execFile);
-
-const TYPST_BIN = join(process.cwd(), 'node_modules/.bin/typst');
+import { compileTypst, typstAvailable } from '#api/services/typst';
 
 /**
  * Compiles one account may start in ten minutes. People export a paper or resolution now and then;
@@ -71,25 +65,8 @@ async function resolutionSource({
 	return resolutionToTypst(parsed.data, header, { emblemPath });
 }
 
-/** Compiles `source` to a PDF in `dir` and returns the PDF's bytes. */
-async function compileTypst({ dir, source }: { dir: string; source: string }): Promise<Buffer> {
-	await writeFile(join(dir, 'resolution.typ'), source);
-
-	await execFileAsync(TYPST_BIN, ['compile', 'resolution.typ', 'resolution.pdf'], {
-		cwd: dir,
-		env: compileEnv(process.env.PATH),
-		timeout: 30_000
-	});
-
-	return readFile(join(dir, 'resolution.pdf'));
-}
-
 async function ensureTypstAvailable() {
-	try {
-		await access(TYPST_BIN);
-	} catch {
-		throw error(500, 'Typst binary not available on the server');
-	}
+	if (!(await typstAvailable())) throw error(500, 'Typst binary not available on the server');
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {

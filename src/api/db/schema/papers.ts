@@ -115,5 +115,9 @@ export const resolution = snakeCase.table('resolution', {
 	fileId: fileRef().notNull(),
 	conferenceId: conferenceRef('cascade'),
 	/** Optional; kept as an untagged resolution when its committee is deleted. */
-	committeeId: text().references(() => committee.id, { onDelete: 'set null', onUpdate: 'cascade' })
+	committeeId: text().references(() => committee.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+	/** The linked CHASE's paper this resolution was adopted as; the link worker keeps it in sync. */
+	chasePaperId: text().unique(),
+	/** The CHASE snapshot of the adopted text the PDF was rendered from. */
+	chaseSnapshotId: text()
 });
