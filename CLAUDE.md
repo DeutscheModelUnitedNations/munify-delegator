@@ -1197,6 +1197,7 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_POOL_SIZE` (optional) - connections each app instance holds open to Postgres (20)
 - `SECRET` - Session encryption secret
 - `NODE_ENV` - Environment (development/production/test)
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL

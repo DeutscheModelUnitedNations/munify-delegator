@@ -1,14 +1,6 @@
-FROM oven/bun:1.3-slim AS base
-
-FROM base AS patched
-WORKDIR /temp
-# Apply OS security updates (e.g. libcap2 CVE-2026-4878) on top of the base image.
-# CI passes the current date so this layer is rebuilt daily instead of being served from a
-# build cache that predates newer Debian security fixes.
-ARG OS_UPDATES_DATE
-RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade
-
-FROM patched AS builder
+# Bun installs and builds; the server runs on Node (the newest LTS), the runtime the e2e suite and
+# the server coverage test it on.
+FROM oven/bun:1.3-slim AS builder
 WORKDIR /run
 
 COPY package.json bun.lock tsconfig.json ./
@@ -34,7 +26,13 @@ RUN find node_modules -type d \( -name 'lefthook-linux-*' -o -path '*/@typescrip
   -prune -exec rm -rf {} +
 
 # A fresh stage leaves the removed binaries, bun's install cache and the build layers behind.
-FROM patched AS runner
+FROM node:26-slim AS runner
+# Apply OS security updates (e.g. libcap2 CVE-2026-4878) on top of the base image.
+# CI passes the current date so this layer is rebuilt daily instead of being served from a
+# build cache that predates newer Debian security fixes.
+ARG OS_UPDATES_DATE
+RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade; \
+  rm -rf /var/lib/apt/lists/*
 WORKDIR /run
 COPY --from=builder /run /run
 
@@ -42,9 +40,13 @@ ARG VERSION
 ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+# The JS heap's limit, below the container's memory limit (1 GB): what the heap may not use goes
+# to buffers, the matching worker and the typst compiles of the PDF export. Over the limit Node
+# fails with "heap out of memory" in the log; over the container's, it is killed without a word
+# (exit 137). Raise both together.
+ENV NODE_OPTIONS="--max-old-space-size=640"
 
-USER bun
+USER node
 ENV NODE_ENV=production
 # adapter-node caps request bodies at 512K by default and rejects anything larger with
 # HTTP 413 before the request reaches the app. Conference document/image uploads (base
@@ -53,4 +55,10 @@ ENV NODE_ENV=production
 # runtime via the BODY_SIZE_LIMIT env var (see .env.example).
 ENV BODY_SIZE_LIMIT=64M
 EXPOSE 3000/tcp
-CMD ["sh", "-c", "bunx drizzle-kit migrate && bun ./build/index.js"]
+# A stop sends SIGTERM, then SIGKILL after the grace period (10s by default). adapter-node shuts
+# down on SIGTERM, but waits up to SHUTDOWN_TIMEOUT (30s) for open connections, and every open tab
+# holds a subscription stream: keep it inside the grace period so the server closes them itself.
+ENV SHUTDOWN_TIMEOUT=5
+# `exec` makes the server the container's PID 1: a shell there neither handles nor forwards
+# SIGTERM, so the server never heard of a stop and was killed (exit 137).
+CMD ["sh", "-c", "node node_modules/drizzle-kit/bin.cjs migrate && exec node ./build/index.js"]

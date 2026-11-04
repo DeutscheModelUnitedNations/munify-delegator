@@ -2,7 +2,11 @@
 import { describe, expect, test, vi } from 'vitest';
 
 // Nothing fills the app's variables in under vitest, and validating them refuses the empty set.
-vi.mock('$app/env/private', () => ({ DATABASE_URL: '', REDIS_URL: undefined }));
+vi.mock('$app/env/private', () => ({
+	DATABASE_URL: '',
+	DATABASE_POOL_SIZE: 1,
+	REDIS_URL: undefined
+}));
 
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
