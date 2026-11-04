@@ -37,11 +37,25 @@ async function rowsFor(ids: string[]): Promise<() => TeamMemberRow[]> {
 	};
 }
 
+/** The conference's team members, as a text that changes when one joins or leaves. */
+async function memberChanges(conferenceId: string): Promise<() => string> {
+	const members = await client.liveQuery.teamMembers({
+		// newest first: a list answers at most 1000 rows, and a new one has to be among them
+		__args: {
+			where: { conferenceId: { eq: conferenceId } },
+			orderBy: { createdAt: 'desc', id: 'desc' }
+		},
+		id: true
+	});
+	return () => members.map((member) => member.id).join();
+}
+
 /** The team table's rows: the API's table engine picks and orders the members. */
 export function teamMembersSource(conferenceId: string) {
 	return createServerSource<TeamMemberRow>({
 		table: 'teamMembers',
 		conferenceId,
-		rowsFor: ({ ids }) => rowsFor(ids)
+		rowsFor: ({ ids }) => rowsFor(ids),
+		changes: () => memberChanges(conferenceId)
 	});
 }

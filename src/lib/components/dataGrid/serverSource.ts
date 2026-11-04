@@ -21,11 +21,18 @@ export interface EnginePage {
 export function createServerSource<Row>({
 	table,
 	conferenceId,
-	rowsFor
+	rowsFor,
+	changes
 }: {
 	table: DataTableKey;
 	conferenceId: string;
 	rowsFor: (page: EnginePage) => Promise<() => Row[]>;
+	/**
+	 * A live query of the table's rows, read as a text that changes when one is added or removed
+	 * (`GridSource.changes`): the engine's answers are not live, so without it the grid never hears
+	 * of a new row.
+	 */
+	changes?: () => Promise<() => string>;
 }): GridSource<Row> {
 	const fetchPage = async ({
 		query,
@@ -54,6 +61,7 @@ export function createServerSource<Row>({
 	};
 
 	return {
+		changes,
 		async page({ query, search, pageIndex, pageSize }) {
 			const page = await fetchPage({
 				query,

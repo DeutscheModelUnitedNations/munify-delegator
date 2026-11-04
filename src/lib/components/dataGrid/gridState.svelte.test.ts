@@ -83,6 +83,21 @@ describe('createGridState', async () => {
 		expect(changes()).toBe(2);
 	});
 
+	it('asks with the source revision, so a row added elsewhere is fetched', async () => {
+		const { pageRequest } = await import('./pageRequest');
+		let revision = 'a';
+		const grid = createGridState<Row>({
+			columns: () => columns,
+			initial: { view: null, saved: base, state: structuredClone(base), search: '', page: 1 },
+			views: () => [],
+			rowId: (row) => row.id,
+			revision: () => revision
+		});
+		expect(pageRequest({ grid, pageIndex: 0 }).revision).toBe('a');
+		revision = 'a,b';
+		expect(pageRequest({ grid, pageIndex: 0 }).revision).toBe('a,b');
+	});
+
 	it('moves and resizes columns, but never the pinned one', () => {
 		const { grid } = create();
 		grid.moveColumn({ id: 'city', delta: -1 });

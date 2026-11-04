@@ -100,6 +100,9 @@
 	// read here, not in the fetch, so a view someone saves or renames shows up
 	const savedViews = $derived<SavedView[]>(readViews());
 	const opening = $derived(initialView(savedViews));
+	const readChanges = $derived(source.changes ? await source.changes() : () => '');
+	// read here, not in the fetch, so a row someone adds or removes elsewhere shows up
+	const revision = $derived(readChanges());
 
 	const grid: GridState<Row> = createGridState({
 		columns: () => columns,
@@ -111,6 +114,7 @@
 		}),
 		views: () => savedViews,
 		rowId: (row) => rowId(row),
+		revision: () => revision,
 		onChange: () =>
 			url.write(
 				gridParams({

@@ -16,7 +16,8 @@
 	const column = $derived(groupBy ? props.grid.column(groupBy.column) : undefined);
 	const query = $derived(props.grid.query(props.path));
 	const search = $derived(props.grid.search);
-	const read = $derived(await props.source.groups({ query, search }));
+	const revision = $derived(props.grid.revision);
+	const read = $derived(await props.source.groups({ query, search, revision }));
 	const fetched = $derived(read());
 	const desc = $derived(
 		props.grid.applied.sorting.find((entry) => entry.id === groupBy?.column)?.desc ?? false

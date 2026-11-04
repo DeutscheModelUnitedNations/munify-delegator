@@ -75,11 +75,25 @@ async function rowsFor({
 	};
 }
 
+/** The conference's waiting list entries, as a text that changes when one is added or removed. */
+async function entryChanges(conferenceId: string): Promise<() => string> {
+	const entries = await client.liveQuery.waitingListEntries({
+		// newest first: a list answers at most 1000 rows, and a new one has to be among them
+		__args: {
+			where: { conferenceId: { eq: conferenceId } },
+			orderBy: { createdAt: 'desc', id: 'desc' }
+		},
+		id: true
+	});
+	return () => entries.map((entry) => entry.id).join();
+}
+
 /** The waiting list's rows: the API's table engine picks and orders the entries. */
 export function waitingListSource(conferenceId: string) {
 	return createServerSource<WaitingListRow>({
 		table: 'waitingList',
 		conferenceId,
-		rowsFor: ({ ids }) => rowsFor({ conferenceId, ids })
+		rowsFor: ({ ids }) => rowsFor({ conferenceId, ids }),
+		changes: () => entryChanges(conferenceId)
 	});
 }

@@ -4,7 +4,7 @@ import type { GridState } from './gridState.svelte';
 
 /**
  * What a page of rows is asked with: the grid's applied query for the group `path` (the whole
- * table where it is empty; not grouped when `flat`), its search and page size.
+ * table where it is empty; not grouped when `flat`), its search, the source's revision and page size.
  */
 export function pageRequest<Row>({
 	grid,
@@ -21,6 +21,7 @@ export function pageRequest<Row>({
 	return {
 		query: flat ? { ...query, grouping: [] } : query,
 		search: grid.search,
+		revision: grid.revision,
 		pageIndex,
 		pageSize: grid.state.pageSize
 	};

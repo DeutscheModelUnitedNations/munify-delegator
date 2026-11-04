@@ -84,6 +84,7 @@ export function createGridState<Row>({
 	initial,
 	views,
 	rowId,
+	revision = () => '',
 	onChange
 }: {
 	/** The columns (a getter: a page may learn an enum's options later) */
@@ -92,6 +93,8 @@ export function createGridState<Row>({
 	/** The saved views there are (live): the chosen one is looked up by id, so a rename shows */
 	views: () => readonly SavedView[];
 	rowId: (row: Row) => string;
+	/** What the source's rows changed by (`GridSource.changes`), so the queries ask again */
+	revision?: () => string;
 	/** Called after every edit, for the URL */
 	onChange?: () => void;
 }) {
@@ -190,6 +193,10 @@ export function createGridState<Row>({
 		},
 		get pageIndex() {
 			return pageIndex;
+		},
+		/** The source's revision, for the requests (`GridRequest.revision`) */
+		get revision() {
+			return revision();
 		},
 		get visibleColumns() {
 			return visibleColumns;

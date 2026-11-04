@@ -24,6 +24,11 @@ export interface GridPage<Row> {
 export interface GridRequest {
 	query: DataQuery;
 	search: string;
+	/**
+	 * What the source's `changes` last said. Sources ignore it; it is part of the request so the
+	 * grid asks again when it changes.
+	 */
+	revision?: string;
 }
 
 export interface GridSource<Row> {
@@ -33,6 +38,12 @@ export interface GridSource<Row> {
 	groups(request: GridRequest): Promise<() => GroupCount[]>;
 	/** Every matching row, once (the export) */
 	all(request: GridRequest): Promise<Row[]>;
+	/**
+	 * A live signal of the rows there are, for a source whose answers are not live themselves (the
+	 * table engine's): a reader of a text that changes whenever a row is added or removed. The grid
+	 * asks for its pages and groups again then.
+	 */
+	changes?(): Promise<() => string>;
 }
 
 /**
