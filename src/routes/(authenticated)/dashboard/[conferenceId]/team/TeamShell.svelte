@@ -7,7 +7,8 @@
 	import CommandPalette from '#lib/components/commandPalette/CommandPalette.svelte';
 	import SearchHistoryWatcher from '#lib/components/commandPalette/SearchHistoryWatcher.svelte';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
-	import { hasAnyRole } from '#lib/helpers/teamAccess';
+	import { hasAnyRole, isOnTeam } from '#lib/helpers/teamAccess';
+	import { rememberTeamConference } from '#lib/state/lastTeamConference.svelte.js';
 	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
 	import { groupedTeamRoutes, teamRelativePath, teamSkeletonForPath } from '#lib/data/teamRoutes';
 	import TeamNavMenu from './TeamNavMenu.svelte';
@@ -38,6 +39,11 @@
 		sections.reduce((count, section) => count + section.routes.length, 0) > 1
 	);
 	const hasCarePages = $derived(hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES }));
+
+	// The home page offers the way back here; participants reach the paper hub through this shell too
+	$effect(() => {
+		if (isOnTeam(access)) rememberTeamConference(conferenceId);
+	});
 
 	// Every navigation gets a fresh boundary, so the next page's skeleton shows right away. The
 	// assignment keeps its tabs and draft status across its pages and shows the skeleton below them

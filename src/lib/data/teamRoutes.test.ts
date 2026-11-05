@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+	firstTeamPagePath,
 	groupedTeamRoutes,
 	mayOpenTeamRoute,
 	teamRelativePath,
@@ -135,5 +136,19 @@ describe('teamRelativePath', () => {
 		expect(teamRelativePath({ pathname: '/dashboard/conf-1/', conferenceId })).toBe('');
 		expect(teamRelativePath({ pathname: '/dashboard/conf-12/team/stats', conferenceId })).toBe('');
 		expect(teamRelativePath({ pathname: '/dashboard/other/team/stats', conferenceId })).toBe('');
+	});
+});
+
+describe('firstTeamPagePath', () => {
+	test('is the first team page the caller may open, in registry order', () => {
+		for (const access of [as('PARTICIPANT_CARE'), as('REVIEWER'), { isAdmin: true, roles: [] }]) {
+			const first = teamRoutesFor(access).find((entry) => entry.path.startsWith('team/'));
+			expect(firstTeamPagePath(access)).toBe(first?.path);
+			expect(firstTeamPagePath(access)?.startsWith('team/')).toBe(true);
+		}
+	});
+
+	test('is undefined for someone not on the team', () => {
+		expect(firstTeamPagePath(NO_TEAM_ACCESS)).toBeUndefined();
 	});
 });

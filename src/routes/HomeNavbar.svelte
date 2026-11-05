@@ -2,11 +2,19 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { getLastTeamConferenceId } from '#lib/state/lastTeamConference.svelte.js';
 	import UserMenu from './(authenticated)/UserMenu.svelte';
 	import { localizeHref } from '#lib/paraglide/runtime';
+	import TeamQuickAccess from './TeamQuickAccess.svelte';
 
 	// Only whether a session exists; the menu fetches the person itself.
 	const signedIn = !!(await client.query.offlineUserRefresh({ user: { sub: true } })).user;
+
+	// Stored in the browser only, so it is read after hydration rather than differ from the server
+	let lastTeamConferenceId = $state<string | null>(null);
+	$effect(() => {
+		lastTeamConferenceId = getLastTeamConferenceId();
+	});
 </script>
 
 <header
@@ -26,6 +34,15 @@
 			target="_blank"
 			rel="noopener noreferrer">GitHub</a
 		>
+
+		{#if signedIn && lastTeamConferenceId}
+			<!-- A conference gone, or a team left, shows no shortcut rather than an error -->
+			<svelte:boundary>
+				<TeamQuickAccess conferenceId={lastTeamConferenceId} />
+				{#snippet pending()}{/snippet}
+				{#snippet failed()}{/snippet}
+			</svelte:boundary>
+		{/if}
 
 		<a class="btn btn-primary btn-sm" href={resolve('dashboard')}>{m.homeConferencesBtn()}</a>
 

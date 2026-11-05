@@ -388,6 +388,14 @@ export function teamRoutesFor(access: TeamAccess & { canSeePaperHub?: boolean })
 	return teamRoutes.filter((route) => mayOpenTeamRoute({ route, access }));
 }
 
+/**
+ * Where the way into the team area leads: its first page the caller may open, since the area has
+ * no landing page of its own. `undefined` when they may open none.
+ */
+export function firstTeamPagePath(access: TeamAccess): string | undefined {
+	return teamRoutesFor(access).find((route) => route.path.startsWith('team/'))?.path;
+}
+
 /** The visible pages grouped into the navigation's sections, empty sections left out */
 export function groupedTeamRoutes(
 	access: TeamAccess & { canSeePaperHub?: boolean }
