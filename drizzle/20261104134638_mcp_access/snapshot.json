@@ -1,10 +1,10 @@
 {
-  "id": "2afa4c11-741b-4920-b4c2-677b517c30e5",
-  "prevIds": [
-    "fb94286a-b010-4b34-a4d4-dc7e2f7ffd28"
-  ],
   "version": "8",
   "dialect": "postgres",
+  "id": "14b9d272-8c1e-4519-a376-176b36dd5d02",
+  "prevIds": [
+    "60dc2278-d2fc-4a73-86ed-3dac41c63b9c"
+  ],
   "ddl": [
     {
       "values": [
@@ -144,6 +144,16 @@
         "NO_STATEMENT"
       ],
       "name": "gender",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "OK",
+        "REFUSED",
+        "ERROR"
+      ],
+      "name": "mcp_call_outcome",
       "entityType": "enums",
       "schema": "public"
     },
@@ -407,6 +417,12 @@
     },
     {
       "isRlsEnabled": false,
+      "name": "mcp_audit_entry",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
       "name": "nation",
       "entityType": "tables",
       "schema": "public"
@@ -528,18 +544,6 @@
     {
       "isRlsEnabled": false,
       "name": "survey_question",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "table_view",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "table_view_default",
       "entityType": "tables",
       "schema": "public"
     },
@@ -2771,6 +2775,19 @@
       "table": "conference"
     },
     {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "mcp_enabled",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
       "type": "text",
       "typeSchema": null,
       "notNull": true,
@@ -3926,6 +3943,136 @@
       "entityType": "columns",
       "schema": "public",
       "table": "mailing_list"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "client_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tool",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "arguments",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "mcp_call_outcome",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "outcome",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "message",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "duration_ms",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "mcp_audit_entry"
     },
     {
       "type": "text",
@@ -5966,240 +6113,6 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "timestamp(3)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "CURRENT_TIMESTAMP",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "timestamp(3)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "CURRENT_TIMESTAMP",
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "table_key",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "name",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "jsonb",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "state",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "shared",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "conference_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "owner_user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "is_default",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "timestamp(3)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "CURRENT_TIMESTAMP",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "timestamp(3)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "CURRENT_TIMESTAMP",
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "table_key",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "conference_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "view_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
       "table": "team_member"
     },
     {
@@ -8173,6 +8086,34 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "mcp_audit_entry_conference_id_created_at_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "alpha2_code",
           "isExpression": false,
           "asc": true,
@@ -8910,160 +8851,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "survey_question"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "table_key",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "conference_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "table_view_table_key_conference_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "owner_user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "table_view_owner_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "table_key",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "conference_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": "\"is_default\" and \"conference_id\" is not null",
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "table_view_conference_default_key",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "table_key",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": "\"is_default\" and \"conference_id\" is null",
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "table_view_global_default_key",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "table_key",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "conference_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "table_view_default_user_table_conference_key",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "view_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "table_view_default_view_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "table_view_default"
     },
     {
       "nameExplicit": true,
@@ -10815,6 +10602,40 @@
     {
       "nameExplicit": false,
       "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "mcp_audit_entry_conference_id_conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "mcp_audit_entry_user_id_user_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "mcp_audit_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "author_participant_id"
       ],
       "schemaTo": "public",
@@ -11418,108 +11239,6 @@
         "id"
       ],
       "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "table_view_conference_id_conference_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "owner_user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "table_view_owner_user_id_user_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "created_by_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "SET NULL",
-      "name": "table_view_created_by_id_user_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "user",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "table_view_default_user_id_user_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "conference_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "conference",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "table_view_default_conference_id_conference_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "view_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "table_view",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "table_view_default_view_id_table_view_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "table_view_default"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "conference_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "conference",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
       "onDelete": "RESTRICT",
       "name": "TeamMember_conferenceId_Conference_id_fkey",
       "entityType": "fks",
@@ -11981,6 +11700,16 @@
     },
     {
       "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "mcp_audit_entry_pkey",
+      "schema": "public",
+      "table": "mcp_audit_entry",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
         "alpha3_code"
       ],
       "nameExplicit": false,
@@ -12194,26 +11923,6 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "table_view_pkey",
-      "schema": "public",
-      "table": "table_view",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "table_view_default_pkey",
-      "schema": "public",
-      "table": "table_view_default",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
       "name": "TeamMember_pkey",
       "schema": "public",
       "table": "team_member",
@@ -12320,20 +12029,6 @@
       "entityType": "checks",
       "schema": "public",
       "table": "conference_role"
-    },
-    {
-      "value": "(\"shared\" and \"owner_user_id\" is null) or (not \"shared\" and \"owner_user_id\" is not null)",
-      "name": "table_view_owned_unless_shared",
-      "entityType": "checks",
-      "schema": "public",
-      "table": "table_view"
-    },
-    {
-      "value": "not \"is_default\" or \"shared\"",
-      "name": "table_view_default_is_shared",
-      "entityType": "checks",
-      "schema": "public",
-      "table": "table_view"
     }
   ],
   "renames": []

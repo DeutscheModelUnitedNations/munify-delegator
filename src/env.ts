@@ -98,6 +98,14 @@ export const variables = defineEnvVars({
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)
 	OIDC_M2M_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
 
+	// The MCP server for AI assistants (`src/api/mcp/`, served at `/mcp`): its public URL, which is
+	// also the API resource (RFC 8707) the provider issues its access tokens for and the audience
+	// they are checked against. Unset, the server is off and `/mcp` answers 404.
+	MCP_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
+	// Space-separated scopes the provider defines on that API resource, advertised to MCP clients
+	// in the protected resource metadata. Optional.
+	MCP_SCOPES: { schema: unlessEmpty(z.string().optional()) },
+
 	OTEL_SERVICE_NAME: { schema: z.string().default('MUNIFY-DELEGATOR') },
 	OTEL_SERVICE_VERSION: { schema: z.string().optional() },
 	OTEL_ENDPOINT_URL: { schema: z.string().optional() },

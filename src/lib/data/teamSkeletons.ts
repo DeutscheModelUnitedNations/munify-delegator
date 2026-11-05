@@ -1287,6 +1287,31 @@ const schoolPage = {
 	]
 };
 
+const aiAccess = {
+	name: 'aiAccess',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-6',
+			children: [
+				paragraph({ lines: 2 }),
+				alert(),
+				{
+					class: 'border-base-300 bg-base-200 rounded-box flex flex-col gap-3 border p-4',
+					children: [toggle('w-64'), block('h-3 w-80 max-w-full rounded-full')]
+				},
+				{
+					class: 'border-base-300 bg-base-200 rounded-box flex flex-col gap-3 border p-4',
+					children: [block('h-4 w-24 rounded-full'), paragraph({ lines: 1 }), block('h-10 w-full')]
+				},
+				{
+					class: 'flex flex-col gap-3',
+					children: [block('h-6 w-32 rounded-full'), table({ rows: 8, columns: 5 })]
+				}
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
 /** The skeleton of every page the registry names, by the entry's id */
 export const TEAM_SKELETONS = {
 	stats,
@@ -1310,7 +1335,8 @@ export const TEAM_SKELETONS = {
 	cleanup,
 	helper,
 	import: importPage,
-	downloads
+	downloads,
+	aiAccess
 } satisfies Record<string, SkeletonLayout>;
 
 /**

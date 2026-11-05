@@ -88,6 +88,11 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/finish': {
 		docs: 'user-manual/team/assignment#finish-and-release'
+	},
+
+	// Team: AI assistants
+	'/(authenticated)/dashboard/[conferenceId]/team/ai-access': {
+		docs: 'user-manual/team/ai-access'
 	}
 };
 

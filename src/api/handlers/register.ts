@@ -31,6 +31,7 @@ import './dataTable/dataTable';
 import './plausibility/plausibility';
 import './school/school';
 import './schoolSuggestion/schoolSuggestion';
+import './mcpAuditEntry/mcpAuditEntry';
 import './scanLookup/scanLookup';
 import './identityCode/identityCode';
 import './seatPlanning/seatPlanning';
