@@ -1838,7 +1838,6 @@
 	"open": "Öffnen",
 	"openAssistant": "Assistent starten",
 	"openIssues": "Offene Probleme",
-	"openIssuesDescription": "Zugelassene Teilnehmende mit Zuordnung, bei denen Zahlung oder Anmeldeunterlagen noch nicht vollständig sind",
 	"openIssuesExplanation": "Zeigt zugelassene Teilnehmende (ohne Team-Mitglieder), bei denen mindestens eines davon noch nicht erledigt ist: Beitragszahlung, Teilnahmebedingungen, Medieneinwilligung oder, bei Minderjährigen, die Einwilligung der Erziehungsberechtigten.",
 	"openPaper": "Öffnen",
 	"openUserCardInConference": "Teilnehmendenkarte in {conference} öffnen",

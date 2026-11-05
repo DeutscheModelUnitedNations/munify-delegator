@@ -1838,7 +1838,6 @@
 	"open": "Open",
 	"openAssistant": "Start assistant",
 	"openIssues": "Open issues",
-	"openIssuesDescription": "Accepted and assigned participants whose payment or registration documents are not complete",
 	"openIssuesExplanation": "Shows accepted participants (excluding team members) for whom at least one of these is not done yet: payment, terms and conditions, media consent or, for minors, guardian consent.",
 	"openPaper": "Open",
 	"openUserCardInConference": "Open user card in {conference}",

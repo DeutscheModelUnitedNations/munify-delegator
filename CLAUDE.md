@@ -1164,6 +1164,10 @@ bun run preview
   write; one that no longer fits opens as the table's base view. A default names a view of its own
   conference or a global one (`table_view_default_same_conference`), and a view never moves to
   another conference. `e2e/authorization/table-views.spec.ts` pins it down.
+- **Some global views ship with the app** (`PRESET_TABLE_VIEWS`, `#lib/dataGrid/tables/presetViews.ts`):
+  the participants' "Warteliste" and "Offene Probleme". The `table_view_presets` migration
+  inserts them, the dev seed again after its reset; `presetViews.test.ts` fails when no migration
+  inserts a preset as the list has it. A new preset is an entry there and a migration of its own.
 - **A resolver that reads through an ability, writes, then reads again calls
   `refreshAbilities(ctx.abilities)`** before the second read: rumble resolves relational rules
   once per request, and the written row is not in that snapshot (the view mutations do).

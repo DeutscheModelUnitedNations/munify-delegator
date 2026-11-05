@@ -7,8 +7,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { participantColumns } from './columns';
 	import { fetchNationOptions, participantsSource } from './participantsSource';
-	import { participantsBase } from './quickFilters';
-	import TableToolbar from './TableToolbar.svelte';
+	import { participantsBase } from './participantsBase';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -40,8 +39,4 @@
 	openSoleMatch
 	onRowClick={(row) => openUserCard(row.userId)}
 	isRowHighlighted={(row) => row.userId === params.highlight}
->
-	{#snippet toolbar(grid)}
-		<TableToolbar {grid} />
-	{/snippet}
-</DataGrid>
+/>
