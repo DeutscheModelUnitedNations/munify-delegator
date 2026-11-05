@@ -19,7 +19,11 @@ const entries: DocsNavEntry[] = [
 		slug: 'user-manual/team',
 		label: () => m.docsTeamGuide(),
 		description: () => m.docsTeamGuideDescription(),
-		items: ['user-manual/team/configuration', 'user-manual/team/assignment']
+		items: [
+			'user-manual/team/configuration',
+			'user-manual/team/assignment',
+			'user-manual/team/ai-access'
+		]
 	}
 ];
 

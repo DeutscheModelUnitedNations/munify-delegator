@@ -22,7 +22,8 @@ and **personal data never reaches it**.
   before anything runs, as are lookups by name, entry code or email.
 - **No personal data in.** Tools never take names, contact details or notes about people.
 
-The rules live in `src/api/mcp/` (see CLAUDE.md, "MCP server").
+The rules live in `src/api/mcp/` (see CLAUDE.md, "MCP server"). How the team uses it is in the user manual,
+`docs/*/user-manual/team/ai-access.md`.
 
 ## Tools
 
