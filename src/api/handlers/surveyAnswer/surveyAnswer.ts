@@ -12,6 +12,7 @@ import {
 	registerSurveyAnswerAbilities
 } from './surveyAnswerPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerSurveyAnswerAbilities();
 
@@ -70,6 +71,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	distributeUnansweredSurvey: t.field({
+		extensions: mcpTool({ outward: true }),
 		description:
 			'Answers the question for everybody holding a seat who has not answered it yet, with an option that still has room, so the options fill up evenly. Returns how many answers it gave; whoever found no room is left out. Participant care only (NOT_FOUND otherwise).',
 		type: 'Int',

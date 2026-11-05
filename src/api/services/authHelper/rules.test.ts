@@ -18,9 +18,14 @@ const {
 } = await import('./rules');
 const { grantWhere } = await import('./utils');
 
-/** Just enough of a request context for the filter builders, which read only these two parts. */
-function contextFor(sub: string | undefined, roles: string[] = []): Context {
-	const ctx: Pick<Context, 'hasRole' | 'oidc'> = {
+/** Just enough of a request context for the filter builders, which read only these parts. */
+function contextFor(
+	sub: string | undefined,
+	roles: string[] = [],
+	mcp: Context['mcp'] = undefined
+): Context {
+	const ctx: Pick<Context, 'hasRole' | 'oidc' | 'mcp'> = {
+		mcp,
 		hasRole: (role) => roles.includes(role),
 		oidc: {
 			user: sub
@@ -135,5 +140,35 @@ describe('anyOf', () => {
 		expect(anyOf([{ state: 'POST' }, { id: 'c' }])).toEqual({
 			OR: [{ state: 'POST' }, { id: 'c' }]
 		});
+	});
+});
+
+describe('an AI assistant (MCP) reaches only the conference of its tool call', () => {
+	// Over MCP nobody holds a system role (`#api/context`), an admin included.
+	const assistant = contextFor('u1', [], { isAdmin: false, conferenceId: 'c1' });
+	const adminAssistant = contextFor('a1', [], { isAdmin: true, conferenceId: 'c1' });
+	const scope = { id: 'c1', mcpEnabled: true };
+
+	test('the caller’s own team roles count there, and only while it switched MCP on', () => {
+		expect(isTeamMemberOf({ ctx: assistant, roles: ['PARTICIPANT_CARE'] })).toEqual({
+			...scope,
+			teamMembers: { user: { id: 'u1' }, role: { in: ['PARTICIPANT_CARE'] } }
+		});
+		expect(isTeamMemberOfConference({ ctx: assistant })).toEqual({
+			conference: { ...scope, teamMembers: { user: { id: 'u1' } } }
+		});
+	});
+
+	test('a system admin holds every team role there, and nothing beyond it', () => {
+		expect(isTeamMemberOf({ ctx: adminAssistant, roles: ['PROJECT_MANAGEMENT'] })).toEqual(scope);
+		expect(systemAdmin(adminAssistant)).toBeUndefined();
+		expect(isCaredForUser(adminAssistant)).toEqual({
+			OR: [participatesIn(scope), { waitingListEntry: { conference: scope } }]
+		});
+	});
+
+	test('rules about the caller’s own part grant nothing: they could only reach other conferences', () => {
+		expect(isParticipantOfConference(assistant)).toBeUndefined();
+		expect(isOwnUser(assistant)).toBeUndefined();
 	});
 });

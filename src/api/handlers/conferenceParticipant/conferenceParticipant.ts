@@ -16,6 +16,7 @@ import {
 	assertCanUpsertParticipantStatus,
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerConferenceParticipantAbilities();
 
@@ -62,6 +63,17 @@ const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
 
 schemaBuilder.mutationFields((t) => ({
 	upsertConferenceParticipant: t.drizzleField({
+		// A status a mail follows from (payment received, documents complete, the certificate).
+		extensions: mcpTool({
+			outwardArguments: [
+				'paymentStatus',
+				'termsAndConditions',
+				'guardianConsent',
+				'mediaConsent',
+				'mediaConsentStatus',
+				'didAttend'
+			]
+		}),
 		description:
 			"Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries CONFLICT.",
 		type: ConferenceParticipantRef,
@@ -97,6 +109,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	setParticipantSchool: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['schoolName'] }),
 		description:
 			"Sets a person's school in a conference: the only school a person taking part has, which the seats and numbers per school count, and which the assignment never changes. Without `id` it is the caller's own (as a delegate, single participant or supervisor); with it, participant care correcting somebody's. Both school arguments null removes it, both left out keeps it.",
 		type: ConferenceParticipantRef,
@@ -124,6 +137,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateAllConferenceParticipants: t.field({
+		// Attendance is what the certificate mails follow from.
+		extensions: mcpTool({ outward: true }),
 		description:
 			'Sets whether everybody registered in the conference attended (participant care), creating the participant rows that are missing.',
 		type: BulkStatusUpdateResult,

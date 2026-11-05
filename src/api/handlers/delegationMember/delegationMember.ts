@@ -19,6 +19,7 @@ import {
 } from './delegationMemberPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerDelegationMemberAbilities();
 
@@ -120,6 +121,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateDelegationMemberCommittee: t.drizzleField({
+		extensions: mcpTool(),
 		description:
 			"Moves a delegate into a committee that seats their delegation's role. When the committee is already full for the delegation, participant care displaces the longest-untouched occupant into the seat this member leaves; a head delegate is refused with CONFLICT.",
 		type: DelegationMemberRef,
@@ -142,6 +144,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	assignCommitteesToDelegationMembers: t.drizzleField({
+		extensions: mcpTool(),
 		description:
 			"Applies a committee assignment in one go: the head delegate's committee assignment page, or the delegation modal clearing its members' committees (a null committee). Every committee has to be the conference's and seat the member's delegation; one pairing refused, or a committee left with more of a delegation than it seats (CONFLICT), rolls the whole batch back. Answers with the members it seated.",
 		type: [DelegationMemberRef],
@@ -164,6 +167,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	switchDelegationMemberSeats: t.drizzleField({
+		extensions: mcpTool(),
 		description:
 			'Swaps the seats (delegation and committee) of two delegates, or moves one into a free seat of a role. Head delegates stay with the seat unless `headDelegateMemberIds` chooses them; every delegation keeps exactly one. A taken seat or a concurrent switch answers CONFLICT. Answers with the members moved.',
 		type: [DelegationMemberRef],

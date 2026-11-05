@@ -16,6 +16,7 @@ import {
 	updateConferenceRole
 } from './conferenceRoleService';
 import { customRoleSeatsSchema, nonStateActorUpdateData } from './plannedRoleRules';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerConferenceRoleAbilities();
 
@@ -41,6 +42,9 @@ schemaBuilder.mutationFields((t) => {
 
 	return {
 		createNonStateActor: t.drizzleField({
+			extensions: mcpTool({
+				textArguments: ['abbreviation', 'name', 'description', 'fontAwesomeIcon']
+			}),
 			description:
 				'Adds a non-state actor to the conference, with how many seats it has. A name or abbreviation another role of the conference has is refused with CONFLICT.',
 			type: ConferenceRoleRef,
@@ -60,6 +64,9 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		updateNonStateActor: t.drizzleField({
+			extensions: mcpTool({
+				textArguments: ['abbreviation', 'name', 'description', 'fontAwesomeIcon']
+			}),
 			description:
 				'Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `fontAwesomeIcon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.',
 			type: ConferenceRoleRef,
@@ -82,6 +89,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		deleteNonStateActor: t.field({
+			extensions: mcpTool(),
 			description:
 				'Deletes a non-state actor, together with the applications for it and its place in the assignment draft. Refused with CONFLICT while a delegation is assigned to it.',
 			type: 'Boolean',
@@ -95,6 +103,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		createCustomRole: t.drizzleField({
+			extensions: mcpTool({ textArguments: ['name', 'description', 'fontAwesomeIcon'] }),
 			description:
 				'Adds a custom role for single participants, such as the press, with how many it seats. A name another role of the conference has is refused with CONFLICT.',
 			type: ConferenceRoleRef,
@@ -110,6 +119,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		updateCustomRole: t.drizzleField({
+			extensions: mcpTool({ textArguments: ['name', 'description', 'fontAwesomeIcon'] }),
 			description:
 				'Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has.',
 			type: ConferenceRoleRef,
@@ -139,6 +149,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		deleteCustomRole: t.field({
+			extensions: mcpTool(),
 			description:
 				'Deletes a custom role, together with the wishes for it and its place in the assignment draft. Refused with CONFLICT while somebody holds it.',
 			type: 'Boolean',

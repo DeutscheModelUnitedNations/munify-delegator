@@ -23,6 +23,7 @@ import {
 	registerConferenceAbilities
 } from './conferencePermissions';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 /** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
 const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });
@@ -79,6 +80,37 @@ const fileArgDescription =
 
 schemaBuilder.mutationFields((t) => ({
 	updateConference: t.drizzleField({
+		extensions: mcpTool({
+			textArguments: [
+				'title',
+				'longTitle',
+				'location',
+				'language',
+				'website',
+				'info',
+				'linkToPreparationGuide',
+				'linkToTeamWiki',
+				'linkToServicesPage',
+				'linkToPaperInbox',
+				'timezone',
+				'currency',
+				'bankName',
+				'postalStreet',
+				'postalApartment',
+				'postalZip',
+				'postalCity',
+				'postalCountry'
+			],
+			outwardArguments: [
+				'state',
+				'info',
+				'showInfoExpanded',
+				'showCalendar',
+				'unlockPayments',
+				'unlockPostals',
+				'isOpenPaperSubmission'
+			]
+		}),
 		description:
 			'Changes the given settings of a conference; left out keeps a setting, `null` clears a nullable one. Project management changes everything; the content roles (participant care, content lead) only the links, the announcement, the postal address, the templates, the status and the feature switches - any other argument is refused with FORBIDDEN. Uploaded files (logo, templates) are passed by the id `requestFileUpload` returned. Dates that end up out of order (the application deadline after the start, the start after the end) are refused with INVALID_INPUT.',
 		type: ConferenceRef,

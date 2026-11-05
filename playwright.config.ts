@@ -73,7 +73,9 @@ export default defineConfig({
 		// A build takes a few minutes on a slow machine.
 		timeout: SERVER === 'build' ? 600_000 : 120_000,
 		// warn even against a dev server, which would log every GraphQL operation at debug.
-		env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn' },
+		// MCP_RESOURCE switches the MCP server on (e2e/authorization/mcp.spec.ts), at this server's
+		// own address whatever `.env` names for the dev server.
+		env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn', MCP_RESOURCE: `${baseURL}/mcp` },
 		stdout: 'pipe',
 		stderr: 'pipe'
 	}

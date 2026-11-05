@@ -137,12 +137,9 @@ export function registerUserAbilities() {
 
 	// Team members read the identity and phone number of everybody on a team they share.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: { teamMember: { conference: { teamMembers: { user: { id } } } } },
-					columns: { ...IDENTITY, phone: true }
-				}
+		const conference = isTeamMemberOf({ ctx });
+		return conference
+			? { where: { teamMember: { conference } }, columns: { ...IDENTITY, phone: true } }
 			: undefined;
 	});
 
@@ -197,17 +194,8 @@ export function registerUserAbilities() {
 	// their conference's papers. A paper's `author` is non-nullable, so without this one paper by
 	// someone they may not otherwise read fails the whole review page.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						papers: {
-							conference: { teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } } }
-						}
-					},
-					columns: NAME
-				}
-			: undefined;
+		const conference = isTeamMemberOf({ ctx, roles: PAPER_ROLES });
+		return conference ? { where: { papers: { conference } }, columns: NAME } : undefined;
 	});
 
 	// Authors read the names of whoever reviewed their papers. A review's `reviewer` is non-nullable,

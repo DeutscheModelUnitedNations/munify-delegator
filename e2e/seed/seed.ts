@@ -35,6 +35,7 @@ import { seedSeatPlanning } from './seatPlanning';
 import { seedSeats } from './seats';
 import { seedAttendance } from './attendance';
 import { seedEmailPace } from './emailPace';
+import { seedMcp } from './mcp';
 import { seedLateSupervisor } from './lateSupervisor';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
@@ -1015,6 +1016,7 @@ export default async function seed() {
 	await seedAttendance(db);
 	await seedEmailPace(db);
 	await seedLateSupervisor(db);
+	await seedMcp(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 }

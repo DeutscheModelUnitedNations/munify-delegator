@@ -12,9 +12,17 @@ import type { Context } from '#api/context';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
-/** The signed-in caller's user id; undefined when nobody is signed in. */
+/**
+ * The signed-in caller's user id, for the rules about the caller's own rows (their registration,
+ * their papers, their co-delegates, …); undefined when nobody is signed in.
+ *
+ * Also undefined for an AI assistant's request (`ctx.mcp`): it is confined to one conference the
+ * caller is on the team of, where they take part in no other way (one part per conference), so
+ * these rules could only reach their rows of other conferences. The team rules know the caller
+ * through `isTeamMemberOf`, which reads the session itself.
+ */
 export function callerUserId(ctx: Context) {
-	return ctx.oidc.user?.sub;
+	return ctx.mcp ? undefined : ctx.oidc.user?.sub;
 }
 
 /**

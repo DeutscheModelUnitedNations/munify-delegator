@@ -917,6 +917,7 @@ export type Conference = {
   logoFileId: ID | null,
   longTitle: String | null,
   maxSeatsPerSchool: Int | null,
+  mcpEnabled: Boolean,
   mediaConsentFile: (p?: {
     orderBy?: StoredfileOrderInputArgument | null | undefined,
     where?: StoredfileWhereInputArgument | null | undefined
@@ -1047,6 +1048,7 @@ export type ConferenceOrderInputArgument = {
   logoFileId?: SortingParameter | null | undefined,
   longTitle?: SortingParameter | null | undefined,
   maxSeatsPerSchool?: SortingParameter | null | undefined,
+  mcpEnabled?: SortingParameter | null | undefined,
   mediaConsentFileId?: SortingParameter | null | undefined,
   nametagBinCount?: SortingParameter | null | undefined,
   postalApartment?: SortingParameter | null | undefined,
@@ -1144,6 +1146,7 @@ export type ConferenceWhereInputArgument = {
   logoFileId?: IDWhereInputArgument | null | undefined,
   longTitle?: StringWhereInputArgument | null | undefined,
   maxSeatsPerSchool?: IntWhereInputArgument | null | undefined,
+  mcpEnabled?: BooleanWhereInputArgument | null | undefined,
   mediaConsentFile?: StoredfileWhereInputArgument | null | undefined,
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
@@ -2103,6 +2106,61 @@ export type LayoutDocument = "certificate" | "contract" | "guardianConsent" | "m
 		
 export type Locale = string;
 		
+export type Mcpauditentry = {
+  arguments: JSON,
+  clientId: ID | null,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  durationMs: Int,
+  id: ID,
+  message: String | null,
+  outcome: McpcalloutcomeEnum,
+  search_distance: Float | null,
+  tool: String,
+  user: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User | null,
+  userId: ID | null    
+};
+		
+export type McpauditentryOrderInputArgument = {
+  arguments?: SortingParameter | null | undefined,
+  clientId?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  durationMs?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  message?: SortingParameter | null | undefined,
+  outcome?: SortingParameter | null | undefined,
+  tool?: SortingParameter | null | undefined,
+  userId?: SortingParameter | null | undefined    
+};
+		
+export type McpauditentryWhereInputArgument = {
+  AND?: McpauditentryWhereInputArgument[] | undefined,
+  NOT?: McpauditentryWhereInputArgument | null | undefined,
+  OR?: McpauditentryWhereInputArgument[] | undefined,
+  arguments?: JSONWhereInputArgument | null | undefined,
+  clientId?: IDWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  durationMs?: IntWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  message?: StringWhereInputArgument | null | undefined,
+  outcome?: McpcalloutcomeEnum | null | undefined,
+  tool?: StringWhereInputArgument | null | undefined,
+  user?: UserWhereInputArgument | null | undefined,
+  userId?: IDWhereInputArgument | null | undefined    
+};
+		
+export type McpcalloutcomeEnum = "ERROR" | "OK" | "REFUSED";
+		
 export type MediaconsentstatusEnum = "ALLOWED_ALL" | "NOT_ALLOWED" | "NOT_SET" | "PARTIALLY_ALLOWED";
 		
 export type Mutation = {
@@ -2497,6 +2555,10 @@ export type Mutation = {
   setConferenceEmailsPerSecond: (p: {
     conferenceId: ID,
     emailsPerSecond?: Int | null | undefined
+  }) => Boolean,
+  setConferenceMcpEnabled: (p: {
+    conferenceId: ID,
+    enabled: Boolean
   }) => Boolean,
   setDocumentLayout: (p: {
     conferenceId: ID,
@@ -3609,6 +3671,17 @@ export type Query = {
   identityCodePublicKey: () => IdentityCodePublicKey,
   impersonationStatus: () => ImpersonationStatus,
   logoutUrl: String,
+  mcpAuditEntries: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: McpauditentryOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: McpauditentryWhereInputArgument | null | undefined
+  }) => Mcpauditentry[],
+  mcpAuditEntry: (p: {
+    id: ID
+  }) => Mcpauditentry,
+  mcpServerUrl: String | null,
   myOIDCRoles: OIDCRolesEnum[],
   myReviewStats: (p: {
     conferenceId: ID
@@ -5054,6 +5127,16 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: EmaillogWhereInputArgument | null | undefined
   }) => Emaillog[],
+  mcpAuditEntries: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: McpauditentryOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: McpauditentryWhereInputArgument | null | undefined
+  }) => Mcpauditentry[],
+  mcpAuditEntry: (p: {
+    id: ID
+  }) => Mcpauditentry,
   nation: (p: {
     id: ID
   }) => Nation,
@@ -5913,7 +5996,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

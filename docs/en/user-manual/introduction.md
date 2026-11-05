@@ -48,3 +48,4 @@ For the team:
 
 - [Settings](./team/configuration): how the team sets up a conference, with its committees and seat planning.
 - [Assignment](./team/assignment): how the team reviews the applications and hands out the seats.
+- [AI access](./team/ai-access): how the team uses AI assistants without personal data reaching them.

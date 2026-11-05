@@ -48,3 +48,4 @@ Für das Team:
 
 - [Einstellungen](./team/configuration): wie das Team eine Konferenz einrichtet, mit Gremien und Sitzplanung.
 - [Zuteilung](./team/assignment): wie das Team die Bewerbungen sichtet und die Plätze verteilt.
+- [KI-Zugang](./team/ai-access): wie das Team KI-Assistenten nutzt, ohne dass personenbezogene Daten sie erreichen.

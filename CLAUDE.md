@@ -1122,6 +1122,40 @@ bun run preview
   languages, keep the `data-tour` anchors and rerun the affected screenshots.** Manual prose:
   concise, no semicolons or dashes, German in du-form and gender-inclusive like the UI.
 
+#### 12. MCP server for AI assistants
+
+- **Why:** AI gets used anyway; rather than people downloading participant data to paste into
+  one, the team connects an assistant to `/mcp`, which works with the caller's own rights and
+  never hands it personal data. Setup and the tool list: `docs/mcp.md`.
+- **Auth:** OAuth with the OIDC provider as authorization server; `/mcp` is a protected resource
+  (`/.well-known/oauth-protected-resource/mcp`). `#api/mcp/auth` checks the bearer JWT against the
+  provider's keys with `MCP_RESOURCE` as audience; `sub` is the user. Unset `MCP_RESOURCE`, the
+  server is off. Locally, `bun run mcp:token <dev account>` mints a token (oidc-mock has no client
+  registration).
+- **Confinement:** every tool call names a conference; `assertCanUseMcpIn` (`mcpPermissions.ts`)
+  refuses unless it switched MCP on (`conference.mcpEnabled`, `setConferenceMcpEnabled`, project
+  management) and the caller is on its team. The call then runs with `locals.mcp` set, which
+  `#api/context` turns into `ctx.mcp`: no system role applies, `isTeamMemberOf`
+  (`authHelper/rules.ts`) matches only that conference - a system admin as holding every team role
+  there - and `callerUserId` answers nothing, so the rules about the caller's own part (their
+  registration, co-delegates, supervisors) grant nothing: in a conference they are on the team of
+  they take part in no other way, so those could only reach other conferences. Every team rule
+  goes through `isTeamMemberOf` / `teamConference`, so a new one must too.
+- **Privacy is default-deny.** `src/api/mcp/classification.ts` classifies every leaf field of the
+  schema as `visible`, `aggregate` (counts by a redacted attribute: `<5` below five) or `redacted`;
+  `redact.ts` rewrites every answer by it, following the operation's selection. A field not listed
+  reads `[redacted]` and `classification.test.ts` fails - **a new column or object field needs
+  an entry there**. `operationGuard.ts` refuses `where` / `orderBy` / rumble `search` touching a
+  non-visible field, and any free-form argument not in `ALLOWED_FREE_ARGUMENTS`.
+- **Mutations opt in** with `extensions: mcpTool({ … })` next to their definition
+  (`#api/mcp/mcpTool`); `mutationTools.ts` generates the tool from the field: person scalars are
+  never passed, `String` / `JSON` arguments only when `textArguments` declares them to be about
+  things, `outward` / `outwardArguments` make the tool preview until `confirm: true`. A mutation
+  without the marker is unreachable through MCP. Writing notes about people stays in the UI.
+- **Reads** are `graphql_query` (one read-only query, guarded, redacted), `graphql_schema`, and the
+  task tools in `curatedReads.ts` (pure, tested). Every call is written to `mcp_audit_entry`
+  (shown on `team/ai-access`); one about a conference the caller may not use is refused unlogged.
+
 ### Logging
 
 - **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after

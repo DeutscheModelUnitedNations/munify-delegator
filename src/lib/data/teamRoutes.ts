@@ -6,6 +6,7 @@ import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess';
 import {
 	CONFERENCE_CONTENT_ROLES,
 	PARTICIPANT_CARE_ROLES,
+	PROJECT_MANAGEMENT_ROLES,
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
 } from '#lib/helpers/teamRoles';
@@ -337,6 +338,28 @@ export const teamRoutes: readonly TeamRoute[] = [
 		category: 'maintenance',
 		keywords: ['downloads', 'herunterladen', 'export', 'exportieren'],
 		roles: PARTICIPANT_CARE_ROLES
+	},
+	{
+		id: 'aiAccess',
+		skeleton: TEAM_SKELETONS.aiAccess,
+		path: teamPath('ai-access'),
+		title: () => m.aiAccess(),
+		description: () => m.aiAccessDescription(),
+		icon: 'fa-robot',
+		group: 'maintenance',
+		category: 'management',
+		keywords: [
+			'ki',
+			'ai',
+			'mcp',
+			'claude',
+			'chatgpt',
+			'assistent',
+			'assistant',
+			'protokoll',
+			'log'
+		],
+		roles: PROJECT_MANAGEMENT_ROLES
 	}
 ];
 

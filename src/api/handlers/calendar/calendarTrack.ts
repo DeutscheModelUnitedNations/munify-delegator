@@ -13,6 +13,7 @@ import {
 	updateCalendarTrack
 } from './calendarTrackService';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCalendarTrackAbilities();
 
@@ -30,6 +31,7 @@ const rolesDescription =
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarTrack: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name', 'description'] }),
 		description:
 			'Adds a track, a parallel strand of the programme, to the conference, running on the given days and meant for the given committees and roles. A name another track of the conference has is refused with CONFLICT; a day, committee or role of another conference with INVALID_INPUT.',
 		type: CalendarTrackRef,
@@ -66,6 +68,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCalendarTrack: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name', 'description'] }),
 		description:
 			'Changes the given fields of a track; left out or `null` keeps a field, `null` clears the description. Given `committeeIds` / `conferenceRoleIds` replace whom the track is for. A name another track of the conference has is refused with CONFLICT; a committee or role of another conference with INVALID_INPUT.',
 		type: CalendarTrackRef,
@@ -98,6 +101,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	setCalendarTrackOnDay: t.field({
+		extensions: mcpTool(),
 		description:
 			"Lets a track run on a day of its conference, or takes it off the day; the day's entries that ran on this track alone go with it. A day of another conference is refused with INVALID_INPUT.",
 		type: 'Boolean',
@@ -118,6 +122,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteCalendarTrack: t.field({
+		extensions: mcpTool(),
 		description:
 			'Deletes a track from every day; entries that ran on this track alone go with it, entries on others stay.',
 		type: 'Boolean',

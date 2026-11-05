@@ -9,6 +9,7 @@ import {
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { createPlace, deletePlace, updatePlace } from './placeService';
 import { latitudeSchema, longitudeSchema } from './placeRules';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerPlaceAbilities();
 
@@ -37,6 +38,9 @@ schemaBuilder.mutationFields((t) => {
 
 	return {
 		createPlace: t.drizzleField({
+			extensions: mcpTool({
+				textArguments: ['name', 'address', 'directions', 'info', 'websiteUrl']
+			}),
 			description:
 				"Adds a place (a venue) the conference's schedule entries can name. A name another place of the conference has is refused with CONFLICT.",
 			type: PlaceRef,
@@ -60,6 +64,9 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		updatePlace: t.drizzleField({
+			extensions: mcpTool({
+				textArguments: ['name', 'address', 'directions', 'info', 'websiteUrl']
+			}),
 			description:
 				'Changes the given fields of a place; left out keeps a field, `null` clears all but the name. A name another place of the conference has is refused with CONFLICT.',
 			type: PlaceRef,
@@ -79,6 +86,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		deletePlace: t.field({
+			extensions: mcpTool(),
 			description: 'Deletes a place; schedule entries at it stay, without a place.',
 			type: 'Boolean',
 			args: { id: t.arg.id({ required: true }) },
