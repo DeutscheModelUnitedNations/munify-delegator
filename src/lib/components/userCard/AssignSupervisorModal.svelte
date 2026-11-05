@@ -4,7 +4,7 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
-	import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
+	import { matchingUserIds } from '#lib/api/matchingUsers';
 
 	const SUPERVISOR_LIMIT = 20;
 

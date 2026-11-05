@@ -48,6 +48,10 @@ export const canEditCommittees = (access: TeamAccess) =>
 export const canPlanSeats = (access: TeamAccess) =>
 	hasAnyRole({ access, roles: SEAT_PLANNING_ROLES });
 
+/** Saving and changing the conference's shared views of the team's tables (`manageTableViews`) */
+export const canManageTableViews = (access: TeamAccess) =>
+	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });
+
 /** Switching the automatic mails and writing their texts */
 export const canManageEmails = (access: TeamAccess) =>
 	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });

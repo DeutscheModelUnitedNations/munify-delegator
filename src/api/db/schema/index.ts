@@ -74,6 +74,7 @@ export {
 } from './papers';
 export { paymentTransaction, userReferenceInPaymentTransaction } from './payments';
 export { mailingList } from './mailSync';
+export { tableView, tableViewDefault } from './tableViews';
 export { mcpCallOutcome, mcpAuditEntry } from './mcp';
 export {
 	statisticsPeople,

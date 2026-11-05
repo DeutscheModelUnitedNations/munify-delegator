@@ -470,19 +470,6 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [...ROW, 'name', 'city', 'region', 'country', 'website'],
 		redacted: ['street', 'apartment', 'zip', 'contactName', 'contactEmail', 'contactPhone', 'notes']
 	},
-	ConferenceSchoolRow: {
-		visible: [
-			'applied',
-			'city',
-			'delegations',
-			'name',
-			'participants',
-			'schoolId',
-			'seated',
-			'supervisors',
-			'waitingList'
-		]
-	},
 	ConferenceSchools: {
 		visible: [
 			'delegationCount',
@@ -493,7 +480,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'sumParticipants'
 		]
 	},
-	ConferenceSchoolsPage: { visible: ['hasMore', 'total'] },
 	SchoolConferenceMetrics: {
 		visible: [
 			'applied',
@@ -564,8 +550,26 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 
 	// --- Lists and pages ------------------------------------------------------------------------
-	ParticipantsPage: { visible: ['hasMore', 'total', 'userIds'] },
 	UpdateAllConferenceParticipantsResponse: { visible: ['changed'] },
+	// The team's tables (`dataTable/`): row ids and counts. A page's values and a group's value are
+	// the rows' own columns, a family name among them, so they stay hidden.
+	DataTablePage: { visible: ['hasMore', 'ids', 'total'], redacted: ['values'] },
+	DataTableGroup: { aggregate: ['count'], redacted: ['value'] },
+	// Saved views: who and where are ids; the name and the state are text people wrote, and a
+	// filter in the state can hold a name.
+	Tableview: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'createdById',
+			'isDefault',
+			'ownerUserId',
+			'shared',
+			'tableKey'
+		],
+		redacted: ['name', 'state']
+	},
+	Tableviewdefault: { visible: [...ROW, 'conferenceId', 'tableKey', 'userId', 'viewId'] },
 	DelegationPreview: {
 		visible: [
 			'applied',
@@ -808,8 +812,6 @@ export const ALLOWED_FREE_ARGUMENTS: ReadonlySet<string> = new Set([
 	// School names are not personal.
 	'Query.searchSchools.search',
 	'Query.sightingSchools.search',
-	'Query.conferenceSchools.search',
-	'Query.conferenceSchools.sortColumn',
 	// Cache busters.
 	'Query.openEmailCounts.revision',
 	'Query.personEmails.revision',

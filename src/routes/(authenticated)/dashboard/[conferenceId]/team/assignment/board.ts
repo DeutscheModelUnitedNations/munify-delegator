@@ -6,8 +6,8 @@ import {
 } from '#lib/api/rumbleClient/client';
 import { liveSnapshot } from '#lib/api/liveSnapshot';
 import type { BoardReviewRow } from './boardState';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
+import { containing } from '#lib/api/queryHelpers';
+import { matchingUserIds } from '#lib/api/matchingUsers';
 
 /*
  * The assignment tabs never read a whole conference: it can hold tens of thousands of

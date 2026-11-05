@@ -54,7 +54,7 @@ test('participant care notifies someone of their found badge from the user card'
 }) => {
 	await loginAs(page, fixedTestUser(E2E_ATTENDANCE_CARE_ID), {
 		// A filter that narrows the table to one row opens that row's user card by itself.
-		startUrl: `/dashboard/${conferenceId}/team/participants?search=Lovelace`
+		startUrl: `/dashboard/${conferenceId}/team/participants?q=Lovelace`
 	});
 	const before = await badgeMailsToAda(page);
 

@@ -1,5 +1,5 @@
 import { client } from '#lib/api/rumbleClient/client';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
+import { containing } from '#lib/api/queryHelpers';
 import {
 	getFullTranslatedCountryNameFromISO3Code,
 	translatedNationCodeAddressFormOptions

@@ -31,7 +31,7 @@ test('participant care sends a person an owed mail by hand from the user card', 
 	page
 }) => {
 	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/participants?search=${E2E_MGMT_TARGET_FAMILY_NAME}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/participants?q=${E2E_MGMT_TARGET_FAMILY_NAME}`
 	});
 
 	const statusTab = page.getByRole('tab', { name: /formalitäten|formalities/i });

@@ -2,15 +2,12 @@ import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_ASSIGNMENT_ADMIN_ID, E2E_CONFERENCE_ID } from '../seed/seed';
 
-// The registration tables hand search, sorting, filters and paging to the backend. Each one has
-// to load, find a row by a word in it, find nothing for nonsense, sort and page without errors.
-const TABLES = [
-	{ route: 'team/participants', search: 'search' },
-	{ route: 'team/waiting-list', search: 'filter' },
-	{ route: 'team/members', search: 'filter' }
-];
+// The team's tables hand search, sorting, filters, grouping and paging to the backend's table
+// engine (`dataTablePage`). Each one has to load, find a row by a word in it, find nothing for
+// nonsense, sort and page without errors.
+const TABLES = ['team/participants', 'team/waiting-list', 'team/members', 'team/schools'];
 
-for (const { route, search } of TABLES) {
+for (const route of TABLES) {
 	test(`the ${route.split('/').pop()} table searches, sorts and pages in the backend`, async ({
 		page
 	}) => {
@@ -38,9 +35,9 @@ for (const { route, search } of TABLES) {
 			.split(/\s+/)
 			.find((token) => /^[\p{L}]{4,}$/u.test(token));
 		expect(word, 'the first row has a word to search for').toBeTruthy();
-		const box = page.locator('input[type="text"]').first();
+		const box = page.locator('input[type="search"]').first();
 		await box.fill(word ?? '');
-		await expect(page).toHaveURL(new RegExp(`${search}=`));
+		await expect(page).toHaveURL(/[?&]q=/);
 		await expect(rows.first()).toContainText(word ?? '', { timeout: 15_000, ignoreCase: true });
 		expect(await rows.count()).toBeLessThanOrEqual(total);
 
@@ -50,17 +47,18 @@ for (const { route, search } of TABLES) {
 		await box.fill('');
 		await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 
-		// a sortable column sorts: the URL says so and the table keeps showing rows
+		// a sortable column sorts: the URL holds the changed view and the table keeps showing rows
 		const sortable = page.locator('thead th button:has(i.fa-arrows-up-down)').first();
 		if (await sortable.count()) {
 			await sortable.click();
-			await expect(page).toHaveURL(/sort=/);
+			await expect(page).toHaveURL(/[?&]state=/);
 			await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 		}
 
-		// the pager has its range and, where there is more than one page, moves on
+		// the pager has its range and, where there is more than one page (only then it has buttons),
+		// moves on
 		const next = page.getByRole('button', { name: /nächste seite|next page/i });
-		if (await next.isEnabled()) {
+		if ((await next.count()) > 0 && (await next.isEnabled())) {
 			await next.click();
 			await expect(page).toHaveURL(/page=2/);
 			await expect(rows.first()).toBeVisible({ timeout: 15_000 });

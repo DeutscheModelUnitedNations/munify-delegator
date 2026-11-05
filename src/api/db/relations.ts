@@ -767,6 +767,28 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.surveyAnswer.questionId
 		})
 	},
+	tableView: {
+		conference: r.one.conference({
+			from: r.tableView.conferenceId,
+			to: r.conference.id
+		}),
+		owner: r.one.user({
+			from: r.tableView.ownerUserId,
+			to: r.user.id
+		})
+	},
+	tableViewDefault: {
+		conference: r.one.conference({
+			from: r.tableViewDefault.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		view: r.one.tableView({
+			from: r.tableViewDefault.viewId,
+			to: r.tableView.id,
+			optional: false
+		})
+	},
 	teamMember: {
 		conference: r.one.conference({
 			from: r.teamMember.conferenceId,

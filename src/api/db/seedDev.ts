@@ -20,6 +20,7 @@ import { unMemberNations } from './seed-data/nations';
 import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user';
 import { devAccounts } from './seed-data/devAccounts';
 import { conferenceTemplatePdfs } from './seed-data/pdfDocuments';
+import { PRESET_TABLE_VIEWS } from '#lib/dataGrid/tables/presetViews';
 import { emptyBatch, insertBatch } from './seed-dev/batch';
 import { replaceSeedObjects, seedStorage } from './seed-dev/files';
 import { createUniqueCode, type CrowdKind, type SeedWorld } from './seed-dev/context';
@@ -121,6 +122,10 @@ logger.info(
 	`Inserting ${batch.user.length} users, ${batch.delegation.length} delegations and ${batch.singleParticipant.length} single participants in ${conferencePlans.length} conferences...`
 );
 await insertBatch({ db, batch });
+// The reset emptied `table_view` too, so the views the migration starts every installation with go back in.
+await db
+	.insert(schema.tableView)
+	.values(PRESET_TABLE_VIEWS.map((view) => ({ ...view, shared: true })));
 logger.info(`Replacing the bucket's objects with ${batch.storedObject.length} uploaded files...`);
 await replaceSeedObjects({ storage, batch });
 // The app refreshes them every few minutes; until then the statistics would show the old data.

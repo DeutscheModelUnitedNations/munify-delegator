@@ -56,7 +56,6 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/typography": "^0.5.20",
 		"@tailwindcss/vite": "^4.3.3",
-		"@tanstack/svelte-table": "^9.3.1",
 		"@thisux/sveltednd": "^0.8.0",
 		"@tiptap/core": "^3.32.0",
 		"@tiptap/extension-blockquote": "^3.32.0",

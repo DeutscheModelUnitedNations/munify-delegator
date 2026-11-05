@@ -1,5 +1,5 @@
 import type { AttendanceentryWhereInputArgument } from '#lib/api/rumbleClient/client';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
+import { containing } from '#lib/api/queryHelpers';
 
 /** How many scans the people list of a session shows at first, and adds on each "show more". */
 export const SESSION_PEOPLE_PAGE = 50;

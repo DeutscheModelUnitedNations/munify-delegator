@@ -2,7 +2,6 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamPermission,
 	isSystemAdmin,
 	isTeamMemberOf,
 	registeredParticipantIn,
@@ -96,18 +95,4 @@ export async function assertCanReadSchoolMetrics({
 		columns: { id: true }
 	});
 	return { conferenceIds: caredFor.map((conference) => conference.id) };
-}
-
-/**
- * Refuses unless the caller holds `manageParticipants` (project management and participant care)
- * in the conference: its schools page, with every school's numbers.
- */
-export async function assertCanReadConferenceSchools({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }

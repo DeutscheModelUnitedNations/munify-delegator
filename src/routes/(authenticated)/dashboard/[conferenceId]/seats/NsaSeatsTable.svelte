@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
+	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import { m } from '#lib/paraglide/messages';
 	import FlagNameCell from './FlagNameCell.svelte';
 	import type { ConferenceSeats } from './conferenceSeats';
@@ -14,41 +14,47 @@
 
 	type Nsa = Props['nonStateActors'][number];
 
-	const columns: ManagedColumn<Nsa>[] = [
+	const columns: GridColumn<Nsa>[] = [
 		{
 			id: 'name',
-			header: m.nonStateActors(),
-			accessorFn: (row) => row.name,
-			cell: ({ row }) =>
-				renderComponent({
+			type: 'text',
+			label: m.nonStateActors(),
+			alwaysVisible: true,
+			size: 240,
+			value: (row) => row.name,
+			cell: (row) =>
+				cellOf({
 					component: FlagNameCell,
-					props: {
-						name: row.original.name ?? '',
-						nsa: true,
-						nsaIcon: row.original.fontAwesomeIcon
-					}
+					props: { name: row.name ?? '', nsa: true, nsaIcon: row.fontAwesomeIcon }
 				})
 		},
 		{
 			id: 'description',
-			header: m.description(),
-			accessorFn: (row) => row.description,
-			enableSorting: false
+			type: 'text',
+			label: m.description(),
+			size: 360,
+			sortable: false,
+			value: (row) => row.description
 		},
 		{
 			id: 'seats',
-			header: m.seatAmount(),
-			accessorFn: (row) => row.seatAmount,
-			filter: { type: 'range' }
+			type: 'number',
+			label: m.seatAmount(),
+			align: 'center',
+			size: 110,
+			value: (row) => row.seatAmount
 		}
 	];
+
+	const source = createLocalSource({ rows: () => nonStateActors, columns: () => columns });
 </script>
 
-<ManagedTable
+<DataGrid
 	{columns}
-	rows={nonStateActors}
-	queryParamKey="nsa"
-	columnClasses={{ seats: 'text-center' }}
-	initialSorting={[{ id: 'name', desc: false }]}
-	storageKey="seat-overview-nsas"
+	{source}
+	rowId={(row) => row.id}
+	base={{ sorting: [{ id: 'name', desc: false }], pageSize: 100 }}
+	label={m.nsaPool()}
+	exportName="non-state-actors"
+	urlPrefix="nsas-"
 />
