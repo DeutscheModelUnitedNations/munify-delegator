@@ -116,14 +116,18 @@ describe('participantCounts', () => {
 });
 
 describe('countGroupingProblem', () => {
-	it('refuses a redacted dimension next to one an assistant reads per person', () => {
+	it('refuses a redacted dimension next to any dimension an assistant reads per person', () => {
 		expect(countGroupingProblem(['gender', 'school'])).toMatch(/gender/);
 		expect(countGroupingProblem(['foodPreference', 'committeeId'])).toMatch(/committeeId/);
+		// six women, five of them paid: the one who has not is named by participant_overview
+		expect(countGroupingProblem(['gender', 'paymentStatus'])).toMatch(/paymentStatus/);
+		expect(countGroupingProblem(['foodPreference', 'kind', 'minor'])).toMatch(/kind, minor/);
 	});
 
-	it('lets everything else through', () => {
-		expect(countGroupingProblem(['foodPreference', 'kind', 'minor'])).toBeUndefined();
-		expect(countGroupingProblem(['school', 'city'])).toBeUndefined();
+	it('counts redacted dimensions alone or together, and the others freely', () => {
+		expect(countGroupingProblem(['gender'])).toBeUndefined();
+		expect(countGroupingProblem(['gender', 'foodPreference'])).toBeUndefined();
+		expect(countGroupingProblem(['school', 'city', 'paymentStatus'])).toBeUndefined();
 	});
 });
 

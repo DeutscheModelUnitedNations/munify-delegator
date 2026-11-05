@@ -236,7 +236,7 @@ function registerReadTools({ server, call }: { server: McpServer; call: ToolCall
 	server.registerTool(
 		'participant_counts',
 		{
-			description: `Counts the conference's registered participants grouped by up to three of: ${COUNT_DIMENSIONS.join(', ')}. Grouped by gender or foodPreference, groups of fewer than five are left out and summed up as suppressed, and those two cannot be combined with school, city, country, committeeId or roleId. Needs participant care or project management.`,
+			description: `Counts the conference's registered participants grouped by up to three of: ${COUNT_DIMENSIONS.join(', ')}. Grouped by gender or foodPreference, groups of fewer than five are left out and summed up as suppressed, and those two can only be counted alone or with each other. Needs participant care or project management.`,
 			inputSchema: z.object({
 				conferenceId: conferenceIdSchema,
 				groupBy: z.array(z.enum(COUNT_DIMENSIONS)).min(1).max(3)

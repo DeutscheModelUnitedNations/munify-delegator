@@ -30,7 +30,7 @@ Alles andere über Personen kommt als `[redacted]` an:
 - Notfallkontakte, Zugangscodes und Einladungslinks
 - alle Freitexte von oder über Personen, etwa Betreuungsnotizen, Motivationstexte, Notizen aus der Sichtung und Kommentare zu Papieren
 
-Zählt ein Assistent Personen nach Geschlecht oder Ernährung, lässt er Gruppen unter fünf Personen weg und schreibt dort `<5`. Solche Zahlen kombiniert er nie mit Schule, Ort, Land, Gremium oder Rolle, da er diese für jede Person kennt.
+Zählt ein Assistent Personen nach Geschlecht oder Ernährung, lässt er Gruppen unter fünf Personen weg und schreibt dort `<5`. Diese beiden Merkmale zählt er nur allein oder miteinander, nie zusammen mit Status, Schule, Ort, Land, Gremium oder Rolle, da er diese für jede Person kennt.
 
 Nach geschwärzten Angaben kann ein Assistent auch nicht filtern, sortieren oder suchen. Eine Frage wie „Wer heißt Müller?“ lehnt DELEGATOR ab, bevor sie ausgeführt wird.
 
@@ -50,4 +50,4 @@ Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort au
 
 ## Das Protokoll {#the-log}
 
-Unter **Protokoll** steht jeder Aufruf eines Assistenten in dieser Konferenz, die neuesten 200 zuerst: wann, von wem, welches Werkzeug, mit welchem **Ergebnis** (**Ausgeführt**, **Abgelehnt** oder **Fehler**) und mit welchen Angaben. Abgelehnt heißt, dass DELEGATOR den Aufruf verweigert hat, etwa weil der Assistent nach geschwärzten Angaben filtern wollte oder die Rollen der Person nicht reichten. Das Protokoll sieht nur die Projektleitung.
+Unter **Protokoll** steht jeder Aufruf eines Assistenten in dieser Konferenz, den jemand aus ihrem Team gemacht hat, die neuesten 200 zuerst: wann, von wem, welches Werkzeug, mit welchem **Ergebnis** (**Ausgeführt**, **Abgelehnt** oder **Fehler**) und mit welchen Angaben. Abgelehnt heißt, dass DELEGATOR den Aufruf verweigert hat, etwa weil der Assistent nach geschwärzten Angaben filtern wollte oder die Rollen der Person nicht reichten. Versucht jemand ohne Platz im Team oder bei ausgeschaltetem Schalter, die Konferenz zu erreichen, lehnt DELEGATOR das ab, ohne es hier einzutragen. Das Protokoll sieht nur die Projektleitung.

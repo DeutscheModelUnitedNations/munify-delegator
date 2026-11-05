@@ -16,8 +16,8 @@ and **personal data never reaches it**.
   motivation, sighting notes, review comments) read `[redacted]`; `null` stays `null`. Visible are
   ids, statuses, roles and seats, the minor flag, school, city and country, and papers and
   resolutions. Counts by gender or diet leave out groups smaller than five (the statistics read
-  `<5` there), and are never grouped together with school, city, country, committee or role, which
-  an assistant knows per person.
+  `<5` there), and are counted only alone or with each other, never together with a status, school,
+  city, country, committee or role, which an assistant knows per person.
 - **No lookups by personal data.** Filtering, sorting or searching by a redacted field is refused
   before anything runs, as are lookups by name, entry code or email.
 - **No personal data in.** Tools never take names, contact details or notes about people.

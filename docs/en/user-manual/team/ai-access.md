@@ -30,7 +30,7 @@ Everything else about people arrives as `[redacted]`:
 - emergency contacts, access codes and invitation links
 - every free text by or about people, such as care notes, motivation texts, sighting notes and comments on papers
 
-When an assistant counts people by gender or diet, it leaves out groups of fewer than five and writes `<5` there. It never combines such counts with school, city, country, committee or role, since it knows those for every person.
+When an assistant counts people by gender or diet, it leaves out groups of fewer than five and writes `<5` there. It counts these two only alone or with each other, never together with a status, school, city, country, committee or role, since it knows those for every person.
 
 An assistant cannot filter, sort or search by redacted details either. A question like "Who is called Miller?" is refused by DELEGATOR before it runs.
 
@@ -50,4 +50,4 @@ An assistant does not run right away what reaches people outside the team. That 
 
 ## The log {#the-log}
 
-**Log** lists every call an assistant made in this conference, the latest 200 first: when, by whom, which tool, with which **Outcome** (**Done**, **Refused** or **Error**) and with which details. Refused means DELEGATOR declined the call, for example because the assistant tried to filter by redacted details or the person's roles were not enough. Only Project Management sees the log.
+**Log** lists every call an assistant made in this conference for someone on its team, the latest 200 first: when, by whom, which tool, with which **Outcome** (**Done**, **Refused** or **Error**) and with which details. Refused means DELEGATOR declined the call, for example because the assistant tried to filter by redacted details or the person's roles were not enough. When someone not on the team, or anyone while the switch is off, tries to reach the conference, DELEGATOR refuses without an entry here. Only Project Management sees the log.

@@ -297,24 +297,16 @@ const DIMENSIONS: Record<CountDimension, (row: CountRow) => string | null> = {
 const SENSITIVE_DIMENSIONS: ReadonlySet<CountDimension> = new Set(['gender', 'foodPreference']);
 
 /**
- * Dimensions an assistant also reads per person (`participant_overview`). A redacted dimension is
- * never grouped together with one of them: a small school's or city's group would tell the gender
- * or diet of the people the assistant can name by id.
+ * Why a grouping is refused: a redacted dimension next to any other. Every other dimension is
+ * one an assistant reads per person (`participant_overview`, `graphql_query`), so a small group,
+ * or two exact counts subtracted from each other, would tell the gender or diet of people it can
+ * name by id. Gender and diet are only ever counted alone or together.
  */
-const PER_PERSON_DIMENSIONS: ReadonlySet<CountDimension> = new Set([
-	'school',
-	'city',
-	'country',
-	'committeeId',
-	'roleId'
-]);
-
-/** Why a grouping is refused: a redacted dimension next to one an assistant reads per person. */
 export function countGroupingProblem(groupBy: readonly CountDimension[]) {
 	const sensitive = groupBy.filter((dimension) => SENSITIVE_DIMENSIONS.has(dimension));
-	const perPerson = groupBy.filter((dimension) => PER_PERSON_DIMENSIONS.has(dimension));
+	const perPerson = groupBy.filter((dimension) => !SENSITIVE_DIMENSIONS.has(dimension));
 	if (sensitive.length === 0 || perPerson.length === 0) return undefined;
-	return `${sensitive.join(' and ')} cannot be counted together with ${perPerson.join(', ')}: those are known per person, so small groups would tell who is who.`;
+	return `${sensitive.join(' and ')} cannot be counted together with ${perPerson.join(', ')}: those are known per person, so the counts would tell who is who.`;
 }
 
 /** Counts a group too small to show reads as: `<5`, or exactly when it is none. */
