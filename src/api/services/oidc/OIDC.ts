@@ -10,6 +10,7 @@ import { userInfoClaims } from './userInfoClaims';
 import { deLocalizeUrl } from '#lib/paraglide/runtime';
 import { logger } from '#lib/logger';
 import { retryAtStartup } from './retryAtStartup';
+import { isMcpEndpoint } from '#api/mcp/auth';
 
 /**
  * How long the session cookies live, the library's default made explicit so
@@ -145,10 +146,13 @@ function oidcOptions(): Parameters<typeof makeOIDC>[0] {
 /**
  * The OIDC handle, except that a public page (see `isPublicRoute`) is served without a session
  * instead of redirecting to the provider. A visitor who is signed in still gets their session on
- * `event.locals.oidc`.
+ * `event.locals.oidc`. The MCP endpoint is passed by: it reads no session and checks its bearer
+ * tokens itself (`isMcpEndpoint`).
  */
 export const oidcHandle: Handle = async (input) => {
-	if (!isPublicRoute(routePath(input.event.url))) {
+	const path = routePath(input.event.url);
+	if (isMcpEndpoint(path)) return input.resolve(input.event);
+	if (!isPublicRoute(path)) {
 		return OIDC.handle(input);
 	}
 	try {

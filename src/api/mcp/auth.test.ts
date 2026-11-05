@@ -14,8 +14,13 @@ vi.mock('$app/env/public', () => ({
 	PUBLIC_OIDC_AUTHORITY: 'https://idp.example/oidc/.well-known/openid-configuration'
 }));
 
-const { discoveryUrl, protectedResourceMetadata, resourceOfMetadataPath, verifyMcpAccessToken } =
-	await import('./auth');
+const {
+	discoveryUrl,
+	isMcpEndpoint,
+	protectedResourceMetadata,
+	resourceOfMetadataPath,
+	verifyMcpAccessToken
+} = await import('./auth');
 
 let privateKey: CryptoKey;
 const realFetch = globalThis.fetch;
@@ -143,5 +148,15 @@ describe('discoveryUrl', () => {
 		expect(discoveryUrl('https://idp.example/oidc/.well-known/openid-configuration').href).toBe(
 			'https://idp.example/oidc/.well-known/openid-configuration'
 		);
+	});
+});
+
+describe('isMcpEndpoint', () => {
+	it('names the MCP endpoint, which the session handle passes by', () => {
+		expect(isMcpEndpoint('/mcp')).toBe(true);
+		expect(isMcpEndpoint('/mcp/')).toBe(true);
+		expect(isMcpEndpoint('/mcp-help')).toBe(false);
+		expect(isMcpEndpoint('/api/graphql')).toBe(false);
+		expect(isMcpEndpoint('/.well-known/oauth-protected-resource/mcp')).toBe(false);
 	});
 });

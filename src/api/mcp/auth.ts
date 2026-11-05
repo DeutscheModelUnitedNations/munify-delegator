@@ -19,6 +19,16 @@ import { logger } from '#lib/logger';
  * checked here against the provider's keys. The token's `sub` is the user's id.
  */
 
+/**
+ * Whether a route path (see `routePath`) is the MCP endpoint. It checks its own bearer tokens,
+ * issued to whichever assistant connects, for the resource `MCP_RESOURCE`; the session library
+ * takes any bearer token for one of the app's own and would refuse every one of them with a 401
+ * before the endpoint is reached, so the OIDC handle passes this path by.
+ */
+export function isMcpEndpoint(path: string) {
+	return path === '/mcp' || path === '/mcp/';
+}
+
 /** The MCP server's public URL, or undefined while it is switched off. */
 export function mcpResourceUrl() {
 	return MCP_RESOURCE ? new URL(MCP_RESOURCE) : undefined;
