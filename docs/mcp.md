@@ -34,7 +34,12 @@ The rules live in `src/api/mcp/` (see CLAUDE.md, "MCP server"). How the team use
 | `participant_counts`                                | Participants counted by up to three attributes                        |
 | `assignment_overview`                               | Seats and holders per role, warnings, a page of the applications      |
 | `graphql_query` / `graphql_schema`                  | Any read-only query, and the schema with redacted fields marked       |
-| `createCommittee`, `assignDelegation`, … (about 57) | The mutations that opted in, one tool each                            |
+| `createCommittee`, `assignDelegation`, … (about 62) | The mutations that opted in, one tool each                            |
+
+Saved views of the team's tables (`createTableView`, `updateTableView`, `copyTableView`,
+`setTableViewDefault`, `deleteTableView`) are shared views only, and the state an assistant
+writes filters, sorts and groups only by columns without personal data
+(`src/api/mcp/viewStateGuard.ts`).
 
 Changes that reach people outside the team (the conference's stage, the announcement, unlocking
 payments, distributing a survey) answer with a preview first and run only when called again with

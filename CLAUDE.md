@@ -1162,6 +1162,10 @@ bun run preview
   never passed, `String` / `JSON` arguments only when `textArguments` declares them to be about
   things, `outward` / `outwardArguments` make the tool preview until `confirm: true`. A mutation
   without the marker is unreachable through MCP. Writing notes about people stays in the UI.
+  Saved views opt in as shared views only; the state an assistant writes is checked by
+  `viewStateGuard.ts`, which classifies every column of the team tables like `classification.ts`
+  does fields (a new table column needs an entry there): only visible columns are filtered, sorted
+  or grouped by, and only known column ids, operators and options pass.
 - **Reads** are `graphql_query` (one read-only query, guarded, redacted), `graphql_schema`, and the
   task tools in `curatedReads.ts` (pure, tested). Every call is written to `mcp_audit_entry`
   (shown on `team/ai-access`); one about a conference the caller may not use is refused unlogged.

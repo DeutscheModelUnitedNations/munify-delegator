@@ -42,7 +42,7 @@ An assistant knows people only as ids and cannot tell you who is meant. Ask it f
 
 For common questions an assistant has tools of its own: an overview of the participants with their paperwork, counts by up to three attributes, and an overview of the assignment with seats, holders and warnings. Beyond that it can ask any read query the team area's pages use.
 
-It can change what the team's pages change: committees, roles and seat planning, the assignment and sighting, the schedule, surveys, participant statuses, payments and the conference's settings. An assistant does not write notes or other texts about people. Those stay in the team area.
+It can change what the team's pages change: committees, roles and seat planning, the assignment and sighting, the schedule, surveys, participant statuses, payments, the conference's settings and the tables' shared views. An assistant filters, sorts and groups a view only by columns without personal data, and saves no personal views. An assistant does not write notes or other texts about people. Those stay in the team area.
 
 :::warning Preview first, then run
 An assistant does not run right away what reaches people outside the team. That covers, for example, the conference stage, the conference information, unlocking payments, postal registration or paper submission, participant statuses and payments that trigger emails, and distributing a survey. The assistant first gets a preview and has to confirm the call explicitly. A good assistant asks you before it does. Only confirm what you would do yourself.

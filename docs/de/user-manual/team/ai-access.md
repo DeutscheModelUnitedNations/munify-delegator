@@ -42,7 +42,7 @@ Ein Assistent kennt Personen nur als IDs und kann dir nicht sagen, wer gemeint i
 
 Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Teilnehmenden mit ihren Formalitäten, Zählungen nach bis zu drei Merkmalen und eine Übersicht der Zuteilung mit Plätzen, Inhaber\*innen und Warnungen. Darüber hinaus kann er jede lesende Abfrage stellen, die auch die Seiten des Team-Bereichs nutzen.
 
-Ändern kann er, was die Seiten des Teams ändern: Gremien, Rollen und Sitzplanung, die Zuteilung und Sichtung, den Zeitplan, Umfragen, Status von Teilnehmenden, Zahlungen und die Einstellungen der Konferenz. Notizen und andere Texte über Personen schreibt ein Assistent nicht, die bleiben im Team-Bereich.
+Ändern kann er, was die Seiten des Teams ändern: Gremien, Rollen und Sitzplanung, die Zuteilung und Sichtung, den Zeitplan, Umfragen, Status von Teilnehmenden, Zahlungen, die Einstellungen der Konferenz und die geteilten Ansichten der Tabellen. Eine Ansicht filtert, sortiert und gruppiert ein Assistent nur nach Spalten ohne personenbezogene Daten, persönliche Ansichten speichert er nicht. Notizen und andere Texte über Personen schreibt ein Assistent nicht, die bleiben im Team-Bereich.
 
 :::warning Erst Vorschau, dann ausführen
 Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören etwa der Konferenzstatus, die Konferenzinformationen, das Freischalten von Zahlungen, der postalischen Anmeldung oder der Papiereinreichung, Status von Teilnehmenden und Zahlungen, die E-Mails auslösen, und das Verteilen einer Umfrage. Der Assistent bekommt zuerst eine Vorschau und muss den Aufruf ausdrücklich bestätigen. Ein guter Assistent fragt dich vorher. Bestätige nur, was du selbst so tun würdest.

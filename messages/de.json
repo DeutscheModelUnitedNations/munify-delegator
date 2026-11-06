@@ -2852,6 +2852,8 @@
 	"tabExplanationPayments": "Bankverbindung für die <strong>Teilnahmegebühren</strong>. Diese Informationen werden Teilnehmenden angezeigt, wenn sie ihre Zahlung tätigen.",
 	"tabExplanationStatus": "Der <strong>Konferenzstatus</strong> bestimmt, welche Funktionen für Teilnehmende verfügbar sind. Die <strong>Feature-Schalter</strong> aktivieren oder deaktivieren einzelne Funktionen unabhängig vom Status.",
 	"tableSize": "Tabellengröße",
+	"tableViewAssistantPersonal": "Ein KI-Assistent kann nur geteilte Ansichten speichern; persönliche Ansichten speicherst du in der App.",
+	"tableViewAssistantState": "Ein KI-Assistent kann eine Ansicht nur nach Spalten ohne personenbezogene Daten filtern, sortieren und gruppieren: {details}",
 	"tableViewDefaultNeedsShared": "Nur geteilte Ansichten können Standard für alle sein; wähle deine eigene als „Mein Standard“.",
 	"tableViewGlobalSharedAdminsOnly": "Geteilte Ansichten für alle Konferenzen können nur Systemadministrator*innen speichern.",
 	"tableViewNameRequired": "Gib der Ansicht einen Namen.",
