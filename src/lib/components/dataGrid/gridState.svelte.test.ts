@@ -155,4 +155,20 @@ describe('createGridState', async () => {
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(grid.query(['Kiel'])).toMatchObject({ grouping: [{ column: 'city' }], path: ['Kiel'] });
 	});
+
+	it('leaves grouping levels on columns that cannot group out of the queries', async () => {
+		const grid = createGridState<Row>({
+			columns: () => [
+				...columns,
+				{ id: 'email', type: 'text' as const, label: 'Email', groupable: false }
+			],
+			initial: { view: null, saved: base, state: structuredClone(base), search: '', page: 1 },
+			views: () => [],
+			rowId: (row) => row.id
+		});
+		// a saved view or a URL from before the column stopped being groupable
+		grid.setGrouping([{ column: 'email' }, { column: 'gone' }, { column: 'city' }]);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(grid.query().grouping).toEqual([{ column: 'city' }]);
+	});
 });
