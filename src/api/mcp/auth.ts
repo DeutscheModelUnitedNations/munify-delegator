@@ -19,6 +19,16 @@ import { logger } from '#lib/logger';
  * checked here against the provider's keys. The token's `sub` is the user's id.
  */
 
+/**
+ * Whether a route path (see `routePath`) is the MCP endpoint. It checks its own bearer tokens,
+ * issued to whichever assistant connects, for the resource `MCP_RESOURCE`; the session library
+ * takes any bearer token for one of the app's own and would refuse every one of them with a 401
+ * before the endpoint is reached, so the OIDC handle passes this path by.
+ */
+export function isMcpEndpoint(path: string) {
+	return path === '/mcp' || path === '/mcp/';
+}
+
 /** The MCP server's public URL, or undefined while it is switched off. */
 export function mcpResourceUrl() {
 	return MCP_RESOURCE ? new URL(MCP_RESOURCE) : undefined;
@@ -35,6 +45,18 @@ type Provider = z.infer<typeof discoverySchema> & {
 	document: Record<string, unknown>;
 };
 
+/**
+ * Where the provider's discovery document is. `PUBLIC_OIDC_AUTHORITY` may be the issuer
+ * (`https://logto.example/oidc`) or the document itself; like openid-client, which the sign-in uses,
+ * an issuer gets `/.well-known/openid-configuration` appended (OIDC Discovery §4).
+ */
+export function discoveryUrl(authority: string) {
+	const url = new URL(authority);
+	if (url.href.includes('/.well-known/')) return url;
+	url.pathname = `${url.pathname.replace(/\/+$/, '')}/.well-known/openid-configuration`;
+	return url;
+}
+
 let provider: Promise<Provider> | undefined;
 
 /** How long the provider's discovery may take before a request gives up (and the next retries). */
@@ -44,7 +66,7 @@ const DISCOVERY_TIMEOUT_MS = 10_000;
 function oidcProvider(): Promise<Provider> {
 	provider ??= (async () => {
 		// The signal also ends reading the body, so a stalled provider cannot hold every request.
-		const response = await fetch(PUBLIC_OIDC_AUTHORITY, {
+		const response = await fetch(discoveryUrl(PUBLIC_OIDC_AUTHORITY), {
 			signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS)
 		});
 		if (!response.ok) throw new Error(`OIDC discovery answered ${response.status}`);
