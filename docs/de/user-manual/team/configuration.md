@@ -20,7 +20,7 @@ Welche Seite du siehst, hängt nur von deinen Rollen in **dieser** Konferenz ab.
 | Bereich                                                                                                       | Wer ihn ändern darf                                                |
 | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | **Einstellungen** öffnen                                                                                      | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt** |
-| **Allgemeines**, **Überweisungsinformationen**, **Höchstzahl an Plätzen pro Schule**                          | **Projektleitung**                                                 |
+| **Allgemeines**, **Überweisungsinformationen**, die Grenzen der Schulregeln                                   | **Projektleitung**                                                 |
 | **Status & Funktionen**, **Links & Inhalte**, Postadresse, Vorlagen, Anordnung auf den Vorlagen, Resolutionen | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt** |
 | Gremien anlegen und löschen                                                                                   | **Projektleitung**                                                 |
 | Gremien und Themen bearbeiten                                                                                 | **Projektleitung**, **Leitung Inhalt**                             |
@@ -95,7 +95,12 @@ Unter **Funktionen** schaltest du einzelne Teile unabhängig von der Phase frei:
 - **Papier-Einreichung geöffnet**: Teilnehmende können Papiere zu den Themen ihrer Gremien einreichen.
 - **Kalender für Teilnehmende anzeigen**: Teilnehmende sehen den [Zeitplan](../participant/dashboard#schedule). Das Team sieht ihn immer.
 
-Im selben Reiter steht die **Höchstzahl an Plätzen pro Schule** (anfangs 16). Die Zuteilung zählt die Plätze jeder Person nach ihrer eigenen Schule und warnt, wenn eine Schule mehr bekäme. Sie blockiert nichts. Leer lassen heißt keine Grenze. Ändern kann den Wert nur die Projektleitung.
+Im selben Reiter stehen die Grenzen der Schulregeln, die nur die Projektleitung ändern kann:
+
+- **Gemeinsame Entscheidung bis Gruppengröße** (anfangs 16): Bis zu so vielen Bewerbenden einer Betreuungsperson von derselben Schule bekommen alle einen Platz oder niemand.
+- **Garantierte Plätze pro Auslandsschule** (anfangs 12): So viele Personen einer Auslandsschule können höchstens einen garantierten Platz bekommen.
+
+Die Zuteilung warnt, wenn ein Entwurf eine Regel verletzt, und blockiert nichts. Leer lassen schaltet eine Regel ab.
 
 ## Dokumente und Vorlagen {#documents}
 

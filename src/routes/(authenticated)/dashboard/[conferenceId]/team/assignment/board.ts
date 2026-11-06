@@ -602,7 +602,71 @@ export async function fetchAssignmentRoles(conferenceId: string) {
 	return { committees, nonStateActors, customRoles };
 }
 
-/** How many seats one school may get (`null` for no limit), live. */
-export function fetchSchoolSeatLimit(conferenceId: string) {
-	return client.liveQuery.conference({ __args: { id: conferenceId }, maxSeatsPerSchool: true });
+const ruleSchool = { id: true, name: true, isForeignSchool: true } as const;
+
+/**
+ * What the school rules are checked against (`schoolRules.ts`), live: the conference's limits,
+ * every supervisor whose students applied with those students and their schools, and the
+ * applications marked required or excluded, with their people's schools.
+ */
+export async function fetchSchoolRules(conferenceId: string) {
+	const applied = { applied: { eq: true } };
+	const [limits, supervisors, reviews] = await Promise.all([
+		client.liveQuery.conference({
+			__args: { id: conferenceId },
+			maxCollectiveGroupSize: true,
+			maxGuaranteedSeatsPerForeignSchool: true
+		}),
+		client.liveQuery.conferenceSupervisors({
+			__args: {
+				where: {
+					conference: { id: { eq: conferenceId } },
+					OR: [
+						{ supervisedDelegationMembers: { delegation: applied } },
+						{ supervisedSingleParticipants: applied }
+					]
+				}
+			},
+			id: true,
+			user: { givenName: true, familyName: true },
+			supervisedDelegationMembers: {
+				id: true,
+				delegation: { id: true, applied: true },
+				school: ruleSchool
+			},
+			supervisedSingleParticipants: { id: true, applied: true, school: ruleSchool }
+		}),
+		client.liveQuery.assignmentReviews({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					OR: [{ required: { eq: true } }, { disqualified: { eq: true } }]
+				}
+			},
+			delegationId: true,
+			singleParticipantId: true,
+			required: true,
+			disqualified: true,
+			delegation: { members: { school: ruleSchool } },
+			singleParticipant: { school: ruleSchool }
+		})
+	]);
+	return { limits, supervisors, reviews };
+}
+
+type SchoolRules = Awaited<ReturnType<typeof fetchSchoolRules>>;
+
+/**
+ * Plain copies of what the school rules are checked against, with the limits (`null` switches a
+ * rule off). Create one per component and call it in a `$derived` (see `seatedSnapshot`).
+ */
+export function schoolRulesSnapshot() {
+	const supervisors = liveSnapshot<SchoolRules['supervisors'][number]>();
+	const reviews = liveSnapshot<SchoolRules['reviews'][number]>();
+	return (rules: SchoolRules) => ({
+		supervisors: supervisors(rules.supervisors),
+		reviews: reviews(rules.reviews),
+		groupLimit: rules.limits.maxCollectiveGroupSize ?? null,
+		guaranteeLimit: rules.limits.maxGuaranteedSeatsPerForeignSchool ?? null
+	});
 }

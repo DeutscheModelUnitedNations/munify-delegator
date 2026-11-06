@@ -123,15 +123,15 @@ Each part then shows up as a group of its own size and is assigned on its own. A
 
 The result lands in the draft just like an assignment by hand, so you can check and change it. **Reset roles with 3 seats** takes the role off every group in the draft that sits on a role with that many seats.
 
-### Seats per school
+### School rules
 
-Below the pool, **Seats per school** shows the schools close to the conference's limit. Every person counts for their own school. When you give a group a role that takes a school past the limit, the board warns you. It does not stop the assignment. You set the limit in the [conference settings](./configuration) under **Maximum seats per school**, empty means no limit.
+Below the pool, **School rules** shows where the draft breaks the conference's rules about schools. The applicants of one supervisor from the same school all get a seat or none do, up to a group size of 16. People of a school abroad get at most 12 guaranteed seats per school, and every person counts for their own school. The board warns about groups of which only some would get a seat or are disqualified, and about schools abroad with too many guaranteed seats. It does not stop the assignment. You set the limits in the [conference settings](./configuration), leaving one empty switches its rule off.
 
 ## Finish and release {#finish-and-release}
 
 In the **Finish** tab you check what the draft does, apply it and release the assignment.
 
-![The finish tab with the planned changes, the seats per school and the release](shot:team/assignment-finish)
+![The finish tab with the planned changes and the release](shot:team/assignment-finish)
 
 ### Checking the planned changes
 
@@ -140,7 +140,7 @@ Under **Planned changes** the page counts **Role changes**, **Merges**, **New de
 Above it are problems and warnings:
 
 - **These problems prevent applying**: a role planned with more people than seats, a split that leaves members without a part, or a delegation that would be dissolved but has already submitted papers.
-- Warnings that do not prevent applying: an individual role given more often than it has seats, applications marked **Must get a seat** that would be left out (checked for the whole conference, not just the board), **Every seat would be taken** and **Schools over the seat limit**.
+- Warnings that do not prevent applying: an individual role given more often than it has seats, applications marked **Must get a seat** that would be left out (checked for the whole conference, not just the board), **Every seat would be taken**, **Groups are split** and **Too many guaranteed seats at schools abroad**.
 
 :::tip Leave a few seats free
 A few free seats help with the unforeseen and are easy to fill from the waiting list later. Whoever moves up from the waiting list gets the email **Moved up from the waiting list** once the assignment is released.

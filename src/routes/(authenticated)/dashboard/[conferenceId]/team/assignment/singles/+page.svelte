@@ -17,7 +17,6 @@
 	import {
 		fetchAssignmentDraft,
 		fetchAssignmentRoles,
-		fetchSchoolSeatLimit,
 		fetchSeatedApplications,
 		fetchSinglePoolPage,
 		type BoardSingleParticipant,
@@ -32,9 +31,7 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '../schoolSeats';
-	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
-	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
+	import SchoolRuleWarnings from '../SchoolRuleWarnings.svelte';
 	import type { PageProps } from './$types';
 	import { untrack } from 'svelte';
 
@@ -46,15 +43,13 @@
 
 	// Nothing here depends on the draft through a query: the draft brings the applications it
 	// touches along, so a move arrives as one live update and asks for nothing afterwards.
-	const [roles, draft, seated, schoolLimit] = $derived(
+	const [roles, draft, seated] = $derived(
 		await Promise.all([
 			fetchAssignmentRoles(conferenceId),
 			fetchAssignmentDraft(conferenceId),
-			fetchSeatedApplications(conferenceId),
-			fetchSchoolSeatLimit(conferenceId)
+			fetchSeatedApplications(conferenceId)
 		])
 	);
-	const maxSeatsPerSchool = $derived(schoolLimit.maxSeatsPerSchool ?? null);
 	// Plain copies of the live results the board works over (see `liveSnapshot`).
 	const roleSnapshot = {
 		committees: liveSnapshot<(typeof roles.committees)[number]>(),
@@ -132,24 +127,6 @@
 	$effect(() => moves.settle());
 
 	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));
-	const schoolLookups = $derived(
-		schoolLookupsOf({ delegations: seatedSet.delegations, singles: singleParticipants })
-	);
-	const schoolCounts = $derived(schoolSeats({ view, lookups: schoolLookups }));
-
-	/** Warns (never blocks) when a single participant taking a role takes their school past the limit. */
-	const holdsRole = (singleParticipantId: string) =>
-		view.singles.some(
-			(single) => single.singleParticipantId === singleParticipantId && !!single.roleId
-		);
-
-	function warnAboutSchool(singleParticipantId: string) {
-		const single = { delegationId: null, singleParticipantId, memberIds: [] };
-		const added = holdsRole(singleParticipantId)
-			? []
-			: schoolsOfGroup({ group: single, lookups: schoolLookups });
-		warnAboutSchoolSeats({ counts: schoolCounts, added, limit: maxSeatsPerSchool });
-	}
 	const openSingles = $derived(view.singles.filter((single) => !single.roleId));
 	// a search's matches are what its pages hold
 	const pool = $derived(
@@ -195,7 +172,6 @@
 			container: dropState.targetContainer
 		});
 		if (!action) return;
-		if (action.type === 'role' && action.roleId) warnAboutSchool(singleParticipantId);
 		void moves.track({
 			key: singleParticipantId,
 			change: () =>
@@ -285,7 +261,7 @@
 				{onDrop}
 				onRevert={revert}
 			/>
-			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} nearLimitOnly />
+			<SchoolRuleWarnings {conferenceId} plan={view} variant="board" />
 		</div>
 
 		<section

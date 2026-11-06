@@ -144,6 +144,14 @@
 					}))
 	);
 
+	// The people's schools, for the school rules
+	const schools = $derived(
+		detail &&
+			(detail.kind === 'single'
+				? { singleParticipant: { school: detail.single.school } }
+				: { delegation: { members: detail.delegation.members } })
+	);
+
 	// The cards around the one on top are what the next key presses open; they are read ahead,
 	// reviews included, nearest first.
 	const PREFETCH_AHEAD = 5;
@@ -261,7 +269,7 @@
 			total={searchShown.length}
 			onSelect={pick}
 		/>
-	{:else if current && currentKind && application}
+	{:else if current && currentKind && application && schools}
 		{#key current.id}
 			<div
 				class="sm:h-[46rem] sm:max-h-[75vh]"
@@ -275,6 +283,8 @@
 					{application}
 					{startConference}
 					onReview={reviewCurrent}
+					{conferenceId}
+					{schools}
 				/>
 			</div>
 		{/key}

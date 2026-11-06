@@ -6,6 +6,7 @@ const schoolRowSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	city: z.string().nullable(),
+	foreign: z.boolean(),
 	delegations: z.number(),
 	participants: z.number(),
 	applied: z.number(),

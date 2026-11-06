@@ -133,7 +133,12 @@ describe('countGroupingProblem', () => {
 
 describe('assignmentOverview', () => {
 	const data = assignmentDataSchema.parse({
-		conference: { state: 'PREPARATION', assignmentReleased: false, maxSeatsPerSchool: 16 },
+		conference: {
+			state: 'PREPARATION',
+			assignmentReleased: false,
+			maxCollectiveGroupSize: 16,
+			maxGuaranteedSeatsPerForeignSchool: 12
+		},
 		committees: [
 			{ id: 'ga', abbreviation: 'GA', numOfSeatsPerDelegation: 2, roles: [{ id: 'deu' }] },
 			{ id: 'sc', abbreviation: 'SC', numOfSeatsPerDelegation: 1, roles: [{ id: 'deu' }] }

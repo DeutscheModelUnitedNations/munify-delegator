@@ -33,14 +33,11 @@
 		fetchAssignmentRoles,
 		fetchDelegationPoolPage,
 		fetchDelegationPoolSizes,
-		fetchSchoolSeatLimit,
 		fetchSeatedApplications,
 		type BoardDelegation,
 		seatedSnapshot
 	} from '../board';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '../schoolSeats';
-	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
-	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
+	import SchoolRuleWarnings from '../SchoolRuleWarnings.svelte';
 	import { boardParams, withBoardParams } from '../boardParams';
 	import BoardToolbar from '../BoardToolbar.svelte';
 	import BusyOverlay from '../BusyOverlay.svelte';
@@ -76,7 +73,7 @@
 
 	// Nothing here depends on the draft through a query: the draft brings the applications it
 	// touches along, so a move arrives as one live update and asks for nothing afterwards.
-	const [roles, draft, seated, poolCounts, schoolLimit] = $derived(
+	const [roles, draft, seated, poolCounts] = $derived(
 		await Promise.all([
 			fetchAssignmentRoles(routeParams.conferenceId),
 			fetchAssignmentDraft(routeParams.conferenceId),
@@ -84,11 +81,9 @@
 			fetchDelegationPoolSizes({
 				conferenceId: routeParams.conferenceId,
 				showDisqualified: !!params.disqualified
-			}),
-			fetchSchoolSeatLimit(routeParams.conferenceId)
+			})
 		])
 	);
-	const maxSeatsPerSchool = $derived(schoolLimit.maxSeatsPerSchool ?? null);
 	// Plain copies of the live results the board works over (see `liveSnapshot`): everything
 	// below reads plain arrays, and `memoizeLast` hands back the last board when they are the same.
 	const roleSnapshot = {
@@ -234,15 +229,6 @@
 
 	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));
 	const singleById = $derived(new Map(seatedSingles.map((s) => [s.id, s])));
-	const schoolLookups = $derived(schoolLookupsOf({ delegations, singles: seatedSingles }));
-	// Every group holding a role is seated or touched by the draft, so the seated rows know them all.
-	const schoolCounts = $derived(schoolSeats({ view, lookups: schoolLookups }));
-
-	/** Warns (never blocks) when a group taking a role takes its school past the limit. */
-	function warnAboutSchool(group: AssignmentGroup) {
-		const added = hasRole(group) ? [] : schoolsOfGroup({ group, lookups: schoolLookups });
-		warnAboutSchoolSeats({ counts: schoolCounts, added, limit: maxSeatsPerSchool });
-	}
 
 	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */
 	const isBadFit = (group: AssignmentGroup) => {
@@ -266,13 +252,11 @@
 		});
 		if (!action) return;
 		if (action.type === 'full') toast.error(m.assignmentNotEnoughSeats());
-		else {
-			if (action.target) warnAboutSchool(action.group);
+		else
 			void moves.track({
 				key: action.group.key,
 				change: () => assignGroup({ group: action.group, target: action.target })
 			});
-		}
 	}
 
 	async function run({
@@ -390,7 +374,7 @@
 					{/snippet}
 				</PoolList>
 			</PoolSection>
-			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} nearLimitOnly />
+			<SchoolRuleWarnings conferenceId={routeParams.conferenceId} plan={view} variant="board" />
 		</div>
 
 		<section

@@ -974,12 +974,23 @@ bun run preview
   The team's schools page (the `schools` table of the table engine, see "Data tables") and
   `schoolMetrics` (per conference: registered, applied, seated, attended, from the waiting list)
   are participant care's.
-- **Seat limit per school:** `conference.maxSeatsPerSchool` (default 16, null for none). The
-  assignment board counts the seats its plan gives each school - per person, by their own school
-  (`schoolSeats` / `schoolsOfGroup` with `schoolLookupsOf`; someone without a school counts for
-  none) - and warns past the limit; it never blocks. `schoolMetrics`, the schools page and the
-  statistics (`statistics_schools`, delegation members and single participants per school) count
-  people too.
+- **School rules** (`team/assignment/schoolRules.ts`, pure; they only warn, never block):
+  - **Decided together:** the applied students of one supervisor from one school are a group
+    (`collectiveGroups`, read through `conferenceSupervisor.supervisedDelegationMembers` /
+    `supervisedSingleParticipants`; someone with two supervisors is in two groups, without one in
+    none). Up to `conference.maxCollectiveGroupSize` (default 16, null switches it off) they all get
+    a seat or none: the board, the summary and the apply dialog warn about a group the plan seats
+    only partly, or the sighting excluded only partly (`collectiveGroupProblems`). Bigger groups
+    get nothing special, and the automatic distribution ignores the rule.
+  - **Guaranteed seats abroad:** `school.isForeignSchool` (set by participant care on the school's
+    page) marks an Auslandsschule. Its people in applications marked required count against
+    `conference.maxGuaranteedSeatsPerForeignSchool` (default 12, null for none), each for their
+    own school (`guaranteedSeatsAbroad`); the sighting card shows the count as it marks, the board
+    and summary warn past it.
+  - `fetchSchoolRules` (`team/assignment/board.ts`) is the live data for both, `SchoolRuleWarnings`
+    and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
+    statistics (`statistics_schools`, delegation members and single participants per school) count
+    people too.
 - The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools of the people in a
   conference's applications; a suggestion's variants point at schools, and merging goes through
   `mergeSchools`. The sighting's school filter matches an application when any of its people has

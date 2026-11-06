@@ -52,8 +52,10 @@ export const conferenceSettingsFormSchema = z
 			message: m.pleaseEnterAValidDate()
 		}),
 		registrationDeadlineGracePeriodMinutes: z.coerce.number(),
-		/** Seats one school may get before the assignment warns; empty for no limit. */
-		maxSeatsPerSchool: z.number().int().min(1).nullish(),
+		/** Up to how many students of one supervisor and school are decided on together; empty for none. */
+		maxCollectiveGroupSize: z.number().int().min(1).nullish(),
+		/** Guaranteed seats per Auslandsschule before the assignment warns; empty for no limit. */
+		maxGuaranteedSeatsPerForeignSchool: z.number().int().min(0).nullish(),
 		/** The age range on the first conference day; empty switches a limit off. */
 		participantMinAge: ageLimitSchema(),
 		participantMaxAge: ageLimitSchema(),
@@ -167,16 +169,22 @@ export type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;
 
 /** The settings' limits as the mutation takes them: an emptied field lifts its limit (`null`). */
 export function limitArgs({
-	maxSeatsPerSchool,
+	maxCollectiveGroupSize,
+	maxGuaranteedSeatsPerForeignSchool,
 	participantMinAge,
 	participantMaxAge,
 	supervisorMinAge
 }: Pick<
 	ConferenceSettings,
-	'maxSeatsPerSchool' | 'participantMinAge' | 'participantMaxAge' | 'supervisorMinAge'
+	| 'maxCollectiveGroupSize'
+	| 'maxGuaranteedSeatsPerForeignSchool'
+	| 'participantMinAge'
+	| 'participantMaxAge'
+	| 'supervisorMinAge'
 >) {
 	return {
-		maxSeatsPerSchool: maxSeatsPerSchool ?? null,
+		maxCollectiveGroupSize: maxCollectiveGroupSize ?? null,
+		maxGuaranteedSeatsPerForeignSchool: maxGuaranteedSeatsPerForeignSchool ?? null,
 		participantMinAge: participantMinAge ?? null,
 		participantMaxAge: participantMaxAge ?? null,
 		supervisorMinAge: supervisorMinAge ?? null

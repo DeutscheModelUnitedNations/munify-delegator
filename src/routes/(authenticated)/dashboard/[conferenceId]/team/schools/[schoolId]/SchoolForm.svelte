@@ -8,6 +8,7 @@
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
 	import AddressSection from '#lib/components/form/AddressSection.svelte';
 	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
@@ -31,6 +32,7 @@
 		city: true,
 		region: true,
 		country: true,
+		isForeignSchool: true,
 		contactName: true,
 		contactEmail: true,
 		contactPhone: true,
@@ -46,6 +48,7 @@
 		city: stored.city ?? undefined,
 		region: stored.region ?? undefined,
 		country: stored.country ?? undefined,
+		isForeignSchool: stored.isForeignSchool,
 		contactName: stored.contactName ?? undefined,
 		contactEmail: stored.contactEmail ?? undefined,
 		contactPhone: stored.contactPhone ?? undefined,
@@ -77,6 +80,8 @@
 <Form {form}>
 	<FormSection title={m.school()} icon="school">
 		<FormTextInput {form} name="name" label={m.name()} />
+		<FormCheckbox {form} name="isForeignSchool" label={m.schoolIsForeign()} />
+		<p class="text-base-content/60 text-sm">{m.schoolIsForeignHint()}</p>
 	</FormSection>
 	<AddressSection {form} fields={ADDRESS_FIELDS} rules={address} />
 	<FormSection title={m.schoolContact()} icon="address-book" description={m.schoolContactHint()}>

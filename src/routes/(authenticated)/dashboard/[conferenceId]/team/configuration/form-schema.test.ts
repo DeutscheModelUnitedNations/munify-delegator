@@ -5,13 +5,15 @@ describe('limitArgs', () => {
 	it('lifts an emptied limit and keeps a set one', () => {
 		expect(
 			limitArgs({
-				maxSeatsPerSchool: undefined,
+				maxCollectiveGroupSize: undefined,
+				maxGuaranteedSeatsPerForeignSchool: 0,
 				participantMinAge: 15,
 				participantMaxAge: null,
 				supervisorMinAge: 21
 			})
 		).toEqual({
-			maxSeatsPerSchool: null,
+			maxCollectiveGroupSize: null,
+			maxGuaranteedSeatsPerForeignSchool: 0,
 			participantMinAge: 15,
 			participantMaxAge: null,
 			supervisorMinAge: 21

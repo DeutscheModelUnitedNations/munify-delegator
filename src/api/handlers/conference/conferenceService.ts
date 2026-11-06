@@ -176,8 +176,9 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				showCalendar: nullToUndefined(args.showCalendar),
 				timezone: nullToUndefined(args.timezone),
 				nametagBinCount: nullToUndefined(args.nametagBinCount),
-				// null lifts the limit
-				maxSeatsPerSchool: args.maxSeatsPerSchool,
+				// null switches the rule off, or lifts the limit
+				maxCollectiveGroupSize: args.maxCollectiveGroupSize,
+				maxGuaranteedSeatsPerForeignSchool: args.maxGuaranteedSeatsPerForeignSchool,
 				// null switches the limit off
 				participantMinAge: args.participantMinAge,
 				participantMaxAge: args.participantMaxAge,

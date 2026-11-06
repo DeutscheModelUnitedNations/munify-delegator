@@ -1,0 +1,1 @@
+ALTER TABLE "conference" DROP COLUMN "max_seats_per_school";

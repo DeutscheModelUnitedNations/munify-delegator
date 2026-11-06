@@ -20,7 +20,7 @@ Which pages you see depends only on your roles in **this** conference. A page yo
 | Area                                                                                                        | Who may change it                                              |
 | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Opening **Settings**                                                                                        | **Project Management**, **Participant Care**, **Content Lead** |
-| **General**, **Banking Information**, **Maximum seats per school**                                          | **Project Management**                                         |
+| **General**, **Banking Information**, the limits of the school rules                                        | **Project Management**                                         |
 | **Status & Features**, **Links & Content**, postal address, templates, layout on the templates, resolutions | **Project Management**, **Participant Care**, **Content Lead** |
 | Creating and deleting committees                                                                            | **Project Management**                                         |
 | Editing committees and agenda items                                                                         | **Project Management**, **Content Lead**                       |
@@ -95,7 +95,12 @@ Under **Features** you unlock individual parts regardless of the stage:
 - **Paper Submission Open**: participants can submit papers on their committees' agenda items.
 - **Show calendar for participants**: participants see the [schedule](../participant/dashboard#schedule). The team always sees it.
 
-The same tab holds the **Maximum seats per school** (16 to begin with). The assignment counts each person's seat by their own school and warns when a school would get more. It never blocks anything. Leave it empty for no limit. Only Project Management can change it.
+The same tab holds the limits of the school rules, which only Project Management can change:
+
+- **Decide groups together up to** (16 to begin with): up to this many applicants of one supervisor from the same school, all of them get a seat or none do.
+- **Guaranteed seats per school abroad** (12 to begin with): at most this many people of one school abroad can get a guaranteed seat.
+
+The assignment warns when a draft breaks a rule and never blocks anything. Leaving a limit empty switches its rule off.
 
 ## Documents and templates {#documents}
 

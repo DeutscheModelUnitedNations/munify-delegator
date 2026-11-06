@@ -10,7 +10,7 @@ import { col, wordsIn, type DataTableSource, type SourceArgs } from '../source';
 function rows(args: SourceArgs) {
 	const { conferenceId } = args;
 	return sql`
-		select s.id as id, s.name as name, s.city as city,
+		select s.id as id, s.name as name, s.city as city, s.is_foreign_school as foreign,
 			count(distinct p.delegation_id)::int as delegations,
 			(count(*) filter (where p.kind in ('MEMBER', 'SINGLE')))::int as participants,
 			(count(*) filter (where p.kind in ('MEMBER', 'SINGLE') and p.applied))::int as applied,

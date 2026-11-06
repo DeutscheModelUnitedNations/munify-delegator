@@ -87,7 +87,9 @@ type EditableSchoolField =
 	| 'notes';
 
 /** The fields of a school the team edits; an omitted field stays, `null` clears it (not the name). */
-export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null };
+export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null } & {
+	isForeignSchool?: boolean;
+};
 
 /**
  * Changes the given fields of a school the caller may update (`assertCanUpdateSchools`); an
@@ -172,6 +174,8 @@ export async function mergeSchools({
 				city: fill('city'),
 				region: fill('region'),
 				country: fill('country'),
+				// one of them known to be abroad is enough
+				isForeignSchool: rows.some((row) => row.isForeignSchool),
 				website: fill('website'),
 				contactName: fill('contactName'),
 				contactEmail: fill('contactEmail'),

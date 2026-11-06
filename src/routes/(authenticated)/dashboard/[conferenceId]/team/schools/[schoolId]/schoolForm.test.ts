@@ -49,13 +49,15 @@ describe('toUpdateSchoolArgs', () => {
 					name: ' Gymnasium Kiel ',
 					country: null,
 					notes: ' kommt jedes Jahr ',
-					city: ''
+					city: '',
+					isForeignSchool: true
 				}
 			})
 		).toMatchObject({
 			id: 's1',
 			name: 'Gymnasium Kiel',
 			country: null,
+			isForeignSchool: true,
 			city: null,
 			notes: 'kommt jedes Jahr'
 		});

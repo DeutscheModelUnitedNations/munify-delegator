@@ -245,7 +245,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'location',
 			'logoFileId',
 			'longTitle',
-			'maxSeatsPerSchool',
+			'maxCollectiveGroupSize',
+			'maxGuaranteedSeatsPerForeignSchool',
 			'mcpEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
@@ -476,7 +477,7 @@ const FIELDS: Record<string, TypeClassification> = {
 
 	// --- Schools: the institution, never its contact person ---------------------------------------
 	School: {
-		visible: [...ROW, 'name', 'city', 'region', 'country', 'website'],
+		visible: [...ROW, 'name', 'city', 'region', 'country', 'isForeignSchool', 'website'],
 		redacted: ['street', 'apartment', 'zip', 'contactName', 'contactEmail', 'contactPhone', 'notes']
 	},
 	ConferenceSchools: {

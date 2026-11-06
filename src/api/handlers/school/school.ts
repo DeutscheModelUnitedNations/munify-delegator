@@ -88,18 +88,27 @@ schemaBuilder.mutationFields((t) => ({
 			city: t.arg.string(),
 			region: t.arg.string(),
 			country: t.arg.string({ description: 'ISO 3166-1 alpha-3' }),
+			isForeignSchool: t.arg.boolean({
+				description:
+					'An Auslandsschule, whose guaranteed seats are limited by `conference.maxGuaranteedSeatsPerForeignSchool`.'
+			}),
 			website: t.arg.string(),
 			contactName: t.arg({ type: 'PersonName' }),
 			contactEmail: t.arg({ type: 'EmailAddress' }),
 			contactPhone: t.arg({ type: 'PhoneNumber' }),
 			notes: t.arg.string()
 		},
-		resolve: async (query, _root, { id, contactPhone, ...update }, ctx) => {
+		resolve: async (query, _root, { id, contactPhone, isForeignSchool, ...update }, ctx) => {
 			await assertCanUpdateSchools({ ctx, ids: [id] });
 			await updateSchool({
 				id,
 				// stored as E.164, like a person's phone
-				update: { ...update, contactPhone: contactPhone === null ? null : contactPhone?.number }
+				update: {
+					...update,
+					// not nullable: null keeps it
+					isForeignSchool: isForeignSchool ?? undefined,
+					contactPhone: contactPhone === null ? null : contactPhone?.number
+				}
 			});
 			return db.query.school
 				.findFirst(

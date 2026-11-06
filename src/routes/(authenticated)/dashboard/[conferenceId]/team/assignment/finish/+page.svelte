@@ -15,8 +15,7 @@
 		fetchSeatedApplications,
 		seatedSnapshot
 	} from '../board';
-	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '../schoolSeats';
-	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
+	import SchoolRuleWarnings from '../SchoolRuleWarnings.svelte';
 	import { toastError } from '../toastError';
 	import {
 		prioritizedApplicationOf,
@@ -44,8 +43,7 @@
 			fetchAssignmentRoles(params.conferenceId),
 			client.liveQuery.conference({
 				__args: { id: params.conferenceId },
-				assignmentReleased: true,
-				maxSeatsPerSchool: true
+				assignmentReleased: true
 			}),
 			fetchSeatedApplications(params.conferenceId),
 			// every required or prioritizing application, also those the board does not hold: a
@@ -118,16 +116,6 @@
 		roles.customRoles.find((role) => role.id === roleId)?.fontAwesomeIcon ?? undefined;
 
 	const delegationById = $derived(new Map(rows.delegations.map((d) => [d.id, d])));
-	const maxSeatsPerSchool = $derived(conference.maxSeatsPerSchool ?? null);
-	const schoolCounts = $derived(
-		schoolSeats({
-			view,
-			lookups: schoolLookupsOf({ delegations: rows.delegations, singles: rows.singleParticipants })
-		})
-	);
-	const schoolsOver = $derived(
-		schoolsOverLimit({ counts: schoolCounts, limit: maxSeatsPerSchool })
-	);
 	const pendingGroups = $derived(
 		view.groups
 			.filter((group) => group.pending)
@@ -171,25 +159,7 @@
 <div class="flex flex-col gap-6">
 	<ApplyProblems errors={preview.errors} warnings={preview.warnings} {roleName} {customRoleName} />
 	<SeatWarnings {missingRequired} {missedPriorities} {occupancy} />
-	{#if schoolsOver.length > 0}
-		<div class="alert alert-warning alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-school text-xl"></i>
-			<div class="flex flex-col gap-1">
-				<h3 class="font-bold">{m.assignmentSchoolSeatsOverLimitTitle()}</h3>
-				<ul class="list-inside list-disc text-sm">
-					{#each schoolsOver as school (school.schoolId)}
-						<li>
-							{m.assignmentSchoolSeatsWarning({
-								school: school.name,
-								seats: school.seats,
-								limit: maxSeatsPerSchool ?? 0
-							})}
-						</li>
-					{/each}
-				</ul>
-			</div>
-		</div>
-	{/if}
+	<SchoolRuleWarnings conferenceId={params.conferenceId} plan={view} />
 
 	<section class="card bg-base-100 border-base-200 border shadow-sm">
 		<div class="card-body gap-4 max-sm:p-4">
@@ -246,8 +216,6 @@
 		</div>
 	</section>
 
-	<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} />
-
 	<ReleaseCard
 		conferenceId={params.conferenceId}
 		released={conference.assignmentReleased}
@@ -268,6 +236,7 @@
 	>
 		<p>{m.assignmentApplyConfirmText()}</p>
 		<SeatWarnings {missingRequired} {missedPriorities} {occupancy} />
+		<SchoolRuleWarnings conferenceId={params.conferenceId} plan={view} />
 		<p class="text-sm opacity-70">
 			{m.assignmentSeatsFreeAfter({ free: occupancy.free, total: occupancy.total })}
 		</p>

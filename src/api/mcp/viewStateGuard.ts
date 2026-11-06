@@ -98,6 +98,7 @@ export const TABLE_COLUMN_CLASSES: Record<DataTableKey, ColumnClassification> = 
 		visible: [
 			'name',
 			'city',
+			'foreign',
 			'delegations',
 			'participants',
 			'applied',

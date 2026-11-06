@@ -83,10 +83,17 @@
 	</div>
 	<FormTextInput
 		{form}
-		name="maxSeatsPerSchool"
+		name="maxCollectiveGroupSize"
 		type="number"
-		label={m.conferenceMaxSeatsPerSchool()}
-		description={m.conferenceMaxSeatsPerSchoolDescription()}
+		label={m.conferenceMaxCollectiveGroupSize()}
+		description={m.conferenceMaxCollectiveGroupSizeDescription()}
+	/>
+	<FormTextInput
+		{form}
+		name="maxGuaranteedSeatsPerForeignSchool"
+		type="number"
+		label={m.conferenceMaxGuaranteedSeats()}
+		description={m.conferenceMaxGuaranteedSeatsDescription()}
 	/>
 </FormSection>
 

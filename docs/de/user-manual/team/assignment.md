@@ -123,15 +123,15 @@ Jeder Teil erscheint danach als eigene Gruppe seiner Größe und wird einzeln zu
 
 Das Ergebnis landet im Entwurf wie eine Zuteilung von Hand, du kannst es also prüfen und ändern. **Rollen mit 3 Plätzen zurücksetzen** nimmt im Entwurf allen Gruppen ihre Rolle wieder ab, die auf einer Rolle dieser Platzzahl liegen.
 
-### Plätze pro Schule
+### Schulregeln
 
-Unter dem Pool zeigt **Plätze pro Schule** die Schulen, die nahe an der Höchstzahl der Konferenz liegen. Gezählt wird jede Person nach ihrer eigenen Schule. Gibst du einer Gruppe eine Rolle, mit der eine Schule die Grenze überschreitet, warnt das Board. Es verhindert die Zuteilung aber nicht. Die Grenze stellst du in den [Konferenzeinstellungen](./configuration) unter **Höchstzahl an Plätzen pro Schule** ein, leer bedeutet keine Grenze.
+Unter dem Pool zeigt **Schulregeln**, wo der Entwurf die Regeln der Konferenz zu Schulen verletzt. Die Bewerbenden einer Betreuungsperson von derselben Schule bekommen bis zu einer Gruppengröße von 16 alle einen Platz oder niemand. Personen einer Auslandsschule bekommen höchstens 12 garantierte Plätze pro Schule, gezählt wird jede Person nach ihrer eigenen Schule. Das Board warnt bei Gruppen, von denen nur ein Teil einen Platz bekäme oder ausgeschlossen ist, und bei Auslandsschulen mit zu vielen garantierten Plätzen. Es verhindert die Zuteilung aber nicht. Die Grenzen stellst du in den [Konferenzeinstellungen](./configuration) ein, leer schaltet eine Regel ab.
 
 ## Abschluss und Freigabe {#finish-and-release}
 
 Im **Abschluss** prüfst du, was der Entwurf bewirkt, übernimmst ihn und gibst die Zuteilung frei.
 
-![Der Abschluss mit den geplanten Änderungen, Plätzen pro Schule und der Freigabe](shot:team/assignment-finish)
+![Der Abschluss mit den geplanten Änderungen und der Freigabe](shot:team/assignment-finish)
 
 ### Geplante Änderungen prüfen
 
@@ -140,7 +140,7 @@ Unter **Geplante Änderungen** zählt die Seite **Rollenänderungen**, **Zusamme
 Darüber stehen Probleme und Warnungen:
 
 - **Diese Probleme verhindern die Übernahme**: eine Rolle mit mehr Personen als Plätzen, eine Aufteilung, die Mitglieder ohne Teil zurücklässt, oder eine Delegation, die aufgelöst würde, aber schon Paper eingereicht hat.
-- Warnungen, die die Übernahme nicht verhindern: eine Einzelrolle, die öfter vergeben ist, als sie Plätze hat, Bewerbungen mit **Muss einen Platz bekommen**, die leer ausgingen (für die ganze Konferenz geprüft, nicht nur für das Board), **Alle Plätze wären vergeben** und **Schulen über der Platzgrenze**.
+- Warnungen, die die Übernahme nicht verhindern: eine Einzelrolle, die öfter vergeben ist, als sie Plätze hat, Bewerbungen mit **Muss einen Platz bekommen**, die leer ausgingen (für die ganze Konferenz geprüft, nicht nur für das Board), **Alle Plätze wären vergeben**, **Gruppen werden geteilt** und **Zu viele garantierte Plätze an Auslandsschulen**.
 
 :::tip Ein paar Plätze frei lassen
 Ein paar freie Plätze helfen bei Unvorhergesehenem und lassen sich später über die Warteliste füllen. Wer von der Warteliste nachrückt, bekommt nach der Freigabe die E-Mail **Von der Warteliste nachgerückt**.

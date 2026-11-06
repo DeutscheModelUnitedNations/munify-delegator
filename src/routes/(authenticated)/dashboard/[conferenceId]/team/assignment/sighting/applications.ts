@@ -33,7 +33,7 @@ const delegationCard = {
 		user: person,
 		supervisors,
 		// each person's own school: the delegation keeps none
-		school: { name: true }
+		school: { id: true, name: true, isForeignSchool: true }
 	},
 	appliedForRoles: {
 		id: true,
@@ -50,7 +50,7 @@ const delegationCard = {
 /** What a card shows of a single participant. */
 const singleCard = {
 	id: true,
-	school: { name: true },
+	school: { id: true, name: true, isForeignSchool: true },
 	motivation: true,
 	experience: true,
 	user: person,

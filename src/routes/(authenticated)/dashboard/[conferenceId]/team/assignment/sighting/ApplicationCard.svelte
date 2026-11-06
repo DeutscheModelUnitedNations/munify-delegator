@@ -8,6 +8,8 @@
 	import ApplicationDetails from './ApplicationDetails.svelte';
 	import NoteInput from './NoteInput.svelte';
 	import ReviewControls from './ReviewControls.svelte';
+	import SchoolRuleNotes from './SchoolRuleNotes.svelte';
+	import type { GuaranteedApplication } from '../schoolRules';
 
 	/** One application in the sighting: who applied, with what, and the team's rating of it. */
 	interface Props {
@@ -19,9 +21,27 @@
 		review: SightingReview | undefined;
 		/** Changes the review; shown at once */
 		onReview: (change: Partial<SightingReview>) => void;
+		conferenceId: string;
+		/** The application with its people's schools, for the school rules */
+		schools: GuaranteedApplication;
 	}
 
-	let { kind, id, codename, application, startConference, review, onReview }: Props = $props();
+	let {
+		kind,
+		id,
+		codename,
+		application,
+		startConference,
+		review,
+		onReview,
+		conferenceId,
+		schools
+	}: Props = $props();
+	const ruleApplication = $derived(
+		kind === 'delegation'
+			? { ...schools, delegationId: id }
+			: { ...schools, singleParticipantId: id }
+	);
 
 	/** A single participant is one person: their name and facts head the card instead of a table. */
 	const person = $derived(kind === 'single' ? application.people[0] : undefined);
@@ -82,6 +102,8 @@
 				<ReviewControls {review} {onReview} />
 			</div>
 		</div>
+
+		<SchoolRuleNotes {conferenceId} application={ruleApplication} required={!!review?.required} />
 
 		<ApplicationDetails {application} {startConference} {kind} {review} {onReview} />
 

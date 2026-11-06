@@ -92,10 +92,16 @@ export const conference = snakeCase.table('conference', {
 	/** Into how many bins (by the first letter of the nation) the nametag handout is split. */
 	nametagBinCount: integer().default(3).notNull(),
 	/**
-	 * How many seats one school may be given; the assignment warns beyond it. Empty means no
-	 * limit.
+	 * The students of one supervisor from one school who applied are a group; up to this many,
+	 * the team decides on them together (all get a seat or none), and the assignment warns when a
+	 * plan seats only some. A bigger group is treated like everyone else. Empty switches it off.
 	 */
-	maxSeatsPerSchool: integer().default(16),
+	maxCollectiveGroupSize: integer().default(16),
+	/**
+	 * How many people of one Auslandsschule (`school.isForeignSchool`) may be given a guaranteed
+	 * seat (`assignmentReview.required`); the assignment warns beyond it. Empty means no limit.
+	 */
+	maxGuaranteedSeatsPerForeignSchool: integer().default(12),
 	/**
 	 * The age range on the first conference day (`#lib/helpers/plausibilityRules`): participants
 	 * from `participantMinAge` to `participantMaxAge`, supervisors from `supervisorMinAge`. Outside it the entry flows warn and the plausibility page lists people;

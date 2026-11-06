@@ -144,11 +144,15 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 		group: 'general',
 		label: () => m.registrationDeadlineGracePeriod()
 	},
-	maxSeatsPerSchool: {
+	maxCollectiveGroupSize: {
 		group: 'general',
-		label: () => m.conferenceMaxSeatsPerSchool(),
-		format: (value) =>
-			typeof value === 'number' ? String(value) : m.conferenceMaxSeatsPerSchoolNone()
+		label: () => m.conferenceMaxCollectiveGroupSize(),
+		format: (value) => (typeof value === 'number' ? String(value) : m.conferenceSchoolRuleOff())
+	},
+	maxGuaranteedSeatsPerForeignSchool: {
+		group: 'general',
+		label: () => m.conferenceMaxGuaranteedSeats(),
+		format: (value) => (typeof value === 'number' ? String(value) : m.conferenceSchoolRuleOff())
 	},
 	participantMinAge: {
 		group: 'general',

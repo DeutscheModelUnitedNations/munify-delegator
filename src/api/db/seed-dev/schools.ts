@@ -4,8 +4,9 @@ import type { SeedBatch } from './batch';
 /**
  * The schools every conference of the seed draws from. Schools are shared across conferences, so
  * one pool serves them all; the draw favours the first schools of the pool, so a few schools send
- * many people - enough to pass the per-school seat limit - and most send a handful. Some schools
- * carry the details the team keeps (address, contact, notes).
+ * many people - enough to form groups past the size decided together - and most send a handful.
+ * Some schools carry the details the team keeps (address, contact, notes); every tenth is an
+ * Auslandsschule, one of them among the popular ones, so guaranteed seats can pass their limit.
  */
 const POOL_SIZE = 120;
 const pools = new WeakMap<SeedBatch, string[]>();
@@ -17,11 +18,15 @@ function poolOf(batch: SeedBatch) {
 		const id = faker.database.mongodbObjectId();
 		const city = faker.location.city();
 		const detailed = index % 4 === 0;
+		const abroad = index % 10 === 1;
 		batch.school.push({
 			id,
-			name: `${faker.helpers.arrayElement(['Gymnasium', 'Gesamtschule', 'Berufskolleg', 'Schule am'])} ${faker.helpers.arrayElement([city, faker.person.lastName()])}`,
+			name: abroad
+				? `Deutsche Schule ${city}`
+				: `${faker.helpers.arrayElement(['Gymnasium', 'Gesamtschule', 'Berufskolleg', 'Schule am'])} ${faker.helpers.arrayElement([city, faker.person.lastName()])}`,
 			city,
-			country: 'DEU',
+			country: abroad ? faker.helpers.arrayElement(['ESP', 'ITA', 'CHL', 'THA', 'EGY']) : 'DEU',
+			isForeignSchool: abroad,
 			...(detailed
 				? {
 						street: faker.location.streetAddress(),

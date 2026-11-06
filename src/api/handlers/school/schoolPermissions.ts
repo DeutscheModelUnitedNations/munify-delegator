@@ -13,9 +13,9 @@ import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
 /**
- * The columns everybody reads of every school: its name and where it is, so applicants can pick
- * it. Schools are shared by every conference; the rest (address, contact, the team's notes) is
- * participant care's (`schoolOfCaredFor`).
+ * The columns everybody reads of every school: its name, where it is and whether it is an
+ * Auslandsschule, so applicants can pick it. Schools are shared by every conference; the rest
+ * (address, contact, the team's notes) is participant care's (`schoolOfCaredFor`).
  */
 const PUBLIC_COLUMNS = {
 	id: true,
@@ -24,7 +24,8 @@ const PUBLIC_COLUMNS = {
 	name: true,
 	city: true,
 	region: true,
-	country: true
+	country: true,
+	isForeignSchool: true
 };
 
 /**

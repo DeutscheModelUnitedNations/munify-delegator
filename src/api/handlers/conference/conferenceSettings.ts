@@ -15,9 +15,13 @@ import { ageLimitSchema } from '#lib/schemata/ageLimit';
  * column.
  */
 export const conferenceSettingSchemas = {
-	maxSeatsPerSchool: z
+	maxCollectiveGroupSize: z
 		.number()
-		.min(1, { error: () => m.conferenceMaxSeatsPerSchoolRange() })
+		.min(1, { error: () => m.conferenceMaxCollectiveGroupSizeRange() })
+		.nullish(),
+	maxGuaranteedSeatsPerForeignSchool: z
+		.number()
+		.min(0, { error: () => m.conferenceMaxGuaranteedSeatsRange() })
 		.nullish(),
 	nametagBinCount: binCountSchema.nullish(),
 	participantMinAge: ageLimitSchema(),

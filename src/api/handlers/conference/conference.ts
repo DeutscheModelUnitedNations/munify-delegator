@@ -137,12 +137,18 @@ schemaBuilder.mutationFields((t) => ({
 			nametagBinCount: t.arg
 				.int({ description: 'How many tables the nametags are handed out at.' })
 				.validate(conferenceSettingSchemas.nametagBinCount),
-			maxSeatsPerSchool: t.arg
+			maxCollectiveGroupSize: t.arg
 				.int({
 					description:
-						'How many seats one school may be given before the assignment warns; `null` for no limit.'
+						'Up to how many applicants of one supervisor and school are decided on together (all get a seat or none), which the assignment warns about; `null` switches it off.'
 				})
-				.validate(conferenceSettingSchemas.maxSeatsPerSchool),
+				.validate(conferenceSettingSchemas.maxCollectiveGroupSize),
+			maxGuaranteedSeatsPerForeignSchool: t.arg
+				.int({
+					description:
+						'How many people of one Auslandsschule may be given a guaranteed seat before the assignment warns; `null` for no limit.'
+				})
+				.validate(conferenceSettingSchemas.maxGuaranteedSeatsPerForeignSchool),
 			participantMinAge: t.arg
 				.int({
 					description:

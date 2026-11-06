@@ -4,6 +4,7 @@ import type { ColumnMeta } from '../columnTypes';
 export const SCHOOLS_COLUMNS = [
 	{ id: 'name', type: 'text', groupable: false },
 	{ id: 'city', type: 'text' },
+	{ id: 'foreign', type: 'boolean' },
 	{ id: 'delegations', type: 'number' },
 	{ id: 'participants', type: 'number' },
 	{ id: 'applied', type: 'number' },
@@ -17,6 +18,8 @@ export interface SchoolRow {
 	id: string;
 	name: string;
 	city: string | null;
+	/** An Auslandsschule */
+	foreign: boolean;
 	delegations: number;
 	participants: number;
 	applied: number;

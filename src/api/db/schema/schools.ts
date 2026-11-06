@@ -26,6 +26,11 @@ export const school = snakeCase.table(
 		region: text(),
 		// ISO 3166-1 alpha-3
 		country: text(),
+		/**
+		 * An Auslandsschule: up to `conference.maxGuaranteedSeatsPerForeignSchool` of its people may
+		 * be given a guaranteed seat (`assignmentReview.required`). Set by the team.
+		 */
+		isForeignSchool: boolean().default(false).notNull(),
 		website: text(),
 		contactName: text(),
 		contactEmail: text(),

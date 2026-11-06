@@ -355,7 +355,9 @@ export function participantCounts({
 
 export const ASSIGNMENT_QUERY = `
 query McpAssignment($conferenceId: ID!) {
-	conference(id: $conferenceId) { state assignmentReleased maxSeatsPerSchool }
+	conference(id: $conferenceId) {
+		state assignmentReleased maxCollectiveGroupSize maxGuaranteedSeatsPerForeignSchool
+	}
 	committees(where: { conferenceId: { eq: $conferenceId } }) {
 		id abbreviation numOfSeatsPerDelegation roles { id }
 	}
@@ -393,7 +395,8 @@ export const assignmentDataSchema = z.object({
 	conference: z.object({
 		state: z.string(),
 		assignmentReleased: z.boolean(),
-		maxSeatsPerSchool: z.number().nullable()
+		maxCollectiveGroupSize: z.number().nullable(),
+		maxGuaranteedSeatsPerForeignSchool: z.number().nullable()
 	}),
 	committees: z.array(
 		z.object({
