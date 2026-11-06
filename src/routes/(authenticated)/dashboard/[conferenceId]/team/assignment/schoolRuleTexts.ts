@@ -1,27 +1,23 @@
 import codenamize from '#lib/helpers/codenamize';
-import formatNames from '#lib/helpers/formatNames';
 import { m } from '#lib/paraglide/messages';
-import type {
-	CollectiveGroupProblem,
-	GuaranteedSeatCount,
-	SupervisedStudents
-} from './schoolRules';
+import type { CollectiveGroupProblem, GuaranteedSeatCount } from './schoolRules';
 
 /** How the board and the summary word a broken school rule (`schoolRules.ts`). */
 
-/** A supervisor as the school rules read them, with their name. */
-export type NamedSupervisor = SupervisedStudents & {
-	user: { givenName: string; familyName: string };
-};
-
-export const supervisorName = (supervisor: NamedSupervisor) =>
-	formatNames({ givenName: supervisor.user.givenName, familyName: supervisor.user.familyName });
+/** Supervisor names by id (`fetchSupervisorNames`); one not loaded yet shows as nothing. */
+export type SupervisorNames = ReadonlyMap<string, string>;
 
 /** What is wrong with a split group: only some seated, or only some excluded. */
-export function splitGroupText(problem: CollectiveGroupProblem<NamedSupervisor>) {
+export function splitGroupText({
+	problem,
+	names
+}: {
+	problem: CollectiveGroupProblem;
+	names: SupervisorNames;
+}) {
 	const who = {
 		school: problem.group.school.name,
-		supervisor: supervisorName(problem.group.supervisor),
+		supervisor: names.get(problem.group.supervisorId) ?? '…',
 		size: problem.group.size
 	};
 	return problem.disqualified > 0 && problem.disqualified < problem.group.size

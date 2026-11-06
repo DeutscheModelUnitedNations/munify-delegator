@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { fetchSchoolRules, schoolRulesSnapshot } from '../board';
-	import { supervisorName } from '../schoolRuleTexts';
-	import {
-		collectiveGroups,
-		collectiveGroupsOf,
-		guaranteesAround,
-		type GuaranteedApplication
-	} from '../schoolRules';
+	import { fetchSchoolRules, fetchSupervisorNames, schoolRulesSnapshot } from '../board';
+	import { collectiveGroupsOf, guaranteesAround, type GuaranteedApplication } from '../schoolRules';
 
 	/**
 	 * What the school rules (`schoolRules.ts`) say about one application in the sighting: the
@@ -29,12 +23,9 @@
 	const checked = $derived(plain(rules));
 	const guaranteeLimit = $derived(checked.guaranteeLimit);
 
-	const groups = $derived(
-		collectiveGroupsOf({
-			groups: collectiveGroups({ supervisors: checked.supervisors, limit: checked.groupLimit }),
-			application
-		})
-	);
+	const groups = $derived(collectiveGroupsOf({ groups: checked.groups, application }));
+	const supervisorKey = $derived(groups.map((group) => group.supervisorId).join(','));
+	const names = $derived(await fetchSupervisorNames(supervisorKey ? supervisorKey.split(',') : []));
 	const guarantees = $derived(
 		guaranteesAround({
 			applications: checked.reviews.filter((review) => review.required),
@@ -53,7 +44,7 @@
 				<span>
 					{m.schoolRuleSightingGroup({
 						school: group.school.name,
-						supervisor: supervisorName(group.supervisor),
+						supervisor: names.get(group.supervisorId) ?? '…',
 						size: group.size
 					})}
 				</span>

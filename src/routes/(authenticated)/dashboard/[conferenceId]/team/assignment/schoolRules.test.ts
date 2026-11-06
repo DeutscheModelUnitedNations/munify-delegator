@@ -1,14 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import {
 	collectiveGroupProblems,
-	collectiveGroups,
 	collectiveGroupsOf,
 	guaranteedSeatsAbroad,
 	guaranteesAround,
 	guaranteesOverLimit,
 	schoolRuleBreaches,
 	seatedPeople,
-	type SupervisedStudents
+	type CollectiveGroup
 } from './schoolRules';
 
 const kiel = { id: 'kiel', name: 'Gymnasium Kiel', isForeignSchool: false };
@@ -16,112 +15,36 @@ const luebeck = { id: 'luebeck', name: 'Schule Lübeck', isForeignSchool: false 
 const madrid = { id: 'madrid', name: 'Deutsche Schule Madrid', isForeignSchool: true };
 const rom = { id: 'rom', name: 'Deutsche Schule Rom', isForeignSchool: true };
 
-const member = ({
-	id,
-	delegationId,
+/** A group as the API answers it: members as `memberId:delegationId`. */
+const groupOf = ({
+	supervisorId = 'anna',
 	school,
-	applied = true
+	members = [],
+	singleParticipantIds = []
 }: {
-	id: string;
-	delegationId: string;
-	school: typeof kiel | null;
-	applied?: boolean;
-}) => ({ id, delegation: { id: delegationId, applied }, school });
-
-const single = ({
-	id,
+	supervisorId?: string;
+	school: typeof kiel;
+	members?: string[];
+	singleParticipantIds?: string[];
+}): CollectiveGroup => ({
+	key: `${supervisorId}:${school.id}`,
+	supervisorId,
 	school,
-	applied = true
-}: {
-	id: string;
-	school: typeof kiel | null;
-	applied?: boolean;
-}) => ({ id, applied, school });
-
-const supervisor = (
-	id: string,
-	{
-		members = [],
-		singles = []
-	}: {
-		members?: SupervisedStudents['supervisedDelegationMembers'];
-		singles?: SupervisedStudents['supervisedSingleParticipants'];
-	}
-): SupervisedStudents => ({
-	id,
-	supervisedDelegationMembers: members,
-	supervisedSingleParticipants: singles
+	members: members.map((pair) => {
+		const [delegationMemberId, delegationId] = pair.split(':');
+		return { delegationMemberId, delegationId };
+	}),
+	singleParticipantIds,
+	size: members.length + singleParticipantIds.length
 });
 
 const none = { delegationIds: new Set<string>(), singleParticipantIds: new Set<string>() };
 
-describe('collectiveGroups', () => {
-	const anna = supervisor('anna', {
-		members: [
-			member({ id: 'm1', delegationId: 'd1', school: kiel }),
-			member({ id: 'm2', delegationId: 'd1', school: kiel }),
-			member({ id: 'm3', delegationId: 'd2', school: luebeck }),
-			// not applied yet: not part of the assignment
-			member({ id: 'm4', delegationId: 'd3', school: kiel, applied: false }),
-			member({ id: 'm5', delegationId: 'd4', school: null })
-		],
-		singles: [
-			single({ id: 's1', school: kiel }),
-			single({ id: 's2', school: kiel, applied: false })
-		]
-	});
-
-	test('groups the applied students of one supervisor by school', () => {
-		const groups = collectiveGroups({ supervisors: [anna], limit: 16 });
-		expect(groups.map((group) => [group.key, group.size])).toEqual([
-			['anna:kiel', 3],
-			['anna:luebeck', 1]
-		]);
-		expect(groups[0].members).toEqual([
-			{ id: 'm1', delegationId: 'd1' },
-			{ id: 'm2', delegationId: 'd1' }
-		]);
-		expect(groups[0].singleParticipantIds).toEqual(['s1']);
-	});
-
-	test('leaves groups larger than the limit to the regular assignment', () => {
-		expect(collectiveGroups({ supervisors: [anna], limit: 2 }).map((group) => group.key)).toEqual([
-			'anna:luebeck'
-		]);
-		// up to the limit, inclusive
-		expect(collectiveGroups({ supervisors: [anna], limit: 3 })).toHaveLength(2);
-	});
-
-	test('has no groups without a limit', () => {
-		expect(collectiveGroups({ supervisors: [anna], limit: null })).toEqual([]);
-	});
-
-	test('puts a student with two supervisors into both of their groups', () => {
-		const shared = member({ id: 'm1', delegationId: 'd1', school: kiel });
-		const groups = collectiveGroups({
-			supervisors: [
-				supervisor('anna', { members: [shared] }),
-				supervisor('ben', { members: [shared] })
-			],
-			limit: 16
-		});
-		expect(groups.map((group) => group.key)).toEqual(['anna:kiel', 'ben:kiel']);
-	});
-});
-
 describe('collectiveGroupProblems', () => {
-	const [group] = collectiveGroups({
-		supervisors: [
-			supervisor('anna', {
-				members: [
-					member({ id: 'm1', delegationId: 'd1', school: kiel }),
-					member({ id: 'm2', delegationId: 'd1', school: kiel }),
-					member({ id: 'm3', delegationId: 'd2', school: kiel })
-				],
-				singles: [single({ id: 's1', school: kiel })]
-			})
-		],
-		limit: 16
+	const group = groupOf({
+		school: kiel,
+		members: ['m1:d1', 'm2:d1', 'm3:d2'],
+		singleParticipantIds: ['s1']
 	});
 	const seatedGroup = (memberIds: string[], roleId: string | null = 'deu') => ({
 		memberIds,
@@ -196,15 +119,10 @@ test('seatedPeople takes the members and single participants holding a role', ()
 });
 
 test('collectiveGroupsOf finds the groups of a delegation or a single participant', () => {
-	const groups = collectiveGroups({
-		supervisors: [
-			supervisor('anna', {
-				members: [member({ id: 'm1', delegationId: 'd1', school: kiel })],
-				singles: [single({ id: 's1', school: luebeck })]
-			})
-		],
-		limit: 16
-	});
+	const groups = [
+		groupOf({ school: kiel, members: ['m1:d1'] }),
+		groupOf({ school: luebeck, singleParticipantIds: ['s1'] })
+	];
 	const keys = (application: Parameters<typeof collectiveGroupsOf>[0]['application']) =>
 		collectiveGroupsOf({ groups, application }).map((group) => group.key);
 	expect(keys({ delegationId: 'd1' })).toEqual(['anna:kiel']);
@@ -272,14 +190,7 @@ describe('guaranteed seats abroad', () => {
 });
 
 test('schoolRuleBreaches checks both rules against the plan and the sighting', () => {
-	const supervisors = [
-		supervisor('anna', {
-			members: [
-				member({ id: 'm1', delegationId: 'd1', school: madrid }),
-				member({ id: 'm2', delegationId: 'd2', school: madrid })
-			]
-		})
-	];
+	const groups = [groupOf({ school: madrid, members: ['m1:d1', 'm2:d2'] })];
 	const reviews = [
 		{
 			delegationId: 'd1',
@@ -293,19 +204,14 @@ test('schoolRuleBreaches checks both rules against the plan and the sighting', (
 		groups: [{ memberIds: ['m1'], singleParticipantId: null, target: { roleId: 'deu' } }],
 		singles: []
 	};
-	const breaches = schoolRuleBreaches({
-		supervisors,
-		reviews,
-		groupLimit: 16,
-		guaranteeLimit: 1,
-		plan
-	});
+	const breaches = schoolRuleBreaches({ groups, reviews, guaranteeLimit: 1, plan });
 	expect(breaches.splitGroups.map((problem) => [problem.seated, problem.disqualified])).toEqual([
 		[1, 1]
 	]);
 	expect(breaches.overGuarantee).toEqual([{ school: madrid, seats: 2 }]);
-	// switched off, neither rule warns
-	expect(
-		schoolRuleBreaches({ supervisors, reviews, groupLimit: null, guaranteeLimit: null, plan })
-	).toEqual({ splitGroups: [], overGuarantee: [] });
+	// switched off (the API then answers no groups), neither rule warns
+	expect(schoolRuleBreaches({ groups: [], reviews, guaranteeLimit: null, plan })).toEqual({
+		splitGroups: [],
+		overGuarantee: []
+	});
 });

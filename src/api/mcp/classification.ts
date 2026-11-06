@@ -208,6 +208,11 @@ const FIELDS: Record<string, TypeClassification> = {
 	SightingDeckEntry: { visible: ['id', 'kind', 'required', 'school', 'size', 'status'] },
 	SightingNameMatch: { visible: ['id'] },
 	SightingSchool: { visible: ['applications', 'city', 'people', 'school', 'schoolId'] },
+	CollectiveGroup: {
+		visible: ['key', 'singleParticipantIds', 'size', 'supervisorId']
+	},
+	CollectiveGroupMember: { visible: ['delegationId', 'delegationMemberId'] },
+	CollectiveGroupSchool: { visible: ['id', 'isForeignSchool', 'name'] },
 	SeatPlanningAssignedRole: { visible: ['memberCount', 'nationAlpha3Code', 'roleId'] },
 	SeatPlanningCommitteeSeat: {
 		visible: ['committeeId', 'nationAlpha3Code'],

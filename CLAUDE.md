@@ -976,9 +976,10 @@ bun run preview
   are participant care's.
 - **School rules** (`team/assignment/schoolRules.ts`, pure; they only warn, never block):
   - **Decided together:** the applied students of one supervisor from one school are a group
-    (`collectiveGroups`, read through `conferenceSupervisor.supervisedDelegationMembers` /
-    `supervisedSingleParticipants`; someone with two supervisors is in two groups, without one in
-    none). Up to `conference.maxCollectiveGroupSize` (default 16, null switches it off) they all get
+    (the `collectiveGroups` query, `#api/handlers/collectiveGroup/`, worked out on the server so
+    no list cap cuts it short, and not live; someone with two supervisors is in two groups,
+    without one in none). It answers ids only: the supervisors' names come from a live query of
+    the groups shown (`fetchSupervisorNames`), behind the user read rules. Up to `conference.maxCollectiveGroupSize` (default 16, null switches it off) they all get
     a seat or none: the board, the summary and the apply dialog warn about a group the plan seats
     only partly, or the sighting excluded only partly (`collectiveGroupProblems`). Bigger groups
     get nothing special, and the automatic distribution ignores the rule.
@@ -987,7 +988,7 @@ bun run preview
     `conference.maxGuaranteedSeatsPerForeignSchool` (default 12, null for none), each for their
     own school (`guaranteedSeatsAbroad`); the sighting card shows the count as it marks, the board
     and summary warn past it.
-  - `fetchSchoolRules` (`team/assignment/board.ts`) is the live data for both, `SchoolRuleWarnings`
+  - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
     and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
     statistics (`statistics_schools`, delegation members and single participants per school) count
     people too.

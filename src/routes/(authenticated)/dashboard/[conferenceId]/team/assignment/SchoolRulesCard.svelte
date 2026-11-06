@@ -5,18 +5,25 @@
 		guaranteeText,
 		splitGroupText,
 		withoutSeatText,
-		type NamedSupervisor
+		type SupervisorNames
 	} from './schoolRuleTexts';
 
 	/** The broken school rules as a small card beside the board's pool (see `SchoolRuleWarnings`). */
 	interface Props {
-		splitGroups: readonly CollectiveGroupProblem<NamedSupervisor>[];
+		splitGroups: readonly CollectiveGroupProblem[];
+		names: SupervisorNames;
 		overGuarantee: readonly GuaranteedSeatCount[];
 		guaranteeLimit: number;
 		class?: string;
 	}
 
-	let { splitGroups, overGuarantee, guaranteeLimit, class: className = '' }: Props = $props();
+	let {
+		splitGroups,
+		names,
+		overGuarantee,
+		guaranteeLimit,
+		class: className = ''
+	}: Props = $props();
 
 	/** How many split groups show before "show all". */
 	const SHOWN = 5;
@@ -37,7 +44,7 @@
 			{#each shown as problem (problem.group.key)}
 				{@const withoutSeat = withoutSeatText(problem)}
 				<li class="flex flex-col">
-					<span>{splitGroupText(problem)}</span>
+					<span>{splitGroupText({ problem, names })}</span>
 					{#if withoutSeat}
 						<span class="text-base-content/60 text-xs">{withoutSeat}</span>
 					{/if}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fetchSchoolRules, schoolRulesSnapshot } from './board';
+	import { fetchSchoolRules, fetchSupervisorNames, schoolRulesSnapshot } from './board';
 	import { schoolRuleBreaches, type PlannedSeats } from './schoolRules';
 	import SchoolRuleAlerts from './SchoolRuleAlerts.svelte';
 	import SchoolRulesCard from './SchoolRulesCard.svelte';
@@ -28,16 +28,23 @@
 	const splitGroups = $derived(breaches.splitGroups);
 	const overGuarantee = $derived(breaches.overGuarantee);
 	const guaranteeLimit = $derived(checked.guaranteeLimit ?? 0);
+	// the names of the split groups' supervisors, keyed by a primitive so they are asked for again
+	// only when other groups split
+	const supervisorKey = $derived(
+		[...new Set(splitGroups.map((problem) => problem.group.supervisorId))].sort().join(',')
+	);
+	const names = $derived(await fetchSupervisorNames(supervisorKey ? supervisorKey.split(',') : []));
 </script>
 
 {#if variant === 'summary'}
 	<SchoolRuleAlerts
 		{splitGroups}
+		{names}
 		{overGuarantee}
 		groupLimit={checked.groupLimit ?? 0}
 		{guaranteeLimit}
 		class={className}
 	/>
 {:else if splitGroups.length > 0 || overGuarantee.length > 0}
-	<SchoolRulesCard {splitGroups} {overGuarantee} {guaranteeLimit} class={className} />
+	<SchoolRulesCard {splitGroups} {names} {overGuarantee} {guaranteeLimit} class={className} />
 {/if}

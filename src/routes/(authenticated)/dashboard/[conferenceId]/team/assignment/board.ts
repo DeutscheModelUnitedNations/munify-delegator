@@ -5,6 +5,7 @@ import {
 	type SingleparticipantWhereInputArgument
 } from '#lib/api/rumbleClient/client';
 import { liveSnapshot } from '#lib/api/liveSnapshot';
+import formatNames from '#lib/helpers/formatNames';
 import type { BoardReviewRow } from './boardState';
 import { containing } from '#lib/api/queryHelpers';
 import { matchingUserIds } from '#lib/api/matchingUsers';
@@ -605,36 +606,26 @@ export async function fetchAssignmentRoles(conferenceId: string) {
 const ruleSchool = { id: true, name: true, isForeignSchool: true } as const;
 
 /**
- * What the school rules are checked against (`schoolRules.ts`), live: the conference's limits,
- * every supervisor whose students applied with those students and their schools, and the
- * applications marked required or excluded, with their people's schools.
+ * What the school rules are checked against (`schoolRules.ts`): the conference's limits and the
+ * applications marked required or excluded, with their people's schools, live; and the groups
+ * decided together, which the backend works out and which are not live (a new supervision shows
+ * once the page asks again).
  */
 export async function fetchSchoolRules(conferenceId: string) {
-	const applied = { applied: { eq: true } };
-	const [limits, supervisors, reviews] = await Promise.all([
+	const [limits, groups, reviews] = await Promise.all([
 		client.liveQuery.conference({
 			__args: { id: conferenceId },
 			maxCollectiveGroupSize: true,
 			maxGuaranteedSeatsPerForeignSchool: true
 		}),
-		client.liveQuery.conferenceSupervisors({
-			__args: {
-				where: {
-					conference: { id: { eq: conferenceId } },
-					OR: [
-						{ supervisedDelegationMembers: { delegation: applied } },
-						{ supervisedSingleParticipants: applied }
-					]
-				}
-			},
-			id: true,
-			user: { givenName: true, familyName: true },
-			supervisedDelegationMembers: {
-				id: true,
-				delegation: { id: true, applied: true },
-				school: ruleSchool
-			},
-			supervisedSingleParticipants: { id: true, applied: true, school: ruleSchool }
+		client.query.collectiveGroups({
+			__args: { conferenceId },
+			key: true,
+			supervisorId: true,
+			school: ruleSchool,
+			members: { delegationMemberId: true, delegationId: true },
+			singleParticipantIds: true,
+			size: true
 		}),
 		client.liveQuery.assignmentReviews({
 			__args: {
@@ -651,7 +642,7 @@ export async function fetchSchoolRules(conferenceId: string) {
 			singleParticipant: { school: ruleSchool }
 		})
 	]);
-	return { limits, supervisors, reviews };
+	return { limits, groups, reviews };
 }
 
 type SchoolRules = Awaited<ReturnType<typeof fetchSchoolRules>>;
@@ -661,12 +652,27 @@ type SchoolRules = Awaited<ReturnType<typeof fetchSchoolRules>>;
  * rule off). Create one per component and call it in a `$derived` (see `seatedSnapshot`).
  */
 export function schoolRulesSnapshot() {
-	const supervisors = liveSnapshot<SchoolRules['supervisors'][number]>();
 	const reviews = liveSnapshot<SchoolRules['reviews'][number]>();
 	return (rules: SchoolRules) => ({
-		supervisors: supervisors(rules.supervisors),
+		groups: rules.groups,
 		reviews: reviews(rules.reviews),
 		groupLimit: rules.limits.maxCollectiveGroupSize ?? null,
 		guaranteeLimit: rules.limits.maxGuaranteedSeatsPerForeignSchool ?? null
 	});
+}
+
+/** The names of the supervisors of the groups a page shows, live, by supervisor id. */
+export async function fetchSupervisorNames(supervisorIds: readonly string[]) {
+	if (supervisorIds.length === 0) return new Map<string, string>();
+	const supervisors = await client.liveQuery.conferenceSupervisors({
+		__args: { where: { id: { in: [...supervisorIds] } } },
+		id: true,
+		user: { givenName: true, familyName: true }
+	});
+	return new Map(
+		supervisors.map((supervisor) => [
+			supervisor.id,
+			formatNames({ givenName: supervisor.user.givenName, familyName: supervisor.user.familyName })
+		])
+	);
 }

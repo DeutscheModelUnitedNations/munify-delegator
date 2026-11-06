@@ -681,6 +681,26 @@ export type CertificateJWT = {
   sessions: String[]    
 };
 		
+export type CollectiveGroup = {
+  key: String,
+  members: () => CollectiveGroupMember[],
+  school: () => CollectiveGroupSchool,
+  singleParticipantIds: ID[],
+  size: Int,
+  supervisorId: ID    
+};
+		
+export type CollectiveGroupMember = {
+  delegationId: ID,
+  delegationMemberId: ID    
+};
+		
+export type CollectiveGroupSchool = {
+  id: ID,
+  isForeignSchool: Boolean,
+  name: String    
+};
+		
 export type Committee = {
   abbreviation: String,
   agendaItems: (p?: {
@@ -3538,6 +3558,9 @@ export type Query = {
     conferenceId: ID,
     emails: String[]
   }) => EmailStatusResult[],
+  collectiveGroups: (p: {
+    conferenceId: ID
+  }) => CollectiveGroup[],
   committee: (p: {
     id: ID
   }) => Committee,

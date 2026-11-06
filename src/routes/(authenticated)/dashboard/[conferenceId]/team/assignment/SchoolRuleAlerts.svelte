@@ -5,12 +5,13 @@
 		guaranteeText,
 		splitGroupText,
 		withoutSeatText,
-		type NamedSupervisor
+		type SupervisorNames
 	} from './schoolRuleTexts';
 
 	/** The broken school rules as alerts, on the summary and when applying (see `SchoolRuleWarnings`). */
 	interface Props {
-		splitGroups: readonly CollectiveGroupProblem<NamedSupervisor>[];
+		splitGroups: readonly CollectiveGroupProblem[];
+		names: SupervisorNames;
 		overGuarantee: readonly GuaranteedSeatCount[];
 		groupLimit: number;
 		guaranteeLimit: number;
@@ -19,6 +20,7 @@
 
 	let {
 		splitGroups,
+		names,
 		overGuarantee,
 		groupLimit,
 		guaranteeLimit,
@@ -35,7 +37,7 @@
 			<ul class="list-inside list-disc text-sm">
 				{#each splitGroups as problem (problem.group.key)}
 					<li>
-						{splitGroupText(problem)}
+						{splitGroupText({ problem, names })}
 						<span class="opacity-70">{withoutSeatText(problem) ?? ''}</span>
 					</li>
 				{/each}

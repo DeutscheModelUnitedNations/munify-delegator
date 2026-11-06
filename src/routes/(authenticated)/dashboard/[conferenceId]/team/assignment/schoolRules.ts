@@ -21,76 +21,18 @@ export interface RuleSchool {
 
 type Nullable<T> = T | null | undefined;
 
-/** A supervisor with their students, as the assignment reads them (`fetchSchoolRules`). */
-export interface SupervisedStudents {
-	id: string;
-	supervisedDelegationMembers: readonly {
-		id: string;
-		delegation: { id: string; applied: boolean };
-		school?: Nullable<RuleSchool>;
-	}[];
-	supervisedSingleParticipants: readonly {
-		id: string;
-		applied: boolean;
-		school?: Nullable<RuleSchool>;
-	}[];
-}
-
-/** The students of one supervisor from one school who applied, to be decided on together. */
-export interface CollectiveGroup<S extends SupervisedStudents = SupervisedStudents> {
+/**
+ * The students of one supervisor from one school who applied, to be decided on together, as the
+ * API's `collectiveGroups` answers them (only groups up to the limit).
+ */
+export interface CollectiveGroup {
 	key: string;
-	supervisor: S;
+	supervisorId: string;
 	school: RuleSchool;
 	/** Delegation members, with the delegation whose review decides about them */
-	members: { id: string; delegationId: string }[];
-	singleParticipantIds: string[];
+	members: readonly { delegationMemberId: string; delegationId: string }[];
+	singleParticipantIds: readonly string[];
 	size: number;
-}
-
-/**
- * The groups decided together: per supervisor and school, the students who applied, as long as
- * there are at most `limit` of them. A student with two supervisors is in two groups; one without
- * a supervisor or a school is in none. No limit, no groups.
- */
-export function collectiveGroups<S extends SupervisedStudents>({
-	supervisors,
-	limit
-}: {
-	supervisors: readonly S[];
-	limit: number | null;
-}): CollectiveGroup<S>[] {
-	if (limit === null) return [];
-	const groups = new Map<string, CollectiveGroup<S>>();
-	const groupOf = ({ supervisor, school }: { supervisor: S; school: RuleSchool }) => {
-		const key = `${supervisor.id}:${school.id}`;
-		const group = groups.get(key) ?? {
-			key,
-			supervisor,
-			school,
-			members: [],
-			singleParticipantIds: [],
-			size: 0
-		};
-		groups.set(key, group);
-		return group;
-	};
-	for (const supervisor of supervisors) {
-		for (const member of supervisor.supervisedDelegationMembers) {
-			if (!member.school || !member.delegation.applied) continue;
-			const group = groupOf({ supervisor, school: member.school });
-			group.members.push({ id: member.id, delegationId: member.delegation.id });
-			group.size += 1;
-		}
-		for (const single of supervisor.supervisedSingleParticipants) {
-			if (!single.school || !single.applied) continue;
-			const group = groupOf({ supervisor, school: single.school });
-			group.singleParticipantIds.push(single.id);
-			group.size += 1;
-		}
-	}
-	return [...groups.values()]
-		.filter((group) => group.size <= limit)
-		.sort((a, b) => a.school.name.localeCompare(b.school.name) || a.key.localeCompare(b.key));
 }
 
 /** The people after applying, as the board sees them: groups with their role, singles with theirs. */
@@ -124,8 +66,8 @@ export interface Disqualified {
 }
 
 /** A group decided together whose plan or sighting splits it. */
-export interface CollectiveGroupProblem<S extends SupervisedStudents = SupervisedStudents> {
-	group: CollectiveGroup<S>;
+export interface CollectiveGroupProblem {
+	group: CollectiveGroup;
 	/** How many of it would hold a seat */
 	seated: number;
 	/** How many of it the sighting excluded */
@@ -138,23 +80,23 @@ export interface CollectiveGroupProblem<S extends SupervisedStudents = Supervise
  * The groups the plan would split: some of their people get a seat and others do not, or the
  * sighting excluded some of them but not all. A group seated or excluded as a whole is fine.
  */
-export function collectiveGroupProblems<S extends SupervisedStudents>({
+export function collectiveGroupProblems({
 	groups,
 	state,
 	disqualified
 }: {
-	groups: readonly CollectiveGroup<S>[];
+	groups: readonly CollectiveGroup[];
 	state: PlannedSeats;
 	disqualified: Disqualified;
-}): CollectiveGroupProblem<S>[] {
+}): CollectiveGroupProblem[] {
 	const seated = seatedPeople(state);
 	return groups.flatMap((group) => {
 		const count = (
-			member: (m: { id: string; delegationId: string }) => boolean,
+			member: (m: CollectiveGroup['members'][number]) => boolean,
 			single: (id: string) => boolean
 		) => group.members.filter(member).length + group.singleParticipantIds.filter(single).length;
 		const seatedCount = count(
-			(member) => seated.members.has(member.id),
+			(member) => seated.members.has(member.delegationMemberId),
 			(id) => seated.singles.has(id)
 		);
 		const disqualifiedCount = count(
@@ -166,7 +108,7 @@ export function collectiveGroupProblems<S extends SupervisedStudents>({
 		const unseatedApplicationIds = [
 			...new Set([
 				...group.members
-					.filter((member) => !seated.members.has(member.id))
+					.filter((member) => !seated.members.has(member.delegationMemberId))
 					.map((member) => member.delegationId),
 				...group.singleParticipantIds.filter((id) => !seated.singles.has(id))
 			])
@@ -178,11 +120,11 @@ export function collectiveGroupProblems<S extends SupervisedStudents>({
 }
 
 /** The groups decided together that an application belongs to, for its card in the sighting. */
-export function collectiveGroupsOf<S extends SupervisedStudents>({
+export function collectiveGroupsOf<G extends CollectiveGroup>({
 	groups,
 	application
 }: {
-	groups: readonly CollectiveGroup<S>[];
+	groups: readonly G[];
 	application: { delegationId: string } | { singleParticipantId: string };
 }) {
 	return groups.filter((group) =>
@@ -286,16 +228,14 @@ export interface RuleReview extends GuaranteedApplication {
  * Where the plan breaks the school rules: the groups decided together it splits (counting the
  * sighting's exclusions), and the Auslandsschulen past the limit of guaranteed seats.
  */
-export function schoolRuleBreaches<S extends SupervisedStudents>({
-	supervisors,
+export function schoolRuleBreaches({
+	groups,
 	reviews,
-	groupLimit,
 	guaranteeLimit,
 	plan
 }: {
-	supervisors: readonly S[];
+	groups: readonly CollectiveGroup[];
 	reviews: readonly RuleReview[];
-	groupLimit: number | null;
 	guaranteeLimit: number | null;
 	plan: PlannedSeats;
 }) {
@@ -306,7 +246,7 @@ export function schoolRuleBreaches<S extends SupervisedStudents>({
 	};
 	return {
 		splitGroups: collectiveGroupProblems({
-			groups: collectiveGroups({ supervisors, limit: groupLimit }),
+			groups,
 			state: plan,
 			disqualified
 		}),
