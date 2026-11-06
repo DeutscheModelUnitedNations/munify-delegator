@@ -926,7 +926,11 @@ either way), grouping and the cell's default text. `value` is the row's value, `
 what the cell shows (a component through `cellOf`, never HTML), `exportValue` what the export holds
 where it differs. `defaultVisible: false` hides a column until someone shows it; `group` sorts the
 menus into headings, `description` explains a column there; `filterable` / `sortable` /
-`groupable: false` take a column out of a menu. `base` is the table's built-in view: its sorting,
+`groupable: false` take a column out of a menu. A column whose values are (nearly) one per row -
+names, contact details, ids, free texts - is always `groupable: false`: every row would be a group
+of its own, one database query each (`#lib/dataGrid/tables/groupable.test.ts` pins the list). A
+saved view or URL still grouping by such a column drops that level, in the grid
+(`applicableGrouping`) and the API alike. `base` is the table's built-in view: its sorting,
 filter, grouping and page size.
 
 **Where the rows come from is the `source`, and the grid does not care which:**

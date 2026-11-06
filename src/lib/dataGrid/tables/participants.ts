@@ -24,12 +24,17 @@ export const TEAM_ROLES = [
 ] as const;
 const ADMINISTRATIVE_STATUSES = ['DONE', 'PENDING', 'PROBLEM'] as const;
 
+/**
+ * Columns whose values are (nearly) one per person - names, contact details, ids, free texts -
+ * are not offered for grouping (`groupable: false`): every row would be a group of its own, and
+ * the engine would ask the database for one group query per person.
+ */
 export const PARTICIPANTS_COLUMNS = [
-	{ id: 'userId', type: 'text' },
-	{ id: 'family_name', type: 'text' },
-	{ id: 'given_name', type: 'text' },
-	{ id: 'email', type: 'text' },
-	{ id: 'phone', type: 'text' },
+	{ id: 'userId', type: 'text', groupable: false },
+	{ id: 'family_name', type: 'text', groupable: false },
+	{ id: 'given_name', type: 'text', groupable: false },
+	{ id: 'email', type: 'text', groupable: false },
+	{ id: 'phone', type: 'text', groupable: false },
 	{ id: 'birthday', type: 'date' },
 	{ id: 'ageAtConference', type: 'number' },
 	{ id: 'hasBirthdayDuringConference', type: 'boolean' },
@@ -56,8 +61,8 @@ export const PARTICIPANTS_COLUMNS = [
 	{ id: 'termsAndConditions', type: 'enum', options: ADMINISTRATIVE_STATUSES },
 	{ id: 'guardianConsent', type: 'enum', options: ADMINISTRATIVE_STATUSES },
 	{ id: 'mediaConsent', type: 'enum', options: ADMINISTRATIVE_STATUSES },
-	{ id: 'documentNumber', type: 'text' },
-	{ id: 'accessCardId', type: 'text' },
+	{ id: 'documentNumber', type: 'text', groupable: false },
+	{ id: 'accessCardId', type: 'text', groupable: false },
 	{ id: 'accepted', type: 'boolean' },
 	{ id: 'hasOpenIssue', type: 'boolean' },
 	{ id: 'participationCount', type: 'number' }

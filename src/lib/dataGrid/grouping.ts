@@ -1,4 +1,4 @@
-import type { ColumnMeta } from './columnTypes';
+import { isGroupable, type ColumnMeta } from './columnTypes';
 import { dayOf } from './dateConditions';
 import type { DateBucket, GroupBy, GroupPath } from './stateSchema';
 
@@ -14,6 +14,24 @@ import type { DateBucket, GroupBy, GroupPath } from './stateSchema';
  *
  * Rows without a value form the group `null`.
  */
+
+/**
+ * The grouping levels that apply: those on columns the table has and can group by. A saved view
+ * or a URL may still name a column that is no longer groupable; the API drops such a level too
+ * (`usableGrouping`), so both sides count the same levels.
+ */
+export function applicableGrouping({
+	grouping,
+	columnOf
+}: {
+	grouping: readonly GroupBy[];
+	columnOf: (id: string) => ColumnMeta | undefined;
+}): GroupBy[] {
+	return grouping.filter((groupBy) => {
+		const column = columnOf(groupBy.column);
+		return column !== undefined && isGroupable(column);
+	});
+}
 
 /** The bucket a date grouping uses. */
 export function dateBucketOf(groupBy: GroupBy): DateBucket {

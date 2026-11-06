@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { groupValueOf, isGroupOpen, orderGroups, toggleGroup } from './grouping';
+import {
+	applicableGrouping,
+	groupValueOf,
+	isGroupOpen,
+	orderGroups,
+	toggleGroup
+} from './grouping';
 
 describe('groupValueOf', () => {
 	it('names groups the way the SQL engine does', () => {
@@ -63,5 +69,23 @@ describe('orderGroups', () => {
 			'20',
 			'100'
 		]);
+	});
+});
+
+describe('applicableGrouping', () => {
+	it('keeps only levels on columns the table has and can group by', () => {
+		const columns = new Map(
+			[
+				{ id: 'city', type: 'text' as const },
+				{ id: 'email', type: 'text' as const, groupable: false },
+				{ id: 'tags', type: 'multiEnum' as const }
+			].map((column) => [column.id, column])
+		);
+		expect(
+			applicableGrouping({
+				grouping: [{ column: 'email' }, { column: 'tags' }, { column: 'gone' }, { column: 'city' }],
+				columnOf: (id) => columns.get(id)
+			})
+		).toEqual([{ column: 'city' }]);
 	});
 });

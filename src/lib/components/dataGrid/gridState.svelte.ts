@@ -1,7 +1,8 @@
+import type { ColumnMeta } from '#lib/dataGrid/columnTypes';
 import type { GroupPath, TableState } from '#lib/dataGrid/stateSchema';
 import { dataQueryOf } from '#lib/dataGrid/stateSchema';
 import { addConditionFor } from '#lib/dataGrid/filterEdit';
-import { isGroupOpen, toggleGroup } from '#lib/dataGrid/grouping';
+import { applicableGrouping, isGroupOpen, toggleGroup } from '#lib/dataGrid/grouping';
 import { moveColumn, stateKey, visibleColumnIds } from '#lib/dataGrid/tableState';
 import type { ResolvedGrid } from '#lib/dataGrid/urlState';
 import type { SavedView } from '#lib/dataGrid/views';
@@ -38,8 +39,19 @@ const APPLIED_KEYS = [
 
 type AppliedPart = Pick<TableState, (typeof APPLIED_KEYS)[number]>;
 
-function appliedPart(state: TableState): AppliedPart {
-	return { filter: state.filter, sorting: state.sorting, grouping: state.grouping };
+/** The applied parts of a state; grouping levels on columns that cannot group are left out. */
+function appliedPart({
+	state,
+	columnOf
+}: {
+	state: TableState;
+	columnOf: (id: string) => ColumnMeta | undefined;
+}): AppliedPart {
+	return {
+		filter: state.filter,
+		sorting: state.sorting,
+		grouping: applicableGrouping({ grouping: state.grouping, columnOf })
+	};
 }
 
 function assignApplied<K extends keyof AppliedPart>({
@@ -104,7 +116,8 @@ export function createGridState<Row>({
 	 * commits in a batch of its own (the panel shows it at once) and the fetch it causes in the
 	 * next; otherwise Svelte holds the panel's update back until the table's rows have arrived.
 	 */
-	const applied = $state(appliedPart(initial.state));
+	const columnOf = (id: string) => columns().find((column) => column.id === id);
+	const applied = $state(appliedPart({ state: initial.state, columnOf }));
 	let applying: ReturnType<typeof setTimeout> | undefined;
 	let saved = $state<TableState>(initial.saved);
 	let viewId = $state<string | null>(initial.view?.id ?? null);
@@ -157,7 +170,7 @@ export function createGridState<Row>({
 	function apply() {
 		clearTimeout(applying);
 		applying = setTimeout(() => {
-			const next = appliedPart($state.snapshot(state));
+			const next = appliedPart({ state: $state.snapshot(state), columnOf });
 			for (const key of APPLIED_KEYS) {
 				if (JSON.stringify(next[key]) !== JSON.stringify($state.snapshot(applied[key])))
 					assignApplied({ target: applied, next, key });
