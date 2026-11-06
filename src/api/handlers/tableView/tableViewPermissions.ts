@@ -10,6 +10,8 @@ import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
 import { rolesWithTeamPermission } from '#lib/helpers/teamRoles';
 import type { DataTableKey } from '#lib/dataGrid/tableKeys';
+import type { TableState } from '#lib/dataGrid/stateSchema';
+import { assistantViewStateProblems } from '#api/mcp/viewStateGuard';
 import { m } from '#lib/paraglide/messages';
 import { DATA_TABLE_PERMISSION } from '../dataTable/dataTablePermissions';
 
@@ -142,4 +144,35 @@ export async function assertCanPickMyDefault({
 		}
 	}
 	return { userId: sub };
+}
+
+/**
+ * Refuses what an AI assistant (`ctx.mcp`) may not write to a view: a personal one (FORBIDDEN;
+ * its own part grants an assistant nothing, so it could not read the view back), or a `state`
+ * that filters, sorts or groups by personal data or names columns the table does not have
+ * (INVALID_INPUT, `assistantViewStateProblems`). Passes everything for a session in the app.
+ */
+export function assertAssistantMayWriteView({
+	ctx,
+	tableKey,
+	shared,
+	state
+}: {
+	ctx: ApiContext;
+	tableKey: DataTableKey;
+	shared: boolean;
+	state?: TableState | null;
+}) {
+	if (!ctx.mcp) return;
+	if (!shared) {
+		throw apiError({ code: 'FORBIDDEN', message: m.tableViewAssistantPersonal() });
+	}
+	if (!state) return;
+	const problems = assistantViewStateProblems({ tableKey, state });
+	if (problems.length > 0) {
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.tableViewAssistantState({ details: problems.join('; ') })
+		});
+	}
 }

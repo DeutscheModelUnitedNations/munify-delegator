@@ -2852,6 +2852,8 @@
 	"tabExplanationPayments": "Bank details for <strong>participation fees</strong>. This information is shown to participants when making their payment.",
 	"tabExplanationStatus": "The <strong>conference status</strong> determines which features are available to participants. The <strong>feature toggles</strong> enable or disable individual features regardless of status.",
 	"tableSize": "Table size",
+	"tableViewAssistantPersonal": "An AI assistant can only save shared views; personal views are saved in the app.",
+	"tableViewAssistantState": "An AI assistant can only filter, sort and group a view by columns without personal data: {details}",
 	"tableViewDefaultNeedsShared": "Only shared views can be everyone's default; pick your own as “My default”.",
 	"tableViewGlobalSharedAdminsOnly": "Only system administrators can save shared views for every conference.",
 	"tableViewNameRequired": "Give the view a name.",
