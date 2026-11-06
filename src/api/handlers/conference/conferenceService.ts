@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db';
-import { assertConferenceDatesInOrder } from './conferenceSettings';
+import { assertAgeRangeInOrder, assertConferenceDatesInOrder } from './conferenceSettings';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 import { m } from '#lib/paraglide/messages';
@@ -178,6 +178,10 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				nametagBinCount: nullToUndefined(args.nametagBinCount),
 				// null lifts the limit
 				maxSeatsPerSchool: args.maxSeatsPerSchool,
+				// null switches the limit off
+				participantMinAge: args.participantMinAge,
+				participantMaxAge: args.participantMaxAge,
+				supervisorMinAge: args.supervisorMinAge,
 				state: nullToUndefined(args.state),
 				applicationDeadline: nullToUndefined(args.applicationDeadline),
 				startConference: nullToUndefined(args.startConference),
@@ -213,10 +217,15 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			.returning({
 				applicationDeadline: schema.conference.applicationDeadline,
 				startConference: schema.conference.startConference,
-				endConference: schema.conference.endConference
+				endConference: schema.conference.endConference,
+				participantMinAge: schema.conference.participantMinAge,
+				participantMaxAge: schema.conference.participantMaxAge
 			});
-		// Checked on the row as written: a change may give only one of the dates.
-		if (written) assertConferenceDatesInOrder(written);
+		// Checked on the row as written: a change may give only one of the dates or ages.
+		if (written) {
+			assertConferenceDatesInOrder(written);
+			assertAgeRangeInOrder(written);
+		}
 	});
 	conferencePubsub.updated(args.id);
 	if (args.assignmentReleased !== undefined) await announceReleaseVisibility(args.id);

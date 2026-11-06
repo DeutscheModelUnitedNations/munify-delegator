@@ -4,6 +4,7 @@
 	import type { PageProps } from './$types';
 	import RegistrationStepPage from '../RegistrationStepPage.svelte';
 	import SupervisorSteps from '../apply/SupervisorSteps.svelte';
+	import AgeNotice from '#lib/components/registration/AgeNotice.svelte';
 
 	// Its own page as well as a path of the dashboard's form: a supervisor may sign up after
 	// registration has closed, when the dashboard does not show the conference to them yet, until
@@ -26,6 +27,7 @@
 	bare
 >
 	{#if signupOpen}
+		<AgeNotice {conferenceId} role="supervisor" class="mb-4" />
 		<ol class="flex flex-col">
 			<SupervisorSteps {conferenceId} firstNumber={1} />
 		</ol>

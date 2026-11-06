@@ -38,6 +38,7 @@ const delegationCard = {
 	appliedForRoles: {
 		id: true,
 		rank: true,
+		roleId: true,
 		role: {
 			name: true,
 			fontAwesomeIcon: true,
@@ -195,6 +196,7 @@ export async function fetchReview({ kind, id }: { kind: 'delegation' | 'single';
 		flagged: true,
 		disqualified: true,
 		required: true,
+		prioritizedRoleId: true,
 		note: true
 	});
 	return reviews.at(0);

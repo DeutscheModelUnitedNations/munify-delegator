@@ -4,6 +4,7 @@ import type { SeatedRole } from '#lib/assignment/capacity';
 import {
 	assignmentCost,
 	reviewCost,
+	singleWishCost,
 	type AssignmentWeights,
 	type GroupReview
 } from '#lib/assignment/weights';
@@ -111,7 +112,13 @@ export function autoAssign(input: AutoAssignInput) {
 				cost:
 					(wishRank === undefined
 						? reviewCost({ weights: input.weights, review, experience })
-						: assignmentCost({ weights: input.weights, review, wishRank, experience })) +
+						: assignmentCost({
+								weights: input.weights,
+								review,
+								roleId: role.target.roleId ?? undefined,
+								wishRank,
+								experience
+							})) +
 					hash01(`${seed}|${group.key}|${role.key}`) * TIE_BREAK
 			};
 		})
@@ -153,8 +160,9 @@ export interface AutoAssignSinglesInput {
 
 /**
  * Seats single participants on the custom roles they applied for, at the lowest total cost. Wishes
- * are unranked, so they only decide who may get which role; who is left out when a role is
- * oversubscribed follows from rating, flag and experience (`reviewCost`). Each role is expanded
+ * are unranked, so they only decide who may get which role (apart from one the team prioritized,
+ * `singleWishCost`); who is left out when a role is oversubscribed follows from rating, flag and
+ * experience (`reviewCost`). Each role is expanded
  * into one column per free seat, and an applicant whose wishes are all full stays unassigned.
  */
 export function autoAssignSingles(input: AutoAssignSinglesInput) {
@@ -171,9 +179,10 @@ export function autoAssignSingles(input: AutoAssignSinglesInput) {
 		matrix: candidates.map((candidate) =>
 			slots.map((slot) =>
 				candidate.wishedRoleIds.has(slot.roleId)
-					? reviewCost({
+					? singleWishCost({
 							weights: input.weights,
 							review: candidate.review,
+							roleId: slot.roleId,
 							experience: candidate.experience
 						}) +
 						hash01(`${seed}|${candidate.id}|${slot.roleId}|${slot.index}`) * TIE_BREAK

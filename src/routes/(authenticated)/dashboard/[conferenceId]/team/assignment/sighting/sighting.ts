@@ -10,6 +10,8 @@ export interface SightingReview {
 	disqualified: boolean;
 	/** Has to end up with a seat; never together with `disqualified`. */
 	required?: boolean;
+	/** The wish the automatic distribution treats as the first */
+	prioritizedRoleId?: string | null;
 	note?: string | null;
 }
 
@@ -147,6 +149,7 @@ export interface SightedDelegation extends ApplicationTexts {
 	}[];
 	appliedForRoles: readonly {
 		rank: number;
+		roleId: string;
 		role: {
 			name?: Nullable<string>;
 			fontAwesomeIcon?: Nullable<string>;
@@ -159,7 +162,7 @@ export interface SightedSingleParticipant extends ApplicationTexts {
 	school?: OwnSchool;
 	user: Person;
 	supervisors: readonly Supervisor[];
-	appliedForRoles: readonly { name?: Nullable<string> }[];
+	appliedForRoles: readonly { id: string; name?: Nullable<string> }[];
 }
 
 const texts = (application: ApplicationTexts) => ({
@@ -169,6 +172,7 @@ const texts = (application: ApplicationTexts) => ({
 
 /** A wish as the sighting shows it: its name, and a flag for a nation or an icon for an actor. */
 interface Wish {
+	roleId: string;
 	name: string;
 	alpha2Code?: string;
 	icon?: string;
@@ -182,8 +186,16 @@ const wishOf = ({
 	nationName: (code: string) => string;
 }): Wish =>
 	wish.role.nation
-		? { name: nationName(wish.role.nation.alpha3Code), alpha2Code: wish.role.nation.alpha2Code }
-		: { name: wish.role.name ?? '', icon: wish.role.fontAwesomeIcon ?? undefined };
+		? {
+				roleId: wish.roleId,
+				name: nationName(wish.role.nation.alpha3Code),
+				alpha2Code: wish.role.nation.alpha2Code
+			}
+		: {
+				roleId: wish.roleId,
+				name: wish.role.name ?? '',
+				icon: wish.role.fontAwesomeIcon ?? undefined
+			};
 
 /** A delegation's application as the sighting shows it; wishes in the order they were ranked. */
 export function delegationApplication({
@@ -215,7 +227,7 @@ export function singleApplication(single: SightedSingleParticipant) {
 		...texts(single),
 		people: [{ ...single.user, isHeadDelegate: false }],
 		supervisors: [...single.supervisors],
-		wishes: single.appliedForRoles.map((role): Wish => ({ name: role.name ?? '' }))
+		wishes: single.appliedForRoles.map((role): Wish => ({ roleId: role.id, name: role.name ?? '' }))
 	};
 }
 

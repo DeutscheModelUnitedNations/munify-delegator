@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_WEIGHTS, assignmentCost } from './weights';
+import { DEFAULT_WEIGHTS, assignmentCost, singleWishCost } from './weights';
 
 describe('assignmentCost', () => {
 	it('costs a wish its rank', () => {
@@ -42,6 +42,36 @@ describe('assignmentCost', () => {
 				review: { ...review, evaluation: 1 },
 				wishRank: 1
 			})
+		);
+	});
+});
+
+describe('a prioritized wish', () => {
+	const prioritized = {
+		evaluation: 4,
+		flagged: false,
+		disqualified: false,
+		prioritizedRoleId: 'r'
+	};
+
+	it('costs what a first wish does', () => {
+		expect(
+			assignmentCost({ weights: DEFAULT_WEIGHTS, review: prioritized, roleId: 'r', wishRank: 3 })
+		).toBe(assignmentCost({ weights: DEFAULT_WEIGHTS, review: prioritized, wishRank: 1 }));
+	});
+
+	it('leaves the other wishes at their rank', () => {
+		expect(
+			assignmentCost({ weights: DEFAULT_WEIGHTS, review: prioritized, roleId: 'x', wishRank: 3 })
+		).toBe(assignmentCost({ weights: DEFAULT_WEIGHTS, review: prioritized, wishRank: 3 }));
+	});
+
+	it('makes a single participant’s prioritized wish cost a first over the others’ second', () => {
+		const cost = (roleId: string) =>
+			singleWishCost({ weights: DEFAULT_WEIGHTS, review: prioritized, roleId, experience: 0 });
+		expect(cost('x') - cost('r')).toBeCloseTo(
+			assignmentCost({ weights: DEFAULT_WEIGHTS, review: prioritized, wishRank: 2 }) -
+				assignmentCost({ weights: DEFAULT_WEIGHTS, review: prioritized, wishRank: 1 })
 		);
 	});
 });

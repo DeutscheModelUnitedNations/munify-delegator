@@ -83,7 +83,7 @@
 			</div>
 		</div>
 
-		<ApplicationDetails {application} {startConference} {kind} />
+		<ApplicationDetails {application} {startConference} {kind} {review} {onReview} />
 
 		<NoteInput {review} {onReview} />
 	</div>

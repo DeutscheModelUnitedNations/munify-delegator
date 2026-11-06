@@ -4,6 +4,7 @@ import IBAN from 'iban';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
 import { conferenceDatesProblem } from '#lib/helpers/conferenceDates';
+import { ageLimitSchema } from '#lib/schemata/ageLimit';
 
 export const conferenceSettingsFormSchema = z
 	.object({
@@ -53,6 +54,10 @@ export const conferenceSettingsFormSchema = z
 		registrationDeadlineGracePeriodMinutes: z.coerce.number(),
 		/** Seats one school may get before the assignment warns; empty for no limit. */
 		maxSeatsPerSchool: z.number().int().min(1).nullish(),
+		/** The age range on the first conference day; empty switches a limit off. */
+		participantMinAge: ageLimitSchema(),
+		participantMaxAge: ageLimitSchema(),
+		supervisorMinAge: ageLimitSchema(),
 		startConference: z.date({
 			message: m.pleaseEnterAValidDate()
 		}),
@@ -147,6 +152,33 @@ export const conferenceSettingsFormSchema = z
 				message: m.conferenceStartAfterEnd()
 			});
 		}
+		// The same rule `updateConference` holds the range to.
+		const { participantMinAge: min, participantMaxAge: max } = settings;
+		if (typeof min === 'number' && typeof max === 'number' && min > max) {
+			ctx.addIssue({
+				code: 'custom',
+				path: ['participantMaxAge'],
+				message: m.conferenceAgeRangeOutOfOrder()
+			});
+		}
 	});
 
 export type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;
+
+/** The settings' limits as the mutation takes them: an emptied field lifts its limit (`null`). */
+export function limitArgs({
+	maxSeatsPerSchool,
+	participantMinAge,
+	participantMaxAge,
+	supervisorMinAge
+}: Pick<
+	ConferenceSettings,
+	'maxSeatsPerSchool' | 'participantMinAge' | 'participantMaxAge' | 'supervisorMinAge'
+>) {
+	return {
+		maxSeatsPerSchool: maxSeatsPerSchool ?? null,
+		participantMinAge: participantMinAge ?? null,
+		participantMaxAge: participantMaxAge ?? null,
+		supervisorMinAge: supervisorMinAge ?? null
+	};
+}

@@ -387,9 +387,23 @@ describe('describeRole and wishRank', () => {
 
 		it('lists the wishes by rank while no role is held', () => {
 			expect(wishList({ wishes, target: { roleId: null }, nationName: name })).toEqual([
-				{ key: 'nsa-amnesty', rank: 1, name: 'AI', matches: false },
-				{ key: 'nation-fra', rank: 2, name: 'name of FRA', matches: false },
-				{ key: 'nameless', rank: 3, name: '', matches: false }
+				{ key: 'nsa-amnesty', rank: 1, name: 'AI', matches: false, prioritized: false },
+				{ key: 'nation-fra', rank: 2, name: 'name of FRA', matches: false, prioritized: false },
+				{ key: 'nameless', rank: 3, name: '', matches: false, prioritized: false }
+			]);
+		});
+
+		it('marks the prioritized wish without moving it', () => {
+			const listed = wishList({
+				wishes,
+				target: { roleId: null },
+				nationName: name,
+				prioritizedRoleId: 'nation-fra'
+			});
+			expect(listed.map((wish) => [wish.key, wish.prioritized])).toEqual([
+				['nsa-amnesty', false],
+				['nation-fra', true],
+				['nameless', false]
 			]);
 		});
 

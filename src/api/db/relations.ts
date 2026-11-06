@@ -24,6 +24,10 @@ export const relations = defineRelations(schema, (r) => ({
 		singleParticipant: r.one.singleParticipant({
 			from: r.assignmentReview.singleParticipantId,
 			to: r.singleParticipant.id
+		}),
+		prioritizedRole: r.one.conferenceRole({
+			from: r.assignmentReview.prioritizedRoleId,
+			to: r.conferenceRole.id
 		})
 	},
 	assignmentSingleRole: {

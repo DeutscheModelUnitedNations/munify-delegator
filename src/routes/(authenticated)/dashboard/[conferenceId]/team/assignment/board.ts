@@ -62,6 +62,7 @@ const reviewFields = {
 	flagged: true,
 	disqualified: true,
 	required: true,
+	prioritizedRoleId: true,
 	note: true
 } as const;
 

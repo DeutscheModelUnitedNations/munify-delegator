@@ -64,6 +64,11 @@ const FIELDS: Record<string, TypeClassification> = {
 			'wantsToReceiveGeneralInformation'
 		]
 	},
+	// The caller's own age against a conference's range; the age and its verdict are a person's.
+	AgeNotice: {
+		visible: ['participantMinAge', 'participantMaxAge', 'supervisorMinAge'],
+		redacted: ['age', 'issue']
+	},
 	Address: {
 		visible: ['locality', 'region', 'countryCode'],
 		redacted: ['streetAddress', 'postalCode']
@@ -175,7 +180,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'evaluation',
 			'flagged',
 			'disqualified',
-			'required'
+			'required',
+			'prioritizedRoleId'
 		],
 		redacted: ['note']
 	},
@@ -244,6 +250,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'mediaConsentFileId',
 			'nametagBinCount',
 			'nextDocumentNumber',
+			'participantMaxAge',
+			'participantMinAge',
 			'postalApartment',
 			'postalCity',
 			'postalCountry',
@@ -254,6 +262,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'showInfoExpanded',
 			'startConference',
 			'state',
+			'supervisorMinAge',
 			'termsAndConditionsFileId',
 			'timezone',
 			'title',

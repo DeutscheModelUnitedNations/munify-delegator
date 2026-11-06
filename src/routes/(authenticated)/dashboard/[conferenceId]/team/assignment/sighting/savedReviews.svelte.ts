@@ -49,6 +49,7 @@ export async function saveReview({
 			flagged: true,
 			disqualified: true,
 			required: true,
+			prioritizedRoleId: true,
 			note: true
 		});
 		if (latest.get(id) !== save) return undefined;
@@ -57,6 +58,7 @@ export async function saveReview({
 			flagged: stored.flagged,
 			disqualified: stored.disqualified,
 			required: stored.required,
+			prioritizedRoleId: stored.prioritizedRoleId,
 			note: stored.note
 		};
 		saved.set(id, result);

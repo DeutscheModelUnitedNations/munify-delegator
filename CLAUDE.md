@@ -777,6 +777,12 @@ bun run preview
   (with `asScan`, an earlier scan in the session is open too), `createAttendanceEntry` stores the
   verdict it reaches itself (`null` in a session that only records), and the check-in page reads
   `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
+- **Age limits are the conference's** (`participantMinAge`, `participantMaxAge`, `supervisorMinAge`,
+  inclusive, measured on the first conference day; empty switches one off). They only warn:
+  `ageIssue` / `ageBands` (`#lib/helpers/plausibilityRules`) are the one rule, which the
+  plausibility page lists people by and `myAgeNotice` answers the caller with; `AgeNotice`
+  (`#lib/components/registration/`) shows it in the apply flow, on the waiting list and on the
+  dashboard. Nothing refuses a registration by age.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model

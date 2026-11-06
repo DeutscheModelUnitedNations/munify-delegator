@@ -15,6 +15,7 @@
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 	import RegistrationStepPage from '../RegistrationStepPage.svelte';
+	import AgeNotice from '#lib/components/registration/AgeNotice.svelte';
 
 	let { params }: PageProps = $props();
 
@@ -91,6 +92,8 @@
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 		{@html m.vacanciesSlashWaitingListDescription()}
 	</div>
+
+	<AgeNotice {conferenceId} role="participant" entered={alreadyOnWaitingList} class="mb-4" />
 
 	{#if alreadyOnWaitingList}
 		<div role="status" class="alert bg-success/10 border-success/30 mb-4">

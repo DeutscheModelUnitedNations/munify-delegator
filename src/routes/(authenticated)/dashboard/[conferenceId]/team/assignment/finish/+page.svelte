@@ -18,7 +18,13 @@
 	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '../schoolSeats';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { toastError } from '../toastError';
-	import { requiredApplicationOf, requiredWithoutSeat, seatOccupancy } from './seatChecks';
+	import {
+		prioritizedApplicationOf,
+		prioritizedElsewhere,
+		requiredApplicationOf,
+		requiredWithoutSeat,
+		seatOccupancy
+	} from './seatChecks';
 	import ApplyProblems from './ApplyProblems.svelte';
 	import SeatWarnings from './SeatWarnings.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';
@@ -32,7 +38,7 @@
 
 	let { params }: PageProps = $props();
 
-	const [draft, roles, conference, seated, requiredReviews] = $derived(
+	const [draft, roles, conference, seated, markedReviews] = $derived(
 		await Promise.all([
 			fetchAssignmentDraft(params.conferenceId),
 			fetchAssignmentRoles(params.conferenceId),
@@ -42,13 +48,19 @@
 				maxSeatsPerSchool: true
 			}),
 			fetchSeatedApplications(params.conferenceId),
-			// every required application, also those the board does not hold: they have no seat
+			// every required or prioritizing application, also those the board does not hold: a
+			// required one there has no seat
 			client.liveQuery.assignmentReviews({
 				__args: {
-					where: { conferenceId: { eq: params.conferenceId }, required: { eq: true } }
+					where: {
+						conferenceId: { eq: params.conferenceId },
+						OR: [{ required: { eq: true } }, { prioritizedRoleId: { isNotNull: true } }]
+					}
 				},
 				delegationId: true,
 				singleParticipantId: true,
+				required: true,
+				prioritizedRoleId: true,
 				delegation: { memberCount: true }
 			})
 		])
@@ -69,7 +81,10 @@
 	);
 	const preview = $derived(planApply({ ...view.live, seats: seatsByKey(view.seated), roleSeats }));
 	const missingRequired = $derived(
-		requiredWithoutSeat({ required: requiredReviews.flatMap(requiredApplicationOf), state: view })
+		requiredWithoutSeat({
+			required: markedReviews.filter((review) => review.required).flatMap(requiredApplicationOf),
+			state: view
+		})
 	);
 	const occupancy = $derived(
 		seatOccupancy({ state: view, seats: seatsByKey(view.seated), roleSeats })
@@ -84,6 +99,21 @@
 	const roleName = (target: Target) => describeTarget(target)?.title ?? m.assignmentNoRole();
 	const customRoleName = (roleId: string | null) =>
 		roles.customRoles.find((role) => role.id === roleId)?.name ?? m.assignmentNoRole();
+	/** A custom role's name, or a nation's or non-state actor's. */
+	const anyRoleName = (roleId: string) =>
+		roles.customRoles.some((role) => role.id === roleId)
+			? customRoleName(roleId)
+			: roleName({ roleId });
+	const missedPriorities = $derived(
+		prioritizedElsewhere({
+			prioritized: markedReviews.flatMap(prioritizedApplicationOf),
+			state: view
+		}).map(({ application, heldRoleIds }) => ({
+			id: application.delegationId ?? application.singleParticipantId ?? '',
+			held: heldRoleIds.map(anyRoleName).join(', '),
+			prioritized: anyRoleName(application.roleId)
+		}))
+	);
 	const customRoleIcon = (roleId: string | null) =>
 		roles.customRoles.find((role) => role.id === roleId)?.fontAwesomeIcon ?? undefined;
 
@@ -140,7 +170,7 @@
 
 <div class="flex flex-col gap-6">
 	<ApplyProblems errors={preview.errors} warnings={preview.warnings} {roleName} {customRoleName} />
-	<SeatWarnings {missingRequired} {occupancy} />
+	<SeatWarnings {missingRequired} {missedPriorities} {occupancy} />
 	{#if schoolsOver.length > 0}
 		<div class="alert alert-warning alert-soft">
 			<i class="fa-sharp-duotone fa-solid fa-school text-xl"></i>
@@ -237,7 +267,7 @@
 		onClose={() => (confirmingApply = false)}
 	>
 		<p>{m.assignmentApplyConfirmText()}</p>
-		<SeatWarnings {missingRequired} {occupancy} />
+		<SeatWarnings {missingRequired} {missedPriorities} {occupancy} />
 		<p class="text-sm opacity-70">
 			{m.assignmentSeatsFreeAfter({ free: occupancy.free, total: occupancy.total })}
 		</p>

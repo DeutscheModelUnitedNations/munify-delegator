@@ -115,6 +115,11 @@ function bankingNote(): string {
 	return m.configChangeWarningBanking();
 }
 
+/** An age limit, or that there is none. */
+function ageLimit(value: unknown) {
+	return typeof value === 'number' ? String(value) : m.conferenceAgeLimitNone();
+}
+
 /**
  * Every field of the settings schema needs an entry here. Using a complete
  * `Record` (instead of a `Partial`) makes the compiler point at this file when a
@@ -144,6 +149,21 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 		label: () => m.conferenceMaxSeatsPerSchool(),
 		format: (value) =>
 			typeof value === 'number' ? String(value) : m.conferenceMaxSeatsPerSchoolNone()
+	},
+	participantMinAge: {
+		group: 'general',
+		label: () => m.conferenceParticipantMinAge(),
+		format: ageLimit
+	},
+	participantMaxAge: {
+		group: 'general',
+		label: () => m.conferenceParticipantMaxAge(),
+		format: ageLimit
+	},
+	supervisorMinAge: {
+		group: 'general',
+		label: () => m.conferenceSupervisorMinAge(),
+		format: ageLimit
 	},
 	startConference: { group: 'general', label: () => m.conferenceStart(), format: formatDateOnly },
 	endConference: { group: 'general', label: () => m.conferenceEnd(), format: formatDateOnly },

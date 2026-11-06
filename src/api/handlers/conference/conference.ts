@@ -143,6 +143,24 @@ schemaBuilder.mutationFields((t) => ({
 						'How many seats one school may be given before the assignment warns; `null` for no limit.'
 				})
 				.validate(conferenceSettingSchemas.maxSeatsPerSchool),
+			participantMinAge: t.arg
+				.int({
+					description:
+						'How old participants are at least on the first conference day; `null` for no lower limit. Outside the range the entry flows warn, nothing is refused.'
+				})
+				.validate(conferenceSettingSchemas.participantMinAge),
+			participantMaxAge: t.arg
+				.int({
+					description:
+						'How old participants are at most on the first conference day; `null` for no upper limit.'
+				})
+				.validate(conferenceSettingSchemas.participantMaxAge),
+			supervisorMinAge: t.arg
+				.int({
+					description:
+						'How old supervisors are at least on the first conference day; `null` for no limit.'
+				})
+				.validate(conferenceSettingSchemas.supervisorMinAge),
 			state: t.arg({ type: conferenceStateEnum }),
 			applicationDeadline: t.arg({ type: 'DateTime' }),
 			startConference: t.arg({ type: 'DateTime' }),

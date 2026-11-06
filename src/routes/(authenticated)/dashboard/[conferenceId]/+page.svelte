@@ -11,6 +11,8 @@
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
 	import { client } from '#lib/api/rumbleClient/client';
+	import AgeNotice from '#lib/components/registration/AgeNotice.svelte';
+	import type { AgeRole } from '#lib/helpers/plausibilityRules';
 
 	let { params }: PageProps = $props();
 
@@ -39,6 +41,17 @@
 	let teamMember = $derived(participation?.teamMember);
 	let status = $derived(participation?.participantStatus ?? null);
 	const conferenceId = $derived(params.conferenceId);
+
+	// Registered people hear about an age outside the range until the conference is over.
+	const ageRole: AgeRole | undefined = $derived(
+		conference?.state === 'POST'
+			? undefined
+			: supervisor
+				? 'supervisor'
+				: delegationMember || singleParticipant
+					? 'participant'
+					: undefined
+	);
 
 	const hasAssignedRole = $derived(
 		!!singleParticipant?.assignedRole || !!delegationMember?.delegation.assignedRole
@@ -82,6 +95,9 @@
 				</DashboardConferenceOverview>
 				<!-- Spaced like the page around it; the dashboard's tour points at it as a whole -->
 				<div class="flex flex-col gap-10" data-tour="dashboard.stages">
+					{#if ageRole}
+						<AgeNotice {conferenceId} role={ageRole} entered />
+					{/if}
 					<ParticipationStages
 						{conferenceId}
 						{conference}

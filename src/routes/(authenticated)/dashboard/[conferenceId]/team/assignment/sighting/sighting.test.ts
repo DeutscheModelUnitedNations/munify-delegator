@@ -51,17 +51,17 @@ describe('application details', () => {
 					}
 				],
 				appliedForRoles: [
-					{ rank: 2, role: { name: 'Amnesty', nation: null } },
-					{ rank: 1, role: { nation: { alpha3Code: 'FRA', alpha2Code: 'FR' } } },
-					{ rank: 3, role: {} }
+					{ rank: 2, roleId: 'r-amnesty', role: { name: 'Amnesty', nation: null } },
+					{ rank: 1, roleId: 'r-fra', role: { nation: { alpha3Code: 'FRA', alpha2Code: 'FR' } } },
+					{ rank: 3, roleId: 'r-none', role: {} }
 				]
 			},
 			nationName: (code) => `name of ${code}`
 		});
 		expect(details.wishes).toEqual([
-			{ name: 'name of FRA', alpha2Code: 'FR' },
-			{ name: 'Amnesty', icon: undefined },
-			{ name: '', icon: undefined }
+			{ roleId: 'r-fra', name: 'name of FRA', alpha2Code: 'FR' },
+			{ roleId: 'r-amnesty', name: 'Amnesty', icon: undefined },
+			{ roleId: 'r-none', name: '', icon: undefined }
 		]);
 		// the members' own schools, one line
 		expect(details.school).toBe('A, B');
@@ -83,13 +83,13 @@ describe('application details', () => {
 			motivation: 'yes',
 			user: person('s'),
 			supervisors: [],
-			appliedForRoles: [{ name: 'Press' }]
+			appliedForRoles: [{ id: 'r-press', name: 'Press' }]
 		});
 		expect(details).toMatchObject({
 			school: null,
 			motivation: 'yes',
 			people: [{ id: 's', isHeadDelegate: false }],
-			wishes: [{ name: 'Press' }]
+			wishes: [{ roleId: 'r-press', name: 'Press' }]
 		});
 	});
 

@@ -11,6 +11,7 @@
 	import SupervisorSteps from './SupervisorSteps.svelte';
 	import type { ApplyPath } from './applyPaths';
 	import { setFlowInteraction } from './flowInteraction';
+	import AgeNotice from '#lib/components/registration/AgeNotice.svelte';
 
 	/**
 	 * The whole application as one form down the page: how to take part first, then the steps of
@@ -75,6 +76,15 @@
 	const chosen = $derived(options.find((option) => option.path === path));
 </script>
 
+{#snippet ageNotice()}
+	<AgeNotice
+		{conferenceId}
+		role={path === 'supervisor' ? 'supervisor' : 'participant'}
+		onApplyAsSupervisor={() => (path = 'supervisor')}
+		class="mt-3"
+	/>
+{/snippet}
+
 <ol
 	class="flex flex-col"
 	onclickcapture={() => (started = true)}
@@ -87,6 +97,7 @@
 		onEdit={() => (path = undefined)}
 		last={!chosen}
 		bare
+		note={path ? ageNotice : undefined}
 	>
 		<!-- `registration.choice` (#lib/docs/tours/anchors) also tells the dashboard's tours apart -->
 		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="registration.choice">

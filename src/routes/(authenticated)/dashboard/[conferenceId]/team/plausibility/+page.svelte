@@ -1,16 +1,10 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime';
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import formatNames from '#lib/helpers/formatNames';
-	import {
-		DUPLICATE_THRESHOLD,
-		PARTICIPANT_MAX_AGE,
-		PARTICIPANT_MIN_AGE,
-		SUPERVISOR_MIN_AGE,
-		yearsAgo
-	} from '#lib/helpers/plausibilityRules';
+	import { ageBands, DUPLICATE_THRESHOLD } from '#lib/helpers/plausibilityRules';
+	import { ageLimitsText } from '#lib/helpers/ageRangeText';
 	import PlausibilityCheck from './PlausibilityCheck.svelte';
 	import PossibleDuplicates from './PossibleDuplicates.svelte';
 	import { duplicatesOfConference } from './possibleDuplicatesWhere';
@@ -22,7 +16,7 @@
 	const userSummary = { id: true, givenName: true, familyName: true } as const;
 	const accountName = { givenName: true, familyName: true } as const;
 
-	const [plausibility, duplicates] = $derived(
+	const [plausibility, duplicates, limits] = $derived(
 		await Promise.all([
 			client.liveQuery.conferencePlausibility({
 				__args: { conferenceId },
@@ -38,11 +32,23 @@
 				status: true,
 				user: accountName,
 				candidate: accountName
+			}),
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
+				participantMinAge: true,
+				participantMaxAge: true,
+				supervisorMinAge: true
 			})
 		])
 	);
+	const ageLimits = $derived({
+		participantMinAge: limits.participantMinAge ?? null,
+		participantMaxAge: limits.participantMaxAge ?? null,
+		supervisorMinAge: limits.supervisorMinAge ?? null
+	});
+	const limitsText = $derived(ageLimitsText(ageLimits));
+	const bands = $derived(ageBands(ageLimits));
 
-	const date = (yearsBack: number) => yearsAgo(yearsBack).toLocaleDateString(getLocale());
 	const people = (users: { id: string; givenName: string | null; familyName: string | null }[]) =>
 		users.map((user) => ({
 			id: user.id,
@@ -52,37 +58,43 @@
 			})
 		}));
 
-	/** Each check with the rule the API applied (`conferencePlausibility`) and who it found. */
-	const userChecks = $derived([
-		{
-			headline: m.plausibilityTooYoung(),
-			rule: m.plausibilityRuleTooYoung({ date: date(PARTICIPANT_MIN_AGE) }),
-			entries: people(plausibility.tooYoungUsers)
-		},
-		{
-			headline: m.plausibilityTooOld(),
-			rule: m.plausibilityRuleTooOld({
-				from: date(PARTICIPANT_MAX_AGE),
-				to: date(SUPERVISOR_MIN_AGE)
-			}),
-			entries: people(plausibility.tooOldUsers)
-		},
-		{
-			headline: m.plausibilityShouldBeSupervisor(),
-			rule: m.plausibilityRuleShouldBeSupervisor({ date: date(PARTICIPANT_MAX_AGE) }),
-			entries: people(plausibility.shouldBeSupervisor)
-		},
-		{
-			headline: m.plausibilityShouldNotBeSupervisor(),
-			rule: m.plausibilityRuleShouldNotBeSupervisor({ date: date(SUPERVISOR_MIN_AGE) }),
-			entries: people(plausibility.shouldNotBeSupervisor)
-		},
-		{
-			headline: m.plausibilityIncompleteOrInvalidData(),
-			rule: m.plausibilityRuleIncompleteData(),
-			entries: people(plausibility.dataMissing)
-		}
-	]);
+	/**
+	 * Each check with the rule the API applied (`conferencePlausibility`) and who it found; an age
+	 * check the conference's limits switch off (or make impossible) is left out.
+	 */
+	const userChecks = $derived(
+		[
+			bands.tooYoung?.lt !== undefined && {
+				headline: m.plausibilityTooYoung(),
+				rule: m.plausibilityRuleTooYoung({ age: bands.tooYoung.lt }),
+				entries: people(plausibility.tooYoungUsers)
+			},
+			bands.tooOld?.gte !== undefined &&
+				bands.tooOld.lt !== undefined && {
+					headline: m.plausibilityTooOld(),
+					rule: m.plausibilityRuleTooOld({
+						max: bands.tooOld.gte - 1,
+						supervisorMin: bands.tooOld.lt
+					}),
+					entries: people(plausibility.tooOldUsers)
+				},
+			bands.shouldBeSupervisor?.gte !== undefined && {
+				headline: m.plausibilityShouldBeSupervisor(),
+				rule: m.plausibilityRuleShouldBeSupervisor({ age: bands.shouldBeSupervisor.gte }),
+				entries: people(plausibility.shouldBeSupervisor)
+			},
+			bands.shouldNotBeSupervisor?.lt !== undefined && {
+				headline: m.plausibilityShouldNotBeSupervisor(),
+				rule: m.plausibilityRuleShouldNotBeSupervisor({ age: bands.shouldNotBeSupervisor.lt }),
+				entries: people(plausibility.shouldNotBeSupervisor)
+			},
+			{
+				headline: m.plausibilityIncompleteOrInvalidData(),
+				rule: m.plausibilityRuleIncompleteData(),
+				entries: people(plausibility.dataMissing)
+			}
+		].filter((check) => check !== false)
+	);
 
 	const duplicateEntries = $derived(
 		duplicates
@@ -99,6 +111,10 @@
 </script>
 
 <div class="flex flex-col gap-6 py-4 sm:p-6">
+	<p class="text-base-content/70 text-sm">
+		<i class="fa-sharp-duotone fa-solid fa-cake-candles mr-1"></i>
+		{limitsText ? m.plausibilityAgeLimits({ limits: limitsText }) : m.plausibilityAgeLimitsOff()}
+	</p>
 	<div class="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
 		{#each userChecks as check (check.headline)}
 			<PlausibilityCheck {...check} onSelect={openUserCard} />

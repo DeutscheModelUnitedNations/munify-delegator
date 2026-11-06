@@ -72,7 +72,7 @@ schemaBuilder.mutationFields((t) => ({
 	upsertAssignmentReview: t.drizzleField({
 		extensions: mcpTool(),
 		description:
-			"Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating or the note.",
+			"Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating, the note or the prioritized role. The prioritized role has to be one of the application's wishes: the automatic distribution treats it as the first.",
 		type: AssignmentReviewRef,
 		args: t.validate(
 			{
@@ -82,6 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 				flagged: t.arg.boolean({ required: false }),
 				disqualified: t.arg.boolean({ required: false }),
 				required: t.arg.boolean({ required: false }),
+				prioritizedRoleId: t.arg.id({ required: false }),
 				note: t.arg.string({ required: false })
 			},
 			reviewArgsSchema

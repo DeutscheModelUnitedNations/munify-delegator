@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { distinctSupervisors, memberSummary, type delegationApplication } from './sighting';
+	import {
+		distinctSupervisors,
+		memberSummary,
+		type delegationApplication,
+		type SightingReview
+	} from './sighting';
 	import Flag from '#lib/components/Flag.svelte';
 	import formatNames from '#lib/helpers/formatNames';
 	import { m } from '#lib/paraglide/messages';
@@ -12,9 +17,16 @@
 		application: ReturnType<typeof delegationApplication>;
 		startConference: Date | string;
 		kind: 'delegation' | 'single';
+		review: SightingReview | undefined;
+		/** Changes the review; shown at once */
+		onReview: (change: Partial<SightingReview>) => void;
 	}
 
-	let { application, startConference, kind }: Props = $props();
+	let { application, startConference, kind, review, onReview }: Props = $props();
+
+	/** Prioritizes a wish, or takes the priority back from the one that has it. */
+	const togglePriority = (roleId: string) =>
+		onReview({ prioritizedRoleId: review?.prioritizedRoleId === roleId ? null : roleId });
 
 	const supervisors = $derived(
 		distinctSupervisors({ supervisors: application.supervisors, format: formatNames })
@@ -104,7 +116,8 @@
 			<!-- A delegation ranks its wishes; a single application does not, so no numbers there. -->
 			<ol class="flex flex-col gap-1">
 				{#each application.wishes as wish, index (index)}
-					<li class="flex items-center gap-3">
+					{@const prioritized = review?.prioritizedRoleId === wish.roleId}
+					<li class="group flex items-center gap-3">
 						{#if kind === 'delegation'}
 							<span class="text-base-content/50 w-4 text-right font-bold tabular-nums">
 								{index + 1}
@@ -116,6 +129,18 @@
 							<Flag size="xs" nsa icon={wish.icon} />
 						{/if}
 						<span class="font-medium">{wish.name}</span>
+						<button
+							type="button"
+							class="btn btn-ghost btn-xs btn-square {prioritized
+								? 'text-primary'
+								: 'opacity-30 group-hover:opacity-100 focus-visible:opacity-100'}"
+							aria-pressed={prioritized}
+							aria-label={prioritized ? m.assignmentPrioritized() : m.assignmentPrioritize()}
+							title={prioritized ? m.assignmentPrioritized() : m.assignmentPrioritize()}
+							onclick={() => togglePriority(wish.roleId)}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-bullseye-arrow"></i>
+						</button>
 					</li>
 				{/each}
 			</ol>

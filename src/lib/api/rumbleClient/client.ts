@@ -29,6 +29,18 @@ export type AddressInput = {
 		
 export type AdministrativestatusEnum = "DONE" | "PENDING" | "PROBLEM";
 		
+export type AgeIssue = "shouldBeSupervisor" | "shouldNotBeSupervisor" | "tooOld" | "tooYoung";
+		
+export type AgeNotice = {
+  age: Int,
+  issue: AgeIssue,
+  participantMaxAge: Int | null,
+  participantMinAge: Int | null,
+  supervisorMinAge: Int | null    
+};
+		
+export type AgeRole = "participant" | "supervisor";
+		
 export type AgendaItemPaperGroup = {
   agendaItem: () => Committeeagendaitem,
   papers: () => Paper[]    
@@ -59,6 +71,11 @@ export type Assignmentreview = {
   flagged: Boolean,
   id: ID,
   note: String | null,
+  prioritizedRole: (p?: {
+    orderBy?: ConferenceroleOrderInputArgument | null | undefined,
+    where?: ConferenceroleWhereInputArgument | null | undefined
+  }) => Conferencerole | null,
+  prioritizedRoleId: ID | null,
   required: Boolean,
   search_distance: Float | null,
   singleParticipant: (p?: {
@@ -78,6 +95,7 @@ export type AssignmentreviewOrderInputArgument = {
   flagged?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   note?: SortingParameter | null | undefined,
+  prioritizedRoleId?: SortingParameter | null | undefined,
   required?: SortingParameter | null | undefined,
   singleParticipantId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
@@ -97,6 +115,8 @@ export type AssignmentreviewWhereInputArgument = {
   flagged?: BooleanWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   note?: StringWhereInputArgument | null | undefined,
+  prioritizedRole?: ConferenceroleWhereInputArgument | null | undefined,
+  prioritizedRoleId?: IDWhereInputArgument | null | undefined,
   required?: BooleanWhereInputArgument | null | undefined,
   singleParticipant?: SingleparticipantWhereInputArgument | null | undefined,
   singleParticipantId?: IDWhereInputArgument | null | undefined,
@@ -932,6 +952,8 @@ export type Conference = {
     search?: String | null | undefined,
     where?: PaperWhereInputArgument | null | undefined
   }) => Paper[],
+  participantMaxAge: Int | null,
+  participantMinAge: Int | null,
   paymentTransactions: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -980,6 +1002,7 @@ export type Conference = {
   }) => Singleparticipant[],
   startConference: DateTime,
   state: ConferencestateEnum,
+  supervisorMinAge: Int | null,
   surveyQuestions: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1051,6 +1074,8 @@ export type ConferenceOrderInputArgument = {
   mcpEnabled?: SortingParameter | null | undefined,
   mediaConsentFileId?: SortingParameter | null | undefined,
   nametagBinCount?: SortingParameter | null | undefined,
+  participantMaxAge?: SortingParameter | null | undefined,
+  participantMinAge?: SortingParameter | null | undefined,
   postalApartment?: SortingParameter | null | undefined,
   postalCity?: SortingParameter | null | undefined,
   postalCountry?: SortingParameter | null | undefined,
@@ -1062,6 +1087,7 @@ export type ConferenceOrderInputArgument = {
   showInfoExpanded?: SortingParameter | null | undefined,
   startConference?: SortingParameter | null | undefined,
   state?: SortingParameter | null | undefined,
+  supervisorMinAge?: SortingParameter | null | undefined,
   termsAndConditionsFileId?: SortingParameter | null | undefined,
   timezone?: SortingParameter | null | undefined,
   title?: SortingParameter | null | undefined,
@@ -1133,6 +1159,8 @@ export type ConferenceWhereInputArgument = {
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
+  participantMaxAge?: IntWhereInputArgument | null | undefined,
+  participantMinAge?: IntWhereInputArgument | null | undefined,
   paymentTransactions?: PaymenttransactionWhereInputArgument | null | undefined,
   places?: PlaceWhereInputArgument | null | undefined,
   postalApartment?: StringWhereInputArgument | null | undefined,
@@ -1149,6 +1177,7 @@ export type ConferenceWhereInputArgument = {
   singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   startConference?: DateTimeWhereInputArgument | null | undefined,
   state?: ConferencestateEnum | null | undefined,
+  supervisorMinAge?: IntWhereInputArgument | null | undefined,
   surveyQuestions?: SurveyquestionWhereInputArgument | null | undefined,
   teamMemberInvitations?: TeammemberinvitationWhereInputArgument | null | undefined,
   teamMembers?: TeammemberWhereInputArgument | null | undefined,
@@ -2703,6 +2732,8 @@ export type Mutation = {
     maxSeatsPerSchool?: Int | null | undefined,
     mediaConsentFileId?: ID | null | undefined,
     nametagBinCount?: Int | null | undefined,
+    participantMaxAge?: Int | null | undefined,
+    participantMinAge?: Int | null | undefined,
     postalApartment?: String | null | undefined,
     postalCity?: String | null | undefined,
     postalCountry?: String | null | undefined,
@@ -2714,6 +2745,7 @@ export type Mutation = {
     showInfoExpanded?: Boolean | null | undefined,
     startConference?: DateTime | null | undefined,
     state?: ConferencestateEnum | null | undefined,
+    supervisorMinAge?: Int | null | undefined,
     termsAndConditionsFileId?: ID | null | undefined,
     timezone?: String | null | undefined,
     title?: String | null | undefined,
@@ -2875,6 +2907,7 @@ export type Mutation = {
     evaluation?: Float | null | undefined,
     flagged?: Boolean | null | undefined,
     note?: String | null | undefined,
+    prioritizedRoleId?: ID | null | undefined,
     required?: Boolean | null | undefined,
     singleParticipantId?: ID | null | undefined
   }) => Assignmentreview,
@@ -3697,6 +3730,10 @@ export type Query = {
     id: ID
   }) => Mcpauditentry,
   mcpServerUrl: String | null,
+  myAgeNotice: (p: {
+    conferenceId: ID,
+    role: AgeRole
+  }) => AgeNotice | null,
   myOIDCRoles: OIDCRolesEnum[],
   myReviewStats: (p: {
     conferenceId: ID

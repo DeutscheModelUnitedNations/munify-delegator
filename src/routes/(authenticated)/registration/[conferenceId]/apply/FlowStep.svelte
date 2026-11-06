@@ -26,6 +26,8 @@
 		 * step that is open when the page loads.
 		 */
 		scrollIntoView?: boolean;
+		/** Shown under the step's heading whether it is open or done, such as a warning about the choice. */
+		note?: Snippet;
 		children: Snippet;
 	}
 
@@ -38,6 +40,7 @@
 		last = false,
 		bare = false,
 		scrollIntoView = false,
+		note,
 		children
 	}: Props = $props();
 
@@ -101,6 +104,7 @@
 					</button>
 				{/if}
 			</div>
+			{@render note?.()}
 			{#if !done}
 				<div
 					class="flex flex-col pt-4"

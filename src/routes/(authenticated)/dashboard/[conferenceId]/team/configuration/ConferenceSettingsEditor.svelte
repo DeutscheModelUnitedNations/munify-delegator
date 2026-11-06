@@ -27,13 +27,14 @@
 	} from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
-	import { conferenceSettingsFormSchema, type ConferenceSettings } from './form-schema';
+	import { conferenceSettingsFormSchema, limitArgs, type ConferenceSettings } from './form-schema';
 	import { collectConfigChanges } from './changePreview';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';
 	import CommitteesManager from './committees/CommitteesManager.svelte';
 	import TabIntro from './sections/TabIntro.svelte';
 	import GeneralSettings from './sections/GeneralSettings.svelte';
 	import StatusSettings from './sections/StatusSettings.svelte';
+	import AgeSettings from './sections/AgeSettings.svelte';
 	import LinkSettings from './sections/LinkSettings.svelte';
 	import PaymentSettings from './sections/PaymentSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
@@ -57,6 +58,9 @@
 		applicationDeadline: true,
 		registrationDeadlineGracePeriodMinutes: true,
 		maxSeatsPerSchool: true,
+		participantMinAge: true,
+		participantMaxAge: true,
+		supervisorMinAge: true,
 		startConference: true,
 		state: true,
 		website: true,
@@ -132,6 +136,9 @@
 		applicationDeadline: storedConference.applicationDeadline,
 		registrationDeadlineGracePeriodMinutes: storedConference.registrationDeadlineGracePeriodMinutes,
 		maxSeatsPerSchool: storedConference.maxSeatsPerSchool ?? null,
+		participantMinAge: storedConference.participantMinAge ?? null,
+		participantMaxAge: storedConference.participantMaxAge ?? null,
+		supervisorMinAge: storedConference.supervisorMinAge ?? null,
 		startConference: storedConference.startConference,
 		endConference: storedConference.endConference,
 		state: storedConference.state,
@@ -250,8 +257,7 @@
 			const promise = client.mutate.updateConference({
 				__args: {
 					...settings,
-					// an emptied field lifts the limit rather than leaving it as it was
-					maxSeatsPerSchool: settings.maxSeatsPerSchool ?? null,
+					...limitArgs(settings),
 					id: conferenceId,
 					imageFileId: await upload({ field: 'image', file: image }),
 					emblemFileId: await upload({ field: 'emblem', file: emblem }),
@@ -481,6 +487,7 @@
 		<fieldset class="contents" disabled={!canEdit}>
 			<div class:hidden={currentTab !== 'general'}>
 				<GeneralSettings {form} storedImages={storedFiles} />
+				<AgeSettings {form} />
 			</div>
 
 			<div class:hidden={currentTab !== 'payments'}>

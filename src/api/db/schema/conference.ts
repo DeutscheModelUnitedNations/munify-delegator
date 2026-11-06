@@ -96,6 +96,14 @@ export const conference = snakeCase.table('conference', {
 	 * limit.
 	 */
 	maxSeatsPerSchool: integer().default(16),
+	/**
+	 * The age range on the first conference day (`#lib/helpers/plausibilityRules`): participants
+	 * from `participantMinAge` to `participantMaxAge`, supervisors from `supervisorMinAge`. Outside it the entry flows warn and the plausibility page lists people;
+	 * nothing is refused. Empty switches that limit off.
+	 */
+	participantMinAge: integer().default(15),
+	participantMaxAge: integer().default(21),
+	supervisorMinAge: integer().default(21),
 	/** How many mails a sweep sends per second at most. Empty means as fast as it can. */
 	emailsPerSecond: integer(),
 	/**

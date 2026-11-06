@@ -12,6 +12,15 @@ const tx = {
 		return chain;
 	},
 	query: {
+		// a delegation `d` and a single participant `s` that wished for `wished`
+		roleApplication: {
+			findFirst: async ({ where }: { where: { roleId: string } }) =>
+				where.roleId === 'wished' ? { id: 'wish' } : undefined
+		},
+		singleParticipant: {
+			findFirst: async ({ where }: { where: { appliedForRoles: { id: string } } }) =>
+				where.appliedForRoles.id === 'wished' ? { id: 's' } : undefined
+		},
 		assignmentUnit: {
 			findMany: async () => {
 				steps.push('read units');
@@ -41,6 +50,7 @@ import { m } from '#lib/paraglide/messages';
 import {
 	planDelegationRole,
 	reviewArgsSchema,
+	upsertAssignmentReview,
 	splitDelegation,
 	writeGroupPlan
 } from './assignmentService';
@@ -194,6 +204,27 @@ describe('reviewArgsSchema', () => {
 			disqualified: undefined,
 			required: undefined,
 			note: null
+		});
+	});
+});
+
+describe('upsertAssignmentReview', () => {
+	const review = (args: object) => reviewArgsSchema.parse(args);
+
+	it('refuses to prioritize a role the application did not wish for', async () => {
+		for (const application of [{ delegationId: 'd' }, { singleParticipantId: 's' }]) {
+			await expect(
+				upsertAssignmentReview({
+					conferenceId: 'c',
+					review: review({ ...application, prioritizedRoleId: 'other' })
+				})
+			).rejects.toThrow(m.assignmentPrioritizedNotAWish());
+		}
+	});
+
+	it('lets the priority be cleared without asking for wishes', () => {
+		expect(review({ delegationId: 'd', prioritizedRoleId: null }).changes).toMatchObject({
+			prioritizedRoleId: null
 		});
 	});
 });
