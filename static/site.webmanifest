@@ -1,19 +1,68 @@
 {
-	"background_color": "#ffffff",
+	"background_color": "#FFFFFF",
+	"description": "Bewerbung, Delegationen und Organisation von Model-United-Nations-Konferenzen",
 	"display": "standalone",
 	"icons": [
 		{
+			"purpose": "any",
 			"sizes": "192x192",
 			"src": "/android-chrome-192x192.png",
 			"type": "image/png"
 		},
 		{
+			"purpose": "any",
 			"sizes": "512x512",
 			"src": "/android-chrome-512x512.png",
 			"type": "image/png"
+		},
+		{
+			"purpose": "maskable",
+			"sizes": "192x192",
+			"src": "/maskable-192x192.png",
+			"type": "image/png"
+		},
+		{
+			"purpose": "maskable",
+			"sizes": "512x512",
+			"src": "/maskable-512x512.png",
+			"type": "image/png"
 		}
 	],
+	"id": "/",
+	"lang": "de",
 	"name": "MUNify DELEGATOR",
-	"short_name": "MUNify DELEGATOR",
-	"theme_color": "#ffffff"
+	"scope": "/",
+	"screenshots": [
+		{
+			"form_factor": "narrow",
+			"label": "Dein Konferenz-Dashboard",
+			"sizes": "390x844",
+			"src": "/pwa/screenshots/de/light/phone-dashboard.jpg",
+			"type": "image/jpeg"
+		},
+		{
+			"form_factor": "narrow",
+			"label": "Der Zeitplan der Konferenz",
+			"sizes": "390x844",
+			"src": "/pwa/screenshots/de/light/phone-calendar.jpg",
+			"type": "image/jpeg"
+		},
+		{
+			"form_factor": "wide",
+			"label": "Dein Konferenz-Dashboard",
+			"sizes": "1280x800",
+			"src": "/pwa/screenshots/de/light/desktop-dashboard.jpg",
+			"type": "image/jpeg"
+		},
+		{
+			"form_factor": "wide",
+			"label": "Die Zuteilung im Team-Bereich",
+			"sizes": "1280x800",
+			"src": "/pwa/screenshots/de/light/desktop-assignment.jpg",
+			"type": "image/jpeg"
+		}
+	],
+	"short_name": "DELEGATOR",
+	"start_url": "/",
+	"theme_color": "#FFFFFF"
 }

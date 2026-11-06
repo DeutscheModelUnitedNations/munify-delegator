@@ -22,6 +22,7 @@
 	import NavigationProgress from '#lib/components/navigation/NavigationProgress.svelte';
 	import { enableViewTransitionApi } from '#lib/helpers/viewTransitionApi.svelte';
 	import { onMount } from 'svelte';
+	import { SPLASH_SCREENS } from '#lib/pwa/splashScreens';
 
 	let { children }: LayoutProps = $props();
 
@@ -43,9 +44,18 @@
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 	<link rel="manifest" href="/site.webmanifest" />
-	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
-	<meta name="msapplication-TileColor" content="#ffffff" />
-	<meta name="theme-color" content="#ffffff" />
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#3D7DD2" />
+	<meta name="msapplication-TileColor" content="#FFFFFF" />
+	<!-- The installed app's title bar takes the header's colour (base-100 of the DMUN themes), as in CHASE -->
+	<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF" />
+	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1B1837" />
+	<meta name="mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-title" content="DELEGATOR" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+	{#each SPLASH_SCREENS as screen (screen.file)}
+		<link rel="apple-touch-startup-image" href="/{screen.file}" media={screen.media} />
+	{/each}
 </svelte:head>
 
 <NavigationProgress />
