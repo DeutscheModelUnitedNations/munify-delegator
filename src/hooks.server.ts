@@ -20,6 +20,10 @@ if (!building && SENTRY_DSN) {
 		dsn: SENTRY_DSN,
 		environment: NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
+		// The SvelteKit SDK registers its own OpenTelemetry tracer provider by default, which would
+		// compete with ours (`src/instrumentation.server.ts`). Without it, Sentry keeps its scopes
+		// apart per request through AsyncLocalStorage all the same.
+		enableOpenTelemetrySetup: false,
 		dataCollection: sentryDataCollection(SENTRY_SEND_DEFAULT_PII ?? false),
 		// Every `logger.error` becomes an issue; Bugsink takes no logs, so nothing else is sent.
 		integrations: [Sentry.pinoIntegration({ error: { levels: ['error'] }, log: { levels: [] } })]

@@ -110,6 +110,8 @@ export const variables = defineEnvVars({
 	OTEL_SERVICE_VERSION: { schema: z.string().optional() },
 	OTEL_ENDPOINT_URL: { schema: z.string().optional() },
 	OTEL_AUTHORIZATION_HEADER: { schema: z.string().optional() },
+	// The share of traces kept, 0 to 1 (`#lib/tracing`)
+	OTEL_TRACES_SAMPLER_ARG: { schema: numberOr(1).pipe(z.number().min(0).max(1)) },
 
 	// SMTP / Transactional Email Configuration
 	SMTP_HOST: { schema: z.string().default('localhost') },

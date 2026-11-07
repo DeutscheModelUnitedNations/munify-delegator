@@ -1235,7 +1235,8 @@ bun run preview
   `console` in the browser. Call it as `logger.error('Sending the mail failed', error)` - a fixed
   message, then one value (an error, or an object of fields); put ids into the fields rather than
   the message. Each line is also added to the active OpenTelemetry span as an event, and an
-  `error` marks the span failed.
+  `error` marks the span failed; every line, rumble's included, carries the span's `trace_id` and
+  `span_id`, so Grafana links it from Loki to its trace.
 - **`logger.error` is a Sentry issue**, on the server through `pinoIntegration` (`hooks.server.ts`),
   in the browser through `forwardErrors` (`hooks.client.ts`: the error the line carries is captured
   as an exception, its other fields go along as extra; a line without one is a message), so
@@ -1358,7 +1359,8 @@ Required variables (see `.env.example`):
 - `CERTIFICATE_SECRET` - Secret for signing participation certificates
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
-- OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL`, `OTEL_SERVICE_NAME`
+- OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL` (the full `…/v1/traces` URL), `OTEL_SERVICE_NAME`,
+  `OTEL_TRACES_SAMPLER_ARG` (share of traces kept, 0 to 1)
 - `LOG_LEVEL` (optional): `debug` / `info` / `warn` / `error` / `silent`; defaults to `debug` in
   development, `warn` otherwise (the e2e server too), `info` for the jobs (`runJob`), `silent` under vitest
 
@@ -1548,9 +1550,17 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   not be - schema building fails every `instanceof` check across two copies.
 - **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
   `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
-- **OpenTelemetry 3** has no `sdk-trace-node`: `src/instrumentation.server.ts` builds a
-  `TracerProvider` from `@opentelemetry/sdk-trace` and registers the async-hooks context manager
-  and the W3C propagators itself, which `NodeTracerProvider.register()` used to do.
+- **OpenTelemetry 3** has no `sdk-trace-node`: `#lib/tracing` builds a `TracerProvider` from
+  `@opentelemetry/sdk-trace` and registers the async-hooks context manager and the W3C propagators
+  itself, which `NodeTracerProvider.register()` used to do. The server (`src/instrumentation.server.ts`)
+  and the jobs (`runJob`) both start it.
+- **The pg, ioredis and http instrumentations need the import hook** that
+  `src/instrumentation.server.ts` registers (`import-in-the-middle`, Node 22.22.3+/24.11.1+/26), and
+  the module they wrap must be loaded at runtime, not bundled: keep `pg`, `drizzle-orm`, `ioredis`
+  and the `@opentelemetry/*` packages the server loads in `dependencies`, which adapter-node leaves
+  external. The jobs run on Bun and get one span per run only.
+- **Sentry must not set up OpenTelemetry** (`enableOpenTelemetrySetup: false` in
+  `hooks.server.ts`): the SvelteKit SDK otherwise registers a tracer provider of its own.
 - **adapter-node 6 ignores `ORIGIN`.** Behind a TLS-terminating proxy, set `PROTOCOL_HEADER` and
   `HOST_HEADER` (see `.env.example`), or request URLs - and the links in the automatic emails - come
   out as `http://` on the internal host.

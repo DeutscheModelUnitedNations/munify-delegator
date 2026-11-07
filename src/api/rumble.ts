@@ -45,7 +45,8 @@ export const {
 		tracer: trace.getTracer(OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION),
 		includeVariables: false
 	},
-	logger: { enabled: true, logger: graphqlLogger, includeVariables: false },
+	// The trace ids come from the logger itself, on every line (`#lib/logger`)
+	logger: { enabled: true, logger: graphqlLogger, includeVariables: false, injectTraceId: false },
 	// Argument schemas word their issues with `m.…()` messages, so these are shown as they are.
 	validation: {
 		validationError: (failure) =>

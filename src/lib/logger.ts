@@ -1,4 +1,4 @@
-import { SpanStatusCode, trace, type Attributes } from '@opentelemetry/api';
+import { SpanStatusCode, isSpanContextValid, trace, type Attributes } from '@opentelemetry/api';
 import pino from 'pino';
 
 /**
@@ -49,9 +49,21 @@ function safeErrorFields(serialized: unknown): unknown {
 	);
 }
 
+/**
+ * The trace a line was logged in, under OpenTelemetry's names for them (its log data model), so that
+ * Grafana links the line in Loki to its trace in Tempo. rumble's lines get them here too: its own
+ * (`injectTraceId`) is off in `src/api/rumble.ts`, as pino would write both.
+ */
+function traceFields() {
+	const spanContext = trace.getActiveSpan()?.spanContext();
+	if (!spanContext || !isSpanContextValid(spanContext)) return {};
+	return { trace_id: spanContext.traceId, span_id: spanContext.spanId };
+}
+
 const pinoLogger = pino({
 	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'warn'),
 	serializers: { err: serializeError },
+	mixin: traceFields,
 	// Resolved here: pino resolves a bare target from its caller's file, which Vite's module runner
 	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`.
 	transport: isDev
