@@ -70,15 +70,15 @@ const totalRows = z.array(z.object({ total: z.number() }));
 export async function loadDataTablePage(args: LoadArgs & { limit: number; offset: number }) {
 	const input = statementInput(args);
 	const [page, count] = await Promise.all([
-		db.execute(pageStatement({ input, limit: args.limit, offset: args.offset })),
-		db.execute(countStatement(input))
+		db.execute(pageStatement({ input, limit: args.limit, offset: args.offset }), 'objects'),
+		db.execute(countStatement(input), 'objects')
 	]);
-	const ids = pageRows.parse(page.rows).map((row) => row.id);
+	const ids = pageRows.parse(page).map((row) => row.id);
 	const pageIds = ids.slice(0, args.limit);
 	return {
 		ids: pageIds,
 		hasMore: ids.length > args.limit,
-		total: totalRows.parse(count.rows)[0]?.total ?? 0,
+		total: totalRows.parse(count)[0]?.total ?? 0,
 		values: input.source.exposeValues ? await valuesOf({ input, ids: pageIds }) : null
 	};
 }
@@ -91,12 +91,13 @@ async function valuesOf({ input, ids }: { input: StatementInput; ids: string[] }
 			conferenceId: input.conferenceId,
 			access: input.access,
 			uses: new Set()
-		})}) as t where t.id = any(${sql.param(ids)}::text[])`
+		})}) as t where t.id = any(${sql.param(ids)}::text[])`,
+		'objects'
 	);
 	const byId = new Map(
 		z
 			.array(z.object({ value: z.looseObject({ id: z.string() }) }))
-			.parse(result.rows)
+			.parse(result)
 			.map(({ value }) => [value.id, value])
 	);
 	return ids.flatMap((id) => byId.get(id) ?? []);
@@ -109,5 +110,5 @@ export async function loadDataTableGroups(args: LoadArgs) {
 	const input = statementInput(args);
 	const statement = groupsStatement(input);
 	if (!statement) return [];
-	return groupRows.parse((await db.execute(statement)).rows);
+	return groupRows.parse(await db.execute(statement, 'objects'));
 }

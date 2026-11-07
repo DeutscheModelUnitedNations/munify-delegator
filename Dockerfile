@@ -1,68 +1,46 @@
-# Bun installs and builds; the server runs on Node (the newest LTS), the runtime the e2e suite and
-# the server coverage test it on.
-FROM oven/bun:1.3-slim AS builder
-WORKDIR /run
-
-COPY package.json bun.lock tsconfig.json ./
-# bun applies patchedDependencies while installing, so the patches have to be there already
+FROM oven/bun:1-slim AS base
+WORKDIR /build
+COPY package.json bun.lock ./
 COPY patches ./patches
+
+FROM base AS dependencies
 RUN bun install --frozen-lockfile
 
+FROM base AS runtime-dependencies
+RUN bun install --frozen-lockfile --production
+
+FROM dependencies AS builder
 ARG VERSION
 ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
-
-COPY . .
-# Increase Node.js heap size for build (default is too small for large codebases)
 ENV NODE_OPTIONS="--max-old-space-size=8192"
-# `bun run check` is not repeated here: the CI `typecheck` job runs the same command and is in
-# the docker-build `needs` list, so the image is only built once it has already passed.
-# The compute worker threads go into build/ next to the server, so the image needs nothing else.
+COPY . .
 RUN bun run build:app && bun run build:compute
-# Strip the Go-built dev tools (lefthook, the native TypeScript 7 tsc): unused at runtime, and
-# Trivy's gobinary scan flags the Go stdlib compiled into them. esbuild stays: drizzle-kit needs it.
-RUN find node_modules -type d \( -name 'lefthook-linux-*' -o -path '*/@typescript/typescript-linux-*' \) \
-  -prune -exec rm -rf {} +
 
-# A fresh stage leaves the removed binaries, bun's install cache and the build layers behind.
-FROM node:26-slim AS runner
-# Apply OS security updates (e.g. libcap2 CVE-2026-4878) on top of the base image.
-# CI passes the current date so this layer is rebuilt daily instead of being served from a
-# build cache that predates newer Debian security fixes.
+FROM node:26-slim AS release
 ARG OS_UPDATES_DATE
-RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade; \
-  rm -rf /var/lib/apt/lists/*
-# The server runs on plain `node`; the npm CLI the image ships is never used, and Trivy flags
-# the dependencies it bundles (brace-expansion, undici, tar, ...), which no override reaches.
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
-  /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
-WORKDIR /run
-COPY --from=builder /run /run
+RUN apt-get update \
+	&& apt-get upgrade -y --no-install-recommends \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/* \
+		/usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+		/usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
+WORKDIR /app
+COPY package.json drizzle.config.ts ./
+COPY drizzle ./drizzle
+COPY --from=runtime-dependencies /build/node_modules ./node_modules
+COPY --from=builder /build/build ./build
 
 ARG VERSION
 ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
-# The JS heap's limit, below the container's memory limit (1 GB): what the heap may not use goes
-# to buffers, the matching worker and the typst compiles of the PDF export. Over the limit Node
-# fails with "heap out of memory" in the log; over the container's, it is killed without a word
-# (exit 137). Raise both together.
-ENV NODE_OPTIONS="--max-old-space-size=640"
+ENV NODE_ENV=production \
+	BODY_SIZE_LIMIT=64M \
+	SHUTDOWN_TIMEOUT=5
 
 USER node
-ENV NODE_ENV=production
-# adapter-node caps request bodies at 512K by default and rejects anything larger with
-# HTTP 413 before the request reaches the app. Conference document/image uploads (base
-# PDFs are validated up to 10MB each in the Zod schema, and several can be sent in one
-# save) exceed that. Raise the limit so uploads actually reach the server. Overridable at
-# runtime via the BODY_SIZE_LIMIT env var (see .env.example).
-ENV BODY_SIZE_LIMIT=64M
 EXPOSE 3000/tcp
-# A stop sends SIGTERM, then SIGKILL after the grace period (10s by default). adapter-node shuts
-# down on SIGTERM, but waits up to SHUTDOWN_TIMEOUT (30s) for open connections, and every open tab
-# holds a subscription stream: keep it inside the grace period so the server closes them itself.
-ENV SHUTDOWN_TIMEOUT=5
-# `exec` makes the server the container's PID 1: a shell there neither handles nor forwards
-# SIGTERM, so the server never heard of a stop and was killed (exit 137).
-CMD ["sh", "-c", "node node_modules/drizzle-kit/bin.cjs migrate && exec node ./build/index.js"]
+CMD ["sh", "-c", "node node_modules/drizzle-kit/bin.cjs migrate && exec node build/index.js"]

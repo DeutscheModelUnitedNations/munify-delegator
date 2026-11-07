@@ -49,6 +49,24 @@ function rebuildRumbleOnSchemaChange(): Plugin {
 }
 
 /**
+ * Keeps `@opentelemetry/api` a plain external of the server build. Sentry's plugin redirects it to
+ * `@sentry/sveltekit/opentelemetry-api`, its own re-export, so that Kit and Sentry share one copy
+ * under pnpm's strict layout; bun's flat one resolves the bare name to that one copy anyway. The
+ * redirect would make the runtime image install `@sentry/sveltekit`, and through its peers Kit,
+ * Vite and esbuild, where `dependencies` alone are enough (`Dockerfile`). Runs before Sentry's.
+ */
+function externalOpenTelemetryApi(): Plugin {
+	return {
+		name: 'external-opentelemetry-api',
+		enforce: 'pre',
+		apply: 'build',
+		resolveId(id, _importer, options) {
+			return id === '@opentelemetry/api' && options?.ssr ? { id, external: true } : null;
+		}
+	};
+}
+
+/**
  * Tests that mount a component into the document (`PageBoundary.dom.svelte.test.ts`); they run
  * with the browser build of Svelte. The `.svelte.test.ts` suffix alone keeps a runes test in the
  * unit project, where `browser` is false and the server build answers.
@@ -66,6 +84,7 @@ const unitTestOptions = {
 
 export default defineConfig({
 	plugins: [
+		externalOpenTelemetryApi(),
 		sentrySvelteKit({
 			autoUploadSourceMaps: false, // We upload manually via CI to Bugsink
 			// Tracing is off (Bugsink only takes errors), so the build-time tracing instrumentation has

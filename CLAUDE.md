@@ -1536,14 +1536,18 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 
 Some versions are held back or wired up on purpose. Check here before "updating to latest":
 
-- **drizzle-orm / drizzle-kit / drizzle-seed track the `1.0.0-rc.5` builds, not npm's `latest`**,
-  which is the 0.x line without the relational API v2 this app is built on. They are pinned to
-  `1.0.0-rc.5-5935859`: the tagged `1.0.0-rc.5` release breaks the row type Pothos hands to every
-  `adjust` resolver (`object({ adjust })`), which silently becomes an index signature of `any`;
-  check `src/api/handlers/storedFile/storedFile.ts` type-checks before moving on. After any drizzle bump,
-  regenerate the client and check `git diff src/lib/api/rumbleClient` for `| null` creeping into
-  relations: newer builds wrap relation columns in a `RelationsBuilderColumn`, which our rumble patch
-  unwraps.
+- **drizzle-orm / drizzle-kit / drizzle-seed are pinned to the `1.0.0-rc.5` release, not npm's
+  `latest`**, which is the 0.x line without the relational API v2 this app is built on. Pinned
+  exactly: the commit builds (`1.0.0-rc.5-5935859` and the like) rank above `1.0.0-rc.5` in semver,
+  so a caret range would pick one of them. rc.5 needs rumble ≥ 0.28 (its `relationsFilterToSQL`
+  returns the collected chunks; older rumble put the conditions into the statements as parameters,
+  and the row type Pothos hands to every `adjust` resolver became `any` - check
+  `src/api/handlers/storedFile/storedFile.ts` type-checks). The same change is why `whereRows`
+  wraps the chunks into an `SQL`, and raw statements read their rows with
+  `db.execute(statement, 'objects')`. After any drizzle bump, regenerate the client and check
+  `git diff src/lib/api/rumbleClient` for `| null` creeping into relations, run `drizzle-kit up`
+  if `migrate` asks for it (it upgrades the snapshots under `drizzle/`, not the SQL), and run the
+  e2e suite: the unit tests do not reach the database.
 - **graphql is on 17.** `@escape.tech/graphql-armor` still pins 16 and keeps a nested copy; that is
   fine because armor only parses and walks documents (verified: depth and alias limits still reject
   over-limit queries on a production build). Anything else that brings its own graphql copy would
