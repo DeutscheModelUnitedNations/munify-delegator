@@ -1578,10 +1578,6 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   reader already shows), which, announced as an update while a page's first async work was
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Keep rumble at ≥ 0.26.2.
 
-- **@sveltejs/kit is patched** to log in `'gray'` instead of `'grey'`: Node 25 dropped the `grey`
-  alias from `util.styleText`, which made every `vite build` fail at the adapter step. Drop the
-  patch once SvelteKit ships the fix.
-
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
 
