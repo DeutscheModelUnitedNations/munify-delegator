@@ -11,6 +11,7 @@
 	import ApplicationText from './ApplicationText.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import PersonLine from './PersonLine.svelte';
+	import { resolve } from '$app/paths';
 
 	/** Who applied in a first row (members, school, supervisors, wishes), what they wrote below. */
 	interface Props {
@@ -20,9 +21,11 @@
 		review: SightingReview | undefined;
 		/** Changes the review; shown at once */
 		onReview: (change: Partial<SightingReview>) => void;
+		/** For the links to the schools' pages */
+		conferenceId: string;
 	}
 
-	let { application, startConference, kind, review, onReview }: Props = $props();
+	let { application, startConference, kind, review, onReview, conferenceId }: Props = $props();
 
 	/** Prioritizes a wish, or takes the priority back from the one that has it. */
 	const togglePriority = (roleId: string) =>
@@ -77,8 +80,19 @@
 				<i class="fa-sharp-duotone fa-solid fa-school"></i>
 				{m.schoolOrInstitution()}
 			</h4>
-			{#if application.school}
-				<span class="font-medium">{application.school}</span>
+			{#if application.schools.length > 0}
+				<ul class="flex flex-col gap-0.5">
+					{#each application.schools as school (school.id)}
+						<li>
+							<a
+								class="link link-hover font-medium"
+								href={resolve(`dashboard/${conferenceId}/team/schools/${school.id}`)}
+							>
+								{school.name}
+							</a>
+						</li>
+					{/each}
+				</ul>
 			{:else}
 				<p class="text-base-content/60">{m.assignmentNoSchool()}</p>
 			{/if}

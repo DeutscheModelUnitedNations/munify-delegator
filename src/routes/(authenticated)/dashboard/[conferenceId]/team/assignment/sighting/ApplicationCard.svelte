@@ -105,7 +105,7 @@
 
 		<SchoolRuleNotes {conferenceId} application={ruleApplication} required={!!review?.required} />
 
-		<ApplicationDetails {application} {startConference} {kind} {review} {onReview} />
+		<ApplicationDetails {application} {startConference} {kind} {review} {onReview} {conferenceId} />
 
 		<NoteInput {review} {onReview} />
 	</div>

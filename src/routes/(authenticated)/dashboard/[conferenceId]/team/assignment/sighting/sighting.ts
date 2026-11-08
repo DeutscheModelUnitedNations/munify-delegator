@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import { getAgeAtConference } from '#lib/helpers/ageChecker';
 import type { WithLinkedAccounts } from '#lib/helpers/linkedNotes';
-import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
+import { delegationSchoolsLabel, distinctSchools } from '#lib/helpers/delegationSchools';
 /** Pure helpers of the sighting. Which applications are shown, in which order, is the backend's: see `sightingDeck`. */
 
 export interface SightingReview {
@@ -138,7 +138,7 @@ interface ApplicationTexts {
 }
 
 /** A person's own school, if they named one. */
-type OwnSchool = Nullable<{ name: string }>;
+type OwnSchool = Nullable<{ id: string; name: string }>;
 
 export interface SightedDelegation extends ApplicationTexts {
 	members: readonly {
@@ -208,6 +208,7 @@ export function delegationApplication({
 	return {
 		// the members' own schools: a delegation keeps none
 		school: delegationSchoolsLabel(delegation.members),
+		schools: distinctSchools(delegation.members.map((member) => member.school)),
 		...texts(delegation),
 		people: delegation.members.map((member) => ({
 			...member.user,
@@ -224,6 +225,7 @@ export function delegationApplication({
 export function singleApplication(single: SightedSingleParticipant) {
 	return {
 		school: single.school?.name ?? null,
+		schools: single.school ? [single.school] : [],
 		...texts(single),
 		people: [{ ...single.user, isHeadDelegate: false }],
 		supervisors: [...single.supervisors],

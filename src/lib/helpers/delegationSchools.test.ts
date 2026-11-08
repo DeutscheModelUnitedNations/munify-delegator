@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { delegationSchoolsLabel, distinctSchoolNames } from './delegationSchools';
+import { delegationSchoolsLabel, distinctSchoolNames, distinctSchools } from './delegationSchools';
 
 const kiel = { name: 'Gymnasium Kiel' };
 const luebeck = { name: 'Schule Lübeck' };
@@ -15,6 +15,15 @@ describe('distinctSchoolNames', () => {
 
 	test('is empty when nobody has a school', () => {
 		expect(distinctSchoolNames([null, undefined])).toEqual([]);
+	});
+});
+
+describe('distinctSchools', () => {
+	test('keeps each school once by id, in the same order as the names', () => {
+		const a = { id: 'a', name: 'Schule Lübeck' };
+		const b = { id: 'b', name: 'Gymnasium Kiel' };
+		const namesake = { id: 'c', name: 'Gymnasium Kiel' };
+		expect(distinctSchools([a, b, null, a, namesake])).toEqual([a, b, namesake]);
 	});
 });
 
