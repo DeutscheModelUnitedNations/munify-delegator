@@ -4,7 +4,8 @@ import { targetKey, type AssignmentGroup } from '#lib/assignment/state';
  * The conference's rules about schools, which the assignment checks and only warns about:
  *
  * - **Decided together.** The students of one supervisor from one school who applied are a group
- *   (`collectiveGroups`). Up to `conference.maxCollectiveGroupSize` of them, they all get a seat or
+ *   (`collectiveGroups`), with every member from that school of a delegation the supervisor is
+ *   linked to through any of its members. Up to `conference.maxCollectiveGroupSize` of them, they all get a seat or
  *   none do; a bigger group is treated like everyone else.
  * - **Guaranteed seats abroad.** Of one Auslandsschule (`school.isForeignSchool`), at most
  *   `conference.maxGuaranteedSeatsPerForeignSchool` people may be in applications marked required

@@ -5,6 +5,7 @@ import { schoolRows } from './conferenceAggregates';
 import { findSimilarSchools, suggestionKey } from './similarSchools';
 import { eq } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
+import { joinMemberSchool } from '#api/handlers/school/memberSchool';
 
 /**
  * The people of applied registrations the caller may read (`readableSchoolRegistrations`), each
@@ -13,20 +14,20 @@ import { whereRows } from '#api/db/whereRows';
 export async function loadSchoolRegistrations(readable: ReadableSchoolRegistrations) {
 	const school = { id: schema.school.id, name: schema.school.name };
 	const [members, singleParticipants] = await Promise.all([
-		db
-			.select({
-				delegationId: schema.delegationMember.delegationId,
-				participantId: schema.conferenceParticipant.id,
-				school
-			})
-			.from(schema.delegationMember)
-			.innerJoin(schema.delegation, eq(schema.delegation.id, schema.delegationMember.delegationId))
-			.innerJoin(
-				schema.conferenceParticipant,
-				eq(schema.conferenceParticipant.id, schema.delegationMember.conferenceParticipantId)
-			)
-			.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId))
-			.where(readable.delegations),
+		joinMemberSchool(
+			db
+				.select({
+					delegationId: schema.delegationMember.delegationId,
+					participantId: schema.conferenceParticipant.id,
+					school
+				})
+				.from(schema.delegationMember)
+				.innerJoin(
+					schema.delegation,
+					eq(schema.delegation.id, schema.delegationMember.delegationId)
+				)
+				.$dynamic()
+		).where(readable.delegations),
 		db
 			.select({
 				id: schema.singleParticipant.id,

@@ -1,11 +1,13 @@
 import { db, schema } from '#api/db/db';
 import { and, eq, isNotNull, or } from 'drizzle-orm';
+import { joinMemberSchool } from '#api/handlers/school/memberSchool';
 import { collectiveGroups, type SupervisedStudent } from './collectiveGroups';
 
 /**
  * The conference's groups decided together (`collectiveGroups`), up to its
  * `maxCollectiveGroupSize`: every supervision of a student with a school who applied, as a
- * delegation member or a single participant.
+ * delegation member or a single participant, and the applied delegation members with a school, of
+ * whom a supervised member brings in their delegation's.
  */
 export async function loadCollectiveGroups(conferenceId: string) {
 	const conference = await db.query.conference.findFirst({
@@ -56,7 +58,25 @@ export async function loadCollectiveGroups(conferenceId: string) {
 			)
 		);
 
-	return collectiveGroups({ students: rows.flatMap(studentOf), limit });
+	const members = await joinMemberSchool(
+		db
+			.select({
+				delegationMemberId: schema.delegationMember.id,
+				delegationId: schema.delegation.id,
+				schoolId: schema.school.id
+			})
+			.from(schema.delegationMember)
+			.innerJoin(
+				schema.delegation,
+				and(
+					eq(schema.delegation.id, schema.delegationMember.delegationId),
+					eq(schema.delegation.applied, true)
+				)
+			)
+			.$dynamic()
+	).where(eq(schema.delegation.conferenceId, conferenceId));
+
+	return collectiveGroups({ students: rows.flatMap(studentOf), members, limit });
 }
 
 /** A row of the supervisions as a student; one that is neither (cannot happen) is left out. */

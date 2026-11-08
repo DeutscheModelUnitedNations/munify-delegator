@@ -125,7 +125,7 @@ Das Ergebnis landet im Entwurf wie eine Zuteilung von Hand, du kannst es also pr
 
 ### Schulregeln
 
-Unter dem Pool zeigt **Schulregeln**, wo der Entwurf die Regeln der Konferenz zu Schulen verletzt. Die Bewerbenden einer Betreuungsperson von derselben Schule bekommen bis zu einer Gruppengröße von 16 alle einen Platz oder niemand. Personen einer Auslandsschule bekommen höchstens 12 garantierte Plätze pro Schule, gezählt wird jede Person nach ihrer eigenen Schule. Das Board warnt bei Gruppen, von denen nur ein Teil einen Platz bekäme oder ausgeschlossen ist, und bei Auslandsschulen mit zu vielen garantierten Plätzen. Es verhindert die Zuteilung aber nicht. Die Grenzen stellst du in den [Konferenzeinstellungen](./configuration) ein, leer schaltet eine Regel ab.
+Unter dem Pool zeigt **Schulregeln**, wo der Entwurf die Regeln der Konferenz zu Schulen verletzt. Die Bewerbenden einer Betreuungsperson von derselben Schule bekommen bis zu einer Gruppengröße von 16 alle einen Platz oder niemand. Zu ihnen zählen alle Mitglieder derselben Schule in Delegationen, in denen die Betreuungsperson mit mindestens einer Person verknüpft ist. Personen einer Auslandsschule bekommen höchstens 12 garantierte Plätze pro Schule, gezählt wird jede Person nach ihrer eigenen Schule. Das Board warnt bei Gruppen, von denen nur ein Teil einen Platz bekäme oder ausgeschlossen ist, und bei Auslandsschulen mit zu vielen garantierten Plätzen. Es verhindert die Zuteilung aber nicht. Die Grenzen stellst du in den [Konferenzeinstellungen](./configuration) ein, leer schaltet eine Regel ab.
 
 ## Abschluss und Freigabe {#finish-and-release}
 

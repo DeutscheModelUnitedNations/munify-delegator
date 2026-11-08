@@ -821,7 +821,7 @@
 	"conferenceLogoHint": "Image file for the logo displayed in the dashboard header. If not set, the emblem will be used as fallback.",
 	"conferenceLongTitle": "Full Name",
 	"conferenceMaxCollectiveGroupSize": "Decide groups together up to",
-	"conferenceMaxCollectiveGroupSizeDescription": "The applicants of one supervisor from the same school form a group. Up to this size, all of them get a seat or none do, and the assignment warns when a plan splits them. Larger groups are treated like everyone else. Leave empty to switch the rule off.",
+	"conferenceMaxCollectiveGroupSizeDescription": "The applicants of one supervisor from the same school form a group, together with every member from that school of a delegation in which the supervisor is linked to at least one person. Up to this size, all of them get a seat or none do, and the assignment warns when a plan splits them. Larger groups are treated like everyone else. Leave empty to switch the rule off.",
 	"conferenceMaxCollectiveGroupSizeRange": "The group size for deciding together must be at least 1.",
 	"conferenceMaxGuaranteedSeats": "Guaranteed seats per school abroad",
 	"conferenceMaxGuaranteedSeatsDescription": "How many people of one school abroad may get a guaranteed seat at most. Beyond that they apply like everyone else, and the assignment warns. Leave empty for no limit.",

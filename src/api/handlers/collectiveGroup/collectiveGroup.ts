@@ -21,7 +21,7 @@ const CollectiveGroupMember = schemaBuilder.simpleObject('CollectiveGroupMember'
 
 const CollectiveGroup = schemaBuilder.simpleObject('CollectiveGroup', {
 	description:
-		'The applied students of one supervisor from one school, as long as there are at most `conference.maxCollectiveGroupSize` of them: they all get a seat or none.',
+		'The applied students of one supervisor from one school, with every member from that school of a delegation the supervisor is linked to through any member, as long as there are at most `conference.maxCollectiveGroupSize` of them: they all get a seat or none.',
 	fields: (t) => ({
 		key: t.string({ description: 'The supervisor and the school, as one key.' }),
 		supervisorId: t.id({ description: 'The conference supervisor.' }),

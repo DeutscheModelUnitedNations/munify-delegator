@@ -97,7 +97,7 @@ Unter **Funktionen** schaltest du einzelne Teile unabhängig von der Phase frei:
 
 Im selben Reiter stehen die Grenzen der Schulregeln, die nur die Projektleitung ändern kann:
 
-- **Gemeinsame Entscheidung bis Gruppengröße** (anfangs 16): Bis zu so vielen Bewerbenden einer Betreuungsperson von derselben Schule bekommen alle einen Platz oder niemand.
+- **Gemeinsame Entscheidung bis Gruppengröße** (anfangs 16): Bis zu so vielen Bewerbenden einer Betreuungsperson von derselben Schule bekommen alle einen Platz oder niemand. Ist eine Person einer Delegation mit der Betreuungsperson verknüpft, zählen alle Mitglieder dieser Delegation von derselben Schule mit.
 - **Garantierte Plätze pro Auslandsschule** (anfangs 12): So viele Personen einer Auslandsschule können höchstens einen garantierten Platz bekommen.
 
 Die Zuteilung warnt, wenn ein Entwurf eine Regel verletzt, und blockiert nichts. Leer lassen schaltet eine Regel ab.

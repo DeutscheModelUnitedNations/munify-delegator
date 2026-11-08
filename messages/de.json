@@ -821,7 +821,7 @@
 	"conferenceLogoHint": "Bilddatei für das Logo im Dashboard-Header. Falls nicht gesetzt, wird das Emblem als Fallback verwendet.",
 	"conferenceLongTitle": "Voller Name",
 	"conferenceMaxCollectiveGroupSize": "Gemeinsame Entscheidung bis Gruppengröße",
-	"conferenceMaxCollectiveGroupSizeDescription": "Die Bewerbenden einer Betreuungsperson von derselben Schule bilden eine Gruppe. Bis zu dieser Größe bekommen alle einen Platz oder niemand, und die Zuteilung warnt, wenn ein Plan sie teilt. Größere Gruppen werden wie alle anderen behandelt. Leer lassen schaltet die Regel ab.",
+	"conferenceMaxCollectiveGroupSizeDescription": "Die Bewerbenden einer Betreuungsperson von derselben Schule bilden eine Gruppe, mit allen Mitgliedern derselben Schule aus Delegationen, in denen sie mit mindestens einer Person verknüpft ist. Bis zu dieser Größe bekommen alle einen Platz oder niemand, und die Zuteilung warnt, wenn ein Plan sie teilt. Größere Gruppen werden wie alle anderen behandelt. Leer lassen schaltet die Regel ab.",
 	"conferenceMaxCollectiveGroupSizeRange": "Die Gruppengröße für gemeinsame Entscheidungen muss mindestens 1 sein.",
 	"conferenceMaxGuaranteedSeats": "Garantierte Plätze pro Auslandsschule",
 	"conferenceMaxGuaranteedSeatsDescription": "Wie viele Personen einer Auslandsschule höchstens einen garantierten Platz bekommen sollen. Darüber hinaus bewerben sie sich regulär, und die Zuteilung warnt. Leer lassen für keine Grenze.",

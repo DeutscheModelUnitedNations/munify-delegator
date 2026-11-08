@@ -978,7 +978,9 @@ bun run preview
   - **Decided together:** the applied students of one supervisor from one school are a group
     (the `collectiveGroups` query, `#api/handlers/collectiveGroup/`, worked out on the server so
     no list cap cuts it short, and not live; someone with two supervisors is in two groups,
-    without one in none). It answers ids only: the supervisors' names come from a live query of
+    without one in none). A delegation is decided on whole, so one supervised member brings in
+    every member of it from the same school: linking only the head delegates does not keep a
+    school's delegations under the limit. It answers ids only: the supervisors' names come from a live query of
     the groups shown (`fetchSupervisorNames`), behind the user read rules. Up to `conference.maxCollectiveGroupSize` (default 16, null switches it off) they all get
     a seat or none: the board, the summary and the apply dialog warn about a group the plan seats
     only partly, or the sighting excluded only partly (`collectiveGroupProblems`). Bigger groups
