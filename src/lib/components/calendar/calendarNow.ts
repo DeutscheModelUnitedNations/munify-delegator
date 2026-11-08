@@ -4,7 +4,7 @@ import type { CalendarEntry } from './calendarTypes';
 type TimedEntry = Pick<CalendarEntry, 'name' | 'startTime' | 'endTime' | 'tracks'>;
 
 /** A track with the committees and roles whose seats it is for. */
-interface SeatTrack {
+export interface SeatTrack {
 	id: string;
 	committees: readonly { id: string }[];
 	conferenceRoles: readonly { id: string }[];
@@ -61,6 +61,15 @@ export function wallClockNow({
 const DAY = 24 * 60 * 60 * 1000;
 const dayOf = (time: number) => Math.floor(time / DAY);
 
+/** Whether a track is meant for someone in `seat`: for their committee or their role. */
+export function isOwnTrackOf(seat: Seat) {
+	const committees = new Set(seat.committeeIds);
+	const roles = new Set(seat.roleIds);
+	return (track: SeatTrack) =>
+		track.committees.some((committee) => committees.has(committee.id)) ||
+		track.conferenceRoles.some((role) => roles.has(role.id));
+}
+
 /**
  * The entries that concern someone in `seat`: the ones for every track, and the ones on a track
  * meant for their committee or role. An entry is for every track when it has none of its own or
@@ -75,11 +84,7 @@ export function entriesForSeat<E extends TimedEntry>({
 	days: readonly DayWithTracks<E>[];
 	seat: Seat;
 }): E[] {
-	const committees = new Set(seat.committeeIds);
-	const roles = new Set(seat.roleIds);
-	const isOwn = (track: SeatTrack) =>
-		track.committees.some((committee) => committees.has(committee.id)) ||
-		track.conferenceRoles.some((role) => roles.has(role.id));
+	const isOwn = isOwnTrackOf(seat);
 	const hasOwnTrack = days.some((day) => day.tracks.some(isOwn));
 	if (!hasOwnTrack) {
 		const seen = new Set<string>();

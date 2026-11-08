@@ -9,6 +9,7 @@ const USER_CARD_TABS = [
 	'formalities',
 	'conference',
 	'surveys',
+	'calendar',
 	'papers',
 	'history'
 ] as const;
@@ -40,6 +41,7 @@ export function visibleUserCardTabs(flags: UserCardTabFlags): UserCardTab[] {
 		formalities: flags.participant,
 		conference: flags.participant && flags.access,
 		surveys: flags.access && !flags.team,
+		calendar: flags.access && !flags.team,
 		papers: flags.delegate,
 		history: true
 	};

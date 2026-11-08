@@ -17,6 +17,8 @@
 	import FormalitiesTab from './tabs/FormalitiesTab.svelte';
 	import ConferenceTab from './tabs/ConferenceTab.svelte';
 	import SurveyAnswersTab from './tabs/SurveyAnswersTab.svelte';
+	import CalendarTab from './tabs/CalendarTab.svelte';
+	import { seatOf } from '#lib/components/calendar/calendarNow';
 	import PapersTab from './tabs/PapersTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
 	import LoadError from '#lib/components/LoadError.svelte';
@@ -79,6 +81,8 @@
 	const singleParticipantId = $derived(singleParticipant?.id);
 	const supervisorId = $derived(conferenceSupervisor?.id);
 	const teamRole = $derived(teamMember?.role);
+	// The ids the schedule's tracks are for, read out once so the calendar tab gets plain values
+	const seat = $derived(seatOf({ delegationMember, singleParticipant }));
 
 	// The other tabs load in the background, one at a time while the browser is idle, once the shown
 	// one has its data: each is rendered hidden until its queries have answered, which leaves their
@@ -128,6 +132,8 @@
 		<ConferenceTab {userId} {conferenceId} />
 	{:else if tab === 'surveys'}
 		<SurveyAnswersTab {conferenceId} {userId} />
+	{:else if tab === 'calendar'}
+		<CalendarTab {conferenceId} {userId} {seat} />
 	{:else if tab === 'papers'}
 		<PapersTab {userId} {conferenceId} />
 	{:else if tab === 'history'}

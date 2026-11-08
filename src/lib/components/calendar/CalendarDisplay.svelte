@@ -11,16 +11,30 @@
 		/** Shown at the start of the row the day and track selection is in */
 		heading?: Snippet;
 		timezone?: string;
+		/** Tracks to preselect: on each day, the first of them the day has */
+		ownTrackIds?: readonly string[];
 		onEditEntry?: (entryId: string) => void;
 		onEditPlace?: (placeId: string) => void;
 	}
 
-	let { days, timezone = 'UTC', heading, onEditEntry, onEditPlace }: Props = $props();
+	let {
+		days,
+		timezone = 'UTC',
+		heading,
+		ownTrackIds = [],
+		onEditEntry,
+		onEditPlace
+	}: Props = $props();
+
+	/** The track a day opens on: the person's own when the day has it, else all of them */
+	const openingTrackOf = (day: Day | undefined) =>
+		day?.tracks.find((track) => ownTrackIds.includes(track.id))?.id ?? null;
 
 	// Only the day shown first depends on these props, so reading them once is intended
 	// svelte-ignore state_referenced_locally
 	let selectedDayIndex = $state(todayIndex({ days, timezone }));
-	let filterTrackId = $state<string | null>(null);
+	// svelte-ignore state_referenced_locally
+	let filterTrackId = $state<string | null>(openingTrackOf(days[selectedDayIndex]));
 
 	let selectedDay = $derived(days[selectedDayIndex]);
 	let selectedDayTracks = $derived(selectedDay?.tracks ?? []);
@@ -40,11 +54,11 @@
 		drawerOpen = true;
 	}
 
-	// Reset track filter when switching days since tracks differ
-	$effect(() => {
-		void selectedDayIndex;
-		filterTrackId = null;
-	});
+	// Tracks differ between days, so switching days starts over with the day's own track
+	function selectDay(index: number) {
+		selectedDayIndex = index;
+		filterTrackId = openingTrackOf(days[index]);
+	}
 </script>
 
 {#snippet dayTabs()}
@@ -53,7 +67,7 @@
 			<button
 				role="tab"
 				class="tab {i === selectedDayIndex ? 'tab-active' : ''}"
-				onclick={() => (selectedDayIndex = i)}
+				onclick={() => selectDay(i)}
 			>
 				{day.name}
 			</button>
@@ -101,7 +115,9 @@
 				date={day.date}
 				tracks={day.tracks}
 				entries={day.entries}
-				{filterTrackId}
+				filterTrackId={day.tracks.some((track) => track.id === filterTrackId)
+					? filterTrackId
+					: null}
 				{timezone}
 				minTrackWidth="0"
 				onEntryClick={(entry) => handleEntryClick({ entry, day })}

@@ -44,6 +44,7 @@ describe('visibleUserCardTabs', () => {
 			'formalities',
 			'conference',
 			'surveys',
+			'calendar',
 			'papers',
 			'history'
 		]);
@@ -57,7 +58,7 @@ describe('visibleUserCardTabs', () => {
 		]);
 	});
 
-	it('offers a team member their seat but no surveys', () => {
+	it('offers a team member their seat but no surveys or calendar', () => {
 		expect(visibleUserCardTabs({ ...none, holdsPart: true, access: true, team: true })).toEqual([
 			'person',
 			'seat',
