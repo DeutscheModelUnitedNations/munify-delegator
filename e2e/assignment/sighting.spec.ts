@@ -52,9 +52,10 @@ test('the sighting keeps ratings, exclusions and notes on the server', async ({ 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
 		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting?application=${E2E_COMMITTEE_ASSIGN_DELEGATION_ID}`
 	});
+	// the segment inside the button carries the colour; the button is the larger hit area
 	const card = page
 		.getByRole('list', { name: /überblick|glance/i })
-		.locator('button[aria-current="true"]');
+		.locator('button[aria-current="true"] > span');
 	await expect(card).toHaveClass(/bg-base-300/);
 
 	await page.getByRole('button', { name: /ausschließen|exclude|disqualif/i }).click();
@@ -108,7 +109,7 @@ test('the sighting seeks, filters and searches in the backend', async ({ page })
 
 	// a status filter narrows the deck: nothing is flagged in the seed
 	await page.getByLabel(/status/i).selectOption('flagged');
-	await expect(page.getByText(/keine|no applications/i).first()).toBeVisible();
+	await expect(page.getByText(/keine bewerbungen|no applications/i).first()).toBeVisible();
 	await page.getByLabel(/status/i).selectOption('all');
 	await expect(position).toHaveText(/^\d+ (von|of) \d+$/);
 
