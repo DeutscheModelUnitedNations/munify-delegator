@@ -36,8 +36,6 @@
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '#lib/components/Kbd.svelte';
 	import QuickScan from '#lib/components/scanner/QuickScan.svelte';
-	import { looksLikeUserId } from '#lib/components/scanner/suggestions';
-	import { toast } from 'svelte-sonner';
 	import {
 		consumeHandoff,
 		getAvailableHandoff,
@@ -199,14 +197,12 @@
 
 	/**
 	 * A scanned code opens the person it stands for, checked the way the scanners check it: the
-	 * nametag, the application documents and a printed nametag's barcode.
+	 * nametag, the application documents and a printed nametag's barcode. The verdict already
+	 * decided the code is one: a signed code's user id is the account's OIDC subject, which need not
+	 * look like an id at all (`dev-team-pm`, Logto's twelve characters).
 	 */
 	function handleScan({ userId }: { userId: string }) {
 		scanning = false;
-		if (!looksLikeUserId(userId)) {
-			toast.error(m.notFound());
-			return;
-		}
 		void recordScan({ conferenceId, userId });
 		closeCommandPalette();
 		openUserCard(userId);
