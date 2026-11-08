@@ -350,8 +350,6 @@
 	"assignmentSeatsTaken": "{taken} / {seats} seats",
 	"assignmentShowDisqualified": "Show disqualified",
 	"assignmentShownCount": "{shown} of {total}",
-	"assignmentSightingHint": "Rate, flag and disqualify applications. The automatic assignment takes ratings and flags into account and suggests no role for disqualified applications.",
-	"assignmentSightingProgress": "{rated} of {total} reviewed",
 	"assignmentSinglesAutoAssigned": "Assigned {count} single participants.",
 	"assignmentSinglesHint": "Drag single participants onto a role, back into the pool, or onto “Turn into a delegation” to give them a nation.",
 	"assignmentSplit": "Split",

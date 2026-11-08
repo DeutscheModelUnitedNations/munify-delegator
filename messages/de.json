@@ -350,8 +350,6 @@
 	"assignmentSeatsTaken": "{taken} / {seats} Plätze",
 	"assignmentShowDisqualified": "Ausgeschlossene zeigen",
 	"assignmentShownCount": "{shown} von {total}",
-	"assignmentSightingHint": "Bewerte, markiere und schließe Bewerbungen aus. Die automatische Zuteilung berücksichtigt Bewertungen und Markierungen, ausgeschlossene Bewerbungen bekommen keine Rolle vorgeschlagen.",
-	"assignmentSightingProgress": "{rated} von {total} gesichtet",
 	"assignmentSinglesAutoAssigned": "{count} Einzelteilnehmende zugeteilt.",
 	"assignmentSinglesHint": "Ziehe Einzelteilnehmende auf eine Rolle, zurück in den Pool oder auf „Zu Delegation machen“, um ihnen eine Nation zu geben.",
 	"assignmentSplit": "Aufteilen",

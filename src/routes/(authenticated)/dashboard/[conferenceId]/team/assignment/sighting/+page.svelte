@@ -208,21 +208,6 @@
 <svelte:window onpopstate={onPopstate} />
 
 <div class="flex flex-col gap-4">
-	<div class="alert alert-info alert-soft">
-		<i class="fa-sharp-duotone fa-solid fa-eye text-xl"></i>
-		<div class="flex flex-col gap-1">
-			<p>{m.assignmentSightingHint()}</p>
-			<progress
-				class="progress progress-primary w-full max-w-64"
-				value={deck.overallRated}
-				max={deck.overallTotal}
-			></progress>
-			<span class="text-xs">
-				{m.assignmentSightingProgress({ rated: deck.overallRated, total: deck.overallTotal })}
-			</span>
-		</div>
-	</div>
-
 	<div class="flex flex-wrap items-end gap-2">
 		<label class="input">
 			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass opacity-60"></i>
