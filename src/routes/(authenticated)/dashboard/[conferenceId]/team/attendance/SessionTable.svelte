@@ -191,7 +191,7 @@
 		</div>
 		{#if peopleOf === row.id}
 			<div class="px-3 pb-3" transition:slide={{ duration: 200 }}>
-				<SessionPeople sessionId={row.id} onSelect={openUserCard} />
+				<SessionPeople sessionId={row.id} sessionName={row.name} onSelect={openUserCard} />
 			</div>
 		{/if}
 	</li>

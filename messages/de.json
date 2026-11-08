@@ -2592,6 +2592,8 @@
 	"sessionOccasionPlaceholder": "z.B. Eröffnungsfeier",
 	"sessionPeople": "Gescannte Personen",
 	"sessionPeopleEmpty": "In dieser Sitzung wurde noch niemand gescannt.",
+	"sessionPeopleExportCheckPassed": "Prüfung bestanden",
+	"sessionPeopleExportRecordedBy": "Gescannt von",
 	"sessionPeopleHide": "Personen ausblenden",
 	"sessionPeopleNoMatch": "Niemand in dieser Sitzung passt zur Suche.",
 	"sessionPeopleRecordedBy": "gescannt von {name}",

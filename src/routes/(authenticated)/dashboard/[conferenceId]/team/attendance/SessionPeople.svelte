@@ -7,21 +7,33 @@
 	import { toast } from 'svelte-sonner';
 	import { onDestroy } from 'svelte';
 	import { fullName } from './attendanceSession';
-	import { SESSION_PEOPLE_PAGE, sessionPeopleWhere } from './sessionPeople';
+	import { downloadCSV } from '#lib/utils/downloadHelpers';
+	import {
+		allPages,
+		SESSION_EXPORT_PAGE,
+		SESSION_PEOPLE_PAGE,
+		sessionPeopleCsvHeader,
+		sessionPeopleCsvRow,
+		sessionPeopleWhere,
+		type ExportedScan
+	} from './sessionPeople';
 
 	/**
 	 * Everyone scanned in a session, newest first, searchable across the whole session rather than
-	 * just this device's scans. Reading whose scan it is is participant care's, as is taking one back.
+	 * just this device's scans. Reading whose scan it is is participant care's, as is taking one back,
+	 * and so is exporting the list.
 	 */
 	interface Props {
 		sessionId: string;
+		/** Names the exported file. */
+		sessionName: string;
 		/** Brings the person up: in the result beside the camera, or on their user card. */
 		onSelect: (userId: string) => void;
 		/** After a scan was taken back, so this device lets the person be scanned again. */
 		onRemoved?: (userId: string) => void;
 	}
 
-	let { sessionId, onSelect, onRemoved }: Props = $props();
+	let { sessionId, sessionName, onSelect, onRemoved }: Props = $props();
 
 	const id = $derived(sessionId);
 
@@ -91,6 +103,41 @@
 		}
 	}
 
+	let exporting = $state(false);
+
+	/** Every scan of the session, oldest first, a page at a time; the search does not narrow it. */
+	async function exportScans() {
+		exporting = true;
+		try {
+			const scans: ExportedScan[] = await allPages((offset) =>
+				client.query.attendanceEntries({
+					__args: {
+						where: { sessionId: { eq: id } },
+						orderBy: { timestamp: 'asc', id: 'asc' },
+						limit: SESSION_EXPORT_PAGE,
+						offset
+					},
+					timestamp: true,
+					checkPassed: true,
+					conferenceParticipant: {
+						accessCardId: true,
+						user: { id: true, givenName: true, familyName: true, email: true }
+					},
+					recordedBy: { givenName: true, familyName: true }
+				})
+			);
+			downloadCSV({
+				header: sessionPeopleCsvHeader(),
+				data: scans.map((scan) => sessionPeopleCsvRow({ scan, formatTime })),
+				filename: `${sessionName}_scans.csv`
+			});
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : m.genericToastError());
+		} finally {
+			exporting = false;
+		}
+	}
+
 	const formatTime = (date: Date) =>
 		date.toLocaleString(getLocale(), { dateStyle: 'short', timeStyle: 'short' });
 </script>
@@ -135,17 +182,33 @@
 {/snippet}
 
 <div class="flex flex-col gap-2">
-	<label class="input input-sm w-full">
-		<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-base-content/60"></i>
-		<input
-			type="search"
-			class="grow"
-			value={typed}
-			oninput={(event) => onInput(event.currentTarget.value)}
-			placeholder={m.sessionPeopleSearch()}
-			aria-label={m.search()}
-		/>
-	</label>
+	<div class="flex items-center gap-2">
+		<label class="input input-sm grow">
+			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-base-content/60"></i>
+			<input
+				type="search"
+				class="grow"
+				value={typed}
+				oninput={(event) => onInput(event.currentTarget.value)}
+				placeholder={m.sessionPeopleSearch()}
+				aria-label={m.search()}
+			/>
+		</label>
+		<button
+			class="btn btn-soft btn-sm shrink-0"
+			disabled={exporting || shown.length === 0}
+			onclick={exportScans}
+			aria-label={m.exportCsv()}
+			title={m.exportCsv()}
+		>
+			{#if exporting}
+				<span class="loading loading-spinner loading-xs"></span>
+			{:else}
+				<i class="fa-sharp-duotone fa-solid fa-download"></i>
+			{/if}
+			<span class="hidden sm:inline">{m.exportCsv()}</span>
+		</button>
+	</div>
 
 	{#if shown.length === 0}
 		<p class="px-1 text-sm text-base-content/60">

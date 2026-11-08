@@ -2592,6 +2592,8 @@
 	"sessionOccasionPlaceholder": "e.g. Opening Ceremony",
 	"sessionPeople": "Scanned people",
 	"sessionPeopleEmpty": "Nobody has been scanned in this session yet.",
+	"sessionPeopleExportCheckPassed": "Check passed",
+	"sessionPeopleExportRecordedBy": "Scanned by",
 	"sessionPeopleHide": "Hide people",
 	"sessionPeopleNoMatch": "Nobody in this session matches the search.",
 	"sessionPeopleRecordedBy": "scanned by {name}",

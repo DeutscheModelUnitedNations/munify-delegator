@@ -1087,6 +1087,7 @@
 				<h3 class="text-lg font-bold">{m.sessionPeople()}</h3>
 				<SessionPeople
 					sessionId={sessionStore.current.id}
+					sessionName={activeOccasion}
 					onSelect={reopen}
 					onRemoved={forgetScansOf}
 				/>
