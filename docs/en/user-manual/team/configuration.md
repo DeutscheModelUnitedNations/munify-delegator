@@ -119,7 +119,7 @@ The templates contain no placeholders. DELEGATOR writes the person's details ont
 | Document                         | Fields                                                                                                               |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | **Certificate of participation** | **Name** (centred), **Check-in list** with the check-ins the person attended, **QR code** for the authenticity check |
-| **Binding Registration**         | **Recipient address**, **The person's code**, **Name**, **Date of Birth**                                            |
+| **Binding Registration**         | **Recipient address**, **Name**, **Date of Birth**                                                                   |
 | **Parental Agreement**           | **Name**, **Date of Birth**                                                                                          |
 | **Media Usage Agreement**        | **Name**, **Date of Birth**, **Address**                                                                             |
 

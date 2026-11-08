@@ -4,7 +4,7 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import defaultImage from '#assets/dmun-stock/bw1.jpg';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
+	import { fetchMyParticipations } from './myParticipations';
 	import { getRegistrationStatus } from '#lib/utils/registrationStatus';
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import {
@@ -23,7 +23,7 @@
 
 	const currentUser = await getOptionalCurrentUser();
 
-	const [conference, myParticipation] = $derived(
+	const [conference, myParticipations] = $derived(
 		await Promise.all([
 			client.liveQuery.conference({
 				__args: { id: conferenceId },
@@ -36,9 +36,10 @@
 				endConference: true,
 				applicationDeadline: true
 			}),
-			fetchMyParticipation(conferenceId)
+			currentUser ? fetchMyParticipations(currentUser.sub) : undefined
 		])
 	);
+	const myParticipation = $derived(myParticipations?.in(conferenceId));
 
 	const participation = $derived(
 		participationOf({

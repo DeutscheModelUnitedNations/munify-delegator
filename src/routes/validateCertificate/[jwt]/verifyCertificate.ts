@@ -7,6 +7,7 @@ import {
 } from '#lib/helpers/certificateJwt';
 import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout';
 import { logger } from '#lib/logger';
+import { parseSignedCode, verifySignedCode } from '#lib/signedCode/signedCode';
 
 /** What the page shows for a certificate that did not verify. */
 const INVALID = {
@@ -43,12 +44,27 @@ export function certificateFacts(payload: CertificateJWTPayload) {
 	};
 }
 
+/** Checks a certificate issued as a signed code against the keys the API publishes. */
+async function verifyCertificateCode(code: string) {
+	const entries = await client.query.signedCodeKeys({ kid: true, publicKey: true });
+	const keys = new Map(entries.map(({ kid, publicKey }) => [kid, publicKey]));
+	const checked = await verifySignedCode({ text: code, keys });
+	if (checked.valid && checked.claims.kind === 'certificate') {
+		return certificateFacts(checked.claims.certificate);
+	}
+	logger.warn('Certificate code verification failed', { valid: checked.valid });
+	return INVALID;
+}
+
 /**
- * Checks a participation certificate against the public key the API publishes.
+ * Checks a participation certificate: a signed code (`/id/<code>` leads here with it), or a JWT
+ * as certificates were issued before, against the RS256 key the API still publishes for them.
  *
  * An empty result means the certificate did not verify, which the page renders as invalid.
  */
 export async function verifyCertificate(jwt: string) {
+	if (parseSignedCode(jwt)) return verifyCertificateCode(jwt);
+
 	const jwk = await client.query.getCertificateJWTPublicKeyObject({
 		alg: true,
 		e: true,

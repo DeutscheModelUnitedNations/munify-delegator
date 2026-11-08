@@ -13,6 +13,7 @@
 	import {
 		templateOrDefault,
 		testPrintCertificate,
+		testPrintDocumentCode,
 		testPrintParticipant,
 		testPrintRecipient
 	} from './testPrintData';
@@ -63,6 +64,7 @@
 		await downloadCompletePostalRegistrationPDF({
 			isOfAge: false,
 			participant: testPrintParticipant(),
+			documentCode: testPrintDocumentCode(),
 			recipient: testPrintRecipient($formData),
 			templates: {
 				contractFile: templates.contractFile,

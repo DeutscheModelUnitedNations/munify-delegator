@@ -148,6 +148,7 @@ bun run preview
   - `api/graphql/` - GraphQL API endpoint
   - `auth/` - OIDC authentication callbacks
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
+  - `id/` - Where a signed code's link leads (see "Signed codes")
 
 - **`src/api/`** - Backend GraphQL API layer
   - `handlers/` - One directory per domain entity (`paper/`), so the IDE keeps them sorted, each
@@ -810,7 +811,7 @@ bun run preview
   template's first page, the elements are dragged and resized on it, and the test print uses the
   unsaved layout. A new placed field is an element in `DOCUMENT_ELEMENTS` plus a label and sample in
   `team/configuration/sections/layoutElements.ts`. Certificates get no fold marks; letters keep them.
-- **Certificates list the check-in sessions the holder was at**: `getCertificateJWT` returns the
+- **Certificates list the check-in sessions the holder was at**: `getCertificate` returns the
   names of the conference's scanner sessions the holder was scanned at (`certificateSessions`) and
   signs them into the optional `a` claim (a list of names), so the PDF and `/validateCertificate`
   show the same list. A certificate never mentions a session someone missed, not even in its
@@ -1350,7 +1351,6 @@ Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
 - `DATABASE_POOL_SIZE` (optional) - connections each app instance holds open to Postgres (20)
-- `SECRET` - Session encryption secret
 - `NODE_ENV` - Environment (development/production/test)
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
 - `PUBLIC_OIDC_CLIENT_ID` - OAuth client ID
@@ -1431,7 +1431,22 @@ The pre-commit fallow step is a gate: it fails the commit when the commit introd
 
 - OIDC authentication required for all routes in `(authenticated)/`
 - rumble ability filters on all GraphQL queries and mutations
-- Certificate signatures use HMAC-SHA256
+- **Everything that identifies a participant is a signed code**, except the printed nametags
+  (room for a one-dimensional barcode of the user id only): the digital nametag (`live`, ten
+  minutes, renewed while shown), the application documents (`print`) and the certificates.
+  `#lib/signedCode/signedCode` is the format, shared by both sides: a CWT in a COSE_Sign1, Ed25519,
+  a `kid` per key (`signingKeys.ts` derives them from `CERTIFICATE_SECRET`; rotating appends an
+  id), written in a scanner safe base 32 (no I, O, Y, Z, any case) so a hand scanner types it right
+  on any keyboard layout. A QR code holds it as an uppercase link to `/ID/<code>` (`hooks.ts`
+  reroutes the casing): the camera app opens it, and `/id` sends a certificate to its public check,
+  anyone else to the login first and to a 403 unless their team role reaches the person's page
+  (`idTarget`), without telling them whether the code is genuine. Every scanner checks codes through
+  `acceptance` (`BarcodeScanner`, `QuickScan`, `scanAcceptance.ts`) in the browser, so it works
+  offline; an unsigned QR code is refused everywhere, an unsigned 1D barcode counts only where
+  printed nametags do. `scanLookup` checks the code again (`scannedUserId`). Recording an attendance
+  and setting a postal status take the user id, like any change the team makes by hand. The
+  certificates issued as RS256 JWTs before still verify at `/validateCertificate`, against
+  `getCertificateJWTPublicKeyObject`.
 - Environment secrets must never be committed
 - Drizzle parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks

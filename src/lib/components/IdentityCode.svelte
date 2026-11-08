@@ -2,9 +2,10 @@
 	import { qr } from '@svelte-put/qr/svg';
 	import { onMount } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { signedCodeLink } from '#lib/signedCode/signedCode';
 
 	interface Props {
-		/** Whose conference's emblem sits in the middle of the code. */
+		/** The conference the code is for, whose emblem sits in the middle of it. */
 		conferenceId: string;
 		/** No glow around the code, for a ticket that has been used. */
 		calm?: boolean;
@@ -13,7 +14,8 @@
 	let { conferenceId, calm = false }: Props = $props();
 
 	// The code is signed and only counts for a few minutes, so it is renewed while the page is open
-	// and again when the page comes back to the front.
+	// and again when the page comes back to the front. The QR code holds it as a link, which the
+	// team's phones open with the camera app and the scanners read the code from.
 	const RENEW_EVERY_MS = 2 * 60 * 1000;
 
 	let code = $state<string | null>(null);
@@ -21,7 +23,8 @@
 
 	async function renew() {
 		try {
-			code = (await client.mutate.issueIdentityCode({ code: true })).code;
+			const issued = await client.mutate.issueNametagCode({ __args: { conferenceId }, code: true });
+			code = signedCodeLink({ origin: location.origin, code: issued.code });
 			failed = false;
 		} catch {
 			// Offline: the code on screen keeps showing until it is too old to count

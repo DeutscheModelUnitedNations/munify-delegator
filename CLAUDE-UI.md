@@ -661,19 +661,20 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ## BarcodeScanner Component
 
-Use `BarcodeScanner` for pages that need barcode scanning via camera or manual text input. Encapsulates camera management, barcode detection, device switching, and manual input fallback.
+Use `BarcodeScanner` for pages that need barcode scanning via camera or manual text input. Encapsulates camera management, barcode detection, device switching, and manual input fallback. Every code read or typed is checked against `acceptance` (`scanAcceptance.ts`, signatures included) before it reaches `scannedCode`; a refused one is reported as a toast. `QuickScan` (the command palette's camera) takes the same `acceptance`.
 
 ### Props
 
-| Prop                | Type                        | Description                                                |
-| ------------------- | --------------------------- | ---------------------------------------------------------- |
-| `scannedCode`       | `string \| null` (bindable) | The detected/entered code                                  |
-| `persistKey`        | `string`                    | localStorage key for camera preference                     |
-| `barcodeFormats`    | `BarcodeFormat[]`           | Formats to detect (default: `['data_matrix', 'code_128']`) |
-| `manualPlaceholder` | `string`                    | Placeholder for manual input field                         |
-| `scanPromptText`    | `string`                    | Prompt shown while camera is scanning                      |
-| `cameraZIndex`      | `string`                    | z-index class for camera preview (default: `'z-30'`)       |
-| `extraControls`     | `Snippet`                   | Optional controls between camera settings and input        |
+| Prop                | Type                        | Description                                                                                                       |
+| ------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `scannedCode`       | `string \| null` (bindable) | The accepted code: a bare signed code, or the user id as read or picked; `userIdOfCode` gives the user            |
+| `acceptance`        | `ScanAcceptance`            | The conference, the signed code kinds (`live`, `print`) and whether printed nametags (unsigned 1D barcodes) count |
+| `persistKey`        | `string`                    | localStorage key for camera preference                                                                            |
+| `barcodeFormats`    | `BarcodeFormat[]`           | Formats to detect (default: `['qr_code', 'code_128']`)                                                            |
+| `manualPlaceholder` | `string`                    | Placeholder for manual input field                                                                                |
+| `scanPromptText`    | `string`                    | Prompt shown while camera is scanning                                                                             |
+| `cameraZIndex`      | `string`                    | z-index class for camera preview (default: `'z-30'`)                                                              |
+| `extraControls`     | `Snippet`                   | Optional controls between camera settings and input                                                               |
 
 ### Exposed Methods
 
@@ -684,6 +685,7 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 ```svelte
 <script lang="ts">
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
+	import { userIdOfCode } from '#lib/components/scanner/scanAcceptance';
 	import { queryParameters } from 'sveltekit-search-params';
 
 	const params = queryParameters({ queryUserId: true });
@@ -692,8 +694,11 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 
 <BarcodeScanner
 	bind:this={scannerRef}
-	bind:scannedCode={params.queryUserId}
-	barcodeFormats={['data_matrix', 'code_128']}
+	bind:scannedCode={
+		() => params.queryUserId, (code) => (params.queryUserId = code ? userIdOfCode(code) : code)
+	}
+	acceptance={{ conferenceId, kinds: ['print'], printedNametags: false }}
+	barcodeFormats={['qr_code']}
 	persistKey="useCameraForMyPage"
 	manualPlaceholder="Enter code..."
 	scanPromptText="Present the barcode..."

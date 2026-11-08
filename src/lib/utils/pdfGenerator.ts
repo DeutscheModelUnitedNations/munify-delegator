@@ -5,6 +5,7 @@ import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
 import { downloadPDF } from '#lib/utils/downloadHelpers';
 import { layoutCertificateSessions } from '#lib/utils/certificateSessionLayout';
+import { signedCodeLink } from '#lib/signedCode/signedCode';
 import {
 	boxInPoints,
 	defaultLayout,
@@ -33,7 +34,8 @@ export interface RecipientData {
 
 export interface ParticipantCertificateData {
 	fullName?: string | null;
-	jwt?: string | null;
+	/** The signed certificate (`getCertificate`), drawn as a QR code of its link. */
+	code?: string | null;
 	/** The names of the check-in sessions the holder was checked in at. */
 	sessions?: readonly string[];
 }
@@ -352,24 +354,17 @@ interface ParticipantForm {
 	drawField(args: { text: string; placement: TextPlacement }): void;
 }
 
-/** A data-matrix code of `text`, drawn as a square where the layout places it. */
-async function drawDataMatrix({
-	pdfDoc,
-	page,
-	text,
-	placement
-}: {
-	pdfDoc: PDFDocument;
-	page: PDFPage;
-	text: string;
-	placement: DocumentLayout<'contract'>['code'];
-}) {
+/**
+ * The link a signed code stands for: what its QR code holds, so the team's phones open the person's
+ * page with the camera app, and what the scanners check.
+ */
+const codeLink = (code: string) => signedCodeLink({ origin: window.location.origin, code });
+
+/** A QR code of `text`, embedded into the document as an image. */
+async function embedQrCode({ pdfDoc, text }: { pdfDoc: PDFDocument; text: string }) {
 	const canvas = document.createElement('canvas');
-	bwipjs.toCanvas(canvas, { bcid: 'datamatrix', text, scale: 4, rotate: 'L' });
-	const image = await pdfDoc.embedPng(canvas.toDataURL('image/png'));
-	const { width, height } = page.getSize();
-	const { left, bottom, side } = squareInPoints({ placement, width, height });
-	page.drawImage(image, { x: left, y: bottom, width: side, height: side });
+	bwipjs.toCanvas(canvas, { bcid: 'qrcode', text, scale: 4 });
+	return pdfDoc.embedPng(canvas.toDataURL('image/png'));
 }
 
 function createContractGenerator({
@@ -409,7 +404,6 @@ function createContractGenerator({
 				});
 			});
 
-			await drawDataMatrix({ pdfDoc, page, text: participantData.id, placement: layout.code });
 			drawField({ text: participantData.name, placement: layout.name });
 			drawField({ text: participantData.birthday, placement: layout.birthday });
 		}
@@ -460,14 +454,19 @@ function toRomanNumeral(num: number): string {
 	return result;
 }
 
+/** The side of the QR code in the footer of the main pages: as small as a phone still reads. */
+const FOOTER_CODE_SIDE = millimeterToPixel(16);
+
 async function numerateDocument({
 	pdfDoc,
 	participantId,
+	participantCode,
 	participantName,
 	mainPageCount
 }: {
 	pdfDoc: PDFDocument;
 	participantId: string;
+	participantCode: string;
 	participantName: string;
 	mainPageCount: number;
 }) {
@@ -479,17 +478,9 @@ async function numerateDocument({
 	const { width } = pdfDoc.getPage(0).getSize();
 	const fontSize = 10;
 
-	// Generate data-matrix barcode for footer (only needed for main pages)
-	const barcodeCanvas = document.createElement('canvas');
-	bwipjs.toCanvas(barcodeCanvas, {
-		bcid: 'datamatrix',
-		text: participantId,
-		scale: 1,
-		rotate: 'N'
-	});
-	const barcodeImg = barcodeCanvas.toDataURL('image/png');
-	const pngImage = await pdfDoc.embedPng(barcodeImg);
-	const pngDims = pngImage.scale(1);
+	// The signed code for the footer (only needed for main pages)
+	const pngImage = await embedQrCode({ pdfDoc, text: codeLink(participantCode) });
+	const pngDims = { width: FOOTER_CODE_SIDE, height: FOOTER_CODE_SIDE };
 
 	const smallFontSize = 8;
 
@@ -502,7 +493,7 @@ async function numerateDocument({
 			// Main pages: show participant info and barcode
 			const pageNumber = `${index + 1} / ${mainPageCount}`;
 
-			// Draw data-matrix barcode at bottom right
+			// Draw the signed code at bottom right
 			const barcodeX = rightX - pngDims.width;
 			page.drawImage(pngImage, {
 				x: barcodeX,
@@ -577,8 +568,8 @@ function createCertificateGenerator({
 			if (!data.fullName) {
 				throw new Error('Full name is required for the certificate');
 			}
-			if (!data.jwt) {
-				throw new Error('JWT is required for the certificate');
+			if (!data.code) {
+				throw new Error('The signed code is required for the certificate');
 			}
 
 			const { width, height } = page.getSize();
@@ -594,10 +585,8 @@ function createCertificateGenerator({
 				color: black
 			});
 
-			const verifyUrl = `${new URL(window.location.href).origin}/vc/${data.jwt}`;
-			const barcodeCanvas = document.createElement('canvas');
-			bwipjs.toCanvas(barcodeCanvas, { bcid: 'qrcode', text: verifyUrl, scale: 4 });
-			const qr = await pdfDoc.embedPng(barcodeCanvas.toDataURL('image/png'));
+			const verifyUrl = codeLink(data.code);
+			const qr = await embedQrCode({ pdfDoc, text: verifyUrl });
 			const { left, bottom, side } = squareInPoints({ placement: layout.qr, width, height });
 			page.drawImage(qr, { x: left, y: bottom, width: side, height: side });
 
@@ -664,6 +653,7 @@ async function appendPages({ target, source }: { target: PDFDocument; source: PD
 async function generateCompletePostalRegistrationPDF({
 	isOfAge,
 	participant,
+	documentCode,
 	recipient,
 	contract,
 	guardianAgreement,
@@ -673,6 +663,7 @@ async function generateCompletePostalRegistrationPDF({
 }: {
 	isOfAge: boolean;
 	participant: ParticipantData;
+	documentCode: string;
 	recipient: RecipientData;
 	contract: string;
 	guardianAgreement: string;
@@ -735,10 +726,11 @@ async function generateCompletePostalRegistrationPDF({
 
 	await appendPages({ target: mergedPdfDoc, source: await loadTemplate(termsAndConditions) });
 
-	// Add page numbers, participant name, data-matrix barcode, and participant ID to each page
+	// Add page numbers, participant name, the signed code, and participant ID to each page
 	await numerateDocument({
 		pdfDoc: mergedPdfDoc,
 		participantId: participant.id,
+		participantCode: documentCode,
 		participantName: participant.name,
 		mainPageCount
 	});
@@ -778,12 +770,15 @@ function requireContent({
 export async function downloadCompletePostalRegistrationPDF({
 	isOfAge,
 	participant,
+	documentCode,
 	recipient,
 	templates,
 	fileName = 'postal_registration.pdf'
 }: {
 	isOfAge: boolean;
 	participant: ParticipantData;
+	/** The signed code the documents carry (`issueDocumentCode`), drawn as QR codes of its link. */
+	documentCode: string;
 	recipient: RecipientData;
 	templates: PostalTemplateFiles;
 	fileName?: string;
@@ -808,6 +803,7 @@ export async function downloadCompletePostalRegistrationPDF({
 		const pdfBytes = await generateCompletePostalRegistrationPDF({
 			isOfAge,
 			participant,
+			documentCode,
 			recipient,
 			contract: contractContent,
 			guardianAgreement: guardianContent,

@@ -736,9 +736,9 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 
 	// --- Identity, sessions and secrets: nothing for an assistant ---------------------------------
-	CertificateJWT: { visible: ['sessions'], redacted: ['fullName', 'jwt'] },
-	IdentityCode: { redacted: ['code'] },
-	IdentityCodePublicKey: { visible: ['publicKey'] },
+	Certificate: { visible: ['sessions'], redacted: ['fullName', 'code'] },
+	SignedCode: { redacted: ['code'] },
+	SignedCodeKey: { visible: ['kid', 'publicKey'] },
 	JWK: { visible: ['alg', 'e', 'kty', 'n', 'use'] },
 	ImpersonationStatus: { visible: ['isImpersonating'] },
 	ImpersonationUser: {

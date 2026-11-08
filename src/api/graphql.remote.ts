@@ -10,6 +10,26 @@ const graphqlRequestSchema = z.object({
 	variables: z.record(z.string(), z.any()).optional()
 });
 
+type Enveloped = ReturnType<typeof yoga.getEnveloped>;
+
+const contexts = new WeakMap<App.Locals, Promise<unknown>>();
+
+/**
+ * One context for every operation a page render runs. rumble prepares a table's abilities once
+ * per context, and a page renders a few dozen operations at once: with a context each, the user
+ * read rules (eleven relational lookups) ran ten times in parallel for one dashboard render and
+ * took 0.7 s each. Every remote call sees its own copy of the request event, but they all share
+ * its `locals`. SSR only reads, so no operation needs the abilities refreshed after a write.
+ */
+function sharedContext({ locals, envelop }: { locals: App.Locals; envelop: Enveloped }) {
+	let context = contexts.get(locals);
+	if (!context) {
+		context = Promise.resolve(envelop.contextFactory());
+		contexts.set(locals, context);
+	}
+	return context;
+}
+
 /**
  * Executes an operation in-process for the urql client during SSR (`ssrExchange` in
  * `#lib/api/client.ts`). It is a remote function only so that the server-side client can reach the
@@ -27,7 +47,7 @@ export const graphqlOperation = query(graphqlRequestSchema, async (request) => {
 	const validationErrors = validate(envelop.schema, request.query);
 	if (validationErrors.length) return { errors: validationErrors.map(formatError) };
 
-	const contextValue = envelop.contextFactory ? await envelop.contextFactory() : undefined;
+	const contextValue = await sharedContext({ locals: requestEvent.locals, envelop });
 
 	// Through envelop rather than graphql's `execute`, so the yoga plugins (`databaseRuleError`)
 	// see the result as they do on `/api/graphql`.

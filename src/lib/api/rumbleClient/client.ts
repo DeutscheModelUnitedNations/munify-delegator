@@ -675,9 +675,9 @@ export type CalendartrackWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type CertificateJWT = {
+export type Certificate = {
+  code: String | null,
   fullName: String | null,
-  jwt: String | null,
   sessions: String[]    
 };
 		
@@ -2056,14 +2056,6 @@ export type IDWhereInputArgument = {
   notLike?: String | null | undefined    
 };
 		
-export type IdentityCode = {
-  code: String    
-};
-		
-export type IdentityCodePublicKey = {
-  publicKey: String    
-};
-		
 export type ImpersonationStatus = {
   impersonatedUser: () => ImpersonationUser | null,
   isImpersonating: Boolean,
@@ -2479,6 +2471,9 @@ export type Mutation = {
   deleteRoleApplication: (p: {
     id: ID
   }) => Boolean,
+  deleteSchool: (p: {
+    id: ID
+  }) => Boolean,
   deleteSingleParticipant: (p: {
     id: ID
   }) => Boolean,
@@ -2517,7 +2512,13 @@ export type Mutation = {
   endAttendanceSession: (p: {
     id: ID
   }) => Boolean,
-  issueIdentityCode: () => IdentityCode,
+  issueDocumentCode: (p: {
+    conferenceId: ID,
+    userId: ID
+  }) => SignedCode,
+  issueNametagCode: (p: {
+    conferenceId: ID
+  }) => SignedCode,
   mergeSchools: (p: {
     name?: String | null | undefined,
     sourceIds: ID[],
@@ -3735,16 +3736,15 @@ export type Query = {
   getAllConferenceNations: (p: {
     conferenceId: ID
   }) => Nation[],
-  getCertificateJWT: (p: {
+  getCertificate: (p: {
     conferenceId: ID,
     userId: ID
-  }) => CertificateJWT,
+  }) => Certificate,
   getCertificateJWTPublicKeyObject: () => JWK,
   getConferenceStatistics: (p: {
     conferenceId: ID,
     filter?: StatsFilter | null | undefined
   }) => StatisticsResult,
-  identityCodePublicKey: () => IdentityCodePublicKey,
   impersonationStatus: () => ImpersonationStatus,
   logoutUrl: String,
   mcpAuditEntries: (p?: {
@@ -3955,6 +3955,7 @@ export type Query = {
     limit?: Int | null | undefined,
     search?: String | null | undefined
   }) => SightingSchool[],
+  signedCodeKeys: () => SignedCodeKey[],
   singleParticipant: (p: {
     id: ID
   }) => Singleparticipant,
@@ -4513,6 +4514,15 @@ export type SightingSchool = {
   people: Int,
   school: String,
   schoolId: ID | null    
+};
+		
+export type SignedCode = {
+  code: String    
+};
+		
+export type SignedCodeKey = {
+  kid: Int,
+  publicKey: String    
 };
 		
 export type Singleparticipant = {

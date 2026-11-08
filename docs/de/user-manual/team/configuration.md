@@ -119,7 +119,7 @@ Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Per
 | Dokument                                    | Felder                                                                                                                 |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | **Teilnahmezertifikat**                     | **Name** (zentriert), **Check-in-Liste** mit den Check-ins, bei denen die Person war, **QR-Code** zur Echtheitsprüfung |
-| **Verbindliche Anmeldung**                  | **Empfängeradresse**, **Code der Person**, **Name**, **Geburtsdatum**                                                  |
+| **Verbindliche Anmeldung**                  | **Empfängeradresse**, **Name**, **Geburtsdatum**                                                                       |
 | **Einwilligung der Erziehungsberechtigten** | **Name**, **Geburtsdatum**                                                                                             |
 | **Einwilligung Bildnutzung**                | **Name**, **Geburtsdatum**, **Adresse**                                                                                |
 

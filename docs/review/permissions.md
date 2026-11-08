@@ -105,11 +105,11 @@ or wait in, and system admins; it is null for every other reader.
 
 ### Lookups and impersonation
 
-| Who                                  | Can                                                                                                                                                                 | Notes                                                                                       | ✓   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --- |
-| System admin                         | Impersonate anybody but themselves                                                                                                                                  | Checked on every request; the system roles are those both hold. `canImpersonateUser` tells. | [ ] |
-| Project management, participant care | Impersonate the conference's delegates, single participants and supervisors                                                                                         | Never anybody holding a team role anywhere. Minors are not excluded _(open)_.               | [ ] |
-| Signed-in user                       | `issueIdentityCode` (signed code of their own id for the scanner), `identityCodePublicKey`, `myOIDCRoles`, `offlineUserRefresh`, `logoutUrl`, `impersonationStatus` |                                                                                             | [ ] |
+| Who                                  | Can                                                                                                                                                     | Notes                                                                                       | ✓   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --- |
+| System admin                         | Impersonate anybody but themselves                                                                                                                      | Checked on every request; the system roles are those both hold. `canImpersonateUser` tells. | [ ] |
+| Project management, participant care | Impersonate the conference's delegates, single participants and supervisors                                                                             | Never anybody holding a team role anywhere. Minors are not excluded _(open)_.               | [ ] |
+| Signed-in user                       | `issueNametagCode(conferenceId)` (signed code of their own id for the scanner), `myOIDCRoles`, `offlineUserRefresh`, `logoutUrl`, `impersonationStatus` |                                                                                             | [ ] |
 
 ## Conference participant (`conferenceParticipant`)
 
@@ -337,10 +337,10 @@ Columns hidden from some readers below: `bankAccountHolder`, `iban`, `bic`, `ban
 
 ## Certificates
 
-| Who                                        | Can                                                                                                                          | Notes                              | ✓   |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | --- |
-| Self, project management, participant care | `getCertificateJWT(conferenceId, userId)`: signed certificate with full name, conference and the check-in occasions attended | Null until attendance is recorded. | [ ] |
-| Anybody                                    | `getCertificateJWTPublicKeyObject`; `/validateCertificate/[jwt]` and `/vc/[jwt]` show what a presented certificate says      |                                    | [ ] |
+| Who                                        | Can                                                                                                                                                                                                                | Notes                                                                                                                         | ✓   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --- |
+| Self, project management, participant care | `getCertificate(conferenceId, userId)`: signed certificate with full name, conference and the check-in occasions attended; `issueDocumentCode(conferenceId, userId)`: the signed code of the application documents | Null until attendance is recorded.                                                                                            | [ ] |
+| Anybody                                    | `signedCodeKeys`, `getCertificateJWTPublicKeyObject` (certificates issued as JWTs); `/validateCertificate/[jwt]`, `/vc/[jwt]` and `/id/[code]` show what a presented certificate says                              | `/id/[code]` with any other code: login first, then the person's team page or 403, without saying whether the code is genuine | [ ] |
 
 ## Payments (`paymentTransaction`, `userReferenceInPaymentTransaction`)
 

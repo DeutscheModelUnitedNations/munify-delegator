@@ -4,7 +4,7 @@ import { planCertificateDownload, type CertificateData } from './certificateDown
 const certificate: CertificateData = {
 	templateUrl: 'https://s3.test/certificate.pdf',
 	title: 'MUN SH 2026',
-	jwt: 'signed',
+	code: 'signed',
 	fullName: 'Ada Lovelace',
 	sessions: ['Eröffnung']
 };
@@ -29,7 +29,7 @@ describe('planCertificateDownload', () => {
 			kind: 'incomplete'
 		});
 		expect(
-			planCertificateDownload({ certificate: { ...certificate, jwt: null }, userId: 'u' })
+			planCertificateDownload({ certificate: { ...certificate, code: null }, userId: 'u' })
 		).toEqual({
 			kind: 'incomplete'
 		});
@@ -40,7 +40,7 @@ describe('planCertificateDownload', () => {
 			kind: 'ready',
 			holder: {
 				fullName: 'Ada Lovelace',
-				jwt: 'signed',
+				code: 'signed',
 				sessions: ['Eröffnung']
 			},
 			content: 'https://s3.test/certificate.pdf',

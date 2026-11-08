@@ -67,9 +67,9 @@
 				documentLayouts: true,
 				title: true
 			}),
-			client.query.getCertificateJWT({
+			client.query.getCertificate({
 				__args: { conferenceId, userId },
-				jwt: true,
+				code: true,
 				fullName: true,
 				sessions: true
 			})
@@ -81,13 +81,13 @@
 	);
 	const certificate = $derived.by((): CertificateData | undefined => {
 		if (!sources) return undefined;
-		const [conference, jwt] = sources;
+		const [conference, signed] = sources;
 		return {
 			templateUrl: conference.certificateFile?.url ?? null,
 			title: conference.title,
-			jwt: jwt.jwt,
-			fullName: jwt.fullName,
-			sessions: jwt.sessions
+			code: signed.code,
+			fullName: signed.fullName,
+			sessions: signed.sessions
 		};
 	});
 
@@ -154,7 +154,7 @@
 				<i class="fas fa-hourglass-half"></i>
 				<p>{m.certificateNotYetAvailable()}</p>
 			</div>
-		{:else if didAttend && userId && certificate.jwt}
+		{:else if didAttend && userId && certificate.code}
 			<button class="btn btn-primary self-start" onclick={downloadPDF}>
 				<i class="fas fa-download"></i>
 				{m.downloadCertificate()}

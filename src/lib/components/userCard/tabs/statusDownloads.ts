@@ -78,19 +78,19 @@ export function documentFileName({
 
 /** What a certificate prints, or undefined while the API cannot sign one for the person. */
 export function certificateContentsOf(
-	jwtData:
+	signed:
 		| {
-				jwt?: string | null;
+				code?: string | null;
 				fullName?: string | null;
 				sessions: readonly string[];
 		  }
 		| null
 		| undefined
 ) {
-	if (!jwtData?.fullName || !jwtData.jwt) return undefined;
+	if (!signed?.fullName || !signed.code) return undefined;
 	return {
-		fullName: jwtData.fullName,
-		jwt: jwtData.jwt,
-		sessions: [...jwtData.sessions]
+		fullName: signed.fullName,
+		code: signed.code,
+		sessions: [...signed.sessions]
 	};
 }

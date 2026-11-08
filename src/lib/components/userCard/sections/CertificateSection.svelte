@@ -17,22 +17,22 @@
 
 	const downloadCertificate = async () => {
 		try {
-			const [conferenceData, jwtData, user] = await Promise.all([
+			const [conferenceData, signed, user] = await Promise.all([
 				client.query.conference({
 					__args: { id: conferenceId },
 					certificateFile: { url: true },
 					documentLayouts: true,
 					title: true
 				}),
-				client.query.getCertificateJWT({
+				client.query.getCertificate({
 					__args: { conferenceId, userId },
-					jwt: true,
+					code: true,
 					fullName: true,
 					sessions: true
 				}),
 				client.query.user({ __args: { id: userId }, id: true, givenName: true, familyName: true })
 			]);
-			const certificate = certificateContentsOf(jwtData);
+			const certificate = certificateContentsOf(signed);
 			if (!certificate) {
 				toast.error(m.certificateDownloadError());
 				return;

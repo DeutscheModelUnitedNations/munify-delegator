@@ -2,12 +2,20 @@ import { db } from '#api/db/db';
 import { sql } from 'drizzle-orm';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { assertAllowed } from '#api/services/authHelper/utils';
+import { m } from '#lib/paraglide/messages';
 import {
 	assertCanReadSchoolMetrics,
 	assertCanUpdateSchools,
 	registerSchoolAbilities
 } from './schoolPermissions';
-import { mergeSchools, schoolMetrics, searchSchoolIds, updateSchool } from './schoolService';
+import {
+	deleteSchool,
+	mergeSchools,
+	schoolMetrics,
+	searchSchoolIds,
+	updateSchool
+} from './schoolService';
 import { schoolRenameSchema, searchSchoolsArgsSchema } from './schoolArgs';
 
 registerSchoolAbilities();
@@ -146,6 +154,24 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
+		}
+	}),
+
+	deleteSchool: t.field({
+		description:
+			'Deletes a school, for a name typed wrongly: everybody naming it is left without a school. Participant care deletes the schools of its people that nobody outside its conferences names; NOT_FOUND otherwise.',
+		type: 'Boolean',
+		args: { id: t.arg.id({ required: true }) },
+		resolve: async (_root, { id }, ctx) => {
+			await assertAllowed({
+				ctx,
+				table: 'school',
+				action: 'delete',
+				id,
+				options: { message: m.schoolDeleteNotAllowed }
+			});
+			await deleteSchool(id);
+			return true;
 		}
 	})
 }));

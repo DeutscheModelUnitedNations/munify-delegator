@@ -76,7 +76,6 @@ jobs:
       PUBLIC_OIDC_CLIENT_ID: delegator
       OIDC_SCOPES: 'openid profile offline_access email'
       OIDC_ROLE_CLAIM: roles
-      SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
       CERTIFICATE_SECRET: e2e-ci-certificate-secret
       # Any values work against oidc-mock, which serves Logto's Management API for impersonation
       OIDC_M2M_CLIENT_ID: e2e-m2m

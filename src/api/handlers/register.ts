@@ -34,7 +34,7 @@ import './school/school';
 import './schoolSuggestion/schoolSuggestion';
 import './mcpAuditEntry/mcpAuditEntry';
 import './scanLookup/scanLookup';
-import './identityCode/identityCode';
+import './signedCode/signedCode';
 import './seatPlanning/seatPlanning';
 import './nametagBins/nametagBins';
 import './sightingDeck/sightingDeck';

@@ -71,12 +71,12 @@ describe('certificateContentsOf', () => {
 	test('copies what the certificate prints', () => {
 		expect(
 			certificateContentsOf({
-				jwt: 'token',
+				code: 'token',
 				fullName: 'Erika Mustermann',
 				sessions: ['Day 1']
 			})
 		).toEqual({
-			jwt: 'token',
+			code: 'token',
 			fullName: 'Erika Mustermann',
 			sessions: ['Day 1']
 		});
@@ -84,7 +84,7 @@ describe('certificateContentsOf', () => {
 
 	test('is undefined while the API cannot sign one', () => {
 		expect(certificateContentsOf(null)).toBeUndefined();
-		expect(certificateContentsOf({ jwt: null, fullName: 'A', sessions: [] })).toBeUndefined();
-		expect(certificateContentsOf({ jwt: 'token', fullName: '', sessions: [] })).toBeUndefined();
+		expect(certificateContentsOf({ code: null, fullName: 'A', sessions: [] })).toBeUndefined();
+		expect(certificateContentsOf({ code: 'token', fullName: '', sessions: [] })).toBeUndefined();
 	});
 });

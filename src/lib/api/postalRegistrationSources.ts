@@ -8,7 +8,7 @@ import {
 
 /**
  * Reads everything a postal registration PDF is built from: the person's address and birthday,
- * and the conference's postal address and consent texts.
+ * the conference's postal address and consent texts, and the signed code the documents carry.
  *
  * Meant to be called once, at the moment of download. The templates are PDFs, so only their
  * URLs are selected; the PDF generator fetches the files.
@@ -20,7 +20,7 @@ export async function fetchPostalRegistrationSources({
 	userId: string;
 	conferenceId: string;
 }) {
-	const [user, conference] = await Promise.all([
+	const [user, conference, { code: documentCode }] = await Promise.all([
 		client.query.user({
 			__args: { id: userId },
 			id: true,
@@ -47,9 +47,10 @@ export async function fetchPostalRegistrationSources({
 			mediaConsentFile: { url: true },
 			termsAndConditionsFile: { url: true },
 			documentLayouts: true
-		})
+		}),
+		client.mutate.issueDocumentCode({ __args: { conferenceId, userId }, code: true })
 	]);
-	return { user, conference };
+	return { user, conference, documentCode };
 }
 
 export type PostalRegistrationSources = Awaited<ReturnType<typeof fetchPostalRegistrationSources>>;
@@ -65,12 +66,14 @@ export async function downloadPostalRegistrationDocuments({
 	conference,
 	birthday,
 	participant,
+	documentCode,
 	recipient,
 	fileName
 }: {
 	conference: PostalRegistrationSources['conference'];
 	birthday: Date;
 	participant: ParticipantData;
+	documentCode: string;
 	recipient: RecipientData;
 	fileName: string;
 }): Promise<void> {
@@ -80,6 +83,7 @@ export async function downloadPostalRegistrationDocuments({
 			dateOfBirth: birthday
 		}),
 		participant,
+		documentCode,
 		recipient,
 		templates: conference,
 		fileName

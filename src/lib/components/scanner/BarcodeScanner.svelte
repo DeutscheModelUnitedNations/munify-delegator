@@ -16,10 +16,16 @@
 		type UserSuggestion
 	} from './suggestions';
 	import { searchUsers } from './userSearch';
+	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
 
 	interface Props {
 		/** Barcode formats to detect */
 		barcodeFormats?: BarcodeFormat[];
+		/**
+		 * Which codes the scanner takes. Every code read or typed is checked against it, its signature
+		 * included, before it reaches `scannedCode`; a refused one is reported and dropped.
+		 */
+		acceptance: ScanAcceptance;
 		/** Key the scanner remembers whether the camera was on under, to turn it back on next time */
 		persistKey: string;
 		/** Conference whose people the search box suggests first */
@@ -28,10 +34,12 @@
 		manualPlaceholder?: string;
 		/** Prompt shown while camera is scanning */
 		scanPromptText?: string;
-		/** The scanned/entered code — two-way bindable (nullable for queryParameters compatibility) */
+		/**
+		 * The accepted code (`ScanVerdict`): the bare signed code, which the server checks again, or
+		 * the user id as it was read or picked. Two-way bindable (nullable for queryParameters
+		 * compatibility); `userIdOfCode` gives the user it leads to.
+		 */
 		scannedCode: string | null;
-		/** The barcode format the camera read the code in; `null` for a typed or picked code. */
-		scannedFormat?: string | null;
 		/** Shown beside the camera, e.g. the person the code leads to */
 		result?: Snippet;
 		/** Shown under the camera, e.g. who was scanned before */
@@ -44,14 +52,13 @@
 	}
 
 	let {
-		barcodeFormats = ['data_matrix', 'code_128'],
+		barcodeFormats = ['qr_code', 'code_128'],
+		acceptance,
 		persistKey,
 		conferenceId,
 		manualPlaceholder = '',
 		scanPromptText = '',
 		scannedCode = $bindable<string | null>(''),
-		// eslint-disable-next-line no-useless-assignment -- a $bindable default, see eslint.config.js
-		scannedFormat = $bindable<string | null>(null),
 		result,
 		belowCamera,
 		collapsed = false
@@ -77,6 +84,8 @@
 	 */
 	let blockedCode: string | null = null;
 	let detecting = false;
+	/** Set while a code is being checked, so the next one waits for the verdict. */
+	let checking = false;
 
 	// Created on first use: the polyfill cannot be constructed during SSR
 	let barcodeDetector: BarcodeDetector | undefined;
@@ -177,12 +186,32 @@
 		return codes.find((barcode) => barcode.rawValue !== blockedCode);
 	}
 
-	function acceptScanned(barcode: { rawValue: string; format: string } | undefined) {
+	/**
+	 * Hands a code on once it is accepted; a refused one is reported and dropped. `format` is what
+	 * the code was read as, `null` for one typed or picked by hand.
+	 */
+	async function take({ text, format }: { text: string; format: string | null }) {
+		if (checking) return;
+		checking = true;
+		try {
+			const verdict = await acceptScan({ text, format, acceptance });
+			if (!verdict.accepted) {
+				toast.error(verdict.message);
+				return;
+			}
+			// The scan may have been answered by hand while it was being checked
+			if (!scannedCode) scannedCode = verdict.code;
+		} finally {
+			checking = false;
+		}
+	}
+
+	async function acceptScanned(barcode: { rawValue: string; format: string } | undefined) {
 		// The scan may have been answered by hand while the detector was running
-		if (!barcode || scannedCode) return;
-		scannedCode = barcode.rawValue;
-		scannedFormat = barcode.format;
+		if (!barcode || scannedCode || checking) return;
+		// Blocked at once, so a refused code is reported once rather than on every frame
 		blockedCode = barcode.rawValue;
+		await take({ text: barcode.rawValue, format: barcode.format });
 	}
 
 	async function scanForCode() {
@@ -209,10 +238,9 @@
 	function submitCode(text: string) {
 		// a keyboard scanner may put the kind of code it read in front of what it types
 		const read = readAimIdentifier(text);
-		scannedCode = read.code;
-		scannedFormat = read.format;
 		clearSearch();
 		manualInputElem?.blur();
+		void take({ text: read.code, format: read.format });
 	}
 
 	function submitManual() {

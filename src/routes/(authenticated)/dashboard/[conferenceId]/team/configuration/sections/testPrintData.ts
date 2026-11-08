@@ -48,18 +48,25 @@ export function templateOrDefault(template: string | null | undefined): string |
 	return template ?? undefined;
 }
 
-const randomString = (length: number) => {
-	const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+/**
+ * A code as long as a real one, in the alphabet signed codes are written in, so a test print's QR
+ * code is as dense as a real one. It is signed by nobody: scanned, it is refused.
+ */
+const testPrintCode = (length: number) => {
+	const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWX';
 	return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(
 		''
 	);
 };
 
-/** The made-up holder of a test certificate, with a token as long as a real one and a few sessions. */
+/** What a test print's documents carry instead of a signed code, as long as a real one. */
+export const testPrintDocumentCode = () => testPrintCode(205);
+
+/** The made-up holder of a test certificate, with a code as long as a real one and a few sessions. */
 export function testPrintCertificate(sessions: string[]): ParticipantCertificateData {
 	return {
 		fullName: 'Antonio Guterres',
-		jwt: `${randomString(20)}.${randomString(200)}.${randomString(350)}`,
+		code: testPrintCode(350),
 		sessions
 	};
 }

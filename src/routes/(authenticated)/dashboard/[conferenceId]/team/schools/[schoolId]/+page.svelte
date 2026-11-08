@@ -1,6 +1,11 @@
 <script lang="ts">
+	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { hasErrorCode } from '#lib/api/errorCodes';
 	import { m } from '#lib/paraglide/messages';
 	import SchoolForm from './SchoolForm.svelte';
 	import SchoolMetrics from './SchoolMetrics.svelte';
@@ -15,6 +20,24 @@
 	const school = $derived(
 		await client.liveQuery.school({ __args: { id: schoolId }, name: true, city: true })
 	);
+
+	let confirmingDelete = $state(false);
+
+	async function deleteSchool() {
+		const promise = Promise.resolve(client.mutate.deleteSchool({ __args: { id: schoolId } }));
+		toast.promise(promise, {
+			...genericPromiseToastMessages,
+			success: m.schoolDeleted(),
+			// named by people of other conferences
+			error: (err: unknown) =>
+				hasErrorCode({ err, code: 'NOT_FOUND' })
+					? m.schoolDeleteNotAllowed()
+					: m.genericToastError()
+		});
+		await promise;
+		confirmingDelete = false;
+		await goto(resolve(`dashboard/${conferenceId}/team/schools`));
+	}
 </script>
 
 <div class="flex flex-col gap-6">
@@ -23,10 +46,16 @@
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			{m.schools()}
 		</a>
-		<h2 class="text-2xl font-bold">
-			<i class="fa-sharp-duotone fa-solid fa-school"></i>
-			{school.name}
-		</h2>
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<h2 class="text-2xl font-bold">
+				<i class="fa-sharp-duotone fa-solid fa-school"></i>
+				{school.name}
+			</h2>
+			<button class="btn btn-error btn-outline btn-sm" onclick={() => (confirmingDelete = true)}>
+				<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+				{m.schoolDelete()}
+			</button>
+		</div>
 		{#if school.city}
 			<p class="text-base-content/70">{school.city}</p>
 		{/if}
@@ -44,3 +73,12 @@
 
 	<SchoolPeople {schoolId} {conferenceId} />
 </div>
+
+{#if confirmingDelete}
+	<ConfirmDeleteModal
+		title={m.schoolDelete()}
+		text={m.schoolDeleteConfirm({ name: school.name })}
+		onConfirm={deleteSchool}
+		onClose={() => (confirmingDelete = false)}
+	/>
+{/if}

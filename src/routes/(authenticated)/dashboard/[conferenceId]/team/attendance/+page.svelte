@@ -41,7 +41,14 @@
 		type ShownPerson,
 		type ServerMode
 	} from './attendanceSession';
-	import { acceptScannedCode, warmUpIdentityKey } from '#lib/api/identityCodeCheck';
+	import { warmUpSignedCodeKeys } from '#lib/api/signedCodeKeys';
+	import {
+		acceptScan,
+		userIdOfCode,
+		type ScanAcceptance
+	} from '#lib/components/scanner/scanAcceptance';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { loadScannedPerson, type FoundPerson } from './scanLoad';
 	import type { PageProps } from './$types';
 
@@ -106,7 +113,12 @@
 	// --- Scanner ---
 
 	let scannedCode = $state<string | null>('');
-	let scannedFormat = $state<string | null>(null);
+	/** The digital nametag, and the barcode of a printed one. */
+	const acceptance: ScanAcceptance = $derived({
+		conferenceId,
+		kinds: ['live'],
+		printedNametags: true
+	});
 	let scannerRef = $state<BarcodeScanner>();
 	/** The code being worked on; the scanner takes no other until it is released. */
 	let heldCode: string | null = null;
@@ -354,7 +366,7 @@
 			if (intake.action === 'hold') scannedCode = intake.held;
 			if (intake.action === 'take') {
 				heldCode = code;
-				void handleScan({ scanned: intake.trimmed, format: scannedFormat });
+				void handleScan(intake.trimmed);
 			}
 		});
 	});
@@ -392,38 +404,53 @@
 		}
 	}
 
-	/** The code to work with, or `null` when it is refused, which is reported. */
-	async function acceptedCode({ code, format }: { code: string; format: string | null }) {
-		const result = await acceptScannedCode({ code, format });
-		if (result.accepted) return result.code;
-		toast.error(result.message);
-		return null;
-	}
-
-	/** What a scan does: log it at once (record), or show the person first (check). */
+	/**
+	 * What a scan does: log it at once (record), or show the person first (check). The scanner has
+	 * accepted the code already, its signature checked here, so recording works offline; a lookup
+	 * hands the signed code on, which the server checks again.
+	 */
 	// fallow-ignore-next-line complexity
-	async function handleScan({ scanned, format }: { scanned: string; format: string | null }) {
-		const code = await acceptedCode({ code: scanned, format });
-		if (code === null) {
-			release();
-			return;
-		}
+	async function handleScan(code: string) {
+		const userId = userIdOfCode(code);
 		if (!checking) {
-			enqueue({ userId: code, checkPassed: null });
+			enqueue({ userId, checkPassed: null });
 			release();
 			return;
 		}
 
-		shown = { state: 'loading', userId: code };
+		shown = { state: 'loading', userId };
 		const person = await lookUp({ code, asScan: true });
 		if (person === undefined) {
 			shown = null;
 			release();
 		} else if (person === null) {
-			shown = { state: 'notFound', userId: code };
+			shown = { state: 'notFound', userId };
 		} else {
 			showScanned(person);
 		}
+	}
+
+	/**
+	 * A nametag opened with a phone's camera app arrives through `/id` as `?code=`. It is checked
+	 * like any scan; without a session it is looked up in the info mode, which records nothing.
+	 * The parameter is dropped from the URL on the next task, so a reload does not scan it again.
+	 */
+	async function takeLinkedCode() {
+		const linked = page.url.searchParams.get('code');
+		if (!linked) return;
+		setTimeout(() => {
+			const url = new URL(location.href);
+			url.searchParams.delete('code');
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, without the code
+			goto(url, { shallow: true, replace: true, state: page.state });
+		});
+		const verdict = await acceptScan({ text: linked, format: 'qr_code', acceptance });
+		if (!verdict.accepted) {
+			toast.error(verdict.message);
+			return;
+		}
+		if (!sessionActive) startInfo();
+		scannedCode = verdict.code;
 	}
 
 	/** Shows a scanned person, logs the scan, and waits for what the mode needs next. */
@@ -820,7 +847,8 @@
 	// --- Hotkeys ---
 
 	onMount(() => {
-		warmUpIdentityKey();
+		warmUpSignedCodeKeys();
+		void takeLinkedCode();
 		hotkeys('esc', () => closeResult());
 		hotkeys('alt+a', () => {
 			void confirmResult();
@@ -1052,8 +1080,8 @@
 		<BarcodeScanner
 			bind:this={scannerRef}
 			bind:scannedCode
-			bind:scannedFormat
-			barcodeFormats={['qr_code', 'data_matrix', 'code_128']}
+			barcodeFormats={['qr_code', 'code_128']}
+			{acceptance}
 			persistKey="useCameraForAttendanceScanner"
 			{conferenceId}
 			manualPlaceholder={m.enterPostalRegistrationCode()}

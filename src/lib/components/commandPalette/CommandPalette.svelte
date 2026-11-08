@@ -36,8 +36,6 @@
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '#lib/components/Kbd.svelte';
 	import QuickScan from '#lib/components/scanner/QuickScan.svelte';
-	import { acceptScannedCode } from '#lib/api/identityCodeCheck';
-	import { readAimIdentifier } from '#lib/components/scanner/aimIdentifier';
 	import { looksLikeUserId } from '#lib/components/scanner/suggestions';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -199,16 +197,12 @@
 		}
 	});
 
-	/** A scanned code opens the person it stands for, checked the way the scanner page checks it. */
-	async function handleScan(scan: { rawValue: string; format: string }) {
+	/**
+	 * A scanned code opens the person it stands for, checked the way the scanners check it: the
+	 * nametag, the application documents and a printed nametag's barcode.
+	 */
+	function handleScan({ userId }: { userId: string }) {
 		scanning = false;
-		const read = readAimIdentifier(scan.rawValue.trim());
-		const result = await acceptScannedCode({ code: read.code, format: read.format ?? scan.format });
-		if (!result.accepted) {
-			toast.error(result.message);
-			return;
-		}
-		const userId = result.code;
 		if (!looksLikeUserId(userId)) {
 			toast.error(m.notFound());
 			return;
@@ -378,7 +372,11 @@
 
 			{#if scanning}
 				<div class="border-base-300 border-b p-2">
-					<QuickScan onscan={handleScan} onclose={() => (scanning = false)} />
+					<QuickScan
+						acceptance={{ conferenceId, kinds: ['live', 'print'], printedNametags: true }}
+						onscan={handleScan}
+						onclose={() => (scanning = false)}
+					/>
 				</div>
 			{/if}
 

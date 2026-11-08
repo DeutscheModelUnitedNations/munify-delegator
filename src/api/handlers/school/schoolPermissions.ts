@@ -44,6 +44,26 @@ function schoolOfCaredFor(ctx: Context) {
 	};
 }
 
+/**
+ * `schoolOfCaredFor`, as long as nobody outside the caller's conferences names the school: a
+ * school is shared by every conference, and deleting it takes it from everybody naming it.
+ */
+function deletableSchoolOfCaredFor(ctx: Context) {
+	// a system admin deletes every school anyway
+	if (isSystemAdmin(ctx)) return undefined;
+	const caredFor = schoolOfCaredFor(ctx);
+	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
+	if (!caredFor || !conference) return undefined;
+	const elsewhere = { conference: { NOT: conference } };
+	return {
+		AND: [
+			caredFor,
+			{ NOT: { waitingListEntries: elsewhere } },
+			{ NOT: { participants: elsewhere } }
+		]
+	};
+}
+
 export function registerSchoolAbilities() {
 	// System admins read, update and delete every school.
 	abilityBuilder.school.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -51,6 +71,8 @@ export function registerSchoolAbilities() {
 	abilityBuilder.school.allow('read').when(() => ({ columns: PUBLIC_COLUMNS }));
 	// Participant care reads in full and updates the schools of the people of its conferences.
 	abilityBuilder.school.allow(['read', 'update']).when((ctx) => grantWhere(schoolOfCaredFor(ctx)));
+	// It deletes those of them nobody outside its conferences names (`deletableSchoolOfCaredFor`).
+	abilityBuilder.school.allow('delete').when((ctx) => grantWhere(deletableSchoolOfCaredFor(ctx)));
 }
 
 /**

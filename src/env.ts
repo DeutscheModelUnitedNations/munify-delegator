@@ -54,9 +54,6 @@ export const variables = defineEnvVars({
 			placeholder: 'production'
 		})
 	},
-	// Unread since the OIDC flow moved to @m1212e/sveltekit-oidc, which manages its own cookies.
-	// Kept required so a deployment does not silently lose it before something needs it again.
-	SECRET: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 	CERTIFICATE_SECRET: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 
 	OIDC_SCOPES: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },

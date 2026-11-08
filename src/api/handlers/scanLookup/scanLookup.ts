@@ -1,5 +1,6 @@
 import { enum_, schemaBuilder } from '#api/rumble';
 import { lookupScan } from './scanLookupService';
+import { scannedUserId } from '#api/handlers/signedCode/signedCodeService';
 import { assertCanLookupScan } from './scanLookupPermissions';
 import { SCAN_ISSUES } from './scanCheck';
 
@@ -89,11 +90,14 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 schemaBuilder.queryFields((t) => ({
 	scanLookup: t.field({
 		description:
-			'Looks a scanned code (a user id) up for the entrance scanner. Any team member may use it, which the scanner is for (FORBIDDEN for anybody else), so it answers with this fixed set of fields instead of letting the caller read the participant\'s user and status rows, which only participant care may - and only for people with a part in the conference; anybody else is "not found". With a session it also tells whether the person picked one of the survey options the session expects; the titles come along, since the team members working the scanner may not read the survey itself. The check itself is made here: `issues`, `checkPassed` and `mayRecordAnyway` are what the scanner shows and acts on.',
+			"Looks a scanned code up for the entrance scanner: a digital nametag's signed code, which has to be genuine, current and of this conference (INVALID_INPUT otherwise), or a user id - a printed nametag's barcode, or a person picked by hand. Any team member may use it, which the scanner is for (FORBIDDEN for anybody else), so it answers with this fixed set of fields instead of letting the caller read the participant's user and status rows, which only participant care may - and only for people with a part in the conference; anybody else is \"not found\". With a session it also tells whether the person picked one of the survey options the session expects; the titles come along, since the team members working the scanner may not read the survey itself. The check itself is made here: `issues`, `checkPassed` and `mayRecordAnyway` are what the scanner shows and acts on.",
 		type: ScanLookupResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			code: t.arg.string({ required: true, description: 'The scanned code: a user id.' }),
+			code: t.arg.string({
+				required: true,
+				description: "The scanned code: a nametag's signed code (or its link), or a user id."
+			}),
 			sessionId: t.arg.id({
 				description:
 					'The scanner session the code was scanned in, whose expected survey options are checked; one of another conference is refused with INVALID_INPUT.'
@@ -109,9 +113,14 @@ schemaBuilder.queryFields((t) => ({
 				conferenceId: args.conferenceId,
 				sessionId: args.sessionId
 			});
+			const userId = await scannedUserId({
+				code: args.code,
+				conferenceId: args.conferenceId,
+				kinds: ['live']
+			});
 			return lookupScan({
 				conferenceId: args.conferenceId,
-				code: args.code,
+				code: userId,
 				sessionId: args.sessionId,
 				asScan: args.asScan ?? false
 			});

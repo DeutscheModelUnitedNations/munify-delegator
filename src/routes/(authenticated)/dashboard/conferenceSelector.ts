@@ -13,27 +13,3 @@ export function fetchSelectableConferences() {
 		startConference: true
 	});
 }
-
-/**
- * The ids of the conferences the user has a part in: applied to, supervises at, is on the team of
- * or took part in. Read through the user's own rows, so it does not depend on what is visible.
- */
-export async function fetchMyConferenceIds(userId: string) {
-	const byUser = { user: { id: { eq: userId } } };
-	const inConference = { conference: { id: true } } as const;
-	const [delegationMembers, singleParticipants, supervisors, teamMembers] = await Promise.all([
-		client.liveQuery.delegationMembers({ __args: { where: byUser }, ...inConference }),
-		client.liveQuery.singleParticipants({ __args: { where: byUser }, ...inConference }),
-		client.liveQuery.conferenceSupervisors({ __args: { where: byUser }, ...inConference }),
-		client.liveQuery.teamMembers({
-			__args: { where: { userId: { eq: userId } } },
-			conferenceId: true
-		})
-	]);
-	return new Set([
-		...[delegationMembers, singleParticipants, supervisors].flatMap((rows) =>
-			rows.slice().map((row) => row.conference.id)
-		),
-		...teamMembers.slice().map((row) => row.conferenceId)
-	]);
-}

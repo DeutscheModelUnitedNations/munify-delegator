@@ -1,15 +1,18 @@
 import { db } from '#api/db/db';
 import { CERTIFICATE_SECRET } from '$app/env/private';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { SignJWT, exportJWK } from 'jose';
+import { exportJWK } from 'jose';
 import { certificateAlg } from '#lib/helpers/certificateJwt';
+import { issueCertificateCode } from '#api/handlers/signedCode/signedCodeService';
 import { generateSeededRsa } from './deterministicRSAKeypair';
 import { certificateContents, certificateSessions } from './certificatePayload';
 
 /**
  * Participation certificates are signed so they can be verified offline, by anyone, without
- * calling back into this app. The key pair is derived deterministically from a single secret so
- * it survives redeploys - rotating `CERTIFICATE_SECRET` invalidates every certificate issued.
+ * calling back into this app. They are signed codes now (`issueCertificateCode`); before, they
+ * were JWTs signed with RS256, by a key pair derived deterministically from `CERTIFICATE_SECRET`.
+ * That key signs nothing any more, but its public half stays published, so the certificates
+ * issued back then still verify.
  */
 const keyPair = generateSeededRsa({ seed: CERTIFICATE_SECRET, opts: { bits: 2048 } });
 
@@ -17,7 +20,7 @@ const jwkPublicKey = keyPair
 	.then((pair) => exportJWK(pair.publicKey))
 	.then((key) => ({ ...key, alg: certificateAlg }));
 
-/** The public half of the signing key, as a JWK, so certificates can be verified without this app. */
+/** The public half of the key the certificates issued as JWTs were signed with, as a JWK. */
 export function certificatePublicKey() {
 	return jwkPublicKey;
 }
@@ -81,11 +84,8 @@ export async function issueCertificate({
 
 	const sessions = await sessionsOf({ conferenceId, participantId: participant.id });
 	const contents = certificateContents({ ...participant, sessions });
-	if (!contents) return { jwt: null, fullName: null, sessions: [] };
+	if (!contents) return { code: null, fullName: null, sessions: [] };
 
-	const jwt = await new SignJWT(contents.payload)
-		.setProtectedHeader({ alg: certificateAlg })
-		.setIssuedAt()
-		.sign((await keyPair).privateKey);
-	return { jwt, fullName: contents.fullName, sessions };
+	const code = await issueCertificateCode({ certificate: contents.payload });
+	return { code, fullName: contents.fullName, sessions };
 }

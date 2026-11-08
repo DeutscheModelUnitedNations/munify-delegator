@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Where the generated parts of a document go on the conference's own template: a certificate's
- * name, sessions and QR code; the contract's recipient, name, birthday and code; the consents'
- * fields. The team places them in the layout editor (`DocumentLayoutEditor.svelte`); the PDF
+ * name, sessions and QR code; the contract's recipient, name and birthday; the consents' fields.
+ * The application documents' signed code is not placed: it is in the footer of every page. The team places them in the layout editor (`DocumentLayoutEditor.svelte`); the PDF
  * generator and the editor read the same values, stored per document in
  * `conference.documentLayouts`.
  *
@@ -85,10 +85,6 @@ export const DOCUMENT_ELEMENTS = {
 			align: 'left',
 			lines: 4,
 			default: { x: portrait.x(mm(25)), y: portrait.y(mm(60) + 15), size: 11 }
-		},
-		code: {
-			shape: 'square',
-			default: { x: portrait.x(A4.short - 40 - 44), y: portrait.y(100), size: portrait.x(44) }
 		},
 		...nameAndBirthday({ top: 320, gap: 60 })
 	},
