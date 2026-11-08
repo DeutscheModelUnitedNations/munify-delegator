@@ -745,7 +745,7 @@
 	"commandPalettePages": "Seiten",
 	"commandPalettePaymentNotReceived": "Zahlung in Höhe von {amount} {currency} ausstehend",
 	"commandPalettePaymentReceived": "Zahlung in Höhe von {amount} {currency} am {date} erhalten",
-	"commandPalettePlaceholder": "Seite, Teilnehmende oder Delegation suchen...",
+	"commandPalettePlaceholder": "Seite, Teilnehmende, Delegation oder Schule suchen...",
 	"commandPaletteUsers": "Teilnehmende",
 	"committee": "Gremium",
 	"committeeAssignment": "Gremienzuteilung",

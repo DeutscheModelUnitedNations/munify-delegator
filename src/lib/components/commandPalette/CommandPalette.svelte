@@ -14,6 +14,7 @@
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import type { TeamAccess } from '#lib/helpers/teamAccess';
+	import { mayOpenTeamRoute, teamRoutes } from '#lib/data/teamRoutes';
 	import {
 		getAllPages,
 		getConfigEntries,
@@ -111,6 +112,7 @@
 
 	let userResults = $state<SearchResults['users']>([]);
 	let delegationResults = $state<SearchResults['delegations']>([]);
+	let schoolResults = $state<SearchResults['schools']>([]);
 	let foreignUserResults = $state<SearchResults['foreignUsers']>([]);
 	let transactionResults = $state<SearchResults['transactions']>([]);
 	let seatResults = $state<SearchResults['seats']>([]);
@@ -121,6 +123,7 @@
 		flattenResults({
 			users: userResults,
 			delegations: delegationResults,
+			schools: schoolResults,
 			seats: seatResults,
 			committees: committeeResults,
 			transactions: transactionResults,
@@ -131,6 +134,11 @@
 		})
 	);
 
+	// A school result opens its page, so only those who may open the schools page are offered any
+	const withSchools = $derived(
+		teamRoutes.some((route) => route.id === 'schools' && mayOpenTeamRoute({ route, access }))
+	);
+
 	// Debounced server search — called from oninput handler, not from $effect
 	function triggerServerSearch(term: string) {
 		if (debounceTimer) clearTimeout(debounceTimer);
@@ -138,6 +146,7 @@
 		if (term.trim().length < 2) {
 			userResults = [];
 			delegationResults = [];
+			schoolResults = [];
 			transactionResults = [];
 			seatResults = [];
 			committeeResults = [];
@@ -150,9 +159,10 @@
 		searchLoading = true;
 		debounceTimer = setTimeout(async () => {
 			try {
-				const result = await searchConference({ conferenceId, searchTerm: term });
+				const result = await searchConference({ conferenceId, searchTerm: term, withSchools });
 				userResults = result.users;
 				delegationResults = result.delegations;
+				schoolResults = result.schools;
 				foreignUserResults = result.foreignUsers;
 				transactionResults = result.transactions;
 				seatResults = result.seats;
@@ -181,6 +191,7 @@
 				seatResults = [];
 				committeeResults = [];
 				delegationResults = [];
+				schoolResults = [];
 				foreignUserResults = [];
 				activeIndex = 0;
 				searchLoading = false;
@@ -280,6 +291,7 @@
 			icon: 'fa-users-viewfinder',
 			fromServer: true
 		},
+		school: { title: m.schools, icon: 'fa-school', fromServer: true },
 		seat: { title: m.seats, icon: 'fa-chair', fromServer: true },
 		committee: { title: m.committees, icon: 'fa-podium', fromServer: true },
 		transaction: { title: m.payment, icon: 'fa-money-bill-transfer', fromServer: true },

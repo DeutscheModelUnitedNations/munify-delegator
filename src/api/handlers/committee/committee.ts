@@ -20,7 +20,10 @@ import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCommitteeAbilities();
 
-export const CommitteeRef = object({ table: 'committee' });
+export const CommitteeRef = object({
+	table: 'committee',
+	search: { columns: ['name', 'abbreviation', 'id'] }
+});
 query({ table: 'committee' });
 
 const regionalBaselineEnum = enum_({ tsName: 'regionalBaseline' });

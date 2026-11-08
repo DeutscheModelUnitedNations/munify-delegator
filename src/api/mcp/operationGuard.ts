@@ -149,7 +149,10 @@ function checkOrder({
 	}
 }
 
-/** rumble's search compares the term with every text and id column of the table. */
+/**
+ * rumble's search compares the term with the text and id columns the table's object names, or
+ * every one. This stays on the safe side: any hidden text or id field refuses the search.
+ */
 function checkSearch({
 	guard,
 	entity,

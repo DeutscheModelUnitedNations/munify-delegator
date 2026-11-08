@@ -19,6 +19,13 @@ export interface SearchDelegation {
 	headDelegateUserId: string | null;
 }
 
+/** A school someone in the conference has as their own, or waits with. */
+export interface SearchSchool {
+	id: string;
+	name: string;
+	city: string | null;
+}
+
 /** A seat - a nation, non-state actor or role - found by name, with whoever holds it. */
 export interface SearchSeat {
 	id: string;
@@ -59,6 +66,7 @@ export type ResultItem =
 	| { type: 'page'; data: PageEntry }
 	| { type: 'user'; data: SearchUser }
 	| { type: 'delegation'; data: SearchDelegation }
+	| { type: 'school'; data: SearchSchool }
 	| { type: 'config'; data: ConfigEntry }
 	| { type: 'foreignUser'; data: SearchForeignUser }
 	| { type: 'seat'; data: SearchSeat }
@@ -69,6 +77,7 @@ export type ResultItem =
 export interface ResultLists {
 	users: readonly SearchUser[];
 	delegations: readonly SearchDelegation[];
+	schools: readonly SearchSchool[];
 	seats: readonly SearchSeat[];
 	committees: readonly SearchCommittee[];
 	transactions: readonly SearchTransaction[];
@@ -80,12 +89,13 @@ export interface ResultLists {
 
 /**
  * Every result in one list, in the order the palette shows them and the keyboard walks them:
- * users, delegations, seats, committees, transactions, pages, configuration, foreign users, and
+ * users, schools, delegations, seats, committees, transactions, pages, configuration, foreign users, and
  * the manual last.
  */
 export function flattenResults(lists: ResultLists): ResultItem[] {
 	return [
 		...lists.users.map((data) => ({ type: 'user' as const, data })),
+		...lists.schools.map((data) => ({ type: 'school' as const, data })),
 		...lists.delegations.map((data) => ({ type: 'delegation' as const, data })),
 		...lists.seats.map((data) => ({ type: 'seat' as const, data })),
 		...lists.committees.map((data) => ({ type: 'committee' as const, data })),
@@ -131,6 +141,13 @@ export function resultTarget({
 			return {
 				href: resolve('/(authenticated)/dashboard/[conferenceId]/team/participants', {
 					conferenceId
+				})
+			};
+		case 'school':
+			return {
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/team/schools/[schoolId]', {
+					conferenceId,
+					schoolId: item.data.id
 				})
 			};
 		case 'committee':
@@ -235,9 +252,16 @@ export function describeItem(item: ResultItem): {
 			};
 		case 'delegation':
 			return {
+				// Named "Delegation" first: a delegation found by its members' school is not that school
 				icon: 'fa-users-viewfinder',
-				primary: item.data.school ?? item.data.id,
+				primary: `${m.delegation()} · ${item.data.school ?? item.data.id}`,
 				secondary: `${item.data.memberCount} ${m.members()}`
+			};
+		case 'school':
+			return {
+				icon: 'fa-school',
+				primary: item.data.name,
+				secondary: item.data.city ?? undefined
 			};
 		case 'transaction':
 			return {

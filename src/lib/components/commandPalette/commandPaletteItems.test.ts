@@ -48,12 +48,14 @@ const config: ConfigEntry = {
 };
 const seat = { id: 's1', title: 'Frankreich', subtitle: 'Gym', holderUserId: 'u9' };
 const committee = { id: 'c1', title: 'Sicherheitsrat', subtitle: 'SC' };
+const school = { id: 'sch1', name: 'Goethe-Gymnasium', city: 'Berlin' };
 const foreignUser = { id: 'f1', email: 'f@b.c', givenName: 'Fo', familyName: 'Reign' };
 
 describe('flattenResults', () => {
 	test('orders the groups', () => {
 		const items = flattenResults({
 			users: [user],
+			schools: [school],
 			delegations: [delegation],
 			seats: [seat],
 			committees: [committee],
@@ -65,6 +67,7 @@ describe('flattenResults', () => {
 		});
 		expect(items.map((i) => i.type)).toEqual([
 			'user',
+			'school',
 			'delegation',
 			'seat',
 			'committee',
@@ -91,6 +94,14 @@ describe('resultTarget', () => {
 		expect(
 			resultTarget({ item: { type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId })
 		).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
+	});
+	test('a school opens its page', () => {
+		expect(resultTarget({ item: { type: 'school', data: school }, conferenceId })).toEqual({
+			href: resolve('/(authenticated)/dashboard/[conferenceId]/team/schools/[schoolId]', {
+				conferenceId,
+				schoolId: 'sch1'
+			})
+		});
 	});
 	test('a committee opens the committees tab', () => {
 		expect(
@@ -187,11 +198,27 @@ describe('describeItem', () => {
 		],
 		[
 			{ type: 'delegation', data: delegation },
-			{ icon: 'fa-users-viewfinder', primary: 'Gym', secondary: `3 ${m.members()}` }
+			{
+				icon: 'fa-users-viewfinder',
+				primary: `${m.delegation()} · Gym`,
+				secondary: `3 ${m.members()}`
+			}
 		],
 		[
 			{ type: 'delegation', data: { ...delegation, school: null } },
-			{ icon: 'fa-users-viewfinder', primary: 'd1', secondary: `3 ${m.members()}` }
+			{
+				icon: 'fa-users-viewfinder',
+				primary: `${m.delegation()} · d1`,
+				secondary: `3 ${m.members()}`
+			}
+		],
+		[
+			{ type: 'school', data: school },
+			{ icon: 'fa-school', primary: 'Goethe-Gymnasium', secondary: 'Berlin' }
+		],
+		[
+			{ type: 'school', data: { ...school, city: null } },
+			{ icon: 'fa-school', primary: 'Goethe-Gymnasium', secondary: undefined }
 		],
 		[
 			{ type: 'page', data: page },

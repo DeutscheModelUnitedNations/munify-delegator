@@ -31,6 +31,9 @@ const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
 
 export const UserRef = object({
 	table: 'user',
+	// by name and email, never by contact details, the address or notes; by id too, which is how a
+	// past search in the command palette comes back
+	search: { columns: ['givenName', 'familyName', 'email', 'id'] },
 	adjust: (t) => ({
 		conferenceParticipationsCount: t.field({
 			description:

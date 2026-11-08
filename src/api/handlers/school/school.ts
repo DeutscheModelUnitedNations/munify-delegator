@@ -12,7 +12,8 @@ import { schoolRenameSchema, searchSchoolsArgsSchema } from './schoolArgs';
 
 registerSchoolAbilities();
 
-const SchoolRef = object({ table: 'school' });
+// by name and place, and by id: a past search in the command palette comes back as its id
+const SchoolRef = object({ table: 'school', search: { columns: ['name', 'city', 'id'] } });
 query({ table: 'school' });
 
 const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {

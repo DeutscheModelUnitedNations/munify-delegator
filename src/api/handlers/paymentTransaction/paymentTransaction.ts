@@ -15,7 +15,11 @@ import { mcpTool } from '#api/mcp/mcpTool';
 
 registerPaymentTransactionAbilities();
 
-const PaymentTransactionRef = object({ table: 'paymentTransaction' });
+// a payment is looked up by its id, the reference transfers carry
+const PaymentTransactionRef = object({
+	table: 'paymentTransaction',
+	search: { columns: ['id'] }
+});
 query({ table: 'paymentTransaction' });
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 

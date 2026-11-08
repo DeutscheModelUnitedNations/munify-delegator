@@ -13,7 +13,10 @@ import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCommitteeAgendaItemAbilities();
 
-export const CommitteeAgendaItemRef = object({ table: 'committeeAgendaItem' });
+export const CommitteeAgendaItemRef = object({
+	table: 'committeeAgendaItem',
+	search: { columns: ['title', 'id'] }
+});
 query({ table: 'committeeAgendaItem' });
 
 const reviewHelpStatusEnum = enum_({ tsName: 'reviewHelpStatus' });
