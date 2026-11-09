@@ -72,7 +72,7 @@
 		<table class="table table-sm">
 			<thead>
 				<tr>
-					<th></th>
+					<th><span class="sr-only">{m.actions()}</span></th>
 					<th>{m.name()}</th>
 				</tr>
 			</thead>

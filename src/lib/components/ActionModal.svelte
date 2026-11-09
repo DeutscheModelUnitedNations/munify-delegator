@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modalFocus } from '#lib/helpers/modalFocus';
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
 
@@ -45,7 +46,7 @@
 </script>
 
 <div class="modal modal-open">
-	<div class="modal-box {boxClass}">
+	<div class="modal-box {boxClass}" role="dialog" aria-modal="true" {@attach modalFocus(onClose)}>
 		<h3 class="text-lg font-bold">{title}</h3>
 		{#if subtitle}
 			<p class="text-base-content/60 mt-1 text-sm">{@render subtitle()}</p>
@@ -71,5 +72,11 @@
 			</div>
 		</div>
 	</div>
-	<button type="button" class="modal-backdrop" aria-label={m.close()} onclick={onClose}></button>
+	<button
+		type="button"
+		class="modal-backdrop"
+		tabindex="-1"
+		aria-label={m.close()}
+		onclick={onClose}
+	></button>
 </div>

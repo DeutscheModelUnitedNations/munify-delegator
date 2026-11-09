@@ -29,11 +29,13 @@
 </script>
 
 <div class="tooltip tooltip-top inline-grid *:[grid-area:1/1]" data-tip={tooltip}>
-	<div aria-label={m.status()} class="status {getSizeClass()} {getColorClass()}"></div>
+	<!-- The colour alone says nothing to a screen reader; the tooltip's words name the dot -->
+	<div
+		role="img"
+		aria-label={tooltip ?? m.status()}
+		class="status {getSizeClass()} {getColorClass()}"
+	></div>
 	{#if blink}
-		<div
-			aria-label={m.status()}
-			class="status {getSizeClass()} {getColorClass()} animate-ping"
-		></div>
+		<div aria-hidden="true" class="status {getSizeClass()} {getColorClass()} animate-ping"></div>
 	{/if}
 </div>

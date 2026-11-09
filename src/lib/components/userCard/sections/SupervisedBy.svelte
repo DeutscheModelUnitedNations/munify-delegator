@@ -87,7 +87,7 @@
 						<th>{m.name()}</th>
 						<th>{m.connectionCode()}</th>
 						<th>{m.attendancePlan()}</th>
-						<th></th>
+						<th><span class="sr-only">{m.actions()}</span></th>
 					</tr>
 				</thead>
 				<tbody>

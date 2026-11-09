@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { clickedLink } from '#lib/helpers/clickedLink';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { m } from '#lib/paraglide/messages';
 	import { goto } from '$app/navigation';
@@ -80,7 +81,15 @@
 		}
 	};
 
+	const ariaSort = (key: PaperSortKey) => {
+		if (!sortConfig || sortConfig.key !== key) return 'none';
+		return sortConfig.direction === 'asc' ? 'ascending' : 'descending';
+	};
+
+	// The row is a bigger target for the mouse; keyboard and screen readers use the link in its
+	// first cell, which also handles its own clicks
 	const handleRowClick = ({ e, paperId }: { e: MouseEvent; paperId: string }) => {
+		if (clickedLink(e)) return;
 		if (e.ctrlKey || e.metaKey) {
 			open(paperHref(paperId), '_blank');
 		} else {
@@ -89,15 +98,10 @@
 	};
 
 	const handleRowAuxclick = ({ e, paperId }: { e: MouseEvent; paperId: string }) => {
+		if (clickedLink(e)) return;
 		if (e.button === 1) {
 			e.preventDefault();
 			open(paperHref(paperId), '_blank', 'noopener,noreferrer');
-		}
-	};
-
-	const handleRowKeypress = ({ e, paperId }: { e: KeyboardEvent; paperId: string }) => {
-		if (e.key === 'Enter') {
-			goto(paperHref(paperId));
 		}
 	};
 </script>
@@ -106,21 +110,31 @@
 	key: PaperSortKey,
 	label: { text: string } | { icon: string; title: string }
 )}
+	{#snippet labelContent()}
+		{#if 'text' in label}
+			{label.text}
+		{:else}
+			<i class="fa-sharp-duotone fa-solid {label.icon}"></i>
+			<span class="sr-only">{label.title}</span>
+		{/if}
+	{/snippet}
 	<th
-		class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-		onclick={() => handleSort(key)}
+		class={sortable ? 'hover:bg-base-200/50' : ''}
 		title={'title' in label ? label.title : undefined}
+		aria-sort={sortable ? ariaSort(key) : undefined}
 	>
-		<div class="flex items-center gap-1">
-			{#if 'text' in label}
-				{label.text}
-			{:else}
-				<i class="fa-sharp-duotone fa-solid {label.icon}"></i>
-			{/if}
-			{#if sortable}
+		{#if sortable}
+			<button
+				type="button"
+				class="flex cursor-pointer items-center gap-1 select-none"
+				onclick={() => handleSort(key)}
+			>
+				{@render labelContent()}
 				<i class="fa-sharp-duotone fa-solid {getSortIcon(key)} text-xs opacity-50"></i>
-			{/if}
-		</div>
+			</button>
+		{:else}
+			<div class="flex items-center gap-1">{@render labelContent()}</div>
+		{/if}
 	</th>
 {/snippet}
 
@@ -154,7 +168,7 @@
 				{#if showUpdatedAt}
 					{@render sortableHeader('updatedAt', { text: m.paperUpdatedAt() })}
 				{/if}
-				<th></th>
+				<th aria-hidden="true"></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -163,12 +177,11 @@
 					class="hover:bg-base-200/50 cursor-pointer"
 					onclick={(e) => handleRowClick({ e, paperId: paper.id })}
 					onmousedown={(e) => handleRowAuxclick({ e, paperId: paper.id })}
-					role="link"
-					tabindex="0"
-					onkeypress={(e) => handleRowKeypress({ e, paperId: paper.id })}
 				>
 					<td>
-						{@render delegationCell(paper.delegation)}
+						<a href={paperHref(paper.id)} class="link link-hover">
+							{@render delegationCell(paper.delegation)}
+						</a>
 					</td>
 					<td>
 						<span class="flex items-center gap-2 whitespace-nowrap">
@@ -198,7 +211,7 @@
 							{formatDate(paper.updatedAt)}
 						</td>
 					{/if}
-					<td class="text-right text-base-content/40">
+					<td class="text-right text-base-content/40" aria-hidden="true">
 						<i class="fa-sharp-duotone fa-solid fa-chevron-right text-xs"></i>
 					</td>
 				</tr>

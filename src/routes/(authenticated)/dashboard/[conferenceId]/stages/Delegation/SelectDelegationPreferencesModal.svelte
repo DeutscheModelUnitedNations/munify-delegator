@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modalFocus } from '#lib/helpers/modalFocus';
 	import type { Snippet } from 'svelte';
 	import Flag from '#lib/components/Flag.svelte';
 	import { m } from '#lib/paraglide/messages';
@@ -166,6 +167,8 @@
 		{:else}
 			<td class="tooltip" data-tip={nation ? getNationRegionalGroup(nation.alpha3Code) : undefined}>
 				<i class="fa-sharp-duotone fa-solid fa-earth"></i>
+				<span class="sr-only">{nation ? getNationRegionalGroup(nation.alpha3Code) : undefined}</span
+				>
 			</td>
 		{/if}
 		{#each conference.committees as committee (committee.id)}
@@ -283,7 +286,12 @@
 {/snippet}
 
 <dialog class="modal modal-open">
-	<div class="modal-box relative w-11/12 max-w-5xl">
+	<div
+		class="modal-box relative w-11/12 max-w-5xl"
+		role="dialog"
+		aria-modal="true"
+		{@attach modalFocus(onClose)}
+	>
 		<div class="flex flex-col gap-10">
 			{#if maxDelegationSizeReached}
 				<div class="alert alert-error">

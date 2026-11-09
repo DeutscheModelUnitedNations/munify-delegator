@@ -97,21 +97,27 @@
 			<dl
 				class="border-base-300 grid grid-cols-2 gap-4 border-t pt-4 lg:w-80 lg:grid-cols-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
 			>
-				<div class="flex items-center gap-3">
-					<i class="fa-sharp-duotone fa-solid fa-users text-base-content/50 text-xl"></i>
-					<div class="flex flex-col">
-						<dt class="text-base-content/60 text-xs">{m.members()}</dt>
-						<dd class="font-semibold">{delegation.members.length}</dd>
-					</div>
+				<!-- A <dl> takes one wrapper per pair holding nothing but the pair, so the icon sits in the
+					 term and is placed beside both lines -->
+				<div class="relative pl-9">
+					<dt class="text-base-content/60 text-xs">
+						<i
+							class="fa-sharp-duotone fa-solid fa-users text-base-content/50 absolute top-1/2 left-0 -translate-y-1/2 text-xl"
+						></i>
+						{m.members()}
+					</dt>
+					<dd class="font-semibold">{delegation.members.length}</dd>
 				</div>
-				<div class="flex items-center gap-3">
-					<i class="fa-sharp-duotone fa-solid fa-signature text-base-content/50 text-xl"></i>
-					<div class="flex min-w-0 flex-col">
-						<dt class="text-base-content/60 text-xs">{m.delegationName()}</dt>
-						<dd class="font-semibold break-words" title={m.delegationNameExplanation()}>
-							{codenamize(delegationId)}
-						</dd>
-					</div>
+				<div class="relative min-w-0 pl-9">
+					<dt class="text-base-content/60 text-xs">
+						<i
+							class="fa-sharp-duotone fa-solid fa-signature text-base-content/50 absolute top-1/2 left-0 -translate-y-1/2 text-xl"
+						></i>
+						{m.delegationName()}
+					</dt>
+					<dd class="min-w-0 font-semibold break-words" title={m.delegationNameExplanation()}>
+						{codenamize(delegationId)}
+					</dd>
 				</div>
 			</dl>
 		</div>

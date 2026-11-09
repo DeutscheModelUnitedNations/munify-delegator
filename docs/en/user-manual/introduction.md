@@ -37,6 +37,12 @@ What the dashboard shows you in each stage is explained under [Dashboard](./part
 - **Command palette:** Press Ctrl+K (⌘+K on a Mac) to search for pages and actions, this manual included.
 - **Participant care:** If you have questions about your application or participation, the conference's participant care team will help you.
 
+## Accessibility {#accessibility}
+
+DELEGATOR works with a keyboard and a screen reader. The first Tab takes you straight to a page's content, past the navigation. Dialogs keep the focus until you close them, and Escape closes them.
+
+At the bottom of every page you can switch on **High contrast**. Text, borders and notices become stronger and easier to read. The choice applies on this device. If your system is set to increase contrast, high contrast is on from the start.
+
 ## What this manual covers {#contents}
 
 For participants:

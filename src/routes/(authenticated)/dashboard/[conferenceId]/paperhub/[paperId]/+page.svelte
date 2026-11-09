@@ -241,6 +241,7 @@
 		>
 			<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle fa-beat-fade text-2xl sm:text-4xl"
 			></i>
+			<span class="sr-only">{m.paperNotSavedAlert()}</span>
 		</div>
 	</div>
 {/if}

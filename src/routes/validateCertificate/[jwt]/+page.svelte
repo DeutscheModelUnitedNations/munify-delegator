@@ -13,7 +13,11 @@
 	);
 </script>
 
-<div class="bg-base-200 flex h-screen w-full flex-col items-center justify-center p-6">
+<main
+	id="main-content"
+	tabindex="-1"
+	class="bg-base-200 flex h-screen w-full flex-col items-center justify-center p-6"
+>
 	<div
 		class="card bg-base-100 z-10 w-full max-w-md shadow-xl"
 		in:blur={{ duration: 1000, delay: 500 }}
@@ -63,4 +67,4 @@
 			{/if}
 		</div>
 	</div>
-</div>
+</main>

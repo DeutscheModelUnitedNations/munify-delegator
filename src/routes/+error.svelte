@@ -26,7 +26,11 @@
 	const getErrorText = (e: number) => (errorTexts[e] ?? m.httpGenericError)();
 </script>
 
-<main class="flex h-screen w-full flex-col items-center justify-center gap-10 p-4">
+<main
+	id="main-content"
+	tabindex="-1"
+	class="flex h-screen w-full flex-col items-center justify-center gap-10 p-4"
+>
 	<img src={getPicture(page.status)} alt="" class="w-full max-w-xs" />
 	<h1 class="text-center text-3xl">{getErrorText(page.status)}</h1>
 	<p>{page.error?.message}</p>

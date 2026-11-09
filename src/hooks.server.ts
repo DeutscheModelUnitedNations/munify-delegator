@@ -37,13 +37,17 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		const render = () =>
 			resolve(event, {
 				transformPageChunk: ({ html }) => {
-					return html
-						.replace('%lang%', locale)
-						.replace(
-							'%fontawesome.stylesheet%',
-							`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
-								`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
-						);
+					return (
+						html
+							.replace('%lang%', locale)
+							// Every locale the app speaks is written left to right
+							.replace('%paraglide.textDirection%', 'ltr')
+							.replace(
+								'%fontawesome.stylesheet%',
+								`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
+									`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
+							)
+					);
 				}
 			});
 

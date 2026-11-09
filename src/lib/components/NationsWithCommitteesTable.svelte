@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -23,7 +24,7 @@
 				</th>
 			{/each}
 			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
-			{#if includeActionCell}<th></th>{/if}
+			{#if includeActionCell}<th><span class="sr-only">{m.actions()}</span></th>{/if}
 		</tr>
 	</thead>
 	<tbody>

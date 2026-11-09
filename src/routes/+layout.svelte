@@ -6,6 +6,7 @@
 	import { Toaster } from 'svelte-sonner';
 	import Inspect from 'svelte-inspect-value';
 	import { locales, localizeHref } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 
 	// import GlobalErrorToast from '#lib/components/ErrorToast.svelte';
 	// import CookieBanner from '#lib/components/CookieBanner.svelte';
@@ -58,6 +59,13 @@
 	{/each}
 </svelte:head>
 
+<!-- The first thing Tab reaches: past the header and navigation, to the layout's <main> -->
+<a
+	href="#main-content"
+	class="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100]"
+>
+	{m.a11ySkipToContent()}
+</a>
 <NavigationProgress />
 <Toaster richColors position="top-center" />
 <DialogHost />

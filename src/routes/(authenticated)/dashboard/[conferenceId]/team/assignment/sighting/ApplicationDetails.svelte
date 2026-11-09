@@ -48,6 +48,7 @@
 					<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-venus-mars"></i></th>
 					<th class="text-right" title={m.assignmentPreviousParticipations()}>
 						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+						<span class="sr-only">{m.assignmentPreviousParticipations()}</span>
 					</th>
 				</tr>
 			</thead>

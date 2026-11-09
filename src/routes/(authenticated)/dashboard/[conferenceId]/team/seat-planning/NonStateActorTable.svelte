@@ -182,6 +182,9 @@
 									data-tip={m.seatPlanningOverfilled({ members, seats: nsa.seatAmount })}
 								>
 									<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error"></i>
+									<span class="sr-only"
+										>{m.seatPlanningOverfilled({ members, seats: nsa.seatAmount })}</span
+									>
 								</span>
 							{/if}
 						</div>

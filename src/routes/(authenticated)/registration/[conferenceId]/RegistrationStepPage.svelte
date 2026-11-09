@@ -32,7 +32,7 @@
 	}: Props = $props();
 </script>
 
-<main class="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-16">
+<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-16">
 	<a
 		class="btn btn-ghost btn-sm self-start"
 		href={backHref ?? resolve(`dashboard/${conferenceId}`)}
@@ -61,4 +61,4 @@
 			{@render children()}
 		</DashboardSection>
 	{/if}
-</main>
+</div>

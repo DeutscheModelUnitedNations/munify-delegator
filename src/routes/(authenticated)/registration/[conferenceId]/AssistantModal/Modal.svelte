@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modalFocus } from '#lib/helpers/modalFocus';
 	import { onMount } from 'svelte';
 	import FinalSupervisor from './Flow/FinalSupervisor.svelte';
 	import FinalSupervisorAnswerWait from './Flow/FinalSupervisorAnswerWait.svelte';
@@ -35,7 +36,12 @@
 </script>
 
 <dialog id="assistent_modal" class="modal modal-open modal-bottom sm:modal-middle h-screen">
-	<div class="modal-box h-full overflow-x-hidden overflow-y-auto">
+	<div
+		class="modal-box h-full overflow-x-hidden overflow-y-auto"
+		role="dialog"
+		aria-modal="true"
+		{@attach modalFocus(onClose)}
+	>
 		<h3 class="text-lg font-bold">
 			<i class="fa-sharp-duotone fa-solid fa-message-question mr-2"></i>
 			Anmeldeassistent

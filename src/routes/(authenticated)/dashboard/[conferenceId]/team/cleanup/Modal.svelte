@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modalFocus } from '#lib/helpers/modalFocus';
 	import type { ModalData } from './types';
 	import { m } from '#lib/paraglide/messages';
 
@@ -12,9 +13,15 @@
 </script>
 
 <div class="modal {open && 'modal-open'}">
-	<button class="modal-backdrop" onclick={closeModal} aria-label={m.a11yCloseDialog()}></button>
-	<div class="modal-box relative flex flex-col gap-4">
-		<h1 class="text-2xl font-bold">{modalData?.message}</h1>
+	<button class="modal-backdrop" tabindex="-1" onclick={closeModal} aria-label={m.a11yCloseDialog()}
+	></button>
+	<div
+		class="modal-box relative flex flex-col gap-4"
+		role="dialog"
+		aria-modal="true"
+		{@attach open ? modalFocus(closeModal) : undefined}
+	>
+		<h2 class="text-2xl font-bold">{modalData?.message}</h2>
 		<p>{m.deleted()}: <span class="badge badge-primary">{modalData?.count}</span></p>
 		<div class="flex flex-row flex-wrap gap-1">
 			{#each modalData?.detailArray ?? [] as id, index (index)}

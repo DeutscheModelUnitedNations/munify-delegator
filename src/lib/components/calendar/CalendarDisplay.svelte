@@ -67,6 +67,7 @@
 			<button
 				role="tab"
 				class="tab {i === selectedDayIndex ? 'tab-active' : ''}"
+				aria-selected={i === selectedDayIndex}
 				onclick={() => selectDay(i)}
 			>
 				{day.name}

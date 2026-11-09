@@ -27,6 +27,7 @@
 				<button
 					role="tab"
 					class="tab {locale === option ? 'tab-active' : ''}"
+					aria-selected={locale === option}
 					onclick={() => (locale = option)}
 				>
 					{conferenceLanguageName({ language: option, inLocale: getLocale() })}

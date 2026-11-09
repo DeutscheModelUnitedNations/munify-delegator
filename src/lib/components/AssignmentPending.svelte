@@ -8,8 +8,8 @@
 	 */
 </script>
 
-<main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4">
+<div class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4">
 	<img src={progress} alt="" class="w-1/2" />
 	<h1 class="text-center text-3xl">{m.assignmentPending()}</h1>
 	<p class="text-center">{m.assignmentPendingText()}</p>
-</main>
+</div>

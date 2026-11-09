@@ -37,6 +37,12 @@ Was du in den einzelnen Phasen auf dem Dashboard findest, steht unter [Dashboard
 - **Befehlspalette:** Mit Strg+K (auf dem Mac ⌘+K) suchst du nach Seiten und Aktionen, auch nach diesem Handbuch.
 - **Teilnehmendenbetreuung:** Bei Fragen zu deiner Bewerbung oder Teilnahme hilft dir die Teilnehmendenbetreuung der Konferenz.
 
+## Barrierefreiheit {#accessibility}
+
+DELEGATOR lässt sich mit Tastatur und Screenreader bedienen. Mit der Tabulatortaste springst du als Erstes zum Inhalt einer Seite, an der Navigation vorbei. Dialoge halten den Fokus, bis du sie schließt, und Escape schließt sie.
+
+Unten auf jeder Seite schaltest du **Hoher Kontrast** ein. Dann sind Texte, Rahmen und Hinweise kräftiger und leichter zu lesen. Die Wahl gilt auf diesem Gerät. Hast du in deinem System mehr Kontrast eingestellt, ist der hohe Kontrast von Anfang an an.
+
 ## Was in diesem Handbuch steht {#contents}
 
 Für Teilnehmende:

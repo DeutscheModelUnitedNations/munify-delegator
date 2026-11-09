@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '#lib/paraglide/messages';
 	import type * as schema from '#api/db/schema/index';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
@@ -23,7 +24,7 @@
 				<th><i class="fa-sharp-duotone fa-solid fa-megaphone"></i></th>
 				<th><i class="fa-sharp-duotone fa-solid fa-info"></i></th>
 				<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
-				{#if actionCell}<th></th>{/if}
+				{#if actionCell}<th><span class="sr-only">{m.actions()}</span></th>{/if}
 			</tr>
 		</thead>
 		<tbody>

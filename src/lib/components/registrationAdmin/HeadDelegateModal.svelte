@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modalFocus } from '#lib/helpers/modalFocus';
 	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -53,7 +54,12 @@
 </script>
 
 <div class="modal" class:modal-open={open}>
-	<div class="modal-box">
+	<div
+		class="modal-box"
+		role="dialog"
+		aria-modal="true"
+		{@attach open ? modalFocus(close) : undefined}
+	>
 		<h3 class="text-lg font-bold">{m.headDelegate()}</h3>
 		<div class="max-h-60 overflow-y-auto">
 			{#each members as member (member.id)}
