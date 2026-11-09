@@ -21,14 +21,16 @@
 		type ScoredNsa
 	} from './presenceImport';
 	import {
-		chasePresenceSchema,
+		parseLinkedPresence,
 		type ChasePresenceRepresentation
 	} from '#lib/schemata/chasePresence';
 	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
 	import type { PageProps } from './$types';
+	import { untrack } from 'svelte';
 
 	let { params }: PageProps = $props();
-	const conferenceId = $derived(params.conferenceId);
+	// read once: the page's boundary is keyed by its path (see "Route parameters" in CLAUDE.md)
+	const conferenceId = untrack(() => params.conferenceId);
 
 	const committees = $derived(
 		await client.liveQuery.committees({
@@ -47,17 +49,20 @@
 	// While linked, CHASE's records arrive on their own (`docs/plans/chase-link.md`); a file
 	// uploaded below still wins, for a conference that ran on another CHASE
 	const chaseLink = $derived(await fetchActiveChaseLink());
+	const linked = $derived(chaseLink !== undefined);
 	const linkedRows = $derived(
-		chaseLink
+		linked
 			? await client.liveQuery.chasePresences({
 					__args: { where: { conferenceId: { eq: conferenceId } } },
+					// its cache key (`customKeyFields`)
+					conferenceId: true,
 					data: true,
 					fetchedAt: true
 				})
 			: []
 	);
 	const linkedRow = $derived(linkedRows.at(0));
-	const fromChase = $derived(linkedRow ? chasePresenceSchema.safeParse(linkedRow.data) : undefined);
+	const fromChase = $derived(linkedRow ? parseLinkedPresence(linkedRow.data) : undefined);
 
 	let participants = $derived(
 		parsed?.ok
