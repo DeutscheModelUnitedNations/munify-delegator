@@ -3,7 +3,7 @@ export interface CustomRole {
 	id: string;
 	name: string;
 	description: string;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	seatAmount: number;
 	holders: number;
 }
@@ -13,7 +13,7 @@ export function customRoleRow(role: {
 	id: string;
 	name?: string | null;
 	description?: string | null;
-	fontAwesomeIcon?: string | null;
+	icon?: string | null;
 	seatAmount?: number | null;
 	assignedSingleParticipants: readonly unknown[];
 }): CustomRole {
@@ -21,7 +21,7 @@ export function customRoleRow(role: {
 		id: role.id,
 		name: role.name ?? '',
 		description: role.description ?? '',
-		fontAwesomeIcon: role.fontAwesomeIcon ?? null,
+		icon: role.icon ?? null,
 		seatAmount: role.seatAmount ?? 0,
 		holders: role.assignedSingleParticipants.length
 	};

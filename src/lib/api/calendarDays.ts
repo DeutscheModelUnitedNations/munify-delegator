@@ -20,7 +20,7 @@ export const calendarDayFields = {
 		endTime: true,
 		name: true,
 		description: true,
-		fontAwesomeIcon: true,
+		icon: true,
 		color: true,
 		place: {
 			id: true,

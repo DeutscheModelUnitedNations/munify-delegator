@@ -23,7 +23,7 @@
 		<div class="mt-4 flex flex-wrap justify-end gap-2">
 			{@render actions?.()}
 			<button type="submit" class="btn btn-primary">
-				<i class="fas fa-save"></i>
+				<i class="ph-fill ph-floppy-disk"></i>
 				{m.save()}
 			</button>
 		</div>

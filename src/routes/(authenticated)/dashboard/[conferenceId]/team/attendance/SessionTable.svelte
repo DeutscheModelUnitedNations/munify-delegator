@@ -123,7 +123,7 @@
 		</EditableIdentityField>
 		<span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/60">
 			{#if row.open}
-				<i class="fa-sharp-duotone fa-solid {modeIcons[row.open.mode]}"></i>
+				<i class="ph-duotone {modeIcons[row.open.mode]}"></i>
 				{modeLabels[row.open.mode]()} · {m.scanRunningSince({
 					time: formatTime(row.open.startedAt)
 				})}
@@ -156,7 +156,7 @@
 			aria-label={peopleOf === row.id ? m.sessionPeopleHide() : m.sessionPeopleShow()}
 			title={peopleOf === row.id ? m.sessionPeopleHide() : m.sessionPeopleShow()}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-users"></i>
+			<i class="ph-duotone ph-users"></i>
 		</button>
 	{/if}
 	{#if row.open}
@@ -166,7 +166,7 @@
 			onclick={() => onJoin(open)}
 			aria-label={m.scanJoinSession()}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
+			<i class="ph-duotone ph-sign-in"></i>
 			<span class="hidden sm:inline">{m.scanJoinSession()}</span>
 		</button>
 	{:else if row.listed && canManage}
@@ -177,7 +177,7 @@
 			onclick={() => reopen(ended)}
 			aria-label={m.scanReopenSession()}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+			<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 			<span class="hidden sm:inline">{m.scanReopenSession()}</span>
 		</button>
 	{/if}
@@ -208,9 +208,7 @@
 				onclick={() => (creating = !creating)}
 			>
 				<i
-					class="fa-sharp-duotone fa-solid fa-plus transition-transform duration-200 {creating
-						? 'rotate-45'
-						: ''}"
+					class="ph-duotone ph-plus transition-transform duration-200 {creating ? 'rotate-45' : ''}"
 				></i>
 				{creating ? m.cancel() : m.scanNewSession()}
 			</button>
@@ -224,7 +222,7 @@
 	<ul class="bg-base-200 divide-y divide-base-content/5 rounded-box">
 		<!-- Looking people up needs no session, and anyone on the team may do it -->
 		<li class="flex items-center gap-3 px-3 py-2.5">
-			<i class="fa-sharp-duotone fa-solid {modeIcons.INFO} shrink-0 text-base-content/60"></i>
+			<i class="ph-duotone {modeIcons.INFO} shrink-0 text-base-content/60"></i>
 			<div class="flex min-w-0 flex-1 flex-col">
 				<span class="font-semibold">{m.scanModeInfo()}</span>
 				<span class="hidden text-xs text-base-content/60 sm:block">{m.scanModeInfoHint()}</span>
@@ -235,7 +233,7 @@
 				aria-label={m.scanStartInfo()}
 				title={m.scanModeInfoHint()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-play"></i>
+				<i class="ph-duotone ph-play"></i>
 				<span class="hidden sm:inline">{m.scanStartInfo()}</span>
 			</button>
 		</li>

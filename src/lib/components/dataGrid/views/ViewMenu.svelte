@@ -41,21 +41,15 @@
 		>
 			<span class="grow truncate">{view.name}</span>
 			{#if view.global}
-				<i
-					class="fa-sharp-duotone fa-solid fa-globe text-xs opacity-60"
-					title={m.dataGridViewGlobal()}
-				></i>
+				<i class="ph-duotone ph-globe text-xs opacity-60" title={m.dataGridViewGlobal()}></i>
 			{/if}
 			{#if view.isMyDefault}
 				<i
-					class="fa-sharp-duotone fa-solid fa-bookmark text-primary text-xs"
+					class="ph-duotone ph-bookmark-simple text-primary text-xs"
 					title={m.dataGridViewMyDefault()}
 				></i>
 			{:else if view.isDefault}
-				<i
-					class="fa-sharp-duotone fa-solid fa-star text-warning text-xs"
-					title={m.dataGridViewDefault()}
-				></i>
+				<i class="ph-duotone ph-star text-warning text-xs" title={m.dataGridViewDefault()}></i>
 			{/if}
 		</button>
 	</li>
@@ -63,12 +57,12 @@
 
 <div class="dropdown no-print">
 	<button tabindex="0" class="btn btn-sm btn-ghost max-w-56" disabled={busy}>
-		<i class="fa-sharp-duotone fa-solid fa-table-layout"></i>
+		<i class="ph-duotone ph-layout"></i>
 		<span class="truncate">{current?.name ?? m.dataGridBaseView()}</span>
 		{#if dirty}
 			<span class="badge badge-warning badge-xs" title={m.dataGridViewChanged()}></span>
 		{/if}
-		<i class="fa-sharp-duotone fa-solid fa-chevron-down text-xs"></i>
+		<i class="ph-duotone ph-caret-down text-xs"></i>
 	</button>
 	<ul
 		class="dropdown-content menu bg-base-200 rounded-box z-20 max-h-[70vh] w-72 flex-nowrap overflow-y-auto p-2 shadow"
@@ -95,7 +89,7 @@
 			{@const entry = viewActionEntry({ action, current })}
 			<li>
 				<button class:text-error={entry.danger} onclick={() => choose(() => onaction(action))}>
-					<i class="fa-sharp-duotone fa-solid {entry.icon}"></i>
+					<i class="ph-duotone {entry.icon}"></i>
 					{entry.label}
 				</button>
 			</li>

@@ -50,7 +50,7 @@
 				name: true,
 				abbreviation: true,
 				description: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				seatAmount: true
 			}),
 			client.liveQuery.conferenceRoles({
@@ -61,7 +61,7 @@
 				id: true,
 				name: true,
 				description: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				seatAmount: true,
 				assignedSingleParticipants: { id: true }
 			}),
@@ -87,7 +87,7 @@
 <div class="flex w-full flex-col gap-4 py-4">
 	{#if conference.state !== 'PRE'}
 		<div role="alert" class="alert alert-warning">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
+			<i class="ph-duotone ph-warning text-xl"></i>
 			<div>
 				<h3 class="font-bold">{m.seatPlanningLiveWarningTitle()}</h3>
 				<p class="text-sm">{m.seatPlanningLiveWarning()}</p>
@@ -104,7 +104,7 @@
 		/>
 		<Tab
 			title={m.nonStateActors()}
-			icon="hand-point-up"
+			icon="hand-pointing"
 			active={params.tab === 'nsa'}
 			onclick={() => (params.tab = 'nsa')}
 		/>
@@ -131,7 +131,7 @@
 				<CustomRoleTable conferenceId={routeParams.conferenceId} {customRoles} />
 			{:else if committees.length === 0}
 				<div class="alert alert-info">
-					<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
+					<i class="ph-duotone ph-info"></i>
 					{m.seatPlanningNoCommittees()}
 				</div>
 			{:else}

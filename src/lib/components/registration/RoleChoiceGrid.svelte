@@ -18,7 +18,7 @@
 			id: true,
 			name: true,
 			description: true,
-			fontAwesomeIcon: true
+			icon: true
 		})
 	);
 	const offered = $derived(roles.filter((role) => !excludeIds.includes(role.id)));
@@ -42,12 +42,7 @@
 				<span
 					class="bg-primary/10 text-primary rounded-box flex size-10 shrink-0 items-center justify-center text-lg"
 				>
-					<i
-						class="fa-sharp-duotone fa-solid fa-{(role.fontAwesomeIcon || 'user-tie').replace(
-							/^fa-/,
-							''
-						)}"
-					></i>
+					<i class="ph-duotone ph-{role.icon || 'user-sound'}"></i>
 				</span>
 				<span class="flex min-w-0 flex-1 flex-col">
 					<span class="font-semibold">{role.name}</span>
@@ -64,7 +59,7 @@
 						<span class="loading loading-spinner loading-xs"></span>
 					{/if}
 					<span class="max-sm:hidden">{actionLabel}</span>
-					<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+					<i class="ph-duotone ph-arrow-right"></i>
 				</button>
 			</div>
 		</div>

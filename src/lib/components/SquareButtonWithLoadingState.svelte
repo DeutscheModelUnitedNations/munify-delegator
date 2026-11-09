@@ -20,8 +20,8 @@
 
 <button class="btn btn-square btn-sm {cssClass}" onclick={fullOnClick} {disabled}>
 	{#if loading}
-		<i class="fa-{duotone ? 'duotone' : 'solid'} fa-spinner fa-spin"></i>
+		<i class="{duotone ? 'ph-duotone' : 'ph-fill'} ph-spinner-gap animate-spin"></i>
 	{:else}
-		<i class="fa-{duotone ? 'duotone' : 'solid'} fa-{icon.replace('fa-', '')}"></i>
+		<i class="{duotone ? 'ph-duotone' : 'ph-fill'} ph-{icon.replace(/^ph-/, '')}"></i>
 	{/if}
 </button>

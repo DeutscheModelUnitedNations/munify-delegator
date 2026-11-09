@@ -12,9 +12,9 @@
 		current > historic ? 'up' : current < historic ? 'down' : 'same';
 
 	const trendStyles: Record<Trend, { fontClass: string; icon: string }> = {
-		up: { fontClass: 'text-[#00aa00]', icon: 'fa-arrow-up-right' },
-		down: { fontClass: 'text-[#ff0000]', icon: 'fa-arrow-down-right' },
-		same: { fontClass: '', icon: 'fa-equals' }
+		up: { fontClass: 'text-[#00aa00]', icon: 'ph-arrow-up-right' },
+		down: { fontClass: 'text-[#ff0000]', icon: 'ph-arrow-down-right' },
+		same: { fontClass: '', icon: 'ph-equals' }
 	};
 </script>
 
@@ -24,7 +24,7 @@
 	{:else}
 		{@const trend = trendStyles[trendOf({ current: currentValue, historic: historicValue })]}
 		<span class={trend.fontClass}>
-			<i class="fa-sharp-duotone fa-solid {trend.icon}"></i>
+			<i class="ph-duotone {trend.icon}"></i>
 			{historicValue}
 			{#if currentValue > historicValue}
 				(+ {currentValue - historicValue})

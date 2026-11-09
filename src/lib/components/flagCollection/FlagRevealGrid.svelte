@@ -13,12 +13,12 @@
 		pieces: Piece[];
 		type: 'NATION' | 'NSA';
 		alpha2Code?: string | null;
-		fontAwesomeIcon?: string | null;
+		icon?: string | null;
 		nsaId?: string | null;
 		compact?: boolean;
 	}
 
-	let { pieces, type, alpha2Code, fontAwesomeIcon, nsaId, compact = false }: Props = $props();
+	let { pieces, type, alpha2Code, icon, nsaId, compact = false }: Props = $props();
 
 	// Generate deterministic gradients for NSAs based on their ID
 	let nsaGradients = $derived(nsaId ? getNsaGradients(nsaId) : null);
@@ -30,8 +30,7 @@
 		`grid-template-columns: repeat(${gridLayout.cols}, 1fr); grid-template-rows: repeat(${gridLayout.rows}, 1fr);`
 	);
 
-	// Clean icon name (remove 'fa-' prefix if present)
-	let cleanIcon = $derived(fontAwesomeIcon?.replace('fa-', '') ?? 'building');
+	let cleanIcon = $derived(icon || 'building');
 </script>
 
 <div
@@ -51,7 +50,7 @@
 					'hsl(220, 70%, 45%)'}, {nsaGradients?.gradient1.to ?? 'hsl(260, 70%, 55%)'})"
 			>
 				<i
-					class="fa-sharp-duotone fa-solid fa-{cleanIcon} text-white/30"
+					class="ph-duotone ph-{cleanIcon} text-white/30"
 					class:text-4xl={!compact}
 					class:text-2xl={compact}
 				></i>

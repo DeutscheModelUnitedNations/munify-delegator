@@ -35,7 +35,7 @@ describe('viewActionEntry', () => {
 		).toBe('dataGridViewUnsetMyDefault');
 		expect(
 			viewActionEntry({ action: 'setDefault', current: { ...view, isDefault: true } }).icon
-		).toBe('fa-star-half-stroke');
+		).toBe('ph-star-half');
 		expect(viewActionEntry({ action: 'delete', current: view }).danger).toBe(true);
 	});
 });

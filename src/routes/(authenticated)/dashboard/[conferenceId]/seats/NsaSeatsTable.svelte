@@ -25,7 +25,7 @@
 			cell: (row) =>
 				cellOf({
 					component: FlagNameCell,
-					props: { name: row.name ?? '', nsa: true, nsaIcon: row.fontAwesomeIcon }
+					props: { name: row.name ?? '', nsa: true, nsaIcon: row.icon }
 				})
 		},
 		{

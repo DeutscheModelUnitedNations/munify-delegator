@@ -20,5 +20,5 @@
 		}
 	})}
 >
-	<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
+	<i class="ph-duotone ph-identification-card"></i>
 </button>

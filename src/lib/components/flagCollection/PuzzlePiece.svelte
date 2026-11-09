@@ -59,16 +59,12 @@
 	title={tooltipText}
 >
 	{#if state === 'LOCKED'}
-		<i class="fa-sharp-duotone fa-solid fa-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="ph-duotone ph-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{:else if state === 'UNLOCKED'}
-		<i
-			class="fa-sharp-duotone fa-solid fa-puzzle-piece {iconClass} {compact
-				? 'text-xs'
-				: 'text-sm'}"
-		></i>
+		<i class="ph-duotone ph-puzzle-piece {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{:else if !overlay}
 		<!-- Only show check icon in non-overlay mode (old tile view) -->
-		<i class="fa-sharp-duotone fa-solid fa-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="ph-duotone ph-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{/if}
 </div>
 

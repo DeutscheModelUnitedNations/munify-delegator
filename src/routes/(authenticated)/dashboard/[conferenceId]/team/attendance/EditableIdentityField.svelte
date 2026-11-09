@@ -64,14 +64,14 @@
 			}}
 		/>
 		<button class="btn btn-square {buttonSize} join-item" onclick={save} aria-label={m.save()}>
-			<i class="fa-sharp-duotone fa-solid fa-save"></i>
+			<i class="ph-duotone ph-floppy-disk"></i>
 		</button>
 		<button
 			class="btn btn-square {buttonSize} btn-error join-item"
 			onclick={() => (editing = false)}
 			aria-label={m.cancel()}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+			<i class="ph-duotone ph-x"></i>
 		</button>
 	</div>
 {:else}
@@ -83,7 +83,7 @@
 		{@render children()}
 		<!-- On a phone the value itself is the obvious thing to tap -->
 		<i
-			class="fa-sharp-duotone fa-solid fa-pen-to-square ml-2 hidden text-sm opacity-50 transition-opacity group-hover:opacity-100 md:inline-block"
+			class="ph-duotone ph-note-pencil ml-2 hidden text-sm opacity-50 transition-opacity group-hover:opacity-100 md:inline-block"
 		></i>
 	</button>
 {/if}

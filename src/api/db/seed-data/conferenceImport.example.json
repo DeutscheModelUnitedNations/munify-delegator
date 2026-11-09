@@ -28,7 +28,7 @@
 		{
 			"abbreviation": "VA",
 			"description": "Ständiger Beobachter bei den Vereinten Nationen",
-			"fontAwesomeIcon": "fa-church",
+			"icon": "church",
 			"name": "Heiliger Stuhl",
 			"seatAmount": 2
 		}

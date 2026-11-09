@@ -10,7 +10,7 @@
 
 	let {
 		title,
-		icon = 'fas fa-file-csv',
+		icon = 'ph-fill ph-file-csv',
 		loading = false,
 		disabled = false,
 		onclick
@@ -47,6 +47,6 @@
 	</span>
 	<span class="min-w-0 flex-1 break-words sm:truncate">{title}</span>
 	<i
-		class="fa-sharp-duotone fa-solid fa-arrow-down-to-line text-base-content/30 group-hover:text-primary shrink-0 text-xs transition-colors"
+		class="ph-duotone ph-arrow-line-down text-base-content/30 group-hover:text-primary shrink-0 text-xs transition-colors"
 	></i>
 </button>

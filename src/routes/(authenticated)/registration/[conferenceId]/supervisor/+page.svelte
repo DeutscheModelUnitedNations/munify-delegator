@@ -21,7 +21,7 @@
 
 <RegistrationStepPage
 	{conferenceId}
-	icon="chalkboard-user"
+	icon="chalkboard-teacher"
 	title={m.signupForSupervisors()}
 	description={m.signupForSupervisorsDescription()}
 	bare
@@ -33,7 +33,7 @@
 		</ol>
 	{:else}
 		<div role="status" class="alert bg-warning/10 border-warning/30">
-			<i class="fa-sharp-duotone fa-solid fa-calendar-xmark text-warning text-xl"></i>
+			<i class="ph-duotone ph-calendar-x text-warning text-xl"></i>
 			<div>
 				<h2 class="font-semibold">{m.supervisorSignupClosedTitle()}</h2>
 				<p class="text-sm">{m.supervisorSignupClosedText()}</p>

@@ -22,7 +22,7 @@
 						id: true,
 						kind: true,
 						name: true,
-						fontAwesomeIcon: true,
+						icon: true,
 						seatAmount: true,
 						nation: { alpha2Code: true, alpha3Code: true }
 					}
@@ -45,10 +45,10 @@
 <table class="table">
 	<thead>
 		<tr>
-			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-hashtag"></i></th>
-			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-flag"></i></th>
-			<th><i class="fa-sharp-duotone fa-solid fa-text"></i></th>
-			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
+			<th class="text-center"><i class="ph-duotone ph-hash"></i></th>
+			<th class="text-center"><i class="ph-duotone ph-flag"></i></th>
+			<th><i class="ph-duotone ph-text-t"></i></th>
+			<th class="text-center"><i class="ph-duotone ph-users"></i></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -71,7 +71,7 @@
 					</td>
 					<td class="text-center">{roleSeats({ role: application.role, committees })}</td>
 				{:else if nonStateActor}
-					<td class="text-center"><Flag nsa size="xs" icon={nonStateActor.fontAwesomeIcon} /></td>
+					<td class="text-center"><Flag nsa size="xs" icon={nonStateActor.icon} /></td>
 					<td class="w-full">{nonStateActor.name}</td>
 					<td class="text-center">{nonStateActor.seatAmount}</td>
 				{/if}

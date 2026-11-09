@@ -58,34 +58,34 @@
 	);
 
 	const administrativeOptions: StatusOption<AdministrativestatusEnum>[] = [
-		{ value: 'PENDING', label: m.statusPending(), faIcon: 'hourglass-half', tone: 'warning' },
-		{ value: 'PROBLEM', label: m.statusProblem(), faIcon: 'triangle-exclamation', tone: 'error' },
-		{ value: 'DONE', label: m.statusDone(), faIcon: 'check', tone: 'success' }
+		{ value: 'PENDING', label: m.statusPending(), icon: 'hourglass-medium', tone: 'warning' },
+		{ value: 'PROBLEM', label: m.statusProblem(), icon: 'warning', tone: 'error' },
+		{ value: 'DONE', label: m.statusDone(), icon: 'check', tone: 'success' }
 	];
 
 	const mediaConsentOptions: StatusOption<MediaconsentstatusEnum>[] = [
 		{
 			value: 'NOT_SET',
 			label: m.mediaConsentStatusNotSet(),
-			faIcon: 'clipboard-question',
+			icon: 'clipboard',
 			tone: 'warning'
 		},
 		{
 			value: 'NOT_ALLOWED',
 			label: m.mediaConsentStatusNotAllowed(),
-			faIcon: 'camera-slash',
+			icon: 'camera-slash',
 			tone: 'error'
 		},
 		{
 			value: 'PARTIALLY_ALLOWED',
 			label: m.mediaConsentStatusPartiallyAllowed(),
-			faIcon: 'magnifying-glass',
+			icon: 'magnifying-glass',
 			tone: 'warning'
 		},
 		{
 			value: 'ALLOWED_ALL',
 			label: m.mediaConsentStatusAllowedAll(),
-			faIcon: 'camera',
+			icon: 'camera',
 			tone: 'success'
 		}
 	];
@@ -130,7 +130,7 @@
 		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
 			<StatusRow
 				title={m.status()}
-				faIcon="money-bill"
+				icon="money"
 				active={status?.paymentStatus ?? 'PENDING'}
 				options={administrativeOptions}
 				change={(paymentStatus) => change({ paymentStatus })}
@@ -143,14 +143,14 @@
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
 			<button class="btn btn-sm" onclick={downloadPostalDocs}>
-				<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
+				<i class="ph-duotone ph-file-pdf"></i>
 				{m.downloadPostalDocuments()}
 			</button>
 		</div>
 		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
 			<StatusRow
 				title={m.userAgreement()}
-				faIcon="file-signature"
+				icon="signature"
 				active={status?.termsAndConditions ?? 'PENDING'}
 				options={administrativeOptions}
 				change={(termsAndConditions) => change({ termsAndConditions })}
@@ -158,9 +158,7 @@
 			{#if !isConferenceSupervisor}
 				{#if isAdult}
 					<div class="flex items-center gap-4 px-4 py-3">
-						<i
-							class="fa-sharp-duotone fa-solid fa-shield-halved text-base-content/60 w-6 text-center text-lg"
-						></i>
+						<i class="ph-duotone ph-shield-check text-base-content/60 w-6 text-center text-lg"></i>
 						<div class="flex flex-col">
 							<span class="font-semibold">{m.guardianAgreement()}</span>
 							<span class="text-base-content/60 text-sm">{m.guardianAgreementNotNeeded()}</span>
@@ -169,7 +167,7 @@
 				{:else}
 					<StatusRow
 						title={m.guardianAgreement()}
-						faIcon="shield-halved"
+						icon="shield-check"
 						active={status?.guardianConsent ?? 'PENDING'}
 						options={administrativeOptions}
 						change={(guardianConsent) => change({ guardianConsent })}
@@ -178,14 +176,14 @@
 			{/if}
 			<StatusRow
 				title={m.mediaAgreement()}
-				faIcon="camera"
+				icon="camera"
 				active={status?.mediaConsent ?? 'PENDING'}
 				options={administrativeOptions}
 				change={(mediaConsent) => change({ mediaConsent })}
 			/>
 			<StatusRow
 				title={m.mediaConsentStatus()}
-				faIcon="camera-slash"
+				icon="camera-slash"
 				active={status?.mediaConsentStatus ?? 'NOT_SET'}
 				options={mediaConsentOptions}
 				change={(mediaConsentStatus) => change({ mediaConsentStatus })}
@@ -198,7 +196,7 @@
 		</div>
 		{#if !status}
 			<div class="alert alert-info">
-				<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
+				<i class="ph-duotone ph-info"></i>
 				<span>{m.noParticipantStatusYet()}</span>
 			</div>
 		{/if}

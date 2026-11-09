@@ -31,7 +31,7 @@
 			next: QuestionFlowState.Q_PARTNERS_CREATED_DELEGATION
 		},
 		{
-			icon: 'xmark',
+			icon: 'x',
 			title: 'Nein',
 			class: 'btn-warning',
 			reply: m.no(),

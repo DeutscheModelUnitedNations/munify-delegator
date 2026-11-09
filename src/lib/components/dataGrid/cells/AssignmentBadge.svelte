@@ -3,7 +3,7 @@
 		tooltip: string;
 		/** ISO 3166-1 alpha-2 code, shown as a flag */
 		flagCode?: string;
-		/** FontAwesome icon, shown when there is no flag */
+		/** Phosphor icon name, shown when there is no flag */
 		icon?: string | null;
 	}
 
@@ -17,6 +17,6 @@
 	{#if flagCode}
 		<span class="fi fi-{flagCode} !w-full !leading-[100rem]"></span>
 	{:else if icon}
-		<span class="fas fa-{icon.replace('fa-', '')}"></span>
+		<span class="ph-fill ph-{icon.replace(/^ph-/, '')}"></span>
 	{/if}
 </div>

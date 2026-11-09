@@ -28,5 +28,5 @@
 <DownloadButton
 	onclick={download}
 	title={m.registrationModeQrDownload()}
-	icon="fa-sharp-duotone fa-solid fa-qrcode"
+	icon="ph-duotone ph-qr-code"
 />

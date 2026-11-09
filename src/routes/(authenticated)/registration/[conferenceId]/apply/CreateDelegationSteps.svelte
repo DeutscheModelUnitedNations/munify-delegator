@@ -32,7 +32,7 @@
 			text: m.createDelegationInfoLeadText()
 		},
 		{
-			icon: 'chalkboard-user',
+			icon: 'chalkboard-teacher',
 			title: m.createDelegationInfoSupervisorTitle(),
 			text: m.createDelegationInfoSupervisorText()
 		}
@@ -77,7 +77,7 @@
 				<span
 					class="bg-primary/10 text-primary rounded-box flex size-10 shrink-0 items-center justify-center text-lg"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-{fact.icon}"></i>
+					<i class="ph-duotone ph-{fact.icon}"></i>
 				</span>
 				<span class="flex flex-col gap-1">
 					<span class="font-semibold">{fact.title}</span>
@@ -90,7 +90,7 @@
 	<div class="mt-4 grid gap-3 md:grid-cols-2">
 		{#each alternatives as alternative (alternative.path)}
 			<div class="border-base-300 rounded-box flex items-start gap-3 border border-dashed p-4">
-				<i class="fa-sharp-duotone fa-solid fa-{alternative.icon} text-base-content/50 mt-0.5"></i>
+				<i class="ph-duotone ph-{alternative.icon} text-base-content/50 mt-0.5"></i>
 				<span class="flex flex-1 flex-col items-start gap-1">
 					<span class="font-medium">{alternative.title}</span>
 					<span class="text-base-content/70 text-sm">{alternative.text}</span>
@@ -100,7 +100,7 @@
 						onclick={() => onSwitchPath(alternative.path)}
 					>
 						{alternative.action}
-						<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+						<i class="ph-duotone ph-arrow-right"></i>
 					</button>
 				</span>
 			</div>
@@ -108,7 +108,7 @@
 	</div>
 	<button class="btn btn-primary mt-4 self-end" type="button" onclick={() => (understood = true)}>
 		{m.next()}
-		<i class="fa-sharp-duotone fa-solid fa-arrow-down"></i>
+		<i class="ph-duotone ph-arrow-down"></i>
 	</button>
 </FlowStep>
 

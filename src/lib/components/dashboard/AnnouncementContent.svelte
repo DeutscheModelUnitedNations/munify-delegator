@@ -27,7 +27,7 @@
 			<div
 				class="bg-info text-info-content grid size-11 shrink-0 place-items-center rounded-full shadow-md"
 			>
-				<i class="fa-sharp-duotone fa-solid fa-bullhorn text-lg"></i>
+				<i class="ph-duotone ph-megaphone text-lg"></i>
 			</div>
 			<div class="min-w-0">
 				<h2 class="text-lg leading-tight font-bold">{title}</h2>
@@ -51,10 +51,10 @@
 			<div class="flex justify-start">
 				<button class="btn btn-ghost btn-sm text-info" onclick={() => (isExpanded = !isExpanded)}>
 					{#if isExpanded}
-						<i class="fa-sharp-duotone fa-solid fa-chevron-up mr-1"></i>
+						<i class="ph-duotone ph-caret-up mr-1"></i>
 						{m.showLess()}
 					{:else}
-						<i class="fa-sharp-duotone fa-solid fa-chevron-down mr-1"></i>
+						<i class="ph-duotone ph-caret-down mr-1"></i>
 						{m.showMore()}
 					{/if}
 				</button>

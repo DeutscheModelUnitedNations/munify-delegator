@@ -14,7 +14,7 @@
 			roleName: true,
 			sortName: true,
 			nationAlpha2Code: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			participants: true
 		})
 	);
@@ -25,7 +25,7 @@
 				// a nation is named in the conference's language, the one it is filed by
 				label: group.nationAlpha3Code ? group.sortName : (group.roleName ?? ''),
 				alpha2Code: group.nationAlpha2Code,
-				icon: group.fontAwesomeIcon,
+				icon: group.icon,
 				participants: group.participants,
 				sortName: group.sortName
 			}))
@@ -43,12 +43,7 @@
 					{#if row.alpha2Code}
 						<Flag alpha2Code={row.alpha2Code} size="xs" />
 					{:else}
-						<i
-							class="fa-sharp-duotone fa-solid fa-{(row.icon ?? 'user').replace(
-								'fa-',
-								''
-							)} w-5 text-center"
-						></i>
+						<i class="ph-duotone ph-{row.icon ?? 'user'} w-5 text-center"></i>
 					{/if}
 					<span class="truncate">{row.label}</span>
 				</span>

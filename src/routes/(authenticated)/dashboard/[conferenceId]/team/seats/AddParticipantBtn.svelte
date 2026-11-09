@@ -38,9 +38,9 @@
 		onclick={() => (open = true)}
 	>
 		{#if warning}
-			<i class="fas fa-diamond-exclamation"></i>
+			<i class="ph-fill ph-warning-diamond"></i>
 		{:else}
-			<i class="fas fa-plus {assignUser.userId ? 'fa-beat' : ''}"></i>
+			<i class="ph-fill ph-plus {assignUser.userId ? 'icon-beat' : ''}"></i>
 		{/if}
 	</button>
 </div>

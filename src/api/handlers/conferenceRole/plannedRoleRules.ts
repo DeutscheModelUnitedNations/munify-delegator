@@ -15,7 +15,7 @@ interface NonStateActorUpdateInput {
 	name?: string | null;
 	abbreviation?: string | null;
 	description?: string | null;
-	fontAwesomeIcon?: string | null;
+	icon?: string | null;
 	seatAmount?: number | null;
 }
 
@@ -31,7 +31,7 @@ export function nonStateActorUpdateData(
 		abbreviation: data.abbreviation ?? undefined,
 		description: data.description ?? undefined,
 		seatAmount: data.seatAmount ?? undefined,
-		fontAwesomeIcon: data.fontAwesomeIcon === undefined ? undefined : data.fontAwesomeIcon || null
+		icon: data.icon === undefined ? undefined : data.icon || null
 	};
 }
 

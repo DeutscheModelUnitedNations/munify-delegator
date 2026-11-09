@@ -14,7 +14,7 @@
 		<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
 	</div>
 </FormSection>
-<FormSection title={m.conferenceBankAccount()} icon="building-columns">
+<FormSection title={m.conferenceBankAccount()} icon="bank">
 	<FormTextInput
 		{form}
 		name="bankAccountHolder"

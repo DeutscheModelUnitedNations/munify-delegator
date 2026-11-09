@@ -239,7 +239,7 @@ export interface NametagBinGroup {
 	/** The flag of a nation. */
 	nationAlpha2Code: string | null;
 	/** The icon of a non-state actor or role. */
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	participants: number;
 }
 
@@ -259,7 +259,7 @@ export function nationGroup({
 		sortName: nationName({ alpha3Code: code, language }),
 		nationAlpha2Code:
 			allNations.find((nation) => nation.cca3 === code.toUpperCase())?.cca2.toLowerCase() ?? null,
-		fontAwesomeIcon: null,
+		icon: null,
 		participants: memberCount
 	};
 }
@@ -279,7 +279,7 @@ function roleGroup({
 		sortName: name,
 		nationAlpha2Code: null,
 		roleName: name || null,
-		fontAwesomeIcon: icon,
+		icon: icon,
 		participants
 	};
 }
@@ -288,13 +288,13 @@ function roleGroup({
 export function nonStateActorGroups(
 	delegations: {
 		memberCount: number;
-		assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null;
+		assignedRole: { name: string | null; icon: string | null } | null;
 	}[]
 ): NametagBinGroup[] {
 	return delegations.map(({ assignedRole, memberCount }) =>
 		roleGroup({
 			name: assignedRole?.name ?? '',
-			icon: assignedRole?.fontAwesomeIcon ?? null,
+			icon: assignedRole?.icon ?? null,
 			participants: memberCount
 		})
 	);
@@ -306,7 +306,7 @@ export function singleRoleGroups({
 	supervisors,
 	language
 }: {
-	singles: { assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null }[];
+	singles: { assignedRole: { name: string | null; icon: string | null } | null }[];
 	supervisors: number;
 	language: string;
 }) {
@@ -314,7 +314,7 @@ export function singleRoleGroups({
 	for (const single of singles) {
 		const name = single.assignedRole?.name ?? '';
 		const entry = perRole.get(name) ?? {
-			icon: single.assignedRole?.fontAwesomeIcon ?? null,
+			icon: single.assignedRole?.icon ?? null,
 			participants: 0
 		};
 		entry.participants++;
@@ -322,7 +322,7 @@ export function singleRoleGroups({
 	}
 	if (supervisors > 0) {
 		const name = language === 'deu' ? 'Betreuende' : 'Supervisors';
-		perRole.set(name, { icon: 'chalkboard-user', participants: supervisors });
+		perRole.set(name, { icon: 'chalkboard-teacher', participants: supervisors });
 	}
 	return [...perRole].map(([name, { icon, participants }]) =>
 		roleGroup({ name, icon, participants })

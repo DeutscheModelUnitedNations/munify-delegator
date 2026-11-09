@@ -29,7 +29,7 @@ interface SourceEntry {
 	description?: Maybe<string>;
 	startTime: Date | string;
 	endTime: Date | string;
-	fontAwesomeIcon?: Maybe<string>;
+	icon?: Maybe<string>;
 	color: ExportEntry['color'];
 	room?: Maybe<string>;
 	tracks: readonly { id: string }[];
@@ -78,7 +78,7 @@ function exportEntry({
 		description: entry.description ?? null,
 		startTime: toTimeString(new Date(entry.startTime)),
 		endTime: toTimeString(new Date(entry.endTime)),
-		fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
+		icon: entry.icon ?? null,
 		color: entry.color,
 		room: entry.room ?? null,
 		trackNames: trackNamesOf({ entry, tracks }),

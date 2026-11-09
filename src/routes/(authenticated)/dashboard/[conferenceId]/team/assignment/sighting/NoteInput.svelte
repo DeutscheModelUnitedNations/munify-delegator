@@ -30,7 +30,7 @@
 
 <label class="flex flex-col gap-1">
 	<span class="flex items-center gap-2 text-sm font-semibold">
-		<i class="fa-sharp-duotone fa-solid fa-note-sticky text-lg"></i>
+		<i class="ph-duotone ph-note text-lg"></i>
 		{m.assignmentNote()}
 	</span>
 	<textarea

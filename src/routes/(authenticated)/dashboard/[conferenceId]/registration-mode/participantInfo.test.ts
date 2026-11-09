@@ -24,7 +24,7 @@ function nationRole(alpha2Code: string, alpha3Code: string): Delegation['assigne
 	return {
 		kind: 'NATION',
 		name: null,
-		fontAwesomeIcon: null,
+		icon: null,
 		nation: { alpha2Code, alpha3Code }
 	};
 }
@@ -54,7 +54,7 @@ describe('describeParticipant', () => {
 				assignedRole: {
 					kind: 'NON_STATE_ACTOR',
 					name: 'Amnesty International',
-					fontAwesomeIcon: 'candle',
+					icon: 'fire-simple',
 					nation: null
 				}
 			})
@@ -63,7 +63,7 @@ describe('describeParticipant', () => {
 			type: 'delegation',
 			roleDisplay: 'Amnesty International',
 			isNSA: true,
-			nsaIcon: 'candle'
+			nsaIcon: 'fire-simple'
 		});
 	});
 
@@ -75,7 +75,7 @@ describe('describeParticipant', () => {
 	test('a single participant with a role shows the role', () => {
 		const info = describeParticipant({
 			...nobody,
-			singleParticipant: { assignedRole: { name: 'Press', fontAwesomeIcon: null } }
+			singleParticipant: { assignedRole: { name: 'Press', icon: null } }
 		});
 		expect(info).toEqual({ type: 'single', roleDisplay: 'Press', isNSA: true, nsaIcon: null });
 	});
@@ -91,7 +91,7 @@ describe('describeParticipant', () => {
 			type: 'team',
 			roleDisplay: translateTeamRole('REVIEWER'),
 			isNSA: true,
-			nsaIcon: 'users-gear'
+			nsaIcon: 'user-gear'
 		});
 	});
 
@@ -101,7 +101,7 @@ describe('describeParticipant', () => {
 			type: 'supervisor',
 			roleDisplay: m.supervisor(),
 			isNSA: true,
-			nsaIcon: 'chalkboard-user'
+			nsaIcon: 'chalkboard-teacher'
 		});
 	});
 

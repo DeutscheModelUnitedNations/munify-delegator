@@ -29,7 +29,7 @@
 				role="img"
 				aria-label={`${label} – ${m.seatPlanningLockedBy({ members: lockedBy.join(', ') })}`}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-lock"></i>
+				<i class="ph-duotone ph-lock"></i>
 			</span>
 		</span>
 	{:else}
@@ -45,7 +45,7 @@
 				})}
 		>
 			{#if hasSeat}
-				<i class="fa-sharp-duotone fa-solid fa-check"></i>
+				<i class="ph-duotone ph-check"></i>
 			{/if}
 		</button>
 	{/if}

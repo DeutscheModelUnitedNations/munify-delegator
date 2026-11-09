@@ -59,9 +59,9 @@ const registeredSingleParticipantsByRole = schemaBuilder.simpleObject(
 			'Single participants who named one custom role among their wishes; someone naming several counts for each.',
 		fields: (t) => ({
 			role: t.string({ description: "The custom role's name." }),
-			fontAwesomeIcon: t.string({
+			icon: t.string({
 				nullable: true,
-				description: "The role's icon (a FontAwesome name without the `fa-` prefix), if it has one."
+				description: "The role's icon (a Phosphor name without the `ph-` prefix), if it has one."
 			}),
 			total: t.int({ description: roleWishSplit.total }),
 			applied: t.int({ description: roleWishSplit.applied }),

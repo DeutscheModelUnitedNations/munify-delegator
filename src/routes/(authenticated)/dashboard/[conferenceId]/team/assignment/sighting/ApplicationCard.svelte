@@ -66,7 +66,7 @@
 		<div class="flex flex-wrap items-start justify-between gap-4">
 			<div class="flex min-w-0 flex-col">
 				<h3 class="flex items-center gap-2 text-xl font-bold break-words">
-					<i class="fa-sharp-duotone fa-solid {kind === 'delegation' ? 'fa-users' : 'fa-user'}"></i>
+					<i class="ph-duotone {kind === 'delegation' ? 'ph-users' : 'ph-user'}"></i>
 					{#if person}
 						<button
 							type="button"
@@ -77,16 +77,16 @@
 						</button>
 						<span class="flex items-center gap-3 text-base font-normal tabular-nums">
 							<span title={m.assignmentAge()}>{age ?? '?'}</span>
-							<i class="fa-sharp-duotone fa-solid fa-{genderIcon(person.gender)}"></i>
+							<i class="ph-duotone ph-{genderIcon(person.gender)}"></i>
 							{#if (person.conferenceParticipationsCount ?? 0) > 0}
 								<span class="text-warning" title={m.assignmentPreviousParticipations()}>
-									<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+									<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 									{person.conferenceParticipationsCount}
 								</span>
 							{/if}
 							{#if careNotesOf(person)}
 								<i
-									class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error text-lg"
+									class="ph-duotone ph-warning text-error text-lg"
 									title={careNotesOf(person)}
 									aria-label={m.globalNotes()}
 								></i>

@@ -38,7 +38,7 @@
 				<div
 					class="bg-primary/10 text-primary flex h-20 w-20 shrink-0 items-center justify-center rounded-box md:h-24 md:w-24"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-landmark-flag text-4xl"></i>
+					<i class="ph-duotone ph-bank text-4xl"></i>
 				</div>
 			{/if}
 
@@ -54,7 +54,7 @@
 
 				{#if startDate && endDate}
 					<div class="text-base-content/60 flex items-center gap-2 text-sm">
-						<i class="fa-sharp-duotone fa-solid fa-calendar-days"></i>
+						<i class="ph-duotone ph-calendar-dots"></i>
 						<span>{formatDateRange({ start: startDate, end: endDate })}</span>
 					</div>
 				{/if}

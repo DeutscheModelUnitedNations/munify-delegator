@@ -117,9 +117,9 @@ describe('splitIntoNametagBins', () => {
 	});
 });
 
-const role = (name: string | null, fontAwesomeIcon: string | null = null) => ({
+const role = (name: string | null, icon: string | null = null) => ({
 	name,
-	fontAwesomeIcon
+	icon
 });
 
 describe('nonStateActorGroups', () => {
@@ -135,7 +135,7 @@ describe('nonStateActorGroups', () => {
 				nationAlpha2Code: null,
 				sortName: 'Greenpeace',
 				roleName: 'Greenpeace',
-				fontAwesomeIcon: 'tree',
+				icon: 'tree',
 				participants: 3
 			},
 			{
@@ -143,7 +143,7 @@ describe('nonStateActorGroups', () => {
 				nationAlpha2Code: null,
 				sortName: '',
 				roleName: null,
-				fontAwesomeIcon: null,
+				icon: null,
 				participants: 2
 			}
 		]);
@@ -161,7 +161,7 @@ describe('singleRoleGroups', () => {
 			supervisors: 0,
 			language: 'eng'
 		});
-		expect(groups.map((g) => [g.roleName, g.fontAwesomeIcon, g.participants])).toEqual([
+		expect(groups.map((g) => [g.roleName, g.icon, g.participants])).toEqual([
 			['Press', 'newspaper', 2],
 			['Chair', 'gavel', 1]
 		]);
@@ -169,7 +169,7 @@ describe('singleRoleGroups', () => {
 
 	test("adds the supervisors as one group, named in the conference's language", () => {
 		expect(singleRoleGroups({ singles: [], supervisors: 4, language: 'deu' })).toMatchObject([
-			{ roleName: 'Betreuende', fontAwesomeIcon: 'chalkboard-user', participants: 4 }
+			{ roleName: 'Betreuende', icon: 'chalkboard-teacher', participants: 4 }
 		]);
 		expect(singleRoleGroups({ singles: [], supervisors: 1, language: 'eng' })).toMatchObject([
 			{ roleName: 'Supervisors' }

@@ -212,7 +212,7 @@
 
 <div class="flex flex-col gap-4">
 	<div class="alert alert-info alert-soft max-sm:alert-vertical">
-		<i class="fa-sharp-duotone fa-solid fa-user-tie text-xl"></i>
+		<i class="ph-duotone ph-user-sound text-xl"></i>
 		<p>{m.assignmentSinglesHint()}</p>
 		<button
 			class="btn btn-primary btn-sm"
@@ -222,7 +222,7 @@
 			{#if busy}
 				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
-				<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
+				<i class="ph-duotone ph-magic-wand"></i>
 			{/if}
 			{m.assignmentAutoAssignSingles()}
 		</button>
@@ -273,7 +273,7 @@
 				<RoleCard
 					container={roleContainer(role.id)}
 					title={role.name ?? ''}
-					icon={role.fontAwesomeIcon ?? undefined}
+					icon={role.icon ?? undefined}
 					seats={role.seatAmount ?? 0}
 					taken={holders.length}
 					highlight={dragging && holders.length < (role.seatAmount ?? 0)}

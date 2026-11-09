@@ -42,7 +42,7 @@
 			<span class="text-base-content/70 text-sm">{m.awaitingReview()}</span>
 			{#if reviews !== undefined}
 				<span class="text-base-content/60 ml-auto flex items-center gap-1.5 text-xs">
-					<i class="fa-sharp-duotone fa-solid fa-star text-primary" aria-hidden="true"></i>
+					<i class="ph-duotone ph-star text-primary" aria-hidden="true"></i>
 					{m.yourReviewStats()}: <span class="font-semibold">{reviews}</span>
 				</span>
 			{/if}

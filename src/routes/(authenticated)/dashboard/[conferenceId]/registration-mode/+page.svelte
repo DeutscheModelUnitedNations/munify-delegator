@@ -99,10 +99,10 @@
 
 	{#if isValidParticipant && !tipDismissed}
 		<div role="note" class="alert alert-info alert-soft mt-4 w-full max-w-xl text-sm">
-			<i class="fa-sharp-duotone fa-solid fa-lightbulb"></i>
+			<i class="ph-duotone ph-lightbulb"></i>
 			<span>{m.registrationModeTip()}</span>
 			<button class="btn btn-ghost btn-xs btn-square" aria-label={m.close()} onclick={dismissTip}>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+				<i class="ph-duotone ph-x"></i>
 			</button>
 		</div>
 	{/if}
@@ -145,7 +145,7 @@
 		<!-- Error state for unassigned/no participant -->
 		<div class="flex flex-1 flex-col items-center justify-center gap-6">
 			<div class="text-error text-6xl">
-				<i class="fa-sharp-duotone fa-solid fa-circle-exclamation"></i>
+				<i class="ph-duotone ph-warning-circle"></i>
 			</div>
 			<h1 class="text-center text-2xl font-bold">
 				{m.registrationModeNotRegistered()}

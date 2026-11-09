@@ -37,7 +37,7 @@ interface EditorDayEntry {
 	name: string;
 	startTime: Date;
 	endTime: Date;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	color: CalendarentrycolorEnum;
 	room: string | null;
 	tracks: { id: string }[];
@@ -49,7 +49,7 @@ interface EditorDayEntry {
 /** An entry as the editor draws it: its stored data, placed in the grid. */
 interface EditorEntry extends Placed {
 	name: string;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	color: CalendarentrycolorEnum;
 	room: string | null;
 	placeName: string | null;
@@ -123,7 +123,7 @@ export function toEditorDay(day: {
 		name: string;
 		startTime: Date | string;
 		endTime: Date | string;
-		fontAwesomeIcon?: string | null;
+		icon?: string | null;
 		color: CalendarentrycolorEnum;
 		room?: string | null;
 		tracks: { id: string }[];
@@ -146,7 +146,7 @@ export function toEditorDay(day: {
 			startTime: new Date(entry.startTime),
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a value copy, never mutated
 			endTime: new Date(entry.endTime),
-			fontAwesomeIcon: orNull(entry.fontAwesomeIcon),
+			icon: orNull(entry.icon),
 			color: entry.color,
 			room: orNull(entry.room),
 			tracks: entry.tracks.map((track) => ({ id: track.id })),
@@ -168,7 +168,7 @@ function toEditorEntry({ day, entry }: { day: EditorDay; entry: EditorDayEntry }
 		start,
 		end: Math.max(minutesOfDay(entry.endTime), start),
 		name: entry.name,
-		fontAwesomeIcon: entry.fontAwesomeIcon,
+		icon: entry.icon,
 		color: entry.color,
 		room: entry.room,
 		placeName: entry.place?.name ?? null,

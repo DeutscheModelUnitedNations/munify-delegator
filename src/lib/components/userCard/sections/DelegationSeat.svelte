@@ -30,7 +30,7 @@
 				kind: true,
 				name: true,
 				abbreviation: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				nation: { alpha2Code: true, alpha3Code: true }
 			},
 			members: {
@@ -67,7 +67,7 @@
 					{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
 				</span>
 			{:else if nonStateActor}
-				<Flag nsa icon={nonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'} size="xs" />
+				<Flag nsa icon={nonStateActor.icon ?? 'hand-pointing'} size="xs" />
 				<span class="text-lg font-bold">
 					{nonStateActor.name}
 					({nonStateActor.abbreviation})
@@ -98,12 +98,12 @@
 				disabled={members.length === 0}
 				onclick={() => (committeeAssignmentModalOpen = true)}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-grid-2"></i>
+				<i class="ph-duotone ph-squares-four"></i>
 				{m.committeeAssignment()}
 			</button>
 		{/if}
 		<button class="btn btn-sm" onclick={() => (headDelegateModalOpen = true)}>
-			<i class="fa-sharp-duotone fa-solid fa-medal"></i>
+			<i class="ph-duotone ph-medal"></i>
 			{m.headDelegate()}
 		</button>
 	</div>

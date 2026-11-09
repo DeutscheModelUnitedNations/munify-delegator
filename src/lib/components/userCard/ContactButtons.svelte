@@ -30,7 +30,7 @@
 			class="link link-hover flex min-w-0 items-center gap-1.5 break-all"
 			aria-label="{label}: {value}"
 		>
-			<i class="fa-sharp-duotone fa-solid {icon} text-xs"></i>
+			<i class="ph-duotone {icon} text-xs"></i>
 			{value}
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
@@ -41,14 +41,14 @@
 			aria-label="{m.copy()}: {label}"
 			title={m.copy()}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-copy text-xs"></i>
+			<i class="ph-duotone ph-copy text-xs"></i>
 		</button>
 	</span>
 {/snippet}
 
 <div class="text-base-content/60 flex flex-wrap items-center gap-x-3 text-sm">
-	{@render entry('fa-envelope', contact.email, `mailto:${contact.email}`, m.email())}
+	{@render entry('ph-envelope', contact.email, `mailto:${contact.email}`, m.email())}
 	{#if contact.phone}
-		{@render entry('fa-phone', contact.phone, `tel:${contact.phone}`, m.phoneNumber())}
+		{@render entry('ph-phone', contact.phone, `tel:${contact.phone}`, m.phoneNumber())}
 	{/if}
 </div>

@@ -589,14 +589,14 @@ export async function fetchAssignmentRoles(conferenceId: string) {
 			id: true,
 			name: true,
 			abbreviation: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			seatAmount: true
 		}),
 		client.liveQuery.conferenceRoles({
 			__args: ofKind('CUSTOM'),
 			id: true,
 			name: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			seatAmount: true
 		})
 	]);

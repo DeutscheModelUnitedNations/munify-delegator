@@ -61,7 +61,7 @@ export interface BoardRoles {
 		id: string;
 		name?: Nullable<string>;
 		abbreviation?: Nullable<string>;
-		fontAwesomeIcon?: Nullable<string>;
+		icon?: Nullable<string>;
 		seatAmount?: Nullable<number>;
 	}[];
 }
@@ -381,7 +381,7 @@ export function describeRole({
 		title: nsa?.abbreviation ?? '',
 		subtitle: nsa?.name ?? '',
 		alpha2Code: undefined,
-		icon: nsa?.fontAwesomeIcon ?? undefined
+		icon: nsa?.icon ?? undefined
 	};
 }
 

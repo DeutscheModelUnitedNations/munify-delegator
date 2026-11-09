@@ -30,11 +30,11 @@
 	const tabs = $derived(
 		(
 			[
-				['introduction', m.assignmentTabIntroduction(), 'circle-info'],
+				['introduction', m.assignmentTabIntroduction(), 'info'],
 				['sighting', m.assignmentTabSighting(), 'eye'],
-				['weighting', m.assignmentTabWeighting(), 'scale-balanced'],
-				['singles', m.assignmentTabSingles(), 'user-tie'],
-				['delegations', m.assignmentTabDelegations(), 'split'],
+				['weighting', m.assignmentTabWeighting(), 'scales'],
+				['singles', m.assignmentTabSingles(), 'user-sound'],
+				['delegations', m.assignmentTabDelegations(), 'arrows-split'],
 				['finish', m.assignmentTabFinish(), 'flag-checkered']
 			] as const
 		).map(([id, title, icon]) => ({

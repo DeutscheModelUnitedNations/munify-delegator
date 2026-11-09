@@ -49,16 +49,16 @@ export function conferenceGroupLabel(key: ConferenceGroupKey) {
 }
 
 const groupIcons: Record<ConferenceGroupKey, string> = {
-	active: 'fa-circle-play',
-	registration: 'fa-envelope-open-text',
-	preparation: 'fa-list-check',
-	upcoming: 'fa-calendar-clock',
-	past: 'fa-flag-checkered'
+	active: 'ph-play-circle',
+	registration: 'ph-envelope-open',
+	preparation: 'ph-list-checks',
+	upcoming: 'ph-calendar-dot',
+	past: 'ph-flag-checkered'
 };
 
-/** The FontAwesome Duotone icon of a group, wherever conferences are listed. */
+/** The Phosphor duotone icon of a group, wherever conferences are listed. */
 export function conferenceGroupIcon(key: ConferenceGroupKey) {
-	return `fa-sharp-duotone fa-solid ${groupIcons[key]}`;
+	return `ph-duotone ${groupIcons[key]}`;
 }
 
 /** The icon a conference state goes by: the one of the group that state lands in. */

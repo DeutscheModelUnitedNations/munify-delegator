@@ -66,7 +66,7 @@ export const statisticsRoleApplications = snakeCase
 		conferenceId: text().notNull(),
 		roleId: text().notNull(),
 		name: text().notNull(),
-		fontAwesomeIcon: text(),
+		icon: text(),
 		total: integer().notNull(),
 		applied: integer().notNull()
 	})

@@ -53,7 +53,7 @@
 {#snippet next(field: 'schoolName' | 'motivation')}
 	<button class="btn btn-primary mt-4 self-end" type="button" onclick={() => confirm(field)}>
 		{m.next()}
-		<i class="fa-sharp-duotone fa-solid fa-arrow-down"></i>
+		<i class="ph-duotone ph-arrow-down"></i>
 	</button>
 {/snippet}
 
@@ -110,7 +110,7 @@
 					<span class="loading loading-spinner loading-sm"></span>
 				{/if}
 				{submitLabel}
-				<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+				<i class="ph-duotone ph-paper-plane-tilt"></i>
 			</button>
 		</Form>
 	</FlowStep>

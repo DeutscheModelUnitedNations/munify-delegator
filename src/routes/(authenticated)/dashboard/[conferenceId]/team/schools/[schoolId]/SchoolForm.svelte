@@ -78,7 +78,7 @@
 </script>
 
 <Form {form}>
-	<FormSection title={m.school()} icon="school">
+	<FormSection title={m.school()} icon="graduation-cap">
 		<FormTextInput {form} name="name" label={m.name()} />
 		<FormCheckbox {form} name="isForeignSchool" label={m.schoolIsForeign()} />
 		<p class="text-base-content/60 text-sm">{m.schoolIsForeignHint()}</p>
@@ -91,7 +91,7 @@
 			<FormTextInput {form} name="contactPhone" type="tel" label={m.phone()} />
 		</div>
 	</FormSection>
-	<FormSection title={m.schoolNotes()} icon="note-sticky" description={m.schoolNotesHint()}>
+	<FormSection title={m.schoolNotes()} icon="note" description={m.schoolNotesHint()}>
 		<FormTextArea {form} name="notes" label={m.schoolNotes()} />
 	</FormSection>
 </Form>

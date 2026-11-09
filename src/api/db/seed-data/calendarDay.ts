@@ -66,10 +66,7 @@ export function makeSeedCalendarEntry(
 		'calendarDayId' | 'name' | 'startTime' | 'endTime' | 'color'
 	> &
 		Partial<
-			Pick<
-				typeof schema.calendarEntry.$inferInsert,
-				'description' | 'fontAwesomeIcon' | 'placeId' | 'room'
-			>
+			Pick<typeof schema.calendarEntry.$inferInsert, 'description' | 'icon' | 'placeId' | 'room'>
 		>
 ): typeof schema.calendarEntry.$inferInsert & { id: string } {
 	return {
@@ -78,7 +75,7 @@ export function makeSeedCalendarEntry(
 		description: options.description ?? null,
 		startTime: options.startTime,
 		endTime: options.endTime,
-		fontAwesomeIcon: options.fontAwesomeIcon ?? null,
+		icon: options.icon ?? null,
 		color: options.color,
 		room: options.room ?? null,
 		placeId: options.placeId ?? null,

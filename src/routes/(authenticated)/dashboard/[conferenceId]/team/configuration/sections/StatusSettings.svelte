@@ -42,7 +42,7 @@
 	];
 </script>
 
-<FormSection title={m.features()} icon="toggle-on">
+<FormSection title={m.features()} icon="toggle-right">
 	<div class="flex flex-col gap-3">
 		<label class="flex cursor-pointer items-center gap-3">
 			<input
@@ -97,7 +97,7 @@
 	/>
 </FormSection>
 
-<FormSection title={m.conferenceStatus()} icon="signal">
+<FormSection title={m.conferenceStatus()} icon="cell-signal-high">
 	<div class="flex flex-col gap-3">
 		{#each conferenceStateOptions as option (option.value)}
 			<label

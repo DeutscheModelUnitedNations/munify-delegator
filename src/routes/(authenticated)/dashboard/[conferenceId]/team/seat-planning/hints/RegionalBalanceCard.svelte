@@ -64,7 +64,7 @@
 			aria-expanded={expanded}
 			onclick={onToggle}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-right-arrow-left mt-0.5"></i>
+			<i class="ph-duotone ph-arrows-left-right mt-0.5"></i>
 			<span class="flex flex-col">
 				<span class="text-base-content/70">{m.regionalBalanceRecommendation()}</span>
 				<span class="font-semibold">{transfer}</span>

@@ -53,7 +53,7 @@
 						description: true,
 						startTime: true,
 						endTime: true,
-						fontAwesomeIcon: true,
+						icon: true,
 						color: true,
 						placeId: true,
 						room: true,

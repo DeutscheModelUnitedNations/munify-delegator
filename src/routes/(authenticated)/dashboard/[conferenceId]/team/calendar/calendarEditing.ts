@@ -79,7 +79,7 @@ export function entryFields<Color>({
 		description: form.description || null,
 		startTime: dateAtMinutes({ dayDate, minutes: minutesOf(form.startTime) }),
 		endTime: dateAtMinutes({ dayDate, minutes: minutesOf(form.endTime) }),
-		fontAwesomeIcon: form.icon || null,
+		icon: form.icon || null,
 		color: form.color,
 		placeId: form.placeId || null,
 		room: form.room || null,

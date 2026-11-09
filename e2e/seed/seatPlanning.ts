@@ -95,7 +95,7 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 		name: E2E_SEAT_ASSIGNED_NSA_NAME,
 		abbreviation: 'E2EN',
 		description: 'Has a delegation assigned',
-		fontAwesomeIcon: 'fa-dove',
+		icon: 'bird',
 		seatAmount: 2
 	};
 	await db

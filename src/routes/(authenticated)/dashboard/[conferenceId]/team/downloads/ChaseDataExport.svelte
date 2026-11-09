@@ -57,7 +57,7 @@
 				},
 				id: true,
 				name: true,
-				fontAwesomeIcon: true
+				icon: true
 			}),
 			client.query.delegationMembers({
 				__args: ofConference,
@@ -115,6 +115,6 @@
 <DownloadButton
 	onclick={() => getAndProcessData()}
 	title={m.chaseSeedData()}
-	icon="fas fa-file-code"
+	icon="ph-fill ph-file-code"
 	{loading}
 />

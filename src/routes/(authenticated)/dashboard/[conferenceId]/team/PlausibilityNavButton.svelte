@@ -27,7 +27,7 @@
 
 <NavMenuButton
 	href="/dashboard/{conferenceId}/team/plausibility"
-	icon="fa-shield-check"
+	icon="ph-shield-check"
 	{active}
 	title={m.adminPlausibility()}
 	attention={count > 0}

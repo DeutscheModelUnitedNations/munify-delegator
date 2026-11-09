@@ -17,28 +17,28 @@
 	<span class="tooltip tooltip-right before:max-w-60 before:whitespace-pre-line" data-tip={tip}>
 		{#if badge}
 			<span class="badge badge-xs badge-info" role="img" aria-label={tip}>
-				<i class="fa-sharp-duotone fa-solid {icon}"></i>
+				<i class="ph-duotone {icon}"></i>
 			</span>
 		{:else}
-			<i class="fa-sharp-duotone fa-solid {icon}" role="img" aria-label={tip}></i>
+			<i class="ph-duotone {icon}" role="img" aria-label={tip}></i>
 		{/if}
 	</span>
 {/snippet}
 
 <div class="flex flex-wrap items-center gap-1">
 	{#if group.part}
-		{@render marked(m.assignmentSplitPart(), 'fa-split', true)}
+		{@render marked(m.assignmentSplitPart(), 'ph-arrows-split', true)}
 	{/if}
 	{#if group.singleParticipantId}
-		{@render marked(m.assignmentConvertedSingle(), 'fa-user-plus', true)}
+		{@render marked(m.assignmentConvertedSingle(), 'ph-user-plus', true)}
 	{/if}
 	{#if review?.required}
-		{@render marked(m.assignmentRequired(), 'fa-thumbtack text-success', false)}
+		{@render marked(m.assignmentRequired(), 'ph-push-pin text-success', false)}
 	{/if}
 	{#if review?.flagged}
-		{@render marked(m.assignmentFlag(), 'fa-flag text-warning', false)}
+		{@render marked(m.assignmentFlag(), 'ph-flag text-warning', false)}
 	{/if}
 	{#if review?.note}
-		{@render marked(review.note, 'fa-note-sticky text-info', false)}
+		{@render marked(review.note, 'ph-note text-info', false)}
 	{/if}
 </div>

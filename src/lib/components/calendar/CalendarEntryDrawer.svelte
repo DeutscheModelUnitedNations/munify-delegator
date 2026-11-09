@@ -57,7 +57,7 @@
 					class="btn btn-soft btn-sm gap-1.5"
 					onclick={() => closeAnd(() => onEditEntry(current.id))}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
+					<i class="ph-duotone ph-note-pencil"></i>
 					{m.calendarEditEntry()}
 				</button>
 			{/if}
@@ -67,7 +67,7 @@
 					class="btn btn-soft btn-sm gap-1.5"
 					onclick={() => closeAnd(() => onEditPlace(placeId))}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-location-pen"></i>
+					<i class="ph-duotone ph-map-pin-line"></i>
 					{m.calendarEditPlace()}
 				</button>
 			{/if}

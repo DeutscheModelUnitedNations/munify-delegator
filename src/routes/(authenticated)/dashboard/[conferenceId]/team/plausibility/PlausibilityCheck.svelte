@@ -16,9 +16,9 @@
 <section class="bg-base-200 rounded-box flex flex-col gap-2 p-4">
 	<h2 class="flex items-center gap-3 text-lg font-bold">
 		<i
-			class="fa-sharp-duotone fa-solid text-2xl {found
-				? 'fa-circle-xmark text-error'
-				: 'fa-circle-check text-success'}"
+			class="ph-duotone text-2xl {found
+				? 'ph-x-circle text-error'
+				: 'ph-check-circle text-success'}"
 		></i>
 		<span class="min-w-0 grow">{headline}</span>
 		<span class="text-3xl tabular-nums {found ? '' : 'text-base-content/40'}">{entries.length}</span
@@ -34,7 +34,7 @@
 					onclick={() => onSelect(entry.id)}
 				>
 					<span class="min-w-0 wrap-anywhere">{entry.label}</span>
-					<i class="fa-sharp-duotone fa-solid fa-id-card text-base-content/60"></i>
+					<i class="ph-duotone ph-identification-card text-base-content/60"></i>
 				</button>
 			</li>
 		{:else}

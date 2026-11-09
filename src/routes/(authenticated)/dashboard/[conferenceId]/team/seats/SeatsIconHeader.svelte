@@ -1,7 +1,7 @@
 <script lang="ts">
 	/** The header row of a seats table listing seats per row: what, who, how many. */
 	interface Props {
-		/** FontAwesome icon class of the first column (e.g. 'fa-megaphone') */
+		/** Phosphor icon class of the first column (e.g. 'ph-megaphone-simple') */
 		icon: string;
 		/** Adds the column of the members menu (`DelegationMembersMenu`) */
 		membersMenu?: boolean;
@@ -13,17 +13,17 @@
 <thead>
 	<tr>
 		<td class="text-left">
-			<i class="fa-sharp-duotone fa-solid {icon}"></i>
+			<i class="ph-duotone {icon}"></i>
 		</td>
 		<td class="text-left">
-			<i class="fa-sharp-duotone fa-solid fa-users"></i>
+			<i class="ph-duotone ph-users"></i>
 		</td>
 		<td>
-			<i class="fa-sharp-duotone fa-solid fa-sigma"></i>
+			<i class="ph-duotone ph-sigma"></i>
 		</td>
 		{#if membersMenu}
 			<td>
-				<i class="fa-sharp-duotone fa-solid fa-users"></i>
+				<i class="ph-duotone ph-users"></i>
 			</td>
 		{/if}
 	</tr>

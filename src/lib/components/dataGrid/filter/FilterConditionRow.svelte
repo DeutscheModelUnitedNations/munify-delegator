@@ -78,12 +78,12 @@
 			aria-label={m.dataGridRemoveCondition()}
 			onclick={onremove}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+			<i class="ph-duotone ph-x"></i>
 		</button>
 	</div>
 	{#if problem}
 		<p class="text-base-content/60 text-xs">
-			<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
+			<i class="ph-duotone ph-info"></i>
 			{PROBLEMS[problem]()}
 		</p>
 	{/if}

@@ -84,7 +84,7 @@
 	{#snippet action()}
 		<button class="btn" onclick={() => (confirming = undefined)}>{m.cancel()}</button>
 		<button class="btn btn-primary" onclick={() => confirming && send(confirming)}>
-			<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+			<i class="ph-duotone ph-paper-plane-tilt"></i>
 			{m.emailSendNow()}
 		</button>
 	{/snippet}

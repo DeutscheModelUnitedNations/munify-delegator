@@ -20,7 +20,7 @@
 			__args: { where: { conferenceId: { eq: conferenceId }, kind: 'CUSTOM' } },
 			id: true,
 			name: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			seatAmount: true
 		})
 	);
@@ -57,13 +57,13 @@
 	title={m.singleParticipants()}
 	downloadButton={downloadSingleParticipantsDataBtn}
 >
-	<SeatsIconHeader icon="fa-masks-theater" />
+	<SeatsIconHeader icon="ph-mask-happy" />
 	<tbody>
 		{#each roles as role (role.id)}
 			{@const participants = singleParticipants.filter((sp) => sp.assignedRole?.id === role.id)}
 			<tr>
 				<td class="flex items-center gap-2">
-					<Flag nsa icon={role.fontAwesomeIcon ?? ''} size="xs" />
+					<Flag nsa icon={role.icon ?? ''} size="xs" />
 					{role.name}
 				</td>
 				<td>

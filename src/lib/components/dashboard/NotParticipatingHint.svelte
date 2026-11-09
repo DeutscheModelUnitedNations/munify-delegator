@@ -32,7 +32,7 @@
 
 		{#if status === 'WAITING_LIST'}
 			<a class="btn btn-primary gap-2" href={resolve(`registration/${conferenceId}/waiting-list`)}>
-				<i class="fa-sharp-duotone fa-solid fa-hourglass-half"></i>
+				<i class="ph-duotone ph-hourglass-medium"></i>
 				{m.joinWaitingListBtn()}
 			</a>
 		{/if}

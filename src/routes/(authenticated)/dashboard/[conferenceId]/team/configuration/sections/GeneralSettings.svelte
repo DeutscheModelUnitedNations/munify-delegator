@@ -94,7 +94,7 @@
 	</div>
 </FormSection>
 
-<FormSection title={m.conferenceSchedule()} icon="calendar-days">
+<FormSection title={m.conferenceSchedule()} icon="calendar-dots">
 	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
 		<FormDateTimeInput
 			{form}

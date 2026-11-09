@@ -113,7 +113,7 @@
 		}))
 	);
 	const customRoleIcon = (roleId: string | null) =>
-		roles.customRoles.find((role) => role.id === roleId)?.fontAwesomeIcon ?? undefined;
+		roles.customRoles.find((role) => role.id === roleId)?.icon ?? undefined;
 
 	const delegationById = $derived(new Map(rows.delegations.map((d) => [d.id, d])));
 	const pendingGroups = $derived(
@@ -171,7 +171,7 @@
 						disabled={empty}
 						onclick={() => (confirmingDiscard = true)}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+						<i class="ph-duotone ph-trash"></i>
 						{m.assignmentDiscardDraft()}
 					</button>
 					<button
@@ -179,7 +179,7 @@
 						disabled={empty || preview.errors.length > 0}
 						onclick={() => (confirmingApply = true)}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-check-double"></i>
+						<i class="ph-duotone ph-checks"></i>
 						{m.assignmentApply()}
 					</button>
 				</div>

@@ -4,7 +4,7 @@
 	export interface StatusOption<S> {
 		value: S;
 		label: string;
-		faIcon: string;
+		icon: string;
 		tone: StatusTone;
 	}
 </script>
@@ -17,13 +17,13 @@
 	 */
 	interface Props {
 		title: string;
-		faIcon: string;
+		icon: string;
 		active: S;
 		options: StatusOption<S>[];
 		change: (status: S) => Promise<void>;
 	}
 
-	let { title, faIcon, active, options, change }: Props = $props();
+	let { title, icon, active, options, change }: Props = $props();
 
 	const toneText: Record<StatusTone, string> = {
 		success: 'text-success',
@@ -54,17 +54,13 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-	<i
-		class="fa-sharp-duotone fa-solid fa-{faIcon.replace(
-			'fa-',
-			''
-		)} text-base-content/60 w-6 text-center text-lg"
+	<i class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-base-content/60 w-6 text-center text-lg"
 	></i>
 	<div class="flex min-w-48 grow flex-col">
 		<span class="font-semibold">{title}</span>
 		{#if current}
 			<span class="text-sm {toneText[current.tone]}">
-				<i class="fa-sharp-duotone fa-solid fa-{current.faIcon.replace('fa-', '')} mr-1"></i>
+				<i class="ph-duotone ph-{current.icon.replace(/^ph-/, '')} mr-1"></i>
 				{current.label}
 			</span>
 		{/if}
@@ -82,9 +78,9 @@
 				onclick={() => select(option.value)}
 			>
 				{#if pending === option.value}
-					<i class="fas fa-spin fa-spinner"></i>
+					<i class="ph-fill animate-spin ph-spinner-gap"></i>
 				{:else}
-					<i class="fas fa-{option.faIcon.replace('fa-', '')}"></i>
+					<i class="ph-fill ph-{option.icon.replace(/^ph-/, '')}"></i>
 				{/if}
 			</button>
 		{/each}

@@ -70,8 +70,8 @@
 	};
 
 	const getSortIcon = (key: PaperSortKey) => {
-		if (!sortConfig || sortConfig.key !== key) return 'fa-sort';
-		return sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+		if (!sortConfig || sortConfig.key !== key) return 'ph-arrows-down-up';
+		return sortConfig.direction === 'asc' ? 'ph-sort-ascending' : 'ph-sort-descending';
 	};
 
 	const handleSort = (key: PaperSortKey) => {
@@ -115,10 +115,10 @@
 			{#if 'text' in label}
 				{label.text}
 			{:else}
-				<i class="fa-sharp-duotone fa-solid {label.icon}"></i>
+				<i class="ph-duotone {label.icon}"></i>
 			{/if}
 			{#if sortable}
-				<i class="fa-sharp-duotone fa-solid {getSortIcon(key)} text-xs opacity-50"></i>
+				<i class="ph-duotone {getSortIcon(key)} text-xs opacity-50"></i>
 			{/if}
 		</div>
 	</th>
@@ -133,7 +133,7 @@
 				{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
 			</span>
 		{:else if nonStateActor}
-			<Flag size="xs" nsa={true} icon={nonStateActor.fontAwesomeIcon} />
+			<Flag size="xs" nsa={true} icon={nonStateActor.icon} />
 			<span class="truncate max-w-32">
 				{nonStateActor.name}
 			</span>
@@ -172,11 +172,7 @@
 					</td>
 					<td>
 						<span class="flex items-center gap-2 whitespace-nowrap">
-							<i
-								class="fa-sharp-duotone fa-solid {getPaperTypeIcon(paper.type)} {getTypeColor(
-									paper.type
-								)}"
-							></i>
+							<i class="ph-duotone {getPaperTypeIcon(paper.type)} {getTypeColor(paper.type)}"></i>
 							{translatePaperType(paper.type)}
 						</span>
 					</td>
@@ -185,7 +181,7 @@
 							<span
 								class="flex items-center gap-2 whitespace-nowrap {getStatusColor(paper.status)}"
 							>
-								<i class="fa-sharp-duotone fa-solid {getPaperStatusIcon(paper.status)}"></i>
+								<i class="ph-duotone {getPaperStatusIcon(paper.status)}"></i>
 								{translatePaperStatus(paper.status)}
 							</span>
 						</td>
@@ -199,7 +195,7 @@
 						</td>
 					{/if}
 					<td class="text-right text-base-content/40">
-						<i class="fa-sharp-duotone fa-solid fa-chevron-right text-xs"></i>
+						<i class="ph-duotone ph-caret-right text-xs"></i>
 					</td>
 				</tr>
 			{/each}

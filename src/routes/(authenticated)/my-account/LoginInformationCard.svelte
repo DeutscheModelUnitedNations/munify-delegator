@@ -40,14 +40,14 @@
 				editLabel: hasPasskey ? 'Manage passkeys' : 'Add passkey'
 			},
 			{
-				icon: 'shield-keyhole',
+				icon: 'lock-key',
 				label: m.authenticatorApp(),
 				isSet: hasTotp,
 				editHref: accountUrl(hasTotp ? 'authenticator-app/replace' : 'authenticator-app'),
 				editLabel: hasTotp ? 'Replace authenticator app' : 'Set up authenticator app'
 			},
 			{
-				icon: 'file-shield',
+				icon: 'file-lock',
 				label: m.backupCodes(),
 				isSet: hasBackupCodes,
 				editHref: accountUrl(hasBackupCodes ? 'backup-codes/manage' : 'backup-codes/generate'),
@@ -64,7 +64,7 @@
 <div class="card bg-base-100 border-base-200 border shadow-xl">
 	<div class="card-body max-sm:p-4">
 		<h2 class="card-title justify-center">
-			<i class="fa-sharp-duotone fa-solid fa-shield-halved text-primary"></i>
+			<i class="ph-duotone ph-shield-check text-primary"></i>
 			{m.loginInformation()}
 		</h2>
 		<div class="divide-base-200 divide-y">
@@ -103,7 +103,7 @@
 				>
 					{#if row.isSet}
 						<div class="text-success text-sm">
-							<i class="fa-sharp-duotone fa-solid fa-check"></i>
+							<i class="ph-duotone ph-check"></i>
 						</div>
 					{/if}
 				</AccountRow>
@@ -124,7 +124,7 @@
 				<div class="truncate font-mono text-sm">{user.sub}</div>
 			</AccountRow>
 			{#if user.myOIDCRoles.length}
-				<AccountRow icon="user-lock" label={m.rights()}>
+				<AccountRow icon="lock-key" label={m.rights()}>
 					<div>{user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</div>
 				</AccountRow>
 			{/if}

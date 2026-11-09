@@ -27,7 +27,7 @@
 	const firstMovable = $derived(grid.pinned.length);
 </script>
 
-<SideDrawer bind:open title={m.columns()} icon="fa-columns">
+<SideDrawer bind:open title={m.columns()} icon="ph-columns">
 	<section>
 		<h3 class="text-base-content/70 mb-1 text-sm font-semibold">{m.dataGridShownColumns()}</h3>
 		<ul class="divide-base-300 divide-y">
@@ -62,7 +62,7 @@
 	{/each}
 	{#snippet footer()}
 		<button class="btn btn-ghost btn-sm" onclick={() => grid.resetSizes()}>
-			<i class="fa-sharp-duotone fa-solid fa-arrows-left-right"></i>
+			<i class="ph-duotone ph-arrows-left-right"></i>
 			{m.dataGridResetWidths()}
 		</button>
 		<button class="btn btn-primary btn-sm ml-auto" onclick={() => (open = false)}>{m.done()}</button

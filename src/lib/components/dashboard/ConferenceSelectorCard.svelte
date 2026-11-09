@@ -100,7 +100,7 @@
 		<div class="flex flex-wrap items-start justify-between gap-2">
 			{#if takesPart}
 				<div class="badge badge-neutral badge-sm gap-1.5 font-medium">
-					<i class="fa-sharp-duotone fa-solid fa-id-badge text-xs"></i>
+					<i class="ph-duotone ph-identification-badge text-xs"></i>
 					{roleLabel}
 				</div>
 			{:else}
@@ -121,21 +121,19 @@
 			</div>
 			<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/80">
 				<span class="flex items-center gap-1.5">
-					<i class="fa-sharp-duotone fa-solid fa-calendar text-xs"></i>
+					<i class="ph-duotone ph-calendar-blank text-xs"></i>
 					{dateRange}
 				</span>
 				{#if conference.location}
 					<span class="flex items-center gap-1.5">
-						<i class="fa-sharp-duotone fa-solid fa-map-marker-alt text-xs"></i>
+						<i class="ph-duotone ph-map-pin text-xs"></i>
 						{conference.location}
 					</span>
 				{/if}
 			</div>
 			<span class="flex items-center gap-2 text-sm font-medium text-white">
 				{canApply ? m.signup() : m.goToDashboard()}
-				<i
-					class="fa-sharp-duotone fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"
-				></i>
+				<i class="ph-duotone ph-arrow-right transition-transform group-hover:translate-x-1"></i>
 			</span>
 		</div>
 	</div>

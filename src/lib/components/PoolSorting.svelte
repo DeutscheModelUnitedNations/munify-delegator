@@ -23,20 +23,20 @@
 </script>
 
 <div class="card bg-base-200 grid w-full grid-cols-[auto_1fr] items-center gap-4 p-4">
-	<i class="fa-sharp-duotone fa-solid fa-arrow-down-short-wide self-center text-xl"></i>
+	<i class="ph-duotone ph-sort-ascending self-center text-xl"></i>
 	<div class="flex flex-wrap gap-2">
 		{#each sortingOptions as option (option.key)}
 			<button
 				class="badge {option.key === activeSorting ? 'badge-primary' : ''}"
 				onclick={() => (activeSorting = option.key)}
 			>
-				<i class="fas fa-{option.icon} mr-2"></i>
+				<i class="ph-fill ph-{option.icon} mr-2"></i>
 				{option.name}
 			</button>
 		{/each}
 	</div>
 
-	<i class="fa-sharp-duotone fa-solid fa-filter self-center text-xl"></i>
+	<i class="ph-duotone ph-funnel self-center text-xl"></i>
 	<div class="flex w-full flex-wrap gap-2">
 		{#each filterOptions as option, optionIndex (optionIndex)}
 			<button
@@ -47,7 +47,7 @@
 						: activeFilter.push(option.key)}
 			>
 				{#if option.icon}
-					<i class="fas fa-{option.icon} mr-2"></i>
+					<i class="ph-fill ph-{option.icon} mr-2"></i>
 				{/if}
 				{option.name}
 			</button>

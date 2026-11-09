@@ -22,7 +22,7 @@
 	<DownloadCategoryCard
 		title={m.badgeDataTitle()}
 		description={m.badgeDataDescription()}
-		icon="fas fa-id-badge"
+		icon="ph-fill ph-identification-badge"
 	>
 		<BadgeData conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -30,7 +30,7 @@
 	<DownloadCategoryCard
 		title={m.registrationListsTitle()}
 		description={m.registrationListsDescription()}
-		icon="fas fa-clipboard-list"
+		icon="ph-fill ph-clipboard-text"
 	>
 		<ConferenceRegistrationList conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -38,7 +38,7 @@
 	<DownloadCategoryCard
 		title={m.participantStatusTitle()}
 		description={m.participantStatusDescription()}
-		icon="fas fa-user-check"
+		icon="ph-fill ph-user-check"
 	>
 		<ParticipantStatusExport conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -46,7 +46,7 @@
 	<DownloadCategoryCard
 		title={m.registrationModeQrTitle()}
 		description={m.registrationModeQrDescription()}
-		icon="fas fa-qrcode"
+		icon="ph-fill ph-qr-code"
 	>
 		<RegistrationModeQr conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -54,7 +54,7 @@
 	<DownloadCategoryCard
 		title={m.committeeDataTitle()}
 		description={m.committeeDataDescription()}
-		icon="fas fa-landmark"
+		icon="ph-fill ph-bank"
 	>
 		<CommitteeMembers conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -62,7 +62,7 @@
 	<DownloadCategoryCard
 		title={m.referenceDataTitle()}
 		description={m.referenceDataDescription()}
-		icon="fas fa-globe"
+		icon="ph-fill ph-globe"
 	>
 		<AllNations conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -70,7 +70,7 @@
 	<DownloadCategoryCard
 		title={m.integrationExportsTitle()}
 		description={m.integrationExportsDescription()}
-		icon="fas fa-plug"
+		icon="ph-fill ph-plug"
 	>
 		<ChaseSeedExport conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>

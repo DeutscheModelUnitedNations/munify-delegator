@@ -6,7 +6,7 @@
 	interface Props {
 		open: boolean;
 		title: string;
-		/** FontAwesome icon class for the header icon (e.g. 'fa-filter') */
+		/** Phosphor icon class for the header icon (e.g. 'ph-funnel') */
 		icon: string;
 		/** Scrollable content */
 		children: Snippet;
@@ -21,11 +21,11 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between px-5 pt-4 pb-3">
 		<Dialog.Title class="flex items-center gap-2 text-lg font-bold">
-			<i class="fa-sharp-duotone fa-solid {icon} text-xl"></i>
+			<i class="ph-duotone {icon} text-xl"></i>
 			{title}
 		</Dialog.Title>
 		<Dialog.Close class="btn btn-ghost btn-sm btn-circle">
-			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+			<i class="ph-duotone ph-x"></i>
 		</Dialog.Close>
 	</div>
 

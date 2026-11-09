@@ -34,7 +34,7 @@
 				alpha3Code: true,
 				name: true,
 				abbreviation: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				totalPieces: true,
 				foundPieces: true,
 				unlockedPieces: true,
@@ -128,7 +128,7 @@
 		</div>
 	{:else}
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
+			<i class="ph-duotone ph-info"></i>
 			<span>{m.noFlagsInFilter()}</span>
 		</div>
 	{/if}
@@ -146,7 +146,7 @@
 	{#snippet badge()}
 		{#if flagCollection?.stats}
 			<div class="badge badge-primary badge-lg gap-2">
-				<i class="fa-sharp-duotone fa-solid fa-trophy"></i>
+				<i class="ph-duotone ph-trophy"></i>
 				{flagCollection.stats.completedFlags}/{flagCollection.stats.totalFlags}
 			</div>
 		{/if}
@@ -157,7 +157,7 @@
 			{@render collection(flagCollection)}
 		{:else}
 			<div class="alert alert-info">
-				<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
+				<i class="ph-duotone ph-info"></i>
 				<span>{m.noFlagsYet()}</span>
 			</div>
 		{/if}

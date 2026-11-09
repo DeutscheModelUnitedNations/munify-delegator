@@ -16,7 +16,7 @@ type UnlockedPiece = {
 	flagType: 'NATION' | 'NSA';
 	flagAlpha2Code: string | null;
 	flagAlpha3Code: string | null;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	pieceName: string;
 	foundCount: number;
 	totalCount: number;
@@ -36,7 +36,7 @@ export type FlagPaper = {
 			id: string;
 			kind: ConferenceRoleKind;
 			name: string | null;
-			fontAwesomeIcon: string | null;
+			icon: string | null;
 			nation: { alpha2Code: string; alpha3Code: string } | null;
 		} | null;
 	};
@@ -140,7 +140,7 @@ async function nationPiece({
 		flagType: 'NATION',
 		flagAlpha2Code: nation.alpha2Code,
 		flagAlpha3Code: nation.alpha3Code,
-		fontAwesomeIcon: null,
+		icon: null,
 		pieceName: agendaItemLabel(paper) ?? m.paperPieceFallback(),
 		foundCount: found.length,
 		totalCount: totalPieces,
@@ -157,7 +157,7 @@ async function nsaPiece({
 }: {
 	tx: Transaction;
 	paper: FlagPaper;
-	nsa: { id: string; name: string | null; fontAwesomeIcon: string | null };
+	nsa: { id: string; name: string | null; icon: string | null };
 }): Promise<UnlockedPiece> {
 	const found = await tx.query.paper.findMany({
 		where: reviewedPaperWhere(paper.delegationId),
@@ -169,7 +169,7 @@ async function nsaPiece({
 		flagType: 'NSA',
 		flagAlpha2Code: null,
 		flagAlpha3Code: null,
-		fontAwesomeIcon: nsa.fontAwesomeIcon,
+		icon: nsa.icon,
 		pieceName:
 			paper.type === 'INTRODUCTION_PAPER'
 				? m.paperTypeIntroductionPaper()

@@ -46,21 +46,21 @@
 				class="text-base-content/70 flex items-center gap-1 text-sm"
 				title={m.committeeNationCount({ count: committee.roles.length })}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-flag"></i>
+				<i class="ph-duotone ph-flag"></i>
 				{committee.roles.length}
 			</span>
 			<span
 				class="text-base-content/70 flex items-center gap-1 text-sm"
 				title={m.seatsPerDelegation()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-chair"></i>
+				<i class="ph-duotone ph-chair"></i>
 				{committee.numOfSeatsPerDelegation}
 			</span>
 		</div>
 		<div class="flex gap-1">
 			{#if canEdit}
 				<button class="btn btn-ghost btn-xs" onclick={onEdit}>
-					<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
+					<i class="ph-duotone ph-note-pencil"></i>
 					{m.edit()}
 				</button>
 			{/if}
@@ -70,7 +70,7 @@
 					data-tip={deletable ? undefined : m.committeeDeleteDisabled()}
 				>
 					<button class="btn btn-ghost btn-xs text-error" disabled={!deletable} onclick={onDelete}>
-						<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+						<i class="ph-duotone ph-trash"></i>
 						{m.delete()}
 					</button>
 				</span>
@@ -79,7 +79,7 @@
 	</header>
 	{#if committee.resolutionHeadline}
 		<p class="text-base-content/70 px-4 pt-0.5 text-sm">
-			<i class="fa-sharp-duotone fa-solid fa-file-signature mr-1"></i>
+			<i class="ph-duotone ph-signature mr-1"></i>
 			{m.resolutionHeadline()}: {committee.resolutionHeadline}
 		</p>
 	{/if}
@@ -100,7 +100,7 @@
 			class="btn btn-ghost btn-xs text-base-content/70 mx-3 my-1 w-[calc(100%-1.5rem)]"
 			onclick={onAddAgendaItem}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+			<i class="ph-duotone ph-plus"></i>
 			{m.createNewAgendaItem()}
 		</button>
 	{/if}

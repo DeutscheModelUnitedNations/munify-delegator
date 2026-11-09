@@ -87,7 +87,7 @@
 	}
 </script>
 
-<RegistrationStepPage {conferenceId} icon="hourglass-half" title={m.vacanciesSlashWaitingList()}>
+<RegistrationStepPage {conferenceId} icon="hourglass-medium" title={m.vacanciesSlashWaitingList()}>
 	<div class="prose prose-sm mb-4 max-w-none">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 		{@html m.vacanciesSlashWaitingListDescription()}
@@ -97,11 +97,11 @@
 
 	{#if alreadyOnWaitingList}
 		<div role="status" class="alert bg-success/10 border-success/30 mb-4">
-			<i class="fa-sharp-duotone fa-solid fa-circle-check text-success text-xl"></i>
+			<i class="ph-duotone ph-check-circle text-success text-xl"></i>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			<span>{@html m.alreadyOnWaitingList()}</span>
 			<button class="btn btn-ghost btn-sm text-error" onclick={withdraw}>
-				<i class="fa-sharp-duotone fa-solid fa-person-to-door"></i>
+				<i class="ph-duotone ph-door-open"></i>
 				{m.withdrawWaitingListEntry()}
 			</button>
 		</div>

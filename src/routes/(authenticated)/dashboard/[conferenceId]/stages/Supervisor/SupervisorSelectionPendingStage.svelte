@@ -118,7 +118,7 @@
 		</div>
 	{:else}
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
+			<i class="ph-duotone ph-info text-xl"></i>
 			{m.noConnectedStudents()}
 		</div>
 	{/if}

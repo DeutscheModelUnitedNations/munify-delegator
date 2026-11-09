@@ -29,7 +29,7 @@
 			<div
 				class="bg-base-300/50 text-base-content/70 rounded-box p-3 w-12 h-12 flex justify-center items-center"
 			>
-				<i class="fas fa-cog text-lg"></i>
+				<i class="ph-fill ph-gear text-lg"></i>
 			</div>
 			<div>
 				<span class="font-medium">{m.csvExportSettings()}</span>

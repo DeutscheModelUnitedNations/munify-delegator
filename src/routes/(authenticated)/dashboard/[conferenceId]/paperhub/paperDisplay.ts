@@ -14,7 +14,7 @@ import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTrans
 export interface PaperDelegationRole {
 	kind: ConferenceRoleKind;
 	name: string | null;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	nation: { alpha2Code: string; alpha3Code: string } | null;
 }
 

@@ -537,7 +537,7 @@ export type Calendarentry = {
   createdAt: DateTime,
   description: String | null,
   endTime: DateTime,
-  fontAwesomeIcon: String | null,
+  icon: String | null,
   id: ID,
   name: String,
   place: (p?: {
@@ -571,7 +571,7 @@ export type CalendarentryOrderInputArgument = {
   createdAt?: SortingParameter | null | undefined,
   description?: SortingParameter | null | undefined,
   endTime?: SortingParameter | null | undefined,
-  fontAwesomeIcon?: SortingParameter | null | undefined,
+  icon?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   name?: SortingParameter | null | undefined,
   placeId?: SortingParameter | null | undefined,
@@ -590,7 +590,7 @@ export type CalendarentryWhereInputArgument = {
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   description?: StringWhereInputArgument | null | undefined,
   endTime?: DateTimeWhereInputArgument | null | undefined,
-  fontAwesomeIcon?: StringWhereInputArgument | null | undefined,
+  icon?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   name?: StringWhereInputArgument | null | undefined,
   place?: PlaceWhereInputArgument | null | undefined,
@@ -1478,7 +1478,7 @@ export type Conferencerole = {
   conferenceId: ID,
   createdAt: DateTime,
   description: String | null,
-  fontAwesomeIcon: String | null,
+  icon: String | null,
   id: ID,
   kind: ConferencerolekindEnum,
   name: String | null,
@@ -1504,7 +1504,7 @@ export type ConferenceroleOrderInputArgument = {
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   description?: SortingParameter | null | undefined,
-  fontAwesomeIcon?: SortingParameter | null | undefined,
+  icon?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   kind?: SortingParameter | null | undefined,
   name?: SortingParameter | null | undefined,
@@ -1527,7 +1527,7 @@ export type ConferenceroleWhereInputArgument = {
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   description?: StringWhereInputArgument | null | undefined,
-  fontAwesomeIcon?: StringWhereInputArgument | null | undefined,
+  icon?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   kind?: ConferencerolekindEnum | null | undefined,
   name?: StringWhereInputArgument | null | undefined,
@@ -1987,8 +1987,8 @@ export type FlagProgress = {
   abbreviation: String | null,
   alpha2Code: String | null,
   alpha3Code: String | null,
-  fontAwesomeIcon: String | null,
   foundPieces: Int,
+  icon: String | null,
   id: String,
   isComplete: Boolean,
   name: String,
@@ -2279,7 +2279,7 @@ export type Mutation = {
     color?: CalendarentrycolorEnum | null | undefined,
     description?: String | null | undefined,
     endTime: DateTime,
-    fontAwesomeIcon?: String | null | undefined,
+    icon?: String | null | undefined,
     name: String,
     placeId?: ID | null | undefined,
     room?: String | null | undefined,
@@ -2311,7 +2311,7 @@ export type Mutation = {
   createCustomRole: (p: {
     conferenceId: ID,
     description?: String | null | undefined,
-    fontAwesomeIcon?: String | null | undefined,
+    icon?: String | null | undefined,
     name: String,
     seatAmount: Int
   }) => Conferencerole,
@@ -2332,7 +2332,7 @@ export type Mutation = {
     abbreviation: String,
     conferenceId: ID,
     description: String,
-    fontAwesomeIcon?: String | null | undefined,
+    icon?: String | null | undefined,
     name: String,
     seatAmount: Int
   }) => Conferencerole,
@@ -2705,7 +2705,7 @@ export type Mutation = {
     color?: CalendarentrycolorEnum | null | undefined,
     description?: String | null | undefined,
     endTime?: DateTime | null | undefined,
-    fontAwesomeIcon?: String | null | undefined,
+    icon?: String | null | undefined,
     id: ID,
     name?: String | null | undefined,
     placeId?: ID | null | undefined,
@@ -2784,7 +2784,7 @@ export type Mutation = {
   }) => Conferencesupervisor,
   updateCustomRole: (p: {
     description?: String | null | undefined,
-    fontAwesomeIcon?: String | null | undefined,
+    icon?: String | null | undefined,
     id: ID,
     name?: String | null | undefined,
     seatAmount?: Int | null | undefined
@@ -2804,7 +2804,7 @@ export type Mutation = {
   updateNonStateActor: (p: {
     abbreviation?: String | null | undefined,
     description?: String | null | undefined,
-    fontAwesomeIcon?: String | null | undefined,
+    icon?: String | null | undefined,
     id: ID,
     name?: String | null | undefined,
     seatAmount?: Int | null | undefined
@@ -2992,7 +2992,7 @@ export type NametagBin = {
 };
 		
 export type NametagBinGroup = {
-  fontAwesomeIcon: String | null,
+  icon: String | null,
   nationAlpha2Code: String | null,
   nationAlpha3Code: String | null,
   participants: Int,
@@ -4801,7 +4801,7 @@ export type StatisticsResultRegisteredSingleParticipants = {
 		
 export type StatisticsResultRegisteredSingleParticipantsByRole = {
   applied: Int,
-  fontAwesomeIcon: String | null,
+  icon: String | null,
   notApplied: Int,
   role: String,
   total: Int    
@@ -5858,8 +5858,8 @@ export type UnlockedPieceData = {
   flagId: String,
   flagName: String,
   flagType: FlagTypeForUnlock,
-  fontAwesomeIcon: String | null,
   foundCount: Int,
+  icon: String | null,
   isComplete: Boolean,
   pieceName: String,
   totalCount: Int    

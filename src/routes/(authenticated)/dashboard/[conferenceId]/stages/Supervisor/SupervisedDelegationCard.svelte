@@ -36,12 +36,12 @@
 				appliedForRoles: {
 					id: true,
 					rank: true,
-					role: { kind: true, fontAwesomeIcon: true, nation: { alpha2Code: true } }
+					role: { kind: true, icon: true, nation: { alpha2Code: true } }
 				},
 				assignedRole: {
 					kind: true,
 					name: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					nation: { alpha2Code: true, alpha3Code: true }
 				},
 				// Every member, for the count and the "hidden member" rows; only the ones this
@@ -81,33 +81,27 @@
 	{#snippet detailSpace()}
 		<InfoGrid.Grid>
 			{#if isStateParticipantRegistration}
-				<InfoGrid.Entry
-					title={m.entryCode()}
-					fontAwesomeIcon="fa-sharp-duotone fa-solid fa-barcode"
-				>
+				<InfoGrid.Entry title={m.entryCode()} icon="ph-duotone ph-barcode">
 					<span class="font-mono tracking-[0.3rem]">{delegation.entryCode}</span>
 				</InfoGrid.Entry>
-				<RoleApplicationsEntry
-					fontAwesomeIcon="fa-sharp-duotone fa-solid fa-flag"
-					applications={roleApplications}
-				>
+				<RoleApplicationsEntry icon="ph-duotone ph-flag" applications={roleApplications}>
 					{#snippet role(roleApplication)}
 						<Flag
 							size="xs"
 							alpha2Code={roleApplication.role.nation?.alpha2Code}
 							nsa={roleApplication.role.kind === 'NON_STATE_ACTOR'}
-							icon={roleApplication.role.fontAwesomeIcon ?? 'fa-hand-point-up'}
+							icon={roleApplication.role.icon ?? 'hand-pointing'}
 						/>
 					{/snippet}
 				</RoleApplicationsEntry>
 			{:else}
-				<InfoGrid.Entry title={m.role()} fontAwesomeIcon="fa-sharp-duotone fa-solid fa-flag">
+				<InfoGrid.Entry title={m.role()} icon="ph-duotone ph-flag">
 					<div class="flex items-center gap-2">
 						<Flag
 							size="xs"
 							alpha2Code={assignedRole.nation?.alpha2Code}
 							nsa={!!assignedRole.nonStateActor}
-							icon={assignedRole.nonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+							icon={assignedRole.nonStateActor?.icon ?? 'hand-pointing'}
 						/>
 						{#if assignedRole.nation}
 							{getFullTranslatedCountryNameFromISO3Code(assignedRole.nation.alpha3Code)}
@@ -119,7 +113,7 @@
 			{/if}
 			<InfoGrid.Entry
 				title={m.delegationMembers()}
-				fontAwesomeIcon="fa-sharp-duotone fa-solid fa-users"
+				icon="ph-duotone ph-users"
 				content={delegation.members.length}
 			/>
 			{#if isStateParticipantRegistration}
@@ -161,7 +155,7 @@
 						{m.hiddenMember()}
 						{#if member.isHeadDelegate}
 							<div class="tooltip" data-tip={m.headDelegate()}>
-								<i class="fa-sharp-duotone fa-solid fa-medal ml-2"></i>
+								<i class="ph-duotone ph-medal ml-2"></i>
 							</div>
 						{/if}
 					</td>

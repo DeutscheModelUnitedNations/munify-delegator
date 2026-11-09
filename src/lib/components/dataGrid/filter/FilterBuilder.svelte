@@ -68,7 +68,7 @@
 			disabled={!canAdd}
 			onclick={() => onchange(addItem({ filter, item: newCondition(filterable[0]) }))}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+			<i class="ph-duotone ph-plus"></i>
 			{m.dataGridAddCondition()}
 		</button>
 		<button
@@ -86,7 +86,7 @@
 					})
 				)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-layer-plus"></i>
+			<i class="ph-duotone ph-stack-plus"></i>
 			{m.dataGridAddGroup()}
 		</button>
 	</div>

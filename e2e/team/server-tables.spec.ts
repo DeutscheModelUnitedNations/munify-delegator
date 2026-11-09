@@ -48,7 +48,7 @@ for (const route of TABLES) {
 		await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 
 		// a sortable column sorts: the URL holds the changed view and the table keeps showing rows
-		const sortable = page.locator('thead th button:has(i.fa-arrows-up-down)').first();
+		const sortable = page.locator('thead th button:has(i.ph-arrows-down-up)').first();
 		if (await sortable.count()) {
 			await sortable.click();
 			await expect(page).toHaveURL(/[?&]state=/);

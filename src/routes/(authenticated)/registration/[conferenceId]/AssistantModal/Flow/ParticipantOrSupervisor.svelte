@@ -23,14 +23,14 @@
 	delay={2000}
 	answers={[
 		{
-			icon: 'user-tie',
+			icon: 'user-sound',
 			title: m.assistantFlowParticipantOrSupervisorAnswer1(),
 			class: 'btn-primary',
 			reply: m.assistantFlowParticipantOrSupervisorAnswer1(),
 			next: QuestionFlowState.Q_ROLE
 		},
 		{
-			icon: 'chalkboard-user',
+			icon: 'chalkboard-teacher',
 			title: m.assistantFlowParticipantOrSupervisorAnswer2(),
 			reply: m.assistantFlowParticipantOrSupervisorAnswer2(),
 			next: QuestionFlowState.Q_SUPERVISOR_USERS_ALREADY_REGISTERED

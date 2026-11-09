@@ -8,9 +8,9 @@ import type { ServerMode } from './attendanceSession';
 export type SessionMode = ServerMode | 'INFO';
 
 export const modeIcons: Record<SessionMode, string> = {
-	CHECK: 'fa-user-check',
-	RECORD: 'fa-bolt',
-	INFO: 'fa-circle-info'
+	CHECK: 'ph-user-check',
+	RECORD: 'ph-lightning',
+	INFO: 'ph-info'
 };
 
 export const modeLabels: Record<SessionMode, () => string> = {

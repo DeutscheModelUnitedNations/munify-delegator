@@ -13,7 +13,7 @@
 	let { conferenceId, singleParticipant }: Props = $props();
 </script>
 
-<DashboardSection icon="masks-theater" title={m.role()} description={m.roleDescription()}>
+<DashboardSection icon="mask-happy" title={m.role()} description={m.roleDescription()}>
 	<div class="stats bg-base-200 shadow">
 		<RoleWidget customConferenceRole={singleParticipant.assignedRole} />
 	</div>

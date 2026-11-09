@@ -79,7 +79,7 @@ describe('entryFields', () => {
 		expect(fields.endTime.toISOString()).toBe('2026-03-12T11:00:00.000Z');
 		expect(fields).toMatchObject({
 			description: null,
-			fontAwesomeIcon: null,
+			icon: null,
 			placeId: null,
 			room: null,
 			surveyOptionIds: [],
@@ -102,7 +102,7 @@ describe('entryFields', () => {
 		});
 		expect(fields).toMatchObject({
 			description: 'Opening',
-			fontAwesomeIcon: 'gavel',
+			icon: 'gavel',
 			room: 'A1',
 			placeId: 'p',
 			surveyOptionIds: ['o', 'p'],

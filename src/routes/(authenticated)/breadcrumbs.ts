@@ -11,12 +11,12 @@ export interface LocalizedBreadcrumb {
 }
 
 export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
-	newResolution: { translation: () => m.newResolution(), icon: 'file-signature' },
-	snippets: { translation: () => m.snippets(), icon: 'bookmark' },
-	'conference-request': { translation: () => m.conferenceRequest(), icon: 'file-pen' },
+	newResolution: { translation: () => m.newResolution(), icon: 'signature' },
+	snippets: { translation: () => m.snippets(), icon: 'bookmark-simple' },
+	'conference-request': { translation: () => m.conferenceRequest(), icon: 'note-pencil' },
 	team: {
 		translation: () => m.team(),
-		icon: 'bars-progress'
+		icon: 'chart-bar-horizontal'
 	},
 	members: {
 		translation: () => m.teamMembers(),
@@ -28,11 +28,11 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	delegations: {
 		translation: () => m.delegations(),
-		icon: 'users-viewfinder'
+		icon: 'user-focus'
 	},
 	dashboard: {
 		translation: () => m.conferences(),
-		icon: 'grid-2'
+		icon: 'squares-four'
 	},
 	registration: {
 		translation: () => m.registration(),
@@ -40,7 +40,7 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	stats: {
 		translation: () => m.statistics(),
-		icon: 'chart-simple'
+		icon: 'chart-bar'
 	},
 	'create-delegation': {
 		translation: () => m.createDelegation(),
@@ -48,7 +48,7 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	'join-delegation': {
 		translation: () => m.joinDelegation(),
-		icon: 'arrow-right-to-arc'
+		icon: 'sign-in'
 	},
 	individual: {
 		translation: () => m.individualApplication(),
@@ -68,7 +68,7 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	configuration: {
 		translation: () => m.settings(),
-		icon: 'gears'
+		icon: 'gear-six'
 	},
 	participants: {
 		translation: () => m.participants(),
@@ -80,7 +80,7 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	supervisors: {
 		translation: () => m.supervisors(),
-		icon: 'chalkboard-user'
+		icon: 'chalkboard-teacher'
 	},
 	plausibility: {
 		translation: () => m.adminPlausibility(),
@@ -88,15 +88,15 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	seats: {
 		translation: () => m.seats(),
-		icon: 'chair-office'
+		icon: 'chair'
 	},
 	'seat-planning': {
 		translation: () => m.seatPlanning(),
-		icon: 'table-cells'
+		icon: 'table'
 	},
 	'committee-assignment': {
 		translation: () => m.committeeAssignment(),
-		icon: 'arrows-turn-to-dots'
+		icon: 'arrows-split'
 	},
 	info: {
 		translation: () => m.infos(),
@@ -104,26 +104,26 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	payment: {
 		translation: () => m.payment(),
-		icon: 'hand-holding-circle-dollar'
+		icon: 'hand-coins'
 	},
 	'check-in': {
 		translation: () => m.onSiteCheckIn(),
-		icon: 'id-badge'
+		icon: 'identification-badge'
 	},
 	'postal-registration': {
 		translation: () => m.postalRegistration(),
-		icon: 'envelopes-bulk'
+		icon: 'envelope-simple'
 	},
 	payments: {
 		translation: () => m.payment(),
-		icon: 'money-bill-transfer'
+		icon: 'money-wavy'
 	},
 	cleanup: {
 		icon: 'broom',
 		translation: () => m.cleanup()
 	},
 	downloads: {
-		icon: 'download',
+		icon: 'download-simple',
 		translation: () => m.downloads()
 	},
 	'ai-access': {
@@ -131,11 +131,11 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.aiAccess()
 	},
 	calendar: {
-		icon: 'calendar-days',
+		icon: 'calendar-dots',
 		translation: () => m.calendar()
 	},
 	survey: {
-		icon: 'square-poll-horizontal',
+		icon: 'chart-bar-horizontal',
 		translation: () => m.survey()
 	},
 	surveyId: {
@@ -143,35 +143,35 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.details()
 	},
 	helper: {
-		icon: 'gear-code',
+		icon: 'gear-fine',
 		translation: () => m.helper()
 	},
 	import: {
-		icon: 'file-import',
+		icon: 'file-arrow-up',
 		translation: () => m.import()
 	},
 	create: {
-		icon: 'seedling',
+		icon: 'plant',
 		translation: () => m.seedConference()
 	},
 	committees: {
-		icon: 'podium',
+		icon: 'lectern',
 		translation: () => m.committees()
 	},
 	'waiting-list': {
-		icon: 'user-clock',
+		icon: 'clock-user',
 		translation: () => m.waitingList()
 	},
 	schools: {
-		icon: 'school',
+		icon: 'graduation-cap',
 		translation: () => m.schools()
 	},
 	schoolId: {
-		icon: 'school-flag',
+		icon: 'graduation-cap',
 		translation: () => m.school()
 	},
 	introduction: {
-		icon: 'circle-info',
+		icon: 'info',
 		translation: () => m.assignmentTabIntroduction()
 	},
 	sighting: {
@@ -179,7 +179,7 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.sightings()
 	},
 	weighting: {
-		icon: 'scale-unbalanced',
+		icon: 'scales',
 		translation: () => m.weighting()
 	},
 	singles: {
@@ -187,11 +187,11 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.singleParticipants()
 	},
 	assignment: {
-		icon: 'arrows-turn-to-dots',
+		icon: 'arrows-split',
 		translation: () => m.assignment()
 	},
 	summary: {
-		icon: 'file-chart-column',
+		icon: 'file-text',
 		translation: () => m.summary()
 	},
 	finish: {
@@ -207,7 +207,7 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.paper()
 	},
 	newPaper: {
-		icon: 'file-circle-plus',
+		icon: 'file-plus',
 		translation: () => m.newPaper()
 	},
 	view: {
@@ -215,11 +215,11 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.view()
 	},
 	'registration-mode': {
-		icon: 'id-card',
+		icon: 'identification-card',
 		translation: () => m.registrationMode()
 	},
 	announcement: {
-		icon: 'bullhorn',
+		icon: 'megaphone',
 		translation: () => m.announcementSectionTitle()
 	},
 	emails: {
@@ -227,11 +227,11 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.emailSettingsTab()
 	},
 	attendance: {
-		icon: 'barcode-read',
+		icon: 'barcode',
 		translation: () => m.attendanceScanner()
 	},
 	'team-tender': {
-		icon: 'bullhorn',
+		icon: 'megaphone',
 		translation: () => m.teamTenderTitle()
 	},
 	user: {

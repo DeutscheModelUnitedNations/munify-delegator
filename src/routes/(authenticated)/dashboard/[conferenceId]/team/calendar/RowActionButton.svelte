@@ -1,6 +1,6 @@
 <script lang="ts">
 	interface Props {
-		/** FontAwesome icon class (e.g. 'fa-edit') */
+		/** Phosphor icon class (e.g. 'ph-pencil-simple') */
 		icon: string;
 		label: string;
 		/** Marks a destructive action */
@@ -12,5 +12,5 @@
 </script>
 
 <button class="btn btn-ghost {danger ? 'btn-error' : ''} btn-sm" aria-label={label} {onclick}>
-	<i class="fas {icon}"></i>
+	<i class="ph-fill {icon}"></i>
 </button>

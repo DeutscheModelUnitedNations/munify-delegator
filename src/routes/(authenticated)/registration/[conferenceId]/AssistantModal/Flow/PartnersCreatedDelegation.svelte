@@ -34,7 +34,7 @@
 			next: QuestionFlowState.FINAL_JOIN_DELEGATION
 		},
 		{
-			icon: 'xmark',
+			icon: 'x',
 			title: m.assistantFlowPartnersCreatedDelegationAnswer2(),
 			class: 'btn-warning',
 			reply: m.assistantFlowPartnersCreatedDelegationAnswer2(),

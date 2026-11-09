@@ -128,7 +128,7 @@
 		</label>
 		{#if uploading}
 			<span class="text-sm opacity-70">
-				<i class="fas fa-spinner fa-spin"></i>
+				<i class="ph-fill ph-spinner-gap animate-spin"></i>
 				{m.resolutionUploading()}
 			</span>
 		{/if}
@@ -136,7 +136,7 @@
 
 	{#if resolutions.length === 0}
 		<div class="alert alert-info mt-2">
-			<i class="fas fa-circle-info"></i>
+			<i class="ph-fill ph-info"></i>
 			<span>{m.resolutionListEmpty()}</span>
 		</div>
 	{:else}
@@ -166,7 +166,7 @@
 			{m.cancel()}
 		</button>
 		<button type="button" class="btn btn-error" onclick={confirmDelete}>
-			<i class="fas fa-trash mr-2"></i>
+			<i class="ph-fill ph-trash mr-2"></i>
 			{m.delete()}
 		</button>
 	{/snippet}

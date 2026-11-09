@@ -9,14 +9,14 @@
 		(
 			[
 				['sighting', m.assignmentTabSighting(), 'eye', m.assignmentIntroSightingText()],
+				['weighting', m.assignmentTabWeighting(), 'scales', m.assignmentIntroWeightingText()],
+				['singles', m.assignmentTabSingles(), 'user-sound', m.assignmentIntroSinglesText()],
 				[
-					'weighting',
-					m.assignmentTabWeighting(),
-					'scale-balanced',
-					m.assignmentIntroWeightingText()
+					'delegations',
+					m.assignmentTabDelegations(),
+					'arrows-split',
+					m.assignmentIntroDelegationsText()
 				],
-				['singles', m.assignmentTabSingles(), 'user-tie', m.assignmentIntroSinglesText()],
-				['delegations', m.assignmentTabDelegations(), 'split', m.assignmentIntroDelegationsText()],
 				['finish', m.assignmentTabFinish(), 'flag-checkered', m.assignmentIntroFinishText()]
 			] as const
 		).map(([id, title, icon, text]) => ({
@@ -31,8 +31,8 @@
 	);
 
 	const phases = $derived([
-		['pen-ruler', m.assignmentIntroDraftTitle(), m.assignmentIntroDraftText()],
-		['file-import', m.assignmentIntroApplyTitle(), m.assignmentIntroApplyText()],
+		['pencil-ruler', m.assignmentIntroDraftTitle(), m.assignmentIntroDraftText()],
+		['file-arrow-up', m.assignmentIntroApplyTitle(), m.assignmentIntroApplyText()],
 		['eye', m.assignmentIntroReleaseTitle(), m.assignmentIntroReleaseText()]
 	] as const);
 </script>
@@ -49,7 +49,7 @@
 			{#each phases as [icon, title, text], index (title)}
 				<li class="flex flex-col gap-1">
 					<span class="flex items-center gap-2 font-semibold">
-						<i class="fa-sharp-duotone fa-solid fa-{icon} text-primary"></i>
+						<i class="ph-duotone ph-{icon} text-primary"></i>
 						{index + 1}. {title}
 					</span>
 					<span class="text-base-content/70 text-sm">{text}</span>
@@ -73,7 +73,7 @@
 							class="link link-hover flex cursor-pointer items-center gap-2 font-semibold"
 							href={step.href}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-{step.icon} text-primary"></i>
+							<i class="ph-duotone ph-{step.icon} text-primary"></i>
 							{step.title}
 						</a>
 						<p class="text-base-content/80">{step.text}</p>

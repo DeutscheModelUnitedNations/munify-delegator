@@ -100,7 +100,7 @@
 		class="btn btn-primary max-w-md {(referenceLoading || users.length == 0) && 'btn-disabled'}"
 		onclick={generateReference}
 	>
-		<i class="fas {referenceLoading ? 'fa-spinner fa-spin' : 'fa-sparkles'} mr-2"
+		<i class="ph-fill {referenceLoading ? 'ph-spinner-gap animate-spin' : 'ph-sparkle'} mr-2"
 		></i>{m.generateReference()}
 	</button>
 {/snippet}
@@ -137,7 +137,7 @@
 		/>
 	</div>
 	<div role="note" class="alert alert-warning alert-soft mt-4 text-sm">
-		<i class="fas fa-exclamation-triangle text-xl"></i>
+		<i class="ph-fill ph-warning text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.abroadTransaction()}</h3>
 			<p>{m.abroadTransactionWarning({ currency: currency ?? 'unknown' })}</p>
@@ -148,12 +148,12 @@
 <div class="bg-base-200 flex w-full flex-col gap-2 rounded-box p-4 shadow-lg">
 	{#if reference}
 		<h2 class="text-2xl font-bold">
-			<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer mr-4"></i>{m.transactionDetails()}
+			<i class="ph-duotone ph-money-wavy mr-4"></i>{m.transactionDetails()}
 		</h2>
 		{@render transfer(reference)}
 	{:else}
 		<h2 class="text-2xl font-bold">
-			<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer mr-4"></i>{m.referenceMaker()}
+			<i class="ph-duotone ph-money-wavy mr-4"></i>{m.referenceMaker()}
 		</h2>
 		<p>{m.referenceMakerDescription()}</p>
 		{@render participantsToPayFor()}

@@ -39,7 +39,7 @@
 
 {#if surveys.questions.length === 0}
 	<div class="alert alert-info">
-		<i class="fa-sharp-duotone fa-solid fa-chart-pie"></i>
+		<i class="ph-duotone ph-chart-pie"></i>
 		<span>{m.userCardNoSurveys()}</span>
 	</div>
 {:else}

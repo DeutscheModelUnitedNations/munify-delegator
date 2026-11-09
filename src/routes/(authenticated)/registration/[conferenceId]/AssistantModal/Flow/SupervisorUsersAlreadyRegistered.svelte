@@ -31,7 +31,7 @@
 			next: QuestionFlowState.FINAL_SUPERVISOR
 		},
 		{
-			icon: 'xmark',
+			icon: 'x',
 			title: 'Nein',
 			class: 'btn-warning',
 			reply: m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer2(),

@@ -1,5 +1,6 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
+	import IconPicker from '#lib/components/IconPicker.svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '#lib/components/ActionModal.svelte';
@@ -37,21 +38,21 @@
 		onDelete
 	}: Props = $props();
 
-	/** A few icons for the usual kinds of programme items; any other FontAwesome name works too. */
+	/** A few icons for the usual kinds of programme items; any other Phosphor name works too. */
 	const ICON_PRESETS = [
 		'gavel',
 		'users',
 		'microphone',
-		'bullhorn',
+		'megaphone',
 		'flag',
 		'handshake',
-		'mug-hot',
-		'utensils',
-		'champagne-glasses',
-		'music',
+		'coffee',
+		'fork-knife',
+		'champagne',
+		'music-notes',
 		'bus',
 		'door-open',
-		'clipboard-list',
+		'clipboard-text',
 		'graduation-cap',
 		'camera',
 		'bed'
@@ -69,7 +70,7 @@
 		description: true,
 		startTime: true,
 		endTime: true,
-		fontAwesomeIcon: true,
+		icon: true,
 		color: true,
 		placeId: true,
 		room: true,
@@ -134,7 +135,7 @@
 	let entryEndTime = $state(
 		source ? formatMinutes(minutesOfDay(source.endTime)) : formatMinutes(seed?.end ?? 10 * 60)
 	);
-	let entryIcon = $state(source?.fontAwesomeIcon ?? '');
+	let entryIcon = $state(source?.icon ?? '');
 	let entryColor = $state<CalendarentrycolorEnum>(source?.color ?? 'SESSION');
 	let entryPlaceId = $state<string | null>(source?.placeId ?? null);
 	let entryRoom = $state(source?.room ?? '');
@@ -274,13 +275,13 @@
 						class="btn btn-ghost btn-error"
 						onclick={() => onDelete(sourceEntryId)}
 					>
-						<i class="fas fa-trash"></i>
+						<i class="ph-fill ph-trash"></i>
 						{m.delete()}
 					</button>
 				{/if}
 				{#if onDuplicate}
 					<button type="button" class="btn btn-ghost" onclick={() => onDuplicate(sourceEntryId)}>
-						<i class="fas fa-copy"></i>
+						<i class="ph-fill ph-copy"></i>
 						{m.calendarDuplicateEntry()}
 					</button>
 				{/if}
@@ -360,7 +361,7 @@
 	</div>
 	{#if entryTimeInvalid}
 		<p class="text-error -mt-2 text-xs">
-			<i class="fas fa-triangle-exclamation"></i>
+			<i class="ph-fill ph-warning"></i>
 			{m.calendarEntryEndBeforeStart()}
 		</p>
 	{/if}
@@ -383,15 +384,23 @@
 					title={icon}
 					onclick={() => (entryIcon = entryIcon === icon ? '' : icon)}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-{icon}"></i>
+					<i class="ph-duotone ph-{icon}"></i>
 				</button>
 			{/each}
 		</div>
 		<div class="mt-1 flex items-center gap-2">
-			<input type="text" bind:value={entryIcon} class="input flex-1" placeholder="gavel" />
-			{#if entryIcon}
-				<i class="fa-sharp-duotone fa-solid fa-{entryIcon} text-base-content/60 text-lg"></i>
-			{/if}
+			<IconPicker
+				value={entryIcon || null}
+				fallback="calendar-blank"
+				onchange={(icon) => (entryIcon = icon)}
+			/>
+			<input
+				type="text"
+				bind:value={entryIcon}
+				class="input flex-1"
+				placeholder="gavel"
+				aria-label={m.calendarIcon()}
+			/>
 		</div>
 	</fieldset>
 	<div class="grid grid-cols-2 gap-4">

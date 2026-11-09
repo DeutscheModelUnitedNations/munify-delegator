@@ -58,7 +58,7 @@ export async function fetchConferenceParticipants({
 				assignedRole: {
 					kind: true,
 					name: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					nation: { alpha2Code: true, alpha3Code: true }
 				}
 			},
@@ -78,7 +78,7 @@ export async function fetchConferenceParticipants({
 			__args: throughParticipant,
 			applied: true,
 			school: { name: true },
-			assignedRole: { name: true, fontAwesomeIcon: true },
+			assignedRole: { name: true, icon: true },
 			user: participantUser
 		}),
 		client.liveQuery.teamMembers({ __args: inConference, role: true, user: participantUser }),

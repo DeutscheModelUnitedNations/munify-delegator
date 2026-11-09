@@ -30,9 +30,9 @@
 		{#if qrCode && qrCode !== ''}
 			<img src={qrCode} alt={m.a11yQrCode()} class="w-full" />
 		{:else if qrCode === ''}
-			<i class="fa-sharp-duotone fa-solid fa-bug text-3xl"></i>
+			<i class="ph-duotone ph-bug text-3xl"></i>
 		{:else}
-			<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
+			<i class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
 		{/if}
 	</div>
 </div>

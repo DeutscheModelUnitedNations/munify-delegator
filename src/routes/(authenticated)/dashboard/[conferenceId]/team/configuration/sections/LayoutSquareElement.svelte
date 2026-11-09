@@ -31,7 +31,7 @@
 			style="font-size: {8 * scale}px;">{caption}</span
 		>
 	{/each}
-	<i class="fa-sharp-duotone fa-solid fa-qrcode text-2xl"></i>
+	<i class="ph-duotone ph-qr-code text-2xl"></i>
 	<span
 		class="bg-accent absolute right-0 bottom-0 h-3 w-3 cursor-nwse-resize"
 		role="presentation"

@@ -52,7 +52,7 @@
 {/await}
 
 <div class="flex flex-wrap gap-2">
-	{@render mapLink(appleMapsUrl, 'fa-brands fa-apple', 'Maps')}
-	{@render mapLink(googleMapsUrl, 'fa-brands fa-google', 'Maps')}
-	{@render mapLink(osmUrl, 'fa-sharp-duotone fa-solid fa-map', 'OpenStreetMap')}
+	{@render mapLink(appleMapsUrl, 'ph ph-apple-logo', 'Maps')}
+	{@render mapLink(googleMapsUrl, 'ph ph-google-logo', 'Maps')}
+	{@render mapLink(osmUrl, 'ph-duotone ph-map-trifold', 'OpenStreetMap')}
 </div>

@@ -11,17 +11,17 @@
 
 {#if status === 'DONE'}
 	<span class="flex items-center gap-1.5 text-success">
-		<i class="fa-sharp-duotone fa-solid fa-circle-check"></i>
+		<i class="ph-duotone ph-check-circle"></i>
 		<span class="text-xs">{m.statusDone()}</span>
 	</span>
 {:else if status === 'PENDING'}
 	<span class="flex items-center gap-1.5 text-warning">
-		<i class="fa-sharp-duotone fa-solid fa-hourglass-half"></i>
+		<i class="ph-duotone ph-hourglass-medium"></i>
 		<span class="text-xs">{m.statusPending()}</span>
 	</span>
 {:else if status === 'PROBLEM'}
 	<span class="flex items-center gap-1.5 text-error">
-		<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation fa-beat"></i>
+		<i class="ph-duotone ph-warning icon-beat"></i>
 		<span class="text-xs">{m.statusProblem()}</span>
 	</span>
 {:else}

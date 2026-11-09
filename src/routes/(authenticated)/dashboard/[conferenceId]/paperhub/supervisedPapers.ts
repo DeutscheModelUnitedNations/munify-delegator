@@ -34,7 +34,7 @@ export function groupPapersByDelegation<P extends GroupablePaper>(
 				delegationName: paperEntityName(delegation) ?? 'Unknown',
 				alpha2Code: nation?.alpha2Code,
 				nsa: !!nsa,
-				icon: nsa?.fontAwesomeIcon,
+				icon: nsa?.icon,
 				papers: []
 			};
 			groups.set(delegation.id, group);

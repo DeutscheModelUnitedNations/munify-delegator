@@ -60,9 +60,9 @@
 	let loading = $state(false);
 
 	const statusIcons: Record<AdministrativestatusEnum, string> = {
-		DONE: 'fa-circle-check text-success',
-		PROBLEM: 'fa-triangle-exclamation fa-beat text-error',
-		PENDING: 'fa-hourglass-half text-warning'
+		DONE: 'ph-check-circle text-success',
+		PROBLEM: 'ph-warning icon-beat text-error',
+		PENDING: 'ph-hourglass-medium text-warning'
 	};
 
 	const download = async (run: () => Promise<void>) => {
@@ -76,13 +76,13 @@
 	{#if value}
 		{value}
 	{:else}
-		<i class="{dashClass} fa-dash"></i>
+		<i class="{dashClass} ph-minus"></i>
 	{/if}
 {/snippet}
 
 {#snippet statusCell(status: AdministrativestatusEnum, tooltip: string)}
 	<div class="tooltip" data-tip={tooltip}>
-		<i class="fas {statusIcons[status]}"></i>
+		<i class="ph-fill {statusIcons[status]}"></i>
 	</div>
 {/snippet}
 
@@ -95,9 +95,7 @@
 			aria-label={m.a11yDownloadPostalPdf()}
 		>
 			<i
-				class={loading
-					? 'fa-sharp-duotone fa-solid fa-spinner fa-spin'
-					: 'fa-sharp-duotone fa-solid fa-download'}
+				class={loading ? 'ph-duotone ph-spinner-gap animate-spin' : 'ph-duotone ph-download-simple'}
 			></i>
 		</button>
 	</div>
@@ -108,24 +106,24 @@
 		><span class="mr-2">{name}</span>
 		{#if headDelegate}
 			<div class="tooltip" data-tip={m.headDelegate()}>
-				<i class="fa-sharp-duotone fa-solid fa-medal ml-2"></i>
+				<i class="ph-duotone ph-medal ml-2"></i>
 			</div>
 		{/if}
 	</td>
 	<td>
-		{@render valueOrDash(pronouns, 'fa-sharp-duotone fa-solid')}
+		{@render valueOrDash(pronouns, 'ph-duotone')}
 	</td>
 
 	{#if committee != undefined}
 		<td>
-			{@render valueOrDash(committee, 'fas')}
+			{@render valueOrDash(committee, 'ph-fill')}
 		</td>
 	{/if}
 
 	{#if email}
 		<td>
 			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label={m.email()}>
-				<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
+				<i class="ph-duotone ph-envelope"></i>
 			</a>
 		</td>
 	{/if}
@@ -148,7 +146,7 @@
 			{#if paperCount > 0}
 				<span class="badge badge-sm badge-soft badge-primary">{paperCount}</span>
 			{:else}
-				<i class="fas fa-dash text-base-300"></i>
+				<i class="ph-fill ph-minus text-base-300"></i>
 			{/if}
 		</td>
 	{/if}

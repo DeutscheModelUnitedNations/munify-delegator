@@ -41,21 +41,21 @@
 				{#if withPostalSatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Postialische Anmeldung">
-							<i class="fa-sharp-duotone fa-solid fa-envelopes-bulk"></i>
+							<i class="ph-duotone ph-envelope-simple"></i>
 						</div>
 					</th>
 				{/if}
 				{#if withPaymentStatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Beitragszahlung">
-							<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer"></i>
+							<i class="ph-duotone ph-money-wavy"></i>
 						</div>
 					</th>
 				{/if}
 				{#if withPaperCount}
 					<th class="text-center">
 						<div class="tooltip" data-tip={m.papers()}>
-							<i class="fa-sharp-duotone fa-solid fa-file-lines"></i>
+							<i class="ph-duotone ph-file-text"></i>
 						</div>
 					</th>
 				{/if}

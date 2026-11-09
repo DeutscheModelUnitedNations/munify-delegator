@@ -5,11 +5,11 @@
 
 	interface Props {
 		title: string;
-		faIcon: string;
+		icon: string;
 		activeStatus: Status;
 		status: {
 			value: Status;
-			faIcon: string;
+			icon: string;
 			color: 'btn-success' | 'btn-warning' | 'btn-error' | 'btn-info';
 			hotkey?: string;
 			/** What the status means, shown as a tooltip */
@@ -18,7 +18,7 @@
 		changeStatus: (status: Status) => Promise<void>;
 	}
 
-	let { title, faIcon, activeStatus, status, changeStatus }: Props = $props();
+	let { title, icon, activeStatus, status, changeStatus }: Props = $props();
 
 	let loading = $state(false);
 
@@ -50,11 +50,11 @@
 
 <div class="card flex flex-col gap-2 p-0 md:p-4">
 	<h3 class="font-bold">
-		<i class="fa-sharp-duotone fa-solid fa-{faIcon.replace('fa-', '')} mr-2"></i>
+		<i class="ph-duotone ph-{icon.replace(/^ph-/, '')} mr-2"></i>
 		{title}
 	</h3>
 	<div class="join w-full">
-		{#each status as { value, faIcon, color, hotkey, title: statusTitle } (value)}
+		{#each status as { value, icon, color, hotkey, title: statusTitle } (value)}
 			<button
 				class="btn {activeStatus === value && `${color}`} join-item flex-1"
 				class:tooltip={statusTitle}
@@ -63,9 +63,9 @@
 				onclick={() => btnClick(value)}
 			>
 				{#if loading}
-					<i class="fas fa-spin fa-spinner"></i>
+					<i class="ph-fill animate-spin ph-spinner-gap"></i>
 				{:else}
-					<i class="fas fa-{faIcon.replace('fa-', '')} text-lg"></i>
+					<i class="ph-fill ph-{icon.replace(/^ph-/, '')} text-lg"></i>
 					{#if hotkey}
 						<span class="hidden sm:inline-block"><Kbd {hotkey} size="xs" /></span>
 					{/if}

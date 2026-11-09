@@ -41,7 +41,7 @@
 <section class="flex flex-col gap-3">
 	<h3 class="text-lg font-bold">{m.supervisor()}</h3>
 	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<InfoRow title={m.connectionCode()} faIcon="link">
+		<InfoRow title={m.connectionCode()} icon="link">
 			<span class="font-mono text-sm tracking-wider">{supervisor.connectionCode}</span>
 			{#snippet actions()}
 				<div class="join">
@@ -51,10 +51,10 @@
 						aria-label={m.copy()}
 						title={m.copy()}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+						<i class="ph-duotone ph-copy"></i>
 					</button>
 					<button class="btn btn-sm join-item" onclick={rotateCode}>
-						<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
+						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 						{m.rotateCode()}
 					</button>
 				</div>

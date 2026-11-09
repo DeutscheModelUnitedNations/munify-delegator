@@ -21,7 +21,7 @@
 	title={m.pdfTemplateHelp()}
 	onclick={() => (open = true)}
 >
-	<i class="fa-sharp-duotone fa-solid fa-circle-question"></i>
+	<i class="ph-duotone ph-question"></i>
 </button>
 
 <Modal bind:open title={m.pdfTemplateHelpTitle()}>

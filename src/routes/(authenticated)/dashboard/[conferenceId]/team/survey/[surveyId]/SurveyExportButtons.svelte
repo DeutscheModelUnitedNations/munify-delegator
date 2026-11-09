@@ -214,7 +214,7 @@
 			{#if loadingStates[key]}
 				<span class="loading loading-md loading-spinner"></span>
 			{:else}
-				<i class="fa-sharp-duotone fa-solid {icon}"></i>
+				<i class="ph-duotone {icon}"></i>
 			{/if}
 		</span>
 		<span class="flex min-w-0 flex-1 flex-col">
@@ -223,14 +223,14 @@
 				<span class="font-mono">CSV</span>
 				{#if count !== undefined}
 					<span class="flex items-center gap-1">
-						<i class="fa-sharp-duotone fa-solid fa-user"></i>
+						<i class="ph-duotone ph-user"></i>
 						{count}
 					</span>
 				{/if}
 			</span>
 		</span>
 		<i
-			class="fa-sharp-duotone fa-solid fa-download text-sm text-base-content/30 transition group-hover:text-primary"
+			class="ph-duotone ph-download-simple text-sm text-base-content/30 transition group-hover:text-primary"
 		></i>
 	</button>
 {/snippet}
@@ -239,17 +239,17 @@
 	{@render exportTile(
 		m.exportAllResults(),
 		'all',
-		'fa-table-list',
+		'ph-list-dashes',
 		downloadAllResults,
 		totalAnswers,
 		true
 	)}
-	{@render exportTile(m.exportNotAnswered(), 'not-answered', 'fa-user-clock', downloadNotAnswered)}
+	{@render exportTile(m.exportNotAnswered(), 'not-answered', 'ph-clock-user', downloadNotAnswered)}
 	{#each options as option (option.id)}
 		{@render exportTile(
 			option.title,
 			`option-${option.id}`,
-			'fa-list-check',
+			'ph-list-checks',
 			() => downloadByOption(option),
 			option.countSurveyAnswers
 		)}

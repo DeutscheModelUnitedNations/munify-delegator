@@ -148,12 +148,12 @@ async function otherGroups({
 		db.query.delegation.findMany({
 			where: { conferenceId, assignedRole: { kind: 'NON_STATE_ACTOR' } },
 			columns: { memberCount: true },
-			with: { assignedRole: { columns: { name: true, fontAwesomeIcon: true } } }
+			with: { assignedRole: { columns: { name: true, icon: true } } }
 		}),
 		db.query.singleParticipant.findMany({
 			where: { participant: { conferenceId }, assignedRoleId: { isNotNull: true } },
 			columns: {},
-			with: { assignedRole: { columns: { name: true, fontAwesomeIcon: true } } }
+			with: { assignedRole: { columns: { name: true, icon: true } } }
 		}),
 		seatedSupervisorUserIds(conferenceId).then((ids) => ids.length)
 	]);

@@ -864,7 +864,7 @@
 {#snippet sessionSetup()}
 	{#if !maySetUpSessions && openSessions.length === 0}
 		<div class="alert alert-info alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-info-circle text-lg"></i>
+			<i class="ph-duotone ph-info text-lg"></i>
 			<span>{m.scanSessionSetupNeedsRole()}</span>
 		</div>
 	{/if}
@@ -883,8 +883,13 @@
 
 {#snippet setupForm()}
 	{@const modes = [
-		{ mode: 'CHECK', icon: 'fa-user-check', label: m.scanModeCheck(), hint: m.scanModeCheckHint() },
-		{ mode: 'RECORD', icon: 'fa-bolt', label: m.scanModeRecord(), hint: m.scanModeRecordHint() }
+		{ mode: 'CHECK', icon: 'ph-user-check', label: m.scanModeCheck(), hint: m.scanModeCheckHint() },
+		{
+			mode: 'RECORD',
+			icon: 'ph-lightning',
+			label: m.scanModeRecord(),
+			hint: m.scanModeRecordHint()
+		}
 	] as const}
 	<section
 		class="bg-base-200 flex flex-col gap-3 rounded-box p-3 md:p-4"
@@ -907,7 +912,7 @@
 						aria-pressed={setupMode === option.mode}
 						onclick={() => (setupMode = option.mode)}
 					>
-						<i class="fa-sharp-duotone fa-solid {option.icon}"></i>
+						<i class="ph-duotone {option.icon}"></i>
 						<span class="max-w-full truncate text-xs sm:text-sm">{option.label}</span>
 					</button>
 				{/each}
@@ -940,7 +945,7 @@
 				}}
 			/>
 			<button class="btn btn-primary" onclick={startSession} disabled={!occasion.trim()}>
-				<i class="fa-sharp-duotone fa-solid fa-play"></i>
+				<i class="ph-duotone ph-play"></i>
 				{m.startSession()}
 			</button>
 		</div>
@@ -958,7 +963,7 @@
 				aria-label={m.scanSwitchSession()}
 				title={m.scanSwitchSession()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+				<i class="ph-duotone ph-arrow-left"></i>
 			</button>
 			<div class="inline-grid shrink-0 *:[grid-area:1/1]" title={m.sessionActive()}>
 				<span class="status status-success status-lg"></span>
@@ -979,7 +984,7 @@
 						aria-label={m.downloadBackup()}
 						title={m.downloadBackup()}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-download"></i>
+						<i class="ph-duotone ph-download-simple"></i>
 						<span class="hidden lg:inline">{m.downloadBackup()}</span>
 					</button>
 					{#if maySetUpSessions}
@@ -989,7 +994,7 @@
 							aria-label={m.endSession()}
 							title={m.endSession()}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-stop"></i>
+							<i class="ph-duotone ph-stop"></i>
 							<span class="hidden sm:inline">{m.endSession()}</span>
 						</button>
 					{/if}
@@ -1035,7 +1040,7 @@
 
 {#snippet modeBadge(mode: SessionMode, size = '')}
 	<span class="badge badge-soft badge-primary gap-1.5 {size}">
-		<i class="fa-sharp-duotone fa-solid {modeIcons[mode]}"></i>
+		<i class="ph-duotone {modeIcons[mode]}"></i>
 		{modeLabels[mode]()}
 	</span>
 {/snippet}
@@ -1058,11 +1063,11 @@
 				<span class="loading loading-md loading-spinner"></span>
 				<span class="font-mono text-sm text-base-content/70">{shown.userId}</span>
 			{:else if shown?.state === 'notFound'}
-				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-3xl text-warning"></i>
+				<i class="ph-duotone ph-warning text-3xl text-warning"></i>
 				<p class="text-base-content/80">{m.userNotFoundForAccessFlow()}</p>
 				<button class="btn btn-ghost btn-sm" onclick={closeResult}>{m.close()}</button>
 			{:else}
-				<i class="fa-sharp-duotone fa-solid fa-id-badge text-4xl text-base-content/30"></i>
+				<i class="ph-duotone ph-identification-badge text-4xl text-base-content/30"></i>
 				<p class="text-sm text-base-content/60">{m.scanResultPlaceholder()}</p>
 			{/if}
 		</div>

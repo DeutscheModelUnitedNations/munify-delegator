@@ -62,7 +62,7 @@ describe('transformParticipants', () => {
 							assignedRole: {
 								kind: 'NATION',
 								name: null,
-								fontAwesomeIcon: null,
+								icon: null,
 								nation: { alpha2Code: 'de', alpha3Code: 'deu' }
 							}
 						},
@@ -108,7 +108,7 @@ describe('transformParticipants', () => {
 							assignedRole: {
 								kind: 'NON_STATE_ACTOR',
 								name: 'Greenpeace',
-								fontAwesomeIcon: 'leaf',
+								icon: 'leaf',
 								nation: null
 							}
 						},
@@ -191,7 +191,7 @@ describe('transformParticipants', () => {
 					{
 						applied: true,
 						school: { name: 'School' },
-						assignedRole: { name: 'Press', fontAwesomeIcon: 'newspaper' },
+						assignedRole: { name: 'Press', icon: 'newspaper' },
 						user: user('p1')
 					},
 					{ applied: true, school: null, assignedRole: null, user: user('p2') }

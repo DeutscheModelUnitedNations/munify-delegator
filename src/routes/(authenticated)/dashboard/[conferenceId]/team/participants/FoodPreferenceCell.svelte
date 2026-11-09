@@ -10,11 +10,11 @@
 	const config = $derived.by(() => {
 		switch (value) {
 			case 'OMNIVORE':
-				return { label: m.omnivore(), icon: 'fa-drumstick-bite', color: 'badge-error' };
+				return { label: m.omnivore(), icon: 'ph-fork-knife', color: 'badge-error' };
 			case 'VEGETARIAN':
-				return { label: m.vegetarian(), icon: 'fa-leaf', color: 'badge-warning' };
+				return { label: m.vegetarian(), icon: 'ph-leaf', color: 'badge-warning' };
 			case 'VEGAN':
-				return { label: m.vegan(), icon: 'fa-seedling', color: 'badge-success' };
+				return { label: m.vegan(), icon: 'ph-plant', color: 'badge-success' };
 			default:
 				return null;
 		}
@@ -23,7 +23,7 @@
 
 {#if config}
 	<span class="badge badge-soft badge-sm {config.color}">
-		<i class="fa-sharp-duotone fa-solid {config.icon} text-xs"></i>
+		<i class="ph-duotone {config.icon} text-xs"></i>
 		{config.label}
 	</span>
 {:else}

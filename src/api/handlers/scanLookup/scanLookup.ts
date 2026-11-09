@@ -54,7 +54,7 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 		}),
 		nonStateActorIcon: t.string({
 			nullable: true,
-			description: "The non-state actor's icon (a FontAwesome name)."
+			description: "The non-state actor's icon (a Phosphor name)."
 		}),
 		committeeAbbreviation: t.string({ nullable: true, description: 'Their committee seat.' }),
 		singleRoleName: t.string({

@@ -93,7 +93,7 @@
 				{selected.length > 0 ? selected.length : noneLabel}
 			</span>
 			<i
-				class="fa-sharp-duotone fa-solid fa-chevron-down ml-auto text-xs transition-transform duration-200 {expanded
+				class="ph-duotone ph-caret-down ml-auto text-xs transition-transform duration-200 {expanded
 					? 'rotate-180'
 					: ''}"
 			></i>

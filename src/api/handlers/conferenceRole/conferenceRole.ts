@@ -17,6 +17,7 @@ import {
 } from './conferenceRoleService';
 import { customRoleSeatsSchema, nonStateActorUpdateData } from './plannedRoleRules';
 import { mcpTool } from '#api/mcp/mcpTool';
+import { iconArgSchema } from '#api/services/iconName';
 
 registerConferenceRoleAbilities();
 
@@ -27,14 +28,15 @@ query({ table: 'conferenceRole' });
 const readableRole = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 	(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query.single;
 
-const iconDescription = 'A FontAwesome icon name; empty or left out shows none.';
+const iconDescription =
+	'A Phosphor icon name (such as `leaf`), see phosphoricons.com; empty or left out shows none.';
 
 schemaBuilder.mutationFields((t) => {
 	/** What every role the seat planning creates names: its conference, name, icon and seats. */
 	const plannedRoleArgs = (seats: typeof seatCountSchema) => ({
 		conferenceId: t.arg.id({ required: true }),
 		name: t.arg.string({ required: true }),
-		fontAwesomeIcon: t.arg.string({ description: iconDescription }),
+		icon: t.arg.string({ description: iconDescription }).validate(iconArgSchema),
 		seatAmount: t.arg
 			.int({ required: true, description: 'How many people the role seats.' })
 			.validate(seats)
@@ -43,7 +45,7 @@ schemaBuilder.mutationFields((t) => {
 	return {
 		createNonStateActor: t.drizzleField({
 			extensions: mcpTool({
-				textArguments: ['abbreviation', 'name', 'description', 'fontAwesomeIcon']
+				textArguments: ['abbreviation', 'name', 'description', 'icon']
 			}),
 			description:
 				'Adds a non-state actor to the conference, with how many seats it has. A name or abbreviation another role of the conference has is refused with CONFLICT.',
@@ -65,17 +67,17 @@ schemaBuilder.mutationFields((t) => {
 
 		updateNonStateActor: t.drizzleField({
 			extensions: mcpTool({
-				textArguments: ['abbreviation', 'name', 'description', 'fontAwesomeIcon']
+				textArguments: ['abbreviation', 'name', 'description', 'icon']
 			}),
 			description:
-				'Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `fontAwesomeIcon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.',
+				'Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `icon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.',
 			type: ConferenceRoleRef,
 			args: {
 				id: t.arg.id({ required: true }),
 				name: t.arg.string(),
 				abbreviation: t.arg.string(),
 				description: t.arg.string(),
-				fontAwesomeIcon: t.arg.string(),
+				icon: t.arg.string({ description: iconDescription }).validate(iconArgSchema),
 				seatAmount: t.arg.int().validate(seatCountSchema.nullish())
 			},
 			resolve: async (query, _root, { id, ...args }, ctx) => {
@@ -103,7 +105,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		createCustomRole: t.drizzleField({
-			extensions: mcpTool({ textArguments: ['name', 'description', 'fontAwesomeIcon'] }),
+			extensions: mcpTool({ textArguments: ['name', 'description', 'icon'] }),
 			description:
 				'Adds a custom role for single participants, such as the press, with how many it seats. A name another role of the conference has is refused with CONFLICT.',
 			type: ConferenceRoleRef,
@@ -119,7 +121,7 @@ schemaBuilder.mutationFields((t) => {
 		}),
 
 		updateCustomRole: t.drizzleField({
-			extensions: mcpTool({ textArguments: ['name', 'description', 'fontAwesomeIcon'] }),
+			extensions: mcpTool({ textArguments: ['name', 'description', 'icon'] }),
 			description:
 				'Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has.',
 			type: ConferenceRoleRef,
@@ -127,7 +129,7 @@ schemaBuilder.mutationFields((t) => {
 				id: t.arg.id({ required: true }),
 				name: t.arg.string(),
 				description: t.arg.string(),
-				fontAwesomeIcon: t.arg.string(),
+				icon: t.arg.string({ description: iconDescription }).validate(iconArgSchema),
 				seatAmount: t.arg.int().validate(customRoleSeatsSchema.nullish())
 			},
 			resolve: async (query, _root, { id, ...data }, ctx) => {
@@ -137,7 +139,7 @@ schemaBuilder.mutationFields((t) => {
 					data: {
 						name: data.name || undefined,
 						description: data.description,
-						fontAwesomeIcon: data.fontAwesomeIcon,
+						icon: data.icon,
 						seatAmount: data.seatAmount ?? undefined
 					}
 				});

@@ -43,10 +43,10 @@
 			}}
 		/>
 		<div class="flex w-full justify-between px-2 text-xs">
-			<i class="fas fa-minus"></i>
-			<i class="fas fa-period -translate-y-1"></i>
-			<i class="fas fa-period -translate-y-1"></i>
-			<i class="fas fa-plus"></i>
+			<i class="ph-fill ph-minus"></i>
+			<i class="ph-fill ph-dot -translate-y-1"></i>
+			<i class="ph-fill ph-dot -translate-y-1"></i>
+			<i class="ph-fill ph-plus"></i>
 		</div>
 	</div>
 </div>

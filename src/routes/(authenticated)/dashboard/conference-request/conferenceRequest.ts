@@ -28,14 +28,14 @@ export type NsaDraft = {
 	abbreviation: string;
 	seatAmount: number;
 	description: string;
-	fontAwesomeIcon: string;
+	icon: string;
 };
 
 export type RoleDraft = {
 	key: string;
 	name: string;
 	description: string;
-	fontAwesomeIcon: string;
+	icon: string;
 	/** How many single participants the role seats (the press: as many as it has places). */
 	seatAmount: number;
 };
@@ -91,14 +91,14 @@ export const newNsa = (): NsaDraft => ({
 	abbreviation: '',
 	seatAmount: 1,
 	description: '',
-	fontAwesomeIcon: ''
+	icon: ''
 });
 
 export const newRole = (): RoleDraft => ({
 	key: crypto.randomUUID(),
 	name: '',
 	description: '',
-	fontAwesomeIcon: '',
+	icon: '',
 	seatAmount: 1
 });
 
@@ -211,7 +211,7 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 		abbreviation: nsa.abbreviation.trim(),
 		seatAmount: nsa.seatAmount,
 		description: nsa.description.trim(),
-		fontAwesomeIcon: nsa.fontAwesomeIcon.trim()
+		icon: nsa.icon.trim()
 	})),
 	committees: state.committees.map((committee) => ({
 		name: committee.name.trim(),
@@ -222,7 +222,7 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 	customConferenceRole: state.customConferenceRole.map((role) => ({
 		name: role.name.trim(),
 		description: role.description.trim(),
-		fontAwesomeIcon: role.fontAwesomeIcon.trim(),
+		icon: role.icon.trim(),
 		seatAmount: role.seatAmount
 	}))
 });
@@ -251,7 +251,7 @@ const importSchema = z.object({
 				abbreviation: text,
 				seatAmount: count,
 				description: text,
-				fontAwesomeIcon: text
+				icon: text
 			})
 		)
 		.default([]),
@@ -266,7 +266,7 @@ const importSchema = z.object({
 		)
 		.default([]),
 	customConferenceRole: z
-		.array(z.object({ name: text, description: text, fontAwesomeIcon: text, seatAmount: count }))
+		.array(z.object({ name: text, description: text, icon: text, seatAmount: count }))
 		.default([])
 });
 

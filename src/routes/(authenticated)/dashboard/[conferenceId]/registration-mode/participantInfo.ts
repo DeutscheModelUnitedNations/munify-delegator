@@ -24,13 +24,13 @@ export interface ParticipationRoles {
 			assignedRole: {
 				kind: ConferenceRoleKind;
 				name: string | null;
-				fontAwesomeIcon: string | null;
+				icon: string | null;
 				nation: { alpha2Code: string; alpha3Code: string } | null;
 			} | null;
 		};
 	} | null;
 	singleParticipant: {
-		assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null;
+		assignedRole: { name: string | null; icon: string | null } | null;
 	} | null;
 	teamMember: { role: string } | null;
 	supervisor: object | null;
@@ -60,7 +60,7 @@ export function describeParticipant(participation: ParticipationRoles): Particip
 			type: 'delegation',
 			roleDisplay: nsa.name ?? '',
 			isNSA: true,
-			nsaIcon: nsa.fontAwesomeIcon
+			nsaIcon: nsa.icon
 		};
 	}
 
@@ -76,7 +76,7 @@ export function describeParticipant(participation: ParticipationRoles): Particip
 			type: 'single',
 			roleDisplay: role.name ?? '',
 			isNSA: true,
-			nsaIcon: role.fontAwesomeIcon
+			nsaIcon: role.icon
 		};
 	}
 
@@ -91,7 +91,7 @@ export function describeParticipant(participation: ParticipationRoles): Particip
 			type: 'team',
 			roleDisplay: translateTeamRole(teamMember.role),
 			isNSA: true,
-			nsaIcon: 'users-gear'
+			nsaIcon: 'user-gear'
 		};
 	}
 
@@ -101,7 +101,7 @@ export function describeParticipant(participation: ParticipationRoles): Particip
 			type: 'supervisor',
 			roleDisplay: m.supervisor(),
 			isNSA: true,
-			nsaIcon: 'chalkboard-user'
+			nsaIcon: 'chalkboard-teacher'
 		};
 	}
 

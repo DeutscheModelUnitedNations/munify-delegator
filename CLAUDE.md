@@ -1304,7 +1304,7 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping
 - **Modals**: Use `Modal` component with `action` snippet for footer buttons
 - **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
-- **Icons**: Use FontAwesome Sharp Duotone (`fa-sharp-duotone fa-solid fa-icon-name`), never with custom `--fa-*` colors
+- **Icons**: Use Phosphor duotone (`ph-duotone ph-icon-name`, `ph-fill` for active states), as CHASE does; stored icons are bare Phosphor names (see Icons in CLAUDE-UI.md)
 - **URL State**: Use `sveltekit-search-params` for URL-persisted state (v4: `queryParameters()` returns a
   reactive object - read and assign `params.x`, no `$` store syntax)
 

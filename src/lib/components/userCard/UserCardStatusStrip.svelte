@@ -35,9 +35,9 @@
 
 	// Done is the normal case and stays quiet; only what still needs doing takes color.
 	const tone: Record<Tone, { text: string; icon: string }> = {
-		DONE: { text: 'text-base-content/70 [&>i]:text-success', icon: 'fa-check' },
-		PENDING: { text: 'text-warning', icon: 'fa-hourglass-half' },
-		PROBLEM: { text: 'text-error', icon: 'fa-triangle-exclamation' },
+		DONE: { text: 'text-base-content/70 [&>i]:text-success', icon: 'ph-check' },
+		PENDING: { text: 'text-warning', icon: 'ph-hourglass-medium' },
+		PROBLEM: { text: 'text-error', icon: 'ph-warning' },
 		NONE: { text: 'text-base-content/40', icon: '' }
 	};
 </script>
@@ -48,7 +48,7 @@
 		class:font-mono={mono}
 		onclick={() => onOpenTab(tab)}
 	>
-		<i class="fa-sharp-duotone fa-solid {icon}"></i>
+		<i class="ph-duotone {icon}"></i>
 		{title}
 	</button>
 {/snippet}
@@ -74,14 +74,14 @@
 			{@render pill(
 				status.accessCardId ?? m.noAccessCard(),
 				status.accessCardId ? 'DONE' : 'NONE',
-				'fa-id-card',
+				'ph-identification-card',
 				'conference',
 				!!status.accessCardId
 			)}
 			{@render pill(
 				m.attendance(),
 				status.didAttend ? 'DONE' : 'NONE',
-				status.didAttend ? 'fa-calendar-check' : 'fa-calendar',
+				status.didAttend ? 'ph-calendar-check' : 'ph-calendar-blank',
 				'conference'
 			)}
 		</div>

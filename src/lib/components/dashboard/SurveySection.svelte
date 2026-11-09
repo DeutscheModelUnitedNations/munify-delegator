@@ -98,7 +98,7 @@
 
 {#if questions.length > 0}
 	<DashboardSection
-		icon="square-poll-horizontal"
+		icon="chart-bar-horizontal"
 		title={m.survey()}
 		description={m.surveyDescription()}
 		collapsible
@@ -107,7 +107,7 @@
 	>
 		{#if awaitingCount > 0}
 			<div class="alert alert-warning alert-soft">
-				<i class="fa-sharp-duotone fa-solid fa-circle-exclamation"></i>
+				<i class="ph-duotone ph-warning-circle"></i>
 				{m.surveysAwaitingAnswer({ count: awaitingCount })}
 			</div>
 		{/if}
@@ -130,7 +130,7 @@
 				<div
 					class="bg-primary/10 border-primary/30 flex items-center gap-3 rounded-box border px-5 py-3.5 shadow-sm"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-square-poll-horizontal text-primary text-lg"></i>
+					<i class="ph-duotone ph-chart-bar-horizontal text-primary text-lg"></i>
 					<div class="flex flex-col">
 						<span class="text-base-content/60 text-xs">{pinned.title}</span>
 						<span class="text-primary font-semibold">{pinned.selection}</span>

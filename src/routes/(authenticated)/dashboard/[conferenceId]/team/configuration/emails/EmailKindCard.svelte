@@ -42,9 +42,9 @@
 
 	const texts = $derived(emailKindTexts(kind));
 	const details = $derived([
-		{ icon: 'fa-clock', label: m.emailSettingsTrigger(), text: texts.trigger },
-		{ icon: 'fa-users', label: m.emailSettingsRecipients(), text: texts.recipients },
-		{ icon: 'fa-envelope-open-text', label: m.emailSettingsContent(), text: texts.content }
+		{ icon: 'ph-clock', label: m.emailSettingsTrigger(), text: texts.trigger },
+		{ icon: 'ph-users', label: m.emailSettingsRecipients(), text: texts.recipients },
+		{ icon: 'ph-envelope-open', label: m.emailSettingsContent(), text: texts.content }
 	]);
 	const logged = $derived(counts ? counts.sent + counts.failed + counts.skipped : 0);
 </script>
@@ -73,7 +73,7 @@
 			</span>
 		{/if}
 		<button class="btn btn-ghost btn-sm" onclick={onedit}>
-			<i class="fa-sharp-duotone fa-solid fa-pen"></i>
+			<i class="ph-duotone ph-pen"></i>
 			{m.emailTextEdit()}
 		</button>
 	</div>
@@ -99,14 +99,14 @@
 					{m.emailOpenCount({ count: open })}
 				</span>
 				<button class="btn btn-ghost btn-sm" disabled={sending} onclick={onskip}>
-					<i class="fa-sharp-duotone fa-solid fa-forward"></i>
+					<i class="ph-duotone ph-fast-forward"></i>
 					{m.emailSkipOpen()}
 				</button>
 				<button class="btn btn-primary btn-sm" disabled={sending} onclick={onsend}>
 					{#if sending}
 						<span class="loading loading-spinner loading-xs"></span>
 					{:else}
-						<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+						<i class="ph-duotone ph-paper-plane-tilt"></i>
 					{/if}
 					{m.emailSendOpenNow()}
 				</button>
@@ -117,7 +117,7 @@
 		{#each details as detail (detail.label)}
 			<div class="flex flex-col gap-1">
 				<span class="text-base-content/60 flex items-center gap-2 text-xs font-semibold uppercase">
-					<i class="fa-sharp-duotone fa-solid {detail.icon} text-primary"></i>
+					<i class="ph-duotone {detail.icon} text-primary"></i>
 					{detail.label}
 				</span>
 				<p class="text-sm">{detail.text}</p>

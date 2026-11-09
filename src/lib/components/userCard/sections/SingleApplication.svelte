@@ -30,7 +30,7 @@
 				applied: true,
 				motivation: true,
 				experience: true,
-				appliedForRoles: { id: true, name: true, fontAwesomeIcon: true }
+				appliedForRoles: { id: true, name: true, icon: true }
 			}),
 			client.liveQuery.conference({ __args: { id: conferenceId }, id: true, state: true })
 		]);
@@ -63,7 +63,7 @@
 				disabled={!participant.applied}
 				onclick={revokeApplication}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-file-slash"></i>
+				<i class="ph-duotone ph-file-x"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}
@@ -74,7 +74,7 @@
 			wishes={participant.appliedForRoles.map((role) => ({
 				id: role.id,
 				label: role.name ?? 'N/A',
-				icon: role.fontAwesomeIcon
+				icon: role.icon
 			}))}
 		/>
 	</div>

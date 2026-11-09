@@ -14,17 +14,17 @@
 		HELP_NEEDED: {
 			tooltip: 'tooltip-warning',
 			tip: () => m.reviewHelpNeeded(),
-			icon: 'fa-hand text-warning'
+			icon: 'ph-hand text-warning'
 		},
 		NO_HELP_WANTED: {
 			tooltip: 'tooltip-success',
 			tip: () => m.reviewHelpNotWanted(),
-			icon: 'fa-check-circle text-success'
+			icon: 'ph-check-circle text-success'
 		},
 		UNSPECIFIED: {
 			tooltip: '',
 			tip: () => m.reviewHelpStatusTooltip(),
-			icon: 'fa-question-circle text-base-content/30'
+			icon: 'ph-question text-base-content/30'
 		}
 	} satisfies Record<ReviewhelpstatusEnum, { tooltip: string; tip: () => string; icon: string }>;
 
@@ -40,6 +40,6 @@
 			onCycle();
 		}}
 	>
-		<i class="fa-sharp-duotone fa-solid {current.icon} text-base"></i>
+		<i class="ph-duotone {current.icon} text-base"></i>
 	</button>
 </div>

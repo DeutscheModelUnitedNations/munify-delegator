@@ -186,7 +186,7 @@
 				<p class="text-base-content/70">{m.reviewerSnippetsDescription()}</p>
 			</div>
 			<button class="btn btn-primary" onclick={openCreateModal}>
-				<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+				<i class="ph-duotone ph-plus"></i>
 				{m.createSnippet()}
 			</button>
 		</div>
@@ -196,7 +196,7 @@
 	<div class="collapse collapse-arrow bg-base-200">
 		<input type="checkbox" />
 		<div class="collapse-title font-medium flex items-center gap-2">
-			<i class="fa-sharp-duotone fa-solid fa-circle-question"></i>
+			<i class="ph-duotone ph-question"></i>
 			{m.snippetHelpTitle()}
 		</div>
 		<div class="collapse-content overflow-hidden">
@@ -232,7 +232,7 @@
 	<div class="bg-base-200 rounded-box p-4">
 		{#if snippets.length === 0}
 			<div class="text-center py-8 text-base-content/50">
-				<i class="fa-sharp-duotone fa-solid fa-bookmark text-4xl mb-4"></i>
+				<i class="ph-duotone ph-bookmark-simple text-4xl mb-4"></i>
 				<p>{m.noSnippetsYet()}</p>
 				<button class="btn btn-primary btn-sm mt-4" onclick={openCreateModal}>
 					{m.createFirstSnippet()}
@@ -255,7 +255,7 @@
 							<tr>
 								<td class="font-medium">
 									<div class="flex items-center gap-2">
-										<i class="fa-sharp-duotone fa-solid fa-bookmark text-primary"></i>
+										<i class="ph-duotone ph-bookmark-simple text-primary"></i>
 										{snippet.name}
 									</div>
 								</td>
@@ -274,14 +274,14 @@
 											onclick={() => openEditModal(snippet)}
 											aria-label={m.editSnippet()}
 										>
-											<i class="fa-sharp-duotone fa-solid fa-pen"></i>
+											<i class="ph-duotone ph-pen"></i>
 										</button>
 										<button
 											class="btn btn-ghost btn-sm text-error"
 											onclick={() => confirmDelete(snippet)}
 											aria-label={m.deleteSnippet()}
 										>
-											<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+											<i class="ph-duotone ph-trash"></i>
 										</button>
 									</div>
 								</td>
@@ -340,7 +340,7 @@
 		<div class="flex gap-2">
 			<button class="btn" onclick={closeModal}>{m.cancel()}</button>
 			<button class="btn btn-primary" onclick={handleSave}>
-				<i class="fa-sharp-duotone fa-solid fa-save"></i>
+				<i class="ph-duotone ph-floppy-disk"></i>
 				{m.save()}
 			</button>
 		</div>
@@ -355,7 +355,7 @@
 		<div class="flex gap-2">
 			<button class="btn" onclick={() => (deleteConfirmOpen = false)}>{m.cancel()}</button>
 			<button class="btn btn-error" onclick={handleDelete}>
-				<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+				<i class="ph-duotone ph-trash"></i>
 				{m.delete()}
 			</button>
 		</div>

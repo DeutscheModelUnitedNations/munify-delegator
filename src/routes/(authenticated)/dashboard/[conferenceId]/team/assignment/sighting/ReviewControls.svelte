@@ -43,7 +43,7 @@
 		title={m.assignmentFlag()}
 		onclick={() => onReview({ flagged: !review?.flagged })}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-flag"></i>
+		<i class="ph-duotone ph-flag"></i>
 	</button>
 	<!-- Required and excluded rule each other out: setting one clears the other. -->
 	<button
@@ -53,7 +53,7 @@
 		title={m.assignmentRequireHint()}
 		onclick={() => onReview({ required: !review?.required, disqualified: false })}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-thumbtack"></i>
+		<i class="ph-duotone ph-push-pin"></i>
 	</button>
 	<button
 		class="btn btn-square {review?.disqualified ? 'btn-error' : 'btn-ghost'}"
@@ -62,6 +62,6 @@
 		title={m.assignmentDisqualify()}
 		onclick={() => onReview({ disqualified: !review?.disqualified, required: false })}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-user-slash"></i>
+		<i class="ph-duotone ph-user-minus"></i>
 	</button>
 </div>

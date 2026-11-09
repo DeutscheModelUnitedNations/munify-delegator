@@ -30,7 +30,7 @@ const NametagBinGroup = schemaBuilder.simpleObject('NametagBinGroup', {
 		roleName: t.string({ nullable: true }),
 		sortName: t.string(),
 		nationAlpha2Code: t.string({ nullable: true }),
-		fontAwesomeIcon: t.string({ nullable: true }),
+		icon: t.string({ nullable: true }),
 		participants: t.int()
 	})
 });

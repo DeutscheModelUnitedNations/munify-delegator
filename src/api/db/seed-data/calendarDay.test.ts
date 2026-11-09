@@ -55,14 +55,14 @@ describe('makeSeedCalendarEntry', () => {
 			makeSeedCalendarEntry({
 				...required,
 				description: 'Feierlich',
-				fontAwesomeIcon: 'flag',
+				icon: 'flag',
 				placeId: 'place',
 				room: 'Plenarsaal'
 			})
 		).toMatchObject({
 			...required,
 			description: 'Feierlich',
-			fontAwesomeIcon: 'flag',
+			icon: 'flag',
 			placeId: 'place',
 			room: 'Plenarsaal'
 		});
@@ -71,7 +71,7 @@ describe('makeSeedCalendarEntry', () => {
 	test('leaves the details it is not given empty', () => {
 		expect(makeSeedCalendarEntry(required)).toMatchObject({
 			description: null,
-			fontAwesomeIcon: null,
+			icon: null,
 			placeId: null,
 			room: null
 		});

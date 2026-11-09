@@ -55,13 +55,13 @@
 	const rows = $derived([
 		{
 			label: m.duplicateReasonName(),
-			icon: 'id-card',
+			icon: 'identification-card',
 			reason: 'name',
 			value: (a: Account) => formatNames({ givenName: a.givenName, familyName: a.familyName })
 		},
 		{
 			label: m.duplicateReasonBirthday(),
-			icon: 'birthday-cake',
+			icon: 'cake',
 			reason: 'birthday',
 			value: (a: Account) => day(a.birthday)
 		},
@@ -79,7 +79,7 @@
 		},
 		{
 			label: m.duplicateReasonEmergencyContact(),
-			icon: 'light-emergency-on',
+			icon: 'siren',
 			reason: 'emergencyContact',
 			value: (a: Account) => a.emergencyContacts ?? ''
 		},
@@ -104,9 +104,7 @@
 			<div class="flex items-center gap-1">
 				<!-- Always there, hidden without a note, so the buttons do not move between the accounts -->
 				<i
-					class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error text-lg {note
-						? ''
-						: 'invisible'}"
+					class="ph-duotone ph-warning text-error text-lg {note ? '' : 'invisible'}"
 					title={note}
 					aria-label={note ? m.globalNotes() : undefined}
 					aria-hidden={note ? undefined : true}
@@ -116,14 +114,14 @@
 					onclick={() => openUserCard(side.id)}
 					aria-label={m.details()}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
+					<i class="ph-duotone ph-identification-card"></i>
 				</button>
 			</div>
 		</div>
 		<div class="mt-1 flex flex-col gap-1 text-xs">
 			{#each side.attendances as attendance (attendance.conferenceId + attendance.role)}
 				<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-					<i class="fa-sharp-duotone fa-solid fa-flag text-base-content/60"></i>
+					<i class="ph-duotone ph-flag text-base-content/60"></i>
 					<span class="min-w-0 wrap-anywhere">{attendance.title}</span>
 					<span class="badge badge-sm bg-base-100 border-0">
 						{roleLabels[attendance.role]?.()}
@@ -150,9 +148,7 @@
 			<tr class={alike ? 'bg-warning/20' : ''}>
 				<th class="text-center">
 					<i
-						class="fa-sharp-duotone fa-solid fa-{row.icon} {alike
-							? 'text-warning'
-							: 'text-base-content/60'}"
+						class="ph-duotone ph-{row.icon} {alike ? 'text-warning' : 'text-base-content/60'}"
 						title={row.label}
 						role="img"
 						aria-label={row.label}

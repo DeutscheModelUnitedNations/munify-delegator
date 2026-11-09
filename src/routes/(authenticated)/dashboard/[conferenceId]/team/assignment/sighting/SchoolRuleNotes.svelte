@@ -40,7 +40,7 @@
 	<div class="flex flex-col gap-2">
 		{#each groups as group (group.key)}
 			<div class="alert alert-info alert-soft py-2 text-sm" data-testid="collective-group">
-				<i class="fa-sharp-duotone fa-solid fa-people-group"></i>
+				<i class="ph-duotone ph-users-three"></i>
 				<span>
 					{m.schoolRuleSightingGroup({
 						school: group.school.name,
@@ -55,7 +55,7 @@
 				class="alert alert-soft py-2 text-sm {over(count.seats) ? 'alert-warning' : ''}"
 				data-testid="foreign-guarantees"
 			>
-				<i class="fa-sharp-duotone fa-solid fa-earth-europe"></i>
+				<i class="ph-duotone ph-globe-hemisphere-east"></i>
 				<span>
 					{guaranteeLimit === null
 						? m.schoolRuleSightingGuaranteesNoLimit({

@@ -33,7 +33,7 @@
 
 <InfoRow
 	title={m.ownPresence()}
-	faIcon="user-check"
+	icon="user-check"
 	hint={editable ? m.ownPresenceDescription() : m.presenceLockedHint()}
 >
 	<span class="text-sm">
@@ -47,10 +47,7 @@
 	</span>
 	{#snippet actions()}
 		{#if !editable}
-			<i
-				class="fa-sharp-duotone fa-solid fa-lock text-base-content/40"
-				title={m.presenceLockedHint()}
-			></i>
+			<i class="ph-duotone ph-lock text-base-content/40" title={m.presenceLockedHint()}></i>
 		{/if}
 		<input
 			type="checkbox"

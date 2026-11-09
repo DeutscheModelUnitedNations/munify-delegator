@@ -115,7 +115,7 @@ export const calendarEntry = snakeCase.table('calendar_entry', {
 	endTime: timestamp({ precision: 3 }).notNull(),
 	name: text().notNull(),
 	description: text(),
-	fontAwesomeIcon: text(),
+	icon: text(),
 	color: calendarEntryColor().default('SESSION').notNull(),
 	room: text(),
 	calendarDayId: text()

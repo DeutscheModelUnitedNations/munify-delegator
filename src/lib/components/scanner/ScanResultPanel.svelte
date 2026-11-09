@@ -48,7 +48,7 @@
 					}}
 					aria-label={m.details()}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
+					<i class="ph-duotone ph-identification-card"></i>
 				</button>
 				<button
 					type="button"
@@ -56,7 +56,7 @@
 					onclick={() => onClose()}
 					aria-label={m.close()}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
+					<i class="ph-duotone ph-x text-lg"></i>
 				</button>
 			</div>
 		</header>
@@ -65,12 +65,12 @@
 
 		<footer class="mb-0! flex flex-wrap gap-2 pt-2">
 			<button class="btn flex-1 btn-primary" onclick={onConfirm} disabled={flow.busy}>
-				<i class="fa-sharp-duotone fa-solid fa-check"></i>
+				<i class="ph-duotone ph-check"></i>
 				{confirmLabel}
 				<Kbd hotkey="alt+a" />
 			</button>
 			<button class="btn btn-error" onclick={onClose}>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+				<i class="ph-duotone ph-x"></i>
 				{m.close()}
 				<Kbd hotkey="Esc" />
 			</button>
@@ -83,11 +83,11 @@
 			<span class="loading loading-md loading-spinner"></span>
 			<span class="font-mono text-sm text-base-content/70">{flow.queryUserId}</span>
 		{:else if flow.queryUserId && !flow.data?.user}
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-3xl text-warning"></i>
+			<i class="ph-duotone ph-warning text-3xl text-warning"></i>
 			<p class="text-base-content/80">{notFoundMessage}</p>
 			<button class="btn btn-ghost btn-sm" onclick={onClose}>{m.close()}</button>
 		{:else}
-			<i class="fa-sharp-duotone fa-solid {drawerIcon} text-4xl text-base-content/30"></i>
+			<i class="ph-duotone {drawerIcon} text-4xl text-base-content/30"></i>
 			<p class="text-sm text-base-content/60">{m.scanResultPlaceholder()}</p>
 		{/if}
 	</div>

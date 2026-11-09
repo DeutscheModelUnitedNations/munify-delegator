@@ -10,14 +10,14 @@
 </script>
 
 <div class="alert alert-error alert-soft">
-	<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
+	<i class="ph-duotone ph-warning text-xl"></i>
 	<div class="collapse {expanded ? 'collapse-open' : ''} flex-1 w-full">
 		<div>
 			<p>{m.chunkLoadErrorMessage()}</p>
 			<button class="btn btn-ghost btn-xs mt-1" onclick={() => (expanded = !expanded)}>
 				{m.chunkLoadErrorDetails()}
 				<i
-					class="fa-sharp-duotone fa-solid fa-chevron-down ml-1 transition-transform duration-200 {expanded
+					class="ph-duotone ph-caret-down ml-1 transition-transform duration-200 {expanded
 						? 'rotate-180'
 						: ''}"
 				></i>
@@ -29,7 +29,7 @@
 		</div>
 	</div>
 	<button class="btn btn-error btn-sm" onclick={() => location.reload()}>
-		<i class="fa-sharp-duotone fa-solid fa-rotate-right"></i>
+		<i class="ph-duotone ph-arrow-clockwise"></i>
 		{m.chunkLoadErrorReload()}
 	</button>
 </div>

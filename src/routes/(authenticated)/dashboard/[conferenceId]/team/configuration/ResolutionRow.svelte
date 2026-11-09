@@ -68,7 +68,7 @@
 			onblur={saveTitle}
 		/>
 		<div class="mt-1 text-xs opacity-60">
-			<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
+			<i class="ph-duotone ph-file-pdf"></i>
 			{resolution.file.fileName}
 		</div>
 	</td>
@@ -96,7 +96,7 @@
 			onclick={() => downloadResolution(resolutionId)}
 			aria-label={m.resolutionDownload()}
 		>
-			<i class="fas fa-download"></i>
+			<i class="ph-fill ph-download-simple"></i>
 		</button>
 		<button
 			type="button"
@@ -104,7 +104,7 @@
 			onclick={() => ondelete({ id: resolutionId, title: resolution.title })}
 			aria-label={m.delete()}
 		>
-			<i class="fas fa-trash"></i>
+			<i class="ph-fill ph-trash"></i>
 		</button>
 	</td>
 </tr>

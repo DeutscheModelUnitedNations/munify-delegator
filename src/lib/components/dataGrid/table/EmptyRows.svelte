@@ -13,7 +13,7 @@
 <tbody>
 	<tr>
 		<td {colspan} class="text-base-content/60 py-10 text-center">
-			<i class="fa-sharp-duotone fa-solid fa-filter-circle-xmark mb-2 block text-3xl"></i>
+			<i class="ph-duotone ph-funnel-x mb-2 block text-3xl"></i>
 			{text}
 		</td>
 	</tr>

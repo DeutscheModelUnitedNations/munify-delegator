@@ -43,17 +43,17 @@
 	{@render views?.()}
 	<PanelButton
 		label={m.filters()}
-		icon="fa-filter"
+		icon="ph-funnel"
 		count={conditions}
 		onclick={() => onpanel('filter')}
 	/>
 	<PanelButton
 		label={m.dataGridGroupBy()}
-		icon="fa-layer-group"
+		icon="ph-stack"
 		count={grid.state.grouping.length}
 		onclick={() => onpanel('group')}
 	/>
-	<PanelButton label={m.columns()} icon="fa-columns" onclick={() => onpanel('columns')} />
+	<PanelButton label={m.columns()} icon="ph-columns" onclick={() => onpanel('columns')} />
 	<!-- Kept together, so a wrapping toolbar never leaves the export alone on a row -->
 	<div class="flex items-center gap-1 max-sm:ml-auto sm:gap-2">
 		<SettingsButton />

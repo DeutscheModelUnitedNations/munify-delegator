@@ -53,7 +53,7 @@ export interface DashboardLink {
 const dashboardLinks: DashboardLink[] = [
 	{
 		id: 'committeeAssignment',
-		icon: 'arrows-turn-to-dots',
+		icon: 'arrows-split',
 		getTitle: () => m.committeeAssignment(),
 		getDescription: () => m.committeeAssignmentLinkDescription(),
 		getHref: (ctx) =>
@@ -70,7 +70,7 @@ const dashboardLinks: DashboardLink[] = [
 	},
 	{
 		id: 'registrationMode',
-		icon: 'id-badge',
+		icon: 'identification-badge',
 		getTitle: () => m.registrationMode(),
 		getDescription: () => m.registrationModeLinkDescription(),
 		getHref: (ctx) =>
@@ -84,7 +84,7 @@ const dashboardLinks: DashboardLink[] = [
 	},
 	{
 		id: 'payment',
-		icon: 'hand-holding-circle-dollar',
+		icon: 'hand-coins',
 		getTitle: () => m.payment(),
 		getDescription: () => m.paymentLinkDescription(),
 		getHref: (ctx) =>
@@ -99,7 +99,7 @@ const dashboardLinks: DashboardLink[] = [
 	},
 	{
 		id: 'postalRegistration',
-		icon: 'envelopes-bulk',
+		icon: 'envelope-simple',
 		getTitle: () => m.postalRegistration(),
 		getDescription: () => m.postalRegistrationLinkDescription(),
 		getHref: (ctx) =>
@@ -138,7 +138,7 @@ const dashboardLinks: DashboardLink[] = [
 	},
 	{
 		id: 'paperInbox',
-		icon: 'file-circle-plus',
+		icon: 'file-plus',
 		getTitle: () => m.paperInbox(),
 		getDescription: () => m.paperInboxDescription(),
 		getHref: (ctx) => ({
@@ -154,7 +154,7 @@ const dashboardLinks: DashboardLink[] = [
 	},
 	{
 		id: 'seats',
-		icon: 'person-seat',
+		icon: 'chair',
 		getTitle: () => m.conferenceSeats(),
 		getDescription: () => m.seatsLinkDescription(),
 		getHref: (ctx) =>
@@ -169,7 +169,7 @@ const dashboardLinks: DashboardLink[] = [
 	},
 	{
 		id: 'calendar',
-		icon: 'calendar-days',
+		icon: 'calendar-dots',
 		getTitle: () => m.calendarSectionTitle(),
 		getDescription: () => m.calendarSectionDescription(),
 		getHref: (ctx) =>

@@ -5,13 +5,13 @@
 
 	interface Props {
 		title: string;
-		faIcon: string;
+		icon: string;
 		status: AdministrativestatusEnum;
 		changeStatus: (status: AdministrativestatusEnum) => Promise<void>;
 		doneHotkey?: string;
 	}
 
-	let { title, faIcon, status, changeStatus, doneHotkey }: Props = $props();
+	let { title, icon, status, changeStatus, doneHotkey }: Props = $props();
 
 	const btnClick = async (status: AdministrativestatusEnum) => {
 		await changeStatus(status);
@@ -20,25 +20,25 @@
 
 <StatusWidget
 	{title}
-	{faIcon}
+	{icon}
 	activeStatus={status ?? 'PENDING'}
 	status={[
 		{
 			value: 'PENDING',
 			title: m.statusPending(),
-			faIcon: 'fa-hourglass-half',
+			icon: 'ph-hourglass-medium',
 			color: 'btn-warning'
 		},
 		{
 			value: 'PROBLEM',
 			title: m.statusProblem(),
-			faIcon: 'fa-triangle-exclamation',
+			icon: 'ph-warning',
 			color: 'btn-error'
 		},
 		{
 			value: 'DONE',
 			title: m.statusDone(),
-			faIcon: 'fa-check',
+			icon: 'ph-check',
 			color: 'btn-success',
 			hotkey: doneHotkey
 		}

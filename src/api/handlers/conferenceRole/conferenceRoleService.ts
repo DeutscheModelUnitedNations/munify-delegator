@@ -127,7 +127,7 @@ export async function createNonStateActor(data: {
 	name: string;
 	abbreviation: string;
 	description: string;
-	fontAwesomeIcon?: string | null;
+	icon?: string | null;
 	seatAmount: number;
 }) {
 	const created = await withUniqueNameCheck(
@@ -139,7 +139,7 @@ export async function createNonStateActor(data: {
 				name: data.name,
 				abbreviation: data.abbreviation,
 				description: data.description,
-				fontAwesomeIcon: data.fontAwesomeIcon || null,
+				icon: data.icon || null,
 				seatAmount: data.seatAmount
 			})
 			.returning({ id: schema.conferenceRole.id })
@@ -226,7 +226,7 @@ export async function createCustomRole(data: {
 	conferenceId: string;
 	name: string;
 	description?: string | null;
-	fontAwesomeIcon?: string | null;
+	icon?: string | null;
 	seatAmount: number;
 }) {
 	const created = await withUniqueNameCheck(
@@ -237,7 +237,7 @@ export async function createCustomRole(data: {
 				kind: 'CUSTOM',
 				name: data.name,
 				description: data.description || null,
-				fontAwesomeIcon: data.fontAwesomeIcon || null,
+				icon: data.icon || null,
 				seatAmount: data.seatAmount
 			})
 			.returning({ id: schema.conferenceRole.id })

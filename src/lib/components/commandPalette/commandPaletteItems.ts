@@ -246,50 +246,50 @@ export function describeItem(item: ResultItem): {
 	switch (item.type) {
 		case 'user':
 			return {
-				icon: 'fa-user',
+				icon: 'ph-user',
 				primary: `${item.data.givenName} ${item.data.familyName}`,
 				secondary: `${item.data.email} · ${participationTypeLabel(item.data.participationType)}`
 			};
 		case 'delegation':
 			return {
 				// Named "Delegation" first: a delegation found by its members' school is not that school
-				icon: 'fa-users-viewfinder',
+				icon: 'ph-user-focus',
 				primary: `${m.delegation()} · ${item.data.school ?? item.data.id}`,
 				secondary: `${item.data.memberCount} ${m.members()}`
 			};
 		case 'school':
 			return {
-				icon: 'fa-school',
+				icon: 'ph-graduation-cap',
 				primary: item.data.name,
 				secondary: item.data.city ?? undefined
 			};
 		case 'transaction':
 			return {
-				icon: item.data.recievedAt ? 'fa-circle-check' : 'fa-circle-xmark',
+				icon: item.data.recievedAt ? 'ph-check-circle' : 'ph-x-circle',
 				primary: item.data.id,
 				secondary: describeTransaction(item.data)
 			};
 		case 'page':
 			return { icon: item.data.icon, primary: item.data.title() };
 		case 'manual':
-			return { icon: 'fa-book', primary: item.data.title() };
+			return { icon: 'ph-book', primary: item.data.title() };
 		case 'config':
 			return { icon: item.data.icon, primary: item.data.title(), secondary: item.data.section() };
 		case 'seat':
 			return {
-				icon: 'fa-chair',
+				icon: 'ph-chair',
 				primary: item.data.title,
 				secondary: item.data.subtitle ?? undefined
 			};
 		case 'committee':
 			return {
-				icon: 'fa-podium',
+				icon: 'ph-lectern',
 				primary: item.data.title,
 				secondary: item.data.subtitle ?? undefined
 			};
 		case 'foreignUser':
 			return {
-				icon: 'fa-user-xmark',
+				icon: 'ph-user-minus',
 				primary: `${item.data.givenName} ${item.data.familyName}`,
 				secondary: item.data.email
 			};

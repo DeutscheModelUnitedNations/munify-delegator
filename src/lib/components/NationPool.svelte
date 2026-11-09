@@ -37,7 +37,7 @@
 		{
 			key: 'alphabetical',
 			name: m.alphabetical(),
-			icon: 'arrow-down-a-z',
+			icon: 'sort-ascending',
 			sorting: (a: Nation, b: Nation) => {
 				return getFullTranslatedCountryNameFromISO3Code(a.nation.alpha3Code).localeCompare(
 					getFullTranslatedCountryNameFromISO3Code(b.nation.alpha3Code) ?? 0
@@ -47,7 +47,7 @@
 		{
 			key: 'byRegion',
 			name: m.byRegionalGroups(),
-			icon: 'earth-europe',
+			icon: 'globe-hemisphere-east',
 			sorting: (a: Nation, b: Nation) => {
 				return `${getNationRegionalGroup(a.nation.alpha3Code)}${getFullTranslatedCountryNameFromISO3Code(
 					a.nation.alpha3Code
@@ -61,7 +61,7 @@
 		{
 			key: 'byDelegationSize',
 			name: m.byDelegationSize(),
-			icon: 'hashtag',
+			icon: 'hash',
 			sorting: (a: Nation, b: Nation) =>
 				`${roleSeats({ role: a, committees })}${getFullTranslatedCountryNameFromISO3Code(a.nation.alpha3Code)}`.localeCompare(
 					`${roleSeats({ role: b, committees })}${getFullTranslatedCountryNameFromISO3Code(b.nation.alpha3Code)}`
@@ -98,11 +98,11 @@
 	{#if committee.roles.some((role) => role.id === nation.id)}
 		<div class="tooltip" data-tip={committee.abbreviation}>
 			{#each { length: committee.numOfSeatsPerDelegation }}
-				<i class="fa-sharp-duotone fa-solid fa-check"></i>
+				<i class="ph-duotone ph-check"></i>
 			{/each}
 		</div>
 	{:else}
-		<i class="fas fa-circle-small text-[8px] text-gray-300 dark:text-gray-800"></i>
+		<i class="ph-fill ph-dot-outline text-[8px] text-gray-300 dark:text-gray-800"></i>
 	{/if}
 {/snippet}
 
@@ -114,7 +114,7 @@
 			class="tooltip tooltip-left"
 			data-tip={m.tooManySeatsForDelegationSize({ size: delegationSize, seats })}
 		>
-			<i class="fas fa-triangle-exclamation text-warning ml-1"></i>
+			<i class="ph-fill ph-warning text-warning ml-1"></i>
 		</div>
 	{/if}
 {/snippet}
@@ -139,7 +139,7 @@
 							</div>
 						</td>
 						<td class="tooltip" data-tip={getNationRegionalGroup(nation.nation.alpha3Code)}>
-							<i class="fa-sharp-duotone fa-solid fa-earth"></i>
+							<i class="ph-duotone ph-globe"></i>
 						</td>
 						{#each committees as committee, committeeIndex (committeeIndex)}
 							<td class="text-center">{@render committeeSeats(committee, nation)}</td>

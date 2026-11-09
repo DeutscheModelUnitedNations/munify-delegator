@@ -70,7 +70,7 @@ export async function fetchMyConferenceParticipation({
 					abbreviation: true,
 					name: true,
 					description: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					seatAmount: true,
 					nation: { alpha3Code: true, alpha2Code: true }
 				}
@@ -85,7 +85,7 @@ export async function fetchMyConferenceParticipation({
 			__args: { where: registrationOfUser },
 			id: true,
 			applied: true,
-			assignedRole: { id: true, name: true, description: true, fontAwesomeIcon: true }
+			assignedRole: { id: true, name: true, description: true, icon: true }
 		}),
 		client.liveQuery.teamMembers({ __args: { where: forUser }, id: true, role: true })
 	]);

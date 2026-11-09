@@ -124,7 +124,7 @@
 	<div class="card bg-base-200 flex flex-col gap-6 p-4 sm:p-5 md:flex-row md:items-start md:gap-10">
 		<div class="flex min-w-0 grow flex-col gap-2">
 			<h3 class="flex items-center gap-2 text-lg font-bold">
-				<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
+				<i class="ph-duotone ph-identification-badge"></i>
 				{m.onSiteCheckIn()}
 			</h3>
 			<p class="text-base-content/70 max-w-3xl">{m.onSiteCheckInDescription()}</p>
@@ -140,16 +140,16 @@
 			<h3 class="text-lg font-bold">{m.nametagBinsTitle()}</h3>
 			<div class="flex flex-wrap gap-2">
 				<button class="btn btn-sm" onclick={downloadQr} disabled={downloadingQr}>
-					<i class="fa-sharp-duotone fa-solid fa-qrcode"></i>
+					<i class="ph-duotone ph-qr-code"></i>
 					{m.nametagQrDownload()}
 					{#if downloadingQr}<span class="loading loading-spinner loading-xs"></span>{/if}
 				</button>
 				<button class="btn btn-sm" onclick={() => (previewOpen = true)}>
-					<i class="fa-sharp-duotone fa-solid fa-eye"></i>
+					<i class="ph-duotone ph-eye"></i>
 					{m.nametagQrPreviewButton()}
 				</button>
 				<button class="btn btn-sm" onclick={downloadSheets} disabled={downloading}>
-					<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
+					<i class="ph-duotone ph-file-pdf"></i>
 					{m.nametagSheetsDownload()}
 					{#if downloading}<span class="loading loading-spinner loading-xs"></span>{/if}
 				</button>

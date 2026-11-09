@@ -147,14 +147,14 @@
 				<li class="bg-base-200 rounded-box flex flex-wrap items-center gap-2 p-3">
 					<span class="font-bold">{selected.name}</span>
 					<span class="text-sm opacity-70">{selected.seatLabel}</span>
-					<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+					<i class="ph-duotone ph-arrow-right"></i>
 					<span class="text-sm">{target.seatLabel}</span>
 				</li>
 				{#if target.kind === 'member'}
 					<li class="bg-base-200 rounded-box flex flex-wrap items-center gap-2 p-3">
 						<span class="font-bold">{target.name}</span>
 						<span class="text-sm opacity-70">{target.seatLabel}</span>
-						<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+						<i class="ph-duotone ph-arrow-right"></i>
 						<span class="text-sm">{selected.seatLabel}</span>
 					</li>
 				{/if}
@@ -178,7 +178,7 @@
 			{#if loading}
 				<span class="loading loading-spinner loading-sm"></span>
 			{:else}
-				<i class="fa-sharp-duotone fa-solid fa-arrow-right-arrow-left"></i>
+				<i class="ph-duotone ph-arrows-left-right"></i>
 			{/if}
 			{m.confirm()}
 		</button>

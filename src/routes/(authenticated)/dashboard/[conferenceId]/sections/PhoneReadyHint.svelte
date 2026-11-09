@@ -51,33 +51,33 @@
 
 {#if conferenceState === 'PREPARATION' && !dismissed}
 	<DashboardSection
-		icon="mobile-screen"
+		icon="device-mobile"
 		title={m.phoneReadyTitle()}
 		description={m.phoneReadyDescription()}
 		variant="info"
 	>
 		<ul class="flex flex-col gap-2">
 			<li class="flex gap-3">
-				<i class="fa-sharp-duotone fa-solid fa-right-to-bracket text-info mt-1 w-5 shrink-0"></i>
+				<i class="ph-duotone ph-sign-in text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyLogin()}</span>
 			</li>
 			<li class="flex gap-3">
-				<i class="fa-sharp-duotone fa-solid fa-house-chimney text-info mt-1 w-5 shrink-0"></i>
+				<i class="ph-duotone ph-house-line text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyHomeScreen()}</span>
 			</li>
 			<li class="flex gap-3">
-				<i class="fa-sharp-duotone fa-solid fa-id-badge text-info mt-1 w-5 shrink-0"></i>
+				<i class="ph-duotone ph-identification-badge text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyNametag()}</span>
 			</li>
 			<li class="flex gap-3">
-				<i class="fa-sharp-duotone fa-solid fa-battery-full text-info mt-1 w-5 shrink-0"></i>
+				<i class="ph-duotone ph-battery-full text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyBattery()}</span>
 			</li>
 		</ul>
 		<div class="mt-4 flex flex-wrap gap-2">
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
 			<a class="btn btn-info btn-sm" href={nametagHref}>
-				<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
+				<i class="ph-duotone ph-identification-badge"></i>
 				{m.phoneReadyOpenNametag()}
 			</a>
 			<button class="btn btn-ghost btn-sm" onclick={dismiss}>{m.phoneReadyDismiss()}</button>
@@ -85,7 +85,7 @@
 	</DashboardSection>
 {:else if conferenceState === 'ACTIVE' && !dismissed}
 	<div class="alert alert-info alert-vertical sm:alert-horizontal">
-		<i class="fa-sharp-duotone fa-solid fa-mobile-screen text-xl"></i>
+		<i class="ph-duotone ph-device-mobile text-xl"></i>
 		<span>{m.phoneReadyActiveReminder()}</span>
 		<div class="flex flex-wrap items-center justify-center gap-1">
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
@@ -96,7 +96,7 @@
 				aria-label={m.phoneReadyDismiss()}
 				title={m.phoneReadyDismiss()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+				<i class="ph-duotone ph-x"></i>
 			</button>
 		</div>
 	</div>

@@ -125,14 +125,14 @@
 				: 'scale-0 opacity-0 ease-in'}"
 			aria-hidden="true"
 		>
-			<i class="fa-sharp-duotone fa-solid fa-check"></i>
+			<i class="ph-duotone ph-check"></i>
 		</span>
 		<h3 class="font-bold">{option.title}</h3>
 		{#if option.description}
 			<p class="whitespace-pre-line text-sm">{option.description}</p>
 		{/if}
 		<p class="flex items-center text-sm {capacityClass(capacity)}">
-			<i class="fa-sharp-duotone fa-solid fa-users mr-2"></i>
+			<i class="ph-duotone ph-users mr-2"></i>
 			{@render seats(option, capacity)}
 		</p>
 	</label>
@@ -141,14 +141,14 @@
 {#snippet action()}
 	{#if currentAnswerOptionId && !questionLocked}
 		<button class="btn btn-ghost text-error mr-auto" onclick={withdrawAnswer} disabled={loading}>
-			<i class="fa-sharp-duotone fa-solid fa-eraser"></i>
+			<i class="ph-duotone ph-eraser"></i>
 			{m.withdrawSurveyAnswer()}
 		</button>
 	{/if}
 	<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
 	<button class="btn btn-primary" onclick={updateChoice} disabled={!canSave}>
 		{#if loading}<span class="loading loading-spinner loading-sm"></span>{/if}
-		<i class="fa-sharp-duotone fa-solid fa-save"></i>
+		<i class="ph-duotone ph-floppy-disk"></i>
 		{m.save()}
 	</button>
 {/snippet}
@@ -162,7 +162,7 @@
 
 		{#if questionLocked}
 			<div class="alert alert-warning">
-				<i class="fa-sharp-duotone fa-solid fa-lock"></i>
+				<i class="ph-duotone ph-lock"></i>
 				{m.questionDeadlinePassed()}
 			</div>
 		{/if}

@@ -114,7 +114,7 @@
 </script>
 
 <DashboardSection
-	icon="clipboard-check"
+	icon="clipboard-text"
 	title={m.personalStatus()}
 	description={m.personalStatusDescription()}
 >

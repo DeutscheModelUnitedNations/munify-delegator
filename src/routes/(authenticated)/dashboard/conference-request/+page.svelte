@@ -1,4 +1,5 @@
 <script lang="ts">
+	import IconPicker from '#lib/components/IconPicker.svelte';
 	import { onMount } from 'svelte';
 	import worldCountries from 'world-countries';
 	import { toast } from 'svelte-sonner';
@@ -124,7 +125,7 @@
 
 {#snippet addButton(label: string, onclick: () => void)}
 	<button type="button" class="btn btn-sm self-start" {onclick}>
-		<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+		<i class="ph-duotone ph-plus"></i>
 		{label}
 	</button>
 {/snippet}
@@ -218,7 +219,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt({ list: form.committees, key: committee.key })}
 								>
-									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+									<i class="ph-duotone ph-trash"></i>
 								</button>
 							</div>
 
@@ -235,7 +236,7 @@
 											}}
 										>
 											{nationNames.get(code) ?? code}
-											<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+											<i class="ph-duotone ph-x"></i>
 										</button>
 									{/each}
 								</div>
@@ -292,17 +293,28 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt({ list: form.nsa, key: nsa.key })}
 								>
-									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+									<i class="ph-duotone ph-trash"></i>
 								</button>
 							</div>
-							<label class="flex flex-col">
-								<span class="label mb-2 whitespace-break-spaces">{m.fontAwesomeIcon()}</span>
-								<input
-									class="input w-full"
-									placeholder="fa-church"
-									bind:value={nsa.fontAwesomeIcon}
-								/>
-							</label>
+							<div class="flex flex-col">
+								<label class="label mb-2 whitespace-break-spaces" for="icon-{nsa.key}"
+									>{m.iconName()}</label
+								>
+								<div class="join w-full">
+									<IconPicker
+										value={nsa.icon}
+										fallback="hand-pointing"
+										triggerClass="btn join-item"
+										onchange={(icon) => (nsa.icon = icon)}
+									/>
+									<input
+										id="icon-{nsa.key}"
+										class="input join-item w-full"
+										placeholder="church"
+										bind:value={nsa.icon}
+									/>
+								</div>
+							</div>
 							<label class="flex flex-col">
 								<span class="label mb-2 whitespace-break-spaces">{m.description()}</span>
 								<textarea class="textarea w-full" rows="2" bind:value={nsa.description}></textarea>
@@ -324,14 +336,25 @@
 									<span class="label mb-2 whitespace-break-spaces">{m.name()}</span>
 									<input class="input w-full" bind:value={role.name} />
 								</label>
-								<label class="flex flex-col">
-									<span class="label mb-2 whitespace-break-spaces">{m.fontAwesomeIcon()}</span>
-									<input
-										class="input w-full"
-										placeholder="fa-camera"
-										bind:value={role.fontAwesomeIcon}
-									/>
-								</label>
+								<div class="flex flex-col">
+									<label class="label mb-2 whitespace-break-spaces" for="icon-{role.key}"
+										>{m.iconName()}</label
+									>
+									<div class="join w-full">
+										<IconPicker
+											value={role.icon}
+											fallback="mask-happy"
+											triggerClass="btn join-item"
+											onchange={(icon) => (role.icon = icon)}
+										/>
+										<input
+											id="icon-{role.key}"
+											class="input join-item w-full"
+											placeholder="camera"
+											bind:value={role.icon}
+										/>
+									</div>
+								</div>
 								<label class="flex flex-col">
 									<span class="label mb-2 whitespace-break-spaces">{m.seatAmount()}</span>
 									<input type="number" min="1" class="input w-full" bind:value={role.seatAmount} />
@@ -342,7 +365,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt({ list: form.customConferenceRole, key: role.key })}
 								>
-									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+									<i class="ph-duotone ph-trash"></i>
 								</button>
 							</div>
 							<label class="flex flex-col">
@@ -384,11 +407,11 @@
 						disabled={!validation.success}
 						onclick={copyJson}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+						<i class="ph-duotone ph-copy"></i>
 						{m.copy()}
 					</button>
 					<button type="button" class="btn" disabled={!validation.success} onclick={downloadJson}>
-						<i class="fa-sharp-duotone fa-solid fa-download"></i>
+						<i class="ph-duotone ph-download-simple"></i>
 						{m.download()}
 					</button>
 					<button type="button" class="btn btn-ghost text-error ml-auto" onclick={resetForm}>
@@ -418,7 +441,7 @@
 					disabled={!importText.trim()}
 					onclick={() => importJson(importText)}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-file-import"></i>
+					<i class="ph-duotone ph-file-arrow-up"></i>
 					{m.import()}
 				</button>
 			</FormFieldset>

@@ -58,7 +58,7 @@
 	<ol class="mt-2 flex flex-col gap-1">
 		<li class="flex items-center gap-2 text-sm">
 			<i
-				class="fa-sharp-duotone fa-solid fa-circle-play text-primary w-4 text-center"
+				class="ph-duotone ph-play-circle text-primary w-4 text-center"
 				title={m.calendarNow()}
 				aria-hidden="true"
 			></i>
@@ -77,17 +77,13 @@
 		{#each timeline.upcoming as { entry, newDay } (entry.id)}
 			{#if newDay}
 				<li class="text-base-content/60 flex items-center gap-2 text-xs">
-					<i class="fa-sharp-duotone fa-solid fa-calendar-day w-4 text-center" aria-hidden="true"
-					></i>
+					<i class="ph-duotone ph-calendar w-4 text-center" aria-hidden="true"></i>
 					<span>{dayLabel(entry.startTime)}</span>
 					<span class="border-base-content/15 flex-1 border-t"></span>
 				</li>
 			{/if}
 			<li class="flex items-center gap-2 text-sm">
-				<i
-					class="fa-sharp-duotone fa-solid fa-clock text-primary w-4 text-center"
-					aria-hidden="true"
-				></i>
+				<i class="ph-duotone ph-clock text-primary w-4 text-center" aria-hidden="true"></i>
 				<span class="min-w-0 truncate">
 					<span class="font-medium">{entry.name}</span>
 					<span class="text-base-content/60">

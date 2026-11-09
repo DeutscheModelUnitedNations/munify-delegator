@@ -34,17 +34,17 @@
 		<div class="join max-sm:join-vertical max-sm:w-full">
 			<button class="btn join-item" onclick={() => switchAttendanceState(false)}>
 				{#if loading}
-					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin"></i>
+					<i class="ph-duotone ph-spinner-gap animate-spin"></i>
 				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-user-xmark"></i>
+					<i class="ph-duotone ph-user-minus"></i>
 				{/if}
 				{m.setAttendanceFalse()}
 			</button>
 			<button class="btn join-item" onclick={() => switchAttendanceState(true)}>
 				{#if loading}
-					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin"></i>
+					<i class="ph-duotone ph-spinner-gap animate-spin"></i>
 				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-user-check"></i>
+					<i class="ph-duotone ph-user-check"></i>
 				{/if}
 				{m.setAttendanceTrue()}
 			</button>

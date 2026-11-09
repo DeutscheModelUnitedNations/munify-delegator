@@ -28,7 +28,7 @@
 		title={m.homeTeamQuickAccess({ conference: conference.title })}
 		aria-label={m.homeTeamQuickAccess({ conference: conference.title })}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-users-gear"></i>
+		<i class="ph-duotone ph-user-gear"></i>
 		<span class="truncate">{conference.title}</span>
 	</a>
 {/if}

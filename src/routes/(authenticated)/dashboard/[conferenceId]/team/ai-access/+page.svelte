@@ -62,7 +62,7 @@
 	<p class="max-w-3xl opacity-70">{m.aiAccessIntro()}</p>
 
 	<div class="alert alert-info max-w-3xl">
-		<i class="fa-sharp-duotone fa-solid fa-shield-halved"></i>
+		<i class="ph-duotone ph-shield-check"></i>
 		<span>{m.aiAccessPrivacy()}</span>
 	</div>
 

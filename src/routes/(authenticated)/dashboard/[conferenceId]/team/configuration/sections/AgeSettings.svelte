@@ -9,7 +9,7 @@
 	let { form }: { form: SuperForm<ConferenceSettings> } = $props();
 </script>
 
-<FormSection title={m.conferenceAgeRange()} icon="cake-candles">
+<FormSection title={m.conferenceAgeRange()} icon="cake">
 	<p class="text-base-content/70 text-sm">{m.conferenceAgeRangeDescription()}</p>
 	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
 		<FormTextInput

@@ -37,7 +37,7 @@
 				toast.success(m.codeCopied());
 			}}
 			aria-label={m.copyEntryCode()}
-			><i class="fa-sharp-duotone fa-solid fa-clipboard text-xl"></i>
+			><i class="ph-duotone ph-clipboard text-xl"></i>
 		</button>
 		<button
 			class="btn btn-square btn-ghost tooltip"
@@ -47,7 +47,7 @@
 				toast.success(m.linkCopied());
 			}}
 			aria-label={m.copyJoinLink()}
-			><i class="fa-sharp-duotone fa-solid fa-link text-xl"></i>
+			><i class="ph-duotone ph-link text-xl"></i>
 		</button>
 		{#if supervisorLink}
 			<button
@@ -58,7 +58,7 @@
 					toast.success(m.linkCopied());
 				}}
 				aria-label={m.copySupervisorLink()}
-				><i class="fa-sharp-duotone fa-solid fa-chalkboard-user text-xl"></i>
+				><i class="ph-duotone ph-chalkboard-teacher text-xl"></i>
 			</button>
 		{/if}
 		<button
@@ -66,12 +66,12 @@
 			data-tip={m.showQrCode()}
 			onclick={() => (qrModalOpen = true)}
 			aria-label={m.showQrCode()}
-			><i class="fa-sharp-duotone fa-solid fa-qrcode text-xl"></i>
+			><i class="ph-duotone ph-qr-code text-xl"></i>
 		</button>
 		{#if userHasRotationPermission}
 			<div class="tooltip" data-tip={m.rotateCode()}>
 				<button class="btn btn-square btn-ghost" onclick={rotationFn} aria-label={m.rotateCode()}
-					><i class="fa-sharp-duotone fa-solid fa-rotate text-xl"></i>
+					><i class="ph-duotone ph-arrows-clockwise text-xl"></i>
 				</button>
 			</div>
 		{/if}

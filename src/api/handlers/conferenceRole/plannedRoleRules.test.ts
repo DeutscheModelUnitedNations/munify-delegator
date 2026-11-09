@@ -15,13 +15,13 @@ describe('nonStateActorUpdateData', () => {
 			abbreviation: undefined,
 			description: undefined,
 			seatAmount: undefined,
-			fontAwesomeIcon: undefined
+			icon: undefined
 		});
 	});
 
 	test('an empty icon clears it', () => {
-		expect(nonStateActorUpdateData({ fontAwesomeIcon: '' }).fontAwesomeIcon).toBeNull();
-		expect(nonStateActorUpdateData({ fontAwesomeIcon: 'fa-tree' }).fontAwesomeIcon).toBe('fa-tree');
+		expect(nonStateActorUpdateData({ icon: '' }).icon).toBeNull();
+		expect(nonStateActorUpdateData({ icon: 'tree' }).icon).toBe('tree');
 	});
 
 	test('passes the seat amount on', () => {

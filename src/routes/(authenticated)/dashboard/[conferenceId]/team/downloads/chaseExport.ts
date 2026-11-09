@@ -39,7 +39,7 @@ export interface ChaseConferenceData {
 		assignedRole?: Maybe<{ id: string }>;
 	}[];
 	conferenceSupervisors: readonly { id: string; user: ExportUser }[];
-	nonStateActors: readonly { id: string; name?: Maybe<string>; fontAwesomeIcon?: Maybe<string> }[];
+	nonStateActors: readonly { id: string; name?: Maybe<string>; icon?: Maybe<string> }[];
 	delegationMembers: readonly ExportDelegationMember[];
 	teamMembers: readonly { id: string; role: string; user: ExportUser }[];
 }
@@ -115,7 +115,7 @@ export function buildChaseImport({
 			id: nonStateActor.id,
 			representationType: 'NSA',
 			name: nonStateActor.name,
-			faIcon: nonStateActor.fontAwesomeIcon
+			icon: nonStateActor.icon
 		}))
 	];
 

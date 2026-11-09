@@ -100,7 +100,7 @@
 	persistKey="useCameraForPostalRegistration"
 	notFoundMessage={m.userNotFoundForPostalRegistration()}
 	drawerTitle={m.postalRegistration()}
-	drawerIcon="fa-envelopes-bulk"
+	drawerIcon="ph-envelope-simple"
 	confirmLabel={m.confirmAll()}
 	onConfirm={confirmAllStatuses}
 	onClose={() => flow.reset()}
@@ -126,7 +126,7 @@
 
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
-			<i class="fa-sharp-duotone fa-solid fa-user text-2xl"></i>
+			<i class="ph-duotone ph-user text-2xl"></i>
 			<div class="grow">
 				<h3 class="text-xl font-bold">
 					{formatNames({
@@ -149,7 +149,7 @@
 			/>
 			<StatusWidget
 				title={m.userAgreement()}
-				faIcon="fa-file-signature"
+				icon="ph-signature"
 				status={postalRegistrationDetails?.termsAndConditions ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativestatusEnum) =>
 					await change({ termsAndConditions: newStatus })}
@@ -157,7 +157,7 @@
 			{#if !ofAgeAtConference( { startConference: conference?.startConference, dateOfBirth: userDetails.birthday } )}
 				<StatusWidget
 					title={m.guardianAgreement()}
-					faIcon="fa-user-shield"
+					icon="ph-shield-star"
 					status={postalRegistrationDetails?.guardianConsent ?? 'PENDING'}
 					changeStatus={async (newStatus: AdministrativestatusEnum) =>
 						await change({ guardianConsent: newStatus })}
@@ -167,7 +167,7 @@
 			{/if}
 			<StatusWidget
 				title={m.mediaAgreement()}
-				faIcon="fa-camera"
+				icon="ph-camera"
 				status={postalRegistrationDetails?.mediaConsent ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativestatusEnum) =>
 					await change({ mediaConsent: newStatus })}

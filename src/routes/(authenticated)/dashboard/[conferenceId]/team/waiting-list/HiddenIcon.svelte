@@ -8,10 +8,10 @@
 
 {#if value}
 	<span class="text-base-content/40">
-		<i class="fa-sharp-duotone fa-solid fa-eye-slash"></i>
+		<i class="ph-duotone ph-eye-slash"></i>
 	</span>
 {:else}
 	<span class="text-success">
-		<i class="fa-sharp-duotone fa-solid fa-eye"></i>
+		<i class="ph-duotone ph-eye"></i>
 	</span>
 {/if}

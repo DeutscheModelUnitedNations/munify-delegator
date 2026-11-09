@@ -45,7 +45,7 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-	<i class="fa-sharp-duotone fa-solid fa-id-card text-base-content/60 w-6 text-center text-lg"></i>
+	<i class="ph-duotone ph-identification-card text-base-content/60 w-6 text-center text-lg"></i>
 	<div class="flex min-w-48 grow flex-col">
 		<span class="font-semibold">{m.accessCardId()}</span>
 		{#if !accessCardId}
@@ -74,7 +74,7 @@
 				aria-label={m.save()}
 				title={m.save()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-save"></i>
+				<i class="ph-duotone ph-floppy-disk"></i>
 			</button>
 		</form>
 		{#if onNotifyFound}
@@ -86,7 +86,7 @@
 				title={m.badgeFoundNotifyHint()}
 				onclick={() => (confirmingNotify = true)}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
+				<i class="ph-duotone ph-envelope"></i>
 				{m.badgeFoundNotify()}
 			</button>
 			{#if confirmingNotify}

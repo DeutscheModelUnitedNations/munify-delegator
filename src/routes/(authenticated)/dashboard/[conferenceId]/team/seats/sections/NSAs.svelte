@@ -26,7 +26,7 @@
 				id: true,
 				name: true,
 				abbreviation: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				seatAmount: true
 			}),
 			client.liveQuery.delegations({
@@ -69,7 +69,7 @@
 {/snippet}
 
 <SeatsTableSection title={m.nsaSeats()} downloadButton={downloadNSADataBtn}>
-	<SeatsIconHeader icon="fa-megaphone" membersMenu />
+	<SeatsIconHeader icon="ph-megaphone-simple" membersMenu />
 	<tbody>
 		{#each nonStateActors as nsa (nsa.id)}
 			{@const delegation = delegations.find((d) => d.assignedRoleId === nsa.id)}
@@ -78,7 +78,7 @@
 			<tr>
 				<td>
 					<div class="tooltip tooltip-right flex items-center gap-2" data-tip={nsa.name}>
-						<Flag nsa icon={nsa.fontAwesomeIcon ?? ''} size="xs" />
+						<Flag nsa icon={nsa.icon ?? ''} size="xs" />
 						{(nsa.abbreviation ?? '').toUpperCase()}
 						<span class="hidden truncate text-left text-xs text-gray-400 lg:block">
 							{nsa.name}

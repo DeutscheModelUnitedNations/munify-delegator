@@ -63,7 +63,7 @@ test('a head delegate can set preferences and complete their delegation signup',
 	const modal = headPage.locator('dialog.modal');
 	// Scoped to the pool's own add-buttons (not the "your preferences" table, which uses the
 	// same icon set once populated) so the count check below only tracks the pool shrinking.
-	const poolAddButtons = modal.locator('.collapse-content button:has(.fa-chevrons-up)');
+	const poolAddButtons = modal.locator('.collapse-content button:has(.ph-caret-double-up)');
 	const openPool = async () => {
 		await headPage.reload();
 		await waitForHydration(headPage);
@@ -79,7 +79,7 @@ test('a head delegate can set preferences and complete their delegation signup',
 
 	// The wishes so far, a row each with its remove button. Counted rather than the pool shrinking:
 	// the pool is every nation seating the delegation, which specs running beside this one change.
-	const wishRows = modal.locator('tr:has(button .fa-xmark)');
+	const wishRows = modal.locator('tr:has(button .ph-x)');
 
 	await openPool();
 	expect(await poolAddButtons.count()).toBeGreaterThanOrEqual(3);

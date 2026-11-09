@@ -277,7 +277,7 @@
 </script>
 
 <p class="text-base-content/60 col-span-full text-sm">
-	<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
+	<i class="ph-duotone ph-info"></i>
 	{m.badgeGeneratorHint()}
 </p>
 {#each committees as committee (committee.id)}

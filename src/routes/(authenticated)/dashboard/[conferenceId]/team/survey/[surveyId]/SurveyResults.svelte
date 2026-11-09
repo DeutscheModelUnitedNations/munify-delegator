@@ -172,7 +172,7 @@
 				title={freeSeats === 0 ? m.surveyDistributeNoRoom() : undefined}
 				onclick={() => (distributeOpen = true)}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-shuffle"></i>
+				<i class="ph-duotone ph-shuffle"></i>
 				{m.surveyDistribute()}
 			</button>
 		{/if}
@@ -199,7 +199,7 @@
 <section class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5">
 	<header class="flex items-center gap-3">
 		<div class="flex size-10 flex-none items-center justify-center rounded-field bg-primary/15">
-			<i class="fa-sharp-duotone fa-solid fa-file-export text-xl text-primary"></i>
+			<i class="ph-duotone ph-file-arrow-down text-xl text-primary"></i>
 		</div>
 		<div>
 			<h3 class="text-lg font-bold">{m.surveyExports()}</h3>
@@ -222,7 +222,7 @@
 		<p>{m.surveyDistributeDescription({ count: notAnsweredParticipants.length })}</p>
 		{#if leftOver > 0}
 			<div class="alert alert-warning">
-				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+				<i class="ph-duotone ph-warning"></i>
 				{m.surveyDistributeLeftOver({ count: leftOver })}
 			</div>
 		{/if}

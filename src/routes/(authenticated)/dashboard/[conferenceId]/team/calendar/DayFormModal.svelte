@@ -81,7 +81,7 @@
 			{/if}
 			{#if importData}
 				<p class="text-success mt-1 text-xs">
-					<i class="fas fa-check-circle"></i>
+					<i class="ph-fill ph-check-circle"></i>
 					{m.calendarImportPreview({
 						tracks: importData.tracks.length.toString(),
 						entries: importData.entries.length.toString()

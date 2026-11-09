@@ -12,6 +12,6 @@
 	let { school, experience, motivation }: Props = $props();
 </script>
 
-<InfoGrid.Entry title={m.schoolOrInstitution()} fontAwesomeIcon="school" content={school} />
-<InfoGrid.Entry title={m.experience()} fontAwesomeIcon="compass" content={experience} />
-<InfoGrid.Entry title={m.motivation()} fontAwesomeIcon="fire-flame-curved" content={motivation} />
+<InfoGrid.Entry title={m.schoolOrInstitution()} icon="graduation-cap" content={school} />
+<InfoGrid.Entry title={m.experience()} icon="compass" content={experience} />
+<InfoGrid.Entry title={m.motivation()} icon="fire" content={motivation} />

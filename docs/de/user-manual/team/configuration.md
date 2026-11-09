@@ -181,7 +181,7 @@ Die Matrix listet alle UN-Mitgliedsstaaten als Zeilen und die Gremien als Spalte
 
 ### Nichtstaatliche Akteure und Einzelrollen
 
-Unter **Nichtstaatliche Akteure** legst du Akteure mit **Name**, **Kürzel**, **Beschreibung**, **Icon** und **Plätze** an, also der Größe ihrer Delegation. Unter **Einzelrollen** legst du Rollen für Einzelteilnehmende an, etwa die Konferenzpresse. Hier bestimmen die **Plätze**, wie viele Personen die Rolle erhalten können, und **Vergeben** zählt, wie viele sie schon haben. Felder speichern, sobald du sie verlässt, das Plus in der letzten Zeile legt eine neue Rolle an. Eine Rolle, der noch jemand zugeteilt ist, lässt sich nicht löschen.
+Unter **Nichtstaatliche Akteure** legst du Akteure mit **Name**, **Kürzel**, **Beschreibung**, **Icon** und **Plätze** an, also der Größe ihrer Delegation. Das Icon wählst du über den Knopf vor dem Feld aus den Phosphor-Icons aus, oder du gibst seinen Namen ein (etwa `tree`). Unter **Einzelrollen** legst du Rollen für Einzelteilnehmende an, etwa die Konferenzpresse. Hier bestimmen die **Plätze**, wie viele Personen die Rolle erhalten können, und **Vergeben** zählt, wie viele sie schon haben. Felder speichern, sobald du sie verlässt, das Plus in der letzten Zeile legt eine neue Rolle an. Eine Rolle, der noch jemand zugeteilt ist, lässt sich nicht löschen.
 
 ### Hinweise
 

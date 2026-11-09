@@ -4,7 +4,7 @@ export interface UnlockedPiece {
 	flagAlpha2Code: string | null;
 	flagAlpha3Code: string | null;
 	flagType: 'NATION' | 'NSA';
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	pieceName: string;
 	isComplete: boolean;
 	foundCount: number;
@@ -19,7 +19,7 @@ export function unlockedPiece(result: {
 		flagAlpha2Code?: string | null;
 		flagAlpha3Code?: string | null;
 		flagType: 'NATION' | 'NSA';
-		fontAwesomeIcon?: string | null;
+		icon?: string | null;
 		pieceName: string;
 		isComplete: boolean;
 		foundCount: number;
@@ -33,7 +33,7 @@ export function unlockedPiece(result: {
 		flagAlpha2Code: unlocked.flagAlpha2Code ?? null,
 		flagAlpha3Code: unlocked.flagAlpha3Code ?? null,
 		flagType: unlocked.flagType,
-		fontAwesomeIcon: unlocked.fontAwesomeIcon ?? null,
+		icon: unlocked.icon ?? null,
 		pieceName: unlocked.pieceName,
 		isComplete: unlocked.isComplete,
 		foundCount: unlocked.foundCount,

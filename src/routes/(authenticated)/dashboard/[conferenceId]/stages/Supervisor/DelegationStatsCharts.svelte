@@ -104,7 +104,7 @@
 	<!-- Payment Status -->
 	<div class="bg-base-100 rounded-box p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
-			<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer text-primary"></i>
+			<i class="ph-duotone ph-money-wavy text-primary"></i>
 			<span class="text-sm font-medium">{m.payment()}</span>
 		</div>
 		<div class="flex h-2 rounded-full overflow-hidden">
@@ -137,7 +137,7 @@
 	<!-- Postal Status -->
 	<div class="bg-base-100 rounded-box p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
-			<i class="fa-sharp-duotone fa-solid fa-envelopes-bulk text-primary"></i>
+			<i class="ph-duotone ph-envelope-simple text-primary"></i>
 			<span class="text-sm font-medium">{m.postalRegistration()}</span>
 		</div>
 		<div class="flex h-2 rounded-full overflow-hidden">
@@ -170,7 +170,7 @@
 	<!-- Paper Status -->
 	<div class="bg-base-100 rounded-box p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
-			<i class="fa-sharp-duotone fa-solid fa-file-lines text-primary"></i>
+			<i class="ph-duotone ph-file-text text-primary"></i>
 			<span class="text-sm font-medium">{m.papers()}</span>
 		</div>
 		<div class="flex h-2 rounded-full overflow-hidden">

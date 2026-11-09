@@ -41,7 +41,7 @@ const delegationCard = {
 		roleId: true,
 		role: {
 			name: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			nation: { alpha3Code: true, alpha2Code: true }
 		}
 	}

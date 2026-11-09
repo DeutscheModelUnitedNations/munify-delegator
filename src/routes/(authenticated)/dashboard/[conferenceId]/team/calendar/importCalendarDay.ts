@@ -55,7 +55,7 @@ export function importedEntryArgs({
 		description: entry.description,
 		startTime: dateAtMinutes({ dayDate: day.date, minutes: minutesOf(entry.startTime) }),
 		endTime: dateAtMinutes({ dayDate: day.date, minutes: minutesOf(entry.endTime) }),
-		fontAwesomeIcon: entry.fontAwesomeIcon,
+		icon: entry.icon,
 		color: entry.color,
 		room: entry.room,
 		placeId: entry.place ? (placeIdByName.get(entry.place.name) ?? null) : null,

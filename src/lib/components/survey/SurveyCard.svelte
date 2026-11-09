@@ -34,10 +34,10 @@
 	/** How the card looks: asking for an answer, answered, or closed without one. */
 	const look = $derived(
 		needsAnswer
-			? { badge: 'bg-warning/15 text-warning', icon: 'fa-circle-exclamation' }
+			? { badge: 'bg-warning/15 text-warning', icon: 'ph-warning-circle' }
 			: answer
-				? { badge: 'bg-success/15 text-success', icon: 'fa-check' }
-				: { badge: 'bg-base-300 text-base-content/50', icon: 'fa-lock' }
+				? { badge: 'bg-success/15 text-success', icon: 'ph-check' }
+				: { badge: 'bg-base-300 text-base-content/50', icon: 'ph-lock' }
 	);
 	const border = $derived(
 		needsAnswer
@@ -63,7 +63,7 @@
 			class="btn btn-sm {answer ? 'btn-ghost' : 'btn-warning'}"
 			onclick={() => (modalOpen = true)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-pen"></i>
+			<i class="ph-duotone ph-pen"></i>
 			{answer ? m.changeAnswer() : m.takeSurvey()}
 		</button>
 	{/if}
@@ -75,7 +75,7 @@
 	<div
 		class="flex size-10 shrink-0 items-center justify-center rounded-full max-sm:hidden {look.badge}"
 	>
-		<i class="fa-sharp-duotone fa-solid {look.icon}"></i>
+		<i class="ph-duotone {look.icon}"></i>
 	</div>
 
 	<div class="flex min-w-0 flex-1 flex-col gap-1">

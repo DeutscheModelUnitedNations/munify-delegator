@@ -8,7 +8,7 @@ export interface CopySourceEntry<Color> {
 	description?: Maybe<string>;
 	startTime: Date | string;
 	endTime: Date | string;
-	fontAwesomeIcon?: Maybe<string>;
+	icon?: Maybe<string>;
 	color: Color;
 	placeId?: Maybe<string>;
 	room?: Maybe<string>;
@@ -72,7 +72,7 @@ export function copiedEntryArgs<Color>({
 		description: entry.description ?? null,
 		startTime: moveToDay({ time: entry.startTime, dayDate: targetDay.date }),
 		endTime: moveToDay({ time: entry.endTime, dayDate: targetDay.date }),
-		fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
+		icon: entry.icon ?? null,
 		color: entry.color,
 		placeId: entry.placeId ?? null,
 		room: entry.room ?? null,

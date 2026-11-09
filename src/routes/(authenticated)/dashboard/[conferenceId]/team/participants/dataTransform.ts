@@ -231,7 +231,7 @@ export function transformParticipants({
 					nationAlpha2Code: nation?.alpha2Code ?? null,
 					nationAlpha3Code: nation?.alpha3Code ?? null,
 					nsaName: nonStateActor?.name ?? null,
-					nsaIcon: nonStateActor?.fontAwesomeIcon ?? null,
+					nsaIcon: nonStateActor?.icon ?? null,
 					committee: entry.assignedCommittee?.name ?? null,
 					school: entry.school?.name ?? null,
 					isHeadDelegate: entry.isHeadDelegate,
@@ -261,7 +261,7 @@ export function transformParticipants({
 					role: 'SINGLE_PARTICIPANT',
 					school: entry.school?.name ?? null,
 					assignedRoleName: entry.assignedRole?.name ?? null,
-					assignedRoleIcon: entry.assignedRole?.fontAwesomeIcon ?? null,
+					assignedRoleIcon: entry.assignedRole?.icon ?? null,
 					accepted: !!entry.assignedRole
 				}
 			})

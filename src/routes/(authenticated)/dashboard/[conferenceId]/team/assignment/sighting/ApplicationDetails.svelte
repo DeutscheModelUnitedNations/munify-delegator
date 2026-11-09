@@ -45,9 +45,9 @@
 				<tr>
 					<th>{m.members()} <span class="badge badge-xs">{application.people.length}</span></th>
 					<th class="text-right">{m.assignmentAge()}</th>
-					<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-venus-mars"></i></th>
+					<th class="text-center"><i class="ph-duotone ph-gender-intersex"></i></th>
 					<th class="text-right" title={m.assignmentPreviousParticipations()}>
-						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 					</th>
 				</tr>
 			</thead>
@@ -77,7 +77,7 @@
 	<div class="flex flex-col gap-4">
 		<section class="flex flex-col gap-1">
 			<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-				<i class="fa-sharp-duotone fa-solid fa-school"></i>
+				<i class="ph-duotone ph-graduation-cap"></i>
 				{m.schoolOrInstitution()}
 			</h4>
 			{#if application.schools.length > 0}
@@ -101,7 +101,7 @@
 		{#if supervisors.length > 0}
 			<section class="flex flex-col gap-1">
 				<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-					<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
+					<i class="ph-duotone ph-chalkboard-teacher"></i>
 					{m.supervisors()}
 				</h4>
 				<ul class="flex flex-col gap-0.5">
@@ -123,7 +123,7 @@
 
 	<section class="flex flex-col gap-2">
 		<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-			<i class="fa-sharp-duotone fa-solid fa-flag"></i>
+			<i class="ph-duotone ph-flag"></i>
 			{m.assignmentWishes()}
 		</h4>
 		{#if application.wishes.length > 0}
@@ -153,7 +153,7 @@
 							title={prioritized ? m.assignmentPrioritized() : m.assignmentPrioritize()}
 							onclick={() => togglePriority(wish.roleId)}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-bullseye-arrow"></i>
+							<i class="ph-duotone ph-target"></i>
 						</button>
 					</li>
 				{/each}
@@ -168,11 +168,7 @@
 			? 'lg:col-span-3'
 			: 'lg:col-span-2'} lg:grid-cols-2"
 	>
-		<ApplicationText
-			icon="fire-flame-curved"
-			label={m.motivation()}
-			text={application.motivation}
-		/>
+		<ApplicationText icon="fire" label={m.motivation()} text={application.motivation} />
 		<ApplicationText icon="compass" label={m.experience()} text={application.experience} />
 	</div>
 </div>

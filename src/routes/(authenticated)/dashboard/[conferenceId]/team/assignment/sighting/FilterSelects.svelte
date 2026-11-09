@@ -58,7 +58,7 @@
 </select>
 <div class="dropdown">
 	<label class="input w-auto max-w-xs">
-		<i class="fa-sharp-duotone fa-solid fa-school opacity-60"></i>
+		<i class="ph-duotone ph-graduation-cap opacity-60"></i>
 		<input
 			type="search"
 			aria-label={m.school()}
@@ -93,7 +93,7 @@
 			onSchool(null);
 		}}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+		<i class="ph-duotone ph-x"></i>
 		{chosenName}
 	</button>
 {/if}

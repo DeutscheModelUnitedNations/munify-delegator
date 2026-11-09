@@ -48,7 +48,7 @@
 			}
 		},
 		{
-			icon: 'heart-pulse',
+			icon: 'heartbeat',
 			title: 'Lebenserwartung',
 			desc: 'Jahre bei Geburt',
 			wbIndicator: 'SP.DYN.LE00.IN',
@@ -58,7 +58,7 @@
 		},
 
 		{
-			icon: 'school-circle-check',
+			icon: 'graduation-cap',
 			title: 'Alphabetisierungsrate',
 			desc: 'Anteil der Lesefähigen',
 			wbIndicator: 'SE.ADT.LITR.ZS',
@@ -67,7 +67,7 @@
 			}
 		},
 		{
-			icon: 'file-contract',
+			icon: 'file-text',
 			title: 'Arbeitslosenquote',
 			desc: 'der Erwerbsfähigen',
 			wbIndicator: 'SL.UEM.TOTL.ZS',
@@ -82,7 +82,7 @@
 	<div class="stats col-span-1 shadow md:col-span-2 xl:col-span-3">
 		<div class="stat bg-base-200">
 			<div class="stat-figure text-primary">
-				<i class="fa-sharp-duotone fa-solid fa-flag text-3xl"></i>
+				<i class="ph-duotone ph-flag text-3xl"></i>
 			</div>
 			<div class="stat-title">{m.countryOfficialName()}</div>
 			<div class="stat-value">{getFullTranslatedCountryNameFromISO3Code(countryCode)}</div>

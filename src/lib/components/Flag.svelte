@@ -38,12 +38,7 @@
 		'bg-base-300'}"
 >
 	{#if nsa}
-		<i
-			class="fa-sharp-duotone fa-solid fa-{(icon ?? 'fa-hand-point-up').replace(
-				'fa-',
-				''
-			)} {iconClassNames()}"
-		></i>
+		<i class="ph-duotone ph-{(icon || 'hand-pointing').replace(/^ph-/, '')} {iconClassNames()}"></i>
 	{:else}
 		<span class="fi fi-{alpha2Code}"></span>
 	{/if}

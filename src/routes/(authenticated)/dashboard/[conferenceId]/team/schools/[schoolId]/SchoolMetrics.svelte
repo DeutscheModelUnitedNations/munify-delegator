@@ -56,7 +56,11 @@
 	const rate = (value: number | undefined) => (value === undefined ? '—' : percent.format(value));
 
 	const tiles = $derived([
-		{ title: m.schoolMetricsConferences(), value: String(summary.conferences), icon: 'calendar' },
+		{
+			title: m.schoolMetricsConferences(),
+			value: String(summary.conferences),
+			icon: 'calendar-blank'
+		},
 		{ title: m.schoolMetricsParticipants(), value: String(summary.participants), icon: 'users' },
 		{
 			title: m.schoolMetricsAcceptanceRate(),
@@ -65,18 +69,18 @@
 				seated: summary.seated,
 				applied: summary.applied
 			}),
-			icon: 'circle-check'
+			icon: 'check-circle'
 		},
 		{
 			title: m.schoolMetricsAttendanceRate(),
 			value: rate(summary.attendanceRate),
 			description: m.schoolMetricsAttendanceRateHint(),
-			icon: 'person-walking-arrow-right'
+			icon: 'person-simple-walk'
 		},
 		{
 			title: m.schoolMetricsFromWaitingList(),
 			value: String(summary.fromWaitingList),
-			icon: 'user-clock'
+			icon: 'clock-user'
 		}
 	]);
 </script>
@@ -89,7 +93,7 @@
 		{#each tiles as tile (tile.title)}
 			<div class="stat">
 				<div class="stat-figure text-primary">
-					<i class="fa-sharp-duotone fa-solid fa-{tile.icon} text-2xl"></i>
+					<i class="ph-duotone ph-{tile.icon} text-2xl"></i>
 				</div>
 				<div class="stat-title">{tile.title}</div>
 				<div class="stat-value text-2xl">{tile.value}</div>

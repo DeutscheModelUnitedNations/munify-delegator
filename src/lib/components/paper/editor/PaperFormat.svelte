@@ -37,12 +37,12 @@
 				<Menu.Button
 					onClick={() => editor.commands.undo()}
 					label={m.undo()}
-					icon="fa-rotate-left"
+					icon="ph-arrow-counter-clockwise"
 				/>
 				<Menu.Button
 					onClick={() => editor.commands.redo()}
 					label={m.redo()}
-					icon="fa-rotate-right"
+					icon="ph-arrow-clockwise"
 				/>
 				<Menu.Divider />
 				<Menu.ToggleButtons {editor} items={['orderedList', 'bulletList']} />
