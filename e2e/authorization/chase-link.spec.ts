@@ -53,8 +53,8 @@ test.beforeAll(async () => {
 	await withDatabase(async (client) => {
 		await client.query('DELETE FROM instance_link');
 		await client.query(
-			`INSERT INTO instance_link (id, remote_url, status, inbound_token_hash, linked_at)
-			 VALUES ('e2e-chase-link', 'https://chase.e2e.invalid', 'ACTIVE', $1, now())`,
+			`INSERT INTO instance_link (id, remote_url, status, inbound_token_hash, confirmation_code, linked_at)
+			 VALUES ('e2e-chase-link', 'https://chase.e2e.invalid', 'ACTIVE', $1, 'E2E000', now())`,
 			[createHash('sha256').update(TOKEN).digest('hex')]
 		);
 	});

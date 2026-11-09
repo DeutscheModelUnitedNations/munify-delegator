@@ -82,7 +82,7 @@ export const REMINDER_KINDS = [
 ] as const satisfies readonly EmailkindEnum[];
 
 /** The kinds that exist only while a CHASE instance is linked. */
-export const CHASE_KINDS = ['CHASE_INTRO_REMINDER'] as const satisfies readonly EmailkindEnum[];
+const CHASE_KINDS = ['CHASE_INTRO_REMINDER'] as const satisfies readonly EmailkindEnum[];
 
 /** Whether the kind applies: a CHASE kind only while an instance is linked. */
 export const kindApplies = ({ kind, chaseLinked }: { kind: string; chaseLinked: boolean }) =>

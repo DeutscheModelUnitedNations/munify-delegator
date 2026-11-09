@@ -1,4 +1,4 @@
-import { REMINDER_GAP_DAYS } from '#lib/helpers/emailKinds';
+import { REMINDER_GAP_DAYS, REMINDER_KINDS } from '#lib/helpers/emailKinds';
 import type { DueEmail } from './dueEmails';
 
 /**
@@ -32,4 +32,28 @@ export function spaceReminders({
 		last.set(email.recipient.id, now);
 		return true;
 	});
+}
+
+/** A row of the e-mail log, as far as the spacing reads it. */
+export interface ReminderLogRow {
+	trigger: string;
+	status: string;
+	kind: string;
+	userId: string | null;
+	updatedAt: Date;
+}
+
+/** When each person last got an automatic reminder (or one is being sent), by user id. */
+export function lastReminders(logs: readonly ReminderLogRow[]) {
+	const last = new Map<string, Date>();
+	for (const log of logs) {
+		const counts =
+			log.trigger === 'AUTOMATIC' &&
+			(log.status === 'SENT' || log.status === 'SENDING') &&
+			REMINDER_KINDS.some((kind) => kind === log.kind);
+		if (!counts || !log.userId) continue;
+		const previous = last.get(log.userId);
+		if (!previous || previous < log.updatedAt) last.set(log.userId, log.updatedAt);
+	}
+	return last;
 }

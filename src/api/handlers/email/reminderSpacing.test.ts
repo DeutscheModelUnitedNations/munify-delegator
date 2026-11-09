@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DueEmail, SnapshotUser } from './dueEmails';
-import { spaceReminders } from './reminderSpacing';
+import { lastReminders, spaceReminders } from './reminderSpacing';
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = new Date('2027-03-01T08:00:00Z');
@@ -58,5 +58,42 @@ describe('spaceReminders', () => {
 		const due = [mail({ kind: 'PAYMENT_RECEIVED' }), mail({ kind: 'PAPER_REVIEWED' })];
 		const anHourAgo = new Map([['anna', new Date(now.getTime() - 60 * 60 * 1000)]]);
 		expect(spaceReminders({ due, lastReminderAt: anHourAgo, now })).toEqual(due);
+	});
+});
+
+describe('lastReminders', () => {
+	const at = (iso: string) => new Date(iso);
+	const row = (overrides: Partial<Parameters<typeof lastReminders>[0][number]> = {}) => ({
+		trigger: 'AUTOMATIC',
+		status: 'SENT',
+		kind: 'CHASE_INTRO_REMINDER',
+		userId: 'u1',
+		updatedAt: at('2027-03-01T10:00:00Z'),
+		...overrides
+	});
+
+	it("keeps each person's latest automatic reminder that went or is going out", () => {
+		const last = lastReminders([
+			row(),
+			row({ updatedAt: at('2027-03-03T10:00:00Z'), status: 'SENDING' }),
+			row({ userId: 'u2', updatedAt: at('2027-03-02T10:00:00Z') })
+		]);
+		expect(last).toEqual(
+			new Map([
+				['u1', at('2027-03-03T10:00:00Z')],
+				['u2', at('2027-03-02T10:00:00Z')]
+			])
+		);
+	});
+
+	it('leaves out mails by hand, failed or skipped ones, other kinds and rows without a person', () => {
+		const last = lastReminders([
+			row({ trigger: 'MANUAL' }),
+			row({ status: 'FAILED' }),
+			row({ status: 'SKIPPED' }),
+			row({ kind: 'CERTIFICATE_AVAILABLE' }),
+			row({ userId: null })
+		]);
+		expect(last.size).toBe(0);
 	});
 });

@@ -11,7 +11,7 @@ import {
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
 import { REMINDER_KINDS } from '#lib/helpers/emailKinds';
-import { spaceReminders } from './reminderSpacing';
+import { lastReminders, spaceReminders } from './reminderSpacing';
 import {
 	deliver,
 	loadWording,
@@ -82,18 +82,6 @@ async function openEmails({
 	});
 	const open = stillOpen({ due: dueEmails({ snapshot, now }), logs, kinds, now });
 	return spaced ? spaceReminders({ due: open, lastReminderAt: lastReminders(logs), now }) : open;
-}
-
-/** When each person last got an automatic reminder (or one is being sent). */
-function lastReminders(logs: readonly LogRow[]) {
-	const last = new Map<string, Date>();
-	for (const log of logs) {
-		if (log.trigger !== 'AUTOMATIC' || !log.userId || !isReminder(log.kind)) continue;
-		if (log.status !== 'SENT' && log.status !== 'SENDING') continue;
-		const previous = last.get(log.userId);
-		if (!previous || previous < log.updatedAt) last.set(log.userId, log.updatedAt);
-	}
-	return last;
 }
 
 type LogRow = LogState & {

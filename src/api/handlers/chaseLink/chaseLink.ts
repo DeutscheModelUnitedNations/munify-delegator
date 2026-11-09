@@ -12,7 +12,7 @@ import { chaseUrlSchema } from '#lib/schemata/chaseLink';
 
 registerInstanceLinkAbilities();
 
-export const InstanceLinkRef = object({ table: 'instanceLink' });
+object({ table: 'instanceLink' });
 query({ table: 'instanceLink' });
 
 schemaBuilder.mutationFields((t) => ({

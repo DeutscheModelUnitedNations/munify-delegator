@@ -83,14 +83,130 @@ function drawCentred({
 	page.drawText(text, { x: left + (CARD_WIDTH - width) / 2, y, size, font, color });
 }
 
-// fallow-ignore-next-line complexity
+/** What every part of one card is drawn with. */
+interface CardCanvas {
+	pdf: PDFDocument;
+	page: PDFPage;
+	left: number;
+	/** The card's width inside its padding. */
+	width: number;
+	fonts: { regular: PDFFont; bold: PDFFont };
+}
+
+/** The conference's logo at the top, answering where the next part starts. */
+async function drawLogo({ canvas, logo, y }: { canvas: CardCanvas; logo: Uint8Array; y: number }) {
+	const image = await canvas.pdf.embedPng(logo);
+	const height = 30;
+	const logoWidth = Math.min((image.width / image.height) * height, canvas.width);
+	const logoHeight = (logoWidth / image.width) * image.height;
+	canvas.page.drawImage(image, {
+		x: canvas.left + (CARD_WIDTH - logoWidth) / 2,
+		y: y - logoHeight,
+		width: logoWidth,
+		height: logoHeight
+	});
+	return y - logoHeight - 18;
+}
+
+/** The given and the family name, each on its own line, answering where the next part starts. */
+function drawNames({ canvas, card, y }: { canvas: CardCanvas; card: NsaCardEntry; y: number }) {
+	const font = canvas.fonts.bold;
+	for (const text of [card.givenName, card.familyName]) {
+		const line = encodable({ font, text });
+		const fitted = fittingSize({ font, text: line, width: canvas.width, size: 24, min: 12 });
+		y -= fitted;
+		drawCentred({
+			page: canvas.page,
+			text: line,
+			font,
+			size: fitted,
+			y,
+			left: canvas.left,
+			color: NEUTRAL
+		});
+		y -= 6;
+	}
+	return y;
+}
+
+/** The organisation's name with its icon, centred, answering where the next part starts. */
+async function drawOrganisation({
+	canvas,
+	name: rawName,
+	icon,
+	y
+}: {
+	canvas: CardCanvas;
+	name: string;
+	icon: Uint8Array | null | undefined;
+	y: number;
+}) {
+	const font = canvas.fonts.regular;
+	const name = encodable({ font, text: rawName });
+	const iconSide = 16;
+	const iconRoom = icon ? iconSide + 6 : 0;
+	const size = fittingSize({
+		font,
+		text: name,
+		width: canvas.width - iconSide - 6,
+		size: 15,
+		min: 9
+	});
+	const rowLeft = canvas.left + (CARD_WIDTH - (iconRoom + font.widthOfTextAtSize(name, size))) / 2;
+	y -= iconSide + 4;
+	if (icon) {
+		const image = await canvas.pdf.embedPng(icon);
+		canvas.page.drawImage(image, { x: rowLeft, y: y - 2, width: iconSide, height: iconSide });
+	}
+	canvas.page.drawText(name, {
+		x: rowLeft + iconRoom,
+		y: y + (iconSide - size) / 2,
+		size,
+		font,
+		color: PRIMARY
+	});
+	return y;
+}
+
+/** The conference's title and the card's label along the bottom edge. */
+function drawFooter({
+	canvas,
+	card,
+	options,
+	footer
+}: {
+	canvas: CardCanvas;
+	card: NsaCardEntry;
+	options: NsaCardsPdfOptions;
+	footer: number;
+}) {
+	const font = canvas.fonts.regular;
+	const title = encodable({ font, text: options.conferenceTitle });
+	const label = options.cardLabel(card.cardNumber);
+	const labelSize = 8;
+	canvas.page.drawText(title, {
+		x: canvas.left + PADDING,
+		y: footer,
+		size: fittingSize({ font, text: title, width: canvas.width - 60, size: labelSize, min: 6 }),
+		font,
+		color: MUTED
+	});
+	canvas.page.drawText(label, {
+		x: canvas.left + CARD_WIDTH - PADDING - font.widthOfTextAtSize(label, labelSize),
+		y: footer,
+		size: labelSize,
+		font,
+		color: MUTED
+	});
+}
+
 async function drawCard({
 	pdf,
 	page,
 	card,
 	left,
 	bottom,
-	fonts: { regular, bold },
+	fonts,
 	options
 }: {
 	pdf: PDFDocument;
@@ -101,63 +217,14 @@ async function drawCard({
 	fonts: { regular: PDFFont; bold: PDFFont };
 	options: NsaCardsPdfOptions;
 }) {
-	const width = CARD_WIDTH - PADDING * 2;
+	const canvas: CardCanvas = { pdf, page, left, width: CARD_WIDTH - PADDING * 2, fonts };
 	let y = bottom + CARD_HEIGHT - PADDING;
-
-	if (options.logo) {
-		const logo = await pdf.embedPng(options.logo);
-		const height = 30;
-		const logoWidth = Math.min((logo.width / logo.height) * height, width);
-		const logoHeight = (logoWidth / logo.width) * logo.height;
-		page.drawImage(logo, {
-			x: left + (CARD_WIDTH - logoWidth) / 2,
-			y: y - logoHeight,
-			width: logoWidth,
-			height: logoHeight
-		});
-		y -= logoHeight + 18;
-	}
-
-	for (const [text, size] of [
-		[card.givenName, 24],
-		[card.familyName, 24]
-	] as const) {
-		const line = encodable({ font: bold, text });
-		const fitted = fittingSize({ font: bold, text: line, width, size, min: 12 });
-		y -= fitted;
-		drawCentred({ page, text: line, font: bold, size: fitted, y, left, color: NEUTRAL });
-		y -= 6;
-	}
-
-	if (card.nsaName) {
-		const name = encodable({ font: regular, text: card.nsaName });
-		const iconSide = 16;
-		const size = fittingSize({
-			font: regular,
-			text: name,
-			width: width - iconSide - 6,
-			size: 15,
-			min: 9
-		});
-		const textWidth = regular.widthOfTextAtSize(name, size);
-		const rowWidth = (card.icon ? iconSide + 6 : 0) + textWidth;
-		const rowLeft = left + (CARD_WIDTH - rowWidth) / 2;
-		y -= iconSide + 4;
-		if (card.icon) {
-			const icon = await pdf.embedPng(card.icon);
-			page.drawImage(icon, { x: rowLeft, y: y - 2, width: iconSide, height: iconSide });
-		}
-		page.drawText(name, {
-			x: rowLeft + (card.icon ? iconSide + 6 : 0),
-			y: y + (iconSide - size) / 2,
-			size,
-			font: regular,
-			color: PRIMARY
-		});
-	}
+	if (options.logo) y = await drawLogo({ canvas, logo: options.logo, y });
+	y = drawNames({ canvas, card, y });
+	if (card.nsaName) y = await drawOrganisation({ canvas, name: card.nsaName, icon: card.icon, y });
 
 	const footer = bottom + PADDING;
-	const side = Math.min(width, y - 14 - footer - 22);
+	const side = Math.min(canvas.width, y - 14 - footer - 22);
 	await drawBrandedQr({
 		pdf,
 		page,
@@ -165,24 +232,7 @@ async function drawCard({
 		box: { x: left + (CARD_WIDTH - side) / 2, top: y - 14, side },
 		emblemBytes: null
 	});
-
-	const title = encodable({ font: regular, text: options.conferenceTitle });
-	const label = options.cardLabel(card.cardNumber);
-	const labelSize = 8;
-	page.drawText(title, {
-		x: left + PADDING,
-		y: footer,
-		size: fittingSize({ font: regular, text: title, width: width - 60, size: labelSize, min: 6 }),
-		font: regular,
-		color: MUTED
-	});
-	page.drawText(label, {
-		x: left + CARD_WIDTH - PADDING - regular.widthOfTextAtSize(label, labelSize),
-		y: footer,
-		size: labelSize,
-		font: regular,
-		color: MUTED
-	});
+	drawFooter({ canvas, card, options, footer });
 }
 
 export async function buildNsaCardsPdf(options: NsaCardsPdfOptions): Promise<Uint8Array> {

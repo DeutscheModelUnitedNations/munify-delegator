@@ -135,7 +135,7 @@ export async function iconPng(icon: string | null): Promise<Uint8Array> {
 }
 
 /** Any image the browser can show (the conference logo), as PNG. `null` if it cannot be read. */
-export async function urlToPng(url: string): Promise<Uint8Array | null> {
+async function urlToPng(url: string): Promise<Uint8Array | null> {
 	try {
 		const image = await loadImage(url);
 		const canvas = document.createElement('canvas');

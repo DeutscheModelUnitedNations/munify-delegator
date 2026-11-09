@@ -1,5 +1,5 @@
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import { isSystemAdmin, systemAdmin } from '#api/services/authHelper/rules';
+import { isLinkedChase, isSystemAdmin, systemAdmin } from '#api/services/authHelper/rules';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
@@ -35,6 +35,6 @@ export async function assertPendingChaseCaller(ctx: ApiContext) {
 }
 
 /** Whether the linked CHASE itself is calling, as it does when it unlinks. */
-export async function isLinkedChaseCaller(ctx: ApiContext) {
-	return (await ctx.linkCaller())?.status === 'ACTIVE';
+export function isLinkedChaseCaller(ctx: ApiContext) {
+	return isLinkedChase(ctx);
 }
