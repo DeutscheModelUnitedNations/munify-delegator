@@ -6383,7 +6383,7 @@ export const client = {
    *
    * Internally, this does some magic to make the data reactive with Svelte's reactivity system. But it can be used with other frameworks as well.
    */
-  liveQuery: makeLiveQuery<Query>({
+  liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
 	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chasePresence", "chasePresences", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
@@ -6392,7 +6392,7 @@ export const client = {
   /**
    * A mutation that can be used to e.g. create, update or delete data.
    */
-  mutate: makeMutation<Mutation>({
+  mutate: makeMutation<Mutation, 'id'>({
 	  urqlClient,
 		schema,
     autoIncludeIdField: 'id'
@@ -6400,7 +6400,7 @@ export const client = {
   /**
    * A continuous stream of results that updates when the server sends new data.
    */
-  subscribe: makeSubscription<Subscription>({
+  subscribe: makeSubscription<Subscription, 'id'>({
 	  urqlClient,
 		schema,
     autoIncludeIdField: 'id'
@@ -6408,7 +6408,7 @@ export const client = {
   /**
    * A one-time fetch of data.
    */
-  query: makeQuery<Query>({
+  query: makeQuery<Query, false, 'id'>({
 	  urqlClient,
 		schema,
     autoIncludeIdField: 'id'

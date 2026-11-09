@@ -24,6 +24,7 @@ function user(id: string, overrides: Partial<User> = {}): User {
 
 function status(userId: string, overrides: Partial<Status> = {}): Status {
 	return {
+		id: `status-${userId}`,
 		user: { id: userId },
 		paymentStatus: 'PENDING',
 		termsAndConditions: 'PENDING',
@@ -55,11 +56,14 @@ describe('transformParticipants', () => {
 				...empty,
 				delegationMembers: [
 					{
+						id: 'member-12',
 						isHeadDelegate: true,
-						assignedCommittee: { name: 'GA' },
-						school: { name: 'Gymnasium' },
+						assignedCommittee: { id: 'committee-1', name: 'GA' },
+						school: { id: 'school-1', name: 'Gymnasium' },
 						delegation: {
+							id: 'delegation-5',
 							assignedRole: {
+								id: 'role-1',
 								kind: 'NATION',
 								name: null,
 								fontAwesomeIcon: null,
@@ -101,11 +105,14 @@ describe('transformParticipants', () => {
 				...empty,
 				delegationMembers: [
 					{
+						id: 'member-13',
 						isHeadDelegate: false,
 						assignedCommittee: null,
 						school: null,
 						delegation: {
+							id: 'delegation-6',
 							assignedRole: {
+								id: 'role-2',
 								kind: 'NON_STATE_ACTOR',
 								name: 'Greenpeace',
 								fontAwesomeIcon: 'leaf',
@@ -136,10 +143,11 @@ describe('transformParticipants', () => {
 				...empty,
 				delegationMembers: [
 					{
+						id: 'member-8',
 						isHeadDelegate: false,
 						assignedCommittee: null,
 						school: null,
-						delegation: { assignedRole: null },
+						delegation: { id: 'delegation-1', assignedRole: null },
 						user: user('c')
 					}
 				]
@@ -160,6 +168,7 @@ describe('transformParticipants', () => {
 					...empty,
 					conferenceSupervisors: [
 						{
+							id: 'supervisor-1',
 							plansOwnAttendenceAtConference: true,
 							school: null,
 							supervisedDelegationMembers: delegations,
@@ -177,10 +186,18 @@ describe('transformParticipants', () => {
 			plansOwnAttendance: true,
 			accepted: false
 		});
-		expect(supervisor([{ delegation: { assignedRoleId: 'r' } }], []).accepted).toBe(true);
-		expect(supervisor([{ delegation: { assignedRoleId: null } }], []).accepted).toBe(false);
-		expect(supervisor([], [{ assignedRole: { id: 'r' } }]).accepted).toBe(true);
-		expect(supervisor([], [{ assignedRole: null }]).accepted).toBe(false);
+		expect(
+			supervisor([{ id: 'member-9', delegation: { id: 'delegation-2', assignedRoleId: 'r' } }], [])
+				.accepted
+		).toBe(true);
+		expect(
+			supervisor(
+				[{ id: 'member-10', delegation: { id: 'delegation-3', assignedRoleId: null } }],
+				[]
+			).accepted
+		).toBe(false);
+		expect(supervisor([], [{ id: 'single-3', assignedRole: { id: 'r' } }]).accepted).toBe(true);
+		expect(supervisor([], [{ id: 'single-4', assignedRole: null }]).accepted).toBe(false);
 	});
 
 	test('maps single participants with and without an assigned role', () => {
@@ -189,12 +206,13 @@ describe('transformParticipants', () => {
 				...empty,
 				singleParticipants: [
 					{
+						id: 'single-5',
 						applied: true,
-						school: { name: 'School' },
-						assignedRole: { name: 'Press', fontAwesomeIcon: 'newspaper' },
+						school: { id: 'school-2', name: 'School' },
+						assignedRole: { id: 'role-3', name: 'Press', fontAwesomeIcon: 'newspaper' },
 						user: user('p1')
 					},
-					{ applied: true, school: null, assignedRole: null, user: user('p2') }
+					{ id: 'single-1', applied: true, school: null, assignedRole: null, user: user('p2') }
 				]
 			},
 			startConference: start,
@@ -221,27 +239,31 @@ describe('transformParticipants', () => {
 				...empty,
 				delegationMembers: [
 					{
+						id: 'member-11',
 						isHeadDelegate: false,
 						assignedCommittee: null,
 						school: null,
-						delegation: { assignedRole: null },
+						delegation: { id: 'delegation-4', assignedRole: null },
 						user: user('rejected')
 					}
 				],
 				waitingListEntries: [
 					{
+						id: 'entry-4',
 						createdAt: new Date('2026-02-01T10:00:00Z'),
 						assignedAt: null,
-						school: { name: 'Gymnasium' },
+						school: { id: 'school-3', name: 'Gymnasium' },
 						user: user('waiting')
 					},
 					{
+						id: 'entry-1',
 						createdAt: new Date('2026-02-02T10:00:00Z'),
 						assignedAt: null,
 						school: null,
 						user: user('rejected')
 					},
 					{
+						id: 'entry-2',
 						createdAt: new Date('2026-02-03T10:00:00Z'),
 						assignedAt: new Date('2026-02-10T10:00:00Z'),
 						school: null,
@@ -273,9 +295,12 @@ describe('transformParticipants', () => {
 		const [row] = transformParticipants({
 			queryData: {
 				...empty,
-				singleParticipants: [{ applied: true, school: null, assignedRole: null, user: user('p') }],
+				singleParticipants: [
+					{ id: 'single-2', applied: true, school: null, assignedRole: null, user: user('p') }
+				],
 				waitingListEntries: [
 					{
+						id: 'entry-3',
 						createdAt: new Date('2026-02-03T10:00:00Z'),
 						assignedAt: new Date('2026-02-10T10:00:00Z'),
 						school: null,
@@ -294,7 +319,10 @@ describe('transformParticipants', () => {
 
 	test('team members are always accepted and keep their team role', () => {
 		const [row] = transformParticipants({
-			queryData: { ...empty, teamMembers: [{ role: 'PROJECT_MANAGEMENT', user: user('t') }] },
+			queryData: {
+				...empty,
+				teamMembers: [{ id: 'member-1', role: 'PROJECT_MANAGEMENT', user: user('t') }]
+			},
 			startConference: start,
 			endConference: end
 		});
@@ -313,9 +341,9 @@ describe('transformParticipants', () => {
 			queryData: {
 				...empty,
 				teamMembers: [
-					{ role: 'MEMBER', user: adult },
-					{ role: 'MEMBER', user: minor },
-					{ role: 'MEMBER', user: problem }
+					{ id: 'member-2', role: 'MEMBER', user: adult },
+					{ id: 'member-3', role: 'MEMBER', user: minor },
+					{ id: 'member-4', role: 'MEMBER', user: problem }
 				],
 				participantStatuses: [
 					status('adult', {
@@ -350,8 +378,16 @@ describe('transformParticipants', () => {
 			queryData: {
 				...empty,
 				teamMembers: [
-					{ role: 'MEMBER', user: user('during', { birthday: new Date(2000, 2, 13) }) },
-					{ role: 'MEMBER', user: user('outside', { birthday: new Date(2000, 5, 1) }) }
+					{
+						id: 'member-5',
+						role: 'MEMBER',
+						user: user('during', { birthday: new Date(2000, 2, 13) })
+					},
+					{
+						id: 'member-6',
+						role: 'MEMBER',
+						user: user('outside', { birthday: new Date(2000, 5, 1) })
+					}
 				]
 			},
 			startConference: start.toISOString(),
@@ -365,7 +401,9 @@ describe('transformParticipants', () => {
 		const [row] = transformParticipants({
 			queryData: {
 				...empty,
-				teamMembers: [{ role: 'MEMBER', user: user('x', { birthday: new Date(2000, 2, 13) }) }]
+				teamMembers: [
+					{ id: 'member-7', role: 'MEMBER', user: user('x', { birthday: new Date(2000, 2, 13) }) }
+				]
 			},
 			startConference: undefined,
 			endConference: undefined

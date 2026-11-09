@@ -7,7 +7,7 @@ import { parseLinkedPresence } from '#lib/schemata/chasePresence';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { watchChaseTables, type ChaseTables } from './chaseTables';
 import { openLinkToken } from './linkTokens';
-import { createGate, handled, listen } from './liveTable';
+import { createGate, handled } from './liveTable';
 import { joinPresence, presenceFromChase, type ChasePresenceTables } from './presenceMirror';
 import { syncResolutions } from './resolutionSync';
 
@@ -118,20 +118,21 @@ function runWorker() {
 			);
 		};
 
-		let reconnected = () => {};
-		const remote: ChaseClient = createChaseClient({
-			url: link.remoteUrl,
-			token: openLinkToken(link.outboundToken),
-			onConnected: () => reconnected()
-		});
-		cleanups.push(() => remote.dispose());
-
-		// A live query's first answer may fail (CHASE unreachable, a rule refusing): that is noted on
-		// the link and asked again on the next (re)connect, never left to crash the app.
+		// A live query's answer may fail (CHASE unreachable, a rule refusing): that is noted on the
+		// link, never left to crash the app. A first answer is asked again, an update waits for the next.
 		const failed = (error: unknown) => {
 			logger.warn('A live query to CHASE failed', error);
 			void noteError({ linkId: link.id, error });
 		};
+
+		let reconnected = () => {};
+		const remote: ChaseClient = createChaseClient({
+			url: link.remoteUrl,
+			token: openLinkToken(link.outboundToken),
+			onError: failed,
+			onConnected: () => reconnected()
+		});
+		cleanups.push(() => remote.dispose());
 
 		// CHASE lets the link read back only the conferences that came from here. Set up again on
 		// every (re)connect: a first answer that failed (the other side was away) leaves no watch
@@ -141,7 +142,7 @@ function runWorker() {
 		const watchConferences = () => {
 			unwatchConferences?.();
 			const conferences = handled(remote.liveQuery.conferences({ id: true }), failed);
-			unwatchConferences = listen(conferences, (list) => {
+			unwatchConferences = conferences.subscribe((list) => {
 				if (!list || stopped) return;
 				const current = new Set(Array.from(list).map((conference) => conference.id));
 				for (const [conferenceId, tables] of watches) {

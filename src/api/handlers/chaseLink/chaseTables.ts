@@ -49,16 +49,14 @@ export function watchChaseTables({
 	const ofCommittees = { committee: inConference };
 
 	const USER = {
-		id: true,
 		conferenceUserType: true,
 		userEmail: true,
 		committeeMemberId: true,
 		conferenceMemberId: true
 	} as const;
-	const SEAT = { id: true, committeeId: true, representationId: true } as const;
-	const MEMBER = { id: true, representationId: true } as const;
+	const SEAT = { committeeId: true, representationId: true } as const;
+	const MEMBER = { representationId: true } as const;
 	const REPRESENTATION = {
-		id: true,
 		type: true,
 		alpha2Code: true,
 		alpha3Code: true,
@@ -66,7 +64,6 @@ export function watchChaseTables({
 		name: true
 	} as const;
 	const EVENT = {
-		id: true,
 		conferenceUserId: true,
 		committeeId: true,
 		present: true,
@@ -74,14 +71,13 @@ export function watchChaseTables({
 		timestamp: true
 	} as const;
 	const PAPER = {
-		id: true,
 		title: true,
 		documentNumber: true,
 		committeeId: true,
 		agendaItemId: true,
 		vote: { id: true, outcome: true }
 	} as const;
-	const SNAPSHOT = { id: true, paperId: true, createdAt: true } as const;
+	const SNAPSHOT = { paperId: true, createdAt: true } as const;
 
 	const presence = {
 		users: table({
