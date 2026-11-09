@@ -37,10 +37,12 @@ export function createChaseClient({
 	const headers: Record<string, string> = token ? { [LINK_TOKEN_HEADER]: token } : {};
 	const wsUrl = new URL('/api/graphql', url);
 	wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-	// only connects once something subscribes
+	// connected from the start, so a CHASE that comes back is noticed (`onConnected`) even while
+	// nothing is subscribed
 	const ws = createWSClient({
 		url: wsUrl.toString(),
 		connectionParams: headers,
+		lazy: false,
 		// keep trying while CHASE is away; the worker reconciles once it is back
 		retryAttempts: Infinity,
 		keepAlive: 30_000,

@@ -6,6 +6,7 @@ import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { openLinkToken } from './linkTokens';
 import { presenceFromChase } from './presenceMirror';
 import { syncResolutions } from './resolutionSync';
+import { readAll } from './readAll';
 
 /**
  * The link worker (`docs/plans/chase-link.md`): reads back what the linked CHASE records about this
@@ -110,58 +111,81 @@ function runWorker() {
 			for (const readback of READBACKS) schedule({ readback, conferenceId });
 		};
 
+		let reconnected = () => {};
 		const remote: ChaseClient = createChaseClient({
 			url: link.remoteUrl,
 			token: openLinkToken(link.outboundToken),
 			onConnected: () => {
+				reconnected();
 				for (const conferenceId of watchers.keys()) scheduleAll(conferenceId);
 			}
 		});
 		cleanups.push(() => remote.dispose());
 
+		// A live query's first answer may fail (CHASE unreachable, a rule refusing): that is noted on
+		// the link and retried on the next (re)connect, never left to crash the app.
+		const failed = (error: unknown) => {
+			logger.warn('A live query to CHASE failed', error);
+			void noteError({ linkId: link.id, error });
+		};
+
 		// CHASE lets the link read back only the conferences that came from here
-		const conferences = remote.liveQuery.conferences({ id: true });
-		const unsubscribe = conferences.subscribe((list) => {
-			if (!list || stopped) return;
-			const current = new Set(list.map((conference) => conference.id));
-			for (const [conferenceId, unwatch] of watchers) {
-				if (current.has(conferenceId)) continue;
-				unwatch();
-				watchers.delete(conferenceId);
-			}
-			for (const conferenceId of current) {
-				if (watchers.has(conferenceId)) continue;
-				const events = remote.liveQuery.presenceEvents({
-					__args: { where: { committee: { conferenceId: { eq: conferenceId } } } },
-					id: true,
-					present: true
-				});
-				// A concluded vote adds a snapshot; the outcome is set on the vote, which the nested
-				// selection listens on too.
-				const adoptions = remote.liveQuery.paperContentSnapshots({
-					__args: {
-						where: {
-							trigger: 'VOTE_CONCLUDED',
-							paper: { committee: { conferenceId: { eq: conferenceId } } }
-						}
-					},
-					id: true,
-					paper: { id: true, vote: { id: true, outcome: true } }
-				});
-				const unwatchEvents = events.subscribe(() =>
-					schedule({ readback: 'presence', conferenceId })
-				);
-				const unwatchAdoptions = adoptions.subscribe(() =>
-					schedule({ readback: 'resolutions', conferenceId })
-				);
-				watchers.set(conferenceId, () => {
-					unwatchEvents();
-					unwatchAdoptions();
-				});
-				scheduleAll(conferenceId);
-			}
-		});
-		cleanups.push(unsubscribe);
+		// Set up again on every (re)connect: a first answer that failed (the other side was away)
+		// leaves no watch behind otherwise.
+		let unwatchConferences: (() => void) | undefined;
+		const watchConferences = () => {
+			unwatchConferences?.();
+			const conferences = handled(remote.liveQuery.conferences({ id: true }), failed);
+			unwatchConferences = conferences.subscribe((list) => {
+				if (!list || stopped) return;
+				const current = new Set(list.map((conference) => conference.id));
+				for (const [conferenceId, unwatch] of watchers) {
+					if (current.has(conferenceId)) continue;
+					unwatch();
+					watchers.delete(conferenceId);
+				}
+				for (const conferenceId of current) {
+					if (watchers.has(conferenceId)) continue;
+					const events = handled(
+						remote.liveQuery.presenceEvents({
+							__args: { where: { committee: { conferenceId: { eq: conferenceId } } } },
+							id: true,
+							present: true
+						}),
+						failed
+					);
+					// A concluded vote adds a snapshot; the outcome is set on the vote, which the nested
+					// selection listens on too.
+					const adoptions = handled(
+						remote.liveQuery.paperContentSnapshots({
+							__args: {
+								where: {
+									trigger: 'VOTE_CONCLUDED',
+									paper: { committee: { conferenceId: { eq: conferenceId } } }
+								}
+							},
+							id: true,
+							paper: { id: true, vote: { id: true, outcome: true } }
+						}),
+						failed
+					);
+					const unwatchEvents = events.subscribe(() =>
+						schedule({ readback: 'presence', conferenceId })
+					);
+					const unwatchAdoptions = adoptions.subscribe(() =>
+						schedule({ readback: 'resolutions', conferenceId })
+					);
+					watchers.set(conferenceId, () => {
+						unwatchEvents();
+						unwatchAdoptions();
+					});
+					scheduleAll(conferenceId);
+				}
+			});
+		};
+		reconnected = watchConferences;
+		watchConferences();
+		cleanups.push(() => unwatchConferences?.());
 	})().catch((error) => {
 		logger.error('The CHASE link worker stopped', error);
 		stop();
@@ -169,6 +193,22 @@ function runWorker() {
 	});
 
 	return { stop };
+}
+
+/** Lets a live query's first answer fail without an unhandled rejection; it still subscribes. */
+function handled<T extends PromiseLike<unknown>>(result: T, onError: (error: unknown) => void): T {
+	Promise.resolve(result).then(undefined, onError);
+	return result;
+}
+
+/** Notes a failure on the link, for the pairing page. */
+async function noteError({ linkId, error }: { linkId: string; error: unknown }) {
+	await db
+		.update(schema.instanceLink)
+		.set({ lastError: error instanceof Error ? error.message : String(error) })
+		.where(eq(schema.instanceLink.id, linkId))
+		.catch(() => undefined);
+	instanceLinkPubsub.updated(linkId);
 }
 
 /**
@@ -186,15 +226,11 @@ async function recorded(
 			.update(schema.instanceLink)
 			.set({ lastEventAt: now, lastReconcileAt: now, lastError: null })
 			.where(eq(schema.instanceLink.id, linkId));
+		instanceLinkPubsub.updated(linkId);
 	} catch (error) {
 		logger.warn('Reading back from CHASE failed', { error, conferenceId, what });
-		await db
-			.update(schema.instanceLink)
-			.set({ lastError: error instanceof Error ? error.message : String(error) })
-			.where(eq(schema.instanceLink.id, linkId))
-			.catch(() => undefined);
+		await noteError({ linkId, error });
 	}
-	instanceLinkPubsub.updated(linkId);
 }
 
 /** Reads one conference's presence from CHASE as it is now and stores it. */
@@ -213,14 +249,19 @@ async function readPresence({
 		faIcon: true,
 		name: true
 	} as const;
-	const users = await remote.query.conferenceUsers({
-		__args: { where: { conferenceId: { eq: conferenceId } } },
-		conferenceUserType: true,
-		userEmail: true,
-		committeeMember: { committeeId: true, representation },
-		conferenceMember: { representation },
-		presenceEvents: { id: true, committeeId: true, present: true, type: true, timestamp: true }
-	});
+	const users = await readAll((page) =>
+		remote.query.conferenceUsers({
+			__args: {
+				...page,
+				where: { conferenceId: { eq: conferenceId } }
+			},
+			conferenceUserType: true,
+			userEmail: true,
+			committeeMember: { committeeId: true, representation },
+			conferenceMember: { representation },
+			presenceEvents: { id: true, committeeId: true, present: true, type: true, timestamp: true }
+		})
+	);
 	const now = new Date();
 	const data = presenceFromChase({ conferenceId, users: Array.from(users), now });
 

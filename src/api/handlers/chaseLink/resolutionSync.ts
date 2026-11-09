@@ -17,6 +17,7 @@ import {
 	type AdoptedResolution
 } from './adoptedResolutions';
 import type { ChaseClient } from './chaseRemote';
+import { readAll } from './readAll';
 
 /**
  * Takes the resolutions the linked CHASE adopted for one conference over as the conference's
@@ -32,16 +33,21 @@ export async function syncResolutions({
 	remote: ChaseClient;
 	conferenceId: string;
 }) {
-	const papers = await remote.query.resolutionPapers({
-		__args: { where: { status: 'FINAL', committee: { conferenceId: { eq: conferenceId } } } },
-		id: true,
-		title: true,
-		documentNumber: true,
-		committeeId: true,
-		agendaItemId: true,
-		vote: { id: true, outcome: true },
-		snapshots: { id: true, content: true, createdAt: true }
-	});
+	const papers = await readAll((page) =>
+		remote.query.resolutionPapers({
+			__args: {
+				...page,
+				where: { status: 'FINAL', committee: { conferenceId: { eq: conferenceId } } }
+			},
+			id: true,
+			title: true,
+			documentNumber: true,
+			committeeId: true,
+			agendaItemId: true,
+			vote: { id: true, outcome: true },
+			snapshots: { id: true, content: true, createdAt: true }
+		})
+	);
 	const adopted = adoptedResolutions(Array.from(papers));
 
 	const existing = (
