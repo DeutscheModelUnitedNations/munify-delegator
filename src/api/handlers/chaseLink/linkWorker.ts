@@ -183,7 +183,12 @@ function runWorker() {
 				}
 			});
 		};
-		reconnected = watchConferences;
+		// A socket that broke may have taken its subscriptions along, so every watch starts afresh
+		reconnected = () => {
+			for (const unwatch of watchers.values()) unwatch();
+			watchers.clear();
+			watchConferences();
+		};
 		watchConferences();
 		cleanups.push(() => unwatchConferences?.());
 	})().catch((error) => {

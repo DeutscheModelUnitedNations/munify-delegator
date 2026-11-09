@@ -108,6 +108,10 @@ export async function createPaperReview({
 	paperReviewPubsub.created();
 	paperPubsub.updated(paperId);
 	paperVersionPubsub.updated(versionId);
+	// The verdict moves the paper into or out of lists filtered by status (the linked CHASE reads
+	// accepted working papers only), which hear of it as rows coming and going, not as updates.
+	paperPubsub.created();
+	paperVersionPubsub.created();
 
 	return result;
 }
