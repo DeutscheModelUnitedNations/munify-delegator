@@ -45,7 +45,10 @@
 </script>
 
 <div class="flex items-start gap-4 px-4 py-3">
-	<i class="ph-duotone ph-clipboard-text text-base-content/60 w-6 pt-0.5 text-center text-lg"></i>
+	<i
+		aria-hidden="true"
+		class="ph-duotone ph-clipboard-text text-base-content/60 w-6 pt-0.5 text-center text-lg"
+	></i>
 	<div class="flex min-w-0 grow flex-col gap-2">
 		<span class="font-semibold">{m.attendanceLog()}</span>
 		{#if entries.length === 0}
@@ -54,7 +57,7 @@
 			<ul class="flex max-h-72 flex-col gap-1 overflow-y-auto">
 				{#each entries as entry (entry.id)}
 					<li class="bg-base-100 rounded-field flex items-center gap-3 px-3 py-2">
-						<i class="ph-duotone ph-check-circle text-success"></i>
+						<i aria-hidden="true" class="ph-duotone ph-check-circle text-success"></i>
 						<div class="flex min-w-0 grow flex-col">
 							<span class="truncate">{entry.session.occasion}</span>
 							<span class="text-base-content/60 text-xs">
@@ -76,7 +79,7 @@
 							aria-label={m.deleteAttendanceEntry()}
 							title={m.deleteAttendanceEntry()}
 						>
-							<i class="ph-duotone ph-trash"></i>
+							<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 						</button>
 					</li>
 				{/each}

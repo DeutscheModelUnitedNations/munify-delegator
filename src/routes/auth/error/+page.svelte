@@ -48,11 +48,11 @@
 
 	<div class="flex flex-col gap-3 sm:flex-row">
 		<a class="btn btn-primary" href={resolve('/')}>
-			<i class="ph-duotone ph-arrow-right"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
 			{m.authErrorTryAgain()}
 		</a>
 		<a class="btn btn-ghost" href={`mailto:${supportEmail}?${mailtoQuery}`}>
-			<i class="ph-duotone ph-envelope"></i>
+			<i aria-hidden="true" class="ph-duotone ph-envelope"></i>
 			{m.authErrorContactSupport()}
 		</a>
 	</div>

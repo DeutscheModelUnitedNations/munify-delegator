@@ -40,14 +40,15 @@
 		class="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
 		onclick={() => (showDangerZone = !showDangerZone)}
 	>
-		<i class="ph-duotone {showDangerZone ? 'ph-caret-down' : 'ph-caret-right'}"></i>
+		<i aria-hidden="true" class="ph-duotone {showDangerZone ? 'ph-caret-down' : 'ph-caret-right'}"
+		></i>
 		{m.dangerZone()}
 	</button>
 
 	{#if showDangerZone}
 		<div class="mt-2 border border-error/30 rounded-box p-4 bg-error/5">
 			<div class="flex items-center gap-2 text-error mb-3">
-				<i class="ph-duotone ph-warning text-lg"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning text-lg"></i>
 				<h3 class="font-bold">{m.paperDeleteTitle()}</h3>
 			</div>
 
@@ -76,7 +77,7 @@
 				disabled={deleteConfirmationText !== confirmationText}
 				onclick={handleDeletePaper}
 			>
-				<i class="ph-duotone ph-trash"></i>
+				<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 				{m.paperDeleteButton()}
 			</button>
 		</div>

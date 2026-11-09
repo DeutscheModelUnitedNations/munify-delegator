@@ -134,7 +134,7 @@
 <div class="flex flex-col gap-6 py-4 sm:px-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
 		<button class="btn btn-primary" onclick={() => (showCreateModal = true)}>
-			<i class="ph-fill ph-plus"></i>
+			<i aria-hidden="true" class="ph-fill ph-plus"></i>
 			{m.createSurvey()}
 		</button>
 	</div>
@@ -143,10 +143,10 @@
 		<div
 			class="bg-base-200 flex flex-col items-center justify-center rounded-box p-6 text-center sm:p-12"
 		>
-			<i class="ph-fill ph-chart-pie text-5xl opacity-50"></i>
+			<i aria-hidden="true" class="ph-fill ph-chart-pie text-5xl opacity-50"></i>
 			<p class="mt-4 text-lg opacity-70">{m.noSurveysYet()}</p>
 			<button class="btn btn-primary mt-4" onclick={() => (showCreateModal = true)}>
-				<i class="ph-fill ph-plus"></i>
+				<i aria-hidden="true" class="ph-fill ph-plus"></i>
 				{m.createSurvey()}
 			</button>
 		</div>
@@ -157,7 +157,7 @@
 			<div class="collapse collapse-arrow bg-base-200">
 				<input type="checkbox" bind:checked={hiddenSurveysExpanded} />
 				<div class="collapse-title font-medium">
-					<i class="ph-duotone ph-archive mr-2"></i>
+					<i aria-hidden="true" class="ph-duotone ph-archive mr-2"></i>
 					{m.archivedSurveys()} ({hiddenSurveys.length})
 				</div>
 				<div class="collapse-content flex flex-col gap-4">

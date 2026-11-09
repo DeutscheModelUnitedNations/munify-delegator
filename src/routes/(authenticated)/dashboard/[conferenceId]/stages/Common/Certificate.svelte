@@ -116,7 +116,7 @@
 	description={m.thanksForParticipatingDescription()}
 >
 	<div class="flex flex-col items-center justify-center py-4">
-		<i class="ph-duotone ph-hands-clapping text-6xl text-primary mb-4"></i>
+		<i aria-hidden="true" class="ph-duotone ph-hands-clapping text-6xl text-primary mb-4"></i>
 		<p class="text-center text-base-content/70">{m.conferenceCompleteMessage()}</p>
 	</div>
 </DashboardSection>
@@ -151,17 +151,17 @@
 	{#if certificate}
 		{#if !certificate.templateUrl}
 			<div class="alert alert-warning">
-				<i class="ph-fill ph-hourglass-medium"></i>
+				<i aria-hidden="true" class="ph-fill ph-hourglass-medium"></i>
 				<p>{m.certificateNotYetAvailable()}</p>
 			</div>
 		{:else if didAttend && userId && certificate.code}
 			<button class="btn btn-primary self-start" onclick={downloadPDF}>
-				<i class="ph-fill ph-download-simple"></i>
+				<i aria-hidden="true" class="ph-fill ph-download-simple"></i>
 				{m.downloadCertificate()}
 			</button>
 		{:else}
 			<div class="alert alert-error">
-				<i class="ph-fill ph-user-minus"></i>
+				<i aria-hidden="true" class="ph-fill ph-user-minus"></i>
 				<p>{m.certificateDescriptionNotAttended()}</p>
 			</div>
 		{/if}

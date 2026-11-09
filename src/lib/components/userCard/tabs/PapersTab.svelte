@@ -46,7 +46,7 @@
 
 {#if papers.length === 0}
 	<div class="alert alert-info">
-		<i class="ph-duotone ph-file-text"></i>
+		<i aria-hidden="true" class="ph-duotone ph-file-text"></i>
 		<span>{m.userCardNoPapers()}</span>
 	</div>
 {:else}
@@ -77,25 +77,25 @@
 						class="btn btn-ghost btn-xs btn-square"
 						title={m.goToPaperHub()}
 					>
-						<i class="ph-duotone ph-arrow-square-out"></i>
+						<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
 					</a>
 				</div>
 
 				<div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-base-content/60">
 					{#if paper.firstSubmittedAt}
 						<span class="flex items-center gap-1">
-							<i class="ph-duotone ph-paper-plane-tilt"></i>
+							<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 							{new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())}
 						</span>
 					{/if}
 					<span class="flex items-center gap-1">
-						<i class="ph-duotone ph-stack"></i>
+						<i aria-hidden="true" class="ph-duotone ph-stack"></i>
 						{paper.versions.length}
 						{m.userCardPaperVersions()}
 					</span>
 					{#if totalReviews(paper) > 0}
 						<span class="flex items-center gap-1">
-							<i class="ph-duotone ph-chats"></i>
+							<i aria-hidden="true" class="ph-duotone ph-chats"></i>
 							{totalReviews(paper)}
 							{m.userCardPaperReviews()}
 						</span>

@@ -22,20 +22,20 @@
 	{#if awaiting === 'decide'}
 		<!-- Open points: not recorded unless asked for; dismissing is the usual way on -->
 		<button class="btn flex-1 btn-error" onclick={onClose}>
-			<i class="ph-duotone ph-x"></i>
+			<i aria-hidden="true" class="ph-duotone ph-x"></i>
 			{m.dismiss()}
 			<Kbd hotkey="Esc" />
 		</button>
 		{#if mayRecordAnyway}
 			<button class="btn btn-success btn-sm self-center" onclick={onRecordAnyway}>
-				<i class="ph-duotone ph-check"></i>
+				<i aria-hidden="true" class="ph-duotone ph-check"></i>
 				{m.scanRecordAnyway()}
 				<Kbd hotkey="alt+a" />
 			</button>
 		{/if}
 	{:else}
 		<button class="btn flex-1 btn-primary" onclick={onConfirm} disabled={busy}>
-			<i class="ph-duotone ph-check"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check"></i>
 			{m.scanContinue()}
 			<Kbd hotkey="alt+a" />
 		</button>

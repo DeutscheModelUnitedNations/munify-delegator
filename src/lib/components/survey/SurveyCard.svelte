@@ -63,7 +63,7 @@
 			class="btn btn-sm {answer ? 'btn-ghost' : 'btn-warning'}"
 			onclick={() => (modalOpen = true)}
 		>
-			<i class="ph-duotone ph-pen"></i>
+			<i aria-hidden="true" class="ph-duotone ph-pen"></i>
 			{answer ? m.changeAnswer() : m.takeSurvey()}
 		</button>
 	{/if}
@@ -75,7 +75,7 @@
 	<div
 		class="flex size-10 shrink-0 items-center justify-center rounded-full max-sm:hidden {look.badge}"
 	>
-		<i class="ph-duotone {look.icon}"></i>
+		<i aria-hidden="true" class="ph-duotone {look.icon}"></i>
 	</div>
 
 	<div class="flex min-w-0 flex-1 flex-col gap-1">

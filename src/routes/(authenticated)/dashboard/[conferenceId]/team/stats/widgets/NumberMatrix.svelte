@@ -12,7 +12,7 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="ph-duotone ph-table text-base-content/70"></i>
+			<i aria-hidden="true" class="ph-duotone ph-table text-base-content/70"></i>
 			{title}
 		</h2>
 		<div class="overflow-x-auto">
@@ -33,7 +33,7 @@
 								{#if typeof yLabels[i] === 'string'}
 									{yLabels[i]}
 								{:else}
-									<i class="ph-duotone {yLabels[i].icon} mr-1"></i>
+									<i aria-hidden="true" class="ph-duotone {yLabels[i].icon} mr-1"></i>
 									{yLabels[i].label}
 								{/if}
 							</th>

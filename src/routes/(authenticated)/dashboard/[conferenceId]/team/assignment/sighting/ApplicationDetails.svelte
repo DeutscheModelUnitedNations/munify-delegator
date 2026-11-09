@@ -45,9 +45,11 @@
 				<tr>
 					<th>{m.members()} <span class="badge badge-xs">{application.people.length}</span></th>
 					<th class="text-right">{m.assignmentAge()}</th>
-					<th class="text-center"><i class="ph-duotone ph-gender-intersex"></i></th>
+					<th class="text-center"
+						><i aria-hidden="true" class="ph-duotone ph-gender-intersex"></i></th
+					>
 					<th class="text-right" title={m.assignmentPreviousParticipations()}>
-						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
+						<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
 						<span class="sr-only">{m.assignmentPreviousParticipations()}</span>
 					</th>
 				</tr>
@@ -78,7 +80,7 @@
 	<div class="flex flex-col gap-4">
 		<section class="flex flex-col gap-1">
 			<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-				<i class="ph-duotone ph-graduation-cap"></i>
+				<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
 				{m.schoolOrInstitution()}
 			</h4>
 			{#if application.schools.length > 0}
@@ -102,7 +104,7 @@
 		{#if supervisors.length > 0}
 			<section class="flex flex-col gap-1">
 				<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-					<i class="ph-duotone ph-chalkboard-teacher"></i>
+					<i aria-hidden="true" class="ph-duotone ph-chalkboard-teacher"></i>
 					{m.supervisors()}
 				</h4>
 				<ul class="flex flex-col gap-0.5">
@@ -124,7 +126,7 @@
 
 	<section class="flex flex-col gap-2">
 		<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-			<i class="ph-duotone ph-flag"></i>
+			<i aria-hidden="true" class="ph-duotone ph-flag"></i>
 			{m.assignmentWishes()}
 		</h4>
 		{#if application.wishes.length > 0}
@@ -154,7 +156,7 @@
 							title={prioritized ? m.assignmentPrioritized() : m.assignmentPrioritize()}
 							onclick={() => togglePriority(wish.roleId)}
 						>
-							<i class="ph-duotone ph-target"></i>
+							<i aria-hidden="true" class="ph-duotone ph-target"></i>
 						</button>
 					</li>
 				{/each}

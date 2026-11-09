@@ -42,11 +42,12 @@
 		{#if busy}
 			<span class="loading loading-spinner loading-xs"></span>
 		{:else}
-			<i class="{icon} text-base"></i>
+			<i aria-hidden="true" class="{icon} text-base"></i>
 		{/if}
 	</span>
 	<span class="min-w-0 flex-1 break-words sm:truncate">{title}</span>
 	<i
+		aria-hidden="true"
 		class="ph-duotone ph-arrow-line-down text-base-content/30 group-hover:text-primary shrink-0 text-xs transition-colors"
 	></i>
 </button>

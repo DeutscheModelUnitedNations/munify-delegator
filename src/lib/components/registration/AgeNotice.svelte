@@ -49,7 +49,7 @@
 		class="alert alert-warning alert-soft items-start {className}"
 		data-testid="age-notice"
 	>
-		<i class="ph-duotone ph-cake mt-0.5 text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-cake mt-0.5 text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h2 class="font-semibold">{m.ageNoticeTitle()}</h2>
 			<p class="text-sm">
@@ -63,7 +63,7 @@
 					class="btn btn-sm btn-warning mt-1 self-start"
 					onclick={onApplyAsSupervisor}
 				>
-					<i class="ph-duotone ph-chalkboard-teacher"></i>
+					<i aria-hidden="true" class="ph-duotone ph-chalkboard-teacher"></i>
 					{m.ageNoticeApplyAsSupervisor()}
 				</button>
 			{/if}

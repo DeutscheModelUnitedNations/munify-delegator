@@ -62,7 +62,7 @@
 	{/each}
 	{#snippet footer()}
 		<button class="btn btn-ghost btn-sm" onclick={() => grid.resetSizes()}>
-			<i class="ph-duotone ph-arrows-left-right"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrows-left-right"></i>
 			{m.dataGridResetWidths()}
 		</button>
 		<button class="btn btn-primary btn-sm ml-auto" onclick={() => (open = false)}>{m.done()}</button

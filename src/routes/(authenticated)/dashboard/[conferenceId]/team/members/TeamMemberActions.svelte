@@ -20,7 +20,7 @@
 			onOpenUserCard();
 		}}
 	>
-		<i class="ph-duotone ph-identification-card"></i>
+		<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
 	</button>
 	{#if onImpersonate}
 		<button
@@ -31,7 +31,7 @@
 				onImpersonate();
 			}}
 		>
-			<i class="ph-duotone ph-detective"></i>
+			<i aria-hidden="true" class="ph-duotone ph-detective"></i>
 		</button>
 	{/if}
 	<button
@@ -42,6 +42,6 @@
 			onDelete();
 		}}
 	>
-		<i class="ph-duotone ph-trash"></i>
+		<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 	</button>
 </div>

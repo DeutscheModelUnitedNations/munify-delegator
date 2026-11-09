@@ -28,7 +28,7 @@
 			aria-label={m.dataGridRemoveGroup()}
 			onclick={() => onremove()}
 		>
-			<i class="ph-duotone ph-trash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 		</button>
 	</div>
 	{#each group.items as condition, inner (inner)}
@@ -47,7 +47,7 @@
 		disabled={!canAdd || columns.length === 0}
 		onclick={() => onadd(newCondition(columns[0]))}
 	>
-		<i class="ph-duotone ph-plus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 		{m.dataGridAddCondition()}
 	</button>
 </div>

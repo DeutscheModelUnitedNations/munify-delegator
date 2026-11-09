@@ -146,7 +146,7 @@
 
 	{#snippet actions()}
 		<button type="button" class="btn btn-ghost" onclick={restoreDefault}>
-			<i class="ph-duotone ph-arrow-counter-clockwise"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
 			{m.emailTextRestoreDefault()}
 		</button>
 	{/snippet}

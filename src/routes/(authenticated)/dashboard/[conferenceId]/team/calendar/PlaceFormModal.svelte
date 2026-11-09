@@ -169,7 +169,7 @@
 				{#if plusCodeLoading}
 					<span class="loading loading-spinner loading-xs"></span>
 				{:else}
-					<i class="ph-fill ph-crosshair"></i>
+					<i aria-hidden="true" class="ph-fill ph-crosshair"></i>
 				{/if}
 			</button>
 		</div>
@@ -233,7 +233,7 @@
 		{#if sitePlanHref}
 			<div class="mt-1 flex items-center gap-2">
 				<span class="text-success text-xs">
-					<i class="ph-fill ph-check-circle"></i>
+					<i aria-hidden="true" class="ph-fill ph-check-circle"></i>
 					PDF
 				</span>
 				<a

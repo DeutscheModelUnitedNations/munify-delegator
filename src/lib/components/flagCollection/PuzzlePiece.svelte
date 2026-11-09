@@ -58,13 +58,20 @@
 	class:hover:scale-105={!compact && !overlay}
 	title={tooltipText}
 >
+	<!-- The title shows on hover only -->
+	<span class="sr-only">{tooltipText}</span>
 	{#if state === 'LOCKED'}
-		<i class="ph-duotone ph-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i aria-hidden="true" class="ph-duotone ph-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"
+		></i>
 	{:else if state === 'UNLOCKED'}
-		<i class="ph-duotone ph-puzzle-piece {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i
+			aria-hidden="true"
+			class="ph-duotone ph-puzzle-piece {iconClass} {compact ? 'text-xs' : 'text-sm'}"
+		></i>
 	{:else if !overlay}
 		<!-- Only show check icon in non-overlay mode (old tile view) -->
-		<i class="ph-duotone ph-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i aria-hidden="true" class="ph-duotone ph-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"
+		></i>
 	{/if}
 </div>
 

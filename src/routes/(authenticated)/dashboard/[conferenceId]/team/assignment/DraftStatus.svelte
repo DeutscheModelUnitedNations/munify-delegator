@@ -30,11 +30,14 @@
 			conferenceId
 		})}
 	>
-		<i class="ph-duotone ph-pencil-ruler"></i>
+		<i aria-hidden="true" class="ph-duotone ph-pencil-ruler"></i>
 		{m.assignmentPendingChanges({ count: pending })}
 	</a>
 	<span class="badge {conference.assignmentReleased ? 'badge-success' : 'badge-neutral'}">
-		<i class="ph-duotone {conference.assignmentReleased ? 'ph-eye' : 'ph-eye-slash'}"></i>
+		<i
+			aria-hidden="true"
+			class="ph-duotone {conference.assignmentReleased ? 'ph-eye' : 'ph-eye-slash'}"
+		></i>
 		{conference.assignmentReleased ? m.assignmentReleasedBadge() : m.assignmentHiddenBadge()}
 	</span>
 </div>

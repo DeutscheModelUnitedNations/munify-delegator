@@ -7,6 +7,6 @@
 </script>
 
 <a href={resolve(`dashboard/${conferenceId}`)} class="btn btn-ghost btn-sm gap-2 self-start">
-	<i class="ph-duotone ph-arrow-left"></i>
+	<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 	{m.backToDashboard()}
 </a>

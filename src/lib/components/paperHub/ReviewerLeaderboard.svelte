@@ -75,7 +75,7 @@
 		<!-- Rank -->
 		<span class="w-8 text-right font-bold text-base-content/50">
 			{#if rankIcons[i]}
-				<i class="ph-duotone {rankIcons[i]}"></i>
+				<i aria-hidden="true" class="ph-duotone {rankIcons[i]}"></i>
 			{:else}
 				#{i + 1}
 			{/if}
@@ -115,7 +115,7 @@
 	{#snippet badge()}
 		{#if leaderboard?.length}
 			<div class="badge badge-primary badge-lg gap-2">
-				<i class="ph-duotone ph-users"></i>
+				<i aria-hidden="true" class="ph-duotone ph-users"></i>
 				{leaderboard.length}
 			</div>
 		{/if}
@@ -142,7 +142,7 @@
 			</div>
 		{:else}
 			<div class="alert alert-info">
-				<i class="ph-duotone ph-info"></i>
+				<i aria-hidden="true" class="ph-duotone ph-info"></i>
 				<span>{m.noReviewsYet()}</span>
 			</div>
 		{/if}

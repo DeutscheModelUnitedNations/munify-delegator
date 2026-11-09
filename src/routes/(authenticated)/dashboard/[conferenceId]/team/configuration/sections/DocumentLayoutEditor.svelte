@@ -264,15 +264,16 @@
 
 	{#snippet action()}
 		<button type="button" class="btn btn-ghost" onclick={() => (layout = defaultLayout(kind))}>
-			<i class="ph-duotone ph-arrow-counter-clockwise"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
 			{m.certificateLayoutReset()}
 		</button>
 		<button type="button" class="btn" disabled={printing || !templateUrl} onclick={print}>
-			<i class="ph-fill {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"></i>
+			<i aria-hidden="true" class="ph-fill {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"
+			></i>
 			{m.postalTemplateTest()}
 		</button>
 		<button type="button" class="btn btn-primary" onclick={save}>
-			<i class="ph-fill ph-floppy-disk"></i>
+			<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
 			{m.save()}
 		</button>
 	{/snippet}

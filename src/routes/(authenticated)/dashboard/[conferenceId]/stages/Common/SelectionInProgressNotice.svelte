@@ -12,7 +12,7 @@
 	<div class="flex flex-col gap-2 text-sm">
 		<p>{m.selectionInProgressDuration()}</p>
 		<div class="alert alert-warning alert-soft">
-			<i class="ph-duotone ph-warning text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning text-xl"></i>
 			<span>{m.selectionInProgressNoGuarantee()}</span>
 		</div>
 		<p class="font-semibold">{m.selectionInProgressNoInquiries()}</p>

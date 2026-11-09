@@ -43,10 +43,12 @@
 	>
 		<div class="flex items-center gap-3">
 			{#if collapsible}
-				<i class="ph-duotone {expanded ? 'ph-caret-down' : 'ph-caret-right'} text-base-content/50"
+				<i
+					aria-hidden="true"
+					class="ph-duotone {expanded ? 'ph-caret-down' : 'ph-caret-right'} text-base-content/50"
 				></i>
 			{/if}
-			<i class="ph-duotone ph-{icon} text-primary text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon} text-primary text-xl"></i>
 			<div>
 				<h3 class="text-lg font-bold">{title}</h3>
 				{#if description}

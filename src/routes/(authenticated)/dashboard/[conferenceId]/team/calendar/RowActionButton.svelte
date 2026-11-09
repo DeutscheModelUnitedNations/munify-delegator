@@ -12,5 +12,5 @@
 </script>
 
 <button class="btn btn-ghost {danger ? 'btn-error' : ''} btn-sm" aria-label={label} {onclick}>
-	<i class="ph-fill {icon}"></i>
+	<i aria-hidden="true" class="ph-fill {icon}"></i>
 </button>

@@ -30,7 +30,7 @@
 					onchange={() => (selected = transition.value)}
 				/>
 				<div class="btn w-full {buttonClass(transition.value)}">
-					<i class="ph-duotone {getPaperStatusIcon(transition.value)}"></i>
+					<i aria-hidden="true" class="ph-duotone {getPaperStatusIcon(transition.value)}"></i>
 					{transition.label}
 				</div>
 			</label>

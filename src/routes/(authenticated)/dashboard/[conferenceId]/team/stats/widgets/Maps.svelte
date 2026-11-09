@@ -41,7 +41,7 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-12">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="ph-duotone ph-map-trifold text-base-content/70"></i>
+			<i aria-hidden="true" class="ph-duotone ph-map-trifold text-base-content/70"></i>
 			{m.statsGeographicDistribution()}
 		</h2>
 		<div class="w-full h-[400px] rounded-box overflow-hidden">

@@ -92,7 +92,7 @@
 					headerState.openNavCallback = undefined;
 				}}
 			>
-				<i class="ph-duotone ph-list text-xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-list text-xl"></i>
 			</button>
 		{/if}
 
@@ -139,7 +139,7 @@
 					aria-label={m.search()}
 					onclick={openCommandPalette}
 				>
-					<i class="ph-duotone ph-magnifying-glass"></i>
+					<i aria-hidden="true" class="ph-duotone ph-magnifying-glass"></i>
 					{@render handoffBadge()}
 				</button>
 				<button
@@ -147,7 +147,7 @@
 					onclick={openCommandPalette}
 				>
 					{@render handoffBadge()}
-					<i class="ph-duotone ph-magnifying-glass"></i>
+					<i aria-hidden="true" class="ph-duotone ph-magnifying-glass"></i>
 					<span class="text-sm">{m.search()}</span>
 					<Kbd hotkey="mod+k" size="xs" />
 				</button>

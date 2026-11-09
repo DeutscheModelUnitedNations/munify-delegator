@@ -43,7 +43,7 @@
 					{#if row.alpha2Code}
 						<Flag alpha2Code={row.alpha2Code} size="xs" />
 					{:else}
-						<i class="ph-duotone ph-{row.icon ?? 'user'} w-5 text-center"></i>
+						<i aria-hidden="true" class="ph-duotone ph-{row.icon ?? 'user'} w-5 text-center"></i>
 					{/if}
 					<span class="truncate">{row.label}</span>
 				</span>

@@ -41,7 +41,9 @@
 				data-tip={tip(paper)}
 				aria-label={tip(paper)}
 			>
-				<i class="ph-duotone {getPaperTypeIcon(paper.type)} {TYPE_COLORS[paper.type]} text-base"
+				<i
+					aria-hidden="true"
+					class="ph-duotone {getPaperTypeIcon(paper.type)} {TYPE_COLORS[paper.type]} text-base"
 				></i>
 			</a>
 		{/each}

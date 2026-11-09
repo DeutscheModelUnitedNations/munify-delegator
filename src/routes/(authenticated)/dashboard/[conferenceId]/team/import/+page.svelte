@@ -184,7 +184,7 @@
 		/>
 		{#if parsed && !parsed.ok}
 			<div class="alert alert-error mt-4">
-				<i class="ph-duotone ph-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 				<span>{m.importPresenceInvalidFile()}</span>
 			</div>
 		{/if}
@@ -298,9 +298,9 @@
 
 {#snippet saveIcon()}
 	{#if loading}
-		<i class="ph-fill ph-spinner-gap animate-spin"></i>
+		<i aria-hidden="true" class="ph-fill ph-spinner-gap animate-spin"></i>
 	{:else}
-		<i class="ph-fill ph-floppy-disk"></i>
+		<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
 	{/if}
 {/snippet}
 
@@ -311,7 +311,7 @@
 		class="min-w-0"
 	>
 		<button class="btn btn-primary max-w-full">
-			<i class="ph-fill ph-arrow-square-out"></i>
+			<i aria-hidden="true" class="ph-fill ph-arrow-square-out"></i>
 			<span class="truncate">{selectedEmail}</span>
 		</button>
 	</a>

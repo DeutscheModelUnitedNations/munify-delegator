@@ -46,6 +46,7 @@
 				<span class="truncate">{column.label}</span>
 				{#if sorted}
 					<i
+						aria-hidden="true"
 						class="ph-duotone {sorted.desc
 							? 'ph-sort-descending'
 							: 'ph-sort-ascending'} text-primary text-xs"
@@ -54,7 +55,10 @@
 						<span class="text-primary text-[0.6rem]">{sortIndex + 1}</span>
 					{/if}
 				{:else}
-					<i class="ph-duotone ph-arrows-down-up text-xs opacity-0 group-hover/head:opacity-30"></i>
+					<i
+						aria-hidden="true"
+						class="ph-duotone ph-arrows-down-up text-xs opacity-0 group-hover/head:opacity-30"
+					></i>
 				{/if}
 			</button>
 		{:else}
@@ -69,7 +73,7 @@
 					onfilter();
 				}}
 			>
-				<i class="ph-duotone ph-funnel text-xs"></i>
+				<i aria-hidden="true" class="ph-duotone ph-funnel text-xs"></i>
 			</button>
 		{/if}
 	</div>

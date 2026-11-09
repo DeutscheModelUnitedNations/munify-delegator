@@ -56,10 +56,13 @@
 <section class="flex flex-col gap-3">
 	<h3 class="text-lg font-bold">{m.certificate()}</h3>
 	<div class="bg-base-200 rounded-box flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-		<i class="ph-duotone ph-certificate text-base-content/60 w-6 text-center text-lg"></i>
+		<i
+			aria-hidden="true"
+			class="ph-duotone ph-certificate text-base-content/60 w-6 text-center text-lg"
+		></i>
 		<span class="grow font-semibold">{m.certificate()}</span>
 		<button class="btn btn-sm" onclick={downloadCertificate}>
-			<i class="ph-duotone ph-download-simple"></i>
+			<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
 			{m.downloadCertificate()}
 		</button>
 	</div>

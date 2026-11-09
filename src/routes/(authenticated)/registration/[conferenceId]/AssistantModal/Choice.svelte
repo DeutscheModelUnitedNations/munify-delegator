@@ -41,7 +41,7 @@
 		{#if btn.href}
 			<a class="btn w-full {btn.class ?? ''}" href={btn.href}>
 				{#if btn.icon}
-					<i class={`ph-duotone ph-${btn.icon} w-5`}></i>
+					<i aria-hidden="true" class={`ph-duotone ph-${btn.icon} w-5`}></i>
 				{/if}
 				<div>{btn.title}</div>
 			</a>
@@ -57,7 +57,7 @@
 				}}
 			>
 				{#if btn.icon}
-					<i class={`ph-duotone ph-${btn.icon} w-5`}></i>
+					<i aria-hidden="true" class={`ph-duotone ph-${btn.icon} w-5`}></i>
 				{/if}
 				<div>{btn.title}</div>
 			</button>

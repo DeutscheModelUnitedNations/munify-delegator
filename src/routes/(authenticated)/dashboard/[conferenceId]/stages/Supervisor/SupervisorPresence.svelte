@@ -47,7 +47,11 @@
 	</span>
 	{#snippet actions()}
 		{#if !editable}
-			<i class="ph-duotone ph-lock text-base-content/40" title={m.presenceLockedHint()}></i>
+			<i
+				aria-hidden="true"
+				class="ph-duotone ph-lock text-base-content/40"
+				title={m.presenceLockedHint()}
+			></i>
 		{/if}
 		<input
 			type="checkbox"

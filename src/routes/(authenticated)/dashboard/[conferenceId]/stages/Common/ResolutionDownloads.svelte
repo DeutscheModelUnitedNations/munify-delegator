@@ -43,9 +43,9 @@
 									class="btn btn-outline btn-sm justify-start gap-2"
 									onclick={() => downloadResolution(resolution.id)}
 								>
-									<i class="ph-duotone ph-file-pdf text-primary"></i>
+									<i aria-hidden="true" class="ph-duotone ph-file-pdf text-primary"></i>
 									<span class="truncate">{resolution.title}</span>
-									<i class="ph-fill ph-download-simple ml-auto"></i>
+									<i aria-hidden="true" class="ph-fill ph-download-simple ml-auto"></i>
 								</button>
 							</li>
 						{/each}

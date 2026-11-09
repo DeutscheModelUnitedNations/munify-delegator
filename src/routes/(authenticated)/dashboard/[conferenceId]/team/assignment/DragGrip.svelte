@@ -8,5 +8,5 @@
 	class="text-base-content/50 -m-1 hidden size-8 shrink-0 cursor-grab touch-none items-center justify-center pointer-coarse:flex"
 	aria-hidden="true"
 >
-	<i class="ph-duotone ph-dots-six-vertical text-base"></i>
+	<i aria-hidden="true" class="ph-duotone ph-dots-six-vertical text-base"></i>
 </span>

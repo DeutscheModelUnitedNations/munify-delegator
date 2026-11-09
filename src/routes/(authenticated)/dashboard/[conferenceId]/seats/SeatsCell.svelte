@@ -10,9 +10,9 @@
 {#if seats > 0}
 	<div class="text-success">
 		{#each { length: seats }}
-			<i class="ph-fill ph-check"></i>
+			<i aria-hidden="true" class="ph-fill ph-check"></i>
 		{/each}
 	</div>
 {:else}
-	<i class="ph-fill ph-minus text-base-content/20"></i>
+	<i aria-hidden="true" class="ph-fill ph-minus text-base-content/20"></i>
 {/if}

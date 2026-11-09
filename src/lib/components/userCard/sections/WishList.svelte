@@ -44,7 +44,7 @@
 							disabled={busy}
 							onclick={() => onMoveUp(wish, wishes[index - 1])}
 						>
-							<i class="ph-duotone ph-arrow-left"></i>
+							<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 						</button>
 					{/if}
 					{#if onRemove}
@@ -55,7 +55,7 @@
 							disabled={busy}
 							onclick={() => onRemove(wish)}
 						>
-							<i class="ph-duotone ph-x"></i>
+							<i aria-hidden="true" class="ph-duotone ph-x"></i>
 						</button>
 					{/if}
 				</li>

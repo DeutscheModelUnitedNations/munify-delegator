@@ -35,7 +35,7 @@
 	{#if item && item.papers.length > 0}
 		<div class="flex flex-col gap-4">
 			<div class="alert alert-warning">
-				<i class="ph-duotone ph-warning flex-shrink-0"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning flex-shrink-0"></i>
 				<span class="break-words">{m.agendaItemHasPapers({ count: item.papers.length })}</span>
 			</div>
 			<FormFieldset title={m.confirmation()}>

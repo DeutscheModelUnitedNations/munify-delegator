@@ -124,7 +124,7 @@
 		<div class="relative w-full">
 			<div class="join w-full">
 				<label class="input join-item w-full">
-					<i class="ph-duotone ph-graduation-cap opacity-60"></i>
+					<i aria-hidden="true" class="ph-duotone ph-graduation-cap opacity-60"></i>
 					<input
 						{...props}
 						type="text"
@@ -150,7 +150,7 @@
 					disabled={disabled || (!$schoolName && !$schoolId)}
 					title={m.schoolPickerNoSchool()}
 				>
-					<i class="ph-duotone ph-x"></i>
+					<i aria-hidden="true" class="ph-duotone ph-x"></i>
 					<span class="hidden sm:inline">{m.schoolPickerNoSchool()}</span>
 				</button>
 			</div>
@@ -192,10 +192,10 @@
 {#snippet status()}
 	<p class="text-base-content/70 mt-1 text-xs" aria-live="polite">
 		{#if outcome === 'existing'}
-			<i class="ph-duotone ph-check text-success"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check text-success"></i>
 			{m.schoolPickerExisting()}
 		{:else if outcome === 'new'}
-			<i class="ph-duotone ph-plus"></i>
+			<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 			{m.schoolPickerNewSchool({ name: typed })}
 		{:else}
 			{m.schoolPickerNone()}

@@ -67,15 +67,17 @@
 	<div class="pointer-events-none flex items-start gap-1.5 leading-tight">
 		{#if overlapping}
 			<i
+				aria-hidden="true"
 				class="ph-duotone ph-warning text-warning mt-0.5 shrink-0 text-xs"
 				title={m.calendarEntryOverlap()}
 			></i>
 		{/if}
 		{#if icon}
-			<i class="ph-duotone ph-{icon} {config.text} mt-0.5 shrink-0 text-xs"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon} {config.text} mt-0.5 shrink-0 text-xs"></i>
 		{/if}
 		{#if surveyOptionTitles.length > 0}
 			<i
+				aria-hidden="true"
 				class="ph-duotone ph-funnel text-base-content/60 mt-0.5 shrink-0 text-xs"
 				title={m.calendarEntryOnlyFor({ option: audience })}
 			></i>
@@ -91,7 +93,7 @@
 		</div>
 		{#if location}
 			<div class="text-base-content/50 pointer-events-none truncate text-[11px] leading-tight">
-				<i class="ph-duotone ph-map-pin text-[9px]"></i>
+				<i aria-hidden="true" class="ph-duotone ph-map-pin text-[9px]"></i>
 				{location}
 			</div>
 		{/if}

@@ -30,7 +30,7 @@
 
 {#if splitGroups.length > 0}
 	<div class="alert alert-warning alert-soft {className}" role="status">
-		<i class="ph-duotone ph-users-three text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-users-three text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.schoolRuleGroupsSplitTitle()}</h3>
 			<p class="text-sm">{m.schoolRuleGroupsSplitHint({ limit: groupLimit })}</p>
@@ -47,7 +47,7 @@
 {/if}
 {#if overGuarantee.length > 0}
 	<div class="alert alert-warning alert-soft {className}" role="status">
-		<i class="ph-duotone ph-globe-hemisphere-east text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-globe-hemisphere-east text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.schoolRuleGuaranteesOverLimitTitle()}</h3>
 			<ul class="list-inside list-disc text-sm">

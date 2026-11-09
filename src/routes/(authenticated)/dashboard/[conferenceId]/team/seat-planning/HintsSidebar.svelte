@@ -51,7 +51,7 @@
 
 <div class="flex flex-col gap-4">
 	<h3 class="text-lg font-bold">
-		<i class="ph-duotone ph-lightbulb"></i>
+		<i aria-hidden="true" class="ph-duotone ph-lightbulb"></i>
 		{m.seatPlanningHints()}
 	</h3>
 	<SizeHistogram roles={planner.roles} onSelectSize={(size) => showStates({ size })} />

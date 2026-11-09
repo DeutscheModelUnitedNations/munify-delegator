@@ -49,7 +49,7 @@
 
 <div class="card flex min-w-0 flex-col gap-2 p-0 md:p-4">
 	<h3 class="font-bold">
-		<i class="ph-duotone ph-hash mr-2"></i>
+		<i aria-hidden="true" class="ph-duotone ph-hash mr-2"></i>
 		{m.documentNumber()}
 	</h3>
 	{#if editing}
@@ -66,7 +66,7 @@
 				}}
 				aria-label={m.a11yExitEditing()}
 			>
-				<i class="ph-duotone ph-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-x"></i>
 			</button>
 
 			<button
@@ -80,7 +80,7 @@
 				}}
 				aria-label={m.save()}
 			>
-				<i class="ph-duotone ph-floppy-disk"></i>
+				<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
 			</button>
 			<button
 				class="btn join-item tooltip {disabledShortcut ? 'btn-square' : ''}"
@@ -90,7 +90,7 @@
 				}}
 				aria-label={m.a11ySaveAndNext()}
 			>
-				<i class="ph-duotone ph-arrow-line-right"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-line-right"></i>
 				{#if !disabledShortcut}
 					<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
 				{/if}
@@ -102,7 +102,7 @@
 				# {assignedDocumentNumber}
 			</div>
 			<button class="btn btn-square" onclick={() => (editing = true)} aria-label={m.edit()}>
-				<i class="ph-duotone ph-note-pencil"></i>
+				<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
 			</button>
 		</div>
 	{/if}

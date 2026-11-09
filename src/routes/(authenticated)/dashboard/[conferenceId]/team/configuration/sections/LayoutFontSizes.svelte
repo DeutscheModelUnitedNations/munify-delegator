@@ -22,7 +22,7 @@
 					aria-label={m.certificateLayoutSmaller()}
 					onclick={() => onstep(id, -1)}
 				>
-					<i class="ph-duotone ph-minus"></i>
+					<i aria-hidden="true" class="ph-duotone ph-minus"></i>
 				</button>
 				<span class="btn btn-xs join-item pointer-events-none">{size} pt</span>
 				<button
@@ -31,7 +31,7 @@
 					aria-label={m.certificateLayoutLarger()}
 					onclick={() => onstep(id, 1)}
 				>
-					<i class="ph-duotone ph-plus"></i>
+					<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 				</button>
 			</div>
 		</div>

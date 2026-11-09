@@ -200,7 +200,7 @@
 								(selectedSchools = selectedSchools.filter((picked) => picked.id !== school.id))}
 						>
 							{school.name}
-							<i class="ph-duotone ph-x text-xs"></i>
+							<i aria-hidden="true" class="ph-duotone ph-x text-xs"></i>
 						</button>
 					{/each}
 					<button
@@ -208,7 +208,7 @@
 						class="btn btn-ghost btn-xs ml-auto"
 						onclick={() => (selectedSchools = [])}
 					>
-						<i class="ph-duotone ph-trash"></i>
+						<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 						{m.cleanupNormalizeSchoolsClearSelected({ count: selectedSchools.length })}
 					</button>
 				</div>
@@ -232,7 +232,7 @@
 					{#if normalizing}
 						<span class="loading loading-spinner"></span>
 					{:else}
-						<i class="ph-duotone ph-git-merge"></i>
+						<i aria-hidden="true" class="ph-duotone ph-git-merge"></i>
 					{/if}
 					{#if selectedSchools.length === 1}
 						{m.cleanupNormalizeSchoolsRenameOne()}
@@ -258,7 +258,7 @@
 	</div>
 {:else}
 	<div class="alert alert-info mt-4">
-		<i class="ph-duotone ph-info"></i>
+		<i aria-hidden="true" class="ph-duotone ph-info"></i>
 		<span>{m.cleanupNormalizeSchoolsNoSchools()}</span>
 	</div>
 {/if}

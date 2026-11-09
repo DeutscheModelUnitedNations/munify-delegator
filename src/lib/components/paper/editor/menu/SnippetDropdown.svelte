@@ -28,8 +28,8 @@
 			aria-label={m.snippets()}
 			{disabled}
 		>
-			<i class="ph-duotone ph-bookmark-simple"></i>
-			<i class="ph-duotone ph-caret-down text-[10px] opacity-60"></i>
+			<i aria-hidden="true" class="ph-duotone ph-bookmark-simple"></i>
+			<i aria-hidden="true" class="ph-duotone ph-caret-down text-[10px] opacity-60"></i>
 		</button>
 
 		<ul
@@ -46,7 +46,7 @@
 				{#each snippets as snippet (snippet.id)}
 					<li>
 						<button type="button" class="cursor-pointer" onclick={() => handleSelect(snippet)}>
-							<i class="ph-duotone ph-bookmark-simple text-primary"></i>
+							<i aria-hidden="true" class="ph-duotone ph-bookmark-simple text-primary"></i>
 							<span class="truncate">{snippet.name}</span>
 						</button>
 					</li>

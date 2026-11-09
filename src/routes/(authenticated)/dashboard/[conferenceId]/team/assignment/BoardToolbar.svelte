@@ -38,7 +38,7 @@
 	{#if running === action}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else}
-		<i class="ph-duotone {name}"></i>
+		<i aria-hidden="true" class="ph-duotone {name}"></i>
 	{/if}
 {/snippet}
 

@@ -27,7 +27,7 @@
 
 {#if !user}
 	<a class="btn btn-primary btn-sm" href={resolve('login?next=/dashboard')} rel="external">
-		<i class="ph-duotone ph-sign-in"></i>
+		<i aria-hidden="true" class="ph-duotone ph-sign-in"></i>
 
 		{m.signIn()}
 	</a>
@@ -68,21 +68,21 @@
 			<ul class="menu w-full p-2">
 				<li>
 					<a href={resolve('dashboard')}>
-						<i class="ph-duotone ph-gauge w-4"></i>
+						<i aria-hidden="true" class="ph-duotone ph-gauge w-4"></i>
 						{m.dashboard()}
 					</a>
 				</li>
 				{#if PUBLIC_FEEDBACK_URL}
 					<li>
 						<a href={PUBLIC_FEEDBACK_URL} target="_blank" rel="external">
-							<i class="ph-duotone ph-chat w-4"></i>
+							<i aria-hidden="true" class="ph-duotone ph-chat w-4"></i>
 							{m.feedback()}
 						</a>
 					</li>
 				{/if}
 				<li>
 					<a class={logoutUrl ? '' : 'disabled'} href={logoutUrl} rel="external">
-						<i class="ph-duotone ph-sign-out w-4"></i>
+						<i aria-hidden="true" class="ph-duotone ph-sign-out w-4"></i>
 						{m.logout()}
 					</a>
 				</li>

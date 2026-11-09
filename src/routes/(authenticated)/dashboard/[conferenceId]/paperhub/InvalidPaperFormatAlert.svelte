@@ -28,13 +28,13 @@
 
 <div class="alert alert-error flex-col items-start gap-3">
 	<div class="flex items-center gap-3">
-		<i class="ph-duotone ph-warning text-2xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-warning text-2xl"></i>
 		<div>
 			<p class="font-semibold">{m.paperInvalidFormat()}</p>
 			<p class="text-sm opacity-80">{m.paperInvalidFormatDescription()}</p>
 			{#if rawContent}
 				<button class="btn btn-sm btn-outline mt-2" onclick={downloadRawContent}>
-					<i class="ph-duotone ph-download-simple"></i>
+					<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
 					{m.paperInvalidFormatDownload()}
 				</button>
 			{/if}

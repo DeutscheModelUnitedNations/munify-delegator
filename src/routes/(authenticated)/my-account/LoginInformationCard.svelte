@@ -64,7 +64,7 @@
 <div class="card bg-base-100 border-base-200 border shadow-xl">
 	<div class="card-body max-sm:p-4">
 		<h2 class="card-title justify-center">
-			<i class="ph-duotone ph-shield-check text-primary"></i>
+			<i aria-hidden="true" class="ph-duotone ph-shield-check text-primary"></i>
 			{m.loginInformation()}
 		</h2>
 		<div class="divide-base-200 divide-y">
@@ -103,7 +103,7 @@
 				>
 					{#if row.isSet}
 						<div class="text-success text-sm">
-							<i class="ph-duotone ph-check"></i>
+							<i aria-hidden="true" class="ph-duotone ph-check"></i>
 						</div>
 					{/if}
 				</AccountRow>

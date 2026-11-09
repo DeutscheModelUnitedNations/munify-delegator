@@ -30,7 +30,7 @@
 	{#snippet action()}
 		<button class="btn" onclick={() => (committee = undefined)}>{m.cancel()}</button>
 		<button class="btn btn-error" onclick={() => committee && remove(committee.id)}>
-			<i class="ph-duotone ph-trash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 			{m.delete()}
 		</button>
 	{/snippet}

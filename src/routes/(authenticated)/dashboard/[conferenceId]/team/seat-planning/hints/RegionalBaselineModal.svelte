@@ -172,7 +172,7 @@
 					disabled={!isValidManualTargets(draft)}
 					onclick={() => applyTargets(current.id)}
 				>
-					<i class="ph-duotone ph-check"></i>
+					<i aria-hidden="true" class="ph-duotone ph-check"></i>
 					{m.regionalBaselineApply()}
 				</button>
 			</section>

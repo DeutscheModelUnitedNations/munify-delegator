@@ -32,13 +32,13 @@
 </script>
 
 <div class="alert alert-soft text-base-content">
-	<i class="ph-duotone ph-clock"></i>
+	<i aria-hidden="true" class="ph-duotone ph-clock"></i>
 	<div>
 		<div class="font-semibold">{timeLabel}</div>
 		<div class="text-xs">{dayLabel}</div>
 		{#if track}
 			<div class="mt-1 text-xs">
-				<i class="ph-duotone ph-stack mr-1"></i>
+				<i aria-hidden="true" class="ph-duotone ph-stack mr-1"></i>
 				{track.name}
 				{#if track.description}
 					&middot; {track.description}

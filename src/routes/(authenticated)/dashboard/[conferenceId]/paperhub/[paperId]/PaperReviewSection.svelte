@@ -185,12 +185,12 @@
 	{#if reviewed}
 		<!-- Options after review has been saved -->
 		<div class="alert alert-success">
-			<i class="ph-duotone ph-check-circle"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>
 			<span>{m.reviewAddedSuccessfully()}</span>
 		</div>
 		{#if nextPaperId && agendaItemId}
 			<button class="btn btn-outline" onclick={jumpToNextPaper}>
-				<i class="ph-duotone ph-caret-double-right"></i>
+				<i aria-hidden="true" class="ph-duotone ph-caret-double-right"></i>
 				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
 			</button>
 		{:else if agendaItemId}
@@ -204,7 +204,7 @@
 
 	{#if availableTransitions.length === 0}
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-info"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info"></i>
 			<span>{m.noStatusTransitionsAvailable()}</span>
 		</div>
 	{:else}
@@ -227,7 +227,7 @@
 			{#if isSubmitting}
 				<span class="loading loading-spinner loading-sm"></span>
 			{:else}
-				<i class="ph-duotone ph-paper-plane-tilt"></i>
+				<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 			{/if}
 			{m.submitReview()}
 		</button>
@@ -238,7 +238,7 @@
 <Modal bind:open={showConfirmModal} title={m.confirmReviewSubmission()}>
 	<div class="flex flex-col gap-4">
 		<div class="alert alert-warning">
-			<i class="ph-duotone ph-warning"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 			<span>{m.reviewSubmissionWarning()}</span>
 		</div>
 		<p class="text-sm text-base-content/70">
@@ -251,7 +251,7 @@
 			<button class="btn" onclick={() => (showConfirmModal = false)}>{m.cancel()}</button>
 
 			<button class="btn btn-primary" onclick={handleSubmitReview}>
-				<i class="ph-duotone ph-paper-plane-tilt"></i>
+				<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 				{m.submitReview()}
 			</button>
 		</div>

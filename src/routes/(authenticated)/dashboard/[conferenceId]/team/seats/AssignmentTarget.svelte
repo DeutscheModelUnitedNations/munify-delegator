@@ -16,12 +16,12 @@
 <div class="bg-base-200 flex w-full flex-col items-center justify-center gap-1 rounded-box p-4">
 	{#if loading}
 		<div>
-			<i class="ph-duotone ph-spinner-gap animate-spin"></i>
+			<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin"></i>
 		</div>
 	{:else if user}
 		{#if alreadyInConference}
 			<div class="badge badge-warning">
-				<i class="ph-duotone ph-check-circle"></i>
+				<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>
 				{m.alreadyInConference()}
 			</div>
 		{/if}
@@ -34,6 +34,6 @@
 	{:else}
 		<div class="badge badge-error">{m.userNotFound()}</div>
 	{/if}
-	<i class="ph-duotone ph-arrow-down"></i>
+	<i aria-hidden="true" class="ph-duotone ph-arrow-down"></i>
 	<div class="badge badge-primary">{targetRole}</div>
 </div>

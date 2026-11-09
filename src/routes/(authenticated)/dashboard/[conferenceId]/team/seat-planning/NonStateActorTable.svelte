@@ -181,7 +181,7 @@
 									class="tooltip tooltip-left"
 									data-tip={m.seatPlanningOverfilled({ members, seats: nsa.seatAmount })}
 								>
-									<i class="ph-duotone ph-warning text-error"></i>
+									<i aria-hidden="true" class="ph-duotone ph-warning text-error"></i>
 									<span class="sr-only"
 										>{m.seatPlanningOverfilled({ members, seats: nsa.seatAmount })}</span
 									>
@@ -200,7 +200,7 @@
 								disabled={members !== undefined}
 								onclick={() => (toDelete = nsa)}
 							>
-								<i class="ph-duotone ph-trash"></i>
+								<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 							</button>
 						</span>
 					</td>

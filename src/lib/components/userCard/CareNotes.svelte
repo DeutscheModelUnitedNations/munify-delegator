@@ -31,7 +31,7 @@
 
 {#if own}
 	<div class="alert alert-warning alert-soft items-start p-2 text-sm">
-		<i class="ph-duotone ph-note"></i>
+		<i aria-hidden="true" class="ph-duotone ph-note"></i>
 		<div class="flex-1">
 			<p class="font-bold">{m.globalNotes()}</p>
 			<p class="whitespace-pre-line">{own}</p>
@@ -42,14 +42,14 @@
 			aria-label={m.editGlobalNotes()}
 			title={m.editGlobalNotes()}
 		>
-			<i class="ph-duotone ph-pen"></i>
+			<i aria-hidden="true" class="ph-duotone ph-pen"></i>
 		</button>
 	</div>
 {/if}
 
 {#each linked as account (account.name + account.note)}
 	<div class="alert alert-warning alert-soft items-start p-2 text-sm">
-		<i class="ph-duotone ph-warning text-error"></i>
+		<i aria-hidden="true" class="ph-duotone ph-warning text-error"></i>
 		<div>
 			<p class="font-bold">{m.linkedAccountNote({ name: account.name })}</p>
 			<p class="whitespace-pre-line">{account.note}</p>

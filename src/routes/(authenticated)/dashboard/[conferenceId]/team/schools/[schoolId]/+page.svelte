@@ -43,16 +43,16 @@
 <div class="flex flex-col gap-6">
 	<div class="flex flex-col gap-1">
 		<a href={resolve(`dashboard/${conferenceId}/team/schools`)} class="link link-hover text-sm">
-			<i class="ph-duotone ph-arrow-left"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 			{m.schools()}
 		</a>
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h2 class="text-2xl font-bold">
-				<i class="ph-duotone ph-graduation-cap"></i>
+				<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
 				{school.name}
 			</h2>
 			<button class="btn btn-error btn-outline btn-sm" onclick={() => (confirmingDelete = true)}>
-				<i class="ph-duotone ph-trash"></i>
+				<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 				{m.schoolDelete()}
 			</button>
 		</div>

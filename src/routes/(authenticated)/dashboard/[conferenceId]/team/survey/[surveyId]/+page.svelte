@@ -61,12 +61,12 @@
 				title={m.survey()}
 				aria-label={m.survey()}
 			>
-				<i class="ph-duotone ph-arrow-left"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 			</a>
 			<h2 class="min-w-0 text-xl font-bold break-words sm:truncate sm:text-2xl">{survey?.title}</h2>
 			{#if survey?.hidden}
 				<span class="badge badge-soft">
-					<i class="ph-duotone ph-archive"></i>
+					<i aria-hidden="true" class="ph-duotone ph-archive"></i>
 					{m.archivedSurvey()}
 				</span>
 			{/if}
@@ -74,12 +74,14 @@
 		{#if survey}
 			<div class="flex flex-none flex-wrap gap-2">
 				<button class="btn btn-ghost btn-sm" onclick={toggleDraft}>
-					<i class="ph-duotone {survey.draft ? 'ph-eye-slash text-warning' : 'ph-eye text-success'}"
+					<i
+						aria-hidden="true"
+						class="ph-duotone {survey.draft ? 'ph-eye-slash text-warning' : 'ph-eye text-success'}"
 					></i>
 					{survey.draft ? m.surveyIsDraft() : m.surveyIsLive()}
 				</button>
 				<button class="btn btn-ghost btn-sm" onclick={toggleHidden}>
-					<i class="ph-duotone ph-archive"></i>
+					<i aria-hidden="true" class="ph-duotone ph-archive"></i>
 					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 				</button>
 			</div>
@@ -94,7 +96,7 @@
 			aria-selected={activeTab === 'results'}
 			onclick={() => (activeTab = 'results')}
 		>
-			<i class="ph-duotone ph-chart-pie"></i>
+			<i aria-hidden="true" class="ph-duotone ph-chart-pie"></i>
 			{m.surveyResults()}
 		</button>
 		<button
@@ -104,7 +106,7 @@
 			aria-selected={activeTab === 'settings'}
 			onclick={() => (activeTab = 'settings')}
 		>
-			<i class="ph-duotone ph-gear"></i>
+			<i aria-hidden="true" class="ph-duotone ph-gear"></i>
 			{m.surveySettings()}
 		</button>
 	</div>

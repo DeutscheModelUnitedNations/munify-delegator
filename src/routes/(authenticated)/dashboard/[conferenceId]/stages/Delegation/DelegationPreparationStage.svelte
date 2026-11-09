@@ -102,6 +102,7 @@
 				<div class="relative pl-9">
 					<dt class="text-base-content/60 text-xs">
 						<i
+							aria-hidden="true"
 							class="ph-duotone ph-users text-base-content/50 text-xl absolute top-1/2 left-0 -translate-y-1/2"
 						></i>
 						{m.members()}
@@ -111,6 +112,7 @@
 				<div class="relative min-w-0 pl-9">
 					<dt class="text-base-content/60 text-xs">
 						<i
+							aria-hidden="true"
 							class="ph-duotone ph-signature text-base-content/50 text-xl absolute top-1/2 left-0 -translate-y-1/2"
 						></i>
 						{m.delegationName()}

@@ -50,7 +50,7 @@
 	<div class="card-body max-sm:p-4">
 		{#snippet header()}
 			<div class={iconClasses}>
-				<i class="ph-duotone ph-{icon} text-xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{icon} text-xl"></i>
 			</div>
 			<div class="flex-1">
 				<div class="flex items-center justify-between">
@@ -66,6 +66,7 @@
 						{#if collapsible}
 							<div class="btn btn-ghost btn-sm btn-circle text-base-content/60">
 								<i
+									aria-hidden="true"
 									class="ph-duotone ph-caret-down transition-transform duration-200 {collapsed
 										? '-rotate-90'
 										: ''}"

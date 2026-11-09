@@ -82,7 +82,7 @@
 		<div class="flex gap-2">
 			<button class="btn" onclick={handleCancel}>{m.cancel()}</button>
 			<button class="btn btn-primary" onclick={handleConfirm}>
-				<i class="ph-duotone ph-check"></i>
+				<i aria-hidden="true" class="ph-duotone ph-check"></i>
 				{m.insertSnippet()}
 			</button>
 		</div>

@@ -59,7 +59,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h1 class="text-3xl font-bold">{m.createConference()}</h1>
 			<a href={resolve('/(authenticated)/dashboard/conference-request')} class="btn btn-ghost">
-				<i class="ph-duotone ph-note-pencil"></i>
+				<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
 				{m.conferenceRequest()}
 			</a>
 		</div>
@@ -76,7 +76,7 @@
 	</section>
 
 	<div class="alert alert-info w-full">
-		<i class="ph-duotone ph-info"></i>
+		<i aria-hidden="true" class="ph-duotone ph-info"></i>
 		<span>{m.createConferenceEditHint()}</span>
 	</div>
 

@@ -152,16 +152,16 @@
 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
 	<div class="flex gap-1">
 		<button class="btn btn-ghost btn-sm" disabled={tracks.length === 0} onclick={selectAll}>
-			<i class="ph-fill ph-check-square"></i>
+			<i aria-hidden="true" class="ph-fill ph-check-square"></i>
 			{m.calendarSelectAllTracks()}
 		</button>
 		<button class="btn btn-ghost btn-sm" disabled={tracks.length === 0} onclick={deselectAll}>
-			<i class="ph-fill ph-square"></i>
+			<i aria-hidden="true" class="ph-fill ph-square"></i>
 			{m.calendarDeselectAllTracks()}
 		</button>
 	</div>
 	<button class="btn btn-ghost btn-sm" onclick={() => (rowForm = {})}>
-		<i class="ph-fill ph-plus"></i>
+		<i aria-hidden="true" class="ph-fill ph-plus"></i>
 		{m.calendarAddTrack()}
 	</button>
 </div>
@@ -247,7 +247,7 @@
 								}}
 								ondragend={endDrag}
 							>
-								<i class="ph-fill ph-dots-six-vertical"></i>
+								<i aria-hidden="true" class="ph-fill ph-dots-six-vertical"></i>
 							</span>
 							<div class="min-w-0 grow">
 								<div class="font-medium">{track.name}</div>
@@ -263,7 +263,7 @@
 								title={m.calendarEditTrack()}
 								onclick={() => (rowForm = { track })}
 							>
-								<i class="ph-fill ph-pencil-simple"></i>
+								<i aria-hidden="true" class="ph-fill ph-pencil-simple"></i>
 							</button>
 							<button
 								class="btn btn-ghost btn-error btn-xs"
@@ -271,7 +271,7 @@
 								title={m.calendarDeleteTrack()}
 								onclick={() => deleteTrack(track)}
 							>
-								<i class="ph-fill ph-trash"></i>
+								<i aria-hidden="true" class="ph-fill ph-trash"></i>
 							</button>
 						</div>
 					</td>

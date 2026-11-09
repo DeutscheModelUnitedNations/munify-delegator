@@ -73,7 +73,7 @@
 			</span>
 		{/if}
 		<button class="btn btn-ghost btn-sm" onclick={onedit}>
-			<i class="ph-duotone ph-pen"></i>
+			<i aria-hidden="true" class="ph-duotone ph-pen"></i>
 			{m.emailTextEdit()}
 		</button>
 	</div>
@@ -99,14 +99,14 @@
 					{m.emailOpenCount({ count: open })}
 				</span>
 				<button class="btn btn-ghost btn-sm" disabled={sending} onclick={onskip}>
-					<i class="ph-duotone ph-fast-forward"></i>
+					<i aria-hidden="true" class="ph-duotone ph-fast-forward"></i>
 					{m.emailSkipOpen()}
 				</button>
 				<button class="btn btn-primary btn-sm" disabled={sending} onclick={onsend}>
 					{#if sending}
 						<span class="loading loading-spinner loading-xs"></span>
 					{:else}
-						<i class="ph-duotone ph-paper-plane-tilt"></i>
+						<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 					{/if}
 					{m.emailSendOpenNow()}
 				</button>
@@ -117,7 +117,7 @@
 		{#each details as detail (detail.label)}
 			<div class="flex flex-col gap-1">
 				<span class="text-base-content/60 flex items-center gap-2 text-xs font-semibold uppercase">
-					<i class="ph-duotone {detail.icon} text-primary"></i>
+					<i aria-hidden="true" class="ph-duotone {detail.icon} text-primary"></i>
 					{detail.label}
 				</span>
 				<p class="text-sm">{detail.text}</p>

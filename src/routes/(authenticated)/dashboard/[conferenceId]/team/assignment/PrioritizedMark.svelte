@@ -7,6 +7,7 @@
 
 {#if show}
 	<i
+		aria-hidden="true"
 		class="ph-duotone ph-target text-primary shrink-0"
 		role="img"
 		aria-label={m.assignmentPrioritized()}

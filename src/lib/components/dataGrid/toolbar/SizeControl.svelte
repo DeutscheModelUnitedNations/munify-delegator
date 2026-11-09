@@ -43,10 +43,10 @@
 			}}
 		/>
 		<div class="flex w-full justify-between px-2 text-xs">
-			<i class="ph-fill ph-minus"></i>
-			<i class="ph-fill ph-dot -translate-y-1"></i>
-			<i class="ph-fill ph-dot -translate-y-1"></i>
-			<i class="ph-fill ph-plus"></i>
+			<i aria-hidden="true" class="ph-fill ph-minus"></i>
+			<i aria-hidden="true" class="ph-fill ph-dot -translate-y-1"></i>
+			<i aria-hidden="true" class="ph-fill ph-dot -translate-y-1"></i>
+			<i aria-hidden="true" class="ph-fill ph-plus"></i>
 		</div>
 	</div>
 </div>

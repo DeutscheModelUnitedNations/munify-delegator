@@ -10,10 +10,10 @@
 </script>
 
 <div role="alert" class="alert alert-error">
-	<i class="ph-duotone ph-warning"></i>
+	<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 	<span>{m.httpGenericError()}</span>
 	<button class="btn btn-sm" onclick={onretry}>
-		<i class="ph-duotone ph-arrow-clockwise"></i>
+		<i aria-hidden="true" class="ph-duotone ph-arrow-clockwise"></i>
 		{m.retry()}
 	</button>
 </div>

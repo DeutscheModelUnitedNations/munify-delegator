@@ -87,7 +87,7 @@
 <div class="flex w-full flex-col gap-4 py-4">
 	{#if conference.state !== 'PRE'}
 		<div role="alert" class="alert alert-warning">
-			<i class="ph-duotone ph-warning text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning text-xl"></i>
 			<div>
 				<h3 class="font-bold">{m.seatPlanningLiveWarningTitle()}</h3>
 				<p class="text-sm">{m.seatPlanningLiveWarning()}</p>
@@ -131,7 +131,7 @@
 				<CustomRoleTable conferenceId={routeParams.conferenceId} {customRoles} />
 			{:else if committees.length === 0}
 				<div class="alert alert-info">
-					<i class="ph-duotone ph-info"></i>
+					<i aria-hidden="true" class="ph-duotone ph-info"></i>
 					{m.seatPlanningNoCommittees()}
 				</div>
 			{:else}

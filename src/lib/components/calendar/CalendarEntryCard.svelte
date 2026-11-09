@@ -45,28 +45,32 @@
 	{#if compact}
 		<div class="flex items-center gap-1 truncate text-[11px] font-medium leading-tight">
 			{#if icon}
-				<i class="ph-duotone ph-{icon} {colorConfig.text} shrink-0 text-[9px]"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{icon} {colorConfig.text} shrink-0 text-[9px]"
+				></i>
 			{/if}
 			<span class="truncate">{name}</span>
 			<span class="text-base-content/50 shrink-0">{timeLabel}</span>
 		</div>
 		{#if locationLabel}
 			<span class="text-base-content/50 truncate text-[10px] leading-tight">
-				<i class="ph-duotone ph-map-pin text-[8px]"></i>
+				<i aria-hidden="true" class="ph-duotone ph-map-pin text-[8px]"></i>
 				{locationLabel}
 			</span>
 		{/if}
 	{:else}
 		<div class="flex items-start gap-1.5">
 			{#if icon}
-				<i class="ph-duotone ph-{icon} {colorConfig.text} mt-0.5 shrink-0 text-sm"></i>
+				<i
+					aria-hidden="true"
+					class="ph-duotone ph-{icon} {colorConfig.text} mt-0.5 shrink-0 text-sm"
+				></i>
 			{/if}
 			<span class="truncate text-sm font-semibold">{name}</span>
 		</div>
 		<span class="text-base-content/60 text-xs">{timeLabel}</span>
 		{#if locationLabel}
 			<span class="text-base-content/50 truncate text-xs">
-				<i class="ph-duotone ph-map-pin text-[10px]"></i>
+				<i aria-hidden="true" class="ph-duotone ph-map-pin text-[10px]"></i>
 				{locationLabel}
 			</span>
 		{/if}

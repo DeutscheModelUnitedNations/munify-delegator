@@ -53,7 +53,7 @@
 
 <div class="flex justify-end">
 	<button class="btn btn-primary btn-sm" onclick={() => (placeModal = {})}>
-		<i class="ph-fill ph-plus"></i>
+		<i aria-hidden="true" class="ph-fill ph-plus"></i>
 		{m.calendarAddPlace()}
 	</button>
 </div>
@@ -72,7 +72,7 @@
 >
 	{#snippet emptyAction()}
 		<button class="btn btn-primary mt-4" onclick={() => (placeModal = {})}>
-			<i class="ph-fill ph-plus"></i>
+			<i aria-hidden="true" class="ph-fill ph-plus"></i>
 			{m.calendarAddPlace()}
 		</button>
 	{/snippet}
@@ -83,7 +83,7 @@
 			<td>{formatCoordinates(place)}</td>
 			<td>
 				{#if place.sitePlanFile}
-					<i class="ph-fill ph-file-pdf text-success"></i>
+					<i aria-hidden="true" class="ph-fill ph-file-pdf text-success"></i>
 				{:else}
 					–
 				{/if}

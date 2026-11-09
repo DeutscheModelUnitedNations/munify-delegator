@@ -241,7 +241,7 @@
 				<div class="flex flex-wrap items-center gap-2">
 					<div class="tooltip tooltip-left" data-tip={m.focusModeDescription()}>
 						<label class="flex cursor-pointer items-center gap-2 text-sm">
-							<i class="ph-duotone ph-target text-primary"></i>
+							<i aria-hidden="true" class="ph-duotone ph-target text-primary"></i>
 							{m.focusModeLabel()}
 							<input
 								type="checkbox"
@@ -255,7 +255,7 @@
 						class="btn btn-ghost btn-sm"
 						title={m.reviewerSnippetsShortDescription()}
 					>
-						<i class="ph-duotone ph-bookmark-simple"></i>
+						<i aria-hidden="true" class="ph-duotone ph-bookmark-simple"></i>
 						{m.manageSnippets()}
 					</a>
 				</div>
@@ -276,7 +276,7 @@
 				aria-selected={section === tab.id}
 				onclick={() => (section = tab.id)}
 			>
-				<i class="ph-duotone {tab.icon} mr-1"></i>
+				<i aria-hidden="true" class="ph-duotone {tab.icon} mr-1"></i>
 				{tab.label()}
 			</button>
 		{/each}
@@ -299,7 +299,7 @@
 									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
 								>
 									<div class="flex items-center gap-1 text-sm font-semibold text-warning">
-										<i class="ph-duotone ph-hand"></i>
+										<i aria-hidden="true" class="ph-duotone ph-hand"></i>
 										{helpNeededCount}
 									</div>
 								</div>

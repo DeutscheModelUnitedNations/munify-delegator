@@ -112,7 +112,7 @@
 <div class="flex flex-col gap-3 w-full">
 	<div class="card bg-base-200 border border-base-300 p-4">
 		<label class="input input-bordered flex items-center gap-2 w-full">
-			<i class="ph-duotone ph-magnifying-glass text-base-content/50"></i>
+			<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-base-content/50"></i>
 			<input
 				type="text"
 				placeholder={m.searchByDelegation()}

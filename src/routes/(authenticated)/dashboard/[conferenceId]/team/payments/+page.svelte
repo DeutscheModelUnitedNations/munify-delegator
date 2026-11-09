@@ -282,7 +282,7 @@
 
 	{#if lastReceived}
 		<div class="alert alert-success">
-			<i class="ph-duotone ph-money-wavy text-lg"></i>
+			<i aria-hidden="true" class="ph-duotone ph-money-wavy text-lg"></i>
 			<div>
 				{m.latestPayment({ id: lastReceived.id, date: formatLongDate(lastReceived.recievedAt) })}
 			</div>
@@ -312,7 +312,7 @@
 			>
 				<header class="flex items-center justify-between gap-2">
 					<h3 class="flex items-center gap-2 text-lg font-bold">
-						<i class="ph-duotone ph-money-wavy text-xl"></i>
+						<i aria-hidden="true" class="ph-duotone ph-money-wavy text-xl"></i>
 						{m.payment()}
 					</h3>
 					<button
@@ -321,7 +321,7 @@
 						onclick={resetView}
 						aria-label={m.close()}
 					>
-						<i class="ph-duotone ph-x text-lg"></i>
+						<i aria-hidden="true" class="ph-duotone ph-x text-lg"></i>
 					</button>
 				</header>
 
@@ -334,7 +334,7 @@
 							onclick={() => changeTransactionStatus('PROBLEM')}
 							disabled={hotkeyDebounce}
 						>
-							<i class="ph-duotone ph-warning"></i>
+							<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 							{m.markAsProblem()}
 						</button>
 						<button
@@ -342,13 +342,13 @@
 							onclick={markReceivedAndNext}
 							disabled={hotkeyDebounce}
 						>
-							<i class="ph-duotone ph-check"></i>
+							<i aria-hidden="true" class="ph-duotone ph-check"></i>
 							{m.markAsReceived()}
 							<Kbd hotkey="alt+a" />
 						</button>
 					{:else}
 						<button class="btn flex-1 btn-error" onclick={resetView}>
-							<i class="ph-duotone ph-x"></i>
+							<i aria-hidden="true" class="ph-duotone ph-x"></i>
 							{m.close()}
 							<Kbd hotkey="Esc" />
 						</button>
@@ -363,7 +363,7 @@
 					<span class="loading loading-md loading-spinner"></span>
 					<span class="font-mono text-sm text-base-content/70">{params.searchValue}</span>
 				{:else}
-					<i class="ph-duotone ph-warning text-3xl text-warning"></i>
+					<i aria-hidden="true" class="ph-duotone ph-warning text-3xl text-warning"></i>
 					<p class="text-base-content/80">{m.noPaymentFound()}</p>
 				{/if}
 			</div>
@@ -378,6 +378,7 @@
 	})}
 	<div class="bg-base-200 flex w-full items-center gap-2 rounded-field px-3 py-2 sm:gap-4 sm:px-4">
 		<i
+			aria-hidden="true"
 			class="ph-duotone {paymentStatusIcon({
 				userId: user.id,
 				transactionReceived: received
@@ -392,7 +393,7 @@
 			onclick={() => openUserCard(user.id)}
 			aria-label="Details for {name}"
 		>
-			<i class="ph-duotone ph-identification-card"></i>
+			<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
 		</button>
 	</div>
 {/snippet}
@@ -416,7 +417,7 @@
 	<!-- Received status alert -->
 	{#if transaction.recievedAt}
 		<div class="alert alert-success mb-4">
-			<i class="ph-duotone ph-check text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check text-2xl"></i>
 			{m.paymentReceived({ date: formatLongDate(transaction.recievedAt) })}
 		</div>
 	{/if}

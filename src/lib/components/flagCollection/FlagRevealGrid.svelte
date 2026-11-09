@@ -50,6 +50,7 @@
 					'hsl(220, 70%, 45%)'}, {nsaGradients?.gradient1.to ?? 'hsl(260, 70%, 55%)'})"
 			>
 				<i
+					aria-hidden="true"
 					class="ph-duotone ph-{cleanIcon} text-white/30"
 					class:text-4xl={!compact}
 					class:text-2xl={compact}

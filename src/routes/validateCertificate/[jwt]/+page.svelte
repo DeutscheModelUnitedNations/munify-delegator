@@ -51,8 +51,9 @@
 						</ul>
 					</div>
 				{/if}
-				<i class="ph-fill ph-check-circle text-success text-4xl"></i>
+				<i aria-hidden="true" class="ph-fill ph-check-circle text-success text-4xl"></i>
 				<i
+					aria-hidden="true"
 					class="ph-fill ph-seal text-primary absolute top-0 right-0 -translate-x-1/2 -translate-y-1/2 text-6xl"
 				></i>
 			{:else}
@@ -60,8 +61,9 @@
 				<p class="text-lg">
 					{m.certificateIsNotValidText()}
 				</p>
-				<i class="ph-fill ph-x-circle text-error text-4xl"></i>
+				<i aria-hidden="true" class="ph-fill ph-x-circle text-error text-4xl"></i>
 				<i
+					aria-hidden="true"
 					class="ph-fill ph-seal-warning text-error absolute top-0 right-0 -translate-x-1/2 -translate-y-1/2 text-6xl"
 				></i>
 			{/if}

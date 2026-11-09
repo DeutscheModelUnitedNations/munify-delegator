@@ -23,7 +23,11 @@
 			aria-expanded={open}
 			onclick={ontoggle}
 		>
-			<i class="ph-duotone ph-caret-right text-xs transition-transform" class:rotate-90={open}></i>
+			<i
+				aria-hidden="true"
+				class="ph-duotone ph-caret-right text-xs transition-transform"
+				class:rotate-90={open}
+			></i>
 			<span class="text-base-content/60 text-xs">{columnLabel}</span>
 			<span class="font-semibold">{label}</span>
 			<span class="badge badge-sm badge-ghost tabular-nums" title={m.dataGridGroupCount({ count })}>

@@ -48,10 +48,10 @@
 	<thead>
 		<tr>
 			<td>
-				<i class="ph-duotone ph-users"></i>
+				<i aria-hidden="true" class="ph-duotone ph-users"></i>
 			</td>
 			<td>
-				<i class="ph-duotone ph-sigma"></i>
+				<i aria-hidden="true" class="ph-duotone ph-sigma"></i>
 			</td>
 		</tr>
 	</thead>
@@ -89,7 +89,7 @@
 						/>
 					</div>
 				{:else}
-					<i class="ph-fill ph-minus text-gray-400"></i>
+					<i aria-hidden="true" class="ph-fill ph-minus text-gray-400"></i>
 				{/if}
 			</td>
 			<td>

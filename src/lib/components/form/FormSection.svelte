@@ -28,7 +28,7 @@
 		<div
 			class="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full"
 		>
-			<i class="ph-duotone ph-{icon}"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon}"></i>
 		</div>
 		<div class="flex flex-col gap-1">
 			<div class="flex items-center gap-1">

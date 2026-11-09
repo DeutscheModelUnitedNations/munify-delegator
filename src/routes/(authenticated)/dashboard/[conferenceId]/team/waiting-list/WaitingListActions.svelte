@@ -60,7 +60,7 @@
 		title={m.assignSeat()}
 		onclick={(e) => e.stopPropagation()}
 	>
-		<i class="ph-duotone ph-user-plus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-user-plus"></i>
 	</a>
 	<button
 		class="btn btn-ghost btn-xs"
@@ -71,9 +71,9 @@
 		}}
 	>
 		{#if hidden}
-			<i class="ph-duotone ph-eye"></i>
+			<i aria-hidden="true" class="ph-duotone ph-eye"></i>
 		{:else}
-			<i class="ph-duotone ph-eye-slash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
 		{/if}
 	</button>
 	<button
@@ -84,7 +84,7 @@
 			confirmingDelete = true;
 		}}
 	>
-		<i class="ph-duotone ph-trash"></i>
+		<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 	</button>
 </div>
 

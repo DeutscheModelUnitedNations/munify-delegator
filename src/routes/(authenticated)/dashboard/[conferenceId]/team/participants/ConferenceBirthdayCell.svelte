@@ -10,7 +10,7 @@
 
 {#if hasBirthday}
 	<span class="flex items-center gap-1.5 text-secondary">
-		<i class="ph-duotone ph-cake"></i>
+		<i aria-hidden="true" class="ph-duotone ph-cake"></i>
 		<span class="text-xs">{m.yes()}</span>
 	</span>
 {:else}

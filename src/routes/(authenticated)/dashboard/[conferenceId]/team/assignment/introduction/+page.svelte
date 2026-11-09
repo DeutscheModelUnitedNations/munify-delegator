@@ -49,7 +49,7 @@
 			{#each phases as [icon, title, text], index (title)}
 				<li class="flex flex-col gap-1">
 					<span class="flex items-center gap-2 font-semibold">
-						<i class="ph-duotone ph-{icon} text-primary"></i>
+						<i aria-hidden="true" class="ph-duotone ph-{icon} text-primary"></i>
 						{index + 1}. {title}
 					</span>
 					<span class="text-base-content/70 text-sm">{text}</span>
@@ -73,7 +73,7 @@
 							class="link link-hover flex cursor-pointer items-center gap-2 font-semibold"
 							href={step.href}
 						>
-							<i class="ph-duotone ph-{step.icon} text-primary"></i>
+							<i aria-hidden="true" class="ph-duotone ph-{step.icon} text-primary"></i>
 							{step.title}
 						</a>
 						<p class="text-base-content/80">{step.text}</p>

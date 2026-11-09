@@ -26,6 +26,6 @@
 	class="text-success flex items-center justify-center gap-3 pb-4"
 	in:fly={{ y: 0, duration: 300, delay }}
 >
-	<i class="ph-duotone ph-check-circle"></i>
+	<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>
 	<p class="text-center tracking-wider uppercase">{m.chatEnded()}</p>
 </div>

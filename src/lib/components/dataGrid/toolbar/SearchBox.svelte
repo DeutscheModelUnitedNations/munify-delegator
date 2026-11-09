@@ -28,9 +28,9 @@
 			aria-label={m.a11yClearSearch()}
 			onclick={() => oninput('')}
 		>
-			<i class="ph-duotone ph-x"></i>
+			<i aria-hidden="true" class="ph-duotone ph-x"></i>
 		</button>
 	{:else}
-		<i class="ph-duotone ph-magnifying-glass"></i>
+		<i aria-hidden="true" class="ph-duotone ph-magnifying-glass"></i>
 	{/if}
 </label>

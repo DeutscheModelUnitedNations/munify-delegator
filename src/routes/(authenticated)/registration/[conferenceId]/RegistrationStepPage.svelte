@@ -37,7 +37,7 @@
 		class="btn btn-ghost btn-sm self-start"
 		href={backHref ?? resolve(`dashboard/${conferenceId}`)}
 	>
-		<i class="ph-duotone ph-arrow-left"></i>
+		<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 		{m.back()}
 	</a>
 
@@ -46,7 +46,7 @@
 			<span
 				class="bg-primary/10 text-primary rounded-box flex size-12 shrink-0 items-center justify-center text-xl"
 			>
-				<i class="ph-duotone ph-{icon}"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{icon}"></i>
 			</span>
 			<div>
 				<h1 class="text-xl font-bold">{title}</h1>

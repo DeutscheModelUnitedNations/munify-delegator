@@ -174,14 +174,10 @@
 							<p class="text-sm font-thin">{conference.longName}</p>
 							<CardInfoSectionWithIcons
 								items={[
-									{ fontAwesomeIcon: 'fa-location-dot', text: conference.location },
-									{ fontAwesomeIcon: 'fa-calendar', text: conference.date },
-									{ fontAwesomeIcon: 'fa-comments', text: conference.lang },
-									{
-										fontAwesomeIcon: 'fa-globe',
-										text: conference.website,
-										link: conference.website
-									}
+									{ icon: 'ph-map-pin', text: conference.location },
+									{ icon: 'ph-calendar-blank', text: conference.date },
+									{ icon: 'ph-chats', text: conference.lang },
+									{ icon: 'ph-globe', text: conference.website, link: conference.website }
 								]}
 							/>
 						</div>
@@ -225,64 +221,9 @@
 					target="_blank"
 					rel="noopener noreferrer"
 				>
-					<figure class="bg-base-200 flex h-60 items-center justify-center p-6">
-						<img src={conference.logo} alt={conference.name} class="h-full" />
-					</figure>
-					<div class="card-body">
-						<h3 class="text-primary text-xl leading-none font-light">{conference.name}</h3>
-						<p class="text-sm font-thin">{conference.longName}</p>
-						<CardInfoSectionWithIcons
-							items={[
-								{ icon: 'ph-map-pin', text: conference.location },
-								{ icon: 'ph-calendar-blank', text: conference.date },
-								{ icon: 'ph-chats', text: conference.lang },
-								{ icon: 'ph-globe', text: conference.website, link: conference.website }
-							]}
-						/>
-					</div>
-				</div>
-			{/each}
-		</div>
-	</section>
-
-	<section class="bg-neutral text-neutral-content relative overflow-hidden">
-		<img
-			src={zweig}
-			alt=""
-			aria-hidden="true"
-			class="pointer-events-none absolute -top-[8%] -left-[6%] w-[44%] select-none dark:hidden"
-		/>
-		<div
-			class="relative mx-auto flex max-w-[1200px] flex-col items-start gap-6 px-4 py-18 md:items-end md:px-12 md:text-right lg:py-32"
-			{@attach reveal}
-		>
-			<AccentStripe long inverse />
-			<h2 class="text-[27px] leading-none font-bold">{m.homeAboutUs()}</h2>
-			<p class="max-w-[66ch] text-[15px] leading-[1.4]">{m.homeAboutUsText()}</p>
-			<a
-				class="btn border-neutral-content bg-neutral-content text-neutral"
-				href="https://dmun.de"
-				target="_blank"
-				rel="noopener noreferrer"
-			>
-				dmun.de
-			</a>
-		</div>
-	</section>
-
-	<section class="mx-auto max-w-[1200px] px-4 py-16 md:px-12 lg:py-24">
-		<div class="flex flex-col items-start gap-4" {@attach reveal}>
-			<h2 class="text-primary text-xl leading-none font-light">{m.homeContributeTitle()}</h2>
-			<p class="max-w-[66ch] text-[15px] leading-[1.3]">{m.homeContributeText()}</p>
-			<a
-				class="link link-primary font-bold"
-				href="https://github.com/DeutscheModelUnitedNations/munify-delegator"
-				target="_blank"
-				rel="noopener noreferrer"
-			>
-				{m.homeContributeLink()}
-			</a>
-		</div>
-	</section>
+					{m.homeContributeLink()}
+				</a>
+			</div>
+		</section>
 	</main>
 </div>

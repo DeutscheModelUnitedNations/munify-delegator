@@ -214,7 +214,7 @@
 			{#if loadingStates[key]}
 				<span class="loading loading-md loading-spinner"></span>
 			{:else}
-				<i class="ph-duotone {icon}"></i>
+				<i aria-hidden="true" class="ph-duotone {icon}"></i>
 			{/if}
 		</span>
 		<span class="flex min-w-0 flex-1 flex-col">
@@ -223,13 +223,14 @@
 				<span class="font-mono">CSV</span>
 				{#if count !== undefined}
 					<span class="flex items-center gap-1">
-						<i class="ph-duotone ph-user"></i>
+						<i aria-hidden="true" class="ph-duotone ph-user"></i>
 						{count}
 					</span>
 				{/if}
 			</span>
 		</span>
 		<i
+			aria-hidden="true"
 			class="ph-duotone ph-download-simple text-sm text-base-content/30 transition group-hover:text-primary"
 		></i>
 	</button>

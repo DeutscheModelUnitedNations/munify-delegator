@@ -143,7 +143,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
 			<button class="btn btn-sm" onclick={downloadPostalDocs}>
-				<i class="ph-duotone ph-file-pdf"></i>
+				<i aria-hidden="true" class="ph-duotone ph-file-pdf"></i>
 				{m.downloadPostalDocuments()}
 			</button>
 		</div>
@@ -158,7 +158,10 @@
 			{#if !isConferenceSupervisor}
 				{#if isAdult}
 					<div class="flex items-center gap-4 px-4 py-3">
-						<i class="ph-duotone ph-shield-check text-base-content/60 w-6 text-center text-lg"></i>
+						<i
+							aria-hidden="true"
+							class="ph-duotone ph-shield-check text-base-content/60 w-6 text-center text-lg"
+						></i>
 						<div class="flex flex-col">
 							<span class="font-semibold">{m.guardianAgreement()}</span>
 							<span class="text-base-content/60 text-sm">{m.guardianAgreementNotNeeded()}</span>
@@ -196,7 +199,7 @@
 		</div>
 		{#if !status}
 			<div class="alert alert-info">
-				<i class="ph-duotone ph-info"></i>
+				<i aria-hidden="true" class="ph-duotone ph-info"></i>
 				<span>{m.noParticipantStatusYet()}</span>
 			</div>
 		{/if}

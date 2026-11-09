@@ -85,7 +85,7 @@
 			<li class="border-base-300 flex items-center gap-3 border-b py-3">
 				<span class="flex size-7 shrink-0 items-center justify-center rounded-full {look.mark}">
 					{#if look.icon}
-						<i class="ph-fill ph-{look.icon} text-sm"></i>
+						<i aria-hidden="true" class="ph-fill ph-{look.icon} text-sm"></i>
 					{/if}
 				</span>
 				<span class="flex min-w-0 flex-1 flex-col">

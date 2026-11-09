@@ -38,7 +38,7 @@
 	<p class="opacity-70">{m.announcementSectionDescription()}</p>
 
 	<div class="alert alert-info mb-6">
-		<i class="ph-fill ph-info"></i>
+		<i aria-hidden="true" class="ph-fill ph-info"></i>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<span>{@html m.markdownSyntaxHint()}</span>
 	</div>
@@ -83,9 +83,9 @@
 	<div class="mt-6">
 		<button class="btn btn-primary" onclick={save} disabled={saving}>
 			{#if saving}
-				<i class="ph-duotone ph-spinner-gap animate-spin"></i>
+				<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin"></i>
 			{:else}
-				<i class="ph-duotone ph-floppy-disk"></i>
+				<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
 			{/if}
 			{m.save()}
 		</button>

@@ -47,7 +47,7 @@
 		: 'border-base-300'}"
 >
 	<div class="flex items-center gap-3">
-		<i class="ph-duotone ph-gauge text-primary"></i>
+		<i aria-hidden="true" class="ph-duotone ph-gauge text-primary"></i>
 		<span class="font-semibold">{m.emailsPerSecondTitle()}</span>
 	</div>
 	<p class="text-sm">{m.emailsPerSecondDescription()}</p>

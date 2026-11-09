@@ -93,6 +93,7 @@
 				{selected.length > 0 ? selected.length : noneLabel}
 			</span>
 			<i
+				aria-hidden="true"
 				class="ph-duotone ph-caret-down ml-auto text-xs transition-transform duration-200 {expanded
 					? 'rotate-180'
 					: ''}"

@@ -42,10 +42,10 @@
 {#if plain}
 	<span class="text-base-content/60 flex flex-wrap items-center gap-x-1.5 text-xs">
 		{#if isClosed}
-			<i class="ph-duotone ph-lock"></i>
+			<i aria-hidden="true" class="ph-duotone ph-lock"></i>
 			{m.surveyClosed()}
 		{:else}
-			<i class="ph-duotone ph-clock"></i>
+			<i aria-hidden="true" class="ph-duotone ph-clock"></i>
 			{m.surveyOpen({ deadline: conferenceTimeFormatted })}
 			{#if timezoneDiffers}
 				<span>({userTimeFormatted} {m.yourTime()})</span>

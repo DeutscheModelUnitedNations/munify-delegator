@@ -56,11 +56,12 @@
 				{#if busy}
 					<span class="loading loading-spinner loading-xs"></span>
 				{:else}
-					<i class="ph-duotone ph-file-csv text-base"></i>
+					<i aria-hidden="true" class="ph-duotone ph-file-csv text-base"></i>
 				{/if}
 			</span>
 			<span class="min-w-0 flex-1 truncate">{label}</span>
 			<i
+				aria-hidden="true"
 				class="ph-duotone ph-arrow-line-down text-base-content/30 group-hover:text-primary shrink-0 text-xs transition-colors"
 			></i>
 		</button>
@@ -73,7 +74,7 @@
 			title={m.badgeGeneratorOpen()}
 			aria-label={m.badgeGeneratorOpen()}
 		>
-			<i class="ph-duotone ph-arrow-square-out"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</div>
@@ -84,7 +85,7 @@
 			{#if busy}
 				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
-				<i class="ph-duotone ph-file-csv"></i>
+				<i aria-hidden="true" class="ph-duotone ph-file-csv"></i>
 			{/if}
 			{label}
 		</button>
@@ -96,7 +97,7 @@
 			rel="noopener noreferrer"
 		>
 			{m.badgeGeneratorOpen()}
-			<i class="ph-duotone ph-arrow-square-out"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{#if showHint}

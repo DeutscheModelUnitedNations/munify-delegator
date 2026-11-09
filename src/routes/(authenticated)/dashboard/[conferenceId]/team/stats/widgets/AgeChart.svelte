@@ -120,7 +120,7 @@
 	<div class="card-body p-4">
 		<div class="flex items-center justify-between">
 			<h2 class="card-title text-base font-semibold">
-				<i class="ph-duotone ph-cake text-base-content/70"></i>
+				<i aria-hidden="true" class="ph-duotone ph-cake text-base-content/70"></i>
 				{m.statsAgeDistribution()}
 			</h2>
 			{#if averageAge !== null}
@@ -133,7 +133,7 @@
 
 		{#if missingBirthdays > 0}
 			<div class="alert alert-warning py-2 text-sm">
-				<i class="ph-duotone ph-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 				<span>{m.statsMissingBirthdays({ count: missingBirthdays })}</span>
 			</div>
 		{/if}

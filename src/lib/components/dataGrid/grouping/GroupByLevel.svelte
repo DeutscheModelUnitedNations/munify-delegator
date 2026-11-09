@@ -65,6 +65,6 @@
 		aria-label={m.dataGridRemoveGrouping()}
 		onclick={onremove}
 	>
-		<i class="ph-duotone ph-x"></i>
+		<i aria-hidden="true" class="ph-duotone ph-x"></i>
 	</button>
 </div>

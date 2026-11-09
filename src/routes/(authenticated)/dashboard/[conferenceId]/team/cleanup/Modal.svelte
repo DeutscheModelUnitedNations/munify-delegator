@@ -33,7 +33,7 @@
 			onclick={closeModal}
 			aria-label={m.a11yCloseDialog()}
 		>
-			<i class="fa ph-x"></i>
+			<i aria-hidden="true" class="fa ph-x"></i>
 		</button>
 	</div>
 </div>

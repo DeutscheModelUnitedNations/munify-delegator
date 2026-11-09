@@ -1301,7 +1301,8 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 
 **Accessibility** (vision-impaired participants attend; details in CLAUDE-UI.md): dialogs through
 `Modal`/`Drawer` or `modalFocus` (`#lib/helpers/modalFocus`), one `<main id="main-content">` per
-page for the skip link, names for icon-only controls (tooltips are hover-only), state as
+page for the skip link, `aria-hidden="true"` on every icon
+(`src/lib/icons.test.ts`), names for icon-only controls (tooltips are hover-only), state as
 `aria-pressed` / `aria-selected` / `aria-sort` rather than colour, real `disabled`. The default
 look keeps DMUN's pale semantic colours; the high contrast variant (`#lib/helpers/contrast`,
 `data-contrast="more"`, the footer's toggle or the system's "increase contrast") is what has to

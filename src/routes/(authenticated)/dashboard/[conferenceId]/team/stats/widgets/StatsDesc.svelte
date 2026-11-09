@@ -24,7 +24,7 @@
 	{:else}
 		{@const trend = trendStyles[trendOf({ current: currentValue, historic: historicValue })]}
 		<span class={trend.fontClass}>
-			<i class="ph-duotone {trend.icon}"></i>
+			<i aria-hidden="true" class="ph-duotone {trend.icon}"></i>
 			{historicValue}
 			{#if currentValue > historicValue}
 				(+ {currentValue - historicValue})

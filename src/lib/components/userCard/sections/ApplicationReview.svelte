@@ -40,7 +40,7 @@
 	<div class="flex items-center justify-between gap-2">
 		<h3 class="text-lg font-bold">{m.userCardReview()}</h3>
 		<a class="btn btn-sm" href={sightingHref({ conferenceId, applicationId })}>
-			<i class="ph-duotone ph-binoculars"></i>
+			<i aria-hidden="true" class="ph-duotone ph-binoculars"></i>
 			{m.assignmentTabSighting()}
 		</a>
 	</div>
@@ -54,19 +54,19 @@
 				{/if}
 				{#if review.flagged}
 					<span class="badge badge-warning badge-sm gap-1">
-						<i class="ph-duotone ph-flag"></i>
+						<i aria-hidden="true" class="ph-duotone ph-flag"></i>
 						{m.assignmentStatusFlagged()}
 					</span>
 				{/if}
 				{#if review.required}
 					<span class="badge badge-success badge-sm gap-1">
-						<i class="ph-duotone ph-push-pin"></i>
+						<i aria-hidden="true" class="ph-duotone ph-push-pin"></i>
 						{m.assignmentRequired()}
 					</span>
 				{/if}
 				{#if review.disqualified}
 					<span class="badge badge-error badge-sm gap-1">
-						<i class="ph-duotone ph-prohibit"></i>
+						<i aria-hidden="true" class="ph-duotone ph-prohibit"></i>
 						{m.assignmentStatusDisqualified()}
 					</span>
 				{/if}
@@ -79,7 +79,7 @@
 		<div
 			class="bg-base-200 rounded-box text-base-content/60 flex items-center gap-4 px-4 py-3 text-sm"
 		>
-			<i class="ph-duotone ph-eye-slash w-6 text-center text-lg"></i>
+			<i aria-hidden="true" class="ph-duotone ph-eye-slash w-6 text-center text-lg"></i>
 			{m.userCardNotReviewed()}
 		</div>
 	{/if}

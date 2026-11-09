@@ -28,7 +28,7 @@
 	}}
 >
 	<label class="input join-item w-full">
-		<i class="ph-duotone ph-magnifying-glass text-base-content/50"></i>
+		<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-base-content/50"></i>
 		<input
 			{...inputProps}
 			type="text"
@@ -42,6 +42,6 @@
 		{/if}
 	</label>
 	<button type="submit" class="btn btn-primary join-item" aria-label={m.search()}>
-		<i class="ph-duotone ph-arrow-right"></i>
+		<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
 	</button>
 </form>

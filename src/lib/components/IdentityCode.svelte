@@ -70,7 +70,7 @@
 					class="w-full"
 				></svg>
 			{:else if failed}
-				<i class="ph-duotone ph-warning text-error text-4xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning text-error text-4xl"></i>
 			{:else}
 				<span class="loading loading-spinner text-primary"></span>
 			{/if}

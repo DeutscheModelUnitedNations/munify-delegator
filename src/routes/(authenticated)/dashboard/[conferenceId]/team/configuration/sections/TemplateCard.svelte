@@ -53,21 +53,21 @@
 		<div
 			class="bg-primary/10 text-primary rounded-box flex h-10 w-10 shrink-0 items-center justify-center"
 		>
-			<i class="ph-duotone ph-{icon} text-lg"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon} text-lg"></i>
 		</div>
 		<div class="flex min-w-0 flex-1 flex-col gap-1">
 			<span class="font-semibold leading-tight">{title}</span>
 			{#if pending}
 				<span class="badge badge-info badge-soft badge-sm">
-					<i class="ph-duotone ph-cloud-arrow-up"></i>{m.templatePending()}
+					<i aria-hidden="true" class="ph-duotone ph-cloud-arrow-up"></i>{m.templatePending()}
 				</span>
 			{:else if stored}
 				<span class="badge badge-success badge-soft badge-sm">
-					<i class="ph-duotone ph-check-circle"></i>{m.templateStored()}
+					<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>{m.templateStored()}
 				</span>
 			{:else}
 				<span class="badge badge-warning badge-soft badge-sm">
-					<i class="ph-duotone ph-warning-circle"></i>{m.templateMissing()}
+					<i aria-hidden="true" class="ph-duotone ph-warning-circle"></i>{m.templateMissing()}
 				</span>
 			{/if}
 		</div>
@@ -81,7 +81,7 @@
 				aria-label={m.templateView()}
 				title={m.templateView()}
 			>
-				<i class="ph-duotone ph-eye"></i>
+				<i aria-hidden="true" class="ph-duotone ph-eye"></i>
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
@@ -99,7 +99,7 @@
 		{#if onplace}
 			<span class={blocked ? 'tooltip' : ''} data-tip={blocked}>
 				<button type="button" class="btn btn-sm btn-outline" disabled={!!blocked} onclick={onplace}>
-					<i class="ph-duotone ph-arrows-out-cardinal"></i>
+					<i aria-hidden="true" class="ph-duotone ph-arrows-out-cardinal"></i>
 					{m.templatePlace()}
 				</button>
 			</span>
@@ -111,7 +111,10 @@
 				disabled={!!testReason || printing}
 				onclick={ontest}
 			>
-				<i class="ph-duotone {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"></i>
+				<i
+					aria-hidden="true"
+					class="ph-duotone {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"
+				></i>
 				{m.templateTest()}
 			</button>
 		</span>

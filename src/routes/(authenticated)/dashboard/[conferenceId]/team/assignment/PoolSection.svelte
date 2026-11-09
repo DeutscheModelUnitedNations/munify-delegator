@@ -57,7 +57,7 @@
 	{/if}
 	{#if search}
 		<label class="input input-sm w-full">
-			<i class="ph-duotone ph-magnifying-glass opacity-60"></i>
+			<i aria-hidden="true" class="ph-duotone ph-magnifying-glass opacity-60"></i>
 			<input
 				type="search"
 				class="grow"

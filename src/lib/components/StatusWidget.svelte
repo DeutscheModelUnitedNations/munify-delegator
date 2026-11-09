@@ -50,7 +50,7 @@
 
 <div class="card flex flex-col gap-2 p-0 md:p-4">
 	<h3 class="font-bold">
-		<i class="ph-duotone ph-{icon.replace(/^ph-/, '')} mr-2"></i>
+		<i aria-hidden="true" class="ph-duotone ph-{icon.replace(/^ph-/, '')} mr-2"></i>
 		{title}
 	</h3>
 	<div class="join w-full">
@@ -63,9 +63,9 @@
 				onclick={() => btnClick(value)}
 			>
 				{#if loading}
-					<i class="ph-fill animate-spin ph-spinner-gap"></i>
+					<i aria-hidden="true" class="ph-fill animate-spin ph-spinner-gap"></i>
 				{:else}
-					<i class="ph-fill ph-{icon.replace(/^ph-/, '')} text-lg"></i>
+					<i aria-hidden="true" class="ph-fill ph-{icon.replace(/^ph-/, '')} text-lg"></i>
 					{#if hotkey}
 						<span class="hidden sm:inline-block"><Kbd {hotkey} size="xs" /></span>
 					{/if}

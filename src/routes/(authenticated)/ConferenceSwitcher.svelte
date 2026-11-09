@@ -23,9 +23,9 @@
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger class="btn btn-ghost btn-sm max-w-56 gap-1.5 max-sm:px-1.5">
-		<i class="ph-duotone ph-flag"></i>
+		<i aria-hidden="true" class="ph-duotone ph-flag"></i>
 		<span class="crumb-label truncate font-semibold">{current?.title ?? m.conference()}</span>
-		<i class="ph-duotone ph-caret-down text-base-content/50 text-[0.6rem]"></i>
+		<i aria-hidden="true" class="ph-duotone ph-caret-down text-base-content/50 text-[0.6rem]"></i>
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
 		<!-- the portal and collision handling keep the menu on screen whatever the bar clips -->
@@ -40,7 +40,7 @@
 					<DropdownMenu.GroupHeading
 						class="text-base-content/60 mt-2 px-3 py-1 text-xs font-semibold"
 					>
-						<i class="{conferenceGroupIcon(group.key)} mr-1"></i>
+						<i aria-hidden="true" class="{conferenceGroupIcon(group.key)} mr-1"></i>
 						{conferenceGroupLabel(group.key)}
 					</DropdownMenu.GroupHeading>
 					{#each group.conferences as conference (conference.id)}

@@ -164,12 +164,12 @@
 			{/if}
 			<div class="mt-2 flex gap-4 text-sm opacity-70">
 				<span>
-					<i class="ph-fill ph-users"></i>
+					<i aria-hidden="true" class="ph-fill ph-users"></i>
 					{option.countSurveyAnswers}
 					{m.answers()}
 				</span>
 				<span>
-					<i class="ph-fill ph-prohibit"></i>
+					<i aria-hidden="true" class="ph-fill ph-prohibit"></i>
 					{option.upperLimit === 0 ? m.noLimit() : `${m.limit()}: ${option.upperLimit}`}
 				</span>
 			</div>
@@ -180,14 +180,14 @@
 				aria-label={m.edit()}
 				onclick={() => startEditOption(option)}
 			>
-				<i class="ph-fill ph-pencil-simple"></i>
+				<i aria-hidden="true" class="ph-fill ph-pencil-simple"></i>
 			</button>
 			<button
 				class="btn btn-ghost btn-sm text-error"
 				aria-label={m.delete()}
 				onclick={() => confirmDeleteOption(option)}
 			>
-				<i class="ph-fill ph-trash"></i>
+				<i aria-hidden="true" class="ph-fill ph-trash"></i>
 			</button>
 		</div>
 	</div>
@@ -199,7 +199,7 @@
 		<div class="flex items-center justify-between">
 			<h3 class="card-title">{m.options()}</h3>
 			<button class="btn btn-primary btn-sm" onclick={openCreateOptionModal}>
-				<i class="ph-fill ph-plus"></i>
+				<i aria-hidden="true" class="ph-fill ph-plus"></i>
 				{m.createOption()}
 			</button>
 		</div>

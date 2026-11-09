@@ -48,17 +48,17 @@
 		disabled={grouping.length >= MAX_GROUP_LEVELS || unused.length === 0}
 		onclick={() => grid.setGrouping([...grouping, { column: unused[0].id }])}
 	>
-		<i class="ph-duotone ph-plus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 		{grouping.length === 0 ? m.dataGridAddGrouping() : m.dataGridAddSubgrouping()}
 	</button>
 	{#if grouping.length > 0}
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-ghost btn-sm" onclick={() => grid.expandAll()}>
-				<i class="ph-duotone ph-caret-double-down"></i>
+				<i aria-hidden="true" class="ph-duotone ph-caret-double-down"></i>
 				{m.dataGridExpandAll()}
 			</button>
 			<button class="btn btn-ghost btn-sm" onclick={() => grid.collapseAll()}>
-				<i class="ph-duotone ph-caret-double-up"></i>
+				<i aria-hidden="true" class="ph-duotone ph-caret-double-up"></i>
 				{m.dataGridCollapseAll()}
 			</button>
 		</div>

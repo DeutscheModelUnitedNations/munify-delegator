@@ -16,7 +16,7 @@
 
 <div class="grid grid-cols-[auto_1fr] gap-2">
 	{#each items as { icon, text, link, trustedHtml }, i (i)}
-		<i class={`ph-duotone ph-${icon}`}></i>
+		<i aria-hidden="true" class={`ph-duotone ph-${icon}`}></i>
 		{#if link}
 			<a href={link} class="hover:underline" target="_blank" rel="external">{text}</a>
 		{:else if trustedHtml}

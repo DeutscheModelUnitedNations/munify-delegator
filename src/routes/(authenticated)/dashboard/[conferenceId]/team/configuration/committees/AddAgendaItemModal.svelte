@@ -49,7 +49,7 @@
 			disabled={!valid}
 			onclick={() => committee && create(committee.id)}
 		>
-			<i class="ph-duotone ph-plus"></i>
+			<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 			{m.create()}
 		</button>
 	{/snippet}

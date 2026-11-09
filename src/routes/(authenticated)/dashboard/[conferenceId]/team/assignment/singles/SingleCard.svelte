@@ -88,10 +88,14 @@
 		<div class="flex items-center gap-1">
 			<StarRating rating={review?.evaluation ?? 0} size="xs" />
 			{#if review?.required}
-				<i class="ph-duotone ph-push-pin text-success" title={m.assignmentRequired()}></i>
+				<i
+					aria-hidden="true"
+					class="ph-duotone ph-push-pin text-success"
+					title={m.assignmentRequired()}
+				></i>
 			{/if}
 			{#if review?.flagged}
-				<i class="ph-duotone ph-flag text-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-flag text-warning"></i>
 			{/if}
 		</div>
 		{#if wishes.length > 0}
@@ -99,9 +103,9 @@
 				{#each wishes as wish, index (wish.id)}
 					<li class="flex items-center gap-1 {wishTone[index]}" title={wish.name}>
 						{#if wish.matches}
-							<i class="ph-duotone ph-check-circle shrink-0"></i>
+							<i aria-hidden="true" class="ph-duotone ph-check-circle shrink-0"></i>
 						{:else if unwished}
-							<i class="ph-duotone ph-warning text-warning shrink-0"></i>
+							<i aria-hidden="true" class="ph-duotone ph-warning text-warning shrink-0"></i>
 						{/if}
 						<span class="truncate">{wish.name}</span>
 						<PrioritizedMark show={wish.prioritized} />
@@ -120,7 +124,7 @@
 			aria-label={m.assignmentCardSighting()}
 			title={m.assignmentCardSighting()}
 		>
-			<i class="ph-duotone ph-arrow-left"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 		</a>
 	</div>
 	{#if busy}

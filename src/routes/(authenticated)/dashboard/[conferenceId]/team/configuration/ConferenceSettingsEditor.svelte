@@ -431,7 +431,7 @@
 					onclick={() => setTab(tab.value)}
 				>
 					<span class="relative shrink-0 sm:mr-2">
-						<i class="ph-fill {tab.icon}"></i>
+						<i aria-hidden="true" class="ph-fill {tab.icon}"></i>
 						{#if changeCount > 0}
 							<span
 								class="absolute -top-0.5 -left-1.5 flex size-2"
@@ -453,7 +453,7 @@
 
 	{#if !canEdit}
 		<div class="alert alert-info mb-6" role="status">
-			<i class="ph-duotone ph-lock"></i>
+			<i aria-hidden="true" class="ph-duotone ph-lock"></i>
 			<span>
 				{canEditContent ? m.conferenceSettingsContentOnly() : m.conferenceSettingsReadOnly()}
 			</span>
@@ -474,7 +474,7 @@
 			title={saveLabel}
 			aria-label={saveLabel}
 		>
-			<i class="ph-fill ph-floppy-disk"></i>
+			<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
 		</button>
 	</div>
 
@@ -518,7 +518,7 @@
 	{#if canManageEmails}
 		<div class="flex flex-col gap-4" class:hidden={currentTab !== 'emails'}>
 			<p class="text-base-content/70 text-sm">
-				<i class="ph-duotone ph-clock mr-1"></i>
+				<i aria-hidden="true" class="ph-duotone ph-clock mr-1"></i>
 				{m.emailSettingsJobHint()}
 			</p>
 			<EmailSettings {conferenceId} changes={emailChanges} />
@@ -538,7 +538,7 @@
 		class="btn btn-primary mt-6 w-full"
 		disabled={!canEditContent || pendingChanges.length === 0}
 	>
-		<i class="ph-fill ph-floppy-disk mr-2"></i>
+		<i aria-hidden="true" class="ph-fill ph-floppy-disk mr-2"></i>
 		{saveLabel}
 	</button>
 </div>
@@ -554,7 +554,7 @@
 			disabled={pendingChanges.length === 0}
 			onclick={handleConfirmSave}
 		>
-			<i class="ph-fill ph-floppy-disk mr-2"></i>
+			<i aria-hidden="true" class="ph-fill ph-floppy-disk mr-2"></i>
 			{m.save()}
 		</button>
 	{/snippet}

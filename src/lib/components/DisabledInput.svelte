@@ -27,7 +27,7 @@
 	/>
 	<div class="tooltip tooltip-left" data-tip={m.copy()}>
 		<button class="btn btn-ghost" onclick={() => copyToClipboard(value)} aria-label={m.copy()}>
-			<i class="ph-duotone ph-copy text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-copy text-xl"></i>
 		</button>
 	</div>
 </div>

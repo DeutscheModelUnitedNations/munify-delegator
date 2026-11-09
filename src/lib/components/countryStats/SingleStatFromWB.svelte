@@ -36,7 +36,7 @@
 <div class="stats bg-base-200 shadow">
 	<div class="stat">
 		<div class="stat-figure text-primary">
-			<i class="ph-duotone ph-{icon} text-3xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon} text-3xl"></i>
 		</div>
 		<div class="stat-title">{title}</div>
 		{#if value}

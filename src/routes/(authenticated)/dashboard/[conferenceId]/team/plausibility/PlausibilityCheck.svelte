@@ -16,6 +16,7 @@
 <section class="bg-base-200 rounded-box flex flex-col gap-2 p-4">
 	<h2 class="flex items-center gap-3 text-lg font-bold">
 		<i
+			aria-hidden="true"
 			class="ph-duotone text-2xl {found
 				? 'ph-x-circle text-error'
 				: 'ph-check-circle text-success'}"
@@ -34,7 +35,7 @@
 					onclick={() => onSelect(entry.id)}
 				>
 					<span class="min-w-0 wrap-anywhere">{entry.label}</span>
-					<i class="ph-duotone ph-identification-card text-base-content/60"></i>
+					<i aria-hidden="true" class="ph-duotone ph-identification-card text-base-content/60"></i>
 				</button>
 			</li>
 		{:else}

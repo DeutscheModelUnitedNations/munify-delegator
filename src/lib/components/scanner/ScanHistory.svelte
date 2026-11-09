@@ -29,7 +29,8 @@
 						class="flex min-w-0 items-center gap-3 {entry.id === activeId ? 'bg-primary/20' : ''}"
 						onclick={() => onSelect(entry.id)}
 					>
-						<i class="ph-duotone ph-clock-counter-clockwise text-base-content/50"></i>
+						<i aria-hidden="true" class="ph-duotone ph-clock-counter-clockwise text-base-content/50"
+						></i>
 						<span class="min-w-0 truncate font-medium">{entry.name}</span>
 						<span class="ml-auto min-w-0 shrink-[2] truncate font-mono text-xs text-base-content/50"
 							>{entry.id}</span

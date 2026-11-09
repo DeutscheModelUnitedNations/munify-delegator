@@ -253,7 +253,7 @@
 				disabled={!emailInput.trim() || isChecking}
 			>
 				{#if isChecking}
-					<i class="ph-duotone ph-spinner-gap animate-spin"></i>
+					<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin"></i>
 				{/if}
 				{m.checkEmails()}
 			</button>
@@ -265,7 +265,7 @@
 	<div class="flex flex-col gap-4">
 		{#if hasExternalEmails}
 			<div class="alert alert-warning">
-				<i class="ph-duotone ph-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 				<span>{m.externalEmailWarning({ domain: organizationDomain ?? '' })}</span>
 			</div>
 		{/if}
@@ -299,7 +299,7 @@
 			<button class="btn" onclick={() => (step = 'enter')}>{m.back()}</button>
 			<button class="btn btn-primary" onclick={handleSendInvitations} disabled={!canSend}>
 				{#if isSending}
-					<i class="ph-duotone ph-spinner-gap animate-spin"></i>
+					<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin"></i>
 				{/if}
 				{m.sendInvitations()}
 			</button>

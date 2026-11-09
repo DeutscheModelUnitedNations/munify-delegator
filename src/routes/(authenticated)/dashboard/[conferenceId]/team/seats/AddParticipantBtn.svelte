@@ -38,9 +38,9 @@
 		onclick={() => (open = true)}
 	>
 		{#if warning}
-			<i class="ph-fill ph-warning-diamond"></i>
+			<i aria-hidden="true" class="ph-fill ph-warning-diamond"></i>
 		{:else}
-			<i class="ph-fill ph-plus {assignUser.userId ? 'icon-beat' : ''}"></i>
+			<i aria-hidden="true" class="ph-fill ph-plus {assignUser.userId ? 'icon-beat' : ''}"></i>
 		{/if}
 	</button>
 </div>

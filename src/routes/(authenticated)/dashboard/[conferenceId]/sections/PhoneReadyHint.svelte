@@ -58,26 +58,27 @@
 	>
 		<ul class="flex flex-col gap-2">
 			<li class="flex gap-3">
-				<i class="ph-duotone ph-sign-in text-info mt-1 w-5 shrink-0"></i>
+				<i aria-hidden="true" class="ph-duotone ph-sign-in text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyLogin()}</span>
 			</li>
 			<li class="flex gap-3">
-				<i class="ph-duotone ph-house-line text-info mt-1 w-5 shrink-0"></i>
+				<i aria-hidden="true" class="ph-duotone ph-house-line text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyHomeScreen()}</span>
 			</li>
 			<li class="flex gap-3">
-				<i class="ph-duotone ph-identification-badge text-info mt-1 w-5 shrink-0"></i>
+				<i aria-hidden="true" class="ph-duotone ph-identification-badge text-info mt-1 w-5 shrink-0"
+				></i>
 				<span>{m.phoneReadyNametag()}</span>
 			</li>
 			<li class="flex gap-3">
-				<i class="ph-duotone ph-battery-full text-info mt-1 w-5 shrink-0"></i>
+				<i aria-hidden="true" class="ph-duotone ph-battery-full text-info mt-1 w-5 shrink-0"></i>
 				<span>{m.phoneReadyBattery()}</span>
 			</li>
 		</ul>
 		<div class="mt-4 flex flex-wrap gap-2">
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
 			<a class="btn btn-info btn-sm" href={nametagHref}>
-				<i class="ph-duotone ph-identification-badge"></i>
+				<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
 				{m.phoneReadyOpenNametag()}
 			</a>
 			<button class="btn btn-ghost btn-sm" onclick={dismiss}>{m.phoneReadyDismiss()}</button>
@@ -85,7 +86,7 @@
 	</DashboardSection>
 {:else if conferenceState === 'ACTIVE' && !dismissed}
 	<div class="alert alert-info alert-vertical sm:alert-horizontal">
-		<i class="ph-duotone ph-device-mobile text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-device-mobile text-xl"></i>
 		<span>{m.phoneReadyActiveReminder()}</span>
 		<div class="flex flex-wrap items-center justify-center gap-1">
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
@@ -96,7 +97,7 @@
 				aria-label={m.phoneReadyDismiss()}
 				title={m.phoneReadyDismiss()}
 			>
-				<i class="ph-duotone ph-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-x"></i>
 			</button>
 		</div>
 	</div>

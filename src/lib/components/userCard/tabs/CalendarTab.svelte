@@ -59,13 +59,13 @@
 	<p class="text-sm text-base-content/60">{m.userCardCalendarHint()}</p>
 	{#if !conference.showCalendar}
 		<div class="alert alert-warning" role="status">
-			<i class="ph-duotone ph-eye-slash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
 			<span>{m.userCardCalendarNotShown()}</span>
 		</div>
 	{/if}
 	{#if empty}
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-calendar-blank"></i>
+			<i aria-hidden="true" class="ph-duotone ph-calendar-blank"></i>
 			<span>{m.userCardNoCalendarEntries()}</span>
 		</div>
 	{:else}

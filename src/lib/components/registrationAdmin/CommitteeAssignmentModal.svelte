@@ -94,25 +94,27 @@
 
 {#snippet action()}
 	<button class="btn btn-error" onclick={resetAssignments}>
-		<i class="ph-fill ph-arrow-counter-clockwise"></i>
+		<i aria-hidden="true" class="ph-fill ph-arrow-counter-clockwise"></i>
 		{m.reset()}
 	</button>
 	<button class="btn btn-primary" onclick={() => (open = false)}>
-		<i class="ph-fill ph-check"></i>
+		<i aria-hidden="true" class="ph-fill ph-check"></i>
 		{m.done()}
 	</button>
 {/snippet}
 
-{#snippet assignButton(member: Member, committeeId: string)}
-	{@const active = member.assignedCommittee?.id === committeeId}
+{#snippet assignButton(member: Member, committee: { id: string; abbreviation: string })}
+	{@const active = member.assignedCommittee?.id === committee.id}
 	<button
 		class="btn btn-square btn-sm {active ? 'btn-success' : ''} {loading && 'disabled'}"
-		onclick={() => assign({ memberId: member.id, committeeId })}
+		aria-label={committee.abbreviation}
+		aria-pressed={active}
+		onclick={() => assign({ memberId: member.id, committeeId: committee.id })}
 	>
 		{#if loading}
-			<i class="ph-duotone animate-spin ph-spinner-gap"></i>
+			<i aria-hidden="true" class="ph-duotone animate-spin ph-spinner-gap"></i>
 		{:else}
-			<i class="ph-duotone {active ? 'ph-check' : 'ph-plus'}"></i>
+			<i aria-hidden="true" class="ph-duotone {active ? 'ph-check' : 'ph-plus'}"></i>
 		{/if}
 	</button>
 {/snippet}
@@ -138,7 +140,7 @@
 							})}
 						</td>
 						{#each filteredCommittees as committee (committee.id)}
-							<td>{@render assignButton(member, committee.id)}</td>
+							<td>{@render assignButton(member, committee)}</td>
 						{/each}
 					</tr>
 				{/each}

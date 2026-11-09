@@ -85,7 +85,7 @@
 				<div class="card-body gap-4">
 					{#if userDataNotComplete}
 						<div role="alert" class="alert alert-warning">
-							<i class="ph-fill ph-warning text-2xl"></i>
+							<i aria-hidden="true" class="ph-fill ph-warning text-2xl"></i>
 							<span>{m.completeAddressAndBirthdayForPostalRegistration()}</span>
 						</div>
 						<a
@@ -94,18 +94,18 @@
 								`my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${params.conferenceId}`)}`
 							)}
 						>
-							<i class="ph-fill ph-pencil-simple-line"></i>
+							<i aria-hidden="true" class="ph-fill ph-pencil-simple-line"></i>
 							{m.updateProfile()}
 						</a>
 					{:else}
 						<p>{m.checkYourAddressAndBirthday()}</p>
 						<div class="bg-base-100 grid grid-cols-[auto_1fr] items-center gap-4 rounded-box p-4">
-							<i class="ph-duotone ph-user"></i>
+							<i aria-hidden="true" class="ph-duotone ph-user"></i>
 							<div>
 								{userQueryData.givenName}
 								{userQueryData.familyName}
 							</div>
-							<i class="ph-duotone ph-house"></i>
+							<i aria-hidden="true" class="ph-duotone ph-house"></i>
 							<div>
 								{userQueryData.street}
 								{userQueryData.apartment ? `, ${userQueryData.apartment}` : ''}<br />
@@ -113,7 +113,7 @@
 								{userQueryData.city}<br />
 								{userQueryData.country}
 							</div>
-							<i class="ph-duotone ph-cake"></i>
+							<i aria-hidden="true" class="ph-duotone ph-cake"></i>
 							<div>
 								{userQueryData.birthday
 									? new Date(userQueryData.birthday).toLocaleDateString(getLocale())
@@ -121,7 +121,7 @@
 							</div>
 						</div>
 						<a class="btn btn-ghost btn-sm self-start" href={resolve('my-account')}>
-							<i class="ph-fill ph-pencil-simple-line"></i>
+							<i aria-hidden="true" class="ph-fill ph-pencil-simple-line"></i>
 							{m.updateProfile()}
 						</a>
 					{/if}
@@ -132,13 +132,13 @@
 						disabled={loading || userDataNotComplete}
 					>
 						{#if loading}
-							<i class="ph-fill ph-spinner-gap animate-spin"></i>
+							<i aria-hidden="true" class="ph-fill ph-spinner-gap animate-spin"></i>
 							{m.documentsAreBeingPrepared()}
 						{:else if userDataNotComplete}
-							<i class="ph-fill ph-lock"></i>
+							<i aria-hidden="true" class="ph-fill ph-lock"></i>
 							{m.downloadDocuments()}
 						{:else}
-							<i class="ph-fill ph-download-simple"></i>
+							<i aria-hidden="true" class="ph-fill ph-download-simple"></i>
 							{m.downloadDocuments()}
 						{/if}
 					</button>
@@ -152,7 +152,7 @@
 						{@html m.postalRegistrationFAQ1()}
 					</div>
 					<div class="bg-base-100 flex gap-6 rounded-box p-4">
-						<i class="ph-duotone ph-mailbox text-4xl"></i>
+						<i aria-hidden="true" class="ph-duotone ph-mailbox text-4xl"></i>
 						<address class="text-lg not-italic">
 							<strong>{conference.postalName}</strong><br /><span>{conference.postalStreet}</span
 							><br />

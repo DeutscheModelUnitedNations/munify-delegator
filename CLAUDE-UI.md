@@ -41,7 +41,10 @@ the public and participant pages, contrast in the high contrast variant, plus th
   "increase contrast") sets `data-contrast="more"`; `app.css` darkens the semantic colours and
   lifts muted text there. Muted text by opacity (`text-base-content/60`, `opacity-50`) is fine in
   the default look; do not hard-code a colour around it.
-- Font Awesome 7 gives its glyphs empty alternative text itself, so plain `<i>` icons are silent.
+- **Every icon is `aria-hidden="true"`.** Phosphor icons are font glyphs a screen reader can read
+  out as a stray character, also inside a button's name; `src/lib/icons.test.ts` fails on an empty
+  `<i>` without it. An icon-only control still needs its `aria-label` (`SquareButtonWithLoadingState`
+  takes a required `label`).
 
 ## Component Library Overview
 
@@ -1325,24 +1328,24 @@ are Phosphor's own (`@phosphor-icons/core` lists them), not Font Awesome's.
 
 ```svelte
 <!-- Duotone, the default look -->
-<i class="ph-duotone ph-user"></i>
+<i aria-hidden="true" class="ph-duotone ph-user"></i>
 
 <!-- Fill for active states -->
-<i class="ph-fill ph-user"></i>
+<i aria-hidden="true" class="ph-fill ph-user"></i>
 
 <!-- Regular (outline), for brand logos -->
-<i class="ph ph-github-logo"></i>
+<i aria-hidden="true" class="ph ph-github-logo"></i>
 
 <!-- With size -->
-<i class="ph-duotone ph-user text-2xl"></i>
+<i aria-hidden="true" class="ph-duotone ph-user text-2xl"></i>
 
 <!-- With color -->
-<i class="ph-duotone ph-check text-success"></i>
-<i class="ph-duotone ph-x text-error"></i>
+<i aria-hidden="true" class="ph-duotone ph-check text-success"></i>
+<i aria-hidden="true" class="ph-duotone ph-x text-error"></i>
 
 <!-- Animated (app.css): spinner, beat, fade, shake -->
-<i class="ph-fill ph-spinner-gap animate-spin"></i>
-<i class="ph-fill ph-bell icon-shake"></i>
+<i aria-hidden="true" class="ph-fill ph-spinner-gap animate-spin"></i>
+<i aria-hidden="true" class="ph-fill ph-bell icon-shake"></i>
 ```
 
 - Components taking an icon prop take the name without `ph-` (`icon="users"`) unless their
@@ -1548,7 +1551,7 @@ page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a 
 
 ```svelte
 <div class="flex flex-col items-center justify-center py-12 text-center">
-	<i class="ph-duotone ph-tray text-4xl text-base-content/30 mb-4"></i>
+	<i aria-hidden="true" class="ph-duotone ph-tray text-4xl text-base-content/30 mb-4"></i>
 	<p class="text-base-content/60">No items found</p>
 </div>
 ```
@@ -1567,7 +1570,7 @@ page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a 
 
 <!-- Icon button -->
 <button class="btn btn-square btn-ghost btn-sm">
-	<i class="ph-duotone ph-pencil-simple"></i>
+	<i aria-hidden="true" class="ph-duotone ph-pencil-simple"></i>
 </button>
 ```
 

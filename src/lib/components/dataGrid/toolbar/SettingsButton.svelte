@@ -12,7 +12,7 @@
 	onclick={() => (confirmDialogOpen = true)}
 	aria-label={m.settings()}
 >
-	<i class="ph-duotone ph-gear-six text-xl"></i>
+	<i aria-hidden="true" class="ph-duotone ph-gear-six text-xl"></i>
 </button>
 
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
@@ -33,7 +33,7 @@
 				onclick={() => (confirmDialogOpen = false)}
 				aria-label={m.close()}
 			>
-				<i class="ph-duotone ph-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-x"></i>
 			</button>
 		</div>
 	</div>

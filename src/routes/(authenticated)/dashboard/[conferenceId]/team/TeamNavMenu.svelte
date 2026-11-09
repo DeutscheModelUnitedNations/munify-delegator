@@ -98,7 +98,7 @@
 			rel="noopener noreferrer"
 			data-testid="team-manual-link"
 		>
-			<i class="ph-duotone ph-book w-5 text-center"></i>
+			<i aria-hidden="true" class="ph-duotone ph-book w-5 text-center"></i>
 			<span class="flex-1">{help.specific ? m.helpManualForPage() : m.helpManual()}</span>
 			<i class="ph-duotone ph-arrow-up-right text-base-content/50 text-xs" aria-hidden="true"></i>
 		</a>

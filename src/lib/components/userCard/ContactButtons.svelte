@@ -30,7 +30,7 @@
 			class="link link-hover flex min-w-0 items-center gap-1.5 break-all"
 			aria-label="{label}: {value}"
 		>
-			<i class="ph-duotone {icon} text-xs"></i>
+			<i aria-hidden="true" class="ph-duotone {icon} text-xs"></i>
 			{value}
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
@@ -41,7 +41,7 @@
 			aria-label="{m.copy()}: {label}"
 			title={m.copy()}
 		>
-			<i class="ph-duotone ph-copy text-xs"></i>
+			<i aria-hidden="true" class="ph-duotone ph-copy text-xs"></i>
 		</button>
 	</span>
 {/snippet}

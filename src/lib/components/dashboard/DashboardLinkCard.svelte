@@ -45,7 +45,10 @@
 	<div class="card bg-base-200 cursor-not-allowed opacity-50">
 		<div class="card-body max-sm:p-4">
 			<div class="flex items-center gap-3">
-				<i class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-2xl text-base-content/50"></i>
+				<i
+					aria-hidden="true"
+					class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-2xl text-base-content/50"
+				></i>
 				<h2 class="card-title">{title}</h2>
 				{#if badge !== undefined}
 					<span class="badge {badgeClasses[badgeType]}">{badge}</span>
@@ -81,13 +84,15 @@
 {#snippet body()}
 	<div class="card-body max-sm:p-4">
 		<div class="flex items-center gap-3">
-			<i class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-primary text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-primary text-2xl"
+			></i>
 			<h2 class="card-title min-w-0 break-words">{title}</h2>
 			{#if badge !== undefined}
 				<span class="badge {badgeClasses[badgeType]}">{badge}</span>
 			{/if}
 			{#if external}
-				<i class="ph-duotone ph-arrow-square-out text-xs text-base-content/50"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-square-out text-xs text-base-content/50"
+				></i>
 			{/if}
 		</div>
 		<p class="text-base-content/70">{description}</p>

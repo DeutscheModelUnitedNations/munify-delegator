@@ -92,7 +92,7 @@
 					<p class="text-base-content/70">{m.emailConflictOption2Description()}</p>
 					<div class="flex flex-wrap items-center gap-3">
 						<a href={`mailto:${supportEmail}?${mailtoQuery}`} class="btn btn-primary btn-sm">
-							<i class="ph-duotone ph-envelope"></i>
+							<i aria-hidden="true" class="ph-duotone ph-envelope"></i>
 							{m.emailConflictContactSupport()}
 						</a>
 						<span class="text-base-content/70">
@@ -106,7 +106,7 @@
 
 	{#if scenario === 'change' && maskedExistingEmail}
 		<div class="alert alert-warning">
-			<i class="ph-duotone ph-warning text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning text-2xl"></i>
 			<p>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/; the interpolated address is reduced by sanitizeMaskedEmail to [a-zA-Z0-9@._*-], which cannot form markup -->
 				{@html m.emailConflictWarning({ existingEmail: maskedExistingEmail })}

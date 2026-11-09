@@ -63,7 +63,7 @@
 			aria-label={m.delegationMembers()}
 			popovertarget={popoverId}
 		>
-			<i class="ph-duotone ph-users"></i>
+			<i aria-hidden="true" class="ph-duotone ph-users"></i>
 		</button>
 	</div>
 
@@ -77,11 +77,11 @@
 	>
 		<div class="border-base-300 bg-base-200 flex flex-col gap-1 border-b px-4 py-3 text-sm">
 			<div class="flex items-center gap-2">
-				<i class="ph-duotone ph-graduation-cap w-4"></i>
+				<i aria-hidden="true" class="ph-duotone ph-graduation-cap w-4"></i>
 				<span class="truncate">{delegationSchoolsLabel(members) ?? '–'}</span>
 			</div>
 			<div class="flex items-center gap-2">
-				<i class="ph-duotone ph-key w-4"></i>
+				<i aria-hidden="true" class="ph-duotone ph-key w-4"></i>
 				<span class="font-mono">{delegation.entryCode}</span>
 			</div>
 		</div>
@@ -102,7 +102,7 @@
 						</span>
 						{#if member.isHeadDelegate}
 							<div class="tooltip tooltip-left" data-tip={m.headDelegate()}>
-								<i class="ph-duotone ph-star text-warning"></i>
+								<i aria-hidden="true" class="ph-duotone ph-star text-warning"></i>
 								<span class="sr-only">{m.headDelegate()}</span>
 							</div>
 						{/if}

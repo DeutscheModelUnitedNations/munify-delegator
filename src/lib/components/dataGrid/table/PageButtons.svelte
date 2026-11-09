@@ -22,7 +22,7 @@
 		disabled={pageIndex === 0}
 		onclick={() => onpage(pageIndex - 1)}
 	>
-		<i class="ph-duotone ph-caret-left"></i>
+		<i aria-hidden="true" class="ph-duotone ph-caret-left"></i>
 	</button>
 	{#each buttons as page, i (page ?? `gap-${i}`)}
 		{#if page === null}
@@ -44,6 +44,6 @@
 		disabled={pageIndex >= pages - 1}
 		onclick={() => onpage(pageIndex + 1)}
 	>
-		<i class="ph-duotone ph-caret-right"></i>
+		<i aria-hidden="true" class="ph-duotone ph-caret-right"></i>
 	</button>
 </div>

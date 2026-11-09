@@ -180,7 +180,7 @@
 
 	{#if delegationMembers.some((x) => x.delegation.assignedRole?.kind === 'NATION' && !x.assignedCommittee)}
 		<div class="alert alert-warning">
-			<i class="ph-fill ph-arrows-split text-2xl"></i>
+			<i aria-hidden="true" class="ph-fill ph-arrows-split text-2xl"></i>
 			<div>
 				<h3 class="font-bold">{m.committeeAssignment()}</h3>
 				<p>{m.committeeAssignmentAlertDescriptionSupervisor()}</p>
@@ -200,7 +200,7 @@
 			/>
 		{:else}
 			<div class="alert alert-warning">
-				<i class="ph-duotone ph-warning text-xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning text-xl"></i>
 				{m.noDelegationsFound()}
 			</div>
 		{/each}
@@ -215,7 +215,7 @@
 			/>
 		{:else}
 			<div class="alert alert-warning">
-				<i class="ph-duotone ph-warning text-xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning text-xl"></i>
 				{m.noSingleParticipantsFound()}
 			</div>
 		{/each}
@@ -258,7 +258,7 @@
 {#snippet beforePost()}
 	{#if isStateParticipantRegistration}
 		<section class="alert alert-info alert-soft">
-			<i class="ph-duotone ph-info text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info text-xl"></i>
 			{m.registeredAsSupervisor()}
 		</section>
 	{/if}

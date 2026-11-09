@@ -93,7 +93,7 @@
 		{#each tiles as tile (tile.title)}
 			<div class="stat">
 				<div class="stat-figure text-primary">
-					<i class="ph-duotone ph-{tile.icon} text-2xl"></i>
+					<i aria-hidden="true" class="ph-duotone ph-{tile.icon} text-2xl"></i>
 				</div>
 				<div class="stat-title">{tile.title}</div>
 				<div class="stat-value text-2xl">{tile.value}</div>

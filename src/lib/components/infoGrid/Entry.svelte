@@ -17,14 +17,14 @@
 	{:else if children}
 		{@render children?.()}
 	{:else}
-		<i class="ph-duotone ph-minus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-minus"></i>
 	{/if}
 {/snippet}
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 	<legend class="fieldset-legend">
 		{#if icon}
-			<i class="ph-duotone ph-{icon}"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{icon}"></i>
 		{/if}
 		{title}
 	</legend>

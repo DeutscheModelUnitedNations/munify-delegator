@@ -53,7 +53,7 @@
 <DashboardSection icon="signature" title={m.yourApplication()}>
 	{#if applied}
 		<div role="status" class="alert bg-success/10 border-success/30 items-start">
-			<i class="ph-duotone ph-check-circle text-success mt-0.5 text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check-circle text-success mt-0.5 text-xl"></i>
 			<div class="flex flex-col gap-1">
 				<p class="font-semibold">{m.completeSignupSuccess()}</p>
 				<p class="text-sm">{m.completeSignupSuccessDescription()}</p>
@@ -62,12 +62,12 @@
 	{:else}
 		<div class="flex flex-col gap-6">
 			<div role="alert" class="alert bg-warning/10 border-warning/40 items-start">
-				<i class="ph-duotone ph-warning text-warning mt-0.5 text-xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning text-warning mt-0.5 text-xl"></i>
 				<div class="flex flex-col gap-1">
 					<p class="font-semibold">{m.completeSignupWarningHeading()}</p>
 					<p class="text-sm">{pendingText}</p>
 					<p class="text-sm font-medium">
-						<i class="ph-duotone ph-clock mr-1"></i>
+						<i aria-hidden="true" class="ph-duotone ph-clock mr-1"></i>
 						{m.applicationDeadlineUntil({ deadline })}
 					</p>
 				</div>
@@ -78,7 +78,7 @@
 			<div class="flex flex-col gap-2">
 				{#if onComplete}
 					<button class="btn btn-primary self-start" disabled={!allDone} onclick={onComplete}>
-						<i class="ph-duotone ph-paper-plane-tilt"></i>
+						<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 						{m.completeSignupButton()}
 					</button>
 					{#if !allDone}
@@ -86,7 +86,7 @@
 					{/if}
 				{:else}
 					<p class="text-base-content/60 text-sm">
-						<i class="ph-duotone ph-info mr-1"></i>
+						<i aria-hidden="true" class="ph-duotone ph-info mr-1"></i>
 						{m.completeSignupHeadDelegateOnly()}
 					</p>
 				{/if}

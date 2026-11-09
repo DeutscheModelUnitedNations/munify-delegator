@@ -125,7 +125,7 @@
 
 {#snippet addButton(label: string, onclick: () => void)}
 	<button type="button" class="btn btn-sm self-start" {onclick}>
-		<i class="ph-duotone ph-plus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 		{label}
 	</button>
 {/snippet}
@@ -219,7 +219,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt({ list: form.committees, key: committee.key })}
 								>
-									<i class="ph-duotone ph-trash"></i>
+									<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 								</button>
 							</div>
 
@@ -236,7 +236,7 @@
 											}}
 										>
 											{nationNames.get(code) ?? code}
-											<i class="ph-duotone ph-x"></i>
+											<i aria-hidden="true" class="ph-duotone ph-x"></i>
 										</button>
 									{/each}
 								</div>
@@ -293,7 +293,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt({ list: form.nsa, key: nsa.key })}
 								>
-									<i class="ph-duotone ph-trash"></i>
+									<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 								</button>
 							</div>
 							<div class="flex flex-col">
@@ -365,7 +365,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt({ list: form.customConferenceRole, key: role.key })}
 								>
-									<i class="ph-duotone ph-trash"></i>
+									<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 								</button>
 							</div>
 							<label class="flex flex-col">
@@ -407,11 +407,11 @@
 						disabled={!validation.success}
 						onclick={copyJson}
 					>
-						<i class="ph-duotone ph-copy"></i>
+						<i aria-hidden="true" class="ph-duotone ph-copy"></i>
 						{m.copy()}
 					</button>
 					<button type="button" class="btn" disabled={!validation.success} onclick={downloadJson}>
-						<i class="ph-duotone ph-download-simple"></i>
+						<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
 						{m.download()}
 					</button>
 					<button type="button" class="btn btn-ghost text-error ml-auto" onclick={resetForm}>
@@ -441,7 +441,7 @@
 					disabled={!importText.trim()}
 					onclick={() => importJson(importText)}
 				>
-					<i class="ph-duotone ph-file-arrow-up"></i>
+					<i aria-hidden="true" class="ph-duotone ph-file-arrow-up"></i>
 					{m.import()}
 				</button>
 			</FormFieldset>

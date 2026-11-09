@@ -26,7 +26,7 @@
 			disabled={grid.state.filter.items.length === 0}
 			onclick={() => grid.setFilter(emptyFilter())}
 		>
-			<i class="ph-duotone ph-funnel-x"></i>
+			<i aria-hidden="true" class="ph-duotone ph-funnel-x"></i>
 			{m.dataGridClearFilter()}
 		</button>
 		<button class="btn btn-primary btn-sm ml-auto" onclick={() => (open = false)}>

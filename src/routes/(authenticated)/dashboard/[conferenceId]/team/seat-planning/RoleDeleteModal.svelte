@@ -18,7 +18,7 @@
 	{#snippet action()}
 		<button class="btn" onclick={() => (role = undefined)}>{m.cancel()}</button>
 		<button class="btn btn-error" onclick={() => role && onconfirm(role.id)}>
-			<i class="ph-duotone ph-trash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 			{m.delete()}
 		</button>
 	{/snippet}

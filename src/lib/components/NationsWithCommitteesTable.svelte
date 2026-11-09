@@ -14,8 +14,8 @@
 <table class="table">
 	<thead>
 		<tr>
-			<th><i class="ph-duotone ph-flag"></i></th>
-			<th><i class="ph-duotone ph-globe"></i></th>
+			<th><i aria-hidden="true" class="ph-duotone ph-flag"></i></th>
+			<th><i aria-hidden="true" class="ph-duotone ph-globe"></i></th>
 			{#each committees as committee, committeeIndex (committeeIndex)}
 				<th class="text-center">
 					<div class="tooltip tooltip-bottom" data-tip={committee.name}>
@@ -23,7 +23,7 @@
 					</div>
 				</th>
 			{/each}
-			<th class="text-center"><i class="ph-duotone ph-users"></i></th>
+			<th class="text-center"><i aria-hidden="true" class="ph-duotone ph-users"></i></th>
 			{#if includeActionCell}<th><span class="sr-only">{m.actions()}</span></th>{/if}
 		</tr>
 	</thead>

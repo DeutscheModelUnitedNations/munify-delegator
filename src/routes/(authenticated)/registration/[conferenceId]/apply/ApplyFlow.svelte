@@ -114,7 +114,7 @@
 							<span
 								class="bg-primary/10 text-primary group-enabled:group-hover:bg-primary group-enabled:group-hover:text-primary-content rounded-box flex size-10 shrink-0 items-center justify-center text-lg transition-colors duration-200"
 							>
-								<i class="ph-duotone ph-{option.icon}"></i>
+								<i aria-hidden="true" class="ph-duotone ph-{option.icon}"></i>
 							</span>
 							<span class="card-title text-base">{option.title}</span>
 						</span>
@@ -123,6 +123,7 @@
 							<span class="badge badge-ghost">{m.RegistrationNotPossible()}</span>
 						{:else}
 							<i
+								aria-hidden="true"
 								class="ph-duotone ph-arrow-down text-primary self-end transition-transform duration-200 group-hover:translate-y-1"
 							></i>
 						{/if}

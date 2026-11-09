@@ -75,7 +75,7 @@
 					aria-label={m.switchCamera()}
 					title={m.switchCamera()}
 				>
-					<i class="ph-duotone ph-camera-rotate"></i>
+					<i aria-hidden="true" class="ph-duotone ph-camera-rotate"></i>
 				</button>
 			{/if}
 			<button
@@ -84,7 +84,7 @@
 				aria-label={m.stopCamera()}
 				title={m.stopCamera()}
 			>
-				<i class="ph-duotone ph-video-camera-slash"></i>
+				<i aria-hidden="true" class="ph-duotone ph-video-camera-slash"></i>
 			</button>
 		</div>
 
@@ -93,10 +93,10 @@
 		>
 			{#if scannedCode}
 				<!-- Scanning pauses while a code is handled, whether it came from the camera or by hand -->
-				<i class="ph-duotone ph-pause-circle"></i>
+				<i aria-hidden="true" class="ph-duotone ph-pause-circle"></i>
 				<span class="truncate font-mono">{scannedCode}</span>
 			{:else}
-				<i class="ph-duotone ph-barcode icon-beat-fade"></i>
+				<i aria-hidden="true" class="ph-duotone ph-barcode icon-beat-fade"></i>
 				<span class="truncate">{scanPromptText}</span>
 			{/if}
 		</div>
@@ -104,7 +104,9 @@
 		<div
 			class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center md:gap-4 md:p-4"
 		>
-			<i class="ph-duotone ph-video-camera-slash hidden text-base-content/40 md:block md:text-4xl"
+			<i
+				aria-hidden="true"
+				class="ph-duotone ph-video-camera-slash hidden text-base-content/40 md:block md:text-4xl"
 			></i>
 			<!-- On a phone the box is too low for the hint; the code field above says as much -->
 			<p class="text-base-content/70 hidden text-sm md:block">{m.cameraOff()}</p>
@@ -112,7 +114,7 @@
 				{#if starting}
 					<span class="loading loading-spinner loading-sm"></span>
 				{:else}
-					<i class="ph-duotone ph-video"></i>
+					<i aria-hidden="true" class="ph-duotone ph-video"></i>
 				{/if}
 				{m.startCamera()}
 			</button>

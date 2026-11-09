@@ -22,7 +22,7 @@
 				class="btn btn-primary sm:btn-lg max-sm:w-full shrink-0 gap-2"
 				href={resolve('dashboard/create')}
 			>
-				<i class="ph-duotone ph-plus sm:text-2xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-plus sm:text-2xl"></i>
 				{m.seedConference()}
 			</a>
 		{/if}

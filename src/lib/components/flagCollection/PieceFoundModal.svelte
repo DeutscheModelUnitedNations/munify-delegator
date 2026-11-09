@@ -56,9 +56,9 @@
 
 		<div class="animate-bounce">
 			{#if isComplete}
-				<i class="ph-duotone ph-trophy text-6xl text-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-trophy text-6xl text-warning"></i>
 			{:else}
-				<i class="ph-duotone ph-puzzle-piece text-6xl text-primary"></i>
+				<i aria-hidden="true" class="ph-duotone ph-puzzle-piece text-6xl text-primary"></i>
 			{/if}
 		</div>
 
@@ -94,7 +94,7 @@
 
 		{#if isComplete}
 			<div class="alert alert-success">
-				<i class="ph-duotone ph-confetti"></i>
+				<i aria-hidden="true" class="ph-duotone ph-confetti"></i>
 				<span>{m.congratulationsFlagComplete()}</span>
 			</div>
 		{/if}
@@ -104,16 +104,16 @@
 		<div class="flex gap-2">
 			{#if onViewCollection}
 				<button class="btn btn-ghost" onclick={handleViewCollection}>
-					<i class="ph-duotone ph-puzzle-piece"></i>
+					<i aria-hidden="true" class="ph-duotone ph-puzzle-piece"></i>
 					{m.viewCollection()}
 				</button>
 			{/if}
 			<button class="btn btn-primary" onclick={() => (open = false)}>
 				{#if isComplete}
-					<i class="ph-duotone ph-confetti"></i>
+					<i aria-hidden="true" class="ph-duotone ph-confetti"></i>
 					{m.celebrate()}
 				{:else}
-					<i class="ph-duotone ph-arrow-right"></i>
+					<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
 					{m.continueReviewing()}
 				{/if}
 			</button>

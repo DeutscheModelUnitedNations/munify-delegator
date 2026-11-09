@@ -17,19 +17,19 @@
 	<td>{pronouns}</td>
 	<td class="whitespace-nowrap">
 		{#if participantType === 'delegation'}
-			<i class="ph-duotone ph-flag mr-2"></i>{m.delegation()}
+			<i aria-hidden="true" class="ph-duotone ph-flag mr-2"></i>{m.delegation()}
 		{:else}
-			<i class="ph-duotone ph-user mr-2"></i>{m.singleParticipant()}
+			<i aria-hidden="true" class="ph-duotone ph-user mr-2"></i>{m.singleParticipant()}
 		{/if}
 	</td>
 	<td>
 		{#if applied}
 			<span class="badge badge-success gap-2 whitespace-nowrap">
-				<i class="ph-duotone ph-check-circle"></i>{m.inSelectionProcess()}
+				<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>{m.inSelectionProcess()}
 			</span>
 		{:else}
 			<span class="badge badge-warning gap-2 whitespace-nowrap">
-				<i class="ph-duotone ph-warning"></i>{m.notInSelectionProcess()}
+				<i aria-hidden="true" class="ph-duotone ph-warning"></i>{m.notInSelectionProcess()}
 			</span>
 		{/if}
 	</td>

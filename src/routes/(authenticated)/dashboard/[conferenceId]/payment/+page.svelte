@@ -104,7 +104,7 @@
 
 {#snippet alreadyPaid()}
 	<div role="status" class="alert alert-success alert-soft max-w-2xl">
-		<i class="ph-duotone ph-check-circle text-2xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-check-circle text-2xl"></i>
 		<div class="flex flex-col gap-1">
 			<h2 class="font-bold">{m.paymentAlreadyPaidTitle()}</h2>
 			<p>{m.paymentAlreadyPaidDescription()}</p>

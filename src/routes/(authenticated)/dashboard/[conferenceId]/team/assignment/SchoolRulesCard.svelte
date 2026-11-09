@@ -37,7 +37,7 @@
 >
 	<div class="card-body gap-2 p-4">
 		<h3 class="flex items-center gap-2 font-semibold">
-			<i class="ph-duotone ph-graduation-cap text-warning"></i>
+			<i aria-hidden="true" class="ph-duotone ph-graduation-cap text-warning"></i>
 			{m.schoolRulesTitle()}
 		</h3>
 		<ul class="flex flex-col gap-2 text-sm">

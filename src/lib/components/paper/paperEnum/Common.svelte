@@ -16,6 +16,6 @@
 </script>
 
 <span class="badge {color} {sizeClasses[size]} font-medium whitespace-nowrap">
-	<i class="ph-duotone ph-{icon.replace(/^ph-/, '')}"></i>
+	<i aria-hidden="true" class="ph-duotone ph-{icon.replace(/^ph-/, '')}"></i>
 	<span>{text}</span>
 </span>

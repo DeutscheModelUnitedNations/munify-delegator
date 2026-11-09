@@ -279,14 +279,14 @@
 					: ''}"
 			>
 				<h2 class="text-xl font-bold break-words sm:text-3xl">{displayName}</h2>
-				<i class="ph-duotone ph-{genderIcon} text-base-content/50"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{genderIcon} text-base-content/50"></i>
 				{#if pronouns}
 					<span class="text-base-content/60 text-sm">({pronouns})</span>
 				{/if}
 				{#if stage}
 					{@const shown = STAGES[stage]}
 					<span class="badge badge-soft gap-1.5 max-sm:badge-sm {shown.badge}">
-						<i class="ph-duotone {shown.icon} text-xs"></i>
+						<i aria-hidden="true" class="ph-duotone {shown.icon} text-xs"></i>
 						{shown.label()}
 					</span>
 				{/if}
@@ -316,7 +316,7 @@
 							aria-label={m.generateBadge()}
 							onclick={() => (badgeModalOpen = true)}
 						>
-							<i class="ph-duotone ph-identification-badge"></i>
+							<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
 						</button>
 					</div>
 				{/if}
@@ -331,20 +331,20 @@
 						aria-label={m.userCardMoreActions()}
 						title={m.userCardMoreActions()}
 					>
-						<i class="ph-duotone ph-dots-three-vertical"></i>
+						<i aria-hidden="true" class="ph-duotone ph-dots-three-vertical"></i>
 					</summary>
 					<ul
 						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
 					>
 						<li>
 							<button onclick={menuAction(() => (careNoteOpen = true))}>
-								<i class="ph-duotone ph-note"></i>
+								<i aria-hidden="true" class="ph-duotone ph-note"></i>
 								{m.editGlobalNotes()}
 							</button>
 						</li>
 						<li>
 							<button onclick={menuAction(copyUserId)}>
-								<i class="ph-duotone ph-copy"></i>
+								<i aria-hidden="true" class="ph-duotone ph-copy"></i>
 								{m.copyUserId()}
 							</button>
 						</li>
@@ -357,7 +357,7 @@
 										deleteModalOpen = true;
 									})}
 								>
-									<i class="ph-duotone ph-user-minus"></i>
+									<i aria-hidden="true" class="ph-duotone ph-user-minus"></i>
 									{m.deleteParticipant()}
 								</button>
 							</li>
@@ -374,7 +374,7 @@
 						class="btn btn-ghost btn-sm btn-square"
 						title={m.userCardOpenFullPage()}
 					>
-						<i class="ph-duotone ph-arrow-square-out"></i>
+						<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
 					</a>
 				{/if}
 			</div>
@@ -397,7 +397,7 @@
 	<div class="flex flex-col gap-2">
 		{#if PUBLIC_BADGE_GENERATOR_URL}
 			<button class="btn btn-sm btn-primary w-full" onclick={openBadgeGenerator}>
-				<i class="ph-duotone ph-magic-wand"></i>
+				<i aria-hidden="true" class="ph-duotone ph-magic-wand"></i>
 				{m.badgeGeneratorPrefilled()}
 			</button>
 		{/if}
@@ -421,7 +421,7 @@
 <Modal bind:open={deleteModalOpen} title={m.deleteParticipant()}>
 	<div class="flex flex-col gap-4">
 		<div class="alert alert-error">
-			<i class="ph-duotone ph-warning text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning text-xl"></i>
 			<span>{m.deleteParticipantWarning()}</span>
 		</div>
 
@@ -436,7 +436,7 @@
 				title={m.copy()}
 			>
 				{confirmDisplayName}
-				<i class="ph-duotone ph-copy text-xs"></i>
+				<i aria-hidden="true" class="ph-duotone ph-copy text-xs"></i>
 			</button>
 		</p>
 
@@ -460,7 +460,7 @@
 			{#if deleteLoading}
 				<span class="loading loading-spinner loading-sm"></span>
 			{/if}
-			<i class="ph-duotone ph-trash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 			{m.deleteParticipantConfirmButton()}
 		</button>
 	{/snippet}

@@ -49,7 +49,7 @@
 		href={plausibility}
 		title={m.userConfirmedDuplicateOf({ names: confirmedNames.join(', ') })}
 	>
-		<i class="ph-duotone ph-link"></i>
+		<i aria-hidden="true" class="ph-duotone ph-link"></i>
 		{m.userHasConfirmedDuplicate()}
 		{#if confirmedNames.length > 1}
 			<span class="font-bold">×{confirmedNames.length}</span>
@@ -58,7 +58,7 @@
 {/if}
 {#if hasOpen}
 	<a class="badge badge-warning gap-1" href={plausibility}>
-		<i class="ph-duotone ph-users"></i>
+		<i aria-hidden="true" class="ph-duotone ph-users"></i>
 		{m.userHasPossibleDuplicate()}
 	</a>
 {/if}

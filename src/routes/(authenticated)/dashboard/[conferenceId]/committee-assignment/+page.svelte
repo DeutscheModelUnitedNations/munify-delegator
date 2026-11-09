@@ -125,13 +125,14 @@
 				<span class="text-sm text-base-content/70">{committee.name}</span>
 			</div>
 			{#if full}
-				<i class="ph-duotone ph-check-circle text-xl text-success"></i>
+				<i aria-hidden="true" class="ph-duotone ph-check-circle text-xl text-success"></i>
 			{/if}
 		</div>
 		<div class="flex items-center gap-3">
 			<div class="flex gap-1">
 				{#each { length: committee.numOfSeatsPerDelegation } as _, i (i)}
 					<i
+						aria-hidden="true"
 						class="ph-duotone ph-user transition-colors duration-300 {i < taken
 							? 'text-primary'
 							: 'text-base-content/20'}"
@@ -163,7 +164,7 @@
 				</span>
 				{#if member?.isHeadDelegate}
 					<span class="flex items-center gap-1 text-xs text-base-content/60">
-						<i class="ph-duotone ph-crown"></i>
+						<i aria-hidden="true" class="ph-duotone ph-crown"></i>
 						{m.headDelegate()}
 					</span>
 				{/if}
@@ -172,7 +173,7 @@
 
 		{#if memberWithCommittee.alreadyAssigned}
 			<span class="badge badge-success badge-soft gap-2 self-start sm:self-auto">
-				<i class="ph-duotone ph-lock"></i>
+				<i aria-hidden="true" class="ph-duotone ph-lock"></i>
 				<span class="font-bold">{picked?.abbreviation}</span>
 				<span class="text-xs">{m.alreadyAssigned()}</span>
 			</span>
@@ -192,14 +193,14 @@
 							isCommitteeFull({ committee, memberId: memberWithCommittee.delegationMemberId })}
 						onclick={() => pick({ memberWithCommittee, committeeId: committee.id })}
 					>
-						{#if selected}<i class="ph-duotone ph-check"></i>{/if}
+						{#if selected}<i aria-hidden="true" class="ph-duotone ph-check"></i>{/if}
 						{committee.abbreviation}
 					</button>
 				{/each}
 			</div>
 		{:else}
 			<span class="badge badge-ghost gap-2 self-start sm:self-auto">
-				<i class="ph-duotone ph-hourglass-medium"></i>
+				<i aria-hidden="true" class="ph-duotone ph-hourglass-medium"></i>
 				{m.notYetAssigned()}
 			</span>
 		{/if}
@@ -217,12 +218,12 @@
 
 	{#if allAssigned}
 		<div class="alert alert-success alert-soft">
-			<i class="ph-duotone ph-check-circle text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check-circle text-2xl"></i>
 			<span class="font-bold">{m.committeesSuccessfullyAssigned()}</span>
 		</div>
 	{:else if !isHeadDelegate}
 		<div class="alert alert-warning alert-soft">
-			<i class="ph-duotone ph-warning text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning text-2xl"></i>
 			<span>{m.onlyHeadDelegateCanAssignCommittees()}</span>
 		</div>
 	{/if}
@@ -271,7 +272,7 @@
 					{#if saving}
 						<span class="loading loading-spinner loading-sm"></span>
 					{:else}
-						<i class="ph-duotone ph-floppy-disk"></i>
+						<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
 					{/if}
 					{m.save()}
 				</button>

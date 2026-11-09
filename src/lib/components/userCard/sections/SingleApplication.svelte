@@ -63,7 +63,7 @@
 				disabled={!participant.applied}
 				onclick={revokeApplication}
 			>
-				<i class="ph-duotone ph-file-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-file-x"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}

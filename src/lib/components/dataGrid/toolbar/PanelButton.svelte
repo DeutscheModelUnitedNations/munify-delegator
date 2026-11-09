@@ -11,7 +11,7 @@
 </script>
 
 <button class="btn btn-ghost btn-sm no-print" {onclick}>
-	<i class="ph-duotone {icon}"></i>
+	<i aria-hidden="true" class="ph-duotone {icon}"></i>
 	{label}
 	{#if count > 0}
 		<span class="badge badge-primary badge-xs">{count}</span>

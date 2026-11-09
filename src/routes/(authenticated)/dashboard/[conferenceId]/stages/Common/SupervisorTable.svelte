@@ -101,7 +101,7 @@
 				</span>
 				{#if preview.school_name}
 					<span class="flex items-center gap-2 text-sm text-base-content/70">
-						<i class="ph-duotone ph-graduation-cap"></i>
+						<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
 						<span class="truncate">
 							{preview.school_name}{preview.school_city ? `, ${preview.school_city}` : ''}
 						</span>
@@ -111,12 +111,12 @@
 		</div>
 		{#if preview.different_school}
 			<div class="alert alert-warning alert-soft mt-4 text-sm">
-				<i class="ph-duotone ph-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 				<span>{m.connectSupervisorDifferentSchool()}</span>
 			</div>
 		{/if}
 		<p class="mt-4 flex gap-2 border-t border-base-300 pt-3 text-sm text-base-content/70">
-			<i class="ph-duotone ph-info mt-0.5 text-info"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info mt-0.5 text-info"></i>
 			<span>{m.connectSupervisorWarning()}</span>
 		</p>
 	</div>
@@ -158,7 +158,7 @@
 				{#if connecting}
 					<span class="loading loading-spinner loading-sm"></span>
 				{:else}
-					<i class="ph-duotone ph-link"></i>
+					<i aria-hidden="true" class="ph-duotone ph-link"></i>
 				{/if}
 				{m.connectSupervisorBtn()}
 			</button>

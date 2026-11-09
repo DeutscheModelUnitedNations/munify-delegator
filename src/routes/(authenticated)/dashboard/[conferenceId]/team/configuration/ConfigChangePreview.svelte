@@ -18,7 +18,7 @@
 	>
 		<div class="flex items-start gap-2">
 			{#if change.highImpact}
-				<i class="ph-fill ph-warning text-warning mt-1 shrink-0"></i>
+				<i aria-hidden="true" class="ph-fill ph-warning text-warning mt-1 shrink-0"></i>
 			{/if}
 			<div class="flex min-w-0 flex-1 flex-col gap-1">
 				<span class="text-sm font-medium break-words">{change.label}</span>
@@ -26,7 +26,7 @@
 					<span class="text-base-content/50 line-through break-all">
 						{change.before}
 					</span>
-					<i class="ph-fill ph-arrow-right text-base-content/40 text-xs"></i>
+					<i aria-hidden="true" class="ph-fill ph-arrow-right text-base-content/40 text-xs"></i>
 					<span class="font-semibold break-all">{change.after}</span>
 				</div>
 				{#if change.isFile}

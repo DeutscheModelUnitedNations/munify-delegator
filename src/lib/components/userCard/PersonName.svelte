@@ -15,7 +15,7 @@
 <span class="uppercase">{familyName}</span>
 {#if isHeadDelegate}
 	<span class="badge badge-accent badge-xs ml-1"
-		><i class="ph-duotone ph-medal"></i>
+		><i aria-hidden="true" class="ph-duotone ph-medal"></i>
 		{m.headDelegate()}</span
 	>
 {/if}

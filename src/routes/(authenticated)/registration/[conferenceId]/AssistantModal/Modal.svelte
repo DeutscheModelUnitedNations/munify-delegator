@@ -43,7 +43,7 @@
 		{@attach modalFocus(onClose)}
 	>
 		<h3 class="text-lg font-bold">
-			<i class="ph-duotone ph-chat-circle-dots mr-2"></i>
+			<i aria-hidden="true" class="ph-duotone ph-chat-circle-dots mr-2"></i>
 			Anmeldeassistent
 		</h3>
 		<div class="my-8 flex flex-col gap-4">
@@ -84,7 +84,7 @@
 		<div class="fixed top-6 right-6">
 			<form method="dialog">
 				<button class="btn btn-circle btn-sm" onclick={onClose} aria-label="Close">
-					<i class="ph-fill ph-x"></i>
+					<i aria-hidden="true" class="ph-fill ph-x"></i>
 				</button>
 			</form>
 		</div>

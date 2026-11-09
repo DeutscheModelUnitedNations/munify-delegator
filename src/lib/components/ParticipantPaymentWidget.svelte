@@ -50,7 +50,7 @@
 	<div class="bg-base-100 flex flex-col gap-1 rounded-box px-3 py-2">
 		<div class="flex flex-wrap items-center gap-3">
 			{#if transaction.recievedAt}
-				<i class="ph-duotone ph-check-circle text-success"></i>
+				<i aria-hidden="true" class="ph-duotone ph-check-circle text-success"></i>
 				<span class="font-mono text-sm">{transaction.id}</span>
 				<p>
 					{m.commandPalettePaymentReceived({
@@ -64,7 +64,7 @@
 					})}
 				</p>
 			{:else}
-				<i class="ph-duotone ph-x-circle text-error"></i>
+				<i aria-hidden="true" class="ph-duotone ph-x-circle text-error"></i>
 				<span class="font-mono text-sm">{transaction.id}</span>
 				<p>{m.commandPalettePaymentNotReceived({ amount: transaction.amount, currency })}</p>
 			{/if}
@@ -76,7 +76,7 @@
 				)}
 				title={m.payment()}
 			>
-				<i class="ph-duotone ph-money-wavy"></i>
+				<i aria-hidden="true" class="ph-duotone ph-money-wavy"></i>
 			</a>
 		</div>
 		<!-- Who else the payment concerns: whoever paid for the person, or whom they paid for -->
@@ -93,12 +93,15 @@
 {/snippet}
 
 <div class="flex items-start gap-4 px-4 py-3">
-	<i class="ph-duotone ph-money-wavy text-base-content/60 w-6 pt-0.5 text-center text-lg"></i>
+	<i
+		aria-hidden="true"
+		class="ph-duotone ph-money-wavy text-base-content/60 w-6 pt-0.5 text-center text-lg"
+	></i>
 	<div class="flex min-w-0 grow flex-col gap-2">
 		<span class="font-semibold">{m.paymentReferences()}</span>
 		{#if transactions.length === 0}
 			<span class="text-warning text-sm">
-				<i class="ph-duotone ph-warning mr-1"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning mr-1"></i>
 				{m.noPaymentReferences()}
 			</span>
 		{:else}

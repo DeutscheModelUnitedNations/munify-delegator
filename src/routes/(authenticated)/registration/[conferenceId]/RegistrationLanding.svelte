@@ -68,7 +68,7 @@
 				href={resolve(`dashboard/${conferenceId}/seats`)}
 				data-tour="registration.seats"
 			>
-				<i class="ph-duotone ph-chair"></i>
+				<i aria-hidden="true" class="ph-duotone ph-chair"></i>
 				<span class="max-sm:hidden">{m.conferenceSeats()}</span>
 			</a>
 		{/snippet}
@@ -80,7 +80,7 @@
 
 		<div class="bg-base-200 rounded-box mt-6 p-4" data-tour="registration.assistant">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-				<i class="ph-duotone ph-chat-circle-dots text-info text-2xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-chat-circle-dots text-info text-2xl"></i>
 				<div class="flex-1">
 					<p class="font-semibold">{m.signUpAssistant()}</p>
 					<p class="text-base-content/70 text-sm">{m.signUpAssistantDescription()}</p>
@@ -92,9 +92,10 @@
 						aria-expanded={showDiagram}
 						onclick={() => (showDiagram = !showDiagram)}
 					>
-						<i class="ph-duotone ph-tree-structure"></i>
+						<i aria-hidden="true" class="ph-duotone ph-tree-structure"></i>
 						{m.howDoIApply()}
 						<i
+							aria-hidden="true"
 							class="ph-duotone ph-caret-down text-xs transition-transform duration-300 {showDiagram
 								? 'rotate-180'
 								: ''}"
@@ -105,7 +106,7 @@
 						type="button"
 						onclick={() => (assistantOpenAt = applyLink)}
 					>
-						<i class="ph-duotone ph-sparkle"></i>
+						<i aria-hidden="true" class="ph-duotone ph-sparkle"></i>
 						{m.openAssistant()}
 					</button>
 				</div>

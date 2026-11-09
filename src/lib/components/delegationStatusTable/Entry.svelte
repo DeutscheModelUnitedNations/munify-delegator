@@ -77,13 +77,13 @@
 	{#if value}
 		{value}
 	{:else}
-		<i class="{dashClass} ph-minus"></i>
+		<i aria-hidden="true" class="{dashClass} ph-minus"></i>
 	{/if}
 {/snippet}
 
 {#snippet statusCell(status: AdministrativestatusEnum, tooltip: string)}
 	<div class="tooltip" data-tip={tooltip}>
-		<i class="ph-fill {statusIcons[status]}"></i>
+		<i aria-hidden="true" class="ph-fill {statusIcons[status]}"></i>
 		<span class="sr-only">{tooltip}</span>
 	</div>
 {/snippet}
@@ -97,6 +97,7 @@
 			aria-label={m.a11yDownloadPostalPdf()}
 		>
 			<i
+				aria-hidden="true"
 				class={loading ? 'ph-duotone ph-spinner-gap animate-spin' : 'ph-duotone ph-download-simple'}
 			></i>
 		</button>
@@ -123,7 +124,7 @@
 	{#if email}
 		<td>
 			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label={m.email()}>
-				<i class="ph-duotone ph-envelope"></i>
+				<i aria-hidden="true" class="ph-duotone ph-envelope"></i>
 			</a>
 		</td>
 	{/if}
@@ -146,7 +147,7 @@
 			{#if paperCount > 0}
 				<span class="badge badge-sm badge-soft badge-primary">{paperCount}</span>
 			{:else}
-				<i class="ph-fill ph-minus text-base-300"></i>
+				<i aria-hidden="true" class="ph-fill ph-minus text-base-300"></i>
 				<span class="sr-only">0</span>
 			{/if}
 		</td>

@@ -58,7 +58,10 @@ export const BlockquoteWithFind = Blockquote.extend<BlockquoteWithFindOptions>({
 			const findButton = document.createElement('button');
 			findButton.className = 'btn btn-ghost btn-xs btn-square text-primary';
 			findButton.type = 'button';
-			findButton.innerHTML = '<i class="ph-duotone ph-magnifying-glass text-xs"></i>';
+			// The tooltip only shows on hover; the label is what a screen reader announces
+			findButton.setAttribute('aria-label', findInPaperLabel);
+			findButton.innerHTML =
+				'<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-xs"></i>';
 
 			// Flashes "not found" on the button for two seconds
 			const flashNotFound = () => {

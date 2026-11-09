@@ -23,7 +23,7 @@
 				? 'text-base-content/50'
 				: 'text-base-content/80'}"
 		>
-			<i class="{conferenceGroupIcon(groupKey)} mr-1.5"></i>
+			<i aria-hidden="true" class="{conferenceGroupIcon(groupKey)} mr-1.5"></i>
 			{conferenceGroupLabel(groupKey)}
 		</h3>
 		<span class="badge badge-ghost badge-sm">{conferenceIds.length}</span>

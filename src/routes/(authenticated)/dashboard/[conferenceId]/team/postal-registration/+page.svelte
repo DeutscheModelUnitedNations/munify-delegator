@@ -126,7 +126,7 @@
 
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
-			<i class="ph-duotone ph-user text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-user text-2xl"></i>
 			<div class="grow">
 				<h3 class="text-xl font-bold">
 					{formatNames({

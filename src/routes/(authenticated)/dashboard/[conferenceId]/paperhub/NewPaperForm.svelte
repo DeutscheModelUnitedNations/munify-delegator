@@ -33,11 +33,11 @@
 
 			<div class="join join-vertical w-full max-xl:order-last">
 				<button class="btn btn-primary btn-outline btn-lg join-item" onclick={() => onSave(false)}>
-					<i class="ph-duotone ph-pencil-simple mr-2"></i>
+					<i aria-hidden="true" class="ph-duotone ph-pencil-simple mr-2"></i>
 					{m.paperSaveDraft()}
 				</button>
 				<button class="btn btn-primary btn-lg join-item" onclick={() => onSave(true)}>
-					<i class="ph-duotone ph-paper-plane-tilt mr-2"></i>
+					<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt mr-2"></i>
 					{m.paperSubmit()}
 				</button>
 			</div>

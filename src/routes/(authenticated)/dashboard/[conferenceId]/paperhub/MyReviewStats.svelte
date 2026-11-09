@@ -24,17 +24,17 @@
 		<h4 class="text-sm font-semibold mb-1">{m.yourReviewStats()}</h4>
 		<div class="flex flex-wrap items-center gap-x-6 gap-y-1">
 			<span class="flex items-center gap-2">
-				<i class="ph-duotone ph-star text-primary"></i>
+				<i aria-hidden="true" class="ph-duotone ph-star text-primary"></i>
 				<span class="text-sm">{m.firstReviews()}:</span>
 				<span class="font-bold">{myStats.firstReviews}</span>
 			</span>
 			<span class="flex items-center gap-2">
-				<i class="ph-duotone ph-plus text-accent"></i>
+				<i aria-hidden="true" class="ph-duotone ph-plus text-accent"></i>
 				<span class="text-sm">{m.followUpReviews()}:</span>
 				<span class="font-bold">{myStats.followUpReviews}</span>
 			</span>
 			<span class="flex items-center gap-2 text-base-content/60">
-				<i class="ph-duotone ph-equals"></i>
+				<i aria-hidden="true" class="ph-duotone ph-equals"></i>
 				<span class="text-sm">{m.totalReviews()}:</span>
 				<span class="font-bold">{myStats.totalReviews}</span>
 			</span>

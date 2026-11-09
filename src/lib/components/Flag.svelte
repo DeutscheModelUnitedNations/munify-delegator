@@ -38,7 +38,10 @@
 		'bg-base-300'}"
 >
 	{#if nsa}
-		<i class="ph-duotone ph-{(icon || 'hand-pointing').replace(/^ph-/, '')} {iconClassNames()}"></i>
+		<i
+			aria-hidden="true"
+			class="ph-duotone ph-{(icon || 'hand-pointing').replace(/^ph-/, '')} {iconClassNames()}"
+		></i>
 	{:else}
 		<span class="fi fi-{alpha2Code}"></span>
 	{/if}

@@ -147,9 +147,13 @@
 	{@const name = fullName(user) || user.id}
 	<li class="bg-base-100 rounded-field flex items-center gap-3 px-3 py-2">
 		{#if entry.checkPassed === false}
-			<i class="ph-duotone ph-warning text-warning" title={m.scanCheckFailedLogged()}></i>
+			<i
+				aria-hidden="true"
+				class="ph-duotone ph-warning text-warning"
+				title={m.scanCheckFailedLogged()}
+			></i>
 		{:else}
-			<i class="ph-duotone ph-check-circle text-success"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check-circle text-success"></i>
 		{/if}
 		<button
 			type="button"
@@ -173,7 +177,7 @@
 			aria-label={m.sessionPeopleRemove({ name })}
 			title={m.sessionPeopleRemove({ name })}
 		>
-			<i class="ph-duotone ph-trash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 		</button>
 	</li>
 {/snippet}
@@ -181,7 +185,7 @@
 <div class="flex flex-col gap-2">
 	<div class="flex items-center gap-2">
 		<label class="input input-sm grow">
-			<i class="ph-duotone ph-magnifying-glass text-base-content/60"></i>
+			<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-base-content/60"></i>
 			<input
 				type="search"
 				class="grow"
@@ -201,7 +205,7 @@
 			{#if exporting}
 				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
-				<i class="ph-duotone ph-download-simple"></i>
+				<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
 			{/if}
 			<span class="hidden sm:inline">{m.exportCsv()}</span>
 		</button>

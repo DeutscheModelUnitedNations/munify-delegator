@@ -47,7 +47,7 @@
 	{#snippet action()}
 		<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
 		<button class="btn btn-primary" disabled={!valid} onclick={create}>
-			<i class="ph-duotone ph-plus"></i>
+			<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 			{m.create()}
 		</button>
 	{/snippet}

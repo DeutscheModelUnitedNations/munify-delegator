@@ -48,7 +48,7 @@
 		class:font-mono={mono}
 		onclick={() => onOpenTab(tab)}
 	>
-		<i class="ph-duotone {icon}"></i>
+		<i aria-hidden="true" class="ph-duotone {icon}"></i>
 		{title}
 	</button>
 {/snippet}

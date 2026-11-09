@@ -117,7 +117,7 @@
 
 {#snippet statusBadge(status: PaperstatusEnum)}
 	<div class="badge {getStatusBadgeClass(status)} badge-sm gap-1">
-		<i class="ph-duotone {getPaperStatusIcon(status)} text-xs"></i>
+		<i aria-hidden="true" class="ph-duotone {getPaperStatusIcon(status)} text-xs"></i>
 		{translatePaperStatus(status)}
 	</div>
 {/snippet}
@@ -127,7 +127,7 @@
 	<!-- Version submission event -->
 	<div class="flex flex-wrap justify-between items-center gap-2">
 		<div class="flex items-center gap-2">
-			<i class="ph-duotone ph-file-arrow-up text-secondary"></i>
+			<i aria-hidden="true" class="ph-duotone ph-file-arrow-up text-secondary"></i>
 			<span class="font-semibold">
 				{m.versionSubmitted({ version: version.version.toString() })}
 			</span>
@@ -150,7 +150,7 @@
 					onclick={() => handleCompareClick(version)}
 					title={m.compareVersion()}
 				>
-					<i class="ph-duotone ph-git-diff"></i>
+					<i aria-hidden="true" class="ph-duotone ph-git-diff"></i>
 				</button>
 			{/if}
 		</div>
@@ -160,7 +160,7 @@
 {#snippet reviewEvent(review: Review)}
 	<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
 		<div class="flex items-center gap-2">
-			<i class="ph-duotone ph-pencil-simple-line text-base-content/50"></i>
+			<i aria-hidden="true" class="ph-duotone ph-pencil-simple-line text-base-content/50"></i>
 			<span class="font-semibold">
 				{review.reviewer.givenName}
 				{review.reviewer.familyName}
@@ -169,7 +169,7 @@
 		{#if review.statusBefore && review.statusAfter}
 			<div class="flex flex-wrap items-center gap-1">
 				{@render statusBadge(review.statusBefore)}
-				<i class="ph-duotone ph-arrow-right text-xs text-base-content/50"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-right text-xs text-base-content/50"></i>
 				{@render statusBadge(review.statusAfter)}
 			</div>
 		{/if}
@@ -191,7 +191,10 @@
 			})}
 		</div>
 		<div class="timeline-middle">
-			<i class="ph-duotone ph-caret-circle-right text-primary text-lg w-5 text-center"></i>
+			<i
+				aria-hidden="true"
+				class="ph-duotone ph-caret-circle-right text-primary text-lg w-5 text-center"
+			></i>
 		</div>
 		<div class="timeline-end w-full min-w-0 pb-4">
 			{#if event.type === 'version'}
@@ -221,10 +224,10 @@
 <!-- Version comparison selection indicator -->
 {#if comparisonState.isSelecting}
 	<div class="alert alert-info fixed bottom-4 right-4 z-50 w-auto max-w-sm shadow-lg">
-		<i class="ph-duotone ph-git-diff"></i>
+		<i aria-hidden="true" class="ph-duotone ph-git-diff"></i>
 		<span>{m.selectSecondVersionToCompare()}</span>
 		<button class="btn btn-sm btn-ghost" onclick={cancelComparison} aria-label={m.cancel()}>
-			<i class="ph-duotone ph-x"></i>
+			<i aria-hidden="true" class="ph-duotone ph-x"></i>
 		</button>
 	</div>
 {/if}

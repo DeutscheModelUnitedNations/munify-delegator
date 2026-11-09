@@ -37,7 +37,7 @@
 	{/if}
 	{#snippet actions()}
 		<button class="btn btn-sm" onclick={() => (changing = true)}>
-			<i class="ph-duotone ph-pencil-simple"></i>
+			<i aria-hidden="true" class="ph-duotone ph-pencil-simple"></i>
 			{m.changeSchool()}
 		</button>
 	{/snippet}

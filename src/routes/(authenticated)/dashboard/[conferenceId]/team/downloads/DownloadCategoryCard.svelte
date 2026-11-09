@@ -18,7 +18,7 @@
 		<div
 			class="from-primary/25 to-primary/5 text-primary rounded-box flex size-12 shrink-0 items-center justify-center bg-gradient-to-br"
 		>
-			<i class="{icon} text-xl"></i>
+			<i aria-hidden="true" class="{icon} text-xl"></i>
 		</div>
 		<div class="min-w-0">
 			<h3 class="text-lg leading-tight font-semibold">{title}</h3>

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { starTarget } from './starRating';
 	interface Props {
 		rating: number;
 		changeRating?: (rating: number) => void;
@@ -25,52 +27,54 @@
 	};
 
 	const getTextSizeClass = () => textSizeClasses[size];
+
+	const positions = [1, 2, 3, 4, 5];
+	const stars = (value: number) => value.toLocaleString(getLocale());
+
+	/** The icon a position shows: full up to the rating, a half star after it, empty beyond */
+	const iconOf = (position: number) =>
+		position <= rating
+			? `ph-star ${getEvaluationColor(rating)}`
+			: position - 0.5 === rating
+				? `ph-star-half ${getEvaluationColor(rating)}`
+				: 'ph-star text-gray-500 opacity-30';
 </script>
 
+{#snippet star(position: number)}
+	<i aria-hidden="true" class="ph-duotone {iconOf(position)}"></i>
+{/snippet}
+
 <div class="flex {getTextSizeClass()}">
-	{#if rating && changeRating}
-		<button
-			type="button"
-			class="text-md text-base-300 mr-2 cursor-pointer hover:text-red-500"
-			onclick={deleteRating}
-			aria-label={m.delete()}
-		>
-			<i class="ph-fill ph-x"></i>
-		</button>
+	{#if changeRating}
+		{#if rating}
+			<button
+				type="button"
+				class="text-md text-base-300 mr-2 cursor-pointer hover:text-red-500"
+				onclick={deleteRating}
+				aria-label={m.delete()}
+			>
+				<i aria-hidden="true" class="ph-fill ph-x"></i>
+			</button>
+		{/if}
+		<!-- Each star is a button saying what it would set; the group says what is set now -->
+		<div role="group" class="flex" aria-label={m.a11yRatingValue({ stars: stars(rating) })}>
+			{#each positions as position (position)}
+				{@const target = starTarget({ rating, position })}
+				<button
+					type="button"
+					class="cursor-pointer"
+					aria-label={m.a11yRateWithStars({ stars: stars(target) })}
+					onclick={() => changeRating(target)}
+				>
+					{@render star(position)}
+				</button>
+			{/each}
+		</div>
+	{:else}
+		<span role="img" class="flex" aria-label={m.a11yRatingValue({ stars: stars(rating) })}>
+			{#each positions as position (position)}
+				{@render star(position)}
+			{/each}
+		</span>
 	{/if}
-	{#each { length: Math.floor(rating) }, i}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<i
-			class="ph-duotone ph-star {getEvaluationColor(rating)}"
-			onclick={() => {
-				if (!changeRating) return;
-				if (rating === i + 1) changeRating(i + 1 - 0.5);
-				else changeRating(i + 1);
-			}}
-		>
-		</i>
-	{/each}
-	{#if rating % 1 === 0.5}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<i
-			class="ph-duotone ph-star-half {getEvaluationColor(rating)}"
-			onclick={() => {
-				if (!changeRating) return;
-				changeRating(Math.floor(rating) + 1);
-			}}
-		></i>
-	{/if}
-	{#each { length: Math.floor(5 - rating) }, i}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<i
-			class="ph-duotone ph-star text-gray-500 opacity-30"
-			onclick={() => {
-				if (!changeRating) return;
-				changeRating(rating + i + 1 + (rating % 1 === 0.5 ? 0.5 : 0));
-			}}
-		></i>
-	{/each}
 </div>

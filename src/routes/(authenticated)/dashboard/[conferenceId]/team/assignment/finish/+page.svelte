@@ -171,7 +171,7 @@
 						disabled={empty}
 						onclick={() => (confirmingDiscard = true)}
 					>
-						<i class="ph-duotone ph-trash"></i>
+						<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 						{m.assignmentDiscardDraft()}
 					</button>
 					<button
@@ -179,7 +179,7 @@
 						disabled={empty || preview.errors.length > 0}
 						onclick={() => (confirmingApply = true)}
 					>
-						<i class="ph-duotone ph-checks"></i>
+						<i aria-hidden="true" class="ph-duotone ph-checks"></i>
 						{m.assignmentApply()}
 					</button>
 				</div>

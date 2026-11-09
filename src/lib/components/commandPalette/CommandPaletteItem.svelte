@@ -23,6 +23,7 @@
 	aria-selected={active}
 >
 	<i
+		aria-hidden="true"
 		class="ph-duotone {icon} w-5 text-center {highlight
 			? 'text-warning animate-pulse'
 			: 'text-base-content/60'}"

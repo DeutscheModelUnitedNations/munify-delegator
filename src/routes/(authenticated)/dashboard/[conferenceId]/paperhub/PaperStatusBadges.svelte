@@ -52,7 +52,7 @@
 				? 'text-xs'
 				: 'text-sm'}"
 		>
-			<i class="ph-duotone ph-file-text"></i>
+			<i aria-hidden="true" class="ph-duotone ph-file-text"></i>
 			<span class:blur-sm={blur} class:select-none={blur}>{counts.total}</span>
 		</span>
 	</div>
@@ -63,7 +63,7 @@
 					? 'text-xs'
 					: 'text-sm'} {chip.count === 0 ? 'opacity-30' : 'font-semibold'}"
 			>
-				<i class="ph-duotone {chip.icon}"></i>
+				<i aria-hidden="true" class="ph-duotone {chip.icon}"></i>
 				<span class:blur-sm={blur} class:select-none={blur}>{chip.count}</span>
 			</span>
 		</div>

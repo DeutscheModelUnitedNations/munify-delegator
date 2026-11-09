@@ -22,7 +22,7 @@
 	href={disabled ? undefined : href}
 >
 	<div class="inline-flex items-center gap-2 {active && 'font-bold'}">
-		<i class="ph-duotone ph-{icon.replace(/^ph-/, '')}"></i>
+		<i aria-hidden="true" class="ph-duotone ph-{icon.replace(/^ph-/, '')}"></i>
 		{title}
 	</div>
 </a>

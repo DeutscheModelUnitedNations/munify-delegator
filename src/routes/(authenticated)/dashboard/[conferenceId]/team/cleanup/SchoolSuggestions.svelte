@@ -132,7 +132,7 @@
 				disabled={open.length < 2}
 				onclick={() => cycle(-1)}
 			>
-				<i class="ph-duotone ph-caret-left"></i>
+				<i aria-hidden="true" class="ph-duotone ph-caret-left"></i>
 			</button>
 			<span class="min-w-12 text-center text-sm tabular-nums">{position + 1} / {open.length}</span>
 			<button
@@ -142,7 +142,7 @@
 				disabled={open.length < 2}
 				onclick={() => cycle(1)}
 			>
-				<i class="ph-duotone ph-caret-right"></i>
+				<i aria-hidden="true" class="ph-duotone ph-caret-right"></i>
 			</button>
 		</div>
 
@@ -168,11 +168,11 @@
 
 		<div class="border-base-300 flex flex-wrap justify-end gap-2 border-t px-4 py-2">
 			<button type="button" class="btn btn-ghost btn-sm" onclick={() => dismiss(key)}>
-				<i class="ph-duotone ph-eye-slash"></i>
+				<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
 				{m.cleanupSuggestionsDismiss()}
 			</button>
 			<button type="button" class="btn btn-ghost btn-sm" onclick={() => onSelect(picked)}>
-				<i class="ph-duotone ph-note-pencil"></i>
+				<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
 				{m.cleanupSuggestionsSelect()}
 			</button>
 			<button
@@ -184,7 +184,7 @@
 				{#if merging}
 					<span class="loading loading-spinner loading-xs"></span>
 				{:else}
-					<i class="ph-duotone ph-git-merge"></i>
+					<i aria-hidden="true" class="ph-duotone ph-git-merge"></i>
 				{/if}
 				{m.cleanupSuggestionsMerge({ name: targetName })}
 				<Kbd hotkey="alt+enter" size="xs" />

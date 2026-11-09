@@ -18,7 +18,8 @@
 		<div class="stats w-full">
 			<div class="stat py-2 px-3">
 				<div class="stat-figure">
-					<i class="ph-duotone ph-clock-countdown text-2xl text-base-content/70"></i>
+					<i aria-hidden="true" class="ph-duotone ph-clock-countdown text-2xl text-base-content/70"
+					></i>
 				</div>
 				<div class="stat-title text-xs">{m.daysUntilConference()}</div>
 				<div class="stat-value text-xl">{stats.countdowns.daysUntilConference ?? '-'}</div>
@@ -32,7 +33,10 @@
 		<div class="stats w-full">
 			<div class="stat py-2 px-3">
 				<div class="stat-figure">
-					<i class="ph-duotone ph-check-square-offset text-2xl text-base-content/70"></i>
+					<i
+						aria-hidden="true"
+						class="ph-duotone ph-check-square-offset text-2xl text-base-content/70"
+					></i>
 				</div>
 				<div class="stat-title text-xs">{m.daysUntilEndRegistration()}</div>
 				<div class="stat-value text-xl">{stats.countdowns.daysUntilEndRegistration ?? '-'}</div>

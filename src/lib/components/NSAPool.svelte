@@ -21,9 +21,9 @@
 	<table class="table">
 		<thead>
 			<tr>
-				<th><i class="ph-duotone ph-megaphone-simple"></i></th>
-				<th><i class="ph-duotone ph-info"></i></th>
-				<th class="text-center"><i class="ph-duotone ph-users"></i></th>
+				<th><i aria-hidden="true" class="ph-duotone ph-megaphone-simple"></i></th>
+				<th><i aria-hidden="true" class="ph-duotone ph-info"></i></th>
+				<th class="text-center"><i aria-hidden="true" class="ph-duotone ph-users"></i></th>
 				{#if actionCell}<th><span class="sr-only">{m.actions()}</span></th>{/if}
 			</tr>
 		</thead>

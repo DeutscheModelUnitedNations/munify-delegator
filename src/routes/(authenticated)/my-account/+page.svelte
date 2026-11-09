@@ -121,7 +121,7 @@
 		 and we want to show a hint -->
 		{#if redirectUrl}
 			<div class="alert alert-warning mt-10">
-				<i class="ph-fill ph-warning text-3xl"></i>
+				<i aria-hidden="true" class="ph-fill ph-warning text-3xl"></i>
 				<div>
 					<h2 class="text-xl font-bold">{m.completeData()}</h2>
 					<p>
@@ -140,7 +140,7 @@
 		>
 			<div class="card-body bg-base-100 rounded-box max-sm:p-4">
 				<h2 class="card-title mb-4 justify-center">
-					<i class="ph-duotone ph-pencil-simple-line text-primary"></i>
+					<i aria-hidden="true" class="ph-duotone ph-pencil-simple-line text-primary"></i>
 					{m.personalData()}
 				</h2>
 				<Form {form}>

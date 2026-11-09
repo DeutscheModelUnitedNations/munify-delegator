@@ -864,7 +864,7 @@
 {#snippet sessionSetup()}
 	{#if !maySetUpSessions && openSessions.length === 0}
 		<div class="alert alert-info alert-soft">
-			<i class="ph-duotone ph-info text-lg"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info text-lg"></i>
 			<span>{m.scanSessionSetupNeedsRole()}</span>
 		</div>
 	{/if}
@@ -912,7 +912,7 @@
 						aria-pressed={setupMode === option.mode}
 						onclick={() => (setupMode = option.mode)}
 					>
-						<i class="ph-duotone {option.icon}"></i>
+						<i aria-hidden="true" class="ph-duotone {option.icon}"></i>
 						<span class="max-w-full truncate text-xs sm:text-sm">{option.label}</span>
 					</button>
 				{/each}
@@ -945,7 +945,7 @@
 				}}
 			/>
 			<button class="btn btn-primary" onclick={startSession} disabled={!occasion.trim()}>
-				<i class="ph-duotone ph-play"></i>
+				<i aria-hidden="true" class="ph-duotone ph-play"></i>
 				{m.startSession()}
 			</button>
 		</div>
@@ -963,7 +963,7 @@
 				aria-label={m.scanSwitchSession()}
 				title={m.scanSwitchSession()}
 			>
-				<i class="ph-duotone ph-arrow-left"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 			</button>
 			<div class="inline-grid shrink-0 *:[grid-area:1/1]" title={m.sessionActive()}>
 				<span class="status status-success status-lg"></span>
@@ -984,7 +984,7 @@
 						aria-label={m.downloadBackup()}
 						title={m.downloadBackup()}
 					>
-						<i class="ph-duotone ph-download-simple"></i>
+						<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
 						<span class="hidden lg:inline">{m.downloadBackup()}</span>
 					</button>
 					{#if maySetUpSessions}
@@ -994,7 +994,7 @@
 							aria-label={m.endSession()}
 							title={m.endSession()}
 						>
-							<i class="ph-duotone ph-stop"></i>
+							<i aria-hidden="true" class="ph-duotone ph-stop"></i>
 							<span class="hidden sm:inline">{m.endSession()}</span>
 						</button>
 					{/if}
@@ -1040,7 +1040,7 @@
 
 {#snippet modeBadge(mode: SessionMode, size = '')}
 	<span class="badge badge-soft badge-primary gap-1.5 {size}">
-		<i class="ph-duotone {modeIcons[mode]}"></i>
+		<i aria-hidden="true" class="ph-duotone {modeIcons[mode]}"></i>
 		{modeLabels[mode]()}
 	</span>
 {/snippet}
@@ -1063,11 +1063,14 @@
 				<span class="loading loading-md loading-spinner"></span>
 				<span class="font-mono text-sm text-base-content/70">{shown.userId}</span>
 			{:else if shown?.state === 'notFound'}
-				<i class="ph-duotone ph-warning text-3xl text-warning"></i>
+				<i aria-hidden="true" class="ph-duotone ph-warning text-3xl text-warning"></i>
 				<p class="text-base-content/80">{m.userNotFoundForAccessFlow()}</p>
 				<button class="btn btn-ghost btn-sm" onclick={closeResult}>{m.close()}</button>
 			{:else}
-				<i class="ph-duotone ph-identification-badge text-4xl text-base-content/30"></i>
+				<i
+					aria-hidden="true"
+					class="ph-duotone ph-identification-badge text-4xl text-base-content/30"
+				></i>
 				<p class="text-sm text-base-content/60">{m.scanResultPlaceholder()}</p>
 			{/if}
 		</div>

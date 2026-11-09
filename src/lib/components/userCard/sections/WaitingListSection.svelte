@@ -51,7 +51,7 @@
 					class="btn btn-primary btn-sm ml-auto"
 					href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}
 				>
-					<i class="ph-duotone ph-user-plus"></i>
+					<i aria-hidden="true" class="ph-duotone ph-user-plus"></i>
 					{m.assignSeat()}
 				</a>
 			{/if}

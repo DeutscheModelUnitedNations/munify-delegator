@@ -45,7 +45,7 @@
 	</div>
 {:else}
 	<button class="btn btn-primary mt-4 self-start" type="button" onclick={() => (adding = true)}>
-		<i class="ph-duotone ph-plus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 		{m.addAnotherApplication()}
 	</button>
 {/if}

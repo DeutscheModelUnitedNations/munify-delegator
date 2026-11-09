@@ -22,7 +22,7 @@
 	<div
 		class="bg-base-200 flex flex-col items-center justify-center rounded-box p-6 text-center sm:p-12"
 	>
-		<i class="ph-fill {emptyIcon} text-5xl opacity-50"></i>
+		<i aria-hidden="true" class="ph-fill {emptyIcon} text-5xl opacity-50"></i>
 		<p class="mt-4 text-lg opacity-70">{emptyText}</p>
 		{@render emptyAction?.()}
 	</div>

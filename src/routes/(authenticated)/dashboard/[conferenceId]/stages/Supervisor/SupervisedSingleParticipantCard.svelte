@@ -50,14 +50,14 @@
 				<RoleApplicationsEntry icon="mask-happy" applications={singleParticipant.appliedForRoles}>
 					{#snippet role(roleApplication)}
 						<div class="badge">
-							<i class="ph-duotone ph-{roleApplication.icon} mr-2"></i>
+							<i aria-hidden="true" class="ph-duotone ph-{roleApplication.icon} mr-2"></i>
 							{roleApplication.name}
 						</div>
 					{/snippet}
 				</RoleApplicationsEntry>
 			{:else}
 				<InfoGrid.Entry title={m.role()} icon="mask-happy">
-					<i class="ph-duotone ph-{singleParticipant.assignedRole.icon}"></i>
+					<i aria-hidden="true" class="ph-duotone ph-{singleParticipant.assignedRole.icon}"></i>
 					{singleParticipant.assignedRole.name}
 				</InfoGrid.Entry>
 			{/if}

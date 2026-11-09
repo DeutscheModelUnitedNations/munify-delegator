@@ -95,7 +95,7 @@
 	/>
 	<button class="btn btn-primary mt-4 self-end" type="button" onclick={confirmSchool}>
 		{m.next()}
-		<i class="ph-duotone ph-arrow-down"></i>
+		<i aria-hidden="true" class="ph-duotone ph-arrow-down"></i>
 	</button>
 </FlowStep>
 
@@ -118,7 +118,7 @@
 							? 'bg-primary text-primary-content'
 							: 'bg-primary/10 text-primary'}"
 					>
-						<i class="ph-duotone ph-{choice.icon}"></i>
+						<i aria-hidden="true" class="ph-duotone ph-{choice.icon}"></i>
 					</span>
 					<span class="flex flex-col gap-1">
 						<span class="font-semibold">{choice.title}</span>
@@ -137,7 +137,7 @@
 				<span class="loading loading-spinner loading-sm"></span>
 			{/if}
 			{m.supervisorSignupButton()}
-			<i class="ph-duotone ph-paper-plane-tilt"></i>
+			<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 		</button>
 	</FlowStep>
 {/if}

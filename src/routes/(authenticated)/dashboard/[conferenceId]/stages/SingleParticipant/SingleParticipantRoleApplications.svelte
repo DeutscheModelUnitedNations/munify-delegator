@@ -50,14 +50,17 @@
 >
 	{#if roles.length === 0}
 		<div class="alert alert-warning alert-soft text-sm">
-			<i class="ph-duotone ph-warning"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 			{m.noRoleApplications()}
 		</div>
 	{:else}
 		<ul class="divide-base-200 divide-y">
 			{#each roles as role (role.id)}
 				<li class="flex items-center gap-4 py-3">
-					<i class="ph-duotone ph-{iconOf(role)} text-primary w-8 text-center text-xl"></i>
+					<i
+						aria-hidden="true"
+						class="ph-duotone ph-{iconOf(role)} text-primary w-8 text-center text-xl"
+					></i>
 					<div class="flex min-w-0 flex-1 flex-col">
 						<span class="font-medium">{role.name}</span>
 						<span class="text-base-content/60 text-sm">{role.description}</span>
@@ -67,6 +70,7 @@
 							cssClass={isOnlyApplication ? 'opacity-10' : ''}
 							disabled={isOnlyApplication}
 							icon="trash"
+							label={m.a11yRemoveWish()}
 							onClick={async () => deleteApplication(role.id)}
 						/>
 					{/if}

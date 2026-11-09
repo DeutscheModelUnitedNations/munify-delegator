@@ -275,13 +275,13 @@
 						class="btn btn-ghost btn-error"
 						onclick={() => onDelete(sourceEntryId)}
 					>
-						<i class="ph-fill ph-trash"></i>
+						<i aria-hidden="true" class="ph-fill ph-trash"></i>
 						{m.delete()}
 					</button>
 				{/if}
 				{#if onDuplicate}
 					<button type="button" class="btn btn-ghost" onclick={() => onDuplicate(sourceEntryId)}>
-						<i class="ph-fill ph-copy"></i>
+						<i aria-hidden="true" class="ph-fill ph-copy"></i>
 						{m.calendarDuplicateEntry()}
 					</button>
 				{/if}
@@ -361,7 +361,7 @@
 	</div>
 	{#if entryTimeInvalid}
 		<p class="text-error -mt-2 text-xs">
-			<i class="ph-fill ph-warning"></i>
+			<i aria-hidden="true" class="ph-fill ph-warning"></i>
 			{m.calendarEntryEndBeforeStart()}
 		</p>
 	{/if}
@@ -384,7 +384,7 @@
 					title={icon}
 					onclick={() => (entryIcon = entryIcon === icon ? '' : icon)}
 				>
-					<i class="ph-duotone ph-{icon}"></i>
+					<i aria-hidden="true" class="ph-duotone ph-{icon}"></i>
 				</button>
 			{/each}
 		</div>

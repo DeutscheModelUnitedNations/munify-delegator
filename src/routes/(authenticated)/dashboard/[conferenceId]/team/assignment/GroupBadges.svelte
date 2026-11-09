@@ -17,10 +17,10 @@
 	<span class="tooltip tooltip-right before:max-w-60 before:whitespace-pre-line" data-tip={tip}>
 		{#if badge}
 			<span class="badge badge-xs badge-info" role="img" aria-label={tip}>
-				<i class="ph-duotone {icon}"></i>
+				<i aria-hidden="true" class="ph-duotone {icon}"></i>
 			</span>
 		{:else}
-			<i class="ph-duotone {icon}" role="img" aria-label={tip}></i>
+			<i aria-hidden="true" class="ph-duotone {icon}" role="img" aria-label={tip}></i>
 		{/if}
 	</span>
 {/snippet}

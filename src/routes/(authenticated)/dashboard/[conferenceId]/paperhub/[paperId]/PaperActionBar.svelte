@@ -38,7 +38,7 @@
 						onclick={() => onSave(false)}
 						disabled={!unsavedChanges}
 					>
-						<i class="ph-duotone ph-floppy-disk"></i>
+						<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
 						{m.paperSaveDraft()}
 					</button>
 				{/if}
@@ -47,7 +47,7 @@
 					onclick={() => onSave(true)}
 					disabled={!unsavedChanges && !isDraft}
 				>
-					<i class="ph-duotone ph-paper-plane-tilt"></i>
+					<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 					{isDraft ? m.paperSubmit() : m.paperResubmit()}
 				</button>
 			{/if}
@@ -60,7 +60,8 @@
 					class="btn btn-sm {reviewerEditMode ? 'btn-warning' : 'btn-ghost'}"
 					onclick={() => (reviewerEditMode = !reviewerEditMode)}
 				>
-					<i class="ph-duotone {reviewerEditMode ? 'ph-eye' : 'ph-note-pencil'}"></i>
+					<i aria-hidden="true" class="ph-duotone {reviewerEditMode ? 'ph-eye' : 'ph-note-pencil'}"
+					></i>
 					{reviewerEditMode ? m.viewer() : m.edit()}
 				</button>
 			</div>

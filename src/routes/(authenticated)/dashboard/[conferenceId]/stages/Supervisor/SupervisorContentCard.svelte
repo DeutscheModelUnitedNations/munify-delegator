@@ -23,9 +23,9 @@
 				: 'badge-warning'} badge-lg absolute top-0 right-4 z-10 -translate-y-1/2"
 		>
 			{#if applied}
-				<i class="ph-duotone ph-check-circle mr-2"></i> {m.applied()}
+				<i aria-hidden="true" class="ph-duotone ph-check-circle mr-2"></i> {m.applied()}
 			{:else}
-				<i class="ph-duotone ph-hourglass-medium mr-2"></i> {m.notApplied()}
+				<i aria-hidden="true" class="ph-duotone ph-hourglass-medium mr-2"></i> {m.notApplied()}
 			{/if}
 		</div>
 	{/if}

@@ -54,13 +54,15 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-	<i class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-base-content/60 w-6 text-center text-lg"
+	<i
+		aria-hidden="true"
+		class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-base-content/60 w-6 text-center text-lg"
 	></i>
 	<div class="flex min-w-48 grow flex-col">
 		<span class="font-semibold">{title}</span>
 		{#if current}
 			<span class="text-sm {toneText[current.tone]}">
-				<i class="ph-duotone ph-{current.icon.replace(/^ph-/, '')} mr-1"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{current.icon.replace(/^ph-/, '')} mr-1"></i>
 				{current.label}
 			</span>
 		{/if}
@@ -78,9 +80,9 @@
 				onclick={() => select(option.value)}
 			>
 				{#if pending === option.value}
-					<i class="ph-fill animate-spin ph-spinner-gap"></i>
+					<i aria-hidden="true" class="ph-fill animate-spin ph-spinner-gap"></i>
 				{:else}
-					<i class="ph-fill ph-{option.icon.replace(/^ph-/, '')}"></i>
+					<i aria-hidden="true" class="ph-fill ph-{option.icon.replace(/^ph-/, '')}"></i>
 				{/if}
 			</button>
 		{/each}

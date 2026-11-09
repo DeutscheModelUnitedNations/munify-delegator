@@ -46,6 +46,6 @@
 </script>
 
 <button type="button" class="btn btn-sm" aria-pressed={more} onclick={toggle}>
-	<i class="fa-sharp-duotone fa-solid fa-circle-half-stroke"></i>
+	<i aria-hidden="true" class="ph-duotone ph-circle-half"></i>
 	{m.a11yHighContrast()}
 </button>

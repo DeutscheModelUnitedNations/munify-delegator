@@ -34,7 +34,7 @@
 				? 'alert-info'
 				: 'alert-warning'} alert-vertical sm:alert-horizontal"
 		>
-			<i class="ph-duotone ph-hammer text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-hammer text-2xl"></i>
 			<div class="flex flex-1 flex-col gap-2 sm:gap-1">
 				<h3 class="font-bold">{m.maintenanceMessage()}</h3>
 				<div class="text-xs">

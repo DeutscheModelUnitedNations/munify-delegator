@@ -10,12 +10,12 @@
 
 {#if value === true}
 	<span class="flex items-center gap-1.5 text-success">
-		<i class="ph-duotone ph-check-circle"></i>
+		<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>
 		<span class="text-xs">{m.yes()}</span>
 	</span>
 {:else if value === false}
 	<span class="flex items-center gap-1.5 text-error">
-		<i class="ph-duotone ph-x-circle"></i>
+		<i aria-hidden="true" class="ph-duotone ph-x-circle"></i>
 		<span class="text-xs">{m.no()}</span>
 	</span>
 {:else}

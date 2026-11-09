@@ -168,7 +168,7 @@
 									disabled={role.holders > 0}
 									onclick={() => (toDelete = role)}
 								>
-									<i class="ph-duotone ph-trash"></i>
+									<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 								</button>
 							</span>
 						</td>

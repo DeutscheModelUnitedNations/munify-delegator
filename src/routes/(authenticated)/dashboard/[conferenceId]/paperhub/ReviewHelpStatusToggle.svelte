@@ -40,6 +40,6 @@
 			onCycle();
 		}}
 	>
-		<i class="ph-duotone {current.icon} text-base"></i>
+		<i aria-hidden="true" class="ph-duotone {current.icon} text-base"></i>
 	</button>
 </div>

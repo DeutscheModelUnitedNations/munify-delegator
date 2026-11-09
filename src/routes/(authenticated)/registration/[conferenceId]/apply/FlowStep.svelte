@@ -66,7 +66,8 @@
 				: 'bg-primary text-primary-content ring-primary/20 ring-4'}"
 		>
 			{#if done}
-				<i class="ph-fill ph-check" in:scale={{ duration: 400, easing: backOut }}></i>
+				<i aria-hidden="true" class="ph-fill ph-check" in:scale={{ duration: 400, easing: backOut }}
+				></i>
 			{:else}
 				<span in:scale={{ duration: 300 }}>{number}</span>
 			{/if}
@@ -99,7 +100,7 @@
 				</div>
 				{#if done && onEdit}
 					<button class="btn btn-ghost btn-sm" type="button" onclick={onEdit}>
-						<i class="ph-duotone ph-pen"></i>
+						<i aria-hidden="true" class="ph-duotone ph-pen"></i>
 						<span class="max-sm:hidden">{m.edit()}</span>
 					</button>
 				{/if}

@@ -41,7 +41,7 @@
 	<p class="text-base-content/60 mb-2 text-sm">{m.globalNotesHint()}</p>
 	<textarea class="textarea w-full" rows="8" bind:value></textarea>
 	<button class="btn btn-primary mt-2" onclick={saveGlobalNotes}>
-		<i class="ph-fill ph-floppy-disk"></i>
+		<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
 		{m.save()}
 	</button>
 </Modal>

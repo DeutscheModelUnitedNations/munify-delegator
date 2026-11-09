@@ -17,7 +17,7 @@
 <LoadState {loading} {error}>
 	{#if empty}
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-info"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info"></i>
 			<span>{m.noPapersSubmittedYet()}</span>
 		</div>
 	{:else}

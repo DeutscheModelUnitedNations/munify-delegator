@@ -27,6 +27,6 @@
 </script>
 
 <span class="badge {config.color} badge-soft badge-sm gap-1">
-	<i class="ph-duotone {config.icon}"></i>
+	<i aria-hidden="true" class="ph-duotone {config.icon}"></i>
 	{config.label()}
 </span>

@@ -29,7 +29,7 @@
 
 {#snippet labelled(icon: string, label: string)}
 	<span class="flex items-center gap-1.5">
-		<i class="ph-duotone {icon} text-base-content/50 text-xs"></i>
+		<i aria-hidden="true" class="ph-duotone {icon} text-base-content/50 text-xs"></i>
 		{label}
 	</span>
 {/snippet}
@@ -64,7 +64,7 @@
 	{#if participant.assignedRole}
 		<span class="flex items-center gap-1.5 font-semibold">
 			{#if participant.assignedRole.icon}
-				<i class="ph-duotone ph-{participant.assignedRole.icon}"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{participant.assignedRole.icon}"></i>
 			{/if}
 			{participant.assignedRole.name}
 		</span>

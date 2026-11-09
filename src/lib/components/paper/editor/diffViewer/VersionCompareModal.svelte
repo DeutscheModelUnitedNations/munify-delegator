@@ -40,7 +40,7 @@
 	{#if diffResult && sortedVersions}
 		{#if noChanges}
 			<div class="alert alert-info mb-4">
-				<i class="ph-duotone ph-info"></i>
+				<i aria-hidden="true" class="ph-duotone ph-info"></i>
 				<span>{m.noChangesBetweenVersions()}</span>
 			</div>
 		{/if}
@@ -65,7 +65,7 @@
 		</div>
 	{:else}
 		<div class="flex items-center justify-center p-8">
-			<i class="ph-duotone ph-spinner-gap animate-spin text-2xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin text-2xl"></i>
 		</div>
 	{/if}
 

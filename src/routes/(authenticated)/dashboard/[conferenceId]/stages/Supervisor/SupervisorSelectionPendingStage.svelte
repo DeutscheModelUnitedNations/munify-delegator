@@ -118,7 +118,7 @@
 		</div>
 	{:else}
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-info text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info text-xl"></i>
 			{m.noConnectedStudents()}
 		</div>
 	{/if}

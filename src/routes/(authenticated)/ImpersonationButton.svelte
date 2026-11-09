@@ -57,11 +57,11 @@
 	aria-label={m.stopImpersonation()}
 >
 	{#if isStoppingImpersonation}
-		<i class="ph-duotone ph-spinner-gap animate-spin text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin text-xl"></i>
 	{:else if isHovered}
-		<i class="ph-duotone ph-x text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-x text-xl"></i>
 	{:else}
-		<i class="ph-duotone ph-detective text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-detective text-xl"></i>
 	{/if}
 </button>
 

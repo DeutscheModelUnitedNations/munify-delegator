@@ -93,7 +93,7 @@
 			<h3 class="card-title">{m.surveyDetails()}</h3>
 			{#if !editingSurvey}
 				<button class="btn btn-sm" onclick={startEditSurvey}>
-					<i class="ph-fill ph-pencil-simple"></i>
+					<i aria-hidden="true" class="ph-fill ph-pencil-simple"></i>
 					{m.edit()}
 				</button>
 			{/if}

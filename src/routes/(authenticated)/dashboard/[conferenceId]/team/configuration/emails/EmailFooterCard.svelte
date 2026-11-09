@@ -21,14 +21,14 @@
 
 <div class="bg-base-100 rounded-box border-base-300 flex flex-col gap-2 border p-4">
 	<div class="flex flex-wrap items-center gap-3">
-		<i class="ph-duotone ph-signature text-primary"></i>
+		<i aria-hidden="true" class="ph-duotone ph-signature text-primary"></i>
 		<span class="font-semibold">{m.emailFooterTitle()}</span>
 		{#if written}
 			<span class="badge badge-primary badge-soft badge-sm">{m.emailTextCustomized()}</span>
 		{/if}
 		<span class="flex-1"></span>
 		<button class="btn btn-ghost btn-sm" onclick={onedit}>
-			<i class="ph-duotone ph-pen"></i>
+			<i aria-hidden="true" class="ph-duotone ph-pen"></i>
 			{m.emailTextEdit()}
 		</button>
 	</div>

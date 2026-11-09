@@ -13,17 +13,17 @@
 <thead>
 	<tr>
 		<td class="text-left">
-			<i class="ph-duotone {icon}"></i>
+			<i aria-hidden="true" class="ph-duotone {icon}"></i>
 		</td>
 		<td class="text-left">
-			<i class="ph-duotone ph-users"></i>
+			<i aria-hidden="true" class="ph-duotone ph-users"></i>
 		</td>
 		<td>
-			<i class="ph-duotone ph-sigma"></i>
+			<i aria-hidden="true" class="ph-duotone ph-sigma"></i>
 		</td>
 		{#if membersMenu}
 			<td>
-				<i class="ph-duotone ph-users"></i>
+				<i aria-hidden="true" class="ph-duotone ph-users"></i>
 			</td>
 		{/if}
 	</tr>

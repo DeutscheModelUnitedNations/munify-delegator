@@ -98,7 +98,7 @@
 							? 'bg-base-100/80 absolute inset-0 justify-center opacity-0 transition-opacity hover:opacity-100 focus-within:opacity-100'
 							: ''}"
 					>
-						<i class="ph-duotone ph-cloud-arrow-up text-primary text-2xl"></i>
+						<i aria-hidden="true" class="ph-duotone ph-cloud-arrow-up text-primary text-2xl"></i>
 						<span class="font-medium">{src ? m.replaceImage() : m.chooseOrDropImage()}</span>
 						<input
 							{...props}
@@ -116,7 +116,7 @@
 							aria-label={m.discardSelectedImage()}
 							onclick={clearPicked}
 						>
-							<i class="ph-duotone ph-x"></i>
+							<i aria-hidden="true" class="ph-duotone ph-x"></i>
 						</button>
 					{/if}
 				</div>

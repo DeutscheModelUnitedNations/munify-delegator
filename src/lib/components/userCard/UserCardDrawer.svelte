@@ -38,7 +38,7 @@
 		class="btn btn-soft btn-sm btn-square absolute top-4 right-4 z-10"
 		aria-label={m.close()}
 	>
-		<i class="ph-duotone ph-x"></i>
+		<i aria-hidden="true" class="ph-duotone ph-x"></i>
 	</Dialog.Close>
 	<Dialog.Title class="sr-only">{m.adminUserCard()}</Dialog.Title>
 	{#if shown}

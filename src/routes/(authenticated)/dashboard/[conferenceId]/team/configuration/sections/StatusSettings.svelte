@@ -116,7 +116,7 @@
 				/>
 				<div class="flex flex-col gap-1">
 					<span class="font-medium">
-						<i class="{conferenceStateIcon(option.value)} mr-1"></i>
+						<i aria-hidden="true" class="{conferenceStateIcon(option.value)} mr-1"></i>
 						{option.label}
 					</span>
 					<span class="text-sm opacity-70">{option.description}</span>

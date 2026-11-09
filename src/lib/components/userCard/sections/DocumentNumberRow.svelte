@@ -34,7 +34,7 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-	<i class="ph-duotone ph-hash text-base-content/60 w-6 text-center text-lg"></i>
+	<i aria-hidden="true" class="ph-duotone ph-hash text-base-content/60 w-6 text-center text-lg"></i>
 	<div class="flex min-w-48 grow flex-col">
 		<span class="font-semibold">{m.documentNumber()}</span>
 		{#if !editing}
@@ -61,7 +61,7 @@
 				aria-label={m.documentNumber()}
 			/>
 			<button class="btn btn-sm btn-square join-item" type="submit" aria-label={m.save()}>
-				<i class="ph-duotone ph-floppy-disk"></i>
+				<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
 			</button>
 			<button
 				class="btn btn-sm btn-square join-item"
@@ -69,7 +69,7 @@
 				onclick={() => (editing = false)}
 				aria-label={m.a11yExitEditing()}
 			>
-				<i class="ph-duotone ph-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-x"></i>
 			</button>
 		</form>
 	{:else}
@@ -80,7 +80,7 @@
 					onclick={() => save()}
 					aria-label={m.a11ySaveAndNext()}
 				>
-					<i class="ph-duotone ph-arrow-line-right"></i>
+					<i aria-hidden="true" class="ph-duotone ph-arrow-line-right"></i>
 					{m.saveNextDocumentNumber()}
 				</button>
 			{/if}
@@ -90,7 +90,7 @@
 				aria-label={m.edit()}
 				title={m.edit()}
 			>
-				<i class="ph-duotone ph-note-pencil"></i>
+				<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
 			</button>
 		</div>
 	{/if}

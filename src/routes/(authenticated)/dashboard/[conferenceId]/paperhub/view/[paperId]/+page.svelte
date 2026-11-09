@@ -65,7 +65,7 @@
 			href={resolve(`dashboard/${params.conferenceId}/paperhub?view=global`)}
 			class="btn btn-ghost btn-sm"
 		>
-			<i class="ph-duotone ph-arrow-left"></i>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
 			{m.backToConferencePapers()}
 		</a>
 	</div>
@@ -75,12 +75,12 @@
 
 		<!-- Read-Only Info Banner -->
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-eye"></i>
+			<i aria-hidden="true" class="ph-duotone ph-eye"></i>
 			<span>{m.readOnlyViewParticipant()}</span>
 		</div>
 	{:else}
 		<div>
-			<i class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
 		</div>
 	{/if}
 

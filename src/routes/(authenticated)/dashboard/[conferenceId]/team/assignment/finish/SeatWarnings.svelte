@@ -34,7 +34,7 @@
 
 {#if missingRequired.length > 0}
 	<div class="alert alert-warning alert-soft" role="status">
-		<i class="ph-duotone ph-push-pin text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-push-pin text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.assignmentRequiredWithoutSeatTitle()}</h3>
 			<ul class="list-inside list-disc text-sm">
@@ -52,7 +52,7 @@
 {/if}
 {#if missedPriorities.length > 0}
 	<div class="alert alert-info alert-soft" role="status">
-		<i class="ph-duotone ph-target text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-target text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.assignmentPrioritizedElsewhereTitle()}</h3>
 			<ul class="list-inside list-disc text-sm">
@@ -71,7 +71,7 @@
 {/if}
 {#if allTaken}
 	<div class="alert alert-warning alert-soft" role="status">
-		<i class="ph-duotone ph-chair text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-chair text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.assignmentSeatsAllTakenTitle()}</h3>
 			<p class="text-sm">{m.assignmentSeatsAllTaken({ total: occupancy.total })}</p>

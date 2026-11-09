@@ -146,7 +146,7 @@
 				disabled={!delegation.applied}
 				onclick={revokeApplication}
 			>
-				<i class="ph-duotone ph-file-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-file-x"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}
@@ -156,7 +156,7 @@
 				: 'ml-auto'}"
 			onclick={deleteDelegation}
 		>
-			<i class="ph-duotone ph-trash"></i>
+			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 			{m.deleteDelegation()}
 		</button>
 	</div>
@@ -175,10 +175,10 @@
 						aria-label={m.copy()}
 						title={m.copy()}
 					>
-						<i class="ph-duotone ph-copy"></i>
+						<i aria-hidden="true" class="ph-duotone ph-copy"></i>
 					</button>
 					<button class="btn btn-sm join-item" onclick={rotateEntryCode}>
-						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
+						<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
 						{m.rotateCode()}
 					</button>
 				</div>

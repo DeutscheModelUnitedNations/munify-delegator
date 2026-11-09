@@ -113,7 +113,7 @@
 	<div
 		class="bg-success text-success-content flex items-center gap-2 px-6 py-2 text-sm font-semibold"
 	>
-		<i class="ph-duotone ph-check-circle text-2xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-check-circle text-2xl"></i>
 		<div class="flex flex-col leading-tight">
 			<span>{m.checkInGuideUsed()}</span>
 			<span class="text-xs font-normal opacity-80">
@@ -169,7 +169,7 @@
 				? 'bg-base-content/20 text-base-content/70'
 				: 'bg-warning text-warning-content'} rounded-box flex size-20 shrink-0 items-center justify-center"
 		>
-			<i class="ph-duotone ph-hand-heart text-4xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-hand-heart text-4xl"></i>
 		</span>
 		<div class="flex min-w-0 flex-col gap-2">
 			<p class="text-lg leading-tight font-bold">{m.checkInGuideCare()}</p>

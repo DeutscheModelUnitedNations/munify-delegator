@@ -51,10 +51,10 @@
 						aria-label={m.copy()}
 						title={m.copy()}
 					>
-						<i class="ph-duotone ph-copy"></i>
+						<i aria-hidden="true" class="ph-duotone ph-copy"></i>
 					</button>
 					<button class="btn btn-sm join-item" onclick={rotateCode}>
-						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
+						<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
 						{m.rotateCode()}
 					</button>
 				</div>

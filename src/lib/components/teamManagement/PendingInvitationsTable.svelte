@@ -98,21 +98,21 @@
 			onclick={() => handleRegenerateAndCopy(invitationId)}
 			title={m.copyLink()}
 		>
-			<i class="ph-duotone ph-copy"></i>
+			<i aria-hidden="true" class="ph-duotone ph-copy"></i>
 		</button>
 		<button
 			class="btn btn-sm btn-ghost"
 			onclick={() => handleResendEmail(invitationId)}
 			title={m.resendInvitation()}
 		>
-			<i class="ph-duotone ph-paper-plane-tilt"></i>
+			<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 		</button>
 		<button
 			class="btn btn-sm btn-ghost text-error"
 			onclick={() => handleRevoke(invitationId)}
 			title={m.revokeInvitation()}
 		>
-			<i class="ph-duotone ph-prohibit"></i>
+			<i aria-hidden="true" class="ph-duotone ph-prohibit"></i>
 		</button>
 	</div>
 {/snippet}

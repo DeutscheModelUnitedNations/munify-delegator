@@ -23,7 +23,7 @@
 		rel="external noopener noreferrer"
 		class="btn btn-outline btn-sm gap-1.5"
 	>
-		<i class={icon}></i>
+		<i aria-hidden="true" class={icon}></i>
 		{label}
 	</a>
 {/snippet}

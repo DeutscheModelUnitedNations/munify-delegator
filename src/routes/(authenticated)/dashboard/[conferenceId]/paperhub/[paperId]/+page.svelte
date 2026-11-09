@@ -167,7 +167,7 @@
 	{#if baseViewMode === 'supervisor'}
 		<!-- Supervisor Read-Only Banner -->
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-chalkboard-teacher"></i>
+			<i aria-hidden="true" class="ph-duotone ph-chalkboard-teacher"></i>
 			<span>{m.readOnlyViewSupervisor()}</span>
 		</div>
 	{/if}
@@ -213,7 +213,7 @@
 		{@render paperHeader(paperData)}
 	{:else}
 		<div>
-			<i class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
 		</div>
 	{/if}
 	{#if loaded.initialized && paperData}
@@ -239,8 +239,7 @@
 			class="bg-warning p-2 sm:p-4 rounded-box shadow-lg tooltip tooltip-right sm:tooltip-left tooltip-warning"
 			data-tip={m.paperNotSavedAlert()}
 		>
-			<i class="ph-duotone ph-warning icon-beat-fade text-2xl sm:text-4xl"
-			></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning icon-beat-fade text-2xl sm:text-4xl"></i>
 			<span class="sr-only">{m.paperNotSavedAlert()}</span>
 		</div>
 	</div>

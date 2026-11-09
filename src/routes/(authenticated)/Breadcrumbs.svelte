@@ -51,7 +51,7 @@ import path via the parameter! The home link is the wordmark in the header, so t
 		{:else}
 			{@const breadcrumb = getBreadcrumb(pathSegment)}
 			{#snippet label()}
-				<i class="ph-duotone ph-{breadcrumb.icon}"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{breadcrumb.icon}"></i>
 				<span class="crumb-label ml-1 truncate">
 					{#if pathSegment.key === 'surveyId' && pathSegment.isParameter}
 						<svelte:boundary>

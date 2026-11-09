@@ -35,9 +35,9 @@
 		aria-label={m.impersonation()}
 	>
 		{#if isLoading}
-			<i class="ph-duotone ph-spinner-gap animate-spin"></i>
+			<i aria-hidden="true" class="ph-duotone ph-spinner-gap animate-spin"></i>
 		{:else}
-			<i class="ph-duotone ph-detective"></i>
+			<i aria-hidden="true" class="ph-duotone ph-detective"></i>
 		{/if}
 		{#if !iconOnly}
 			<span class="ml-2">{m.impersonation()}</span>

@@ -74,7 +74,7 @@
 						aria-selected={currentView === tab.view}
 						onclick={() => (params.view = tab.view)}
 					>
-						<i class="ph-duotone {tab.icon} mr-1"></i>
+						<i aria-hidden="true" class="ph-duotone {tab.icon} mr-1"></i>
 						{tab.label()}
 					</button>
 				{/each}

@@ -25,7 +25,8 @@
 >
 	<div class="flex items-start gap-3">
 		{#if entry.icon}
-			<i class="ph-duotone ph-{entry.icon} {colorConfig.text} mt-0.5 text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-{entry.icon} {colorConfig.text} mt-0.5 text-xl"
+			></i>
 		{/if}
 		<div class="min-w-0 flex-1">
 			<Dialog.Title class="text-lg font-bold leading-tight">
@@ -43,7 +44,7 @@
 			onclick={onClose}
 			aria-label={m.close()}
 		>
-			<i class="ph-duotone ph-x text-lg"></i>
+			<i aria-hidden="true" class="ph-duotone ph-x text-lg"></i>
 		</button>
 	</div>
 </div>

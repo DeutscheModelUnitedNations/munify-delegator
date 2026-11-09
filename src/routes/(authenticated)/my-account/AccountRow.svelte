@@ -18,14 +18,14 @@
 </script>
 
 <div class="flex items-center gap-3 py-3">
-	<i class="ph-duotone ph-{icon} text-base-content/60 w-5 text-center"></i>
+	<i aria-hidden="true" class="ph-duotone ph-{icon} text-base-content/60 w-5 text-center"></i>
 	<div class="flex-1 min-w-0">
 		<div class="text-xs text-base-content/60">{label}</div>
 		{@render children?.()}
 	</div>
 	{#if editHref}
 		<a class="btn btn-ghost btn-sm" rel="external" href={editHref} aria-label={editLabel}>
-			<i class="ph-duotone ph-note-pencil"></i>
+			<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
 		</a>
 	{/if}
 </div>

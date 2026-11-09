@@ -21,6 +21,6 @@
 			{/each}
 		</div>
 	{:else}
-		<i class="ph-duotone ph-minus"></i>
+		<i aria-hidden="true" class="ph-duotone ph-minus"></i>
 	{/if}
 </InfoGrid.Entry>

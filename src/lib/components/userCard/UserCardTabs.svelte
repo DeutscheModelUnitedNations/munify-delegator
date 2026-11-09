@@ -34,7 +34,7 @@
 				class="tab gap-1.5 whitespace-nowrap {activeTab === tab ? 'tab-active' : ''}"
 				onclick={() => onTabChange(tab)}
 			>
-				<i class="ph-duotone {meta.icon} text-xs"></i>
+				<i aria-hidden="true" class="ph-duotone {meta.icon} text-xs"></i>
 				<!-- On a phone only the open tab says its name; the others are told apart by icon -->
 				<span class={activeTab === tab ? '' : 'hidden sm:inline'}>{meta.label()}</span>
 			</button>

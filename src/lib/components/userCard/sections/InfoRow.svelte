@@ -19,6 +19,7 @@
 
 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
 	<i
+		aria-hidden="true"
 		class="ph-duotone ph-{icon.replace(
 			/^ph-/,
 			''

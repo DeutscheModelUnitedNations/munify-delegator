@@ -212,7 +212,7 @@
 
 <div class="flex flex-col gap-4">
 	<div class="alert alert-info alert-soft max-sm:alert-vertical">
-		<i class="ph-duotone ph-user-sound text-xl"></i>
+		<i aria-hidden="true" class="ph-duotone ph-user-sound text-xl"></i>
 		<p>{m.assignmentSinglesHint()}</p>
 		<button
 			class="btn btn-primary btn-sm"
@@ -222,7 +222,7 @@
 			{#if busy}
 				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
-				<i class="ph-duotone ph-magic-wand"></i>
+				<i aria-hidden="true" class="ph-duotone ph-magic-wand"></i>
 			{/if}
 			{m.assignmentAutoAssignSingles()}
 		</button>

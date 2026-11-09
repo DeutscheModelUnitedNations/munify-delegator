@@ -163,7 +163,7 @@
 		<Flag nsa icon={entry.flag.icon} size="xs" />
 	{:else}
 		<div class="bg-base-300 flex h-6 w-8 items-center justify-center rounded-field text-xs">
-			<i class="ph-duotone {entry.icon} text-base-content/60"></i>
+			<i aria-hidden="true" class="ph-duotone {entry.icon} text-base-content/60"></i>
 		</div>
 	{/if}
 {/snippet}
@@ -189,7 +189,7 @@
 						title={m.openUserCardInConference({ conference: entry.conferenceTitle })}
 					>
 						{entry.conferenceTitle}
-						<i class="ph-duotone ph-arrow-square-out text-xs"></i>
+						<i aria-hidden="true" class="ph-duotone ph-arrow-square-out text-xs"></i>
 					</a>
 					<div class="flex shrink-0 items-center gap-1">
 						<span class="text-base-content/50 text-xs">
@@ -213,13 +213,13 @@
 							class="badge badge-error badge-soft badge-sm gap-1"
 							title={m.possibleDuplicateConfirmedBadge()}
 						>
-							<i class="ph-duotone ph-link"></i>
+							<i aria-hidden="true" class="ph-duotone ph-link"></i>
 							{m.userCardLinkedHistoryAccount({ name: entry.linkedAccount.name })}
 						</span>
 					{/if}
 					{#if entry.isHeadDelegate}
 						<span class="badge badge-accent badge-xs">
-							<i class="ph-duotone ph-medal"></i>
+							<i aria-hidden="true" class="ph-duotone ph-medal"></i>
 							{m.headDelegate()}
 						</span>
 					{/if}
@@ -231,7 +231,7 @@
 
 {#if historyEntries.length === 0}
 	<div class="alert alert-info">
-		<i class="ph-duotone ph-clock-counter-clockwise"></i>
+		<i aria-hidden="true" class="ph-duotone ph-clock-counter-clockwise"></i>
 		<span>{m.userCardNoHistory()}</span>
 	</div>
 {:else}

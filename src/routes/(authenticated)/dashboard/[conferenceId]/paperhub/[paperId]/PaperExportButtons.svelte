@@ -79,11 +79,11 @@
 	{#if isExportingPdf}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else}
-		<i class="ph-duotone ph-file-pdf"></i>
+		<i aria-hidden="true" class="ph-duotone ph-file-pdf"></i>
 	{/if}
 	{m.paperExportPdf()}
 </button>
 <button class="btn btn-sm btn-ghost" disabled={!exportContent} onclick={exportTypst}>
-	<i class="ph-duotone ph-file-code"></i>
+	<i aria-hidden="true" class="ph-duotone ph-file-code"></i>
 	{m.paperExportTypst()}
 </button>

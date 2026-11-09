@@ -58,7 +58,7 @@
 			title={m.copy()}
 			onclick={() => copy(text)}
 		>
-			<i class="ph-duotone ph-copy"></i>
+			<i aria-hidden="true" class="ph-duotone ph-copy"></i>
 		</button>
 	{/if}
 </div>

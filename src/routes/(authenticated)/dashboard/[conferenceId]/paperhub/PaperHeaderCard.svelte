@@ -40,7 +40,7 @@
 			</div>
 			{#if status}
 				<div class="badge {getStatusBadgeClass(status)} badge-lg max-sm:badge-md gap-2">
-					<i class="ph-duotone {getPaperStatusIcon(status)}"></i>
+					<i aria-hidden="true" class="ph-duotone {getPaperStatusIcon(status)}"></i>
 					{translatePaperStatus(status)}
 				</div>
 			{/if}
@@ -53,7 +53,7 @@
 		<div class="flex items-center justify-between gap-3 mt-2 flex-wrap">
 			<div class="flex items-center gap-3 text-sm text-base-content/70 flex-wrap">
 				<span class="flex items-center gap-1">
-					<i class="ph-duotone {getPaperTypeIcon(paper.type)}"></i>
+					<i aria-hidden="true" class="ph-duotone {getPaperTypeIcon(paper.type)}"></i>
 					{translatePaperType(paper.type)}
 				</span>
 				{#if versionNumber !== undefined}
@@ -66,7 +66,7 @@
 					<span class="text-base-content/30">•</span>
 					<div class="tooltip" data-tip={m.createdAt()}>
 						<span class="flex items-center gap-1">
-							<i class="ph-duotone ph-plus text-xs"></i>
+							<i aria-hidden="true" class="ph-duotone ph-plus text-xs"></i>
 							{createdAt.toLocaleDateString(getLocale())}
 						</span>
 					</div>
@@ -75,7 +75,7 @@
 					<span class="text-base-content/30">•</span>
 					<div class="tooltip" data-tip={m.submittedAt()}>
 						<span class="flex items-center gap-1">
-							<i class="ph-duotone ph-paper-plane-tilt text-xs"></i>
+							<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt text-xs"></i>
 							{paper.firstSubmittedAt.toLocaleDateString(getLocale())}
 						</span>
 					</div>

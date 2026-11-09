@@ -26,7 +26,7 @@
 				title={action.label}
 				onclick={action.run}
 			>
-				<i class="ph-duotone ph-{action.icon}"></i>
+				<i aria-hidden="true" class="ph-duotone ph-{action.icon}"></i>
 			</button>
 		{/each}
 	</div>

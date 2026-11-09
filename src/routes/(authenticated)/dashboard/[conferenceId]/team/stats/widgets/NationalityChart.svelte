@@ -47,7 +47,7 @@
 		<div class="card-body p-4">
 			<div class="flex items-center justify-between">
 				<h2 class="card-title text-base font-semibold">
-					<i class="ph-duotone ph-globe text-base-content/70"></i>
+					<i aria-hidden="true" class="ph-duotone ph-globe text-base-content/70"></i>
 					{m.statsNationalityDistribution()}
 				</h2>
 				<div class="join">
@@ -57,7 +57,7 @@
 						aria-label={m.statsShowPieChart()}
 						aria-pressed={showPieChart}
 					>
-						<i class="ph-duotone ph-chart-pie"></i>
+						<i aria-hidden="true" class="ph-duotone ph-chart-pie"></i>
 					</button>
 					<button
 						class="btn btn-sm join-item {!showPieChart ? 'btn-active' : ''}"
@@ -65,7 +65,7 @@
 						aria-label={m.statsShowBarChart()}
 						aria-pressed={!showPieChart}
 					>
-						<i class="ph-duotone ph-chart-bar"></i>
+						<i aria-hidden="true" class="ph-duotone ph-chart-bar"></i>
 					</button>
 				</div>
 			</div>

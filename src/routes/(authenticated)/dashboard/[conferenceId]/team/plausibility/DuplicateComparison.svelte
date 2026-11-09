@@ -114,14 +114,14 @@
 					onclick={() => openUserCard(side.id)}
 					aria-label={m.details()}
 				>
-					<i class="ph-duotone ph-identification-card"></i>
+					<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
 				</button>
 			</div>
 		</div>
 		<div class="mt-1 flex flex-col gap-1 text-xs">
 			{#each side.attendances as attendance (attendance.conferenceId + attendance.role)}
 				<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-					<i class="ph-duotone ph-flag text-base-content/60"></i>
+					<i aria-hidden="true" class="ph-duotone ph-flag text-base-content/60"></i>
 					<span class="min-w-0 wrap-anywhere">{attendance.title}</span>
 					<span class="badge badge-sm bg-base-100 border-0">
 						{roleLabels[attendance.role]?.()}
@@ -148,6 +148,7 @@
 			<tr class={alike ? 'bg-warning/20' : ''}>
 				<th class="text-center">
 					<i
+						aria-hidden="true"
 						class="ph-duotone ph-{row.icon} {alike ? 'text-warning' : 'text-base-content/60'}"
 						title={row.label}
 						role="img"

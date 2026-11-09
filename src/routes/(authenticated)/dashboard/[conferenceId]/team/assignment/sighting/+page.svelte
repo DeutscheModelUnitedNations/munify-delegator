@@ -210,7 +210,7 @@
 <div class="flex flex-col gap-4">
 	<div class="flex flex-wrap items-end gap-2">
 		<label class="input">
-			<i class="ph-duotone ph-magnifying-glass opacity-60"></i>
+			<i aria-hidden="true" class="ph-duotone ph-magnifying-glass opacity-60"></i>
 			<input
 				type="search"
 				placeholder={m.search()}
@@ -276,7 +276,7 @@
 		<DeckNav {deck} {position} onSelect={select} onSeek={seek} />
 	{:else}
 		<div class="flex flex-col items-center justify-center py-12 text-center">
-			<i class="ph-duotone ph-tray text-base-content/30 mb-4 text-4xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-tray text-base-content/30 mb-4 text-4xl"></i>
 			<p class="text-base-content/60">{m.assignmentNoApplications()}</p>
 		</div>
 	{/if}

@@ -346,7 +346,7 @@
 		>
 			<!-- Search input -->
 			<div class="border-base-300 flex items-center gap-3 border-b px-4 py-3">
-				<i class="ph-duotone ph-magnifying-glass text-base-content/40"></i>
+				<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-base-content/40"></i>
 				<input
 					bind:this={inputEl}
 					bind:value={searchInput}
@@ -361,7 +361,7 @@
 					aria-label={m.quickScan()}
 					title={m.quickScan()}
 				>
-					<i class="ph-duotone ph-camera"></i>
+					<i aria-hidden="true" class="ph-duotone ph-camera"></i>
 				</button>
 				<span class="max-sm:hidden"><Kbd hotkey="Esc" size="xs" /></span>
 			</div>

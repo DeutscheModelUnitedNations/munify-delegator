@@ -98,12 +98,12 @@
 				disabled={members.length === 0}
 				onclick={() => (committeeAssignmentModalOpen = true)}
 			>
-				<i class="ph-duotone ph-squares-four"></i>
+				<i aria-hidden="true" class="ph-duotone ph-squares-four"></i>
 				{m.committeeAssignment()}
 			</button>
 		{/if}
 		<button class="btn btn-sm" onclick={() => (headDelegateModalOpen = true)}>
-			<i class="ph-duotone ph-medal"></i>
+			<i aria-hidden="true" class="ph-duotone ph-medal"></i>
 			{m.headDelegate()}
 		</button>
 	</div>

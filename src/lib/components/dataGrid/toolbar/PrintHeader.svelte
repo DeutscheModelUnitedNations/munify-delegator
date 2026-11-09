@@ -25,7 +25,7 @@
 	{/if}
 
 	<div class="alert alert-warning mt-6">
-		<i class="ph-fill ph-warning-diamond"></i>
+		<i aria-hidden="true" class="ph-fill ph-warning-diamond"></i>
 		<p>
 			{m.thisExportContainsSensitiveData()}
 		</p>

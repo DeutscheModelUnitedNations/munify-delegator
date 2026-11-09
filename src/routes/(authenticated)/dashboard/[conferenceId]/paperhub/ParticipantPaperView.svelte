@@ -48,7 +48,7 @@
 		<p class="text-sm text-base-content/70 leading-relaxed grow">{description}</p>
 
 		<a class="btn btn-primary btn-sm mt-1" {href}>
-			<i class="ph-duotone ph-plus"></i>
+			<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 			{m.paperCreateNew()}
 		</a>
 	</div>
@@ -99,7 +99,7 @@
 									class="btn btn-primary btn-sm"
 								>
 									{m.openPaper()}
-									<i class="ph-fill ph-arrow-right"></i>
+									<i aria-hidden="true" class="ph-fill ph-arrow-right"></i>
 								</a>
 							</td>
 						</tr>

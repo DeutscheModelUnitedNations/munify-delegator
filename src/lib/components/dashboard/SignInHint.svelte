@@ -24,7 +24,7 @@
 		<p class="text-base-content/70 max-w-xl">{text}</p>
 
 		<a class="btn btn-primary gap-2" href={resolve(`login?next=${next}`)} rel="external">
-			<i class="ph-duotone ph-sign-in"></i>
+			<i aria-hidden="true" class="ph-duotone ph-sign-in"></i>
 
 			{m.signIn()}
 		</a>

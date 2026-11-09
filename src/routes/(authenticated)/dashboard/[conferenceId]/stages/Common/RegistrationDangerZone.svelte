@@ -24,7 +24,7 @@
 <DashboardSection icon="warning" title={m.dangerZone()}>
 	{#if applied}
 		<div class="bg-base-200 rounded-box flex items-start gap-3 p-4">
-			<i class="ph-duotone ph-lock text-base-content/60 mt-0.5 text-lg"></i>
+			<i aria-hidden="true" class="ph-duotone ph-lock text-base-content/60 mt-0.5 text-lg"></i>
 			<p class="text-sm">{appliedText}</p>
 		</div>
 	{:else}

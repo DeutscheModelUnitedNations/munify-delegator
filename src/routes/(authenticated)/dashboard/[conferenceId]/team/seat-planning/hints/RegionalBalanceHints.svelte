@@ -31,7 +31,7 @@
 	<div class="flex items-center justify-between gap-2">
 		<h4 class="text-sm font-semibold">{m.seatPlanningRegionalBalance()}</h4>
 		<button class="btn btn-ghost btn-sm" onclick={() => (baselineModalOpen = true)}>
-			<i class="ph-duotone ph-sliders-horizontal"></i>
+			<i aria-hidden="true" class="ph-duotone ph-sliders-horizontal"></i>
 			{m.regionalBaselineButton()}
 		</button>
 	</div>

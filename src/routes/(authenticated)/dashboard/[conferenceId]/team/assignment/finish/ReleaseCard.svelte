@@ -42,7 +42,7 @@
 </script>
 
 <section class="alert {notice.tone} alert-soft items-start">
-	<i class="ph-duotone {notice.icon} mt-1 text-xl"></i>
+	<i aria-hidden="true" class="ph-duotone {notice.icon} mt-1 text-xl"></i>
 	<div class="flex flex-col gap-3">
 		<h3 class="font-bold">{notice.title}</h3>
 		<p class="text-sm">{notice.hint}</p>
@@ -50,7 +50,7 @@
 			class="btn btn-sm w-fit {released ? '' : 'btn-primary'}"
 			onclick={() => (confirming = true)}
 		>
-			<i class="ph-duotone {released ? 'ph-eye-slash' : 'ph-eye'}"></i>
+			<i aria-hidden="true" class="ph-duotone {released ? 'ph-eye-slash' : 'ph-eye'}"></i>
 			{released ? m.assignmentHide() : m.assignmentRelease()}
 		</button>
 	</div>

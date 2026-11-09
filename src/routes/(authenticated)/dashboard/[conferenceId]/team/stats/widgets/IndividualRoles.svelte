@@ -43,7 +43,7 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-8">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="ph-duotone ph-user-gear text-base-content/70"></i>
+			<i aria-hidden="true" class="ph-duotone ph-user-gear text-base-content/70"></i>
 			{m.singleParticipants()}
 		</h2>
 		<div class="overflow-x-auto">
@@ -58,7 +58,7 @@
 					{#each stats.registered.singleParticipants.byRole as role, i (i)}
 						<tr>
 							<td>
-								<i class="ph-duotone ph-{role.icon} mr-2 text-lg"></i>
+								<i aria-hidden="true" class="ph-duotone ph-{role.icon} mr-2 text-lg"></i>
 								{role.role}
 							</td>
 							<td class="text-center">

@@ -208,7 +208,7 @@
 			<div
 				class="border-info flex h-8 w-10 items-center justify-center rounded-field border border-dotted"
 			>
-				<i class="ph-fill ph-hourglass-medium text-info"></i>
+				<i aria-hidden="true" class="ph-fill ph-hourglass-medium text-info"></i>
 			</div>
 		</div>
 	{/if}
@@ -238,7 +238,7 @@
 				<td>
 					<div class="flex justify-center gap-2 opacity-20">
 						{#each seatKeys(committee.numOfSeatsPerDelegation) as seat (seat)}
-							<i class="ph-fill ph-dot-outline text-[8px]"></i>
+							<i aria-hidden="true" class="ph-fill ph-dot-outline text-[8px]"></i>
 						{/each}
 					</div>
 				</td>
@@ -276,8 +276,8 @@
 					</div>
 				</td>
 			{/each}
-			<td><i class="ph-duotone ph-sigma"></i></td>
-			<td><i class="ph-duotone ph-users"></i></td>
+			<td><i aria-hidden="true" class="ph-duotone ph-sigma"></i></td>
+			<td><i aria-hidden="true" class="ph-duotone ph-users"></i></td>
 		</tr>
 	</thead>
 	<tbody>

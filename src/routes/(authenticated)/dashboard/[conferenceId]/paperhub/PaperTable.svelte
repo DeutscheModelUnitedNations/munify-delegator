@@ -114,7 +114,7 @@
 		{#if 'text' in label}
 			{label.text}
 		{:else}
-			<i class="ph-duotone {label.icon}"></i>
+			<i aria-hidden="true" class="ph-duotone {label.icon}"></i>
 			<span class="sr-only">{label.title}</span>
 		{/if}
 	{/snippet}
@@ -130,7 +130,7 @@
 				onclick={() => handleSort(key)}
 			>
 				{@render labelContent()}
-				<i class="ph-duotone {getSortIcon(key)} text-xs opacity-50"></i>
+				<i aria-hidden="true" class="ph-duotone {getSortIcon(key)} text-xs opacity-50"></i>
 			</button>
 		{:else}
 			<div class="flex items-center gap-1">{@render labelContent()}</div>
@@ -185,7 +185,10 @@
 					</td>
 					<td>
 						<span class="flex items-center gap-2 whitespace-nowrap">
-							<i class="ph-duotone {getPaperTypeIcon(paper.type)} {getTypeColor(paper.type)}"></i>
+							<i
+								aria-hidden="true"
+								class="ph-duotone {getPaperTypeIcon(paper.type)} {getTypeColor(paper.type)}"
+							></i>
 							{translatePaperType(paper.type)}
 						</span>
 					</td>
@@ -194,7 +197,7 @@
 							<span
 								class="flex items-center gap-2 whitespace-nowrap {getStatusColor(paper.status)}"
 							>
-								<i class="ph-duotone {getPaperStatusIcon(paper.status)}"></i>
+								<i aria-hidden="true" class="ph-duotone {getPaperStatusIcon(paper.status)}"></i>
 								{translatePaperStatus(paper.status)}
 							</span>
 						</td>
@@ -208,7 +211,7 @@
 						</td>
 					{/if}
 					<td class="text-right text-base-content/40" aria-hidden="true">
-						<i class="ph-duotone ph-caret-right text-xs"></i>
+						<i aria-hidden="true" class="ph-duotone ph-caret-right text-xs"></i>
 					</td>
 				</tr>
 			{/each}

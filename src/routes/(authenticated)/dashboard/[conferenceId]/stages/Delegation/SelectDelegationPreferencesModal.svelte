@@ -142,13 +142,13 @@
 <!-- A nation's seats in a committee; non-state actors have none -->
 {#snippet committeeCell(application: RoleApplication, committee: Committee)}
 	{#if application.role.kind === 'NON_STATE_ACTOR'}
-		<td class="text-center"><i class="ph-duotone ph-minus"></i></td>
+		<td class="text-center"><i aria-hidden="true" class="ph-duotone ph-minus"></i></td>
 	{:else}
 		<td class="text-center">
 			{#if committee.roles.some((seated) => seated.id === application.role.id)}
 				<div class="tooltip" data-tip={committee.abbreviation}>
 					{#each Array.from({ length: committee.numOfSeatsPerDelegation }, (_, seat) => seat) as seat (seat)}
-						<i class="ph-duotone ph-check"></i>
+						<i aria-hidden="true" class="ph-duotone ph-check"></i>
 					{/each}
 				</div>
 			{/if}
@@ -163,10 +163,10 @@
 			{@render roleName(role)}
 		</td>
 		{#if role.role.kind === 'NON_STATE_ACTOR'}
-			<td><i class="ph-duotone ph-minus"></i></td>
+			<td><i aria-hidden="true" class="ph-duotone ph-minus"></i></td>
 		{:else}
 			<td class="tooltip" data-tip={nation ? getNationRegionalGroup(nation.alpha3Code) : undefined}>
-				<i class="ph-duotone ph-globe"></i>
+				<i aria-hidden="true" class="ph-duotone ph-globe"></i>
 				<span class="sr-only">{nation ? getNationRegionalGroup(nation.alpha3Code) : undefined}</span
 				>
 			</td>
@@ -182,6 +182,7 @@
 				cssClass="bg-base-200 {index === 0 && 'opacity-10'}"
 				disabled={index === 0}
 				icon="caret-up"
+				label={m.moveUp()}
 				onClick={async () => {
 					const previous = appliedForRoles[index - 1];
 					swapEntry({ firstId: role.id, secondId: previous.id });
@@ -191,6 +192,7 @@
 				cssClass="bg-base-200 {index === delegation.appliedForRoles.length - 1 && 'opacity-10'}"
 				disabled={index === delegation.appliedForRoles.length - 1}
 				icon="caret-down"
+				label={m.a11yMoveDown()}
 				onClick={async () => {
 					const next = appliedForRoles[index + 1];
 					swapEntry({ firstId: role.id, secondId: next.id });
@@ -200,6 +202,7 @@
 				cssClass="text-error"
 				duotone={false}
 				icon="ph-x"
+				label={m.a11yRemoveWish()}
 				onClick={async () => deleteEntry(role.id)}
 			/>
 		</td>
@@ -212,7 +215,7 @@
 		<p class="text-sm">{m.yourPreferencesDescription()}</p>
 		{#if appliedForRoles.length === 0}
 			<div class="alert alert-warning">
-				<i class="ph-fill ph-warning"></i>
+				<i aria-hidden="true" class="ph-fill ph-warning"></i>
 				<p>{m.noPreferencesSet()}</p>
 			</div>
 		{:else}
@@ -249,7 +252,7 @@
 			{@render list()}
 			{#if empty}
 				<div class="alert alert-warning">
-					<i class="ph-fill ph-warning"></i>
+					<i aria-hidden="true" class="ph-fill ph-warning"></i>
 					<p>{emptyText}</p>
 				</div>
 			{/if}
@@ -266,6 +269,7 @@
 		{#snippet actionCell(nation)}
 			<SquareButtonWithLoadingState
 				icon="ph-caret-double-up"
+				label={m.a11yAddToWishes()}
 				cssClass="bg-base-300"
 				onClick={async () => applyFor(nation.id)}
 			/>
@@ -278,6 +282,7 @@
 		{#snippet actionCell(nsa)}
 			<SquareButtonWithLoadingState
 				icon="ph-caret-double-up"
+				label={m.a11yAddToWishes()}
 				cssClass="bg-base-300"
 				onClick={async () => applyFor(nsa.id)}
 			/>
@@ -295,7 +300,7 @@
 		<div class="flex flex-col gap-10">
 			{#if maxDelegationSizeReached}
 				<div class="alert alert-error">
-					<i class="ph-fill ph-warning-octagon text-5xl"></i>
+					<i aria-hidden="true" class="ph-fill ph-warning-octagon text-5xl"></i>
 					<div class="flex flex-col gap-2">
 						<h2 class="text-xl font-bold">{m.delegationSizeExceeded()}</h2>
 						<p>{m.delegationSizeExceededDescription()}</p>
@@ -325,7 +330,7 @@
 				onclick={() => {
 					onClose();
 				}}
-				aria-label={m.close()}><i class="ph-duotone ph-x"></i></button
+				aria-label={m.close()}><i aria-hidden="true" class="ph-duotone ph-x"></i></button
 			>
 		</div>
 	</div>

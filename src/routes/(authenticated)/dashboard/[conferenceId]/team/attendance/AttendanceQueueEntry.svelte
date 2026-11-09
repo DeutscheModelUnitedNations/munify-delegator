@@ -30,17 +30,17 @@
 >
 	<!-- Status icon -->
 	{#if entry.status === 'success'}
-		<i class="ph-duotone ph-check"></i>
+		<i aria-hidden="true" class="ph-duotone ph-check"></i>
 	{:else if entry.status === 'processing'}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else if entry.status === 'pending'}
-		<i class="ph-duotone ph-clock"></i>
+		<i aria-hidden="true" class="ph-duotone ph-clock"></i>
 	{:else if isNetworkError}
-		<i class="ph-duotone ph-arrow-clockwise"></i>
+		<i aria-hidden="true" class="ph-duotone ph-arrow-clockwise"></i>
 	{:else if isDuplicate}
-		<i class="ph-duotone ph-copy-simple"></i>
+		<i aria-hidden="true" class="ph-duotone ph-copy-simple"></i>
 	{:else}
-		<i class="ph-duotone ph-x"></i>
+		<i aria-hidden="true" class="ph-duotone ph-x"></i>
 	{/if}
 
 	<!-- Who was scanned -->
@@ -54,7 +54,7 @@
 
 	{#if entry.checkPassed === false}
 		<span class="badge badge-soft badge-warning badge-sm gap-1" title={m.scanCheckFailedLogged()}>
-			<i class="ph-duotone ph-warning"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 			{m.scanIssuesFound()}
 		</span>
 	{/if}
@@ -74,7 +74,7 @@
 	<!-- Dismiss button for non-network errors -->
 	{#if entry.status === 'error' && !isNetworkError}
 		<button class="btn btn-ghost btn-xs btn-square" onclick={onDismiss} aria-label={m.dismiss()}>
-			<i class="ph-duotone ph-x"></i>
+			<i aria-hidden="true" class="ph-duotone ph-x"></i>
 		</button>
 	{/if}
 </div>

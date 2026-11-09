@@ -39,7 +39,7 @@
 				disabled={!canMoveUp}
 				onclick={() => onmove(-1)}
 			>
-				<i class="ph-duotone ph-arrow-up"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-up"></i>
 			</button>
 			<button
 				class="join-item btn btn-ghost btn-xs"
@@ -47,7 +47,7 @@
 				disabled={!canMoveDown}
 				onclick={() => onmove(1)}
 			>
-				<i class="ph-duotone ph-arrow-down"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-down"></i>
 			</button>
 		</div>
 	{/if}

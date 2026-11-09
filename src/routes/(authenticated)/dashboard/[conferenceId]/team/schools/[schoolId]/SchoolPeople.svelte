@@ -82,7 +82,11 @@
 							</td>
 							<td class="text-center">
 								{#if person.didAttend}
-									<i class="ph-duotone ph-check text-success" title={m.schoolMetricsAttended()}></i>
+									<i
+										aria-hidden="true"
+										class="ph-duotone ph-check text-success"
+										title={m.schoolMetricsAttended()}
+									></i>
 								{/if}
 							</td>
 						</tr>

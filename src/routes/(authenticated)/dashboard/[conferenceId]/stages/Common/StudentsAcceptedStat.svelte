@@ -16,6 +16,7 @@
 	<div class="stat">
 		<div class="stat-figure text-primary">
 			<i
+				aria-hidden="true"
 				class="ph-duotone text-4xl"
 				class:ph-check-circle={allAccepted}
 				class:text-success={allAccepted}

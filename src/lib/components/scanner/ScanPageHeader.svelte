@@ -23,7 +23,7 @@
 			aria-label={m.showInstructions()}
 			title={m.showInstructions()}
 		>
-			<i class="ph-duotone ph-info text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-info text-xl"></i>
 		</button>
 	</div>
 	{#if showInstructions}

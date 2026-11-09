@@ -110,9 +110,9 @@
 
 {#snippet appliedIcon(applied: boolean)}
 	{#if applied}
-		<i class="ph-duotone ph-check-circle text-success"></i>
+		<i aria-hidden="true" class="ph-duotone ph-check-circle text-success"></i>
 	{:else}
-		<i class="ph-duotone ph-hourglass-medium text-error"></i>
+		<i aria-hidden="true" class="ph-duotone ph-hourglass-medium text-error"></i>
 	{/if}
 {/snippet}
 
@@ -167,7 +167,7 @@
 	{#each group.members as member (member.id)}
 		<tr class="text-sm">
 			<td class="text-right">
-				<i class="ph-duotone ph-arrow-elbow-down-right text-base-content/40"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-elbow-down-right text-base-content/40"></i>
 			</td>
 			<td colspan="2">
 				<PersonName
@@ -193,7 +193,7 @@
 			aria-label={m.removeSupervision()}
 			title={m.removeSupervision()}
 		>
-			<i class="ph-duotone ph-link-break"></i>
+			<i aria-hidden="true" class="ph-duotone ph-link-break"></i>
 		</button>
 	</div>
 {/snippet}
@@ -232,9 +232,9 @@
 	<h3 class="text-lg font-bold">{m.supervisor()}</h3>
 	<label class="bg-base-200 rounded-box flex cursor-pointer items-center gap-4 p-4">
 		{#if conferenceSupervisor.plansOwnAttendenceAtConference}
-			<i class="ph-duotone ph-map-pin-simple text-success text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-map-pin-simple text-success text-xl"></i>
 		{:else}
-			<i class="ph-duotone ph-cloud text-base-content/50 text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone ph-cloud text-base-content/50 text-xl"></i>
 		{/if}
 		<div class="flex grow flex-col">
 			<span class="font-semibold">{m.attendancePlan()}</span>
@@ -255,7 +255,7 @@
 	<!-- Students list -->
 	{#if delegationMembers.length === 0 && singleParticipants.length === 0}
 		<div class="alert alert-info">
-			<i class="ph-duotone ph-graduation-cap"></i>
+			<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
 			<span>{m.userCardNoStudents()}</span>
 		</div>
 	{/if}

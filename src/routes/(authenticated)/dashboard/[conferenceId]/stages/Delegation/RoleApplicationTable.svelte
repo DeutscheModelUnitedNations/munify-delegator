@@ -45,10 +45,10 @@
 <table class="table">
 	<thead>
 		<tr>
-			<th class="text-center"><i class="ph-duotone ph-hash"></i></th>
-			<th class="text-center"><i class="ph-duotone ph-flag"></i></th>
-			<th><i class="ph-duotone ph-text-t"></i></th>
-			<th class="text-center"><i class="ph-duotone ph-users"></i></th>
+			<th class="text-center"><i aria-hidden="true" class="ph-duotone ph-hash"></i></th>
+			<th class="text-center"><i aria-hidden="true" class="ph-duotone ph-flag"></i></th>
+			<th><i aria-hidden="true" class="ph-duotone ph-text-t"></i></th>
+			<th class="text-center"><i aria-hidden="true" class="ph-duotone ph-users"></i></th>
 		</tr>
 	</thead>
 	<tbody>

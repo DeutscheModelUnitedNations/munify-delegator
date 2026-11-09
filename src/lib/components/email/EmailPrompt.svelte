@@ -43,7 +43,7 @@
 		<ul class="flex flex-col gap-1">
 			{#each offered?.open ?? [] as kind (kind.kind)}
 				<li class="flex flex-wrap items-center gap-2">
-					<i class="ph-duotone ph-envelope text-primary"></i>
+					<i aria-hidden="true" class="ph-duotone ph-envelope text-primary"></i>
 					<span class="font-medium">{emailKindTexts(kind.kind).title}</span>
 					<span class="badge badge-neutral badge-soft badge-sm">
 						{m.emailOpenCount({ count: kind.open })}

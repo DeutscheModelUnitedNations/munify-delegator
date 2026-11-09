@@ -80,7 +80,7 @@
 			onclick={() => openUserCard(person.user.id)}
 			aria-label={m.details()}
 		>
-			<i class="ph-duotone ph-identification-card"></i>
+			<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
 		</button>
 	</header>
 
@@ -112,7 +112,7 @@
 					: ''}
 				onSave={(value) => saveIdentityField({ field: 'birthday', value })}
 			>
-				<i class="ph-duotone ph-cake md:text-xl"></i>
+				<i aria-hidden="true" class="ph-duotone ph-cake md:text-xl"></i>
 				<span class="md:text-xl">
 					{person.user.birthday
 						? new Date(person.user.birthday).toLocaleDateString(getLocale(), { dateStyle: 'long' })
@@ -126,12 +126,12 @@
 
 	{#if issues.length === 0}
 		<div class="alert alert-success alert-soft" role="status">
-			<i class="ph-duotone ph-check-circle"></i>
+			<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>
 			<span>{m.scanAllClear()}</span>
 		</div>
 	{:else}
 		<div class="alert alert-warning alert-soft items-start" role="alert">
-			<i class="ph-duotone ph-warning mt-1"></i>
+			<i aria-hidden="true" class="ph-duotone ph-warning mt-1"></i>
 			<div class="flex flex-col gap-1">
 				<span class="font-semibold">{m.scanIssuesFound()}</span>
 				<ul class="list-inside list-disc">

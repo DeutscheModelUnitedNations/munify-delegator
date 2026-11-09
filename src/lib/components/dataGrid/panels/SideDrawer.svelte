@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
 	import SlidePanel from '#lib/components/SlidePanel.svelte';
@@ -21,11 +22,11 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between px-5 pt-4 pb-3">
 		<Dialog.Title class="flex items-center gap-2 text-lg font-bold">
-			<i class="ph-duotone {icon} text-xl"></i>
+			<i aria-hidden="true" class="ph-duotone {icon} text-xl"></i>
 			{title}
 		</Dialog.Title>
-		<Dialog.Close class="btn btn-ghost btn-sm btn-circle">
-			<i class="ph-duotone ph-x"></i>
+		<Dialog.Close class="btn btn-ghost btn-sm btn-circle" aria-label={m.close()}>
+			<i aria-hidden="true" class="ph-duotone ph-x"></i>
 		</Dialog.Close>
 	</div>
 
