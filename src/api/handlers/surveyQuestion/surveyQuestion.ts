@@ -10,6 +10,7 @@ import { nullToUndefined } from '#api/services/args';
 import { surveyQuestionPubsub } from '#api/pubsub';
 import { deleteIfAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerSurveyQuestionAbilities();
 
@@ -22,6 +23,7 @@ const readableQuestion = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 
 schemaBuilder.mutationFields((t) => ({
 	createSurveyQuestion: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['title', 'description'] }),
 		description:
 			'Adds a survey question to the conference, by default as a draft participants do not see yet. A title the conference already has is refused with CONFLICT.',
 		type: SurveyQuestionRef,
@@ -59,6 +61,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateSurveyQuestion: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['title', 'description'] }),
 		description:
 			'Changes the given fields of a survey question; the others stay as they are, and `null` leaves one alone too. A title the conference already has is refused with CONFLICT.',
 		type: SurveyQuestionRef,
@@ -98,6 +101,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteSurveyQuestion: t.field({
+		extensions: mcpTool(),
 		description:
 			'Deletes a survey question. Refused with CONFLICT while it still has options: delete those first.',
 		type: 'Boolean',

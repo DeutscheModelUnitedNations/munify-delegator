@@ -1,0 +1,957 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "01e5aee1-219f-4f5e-8499-9b4e4559680a",
+  "prevIds": [
+    "14b9d272-8c1e-4519-a376-176b36dd5d02"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view"
+      ],
+      "writes": [
+        "s|tbl|public.table_view",
+        "n|tbl|public.table_view",
+        "e|tbl|public.table_view",
+        "n|rel|public.table_view",
+        "n|type|public.table_view",
+        "n|rel|public.table_view_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view_default"
+      ],
+      "writes": [
+        "s|tbl|public.table_view_default",
+        "n|tbl|public.table_view_default",
+        "e|tbl|public.table_view_default",
+        "n|rel|public.table_view_default",
+        "n|type|public.table_view_default",
+        "n|rel|public.table_view_default_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "table_view",
+        "table_view_table_key_conference_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.table_view_table_key_conference_id_idx",
+        "n|idx|public.table_view_table_key_conference_id_idx",
+        "e|idx|public.table_view_table_key_conference_id_idx",
+        "n|rel|public.table_view_table_key_conference_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|col|public.table_view.table_key",
+        "n|col|public.table_view.conference_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "table_view",
+        "table_view_owner_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.table_view_owner_user_id_idx",
+        "n|idx|public.table_view_owner_user_id_idx",
+        "e|idx|public.table_view_owner_user_id_idx",
+        "n|rel|public.table_view_owner_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|col|public.table_view.owner_user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "table_view",
+        "table_view_conference_default_key"
+      ],
+      "writes": [
+        "s|idx|public.table_view_conference_default_key",
+        "n|idx|public.table_view_conference_default_key",
+        "e|idx|public.table_view_conference_default_key",
+        "n|rel|public.table_view_conference_default_key"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|col|public.table_view.table_key",
+        "n|col|public.table_view.conference_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "table_view",
+        "table_view_global_default_key"
+      ],
+      "writes": [
+        "s|idx|public.table_view_global_default_key",
+        "n|idx|public.table_view_global_default_key",
+        "e|idx|public.table_view_global_default_key",
+        "n|rel|public.table_view_global_default_key"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|col|public.table_view.table_key"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "table_view_default",
+        "table_view_default_user_table_conference_key"
+      ],
+      "writes": [
+        "s|idx|public.table_view_default_user_table_conference_key",
+        "n|idx|public.table_view_default_user_table_conference_key",
+        "e|idx|public.table_view_default_user_table_conference_key",
+        "n|rel|public.table_view_default_user_table_conference_key"
+      ],
+      "reads": [
+        "n|tbl|public.table_view_default",
+        "n|sch|public",
+        "n|col|public.table_view_default.user_id",
+        "n|col|public.table_view_default.table_key",
+        "n|col|public.table_view_default.conference_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "table_view_default",
+        "table_view_default_view_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.table_view_default_view_id_idx",
+        "n|idx|public.table_view_default_view_id_idx",
+        "e|idx|public.table_view_default_view_id_idx",
+        "n|rel|public.table_view_default_view_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.table_view_default",
+        "n|sch|public",
+        "n|col|public.table_view_default.view_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view"
+      ],
+      "writes": [
+        "s|fk|public.table_view.table_view_conference_id_conference_id_fkey",
+        "n|fk|public.table_view.table_view_conference_id_conference_id_fkey",
+        "e|fk|public.table_view.table_view_conference_id_conference_id_fkey",
+        "n|con|public.table_view.table_view_conference_id_conference_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|tbl|public.conference",
+        "n|sch|public",
+        "n|col|public.table_view.conference_id",
+        "n|col|public.conference.id",
+        "e|uniqueness|public.conference.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view"
+      ],
+      "writes": [
+        "s|fk|public.table_view.table_view_owner_user_id_user_id_fkey",
+        "n|fk|public.table_view.table_view_owner_user_id_user_id_fkey",
+        "e|fk|public.table_view.table_view_owner_user_id_user_id_fkey",
+        "n|con|public.table_view.table_view_owner_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.table_view.owner_user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view"
+      ],
+      "writes": [
+        "s|fk|public.table_view.table_view_created_by_id_user_id_fkey",
+        "n|fk|public.table_view.table_view_created_by_id_user_id_fkey",
+        "e|fk|public.table_view.table_view_created_by_id_user_id_fkey",
+        "n|con|public.table_view.table_view_created_by_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.table_view.created_by_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view_default"
+      ],
+      "writes": [
+        "s|fk|public.table_view_default.table_view_default_user_id_user_id_fkey",
+        "n|fk|public.table_view_default.table_view_default_user_id_user_id_fkey",
+        "e|fk|public.table_view_default.table_view_default_user_id_user_id_fkey",
+        "n|con|public.table_view_default.table_view_default_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.table_view_default",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.table_view_default.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view_default"
+      ],
+      "writes": [
+        "s|fk|public.table_view_default.table_view_default_conference_id_conference_id_fkey",
+        "n|fk|public.table_view_default.table_view_default_conference_id_conference_id_fkey",
+        "e|fk|public.table_view_default.table_view_default_conference_id_conference_id_fkey",
+        "n|con|public.table_view_default.table_view_default_conference_id_conference_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.table_view_default",
+        "n|sch|public",
+        "n|tbl|public.conference",
+        "n|sch|public",
+        "n|col|public.table_view_default.conference_id",
+        "n|col|public.conference.id",
+        "e|uniqueness|public.conference.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "table_view_default"
+      ],
+      "writes": [
+        "s|fk|public.table_view_default.table_view_default_view_id_table_view_id_fkey",
+        "n|fk|public.table_view_default.table_view_default_view_id_table_view_id_fkey",
+        "e|fk|public.table_view_default.table_view_default_view_id_table_view_id_fkey",
+        "n|con|public.table_view_default.table_view_default_view_id_table_view_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.table_view_default",
+        "n|sch|public",
+        "n|tbl|public.table_view",
+        "n|sch|public",
+        "n|col|public.table_view_default.view_id",
+        "n|col|public.table_view.id",
+        "e|uniqueness|public.table_view.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "table_view",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "table_view_default",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "state",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "shared",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "conference_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "owner_user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "is_default",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "created_by_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "conference_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "view_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_table_key_conference_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "table_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_owner_user_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "owner_user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_conference_default_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "table_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"is_default\" and \"conference_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_global_default_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "table_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"is_default\" and \"conference_id\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_view_default_user_table_conference_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "table_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_view_default_view_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "view_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_conference_id_conference_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_owner_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "owner_user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_created_by_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_view_default_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_view_default_conference_id_conference_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_view_default_view_id_table_view_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "view_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "table_view",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view_default",
+        "name": "table_view_default_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_owned_unless_shared",
+        "value": "(\"shared\" and \"owner_user_id\" is null) or (not \"shared\" and \"owner_user_id\" is not null)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "table_view",
+        "name": "table_view_default_is_shared",
+        "value": "not \"is_default\" or \"shared\"",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

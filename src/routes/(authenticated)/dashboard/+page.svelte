@@ -7,7 +7,8 @@
 	import MyConferencesSection from '#lib/components/dashboard/MyConferencesSection.svelte';
 	import ConferenceStateGroup from './ConferenceStateGroup.svelte';
 	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
-	import { fetchMyConferenceIds, fetchSelectableConferences } from './conferenceSelector';
+	import { fetchSelectableConferences } from './conferenceSelector';
+	import { fetchMyParticipations } from '#lib/components/dashboard/myParticipations';
 	import { groupConferencesByState } from './conferenceGroups';
 
 	// Only what decides the grouping; each card fetches what it shows.
@@ -16,7 +17,7 @@
 
 	// A visitor who is not signed in has no part in any conference yet
 	const myConferenceIds = $derived(
-		currentUser ? await fetchMyConferenceIds(currentUser.sub) : new Set<string>()
+		currentUser ? (await fetchMyParticipations(currentUser.sub)).conferenceIds : new Set<string>()
 	);
 
 	// "Your conferences" first: one list, ordered by conference state. Past conferences always go

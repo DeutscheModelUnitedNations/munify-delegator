@@ -48,8 +48,43 @@ function rebuildRumbleOnSchemaChange(): Plugin {
 	};
 }
 
+/**
+ * Keeps `@opentelemetry/api` a plain external of the server build. Sentry's plugin redirects it to
+ * `@sentry/sveltekit/opentelemetry-api`, its own re-export, so that Kit and Sentry share one copy
+ * under pnpm's strict layout; bun's flat one resolves the bare name to that one copy anyway. The
+ * redirect would make the runtime image install `@sentry/sveltekit`, and through its peers Kit,
+ * Vite and esbuild, where `dependencies` alone are enough (`Dockerfile`). Runs before Sentry's.
+ */
+function externalOpenTelemetryApi(): Plugin {
+	return {
+		name: 'external-opentelemetry-api',
+		enforce: 'pre',
+		apply: 'build',
+		resolveId(id, _importer, options) {
+			return id === '@opentelemetry/api' && options?.ssr ? { id, external: true } : null;
+		}
+	};
+}
+
+/**
+ * Tests that mount a component into the document (`PageBoundary.dom.svelte.test.ts`); they run
+ * with the browser build of Svelte. The `.svelte.test.ts` suffix alone keeps a runes test in the
+ * unit project, where `browser` is false and the server build answers.
+ */
+const MOUNTED_COMPONENT_TESTS = 'src/**/*.dom.svelte.{test,spec}.?(c|m)[jt]s?(x)';
+
+const unitTestOptions = {
+	environment: 'jsdom',
+	// Unit tests live in src/. Without this, vitest's default glob also matches the Playwright
+	// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
+	include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+	// vitest blanks CSS, `?raw` imports included; the mails read their colours from the CI's
+	css: { include: [/corporate-identity\/dist\/.*\.css/] }
+};
+
 export default defineConfig({
 	plugins: [
+		externalOpenTelemetryApi(),
 		sentrySvelteKit({
 			autoUploadSourceMaps: false, // We upload manually via CI to Bugsink
 			// Tracing is off (Bugsink only takes errors), so the build-time tracing instrumentation has
@@ -80,7 +115,9 @@ export default defineConfig({
 			// before the app loads, and SvelteKit emits spans for handle, loads and remote functions
 			// into it. Both are inert unless OTEL_ENDPOINT_URL is set.
 			tracing: { server: true },
-			adapter: adapter()
+			// The e2e build skips the .gz/.br copies (`PRECOMPRESS=false`, playwright.config.ts): they
+			// take a quarter of the build, and `vite preview` serves none of them.
+			adapter: adapter({ precompress: process.env.PRECOMPRESS !== 'false' })
 		}),
 		paraglideVitePlugin({
 			project: './project.inlang',
@@ -93,7 +130,10 @@ export default defineConfig({
 		// module. esbuild's dependency pre-bundling can't compile `$state`, which
 		// drops exports like `createNativeStore`. Excluding it routes the package
 		// through vite-plugin-svelte's compiler instead.
-		exclude: ['@deutschemodelunitednations/munify-resolution-editor']
+		exclude: ['@deutschemodelunitednations/munify-resolution-editor'],
+		// Imported lazily when a tour starts; found only then, it would make Vite re-optimize and
+		// reload the page in the middle of the first tour.
+		include: ['@deutschemodelunitednations/docs-kit/tour']
 	},
 	ssr: {
 		// The OIDC library needs typebox >= 1.1, but the hoisted copy is the 1.0 one that
@@ -106,12 +146,20 @@ export default defineConfig({
 		sourcemap: true // Required for Bugsink error tracking
 	},
 	test: {
-		environment: 'jsdom',
-		// Unit tests live in src/. Without this, vitest's default glob also matches the Playwright
-		// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
-		include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
-		// vitest blanks CSS, `?raw` imports included; the mails read their colours from the CI's
-		css: { include: [/corporate-identity\/dist\/.*\.css/] },
+		// Two projects over the same sources: tests of components that are mounted into a document
+		// (`*.dom.svelte.test.ts`) resolve Svelte's browser build - its server build has no `mount` -
+		// and `$app/env`'s `browser` is true there; everything else runs as before.
+		projects: [
+			{
+				extends: true,
+				test: { name: 'unit', ...unitTestOptions, exclude: [MOUNTED_COMPONENT_TESTS] }
+			},
+			{
+				extends: true,
+				resolve: { conditions: ['browser'] },
+				test: { name: 'client', ...unitTestOptions, include: [MOUNTED_COMPONENT_TESTS] }
+			}
+		],
 		coverage: {
 			provider: 'v8',
 			// Its own directory: vitest empties it on every run, and coverage/ also holds the e2e

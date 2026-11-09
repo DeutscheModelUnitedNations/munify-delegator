@@ -1,0 +1,115 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5c3bba0f-0623-41e7-9102-245907f5ca63",
+  "prevIds": [
+    "1ad000e1-bb09-4678-b3b4-04b0775ea3e9"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "participant_min_age"
+      ],
+      "writes": [
+        "s|col|public.conference.participant_min_age",
+        "n|col|public.conference.participant_min_age",
+        "e|col|public.conference.participant_min_age"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "participant_max_age"
+      ],
+      "writes": [
+        "s|col|public.conference.participant_max_age",
+        "n|col|public.conference.participant_max_age",
+        "e|col|public.conference.participant_max_age"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "supervisor_min_age"
+      ],
+      "writes": [
+        "s|col|public.conference.supervisor_min_age",
+        "n|col|public.conference.supervisor_min_age",
+        "e|col|public.conference.supervisor_min_age"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "participant_min_age",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "15",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "participant_max_age",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "21",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "supervisor_min_age",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "21",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

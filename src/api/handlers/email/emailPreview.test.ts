@@ -124,7 +124,7 @@ describe('previewEmail', () => {
 		});
 		expect(preview?.subject).toContain('MUN-SH 2027');
 		const html = preview && 'html' in preview ? preview.html : '';
-		expect(html).toContain('Ada Lovelace hat Sie zum Team');
+		expect(html).toContain('Ada Lovelace hat dich zum Team');
 		expect(html).toContain('https://app/dashboard/c1');
 	});
 });

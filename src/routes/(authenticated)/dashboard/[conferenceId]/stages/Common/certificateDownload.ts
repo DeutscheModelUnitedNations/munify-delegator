@@ -3,7 +3,7 @@ export interface CertificateData {
 	/** The certificate's PDF template, null while none is uploaded. */
 	templateUrl: string | null;
 	title: string;
-	jwt: string | null;
+	code: string | null;
 	fullName: string | null;
 	/** The check-in sessions the certificate lists. */
 	sessions: readonly string[];
@@ -19,7 +19,7 @@ export type CertificateDownload =
 	| { kind: 'incomplete' }
 	| {
 			kind: 'ready';
-			holder: { fullName: string; jwt: string; sessions: readonly string[] };
+			holder: { fullName: string; code: string; sessions: readonly string[] };
 			content: string;
 			filename: string;
 	  };
@@ -32,11 +32,11 @@ export function planCertificateDownload({
 	userId: string;
 }): CertificateDownload {
 	if (!certificate?.templateUrl || !userId) return { kind: 'unavailable' };
-	const { fullName, jwt, title, sessions } = certificate;
-	if (!fullName || !jwt) return { kind: 'incomplete' };
+	const { fullName, code, title, sessions } = certificate;
+	if (!fullName || !code) return { kind: 'incomplete' };
 	return {
 		kind: 'ready',
-		holder: { fullName, jwt, sessions },
+		holder: { fullName, code, sessions },
 		content: certificate.templateUrl,
 		filename: `${fullName.replace(' ', '-')}_${title.replace(' ', '-')}_certificate.pdf`
 	};

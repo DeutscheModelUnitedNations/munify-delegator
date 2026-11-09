@@ -27,6 +27,9 @@ export const E2E_SEAT_CONTENT_LEAD_ID = 'e2e-seat-content-lead';
 export const E2E_SEAT_PARTICIPANT_CARE_ID = 'e2e-seat-pc';
 const E2E_SEAT_DELEGATE_ID = 'e2e-seat-delegate';
 export const E2E_SEAT_DELEGATE_FAMILY_NAME = 'ETwoESeatDelegate';
+/** Not on the team: e2e/live/live-lists.spec.ts adds and removes them while the team list is open. */
+export const E2E_SEAT_LIVE_TEAM_ID = 'e2e-seat-live-team';
+export const E2E_SEAT_LIVE_TEAM_FAMILY_NAME = 'ETwoELiveTeam';
 
 const NATIONS = { deu: 'de', fra: 'fr', nld: 'nl', ita: 'it' };
 const LOCKED_DELEGATION_ID = 'e2e00000seatdelegation0001';
@@ -117,6 +120,13 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 			email: `${E2E_SEAT_DELEGATE_ID}@e2e.test`,
 			givenName: 'Seat',
 			familyName: E2E_SEAT_DELEGATE_FAMILY_NAME
+		},
+		{
+			...makeSeedUser(),
+			id: E2E_SEAT_LIVE_TEAM_ID,
+			email: `${E2E_SEAT_LIVE_TEAM_ID}@e2e.test`,
+			givenName: 'Live',
+			familyName: E2E_SEAT_LIVE_TEAM_FAMILY_NAME
 		}
 	];
 	for (const user of users) {
@@ -134,6 +144,23 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 	for (const [userId, role] of teamMembers) {
 		await upsertTeamMember(db, conference.id, userId, role);
 	}
+	// whatever an earlier run of the live list spec left behind
+	await db
+		.delete(schema.teamMember)
+		.where(
+			and(
+				eq(schema.teamMember.conferenceId, conference.id),
+				eq(schema.teamMember.userId, E2E_SEAT_LIVE_TEAM_ID)
+			)
+		);
+	await db
+		.delete(schema.teamMemberInvitation)
+		.where(
+			and(
+				eq(schema.teamMemberInvitation.conferenceId, conference.id),
+				eq(schema.teamMemberInvitation.email, `${E2E_SEAT_LIVE_TEAM_ID}@e2e.test`)
+			)
+		);
 
 	const lockedDelegation = {
 		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),

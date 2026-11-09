@@ -27,13 +27,15 @@
 					givenName: true,
 					familyName: true,
 					pronouns: true,
+					// Only this conference's row: the caller may read a person's rows elsewhere (their own
+					// left over after a withdrawal) without reading that conference
 					conferenceParticipants: {
+						__args: { where: { conferenceId: { eq: conferenceId } } },
 						termsAndConditions: true,
 						guardianConsent: true,
 						mediaConsent: true,
 						paymentStatus: true,
-						ofAgeAtConference: true,
-						conference: { id: true }
+						ofAgeAtConference: true
 					}
 				}
 			}
@@ -48,9 +50,7 @@
 >
 	<DelegationStatusTableWrapper withCommittee withPostalSatus withPaymentStatus>
 		{#each delegation.members as member (member.id)}
-			{@const participantStatus = member.user.conferenceParticipants.find(
-				(x) => x.conference.id === conferenceId
-			)}
+			{@const participantStatus = member.user.conferenceParticipants.at(0)}
 			<DelegationStatusTableEntry
 				name={formatNames({ givenName: member.user.givenName, familyName: member.user.familyName })}
 				pronouns={member.user.pronouns ?? ''}

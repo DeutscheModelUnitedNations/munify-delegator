@@ -23,6 +23,7 @@ import {
 	registerConferenceAbilities
 } from './conferencePermissions';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 /** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
 const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });
@@ -79,6 +80,37 @@ const fileArgDescription =
 
 schemaBuilder.mutationFields((t) => ({
 	updateConference: t.drizzleField({
+		extensions: mcpTool({
+			textArguments: [
+				'title',
+				'longTitle',
+				'location',
+				'language',
+				'website',
+				'info',
+				'linkToPreparationGuide',
+				'linkToTeamWiki',
+				'linkToServicesPage',
+				'linkToPaperInbox',
+				'timezone',
+				'currency',
+				'bankName',
+				'postalStreet',
+				'postalApartment',
+				'postalZip',
+				'postalCity',
+				'postalCountry'
+			],
+			outwardArguments: [
+				'state',
+				'info',
+				'showInfoExpanded',
+				'showCalendar',
+				'unlockPayments',
+				'unlockPostals',
+				'isOpenPaperSubmission'
+			]
+		}),
 		description:
 			'Changes the given settings of a conference; left out keeps a setting, `null` clears a nullable one. Project management changes everything; the content roles (participant care, content lead) only the links, the announcement, the postal address, the templates, the status and the feature switches - any other argument is refused with FORBIDDEN. Uploaded files (logo, templates) are passed by the id `requestFileUpload` returned. Dates that end up out of order (the application deadline after the start, the start after the end) are refused with INVALID_INPUT.',
 		type: ConferenceRef,
@@ -105,12 +137,36 @@ schemaBuilder.mutationFields((t) => ({
 			nametagBinCount: t.arg
 				.int({ description: 'How many tables the nametags are handed out at.' })
 				.validate(conferenceSettingSchemas.nametagBinCount),
-			maxSeatsPerSchool: t.arg
+			maxCollectiveGroupSize: t.arg
 				.int({
 					description:
-						'How many seats one school may be given before the assignment warns; `null` for no limit.'
+						'Up to how many applicants of one supervisor and school are decided on together (all get a seat or none), which the assignment warns about; `null` switches it off.'
 				})
-				.validate(conferenceSettingSchemas.maxSeatsPerSchool),
+				.validate(conferenceSettingSchemas.maxCollectiveGroupSize),
+			maxGuaranteedSeatsPerForeignSchool: t.arg
+				.int({
+					description:
+						'How many people of one Auslandsschule may be given a guaranteed seat before the assignment warns; `null` for no limit.'
+				})
+				.validate(conferenceSettingSchemas.maxGuaranteedSeatsPerForeignSchool),
+			participantMinAge: t.arg
+				.int({
+					description:
+						'How old participants are at least on the first conference day; `null` for no lower limit. Outside the range the entry flows warn, nothing is refused.'
+				})
+				.validate(conferenceSettingSchemas.participantMinAge),
+			participantMaxAge: t.arg
+				.int({
+					description:
+						'How old participants are at most on the first conference day; `null` for no upper limit.'
+				})
+				.validate(conferenceSettingSchemas.participantMaxAge),
+			supervisorMinAge: t.arg
+				.int({
+					description:
+						'How old supervisors are at least on the first conference day; `null` for no limit.'
+				})
+				.validate(conferenceSettingSchemas.supervisorMinAge),
 			state: t.arg({ type: conferenceStateEnum }),
 			applicationDeadline: t.arg({ type: 'DateTime' }),
 			startConference: t.arg({ type: 'DateTime' }),

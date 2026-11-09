@@ -52,9 +52,15 @@ export function createEmailChanges() {
 			if (change.enabled === stored) staged.delete(change.kind);
 			else staged.set(change.kind, change);
 		},
-		saved() {
-			staged.clear();
-			pace = undefined;
+		/**
+		 * Drops the changes that were saved. One staged while the save was on its way is a change of
+		 * its own, and stays for the next save.
+		 */
+		saved(done: { pace: EmailsPerSecondChange | undefined; switches: readonly EmailChange[] }) {
+			for (const change of done.switches) {
+				if (staged.get(change.kind) === change) staged.delete(change.kind);
+			}
+			if (pace === done.pace) pace = undefined;
 			revision++;
 		}
 	};

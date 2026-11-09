@@ -23,7 +23,7 @@ export const instanceLink = snakeCase.table(
 		status: instanceLinkStatus().default('PENDING').notNull(),
 		/** SHA-256 of the token CHASE sends with its requests. */
 		inboundTokenHash: text().notNull(),
-		/** The token this instance sends to CHASE, encrypted with `SECRET`; null until approved. */
+		/** The token this instance sends to CHASE, sealed under a key derived from `CERTIFICATE_SECRET`; null until approved. */
 		outboundToken: text(),
 		/** Shown on both sides while pending, for the admins to compare. */
 		confirmationCode: text().notNull(),

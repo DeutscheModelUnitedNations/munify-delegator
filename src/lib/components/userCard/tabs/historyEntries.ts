@@ -15,6 +15,8 @@ export interface HistoryEntry {
 	assignmentName?: string;
 	committeeName?: string;
 	isHeadDelegate?: boolean;
+	/** Set on a conference of another account confirmed to be the same person */
+	linkedAccount?: { id: string; name: string };
 }
 
 interface ConferenceSummary {
@@ -111,6 +113,45 @@ export function teamMemberEntry(tm: {
 		icon: 'fa-shield-halved',
 		assignmentName: tm.role ? translateTeamRole(tm.role) : undefined
 	};
+}
+
+/** A conference an account confirmed to be the same person took part in (`possibleDuplicate`). */
+export function linkedAttendanceEntry({
+	attendance,
+	account
+}: {
+	attendance: {
+		conferenceId: string;
+		title: string;
+		startConference: Date;
+		role: string;
+	};
+	account: { id: string; name: string };
+}): HistoryEntry {
+	const base = {
+		conferenceId: attendance.conferenceId,
+		conferenceTitle: attendance.title,
+		startDate: attendance.startConference,
+		endDate: null,
+		linkedAccount: account
+	};
+	if (attendance.role === 'SINGLE_PARTICIPANT') {
+		return {
+			...base,
+			roleType: 'singleParticipant',
+			roleLabel: m.singleParticipant(),
+			icon: 'fa-user'
+		};
+	}
+	if (attendance.role === 'SUPERVISOR') {
+		return {
+			...base,
+			roleType: 'supervisor',
+			roleLabel: m.supervisor(),
+			icon: 'fa-chalkboard-user'
+		};
+	}
+	return { ...base, roleType: 'delegation', roleLabel: m.delegationMember(), icon: 'fa-users' };
 }
 
 /** Newest conference first; entries without a start date last. */

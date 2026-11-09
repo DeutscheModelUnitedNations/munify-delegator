@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
+	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import Drawer from '#lib/components/Drawer.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import AgendaItemsCell from './AgendaItemsCell.svelte';
@@ -24,45 +24,61 @@
 	);
 	const openAgendaItem = $derived(agendaItems.find((item) => item.id === openAgendaItemId));
 
-	const columns: ManagedColumn<Committee>[] = [
-		{ id: 'abbreviation', header: m.abbreviation(), accessorFn: (row) => row.abbreviation },
-		{ id: 'name', header: m.name(), accessorFn: (row) => row.name },
+	const columns: GridColumn<Committee>[] = [
+		{
+			id: 'abbreviation',
+			type: 'text',
+			label: m.abbreviation(),
+			alwaysVisible: true,
+			size: 110,
+			value: (row) => row.abbreviation
+		},
+		{ id: 'name', type: 'text', label: m.name(), size: 260, value: (row) => row.name },
 		{
 			id: 'nations',
-			header: m.nations(),
-			accessorFn: (row) => row.roles.length,
-			filter: { type: 'range' }
+			type: 'number',
+			label: m.nations(),
+			align: 'center',
+			size: 100,
+			value: (row) => row.roles.length,
+			searchable: false
 		},
 		{
 			id: 'seatsPerDelegation',
-			header: m.membersPerDelegation(),
-			accessorFn: (row) => row.numOfSeatsPerDelegation,
-			filter: { type: 'range' }
+			type: 'number',
+			label: m.membersPerDelegation(),
+			align: 'center',
+			size: 140,
+			value: (row) => row.numOfSeatsPerDelegation,
+			searchable: false
 		},
 		{
 			id: 'agendaItems',
-			header: m.agendaItems(),
-			accessorFn: (row) => row.agendaItems.map((item) => item.title).join(', '),
-			cell: ({ row }) =>
-				renderComponent({
+			type: 'text',
+			label: m.agendaItems(),
+			size: 360,
+			sortable: false,
+			groupable: false,
+			value: (row) => row.agendaItems.map((item) => item.title).join(', '),
+			cell: (row) =>
+				cellOf({
 					component: AgendaItemsCell,
-					props: {
-						items: row.original.agendaItems,
-						onOpen: (id: string) => (openAgendaItemId = id)
-					}
-				}),
-			enableSorting: false
+					props: { items: row.agendaItems, onOpen: (id: string) => (openAgendaItemId = id) }
+				})
 		}
 	];
+
+	const source = createLocalSource({ rows: () => committees, columns: () => columns });
 </script>
 
-<ManagedTable
+<DataGrid
 	{columns}
-	rows={committees}
-	queryParamKey="committee"
-	columnClasses={{ nations: 'text-center', seatsPerDelegation: 'text-center' }}
-	initialSorting={[{ id: 'name', desc: false }]}
-	storageKey="seat-overview-committees"
+	{source}
+	rowId={(row) => row.id}
+	base={{ sorting: [{ id: 'name', desc: false }], pageSize: 100 }}
+	label={m.committeesAndAgendaItems()}
+	exportName="committees"
+	urlPrefix="committees-"
 />
 
 <Drawer

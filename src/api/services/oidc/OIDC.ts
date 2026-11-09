@@ -2,7 +2,7 @@ import { building, dev } from '$app/env';
 import { makeOIDC } from '@m1212e/sveltekit-oidc';
 import { isRedirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
-import { OIDC_CLIENT_SECRET, OIDC_ROLE_CLAIM, OIDC_SCOPES } from '$app/env/private';
+import { OIDC_CLIENT_SECRET, OIDC_RESOURCE, OIDC_ROLE_CLAIM, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';
 import { providerClaims } from '../account/providerClaims';
 import { upsertSelfFromClaims } from '../account/upsertSelf';
@@ -10,6 +10,13 @@ import { userInfoClaims } from './userInfoClaims';
 import { deLocalizeUrl } from '#lib/paraglide/runtime';
 import { logger } from '#lib/logger';
 import { retryAtStartup } from './retryAtStartup';
+import { isMcpEndpoint } from '#api/mcp/auth';
+
+/**
+ * How long the session cookies live, the library's default made explicit so
+ * `sessionCookieOptions` can match it.
+ */
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 /**
  * Everything behind the `(authenticated)` route group, except the conference selector at
@@ -67,6 +74,28 @@ function isLoopbackIssuer(issuer: string): boolean {
 }
 
 /**
+ * Whether the provider is run for development: `vite dev`, or a provider on this machine. The
+ * library then accepts it over plain HTTP and sets its cookies without `Secure`.
+ */
+function isDevelopment(): boolean {
+	return dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY);
+}
+
+/**
+ * The attributes the library sets on its session cookies, for the one place the app writes one
+ * itself: a rotated refresh token (`actorToken.ts`).
+ */
+export function sessionCookieOptions() {
+	return {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: !isDevelopment(),
+		maxAge: SESSION_MAX_AGE
+	} as const;
+}
+
+/**
  * The OIDC flow, owned by the library rather than by route loads.
  *
  * Its `handle` hook protects `authenticatedRoutes`, serves both callback routes and puts the
@@ -90,11 +119,16 @@ export const OIDC = !building
 
 function oidcOptions(): Parameters<typeof makeOIDC>[0] {
 	return {
-		development: dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY),
+		development: isDevelopment(),
 		issuer: PUBLIC_OIDC_AUTHORITY,
 		clientId: PUBLIC_OIDC_CLIENT_ID,
 		clientSecret: OIDC_CLIENT_SECRET,
 		scope: OIDC_SCOPES,
+		// Logto issues a refresh token for `offline_access` only with this (OIDC Core §11); without
+		// one, sessions cannot refresh and impersonation has no actor token (`actorToken.ts`)
+		prompt: 'consent',
+		resource: OIDC_RESOURCE,
+		sessionMaxAge: SESSION_MAX_AGE,
 		loginCallbackRoute: '/auth/login-callback',
 		logoutCallbackRoute: '/auth/logout-callback',
 		// A function rather than the list: the library would match the list against the
@@ -112,10 +146,13 @@ function oidcOptions(): Parameters<typeof makeOIDC>[0] {
 /**
  * The OIDC handle, except that a public page (see `isPublicRoute`) is served without a session
  * instead of redirecting to the provider. A visitor who is signed in still gets their session on
- * `event.locals.oidc`.
+ * `event.locals.oidc`. The MCP endpoint is passed by: it reads no session and checks its bearer
+ * tokens itself (`isMcpEndpoint`).
  */
 export const oidcHandle: Handle = async (input) => {
-	if (!isPublicRoute(routePath(input.event.url))) {
+	const path = routePath(input.event.url);
+	if (isMcpEndpoint(path)) return input.resolve(input.event);
+	if (!isPublicRoute(path)) {
 		return OIDC.handle(input);
 	}
 	try {

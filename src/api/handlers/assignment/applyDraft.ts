@@ -237,7 +237,7 @@ export function announceAppliedPlan(plan: ApplyPlan) {
 }
 
 /** The plan's errors as one translated message, a line each. */
-function describeApplyErrors({
+export function describeApplyErrors({
 	errors,
 	roleNames
 }: {
@@ -263,7 +263,7 @@ function describeApplyErrors({
 }
 
 /** Creates the plan's new delegations and returns how to look up a delegation's id. */
-async function createDelegations({
+export async function createDelegations({
 	tx,
 	conferenceId,
 	plan

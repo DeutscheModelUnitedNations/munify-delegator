@@ -27,6 +27,8 @@ export interface BoardReviewRow {
 	disqualified: boolean;
 	/** Has to end up with a seat (`assignmentReview.required`). */
 	required?: boolean;
+	/** The wish the automatic distribution treats as the first. */
+	prioritizedRoleId?: Nullable<string>;
 	note?: Nullable<string>;
 }
 
@@ -443,15 +445,20 @@ function wishMatches({ wish, target }: { wish: ListedWish; target: Target }) {
 	return !!targetKey(target) && wish.roleId === target.roleId;
 }
 
-/** Every wish of a delegation as a card lists it: the one matching its role first, then by rank. */
+/**
+ * Every wish of a delegation as a card lists it: the one matching its role first, then by rank.
+ * `prioritized` marks the wish the team prioritized.
+ */
 export function wishList({
 	wishes,
 	target,
-	nationName
+	nationName,
+	prioritizedRoleId
 }: {
 	wishes: readonly ListedWish[] | undefined;
 	target: Target;
 	nationName: (code: string) => string;
+	prioritizedRoleId?: Nullable<string>;
 }) {
 	return (wishes ?? [])
 		.map((wish) => ({
@@ -460,7 +467,8 @@ export function wishList({
 			name: wish.role.nation
 				? nationName(wish.role.nation.alpha3Code)
 				: (wish.role.abbreviation ?? ''),
-			matches: wishMatches({ wish, target })
+			matches: wishMatches({ wish, target }),
+			prioritized: wish.roleId === prioritizedRoleId
 		}))
 		.toSorted((a, b) => Number(b.matches) - Number(a.matches) || a.rank - b.rank);
 }

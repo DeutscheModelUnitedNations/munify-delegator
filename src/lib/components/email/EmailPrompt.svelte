@@ -4,7 +4,7 @@
 	import { emailKindTexts } from '#lib/helpers/emailKindTexts';
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import type { EmailPrompt } from './emailPrompt.svelte';
+	import type { EmailPrompt } from './emailPrompt.svelte.js';
 
 	/** Asks whether the mails an action made due go out now, or later from the e-mail page. */
 	interface Props {

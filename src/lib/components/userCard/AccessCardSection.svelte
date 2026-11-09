@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
+	import ActionModal from '#lib/components/ActionModal.svelte';
 
 	interface Props {
 		accessCardId: string | null | undefined;
@@ -17,6 +18,7 @@
 	const dirty = $derived(localValue.trim() !== (accessCardId ?? ''));
 
 	let notifying = $state(false);
+	let confirmingNotify = $state(false);
 
 	const save = () => {
 		const promise = onSave(localValue.trim() || null);
@@ -38,6 +40,7 @@
 		});
 		await promise.catch(() => undefined);
 		notifying = false;
+		confirmingNotify = false;
 	}
 </script>
 
@@ -81,11 +84,22 @@
 				type="button"
 				disabled={notifying}
 				title={m.badgeFoundNotifyHint()}
-				onclick={() => notifyFound(notify)}
+				onclick={() => (confirmingNotify = true)}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
 				{m.badgeFoundNotify()}
 			</button>
+			{#if confirmingNotify}
+				<ActionModal
+					title={m.badgeFoundConfirmTitle()}
+					confirmLabel={m.badgeFoundNotify()}
+					loading={notifying}
+					onConfirm={() => notifyFound(notify)}
+					onClose={() => (confirmingNotify = false)}
+				>
+					<p>{m.badgeFoundConfirmText()}</p>
+				</ActionModal>
+			{/if}
 		{/if}
 	</div>
 </div>

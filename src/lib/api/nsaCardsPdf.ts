@@ -22,7 +22,7 @@ export interface NsaCardEntry {
 	/** The NSA's icon as PNG. */
 	icon: Uint8Array | null;
 	cardNumber: number;
-	/** The signed card code (`MUC1…`). */
+	/** What the QR holds: the signed card code's link (`signedCodeLink`). */
 	code: string;
 }
 

@@ -21,12 +21,10 @@ export async function fetchMyConferenceParticipation({
 	conferenceId: string;
 }) {
 	// Participant and team rows carry the ids themselves; registrations reach them through the
-	// participant row.
+	// participant row's columns. Not through `user`: a filter on a relation is checked against that
+	// table's read rules, and the user table's eleven relational ones cost ~100 ms to resolve.
 	const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: userId } };
-	const registrationOfUser = {
-		conference: { id: { eq: conferenceId } },
-		user: { id: { eq: userId } }
-	};
+	const registrationOfUser = { participant: forUser };
 
 	const [
 		user,

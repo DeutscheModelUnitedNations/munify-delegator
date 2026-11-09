@@ -30,6 +30,7 @@ import {
 	upsertAssignmentWeights
 } from './assignmentService';
 import { assignmentWeightsArgsSchema } from '#lib/schemata/assignmentWeights';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerAssignmentAbilities();
 
@@ -69,8 +70,9 @@ const SplitPartInput = schemaBuilder.inputType('AssignmentSplitPartInput', {
 
 schemaBuilder.mutationFields((t) => ({
 	upsertAssignmentReview: t.drizzleField({
+		extensions: mcpTool(),
 		description:
-			"Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating or the note.",
+			"Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating, the note or the prioritized role. The prioritized role has to be one of the application's wishes: the automatic distribution treats it as the first.",
 		type: AssignmentReviewRef,
 		args: t.validate(
 			{
@@ -80,6 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 				flagged: t.arg.boolean({ required: false }),
 				disqualified: t.arg.boolean({ required: false }),
 				required: t.arg.boolean({ required: false }),
+				prioritizedRoleId: t.arg.id({ required: false }),
 				note: t.arg.string({ required: false })
 			},
 			reviewArgsSchema
@@ -104,6 +107,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	upsertAssignmentWeights: t.drizzleField({
+		extensions: mcpTool(),
 		description:
 			'Changes the given weights of the automatic assignment; the others stay as they are.',
 		type: AssignmentWeightsRef,
@@ -144,6 +148,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	assignDelegation: t.field({
+		extensions: mcpTool(),
 		description:
 			'Plans a nation or non-state actor for a whole delegation; no `roleId` plans none.',
 		type: 'Boolean',
@@ -160,6 +165,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	assignAssignmentUnit: t.field({
+		extensions: mcpTool(),
 		description:
 			'Plans a role for one part of a split delegation or a converted single participant.',
 		type: 'Boolean',
@@ -176,6 +182,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	splitDelegation: t.field({
+		extensions: mcpTool(),
 		description:
 			'Splits a delegation into parts that are assigned separately. Replaces an earlier split.',
 		type: 'Boolean',
@@ -193,6 +200,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	undoDelegationSplit: t.field({
+		extensions: mcpTool(),
 		description: 'Drops a planned split, so the delegation is planned as a whole again.',
 		type: 'Boolean',
 		args: { delegationId: t.arg.id({ required: true }) },
@@ -204,6 +212,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	convertSingleParticipant: t.field({
+		extensions: mcpTool(),
 		description: 'Plans to turn a single participant into a delegation of their own.',
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
@@ -211,6 +220,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	revertSingleParticipantConversion: t.field({
+		extensions: mcpTool(),
 		description:
 			'Drops the plan to turn a single participant into a delegation, with any role planned for it.',
 		type: 'Boolean',
@@ -219,6 +229,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	assignSingleParticipantRole: t.field({
+		extensions: mcpTool(),
 		description: 'Plans a custom role for a single participant; no `roleId` plans none.',
 		type: 'Boolean',
 		args: {
@@ -237,6 +248,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	autoAssignDelegations: t.field({
+		extensions: mcpTool(),
 		description:
 			'Plans roles for the unassigned delegations of `size` members, using only roles with exactly that many free seats. Returns how many got one.',
 		type: 'Int',
@@ -252,6 +264,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	autoAssignSingleParticipants: t.field({
+		extensions: mcpTool(),
 		description:
 			'Plans a custom role for each single participant without one, among the roles they applied for; roles planned by hand stay. Returns how many got one.',
 		type: 'Int',
@@ -264,6 +277,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	resetAssignmentSize: t.field({
+		extensions: mcpTool(),
 		description: 'Unplans every role with `seats` seats, so they can be assigned anew.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }), seats: t.arg.int({ required: true }) },
@@ -275,6 +289,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	discardAssignmentDraft: t.field({
+		extensions: mcpTool(),
 		description: 'Deletes the draft. Ratings and weights stay.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },

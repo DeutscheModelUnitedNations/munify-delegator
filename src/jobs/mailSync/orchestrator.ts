@@ -1,6 +1,6 @@
 import { config } from '../config';
 import { db } from '../db';
-import { logTaskStart, logTaskEnd, taskError } from '../logs';
+import { taskError } from '../logs';
 import { ensureListsExist } from './listManager';
 import { fetchSubscriberMap } from './subscriberFetcher';
 import { processUsersInBatches } from './userProcessor';
@@ -13,7 +13,6 @@ import { logger } from '#lib/logger';
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
 
 export async function runMailSync(): Promise<void> {
-	const startTime = logTaskStart(TASK_NAME);
 	try {
 		if (!config.LISTMONK_API_URL || config.LISTMONK_API_URL === '') {
 			taskError({ taskName: TASK_NAME, message: 'Listmonk API URL is not set. Aborting task.' });
@@ -85,7 +84,5 @@ export async function runMailSync(): Promise<void> {
 			message: 'Task failed.',
 			error: error instanceof Error ? error : String(error)
 		});
-	} finally {
-		logTaskEnd({ taskName: TASK_NAME, startTime });
 	}
 }

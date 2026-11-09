@@ -5,9 +5,10 @@ import {
 	type SingleparticipantWhereInputArgument
 } from '#lib/api/rumbleClient/client';
 import { liveSnapshot } from '#lib/api/liveSnapshot';
+import formatNames from '#lib/helpers/formatNames';
 import type { BoardReviewRow } from './boardState';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
+import { containing } from '#lib/api/queryHelpers';
+import { matchingUserIds } from '#lib/api/matchingUsers';
 
 /*
  * The assignment tabs never read a whole conference: it can hold tens of thousands of
@@ -62,6 +63,7 @@ const reviewFields = {
 	flagged: true,
 	disqualified: true,
 	required: true,
+	prioritizedRoleId: true,
 	note: true
 } as const;
 
@@ -601,7 +603,76 @@ export async function fetchAssignmentRoles(conferenceId: string) {
 	return { committees, nonStateActors, customRoles };
 }
 
-/** How many seats one school may get (`null` for no limit), live. */
-export function fetchSchoolSeatLimit(conferenceId: string) {
-	return client.liveQuery.conference({ __args: { id: conferenceId }, maxSeatsPerSchool: true });
+const ruleSchool = { id: true, name: true, isForeignSchool: true } as const;
+
+/**
+ * What the school rules are checked against (`schoolRules.ts`): the conference's limits and the
+ * applications marked required or excluded, with their people's schools, live; and the groups
+ * decided together, which the backend works out and which are not live (a new supervision shows
+ * once the page asks again).
+ */
+export async function fetchSchoolRules(conferenceId: string) {
+	const [limits, groups, reviews] = await Promise.all([
+		client.liveQuery.conference({
+			__args: { id: conferenceId },
+			maxCollectiveGroupSize: true,
+			maxGuaranteedSeatsPerForeignSchool: true
+		}),
+		client.query.collectiveGroups({
+			__args: { conferenceId },
+			key: true,
+			supervisorId: true,
+			school: ruleSchool,
+			members: { delegationMemberId: true, delegationId: true },
+			singleParticipantIds: true,
+			size: true
+		}),
+		client.liveQuery.assignmentReviews({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					OR: [{ required: { eq: true } }, { disqualified: { eq: true } }]
+				}
+			},
+			delegationId: true,
+			singleParticipantId: true,
+			required: true,
+			disqualified: true,
+			delegation: { members: { school: ruleSchool } },
+			singleParticipant: { school: ruleSchool }
+		})
+	]);
+	return { limits, groups, reviews };
+}
+
+type SchoolRules = Awaited<ReturnType<typeof fetchSchoolRules>>;
+
+/**
+ * Plain copies of what the school rules are checked against, with the limits (`null` switches a
+ * rule off). Create one per component and call it in a `$derived` (see `seatedSnapshot`).
+ */
+export function schoolRulesSnapshot() {
+	const reviews = liveSnapshot<SchoolRules['reviews'][number]>();
+	return (rules: SchoolRules) => ({
+		groups: rules.groups,
+		reviews: reviews(rules.reviews),
+		groupLimit: rules.limits.maxCollectiveGroupSize ?? null,
+		guaranteeLimit: rules.limits.maxGuaranteedSeatsPerForeignSchool ?? null
+	});
+}
+
+/** The names of the supervisors of the groups a page shows, live, by supervisor id. */
+export async function fetchSupervisorNames(supervisorIds: readonly string[]) {
+	if (supervisorIds.length === 0) return new Map<string, string>();
+	const supervisors = await client.liveQuery.conferenceSupervisors({
+		__args: { where: { id: { in: [...supervisorIds] } } },
+		id: true,
+		user: { givenName: true, familyName: true }
+	});
+	return new Map(
+		supervisors.map((supervisor) => [
+			supervisor.id,
+			formatNames({ givenName: supervisor.user.givenName, familyName: supervisor.user.familyName })
+		])
+	);
 }

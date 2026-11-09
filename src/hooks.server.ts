@@ -1,17 +1,19 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection';
 import { graphqlLogger, logger } from '#lib/logger';
-import { sequence, type Handle, type ServerInit } from '@sveltejs/kit/hooks';
+import {
+	sequence,
+	type Handle,
+	type HandleServerError,
+	type ServerInit
+} from '@sveltejs/kit/hooks';
 
 import { oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
 import { paraglideMiddleware } from '#lib/paraglide/server';
 import { impersonationHandle } from '#api/handlers/user/userPermissions';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
-import { db } from '#api/db/db';
-import { uploadLegacyFiles } from '#api/handlers/storedFile/legacyFileUpload';
 import { resumeLinkWorker } from '#api/handlers/chaseLink/linkWorker';
-import { storage } from '#api/handlers/storedFile/storedFileService';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 import {
 	PUBLIC_FONTAWESOME_CSS_URL,
@@ -24,6 +26,10 @@ if (!building && SENTRY_DSN) {
 		dsn: SENTRY_DSN,
 		environment: NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
+		// The SvelteKit SDK registers its own OpenTelemetry tracer provider by default, which would
+		// compete with ours (`src/instrumentation.server.ts`). Without it, Sentry keeps its scopes
+		// apart per request through AsyncLocalStorage all the same.
+		enableOpenTelemetrySetup: false,
 		dataCollection: sentryDataCollection(SENTRY_SEND_DEFAULT_PII ?? false),
 		// Every `logger.error` becomes an issue; Bugsink takes no logs, so nothing else is sent.
 		integrations: [Sentry.pinoIntegration({ error: { levels: ['error'] }, log: { levels: [] } })]
@@ -31,15 +37,9 @@ if (!building && SENTRY_DSN) {
 	Sentry.pinoIntegration.untrackLogger(graphqlLogger);
 }
 
-// Awaited before the first request: files moved off the Prisma app's data URLs must be in the
-// bucket before anyone is handed their URLs. A failure stops the start, and the next one resumes.
-// TODO: remove this hook, `legacyFileUpload.ts` and the export of `storage()` once production has
-// started on the drizzle schema and `legacy_file_upload` is gone (and "Files from before the
-// bucket" in CLAUDE.md).
+// Picks the CHASE link up again (`docs/plans/chase-link.md`); never in the way of starting.
 export const init: ServerInit = async () => {
 	if (building) return;
-	await uploadLegacyFiles({ db, storage: storage() });
-	// picks the CHASE link up again (`docs/plans/chase-link.md`); never in the way of starting
 	await resumeLinkWorker().catch((error) => logger.error('Resuming the CHASE link failed', error));
 };
 
@@ -66,7 +66,20 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 			: render();
 	});
 
-export const handleError = Sentry.handleErrorWithSentry();
+/**
+ * An error the app's own code threw while answering a request (a hook, a load, an endpoint) as one
+ * log line, which `pinoIntegration` makes the Sentry issue. Sentry's own `handleErrorWithSentry`
+ * would capture it as well and print it through `console.error`, outside the JSON log. Errors
+ * thrown with `error(...)`, SvelteKit's 404s and validation failures are expected and stay out.
+ */
+export const handleError: HandleServerError = ({ error, event, kind }) => {
+	if (kind !== 'unknown') return;
+	logger.error('Request failed', {
+		err: error,
+		method: event.request.method,
+		route: event.route.id ?? undefined
+	});
+};
 export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
 	// Protects the authenticated routes, serves both callback routes and puts the validated session

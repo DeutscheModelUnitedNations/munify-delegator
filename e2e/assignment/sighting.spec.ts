@@ -46,16 +46,20 @@ test('the sighting turns through the applications one card at a time', async ({ 
 });
 
 // Ratings, exclusions and notes live in the database, not in the browser: they come back after a
-// reload and colour the card in the strip of the deck.
+// reload and colour the card in the strip of the deck. A delegation of its own, since applying a
+// draft in the assignment spec creates and deletes delegations at the front of the deck.
 test('the sighting keeps ratings, exclusions and notes on the server', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting?application=`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting?application=${E2E_COMMITTEE_ASSIGN_DELEGATION_ID}`
 	});
-	const strip = page.getByRole('list', { name: /überblick|glance/i }).getByRole('button');
-	await expect(strip.first()).toHaveClass(/bg-base-300/);
+	// the segment inside the button carries the colour; the button is the larger hit area
+	const card = page
+		.getByRole('list', { name: /überblick|glance/i })
+		.locator('button[aria-current="true"] > span');
+	await expect(card).toHaveClass(/bg-base-300/);
 
 	await page.getByRole('button', { name: /ausschließen|exclude|disqualif/i }).click();
-	await expect(strip.first()).toHaveClass(/bg-error/);
+	await expect(card).toHaveClass(/bg-error/);
 
 	const note = page.getByRole('textbox', { name: /notiz|note/i });
 	await note.fill('e2e note');
@@ -64,14 +68,25 @@ test('the sighting keeps ratings, exclusions and notes on the server', async ({ 
 
 	await page.reload();
 	await waitForHydration(page);
-	await expect(strip.first()).toHaveClass(/bg-error/);
+	await expect(card).toHaveClass(/bg-error/);
 	await expect(page.getByRole('textbox', { name: /notiz|note/i })).toHaveValue('e2e note');
 
-	// Undo, so the shared seed stays as it was.
+	// Undo, so the shared seed stays as it was. Reviews show before they are saved, so wait for
+	// the saves themselves: the test ending first would leave the application excluded.
+	const saved = () =>
+		page.waitForResponse(
+			(res) =>
+				res.url().includes('/api/graphql') &&
+				(res.request().postData() ?? '').includes('upsertAssignmentReview')
+		);
+	let save = saved();
 	await page.getByRole('button', { name: /ausschließen|exclude|disqualif/i }).click();
-	await expect(strip.first()).toHaveClass(/bg-base-300/);
+	await save;
+	await expect(card).toHaveClass(/bg-base-300/);
+	save = saved();
 	await page.getByRole('textbox', { name: /notiz|note/i }).fill('');
 	await page.getByRole('textbox', { name: /notiz|note/i }).blur();
+	await save;
 });
 
 // The deck, its filters, the slider and the search are the backend's: only a window of the deck
@@ -94,7 +109,7 @@ test('the sighting seeks, filters and searches in the backend', async ({ page })
 
 	// a status filter narrows the deck: nothing is flagged in the seed
 	await page.getByLabel(/status/i).selectOption('flagged');
-	await expect(page.getByText(/keine|no applications/i).first()).toBeVisible();
+	await expect(page.getByText(/keine bewerbungen|no applications/i).first()).toBeVisible();
 	await page.getByLabel(/status/i).selectOption('all');
 	await expect(position).toHaveText(/^\d+ (von|of) \d+$/);
 
@@ -131,10 +146,14 @@ test('a review change keeps the fields it does not name', async ({ page }) => {
 		};
 	};
 
-	expect((await review('evaluation: 4')).data?.upsertAssignmentReview).toMatchObject({
-		evaluation: 4,
-		required: false
-	});
+	// From a known review, whatever an earlier test left behind
+	expect(
+		(
+			await review(
+				'evaluation: 4, flagged: false, disqualified: false, required: false, note: null'
+			)
+		).data?.upsertAssignmentReview
+	).toMatchObject({ evaluation: 4, required: false });
 	expect((await review('note: "e2e partial"')).data?.upsertAssignmentReview).toMatchObject({
 		evaluation: 4,
 		note: 'e2e partial'

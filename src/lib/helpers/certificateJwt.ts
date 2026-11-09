@@ -1,12 +1,13 @@
 /**
  * The shape of a participation certificate, shared by the API that signs it
- * (`#api/handlers/certificate/`) and the page that verifies it (`/validateCertificate`).
+ * (`#api/handlers/certificate/`) and the page that verifies it (`/validateCertificate`). The claims
+ * are the same in the signed codes certificates are now and in the JWTs they were before.
  */
 
-/** The algorithm certificates are signed with. */
+/** The algorithm the certificates issued as JWTs were signed with. */
 export const certificateAlg = 'RS256';
 
-/** The claims every certificate carries; one without them does not verify. */
+/** The claims every certificate issued as a JWT carries; one without them does not verify. */
 export const certificateRequiredClaims = ['n', 't', 's', 'e'];
 
 /**

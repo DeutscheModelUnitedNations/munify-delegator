@@ -1,0 +1,1 @@
+ALTER TABLE "possible_duplicate" ADD COLUMN "inferred" boolean DEFAULT false NOT NULL;

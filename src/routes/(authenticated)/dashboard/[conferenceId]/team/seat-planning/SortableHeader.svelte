@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import SortButton from '#lib/components/tanStackTable/ui/SortButton.svelte';
+	import SortButton from '#lib/components/table/SortButton.svelte';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

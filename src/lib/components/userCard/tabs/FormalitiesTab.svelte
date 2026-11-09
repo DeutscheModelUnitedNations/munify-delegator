@@ -96,7 +96,10 @@
 	/** Everything the postal documents need is read when they are asked for, not kept live. */
 	const downloadPostalDocs = async () => {
 		try {
-			const { user, conference } = await fetchPostalRegistrationSources({ userId, conferenceId });
+			const { user, conference, documentCode } = await fetchPostalRegistrationSources({
+				userId,
+				conferenceId
+			});
 			if (!hasPostalAddress(conference)) {
 				toast.error(m.httpGenericError());
 				return;
@@ -110,6 +113,7 @@
 				conference,
 				birthday: postal.birthday,
 				participant: postal.participant,
+				documentCode,
 				recipient: postalRecipient(conference),
 				fileName: documentFileName({ user, document: 'postal_registration' })
 			});

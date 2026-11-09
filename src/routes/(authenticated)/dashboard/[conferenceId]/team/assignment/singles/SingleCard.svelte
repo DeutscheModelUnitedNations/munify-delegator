@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PrioritizedMark from '../PrioritizedMark.svelte';
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import DragGrip from '../DragGrip.svelte';
 	import { cardBorder, type BoardReviewRow } from '../boardState';
@@ -43,7 +44,12 @@
 	/** Every wish, the one matching the current assignment first. Wishes of a single are unranked. */
 	const wishes = $derived(
 		(single?.appliedForRoles ?? [])
-			.map((role) => ({ id: role.id, name: role.name, matches: role.id === roleId }))
+			.map((role) => ({
+				id: role.id,
+				name: role.name,
+				matches: role.id === roleId,
+				prioritized: role.id === review?.prioritizedRoleId
+			}))
 			.toSorted((a, b) => Number(b.matches) - Number(a.matches))
 	);
 	/** Holds a role, but none of the wishes is it. */
@@ -102,6 +108,7 @@
 							></i>
 						{/if}
 						<span class="truncate">{wish.name}</span>
+						<PrioritizedMark show={wish.prioritized} />
 					</li>
 				{/each}
 			</ul>

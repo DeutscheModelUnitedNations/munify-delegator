@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
+	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup';
 	import { roleSeats } from '#lib/helpers/conferenceRole';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
@@ -43,58 +43,59 @@
 			total: roleSeats({ role, committees })
 		}))
 	);
+	const regions = $derived([...new Set(rows.map((row) => row.region).filter(Boolean))].sort());
 
-	const columns = $derived<ManagedColumn<NationRow>[]>([
+	const columns = $derived<GridColumn<NationRow>[]>([
 		{
 			id: 'name',
-			header: m.nation(),
-			accessorFn: (row) => row.name,
-			cell: ({ row }) =>
-				renderComponent({
-					component: FlagNameCell,
-					props: {
-						name: row.original.name,
-						alpha2Code: row.original.alpha2Code
-					}
-				})
+			type: 'text',
+			label: m.nation(),
+			alwaysVisible: true,
+			size: 220,
+			value: (row) => row.name,
+			cell: (row) =>
+				cellOf({ component: FlagNameCell, props: { name: row.name, alpha2Code: row.alpha2Code } })
 		},
 		{
 			id: 'region',
-			header: m.regionalGroup(),
-			accessorFn: (row) => row.region,
-			filter: { type: 'enum' }
+			type: 'enum',
+			label: m.regionalGroup(),
+			options: regions,
+			value: (row) => row.region
 		},
-		...committees.map((committee): ManagedColumn<NationRow> => ({
+		...committees.map((committee): GridColumn<NationRow> => ({
 			id: `committee-${committee.id}`,
-			header: committee.abbreviation,
+			type: 'number',
+			label: committee.abbreviation,
 			description: committee.name,
 			group: m.committees(),
-			accessorFn: (row) => row.seatsByCommittee[committee.id] ?? 0,
-			cell: ({ row }) =>
-				renderComponent({
-					component: SeatsCell,
-					props: {
-						seats: row.original.seatsByCommittee[committee.id] ?? 0
-					}
-				}),
-			exportValue: (row) => String(row.seatsByCommittee[committee.id] ?? 0),
-			filter: { type: 'range' }
+			align: 'center',
+			size: 90,
+			value: (row) => row.seatsByCommittee[committee.id] ?? 0,
+			cell: (row) =>
+				cellOf({ component: SeatsCell, props: { seats: row.seatsByCommittee[committee.id] ?? 0 } }),
+			searchable: false
 		})),
 		{
 			id: 'total',
-			header: m.total(),
-			accessorFn: (row) => row.total,
-			filter: { type: 'range' }
+			type: 'number',
+			label: m.total(),
+			align: 'center',
+			size: 90,
+			value: (row) => row.total,
+			searchable: false
 		}
 	]);
+
+	const source = createLocalSource({ rows: () => rows, columns: () => columns });
 </script>
 
-<ManagedTable
+<DataGrid
 	{columns}
-	{rows}
-	queryParamKey="nation"
-	pageSize={200}
-	columnClasses={{ total: 'text-center', region: 'whitespace-nowrap' }}
-	initialSorting={[{ id: 'name', desc: false }]}
-	storageKey="seat-overview-nations"
+	{source}
+	rowId={(row) => row.alpha3Code}
+	base={{ sorting: [{ id: 'name', desc: false }], pageSize: 250 }}
+	label={m.nationsPool()}
+	exportName="nations"
+	urlPrefix="nations-"
 />

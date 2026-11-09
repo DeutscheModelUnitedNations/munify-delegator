@@ -10,7 +10,6 @@ export const elementLabel: Record<LayoutElement, () => string> = {
 	sessions: () => m.certificateLayoutSessions(),
 	qr: () => m.certificateLayoutQr(),
 	recipient: () => m.documentLayoutRecipient(),
-	code: () => m.documentLayoutCode(),
 	birthday: () => m.birthday(),
 	address: () => m.address()
 };
@@ -25,7 +24,6 @@ export const elementSample: Record<LayoutElement, () => string[]> = {
 	],
 	qr: () => [m.certificateVerify()],
 	recipient: () => ['DMUN e.V.', 'Musterstraße 1', '12345 Musterstadt', 'Deutschland'],
-	code: () => [],
 	birthday: () => ['30.04.1949'],
 	address: () => ['405 E 45th St, New York, NY 10017, USA']
 };

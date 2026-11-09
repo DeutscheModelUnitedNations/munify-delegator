@@ -6,6 +6,7 @@ import {
 	OIDC_RESOURCE
 } from '$app/env/private';
 import { OIDC } from '#api/services/oidc/OIDC';
+import { actorAccessTokenOf } from '#api/services/oidc/actorToken';
 import type { RequestEvent } from '@sveltejs/kit';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
@@ -76,21 +77,26 @@ async function subjectTokenFor(userId: string): Promise<string> {
 }
 
 /**
- * Tokens for `userId`, delegated to whoever `actorAccessToken` belongs to, the way Logto
- * impersonates: a subject token from the Management API, exchanged (RFC 8693) with the actor's own
- * access token, so the issued token names the actor in its `act` claim. Checks no permissions;
+ * Tokens for `userId`, delegated to the person signed in on `event`, the way Logto impersonates:
+ * a subject token from the Management API, exchanged (RFC 8693) with the actor's own access token,
+ * so the issued token names the actor in its `act` claim. Logto accepts only a plain access token
+ * as the actor's, not the session's resource JWT (`actorAccessTokenOf`). Checks no permissions;
  * `assertCanImpersonate` comes first.
  */
 async function impersonationTokens({
-	actorAccessToken,
+	event,
 	userId
 }: {
-	actorAccessToken: string;
+	event: RequestEvent;
 	userId: string;
 }): Promise<ImpersonationTokens> {
+	const [subjectToken, actorToken] = await Promise.all([
+		subjectTokenFor(userId),
+		actorAccessTokenOf(event)
+	]);
 	const tokens = await OIDC.core.exchangeToken({
-		subjectToken: await subjectTokenFor(userId),
-		actorToken: actorAccessToken,
+		subjectToken,
+		actorToken,
 		resource: OIDC_RESOURCE
 	});
 	return { access_token: tokens.access_token, id_token: tokens.id_token };
@@ -114,11 +120,10 @@ export async function startImpersonation({
 	if (!impersonationConfigured()) {
 		throw apiError({ code: 'FORBIDDEN', message: m.impersonationNotConfigured() });
 	}
-	const actorAccessToken = event.locals.oidc?.tokens.accessToken;
-	if (!actorAccessToken) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
+	if (!event.locals.oidc) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
 
 	try {
-		const tokens = await impersonationTokens({ actorAccessToken, userId: targetId });
+		const tokens = await impersonationTokens({ event, userId: targetId });
 		await OIDC.startImpersonation(event, tokens);
 	} catch (error) {
 		logger.warn('Impersonation failed to start', {

@@ -42,14 +42,20 @@ the tab order and the accessibility tree once the slide has finished. -->
 	onclick={() => (mobileOpen = false)}
 ></button>
 
-<div
+<!-- `view-transition-name`: the menu stays put while the page beside it cross-fades.
+`data-sveltekit-preload-code`: the code of every entry in view is fetched ahead, so opening one
+waits for its data at most. -->
+<nav
+	aria-label={m.a11yPageNavigation()}
 	class="fixed top-0 left-0 z-50 h-full py-4 pl-3 transition-[translate,visibility] duration-200 ease-out sm:visible sm:sticky sm:z-20 sm:top-[var(--header-height,0px)] sm:h-[calc(100dvh-var(--header-height,0px))] sm:w-60 sm:shrink-0 sm:translate-x-0 sm:py-0 sm:pl-0 sm:transition-none {mobileOpen
 		? 'translate-x-0'
 		: 'invisible -translate-x-full'}"
+	style:view-transition-name="team-nav"
+	data-sveltekit-preload-code="viewport"
 >
 	<div
 		class="bg-base-100 rounded-box h-full w-60 overflow-y-auto px-3 py-2 shadow-lg sm:bg-transparent sm:shadow-none"
 	>
 		{@render children()}
 	</div>
-</div>
+</nav>

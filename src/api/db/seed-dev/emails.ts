@@ -129,8 +129,8 @@ export function addEmails(cs: ConferenceSeed) {
 		subject: 'Willkommen bei {conference}!',
 		heading: null,
 		body: [
-			'wir freuen uns sehr, dass Sie bei {conference} dabei sind. Sie vertreten: {seat}.',
-			'Alles Weitere zur Vorbereitung finden Sie auf Ihrem Dashboard. Bei Fragen ist die Teilnehmendenbetreuung für Sie da.'
+			'wir freuen uns sehr, dass du bei {conference} dabei bist. Du vertrittst: {seat}.',
+			'Alles Weitere zur Vorbereitung findest du auf deinem Dashboard. Bei Fragen ist die Teilnehmendenbetreuung für dich da.'
 		].join('\n\n')
 	});
 }

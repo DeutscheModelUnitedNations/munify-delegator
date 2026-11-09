@@ -24,6 +24,10 @@ export const relations = defineRelations(schema, (r) => ({
 		singleParticipant: r.one.singleParticipant({
 			from: r.assignmentReview.singleParticipantId,
 			to: r.singleParticipant.id
+		}),
+		prioritizedRole: r.one.conferenceRole({
+			from: r.assignmentReview.prioritizedRoleId,
+			to: r.conferenceRole.id
 		})
 	},
 	assignmentSingleRole: {
@@ -774,6 +778,28 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		})
 	},
+	tableView: {
+		conference: r.one.conference({
+			from: r.tableView.conferenceId,
+			to: r.conference.id
+		}),
+		owner: r.one.user({
+			from: r.tableView.ownerUserId,
+			to: r.user.id
+		})
+	},
+	tableViewDefault: {
+		conference: r.one.conference({
+			from: r.tableViewDefault.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		view: r.one.tableView({
+			from: r.tableViewDefault.viewId,
+			to: r.tableView.id,
+			optional: false
+		})
+	},
 	teamMember: {
 		conference: r.one.conference({
 			from: r.teamMember.conferenceId,
@@ -989,6 +1015,18 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.emailLog.sentById,
 			to: r.user.id,
 			alias: 'emailLogSentBy'
+		})
+	},
+	mcpAuditEntry: {
+		conference: r.one.conference({
+			from: r.mcpAuditEntry.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		user: r.one.user({
+			from: r.mcpAuditEntry.userId,
+			to: r.user.id,
+			alias: 'mcpAuditEntryUser'
 		})
 	},
 	waitingListEntry: {

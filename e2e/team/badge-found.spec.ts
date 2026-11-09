@@ -54,7 +54,7 @@ test('participant care notifies someone of their found badge from the user card'
 }) => {
 	await loginAs(page, fixedTestUser(E2E_ATTENDANCE_CARE_ID), {
 		// A filter that narrows the table to one row opens that row's user card by itself.
-		startUrl: `/dashboard/${conferenceId}/team/participants?search=Lovelace`
+		startUrl: `/dashboard/${conferenceId}/team/participants?q=Lovelace`
 	});
 	const before = await badgeMailsToAda(page);
 
@@ -63,13 +63,20 @@ test('participant care notifies someone of their found badge from the user card'
 	await accessTab.click();
 
 	const notify = page.getByRole('button', { name: /ausweis gefunden|badge found/i });
+	// The press asks first; the confirm button carries the same label
+	const confirm = page
+		.locator('.modal-box')
+		.getByRole('button', { name: /ausweis gefunden|badge found/i });
 	await expect(notify).toBeVisible({ timeout: 15_000 });
 	await notify.click();
+	await confirm.click();
 
 	await expect.poll(() => badgeMailsToAda(page), { timeout: 15_000 }).toBe(before + 1);
-	// Every press sends it once more
-	await expect(notify).toBeEnabled({ timeout: 15_000 });
+	// Every confirmed press sends it once more
+	await expect(confirm).toBeHidden({ timeout: 15_000 });
+	await expect(notify).toBeEnabled();
 	await notify.click();
+	await confirm.click();
 	await expect.poll(() => badgeMailsToAda(page), { timeout: 15_000 }).toBe(before + 2);
 });
 

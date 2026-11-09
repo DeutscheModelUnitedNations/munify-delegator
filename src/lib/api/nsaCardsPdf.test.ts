@@ -15,7 +15,7 @@ const card = (index: number): NsaCardEntry => ({
 	nsaName: 'Amnesty International',
 	icon: null,
 	cardNumber: 2,
-	code: `MUC1.user-${index}.conference.${'A'.repeat(7)}.${'B'.repeat(4)}.${'C'.repeat(103)}`
+	code: `HTTPS://DELEGATOR.EXAMPLE/ID/${'A'.repeat(180)}${index}`
 });
 
 describe('buildNsaCardsPdf', () => {

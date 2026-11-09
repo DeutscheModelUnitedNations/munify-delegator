@@ -1,0 +1,115 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "824307e1-9de7-45af-9631-37022236fd2e",
+  "prevIds": [
+    "d3a0be81-930e-4fde-bf48-377e6a2ea57b"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "max_collective_group_size"
+      ],
+      "writes": [
+        "s|col|public.conference.max_collective_group_size",
+        "n|col|public.conference.max_collective_group_size",
+        "e|col|public.conference.max_collective_group_size"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "max_guaranteed_seats_per_foreign_school"
+      ],
+      "writes": [
+        "s|col|public.conference.max_guaranteed_seats_per_foreign_school",
+        "n|col|public.conference.max_guaranteed_seats_per_foreign_school",
+        "e|col|public.conference.max_guaranteed_seats_per_foreign_school"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "school",
+        "is_foreign_school"
+      ],
+      "writes": [
+        "s|col|public.school.is_foreign_school",
+        "n|col|public.school.is_foreign_school",
+        "e|col|public.school.is_foreign_school"
+      ],
+      "reads": [
+        "n|tbl|public.school",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "max_collective_group_size",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "16",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "max_guaranteed_seats_per_foreign_school",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "12",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "school",
+        "name": "is_foreign_school",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

@@ -39,6 +39,7 @@
 			label={motivationLabel}
 			{form}
 			placeholder={m.answerHere()}
+			description={disabled ? undefined : m.applicationQualityHint()}
 			{disabled}
 		/>
 		<FormTextArea

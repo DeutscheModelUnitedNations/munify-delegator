@@ -653,6 +653,50 @@ describe('autoAssign matching quality', () => {
 	});
 });
 
+describe('a prioritized wish', () => {
+	const { groups } = assignmentGroups({
+		delegations: [delegation('a', 2), delegation('b', 2)],
+		singleParticipants: [],
+		units: []
+	});
+	const ranks: Record<string, string[]> = {
+		a: ['nation-fra', 'nation-gbr', 'nation-chn'],
+		b: ['nation-fra', 'nation-gbr']
+	};
+	const roles = [role('nation-fra', 2), role('nation-gbr', 2), role('nation-chn', 2)];
+	const assign = ({ prioritized }: { prioritized: Record<string, string> }) =>
+		Object.fromEntries(
+			autoAssign({
+				size: 2,
+				groups,
+				roles,
+				weights: DEFAULT_WEIGHTS,
+				reviewOf: (group) => ({
+					evaluation: null,
+					flagged: false,
+					disqualified: false,
+					prioritizedRoleId: prioritized[group.key] ?? null
+				}),
+				wishRankOf: (group, target) => {
+					const rank = ranks[group.key]?.indexOf(target.roleId ?? '');
+					return rank === undefined || rank < 0 ? undefined : rank + 1;
+				}
+			}).map(({ group, target }) => [group.key, target.roleId])
+		);
+
+	it('moves a group onto its prioritized wish, as if it were its first', () => {
+		// a's third wish now costs what its first does, and leaves b its first
+		expect(assign({ prioritized: { a: 'nation-chn' } })).toEqual({
+			a: 'nation-chn',
+			b: 'nation-fra'
+		});
+	});
+
+	it('does nothing for a role the group did not wish for', () => {
+		expect(assign({ prioritized: { b: 'nation-chn' } })).toEqual(assign({ prioritized: {} }));
+	});
+});
+
 describe('autoAssignSingles', () => {
 	const single = (
 		id: string,
@@ -727,6 +771,24 @@ describe('autoAssignSingles', () => {
 		);
 		expect(matches).toHaveLength(2);
 		expect(matches.find((match) => match.singleParticipantId === 'b')?.roleId).toBe('press');
+	});
+
+	test('seats an applicant on the wish the team prioritized', () => {
+		const plain = single('a', ['press', 'it']);
+		const prioritizing = { ...plain, review: { ...plain.review, prioritizedRoleId: 'it' } };
+		for (const seed of ['1', '2', '3', '4']) {
+			const matches = autoAssignSingles({
+				...input(
+					[prioritizing],
+					[
+						{ id: 'press', freeSeats: 1 },
+						{ id: 'it', freeSeats: 1 }
+					]
+				),
+				seed
+			});
+			expect(matches).toEqual([{ singleParticipantId: 'a', roleId: 'it' }]);
+		}
 	});
 
 	test('skips disqualified applicants and those without wishes', () => {

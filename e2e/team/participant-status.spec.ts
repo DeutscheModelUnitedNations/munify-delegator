@@ -6,10 +6,10 @@ test('a team member can mark a participant payment status as done from the parti
 	page
 }) => {
 	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), {
-		// Filter to the target via the page's `search` query param. The participants table
+		// Filter to the target via the page's `q` (search) query param. The participants table
 		// paginates, and every run adds newly registered users to this conference, so the seeded
 		// target eventually falls off the first page and a bare row lookup starts timing out.
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/participants?search=${E2E_MGMT_TARGET_FAMILY_NAME}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/participants?q=${E2E_MGMT_TARGET_FAMILY_NAME}`
 	});
 
 	// A filter that narrows the table to one row opens that row's user card by itself.

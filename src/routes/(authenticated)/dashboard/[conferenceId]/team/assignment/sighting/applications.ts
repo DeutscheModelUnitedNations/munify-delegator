@@ -1,8 +1,8 @@
 import { client } from '#lib/api/rumbleClient/client';
 import { confirmedLinkedAccounts } from '#lib/helpers/linkedNotes';
 import type { DeckWindowData, WindowEntry } from './deckPosition';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
+import { containing } from '#lib/api/queryHelpers';
+import { matchingUserIds } from '#lib/api/matchingUsers';
 
 const person = {
 	id: true,
@@ -33,11 +33,12 @@ const delegationCard = {
 		user: person,
 		supervisors,
 		// each person's own school: the delegation keeps none
-		school: { name: true }
+		school: { id: true, name: true, isForeignSchool: true }
 	},
 	appliedForRoles: {
 		id: true,
 		rank: true,
+		roleId: true,
 		role: {
 			name: true,
 			fontAwesomeIcon: true,
@@ -49,7 +50,7 @@ const delegationCard = {
 /** What a card shows of a single participant. */
 const singleCard = {
 	id: true,
-	school: { name: true },
+	school: { id: true, name: true, isForeignSchool: true },
 	motivation: true,
 	experience: true,
 	user: person,
@@ -195,6 +196,7 @@ export async function fetchReview({ kind, id }: { kind: 'delegation' | 'single';
 		flagged: true,
 		disqualified: true,
 		required: true,
+		prioritizedRoleId: true,
 		note: true
 	});
 	return reviews.at(0);

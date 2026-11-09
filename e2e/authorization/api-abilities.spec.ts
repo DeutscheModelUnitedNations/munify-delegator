@@ -722,18 +722,30 @@ test('the participants table does not reveal a teammate’s address to participa
 	const teammateWithCountry = async (actorId: string) => {
 		const page = await (await browser.newContext()).newPage();
 		await loginAs(page, fixedTestUser(actorId));
+		const query = {
+			filter: {
+				type: 'group',
+				op: 'and',
+				items: [
+					{ type: 'condition', column: 'userId', operator: 'equals', value: E2E_TEAMMATE_USER_ID },
+					{ type: 'condition', column: 'country', operator: 'equals', value: 'DEU' }
+				]
+			},
+			sorting: [],
+			grouping: [],
+			path: []
+		};
 		const result = await gql(
 			page,
-			`query ($c: ID!, $u: String!) {
-				participantsPage(conferenceId: $c, limit: 10, offset: 0, filters: [
-					{ column: "userId", mode: "equals", text: $u },
-					{ column: "country", mode: "equals", text: "DEU" }
-				]) { total }
+			`query ($c: ID!, $q: JSON!) {
+				dataTablePage(table: "participants", conferenceId: $c, query: $q, limit: 10, offset: 0) {
+					total
+				}
 			}`,
-			{ c: E2E_CONFERENCE_ID, u: E2E_TEAMMATE_USER_ID }
+			{ c: E2E_CONFERENCE_ID, q: query }
 		);
 		expect(result.errors, JSON.stringify(result)).toBeUndefined();
-		return (result.data?.participantsPage as { total: number }).total;
+		return (result.data?.dataTablePage as { total: number }).total;
 	};
 
 	// Participant care reads the teammate's name and phone, not where they live.
@@ -786,18 +798,13 @@ test('only who may delete a registration unregisters a participant', async ({ pa
 
 test('nobody registers into a conference that is not taking applications', async ({ page }) => {
 	// Registering makes the caller a participant, which opens the conference's members-only
-	// details to them; the preparation conference has closed its registration.
+	// details to them; the preparation conference has closed its registration. Supervisors are
+	// the exception, until the conference is over: e2e/authorization/late-supervisor.spec.ts.
 	await loginAs(page, makeTestUser('authz-late-registrant'));
 	const closed = /registration period is closed/;
 
 	expectRefused(
 		await gql(page, `mutation ($c: ID!) { createDelegation(conferenceId: $c) { id } }`, {
-			c: E2E_PREP_CONFERENCE_ID
-		}),
-		closed
-	);
-	expectRefused(
-		await gql(page, `mutation ($c: ID!) { createConferenceSupervisor(conferenceId: $c) { id } }`, {
 			c: E2E_PREP_CONFERENCE_ID
 		}),
 		closed

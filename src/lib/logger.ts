@@ -1,4 +1,4 @@
-import { SpanStatusCode, trace, type Attributes } from '@opentelemetry/api';
+import { SpanStatusCode, isSpanContextValid, trace, type Attributes } from '@opentelemetry/api';
 import pino from 'pino';
 
 /**
@@ -7,13 +7,63 @@ import pino from 'pino';
  * through its `browser` build.
  *
  * Reads `process.env` directly: the jobs and the seed run outside SvelteKit, and the browser has
- * no `process` at all. `LOG_LEVEL` overrides the level; under vitest it defaults to silent.
+ * no `process` at all. `LOG_LEVEL` overrides the level, which is debug in development, silent under
+ * vitest and warn otherwise, so production keeps out rumble's line per operation. The jobs log at
+ * info (`runJob`, `src/jobs/logs.ts`).
  */
 const env = typeof process === 'undefined' ? {} : process.env;
 const isDev = env.NODE_ENV === 'development';
 
+// A field as it is if it serializes, otherwise named by its type: one that throws (a circular
+// client, a getter that throws) would cost the whole line.
+function jsonSafe(value: unknown): unknown {
+	try {
+		JSON.stringify(value);
+		return value;
+	} catch {
+		const type =
+			typeof value === 'object' && value !== null ? value.constructor?.name : typeof value;
+		return `[unserializable ${type ?? 'object'}]`;
+	}
+}
+
+/**
+ * pino's error serializer, except that a field it copies from the error which does not serialize
+ * is replaced by its type. pino copies every enumerable field of an error as it is, so one holding
+ * a socket or a client used to turn the whole line into "unable to serialize", the error with it.
+ */
+export function serializeError(err: unknown): unknown {
+	if (!(err instanceof Error)) return jsonSafe(err);
+	return safeErrorFields(pino.stdSerializers.err(err));
+}
+
+function safeErrorFields(serialized: unknown): unknown {
+	if (typeof serialized !== 'object' || serialized === null) return serialized;
+	return Object.fromEntries(
+		Object.entries(serialized).map(([key, value]) => [
+			key,
+			key === 'aggregateErrors' && Array.isArray(value)
+				? value.map(safeErrorFields)
+				: jsonSafe(value)
+		])
+	);
+}
+
+/**
+ * The trace a line was logged in, under OpenTelemetry's names for them (its log data model), so that
+ * Grafana links the line in Loki to its trace in Tempo. rumble's lines get them here too: its own
+ * (`injectTraceId`) is off in `src/api/rumble.ts`, as pino would write both.
+ */
+function traceFields() {
+	const spanContext = trace.getActiveSpan()?.spanContext();
+	if (!spanContext || !isSpanContextValid(spanContext)) return {};
+	return { trace_id: spanContext.traceId, span_id: spanContext.spanId };
+}
+
 const pinoLogger = pino({
-	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'info'),
+	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'warn'),
+	serializers: { err: serializeError },
+	mixin: traceFields,
 	// Resolved here: pino resolves a bare target from its caller's file, which Vite's module runner
 	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`.
 	transport: isDev
@@ -51,7 +101,7 @@ function toSpanAttributes(data: unknown): Attributes {
 		) {
 			attributes[key] = value;
 		} else {
-			attributes[key] = JSON.stringify(value);
+			attributes[key] = JSON.stringify(jsonSafe(value));
 		}
 	}
 	return attributes;
@@ -128,6 +178,13 @@ function makeLevelLoggers(instance: pino.Logger) {
  */
 export const logger = {
 	...makeLevelLoggers(pinoLogger),
+	/**
+	 * Changes the level of every line from now on (children created before keep theirs). For a
+	 * default of its own, such as the jobs' `info`; `LOG_LEVEL` is still the operator's to set.
+	 */
+	setLevel: (level: Level | 'silent') => {
+		pinoLogger.level = level;
+	},
 	/** A logger with fields bound to every line (a job's name, a conference id). */
 	child: (bindings: Record<string, unknown>) => makeLevelLoggers(pinoLogger.child(bindings))
 };

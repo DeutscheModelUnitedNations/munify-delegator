@@ -9,9 +9,9 @@
 		setHistory,
 		setSelectedHistory,
 		statsQueryFilter,
-		type HistoryStats,
-		type StatsTypeHistoryEntry
+		type HistoryStats
 	} from '../stats.svelte';
+	import { loadStatsHistory, saveStatsHistory } from '../statsHistory';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -77,16 +77,14 @@
 
 	onMount(() => {
 		const today = format(Date.now(), 'yyyy-MM-dd');
-		const history: StatsTypeHistoryEntry[] = JSON.parse(
-			localStorage.getItem('statsHistory') ?? '[]'
-		);
+		const history = loadStatsHistory();
 
 		if (!history.find((x) => `${x.timestamp}_${x.conferenceId}` === `${today}_${conferenceId}`)) {
 			history.unshift({ stats: toHistoryStats(), timestamp: today, conferenceId });
 		}
 		setHistory(history);
 
-		localStorage.setItem('statsHistory', JSON.stringify(history));
+		saveStatsHistory(history);
 
 		setHistory(history.filter((x) => x.conferenceId === conferenceId));
 		setSelectedHistory(history.find((x) => x.timestamp !== today)?.timestamp);

@@ -148,6 +148,7 @@ bun run preview
   - `api/graphql/` - GraphQL API endpoint
   - `auth/` - OIDC authentication callbacks
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
+  - `id/` - Where a signed code's link leads (see "Signed codes")
 
 - **`src/api/`** - Backend GraphQL API layer
   - `handlers/` - One directory per domain entity (`paper/`), so the IDE keeps them sorted, each
@@ -164,6 +165,7 @@ bun run preview
     `papers.ts`, …; `index.ts` exports them all, `columns.ts` holds the shared column helpers),
     `relations.ts` (the relational API's graph), `db.ts` (client),
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
+  - `handlers/dataTable/` - The table engine behind the team's tables (see "Data tables")
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
   - `services/` - Business logic shared by several handlers or routes, and `authHelper/`, the
@@ -181,6 +183,8 @@ bun run preview
   - `components/` - Reusable Svelte components
   - `services/` - Frontend utility functions
   - `schemata/` - Zod validation schemas
+  - `dataGrid/` - The data tables' shared model (state, operators, grouping, views), used by the
+    grid components and the API's table engine alike
   - `paraglide/` - Generated i18n code
 
 - **`src/env.ts`** - Every environment variable, declared and validated by SvelteKit (3's
@@ -263,9 +267,10 @@ bun run preview
 - **Arguments are checked by zod schemas on the arguments, never by hand in a resolver or service.**
   rumble installs `@pothos/plugin-validation`: one argument with `t.arg.int().validate(schema)`,
   several together with `validate: schema` on the field, and `args: t.validate({ … }, schema)`
-  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). The resolver gets
-  what a field's `validate` schema returns, so that schema is a `z.looseObject` (`.loose()` on a
-  shared form schema): a plain `z.object` drops every argument it does not name. Word each issue
+  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). What a
+  field-level schema returns _replaces_ the resolver's `args`, so it is a `z.looseObject` (or
+  `.loose()` where a form shares a plain `z.object`): a strict one strips every argument it does
+  not name, and the resolver gets `conferenceId: undefined`. Word each issue
   with a lazy `m.…()` (`{ error: () => m.x() }`): a failure becomes an `INVALID_INPUT` error with
   those messages (`validation.validationError` in `rumble.ts`). A JSON argument holding a whole
   document goes through `jsonDocument` (`#api/services/argSchemas`). Keep the schema in the
@@ -405,6 +410,22 @@ bun run preview
   real bug, not noise. A plain `await` is right only for something seeded once, such as the initial
   value of a form field.
 
+- **A layout shows the next page's skeleton, not the old page, while that page's first data
+  loads.** An `await` outside any boundary holds the whole update back, so a client-side
+  navigation would keep the old page on screen until the new one has its data. The layouts that
+  render pages wrap them in `PageBoundary` (`#lib/components/navigation/`), a
+  `<svelte:boundary>` with a skeleton as `pending` snippet, keyed by the pathname so every
+  navigation creates a fresh one (a settled boundary never shows `pending` again). The snippet is
+  only passed in the browser: on the server a boundary with `pending` renders nothing else, and a
+  full load still arrives with its content. A page whose fetch fails shows a retry
+  (`LoadError`) in its boundary, logged as a warning when the API was not reached: past a failed
+  `await`, Svelte still runs the template against script variables that were never assigned, so
+  the error must not escape the boundary. A section that keeps a frame across its pages (the
+  assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
+  outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
+  registry names each page's `skeleton`, drawn after that page (`#lib/data/teamSkeletons`); `NavigationProgress` draws the bar along the top
+  edge while a navigation loads, and `enableViewTransitionApi` (`#lib/helpers/viewTransitionApi.svelte`,
+  after chase) cross-fades the pages. See "Navigation" in CLAUDE-UI.md.
 - **Each component fetches what it renders, and nothing more.** A page fetches only what decides
   _which_ sections to show (often just ids), and hands each section the ids it needs; the section
   queries its own fields. Never fetch a large tree at the top and prop-drill it down: every
@@ -442,7 +463,9 @@ bun run preview
 
 - **`load` functions are for three things only**: redirect and 403 guards, page options like
   `ssr = false`, and cookie work that has to happen before anything renders — of which only
-  `auth/accept-invitation` is left. There are **no form-action loads any more**; every form submits
+  `auth/accept-invitation` is left (and the user manual's server loads, which serve markdown
+  bundled into the build, not API data; see "User manual, help and tours"). There are **no
+  form-action loads any more**; every form submits
   through a mutation (see Forms below). Everything else fetches in the component, and a guard
   returns nothing — route parameters come from the `params` prop, not from load data. A `load` must
   never return what the generated client gave it: those are subscribeable proxies, and `load` data
@@ -465,6 +488,10 @@ bun run preview
   (`const conferenceId = $derived(params.conferenceId)`) before an awaited derived uses it, in
   layouts too: every navigation, a query-only one included, hands over a fresh `params` object,
   and an awaited derived reading `params.x` directly asks for everything again each time.
+  A page under a `PageBoundary` keyed by its pathname (the team pages) never changes params, so it
+  reads them once, `untrack(() => params.conferenceId)`: even through a `$derived`, a re-run inside
+  a pending batch (hydration, a table writing its URL state) can still see the prop as `{}` and
+  ask for conference `''` (the participants, waiting-list and members tables did).
 
 - **Global state lives in `#lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
@@ -565,11 +592,6 @@ bun run preview
     and PUT from the app's origin), and an image drawn onto a canvas is loaded with
     `crossOrigin = 'anonymous'`. The resolution header's emblem is still embedded as a data URL
     (`fetchFileAsDataURL`, `paperhub/conferenceHeaderInfo.ts`) for the editor and `/api/pdf`.
-  - **Files from before the bucket** (the Prisma app's data URLs) were turned into `stored_file`
-    rows by the `stored_files` migration, their bytes parked in `legacy_file_upload` (outside the
-    drizzle schema). The server's `init` hook (`uploadLegacyFiles`,
-    `#api/handlers/storedFile/legacyFileUpload`) puts them into the bucket before the first request
-    and drops that table; afterwards it costs one query per start.
   - **Cleanup is garbage collection:** no mutation or cascade deletes a file, and a file names no
     conference. The `file-cleanup` job collects every `stored_file` nothing points at, found
     through the schema's foreign keys to it (`fileReferenceColumns`), so **a file id kept in
@@ -632,7 +654,13 @@ bun run preview
   (`OIDC.startImpersonation`). `startImpersonation` gets a subject token for the target from
   Logto's Management API (M2M credentials `OIDC_M2M_*`; oidc-mock serves the same endpoint, any
   values work locally) and exchanges it (RFC 8693) with the caller's access token as actor, so the
-  issued token names them in `act`; `#api/handlers/user/impersonation.ts` does both. The library
+  issued token names them in `act`; `#api/handlers/user/impersonation.ts` does both. Logto takes
+  only an opaque token with the `openid` scope as the actor's, and with `OIDC_RESOURCE` the
+  session's access token is a JWT for that resource, so `actorAccessTokenOf`
+  (`#api/services/oidc/actorToken.ts`) trades the session's refresh token for a token set without
+  a resource first, keeping a rotated refresh token in the session cookie. That refresh token
+  exists only because the sign-in sends `prompt: 'consent'` (`OIDC.ts`): Logto ignores
+  `offline_access` without it (OIDC Core §11). The library
   accepts it only as long as its actor is the signed-in session, never refreshes it, and drops it
   on sign out. Who may act as whom is `impersonatableBy` (`userPermissions.ts`): admins anybody but
   themselves, participant care and project management the participants of their conferences, never
@@ -670,6 +698,7 @@ bun run preview
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
 - **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`#api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError({ code, message: m.…() })` (`#api/services/errors.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode({ err, code })` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
+- **German addresses the reader informally**: always "du" / "dein" (lowercase mid-sentence), never "Sie" / "Ihr"; a sentence speaking to a whole group (a delegation deciding together) uses plural "ihr" / "euch", in the UI and the mails alike; imperatives are du-imperatives ("Wähle", "Lade … hoch").
 - **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
@@ -749,6 +778,12 @@ bun run preview
   (with `asScan`, an earlier scan in the session is open too), `createAttendanceEntry` stores the
   verdict it reaches itself (`null` in a session that only records), and the check-in page reads
   `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
+- **Age limits are the conference's** (`participantMinAge`, `participantMaxAge`, `supervisorMinAge`,
+  inclusive, measured on the first conference day; empty switches one off). They only warn:
+  `ageIssue` / `ageBands` (`#lib/helpers/plausibilityRules`) are the one rule, which the
+  plausibility page lists people by and `myAgeNotice` answers the caller with; `AgeNotice`
+  (`#lib/components/registration/`) shows it in the apply flow, on the waiting list and on the
+  dashboard. Nothing refuses a registration by age.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -776,7 +811,7 @@ bun run preview
   template's first page, the elements are dragged and resized on it, and the test print uses the
   unsaved layout. A new placed field is an element in `DOCUMENT_ELEMENTS` plus a label and sample in
   `team/configuration/sections/layoutElements.ts`. Certificates get no fold marks; letters keep them.
-- **Certificates list the check-in sessions the holder was at**: `getCertificateJWT` returns the
+- **Certificates list the check-in sessions the holder was at**: `getCertificate` returns the
   names of the conference's scanner sessions the holder was scanned at (`certificateSessions`) and
   signs them into the optional `a` claim (a list of names), so the PDF and `/validateCertificate`
   show the same list. A certificate never mentions a session someone missed, not even in its
@@ -885,6 +920,15 @@ bun run preview
   with the person's own (`careNotesOf` in `#lib/helpers/linkedNotes`; select
   `confirmedLinkedAccounts` wherever a note is shown). An open pair is only a suspicion and carries
   nothing over.
+- **Confirmations are transitive, and stored that way.** A is B and B is C makes A and C a pair
+  too: `decidePossibleDuplicate` pairs every account of a person with every other one
+  (`reconcileLinks`, `possibleDuplicate/sameLinks.ts`), marking the pairs nobody decided
+  `inferred`, and takes them back when a decided one is reopened or dismissed (a pair only the
+  links made is deleted, one the matcher found goes back to open). So one account's confirmed
+  pairs are always the whole person, and the notes, read rules, the badge and the "Konferenzen"
+  tab (the linked accounts' conferences) need no chain walking. A confirmation that would make one
+  person of a dismissed pair answers `CONFLICT`. The plausibility page lists open pairs, then the
+  confirmed ones, then the dismissed.
 - **The dev seed replays the ways a returning person's data can differ**
   (`seed-dev/duplicateScenarios.ts`, one scenario per case): spelling, umlauts, name order, a
   dropped second given name, typos, another script, an email variant, a nickname with a reformatted
@@ -928,14 +972,29 @@ bun run preview
   care and project management of a conference where someone has it as their own (or waits with
   it), who also edit it (`updateSchool`) and merge duplicates (`mergeSchools`, which repoints the
   participant rows and waiting list entries of all conferences and deletes the sources).
-  `conferenceSchools` (the team's schools page) and `schoolMetrics` (per conference: registered,
-  applied, seated, attended, from the waiting list) are participant care's.
-- **Seat limit per school:** `conference.maxSeatsPerSchool` (default 16, null for none). The
-  assignment board counts the seats its plan gives each school - per person, by their own school
-  (`schoolSeats` / `schoolsOfGroup` with `schoolLookupsOf`; someone without a school counts for
-  none) - and warns past the limit; it never blocks. `schoolMetrics`, the schools page and the
-  statistics (`statistics_schools`, delegation members and single participants per school) count
-  people too.
+  The team's schools page (the `schools` table of the table engine, see "Data tables") and
+  `schoolMetrics` (per conference: registered, applied, seated, attended, from the waiting list)
+  are participant care's.
+- **School rules** (`team/assignment/schoolRules.ts`, pure; they only warn, never block):
+  - **Decided together:** the applied students of one supervisor from one school are a group
+    (the `collectiveGroups` query, `#api/handlers/collectiveGroup/`, worked out on the server so
+    no list cap cuts it short, and not live; someone with two supervisors is in two groups,
+    without one in none). A delegation is decided on whole, so one supervised member brings in
+    every member of it from the same school: linking only the head delegates does not keep a
+    school's delegations under the limit. It answers ids only: the supervisors' names come from a live query of
+    the groups shown (`fetchSupervisorNames`), behind the user read rules. Up to `conference.maxCollectiveGroupSize` (default 16, null switches it off) they all get
+    a seat or none: the board, the summary and the apply dialog warn about a group the plan seats
+    only partly, or the sighting excluded only partly (`collectiveGroupProblems`). Bigger groups
+    get nothing special, and the automatic distribution ignores the rule.
+  - **Guaranteed seats abroad:** `school.isForeignSchool` (set by participant care on the school's
+    page) marks an Auslandsschule. Its people in applications marked required count against
+    `conference.maxGuaranteedSeatsPerForeignSchool` (default 12, null for none), each for their
+    own school (`guaranteedSeatsAbroad`); the sighting card shows the count as it marks, the board
+    and summary warn past it.
+  - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
+    and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
+    statistics (`statistics_schools`, delegation members and single participants per school) count
+    people too.
 - The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools of the people in a
   conference's applications; a suggestion's variants point at schools, and merging goes through
   `mergeSchools`. The sighting's school filter matches an application when any of its people has
@@ -1028,32 +1087,7 @@ bun run preview
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
   started the sending, or the job's `APP_URL`.
 
-#### 10. The CHASE link
-
-- **One MUNify CHASE instance can be linked to this one**, system-wide (`docs/plans/chase-link.md`,
-  the same plan as chase's `docs/plans/delegator-link.md`). A system admin requests it on
-  `dashboard/chase-link`, a chase global admin approves it with the confirmation code;
-  unlinking on either side freezes it. `instanceLink` holds the single row: the inbound token as a
-  SHA-256 hash, the outbound one sealed under `SECRET`.
-- **Chase reads through link read rules**, not through dedicated queries: it calls the API with
-  the `x-munify-link-token` header (`ctx.linkCaller()`), and `linkedChase(grant)`
-  (`authHelper/rules.ts`) grants it rows of mirrored conferences (`MIRRORED_CONFERENCE`, and
-  `RELEASED_MIRRORED_CONFERENCE` for anything about participants) with only the listed columns.
-  A new field chase needs is a column in such a rule.
-- **Delegator reads chase back with its link worker** (`#api/handlers/chaseLink/linkWorker.ts`):
-  one app process at a time (a Postgres advisory lock), live queries through the generated chase
-  client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`) as
-  triggers, then a fresh read: the presence into `chase_presence` (the attendance import page),
-  adopted resolutions rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
-  not deletable while linked). The worker starts from the `init` hook.
-- **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
-  the API: the custom roles' "In CHASE" column, the dashboard's CHASE card, the
-  `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
-- **NSA cards** are signed card codes (`MUC1`, `#lib/helpers/identityCode.ts`, copied into chase)
-  with a card number on the participant row; `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts`
-  prints them.
-
-#### 11. Background Tasks and Jobs
+#### 10. Background Tasks and Jobs
 
 - **Jobs** (`src/jobs/`) are one-shot commands of the `delegator-jobs` CLI (citty), run by a
   scheduler outside the app (a cron job, a Dokploy schedule); nothing inside the app runs on a
@@ -1072,6 +1106,157 @@ bun run preview
     sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
     the mails link to
 
+#### 11. User manual, help and tours
+
+- **The manual is markdown in the repository**: `docs/de/` and `docs/en/` (`docs/review/` holds
+  internal notes and is not part of it), served publicly at `/docs` (`src/routes/docs/`) in the
+  landing page's frame. A page needs a `title` in its frontmatter; the sidebar order lives in
+  `#lib/docs/nav.ts`. A page missing in English falls back to German with a notice. Links between
+  pages are relative (`./dashboard#payment`) and keep the reader's locale prefix; a section other
+  pages or the help map link to carries an explicit id in both languages
+  (`## Zahlung {#payment}`), so German and English headings share it.
+- **Everything generic is MUNify CHASE's, shared through `@deutschemodelunitednations/docs-kit`**
+  (repository `munify-docs-kit`): the markdown renderer (admonitions as `:::tip Title … :::`,
+  `{#id}` headings, `shot:` screenshots), the docs layout and page components, the help
+  dropdown, the driver.js tour runner, the guard tests and the screenshot capture. What is
+  DELEGATOR's lives in `src/lib/docs/` and `scripts/docs-screenshots/`. Improve the kit rather
+  than working around it here: a GitHub release `v<version>` of `munify-docs-kit` publishes it to
+  npm, then bump it here and in CHASE.
+- **Every route can point at its manual page.** `routeHelp.ts` maps `RouteId`s to a page and
+  section (`'user-manual/team/assignment#sighting'`) and optionally a tour, so a renamed route
+  breaks the typecheck. `helpForRoute` (`#lib/docs/help.ts`) turns it into a link (the manual's
+  start page for routes without an entry), which the header's help button
+  (`#lib/docs/HelpButton.svelte`), the footer, the team navigation and the command palette
+  (a `manual` result, opened in a new tab) all use. They read `page.route.id` only.
+- **Tours** are `*.tour.ts` files in `#lib/docs/tours/`, anchored on `data-tour="…"` attributes
+  (or the `tourAnchor` prop of `DashboardSection`). A step whose anchor is not on screen is
+  skipped. The conference dashboard picks the registration tour when the registration choice is
+  on screen, the participant tour otherwise. Messages are `tour…` keys.
+- **Screenshots are generated, never taken by hand.** Reference one as
+  `![alt](shot:team/assignment-sighting)` and list it in `scripts/docs-screenshots/shots.ts`
+  (persona, path, optional viewport, wait or clip). `bun run docs:screenshots [id-prefix]` loads
+  the dev seed into a `delegator_docs` database, starts a dev server and captures every shot in
+  German and English, light and dark, into `static/docs-assets/screenshots/` (stop your own dev
+  server first; it needs the dev bucket from `dev:docker`). `DOCS_DATABASE_URL` and
+  `DOCS_SKIP_SEED=1` reuse an already seeded database, `DOCS_CHROMIUM` points at another
+  Chromium. Shots only look, they never change data. The `Docs screenshots` workflow reruns it
+  on main and opens a PR.
+- `src/lib/docs/docs.test.ts` fails on a page missing from the sidebar or a language, broken
+  links or sections, missing or unused screenshots, help targets that do not exist and tour
+  anchors no component defines. **When a feature's UI changes, update its manual page in both
+  languages, keep the `data-tour` anchors and rerun the affected screenshots.** Manual prose:
+  concise, no semicolons or dashes, German in du-form and gender-inclusive like the UI.
+
+#### 12. MCP server for AI assistants
+
+- **Why:** AI gets used anyway; rather than people downloading participant data to paste into
+  one, the team connects an assistant to `/mcp`, which works with the caller's own rights and
+  never hands it personal data. Setup and the tool list: `docs/mcp.md`.
+- **Auth:** OAuth with the OIDC provider as authorization server; `/mcp` is a protected resource
+  (`/.well-known/oauth-protected-resource/mcp`). `#api/mcp/auth` checks the bearer JWT against the
+  provider's keys with `MCP_RESOURCE` as audience; `sub` is the user. Unset `MCP_RESOURCE`, the
+  server is off. Locally, `bun run mcp:token <dev account>` mints a token (oidc-mock has no client
+  registration).
+- **Confinement:** every tool call names a conference; `assertCanUseMcpIn` (`mcpPermissions.ts`)
+  refuses unless it switched MCP on (`conference.mcpEnabled`, `setConferenceMcpEnabled`, project
+  management) and the caller is on its team. The call then runs with `locals.mcp` set, which
+  `#api/context` turns into `ctx.mcp`: no system role applies, `isTeamMemberOf`
+  (`authHelper/rules.ts`) matches only that conference - a system admin as holding every team role
+  there - and `callerUserId` answers nothing, so the rules about the caller's own part (their
+  registration, co-delegates, supervisors) grant nothing: in a conference they are on the team of
+  they take part in no other way, so those could only reach other conferences. Every team rule
+  goes through `isTeamMemberOf` / `teamConference`, so a new one must too.
+- **Privacy is default-deny.** `src/api/mcp/classification.ts` classifies every leaf field of the
+  schema as `visible`, `aggregate` (counts by a redacted attribute: `<5` below five) or `redacted`;
+  `redact.ts` rewrites every answer by it, following the operation's selection. A field not listed
+  reads `[redacted]` and `classification.test.ts` fails - **a new column or object field needs
+  an entry there**. `operationGuard.ts` refuses `where` / `orderBy` / rumble `search` touching a
+  non-visible field, and any free-form argument not in `ALLOWED_FREE_ARGUMENTS`.
+- **Mutations opt in** with `extensions: mcpTool({ … })` next to their definition
+  (`#api/mcp/mcpTool`); `mutationTools.ts` generates the tool from the field: person scalars are
+  never passed, `String` / `JSON` arguments only when `textArguments` declares them to be about
+  things, `outward` / `outwardArguments` make the tool preview until `confirm: true`. A mutation
+  without the marker is unreachable through MCP. Writing notes about people stays in the UI.
+  Saved views opt in as shared views only; the state an assistant writes is checked by
+  `viewStateGuard.ts`, which classifies every column of the team tables like `classification.ts`
+  does fields (a new table column needs an entry there): only visible columns are filtered, sorted
+  or grouped by, and only known column ids, operators and options pass.
+- **Reads** are `graphql_query` (one read-only query, guarded, redacted), `graphql_schema`, and the
+  task tools in `curatedReads.ts` (pure, tested). Every call is written to `mcp_audit_entry`
+  (shown on `team/ai-access`); one about a conference the caller may not use is refused unlogged.
+
+#### 13. Data tables and saved views
+
+- **The team's tables are one `DataGrid`** (`#lib/components/dataGrid/`, see CLAUDE-UI.md), after
+  the member table of the Mitgliedshub: a filter builder (conditions and groups, AND / OR, one
+  level of groups), sorting by several columns, grouping by up to three with collapsible groups,
+  columns to show, move and resize, pages, selection and export, and saved views.
+- **One model, shared** (`#lib/dataGrid/`, pure, unit tested): the state a view and the URL hold
+  (`stateSchema.ts`, checked by zod in the browser and the API alike), the operators per column
+  type (`operators.ts`, `dateConditions.ts` resolving relative dates for both engines), grouping
+  (`grouping.ts`: the text naming a group is the same in the browser and in SQL), the view logic
+  (`views.ts`: which view opens, what the menu offers) and the engine for rows held in the
+  browser (`localEngine.ts`). `conditionCases.ts` are the cases both engines are tested against;
+  the SQL side runs them against a real Postgres when changed (`conditionSql.test.ts` checks the
+  generated SQL).
+- **The table engine** (`#api/handlers/dataTable/`) answers the big tables - participants, waiting
+  list, team members, schools (`DATA_TABLE_KEYS`): `dataTablePage` (one page of row ids, the total,
+  and for `exposeValues` sources the rows' values) and `dataTableGroups` (one level's groups with
+  their counts). A table is a **source** (`sources/`): one `select` with an `id` and a column per
+  column id (`#lib/dataGrid/tables/…` holds their ids and types, shared with the page), and the
+  engine compiles filter, search, sort, group path and buckets against it (`sql/`). **What the
+  caller may not read never leaves the source**: a teammate's address is `null` for whoever may not
+  read it, so filtering or grouping by it reveals nothing. Who opens which table is
+  `DATA_TABLE_PERMISSION` (`dataTablePermissions.ts`), the page's own team permission. A new
+  table is a source, an entry in `DATA_TABLE_KEYS`, `DATA_TABLE_SOURCES` and
+  `DATA_TABLE_PERMISSION`, and its metas in `#lib/dataGrid/tables/`. Incomplete conditions and
+  columns a table does not have count for nothing, in either engine.
+- **Saved views** (`table_view`, `#api/handlers/tableView/`) are personal (`ownerUserId`, only the
+  owner sees them, not even a system admin) or shared (the conference's team reads them), and
+  belong to one conference or, without `conferenceId`, to every one. Shared views of a conference
+  are changed by the team permission `manageTableViews` (project management and participant care),
+  global shared views by system admins only; creating any view of a table needs that table's
+  permission. A shared view can be its conference's (or the global) default
+  (`setTableViewDefault`); everyone can pick their own default (`table_view_default`,
+  `setMyTableViewDefault`), which wins. `copyTableView` publishes a personal view as a shared one
+  or copies a shared one as one's own. A view's state is checked against `tableStateSchema` on
+  write; one that no longer fits opens as the table's base view. A default names a view of its own
+  conference or a global one (`table_view_default_same_conference`), and a view never moves to
+  another conference. `e2e/authorization/table-views.spec.ts` pins it down.
+- **Some global views ship with the app** (`PRESET_TABLE_VIEWS`, `#lib/dataGrid/tables/presetViews.ts`):
+  the participants' "Warteliste" and "Offene Probleme". The `table_view_presets` migration
+  inserts them, the dev seed again after its reset; `presetViews.test.ts` fails when no migration
+  inserts a preset as the list has it. A new preset is an entry there and a migration of its own.
+- **A resolver that reads through an ability, writes, then reads again calls
+  `refreshAbilities(ctx.abilities)`** before the second read: rumble resolves relational rules
+  once per request, and the written row is not in that snapshot (the view mutations do).
+
+#### 14. The CHASE link
+
+- **One MUNify CHASE instance can be linked to this one**, system-wide (`docs/plans/chase-link.md`,
+  the same plan as chase's `docs/plans/delegator-link.md`). A system admin requests it on
+  `dashboard/chase-link`, a chase global admin approves it with the confirmation code;
+  unlinking on either side freezes it. `instanceLink` holds the single row: the inbound token as a
+  SHA-256 hash, the outbound one sealed under a key derived from `CERTIFICATE_SECRET`.
+- **Chase reads through link read rules**, not through dedicated queries: it calls the API with
+  the `x-munify-link-token` header (`ctx.linkCaller()`), and `linkedChase(grant)`
+  (`authHelper/rules.ts`) grants it rows of mirrored conferences (`MIRRORED_CONFERENCE`, and
+  `RELEASED_MIRRORED_CONFERENCE` for anything about participants) with only the listed columns.
+  A new field chase needs is a column in such a rule.
+- **Delegator reads chase back with its link worker** (`#api/handlers/chaseLink/linkWorker.ts`):
+  one app process at a time (a Postgres advisory lock), live queries through the generated chase
+  client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`) as
+  triggers, then a fresh read: the presence into `chase_presence` (the attendance import page),
+  adopted resolutions rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
+  not deletable while linked). The worker starts from the `init` hook.
+- **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
+  the API: the custom roles' "In CHASE" column, the dashboard's CHASE card, the
+  `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
+- **NSA cards** are signed codes of the kind `nsaCard` (`#lib/signedCode/signedCode`, copied into
+  chase), naming the person, the conference, an expiry and the card number on the participant
+  row (`nsaCardNumber`); `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts` prints them. Chase's
+  scanner checks them, and the `live` nametags, against `signedCodeKeys`.
+
 ### Logging
 
 - **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after
@@ -1079,7 +1264,8 @@ bun run preview
   `console` in the browser. Call it as `logger.error('Sending the mail failed', error)` - a fixed
   message, then one value (an error, or an object of fields); put ids into the fields rather than
   the message. Each line is also added to the active OpenTelemetry span as an event, and an
-  `error` marks the span failed.
+  `error` marks the span failed; every line, rumble's included, carries the span's `trace_id` and
+  `span_id`, so Grafana links it from Loki to its trace.
 - **`logger.error` is a Sentry issue**, on the server through `pinoIntegration` (`hooks.server.ts`),
   in the browser through `forwardErrors` (`hooks.client.ts`: the error the line carries is captured
   as an exception, its other fields go along as extra; a line without one is a message), so
@@ -1133,7 +1319,7 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - Form components and `FormFieldset` grouping patterns
 - Modal and Drawer usage
 - Dashboard section layouts
-- ManagedTable configuration
+- DataGrid: columns, sources, views
 - Navigation components (Tabs, NavMenu)
 - Status indicators and badges
 - Color theming and icons
@@ -1190,7 +1376,7 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
-- `SECRET` - Session encryption secret
+- `DATABASE_POOL_SIZE` (optional) - connections each app instance holds open to Postgres (20)
 - `NODE_ENV` - Environment (development/production/test)
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
 - `PUBLIC_OIDC_CLIENT_ID` - OAuth client ID
@@ -1201,9 +1387,10 @@ Required variables (see `.env.example`):
 - `CERTIFICATE_SECRET` - Secret for signing participation certificates
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
-- OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL`, `OTEL_SERVICE_NAME`
+- OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL` (the full `…/v1/traces` URL), `OTEL_SERVICE_NAME`,
+  `OTEL_TRACES_SAMPLER_ARG` (share of traces kept, 0 to 1)
 - `LOG_LEVEL` (optional): `debug` / `info` / `warn` / `error` / `silent`; defaults to `debug` in
-  development, `info` otherwise, `silent` under vitest
+  development, `warn` otherwise (the e2e server too), `info` for the jobs (`runJob`), `silent` under vitest
 
 ## Common Workflows
 
@@ -1270,7 +1457,22 @@ The pre-commit fallow step is a gate: it fails the commit when the commit introd
 
 - OIDC authentication required for all routes in `(authenticated)/`
 - rumble ability filters on all GraphQL queries and mutations
-- Certificate signatures use HMAC-SHA256
+- **Everything that identifies a participant is a signed code**, except the printed nametags
+  (room for a one-dimensional barcode of the user id only): the digital nametag (`live`, ten
+  minutes, renewed while shown), the application documents (`print`) and the certificates.
+  `#lib/signedCode/signedCode` is the format, shared by both sides: a CWT in a COSE_Sign1, Ed25519,
+  a `kid` per key (`signingKeys.ts` derives them from `CERTIFICATE_SECRET`; rotating appends an
+  id), written in a scanner safe base 32 (no I, O, Y, Z, any case) so a hand scanner types it right
+  on any keyboard layout. A QR code holds it as an uppercase link to `/ID/<code>` (`hooks.ts`
+  reroutes the casing): the camera app opens it, and `/id` sends a certificate to its public check,
+  anyone else to the login first and to a 403 unless their team role reaches the person's page
+  (`idTarget`), without telling them whether the code is genuine. Every scanner checks codes through
+  `acceptance` (`BarcodeScanner`, `QuickScan`, `scanAcceptance.ts`) in the browser, so it works
+  offline; an unsigned QR code is refused everywhere, an unsigned 1D barcode counts only where
+  printed nametags do. `scanLookup` checks the code again (`scannedUserId`). Recording an attendance
+  and setting a postal status take the user id, like any change the team makes by hand. The
+  certificates issued as RS256 JWTs before still verify at `/validateCertificate`, against
+  `getCertificateJWTPublicKeyObject`.
 - Environment secrets must never be committed
 - Drizzle parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks
@@ -1377,23 +1579,35 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 
 Some versions are held back or wired up on purpose. Check here before "updating to latest":
 
-- **drizzle-orm / drizzle-kit / drizzle-seed track the `1.0.0-rc.5` builds, not npm's `latest`**,
-  which is the 0.x line without the relational API v2 this app is built on. They are pinned to
-  `1.0.0-rc.5-5935859`: the tagged `1.0.0-rc.5` release breaks the row type Pothos hands to every
-  `adjust` resolver (`object({ adjust })`), which silently becomes an index signature of `any`;
-  check `src/api/handlers/storedFile/storedFile.ts` type-checks before moving on. After any drizzle bump,
-  regenerate the client and check `git diff src/lib/api/rumbleClient` for `| null` creeping into
-  relations: newer builds wrap relation columns in a `RelationsBuilderColumn`, which our rumble patch
-  unwraps.
+- **drizzle-orm / drizzle-kit / drizzle-seed are pinned to the `1.0.0-rc.5` release, not npm's
+  `latest`**, which is the 0.x line without the relational API v2 this app is built on. Pinned
+  exactly: the commit builds (`1.0.0-rc.5-5935859` and the like) rank above `1.0.0-rc.5` in semver,
+  so a caret range would pick one of them. rc.5 needs rumble ≥ 0.28 (its `relationsFilterToSQL`
+  returns the collected chunks; older rumble put the conditions into the statements as parameters,
+  and the row type Pothos hands to every `adjust` resolver became `any` - check
+  `src/api/handlers/storedFile/storedFile.ts` type-checks). The same change is why `whereRows`
+  wraps the chunks into an `SQL`, and raw statements read their rows with
+  `db.execute(statement, 'objects')`. After any drizzle bump, regenerate the client and check
+  `git diff src/lib/api/rumbleClient` for `| null` creeping into relations, run `drizzle-kit up`
+  if `migrate` asks for it (it upgrades the snapshots under `drizzle/`, not the SQL), and run the
+  e2e suite: the unit tests do not reach the database.
 - **graphql is on 17.** `@escape.tech/graphql-armor` still pins 16 and keeps a nested copy; that is
   fine because armor only parses and walks documents (verified: depth and alias limits still reject
   over-limit queries on a production build). Anything else that brings its own graphql copy would
   not be - schema building fails every `instanceof` check across two copies.
 - **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
   `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
-- **OpenTelemetry 3** has no `sdk-trace-node`: `src/instrumentation.server.ts` builds a
-  `TracerProvider` from `@opentelemetry/sdk-trace` and registers the async-hooks context manager
-  and the W3C propagators itself, which `NodeTracerProvider.register()` used to do.
+- **OpenTelemetry 3** has no `sdk-trace-node`: `#lib/tracing` builds a `TracerProvider` from
+  `@opentelemetry/sdk-trace` and registers the async-hooks context manager and the W3C propagators
+  itself, which `NodeTracerProvider.register()` used to do. The server (`src/instrumentation.server.ts`)
+  and the jobs (`runJob`) both start it.
+- **The pg, ioredis and http instrumentations need the import hook** that
+  `src/instrumentation.server.ts` registers (`import-in-the-middle`, Node 22.22.3+/24.11.1+/26), and
+  the module they wrap must be loaded at runtime, not bundled: keep `pg`, `drizzle-orm`, `ioredis`
+  and the `@opentelemetry/*` packages the server loads in `dependencies`, which adapter-node leaves
+  external. The jobs run on Bun and get one span per run only.
+- **Sentry must not set up OpenTelemetry** (`enableOpenTelemetrySetup: false` in
+  `hooks.server.ts`): the SvelteKit SDK otherwise registers a tracer provider of its own.
 - **adapter-node 6 ignores `ORIGIN`.** Behind a TLS-terminating proxy, set `PROTOCOL_HEADER` and
   `HOST_HEADER` (see `.env.example`), or request URLs - and the links in the automatic emails - come
   out as `http://` on the internal host.
@@ -1411,12 +1625,16 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   reader already shows), which, announced as an update while a page's first async work was
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Keep rumble at ≥ 0.26.2.
 
-- **@sveltejs/kit is patched** to log in `'gray'` instead of `'grey'`: Node 25 dropped the `grey`
-  alias from `util.styleText`, which made every `vite build` fail at the adapter step. Drop the
-  patch once SvelteKit ships the fix.
-
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
+
+- **graphql-sse is patched** (`lib/handler.*`, `lib/client.*`, the compiled files both bundles
+  inline) for two leaks upstream has not released fixes for. The handler disposes a stream
+  reserved with `PUT` that no `GET` connects to within `reservationTimeout` (30 s; issue #123):
+  it kept its subscriptions and their queued results forever, ~330 KB each. The client aborts its
+  event stream when an operation's request fails instead of opening a second one beside it (issue
+  #135, PR #136 ported). `src/api/sseReservations.test.ts` and `src/lib/api/sseClient.test.ts`
+  fail without the patch; drop it once a release carries both fixes.
 
 ## Development Workflow
 

@@ -20,6 +20,8 @@ export const schoolFormSchema = z.object({
 	region: z.string().nullish(),
 	/** ISO 3166-1 alpha-3 */
 	country: z.string().nullish(),
+	/** An Auslandsschule, whose guaranteed seats the conference limits */
+	isForeignSchool: z.boolean().default(false),
 	contactName: emptyOr(isPersonName, () => m.invalidPersonName()),
 	contactEmail: z.union([z.literal(''), z.email()]).optional(),
 	contactPhone: emptyOr(isValidPhoneNumber, () => m.pleaseEnterAValidPhoneNumber()),
@@ -42,6 +44,7 @@ export function toUpdateSchoolArgs({ id, values }: { id: string; values: SchoolF
 		city: orNull(values.city),
 		region: orNull(values.region),
 		country: orNull(values.country),
+		isForeignSchool: values.isForeignSchool,
 		contactName: orNull(values.contactName),
 		contactEmail: orNull(values.contactEmail),
 		contactPhone: orNull(values.contactPhone),

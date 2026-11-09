@@ -90,3 +90,54 @@ export function seatOccupancy({
 }
 
 const sum = (values: Iterable<number>) => [...values].reduce((total, value) => total + value, 0);
+
+/** An application whose review prioritizes one of its wishes (`assignmentReview.prioritizedRoleId`). */
+export type PrioritizedApplication = (
+	| { delegationId: string; singleParticipantId?: null }
+	| { delegationId?: null; singleParticipantId: string }
+) & { roleId: string };
+
+/** The application a review row prioritizes a wish of; none for a row that prioritizes nothing. */
+export function prioritizedApplicationOf(review: {
+	delegationId?: string | null;
+	singleParticipantId?: string | null;
+	prioritizedRoleId?: string | null;
+}): PrioritizedApplication[] {
+	const roleId = review.prioritizedRoleId;
+	if (!roleId) return [];
+	if (review.delegationId) return [{ delegationId: review.delegationId, roleId }];
+	if (review.singleParticipantId) {
+		return [{ singleParticipantId: review.singleParticipantId, roleId }];
+	}
+	return [];
+}
+
+/**
+ * The applications that would get a seat, but not on the role the team prioritized for them: the
+ * roles they would hold instead. One left without a seat is not listed, the priority only says
+ * which role, should it get one. A split delegation counts as getting its role when any part does.
+ */
+export function prioritizedElsewhere({
+	prioritized,
+	state
+}: {
+	prioritized: readonly PrioritizedApplication[];
+	state: SeatedState;
+}) {
+	const held = new Map<string, string[]>();
+	const hold = ({ id, roleId }: { id: string | null | undefined; roleId: string | null }) => {
+		if (id && roleId) held.set(id, [...(held.get(id) ?? []), roleId]);
+	};
+	for (const group of state.groups) {
+		hold({ id: group.delegationId, roleId: group.target.roleId });
+		hold({ id: group.singleParticipantId, roleId: group.target.roleId });
+	}
+	for (const single of state.singles) {
+		hold({ id: single.singleParticipantId, roleId: single.roleId });
+	}
+	return prioritized.flatMap((application) => {
+		const roleIds = held.get(application.delegationId ?? application.singleParticipantId ?? '');
+		if (!roleIds || roleIds.includes(application.roleId)) return [];
+		return [{ application, heldRoleIds: [...new Set(roleIds)] }];
+	});
+}

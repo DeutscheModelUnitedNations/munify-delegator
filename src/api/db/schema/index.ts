@@ -75,6 +75,8 @@ export {
 export { paymentTransaction, userReferenceInPaymentTransaction } from './payments';
 export { mailingList } from './mailSync';
 export { instanceLinkStatus, chaseAccess, instanceLink, chasePresence } from './chaseLink';
+export { tableView, tableViewDefault } from './tableViews';
+export { mcpCallOutcome, mcpAuditEntry } from './mcp';
 export {
 	statisticsPeople,
 	statisticsDelegations,

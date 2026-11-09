@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => ({
 	config: { LISTMONK_API_URL: 'http://listmonk' },
 	findConferences: vi.fn(),
 	taskError: vi.fn(),
-	logTaskEnd: vi.fn(),
 	ensureListsExist: vi.fn(),
 	fetchSubscriberMap: vi.fn(),
 	processUsersInBatches: vi.fn(),
@@ -20,8 +19,6 @@ vi.mock('../db', () => ({
 	db: { query: { conference: { findMany: mocks.findConferences } } }
 }));
 vi.mock('../logs', () => ({
-	logTaskStart: () => 1,
-	logTaskEnd: mocks.logTaskEnd,
 	taskError: mocks.taskError
 }));
 vi.mock('./listManager', () => ({ ensureListsExist: mocks.ensureListsExist }));
@@ -100,7 +97,6 @@ describe('runMailSync', () => {
 		});
 		expect(mocks.executeActions).toHaveBeenCalledWith({ label: 'releases', actions: [] });
 		expect(mocks.collectGarbage).toHaveBeenCalledOnce();
-		expect(mocks.logTaskEnd).toHaveBeenCalledWith({ taskName: TASK, startTime: 1 });
 	});
 
 	test('aborts without a Listmonk URL', async () => {
@@ -111,7 +107,6 @@ describe('runMailSync', () => {
 			message: 'Listmonk API URL is not set. Aborting task.'
 		});
 		expect(mocks.ensureListsExist).not.toHaveBeenCalled();
-		expect(mocks.logTaskEnd).toHaveBeenCalled();
 	});
 
 	test('stops when the lists could not be prepared', async () => {
@@ -130,7 +125,7 @@ describe('runMailSync', () => {
 		expect(mocks.processUsersInBatches).not.toHaveBeenCalled();
 	});
 
-	test('logs a failure instead of throwing, and still ends the task', async () => {
+	test('logs a failure instead of throwing', async () => {
 		const error = new Error('database gone');
 		mocks.findConferences.mockRejectedValue(error);
 		await expect(runMailSync()).resolves.toBeUndefined();
@@ -139,6 +134,5 @@ describe('runMailSync', () => {
 			message: 'Task failed.',
 			error
 		});
-		expect(mocks.logTaskEnd).toHaveBeenCalledWith({ taskName: TASK, startTime: 1 });
 	});
 });

@@ -64,7 +64,8 @@ export type TeamPermission =
 	| 'manageTeam'
 	| 'planSeats'
 	| 'editConferenceContent'
-	| 'manageConference';
+	| 'manageConference'
+	| 'manageTableViews';
 
 /** The roles each team permission is granted to (`rolesWithTeamPermission`); undefined for any. */
 const TEAM_PERMISSION_ROLES: Record<TeamPermission, readonly TeamroleEnum[] | undefined> = {
@@ -74,7 +75,9 @@ const TEAM_PERMISSION_ROLES: Record<TeamPermission, readonly TeamroleEnum[] | un
 	manageTeam: TEAM_ADMIN_ROLES,
 	planSeats: SEAT_PLANNING_ROLES,
 	editConferenceContent: CONFERENCE_CONTENT_ROLES,
-	manageConference: PROJECT_MANAGEMENT_ROLES
+	manageConference: PROJECT_MANAGEMENT_ROLES,
+	// saving, changing and deleting the conference's shared views of the team's tables
+	manageTableViews: PARTICIPANT_CARE_ROLES
 };
 
 /** The team roles that hold `permission`, or undefined when every team role does. */

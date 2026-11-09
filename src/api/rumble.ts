@@ -1,28 +1,23 @@
 import { rumble } from '@m1212e/rumble';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
-// rumble installs the plugin; this brings in its types (`validate`, `t.validate`).
+// rumble installs these plugins; this brings in their types (`subscribe`, `validate`, `t.validate`).
+import type {} from '@pothos/plugin-smart-subscriptions';
 import type {} from '@pothos/plugin-validation';
 import { trace } from '@opentelemetry/api';
-import { Redis } from 'ioredis';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
-import {
-	OTEL_ENDPOINT_URL,
-	OTEL_SERVICE_NAME,
-	OTEL_SERVICE_VERSION,
-	REDIS_URL
-} from '$app/env/private';
+import { OTEL_ENDPOINT_URL, OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION } from '$app/env/private';
+import { redisClient } from './services/redisClient';
 import { graphqlLogger } from '#lib/logger';
 import { apiError } from './services/errors';
 import { db, schema } from './db/db';
 import { context } from './context';
 
-let eventTarget: ReturnType<typeof createRedisEventTarget> | undefined;
-if (REDIS_URL) {
-	const publishClient = new Redis(REDIS_URL);
-	const subscribeClient = new Redis(REDIS_URL);
-
-	eventTarget = createRedisEventTarget({ publishClient, subscribeClient });
-}
+const publishClient = redisClient();
+const subscribeClient = redisClient();
+const eventTarget =
+	publishClient && subscribeClient
+		? createRedisEventTarget({ publishClient, subscribeClient })
+		: undefined;
 
 export const {
 	abilityBuilder,
@@ -40,6 +35,9 @@ export const {
 	schema,
 	context,
 	defaultLimit: 1000,
+	// Relational rules are looked up once per request and become id lists in the statements,
+	// instead of nested exists at every nesting site that cost Postgres ~100 MB to plan.
+	resolveRelationalRules: { enabled: true },
 	subscriptions: [{ eventTarget }],
 	actions: ['read', 'update', 'delete'],
 	search: { enabled: true, threshold: 0.3 },
@@ -48,7 +46,8 @@ export const {
 		tracer: trace.getTracer(OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION),
 		includeVariables: false
 	},
-	logger: { enabled: true, logger: graphqlLogger, includeVariables: false },
+	// The trace ids come from the logger itself, on every line (`#lib/logger`)
+	logger: { enabled: true, logger: graphqlLogger, includeVariables: false, injectTraceId: false },
 	// Argument schemas word their issues with `m.…()` messages, so these are shown as they are.
 	validation: {
 		validationError: (failure) =>

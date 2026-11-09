@@ -48,6 +48,14 @@ export const assignmentReview = snakeCase.table(
 		 * summary warns when the draft leaves it without one. Never together with `disqualified`.
 		 */
 		required: boolean().default(false).notNull(),
+		/**
+		 * One of the application's wishes the automatic distribution treats as its first, should it
+		 * get a seat. A wish dropped later leaves it without effect.
+		 */
+		prioritizedRoleId: text().references(() => conferenceRole.id, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		}),
 		note: text()
 	},
 	(table) => [

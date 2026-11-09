@@ -11,7 +11,7 @@ import {
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
-import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness';
+import { assertSupervisorSignupOpen } from '#api/services/registration/applicationReadiness';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -39,18 +39,19 @@ async function unusedConnectionCode() {
 /**
  * Registers a user as supervisor of a conference, with the school they name as their own. Refuses
  * (CONFLICT) somebody who takes part in the conference already or is on its team, and a
- * registration of one's own outside the registration window. Returns the new row's id.
+ * registration of one's own once the conference is over (any earlier stage is fine, registration
+ * closed or not). Returns the new row's id.
  */
 export async function registerSupervisor(
 	args: SchoolChoice & {
 		conferenceId: string;
 		subjectId: string;
 		plansOwnAttendenceAtConference?: boolean | null;
-		/** Whether the user registers themselves; the team registering somebody else may in any stage. */
+		/** Whether the user registers themselves (until the conference is over); the team registering somebody else may in any stage. */
 		selfService: boolean;
 	}
 ) {
-	if (args.selfService) await assertRegistrationOpen(args.conferenceId);
+	if (args.selfService) await assertSupervisorSignupOpen(args.conferenceId);
 	if (
 		await isParticipantOrTeamMember({ userId: args.subjectId, conferenceId: args.conferenceId })
 	) {

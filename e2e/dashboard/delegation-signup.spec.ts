@@ -77,19 +77,22 @@ test('a head delegate can set preferences and complete their delegation signup',
 		await expect(poolAddButtons.first()).toBeVisible({ timeout: 15_000 });
 	};
 
+	// The wishes so far, a row each with its remove button. Counted rather than the pool shrinking:
+	// the pool is every nation seating the delegation, which specs running beside this one change.
+	const wishRows = modal.locator('tr:has(button .fa-xmark)');
+
 	await openPool();
-	const initialPoolSize = await poolAddButtons.count();
-	expect(initialPoolSize).toBeGreaterThanOrEqual(3);
+	expect(await poolAddButtons.count()).toBeGreaterThanOrEqual(3);
 	for (let i = 1; i <= 3; i++) {
 		await poolAddButtons.first().click();
-		// Wait for the mutation to land (pool shrinks by one) before adding the next. A wish added
-		// while the modal's subscription is still computing its first result is not announced to
-		// it (see the live lists spec); opened afresh, the pool shows what the server holds.
-		await expect(poolAddButtons)
-			.toHaveCount(initialPoolSize - i, { timeout: 5_000 })
+		// Wait for the mutation to land before adding the next. A wish added while the modal's
+		// subscription is still computing its first result is not announced to it (see the live
+		// lists spec); opened afresh, the modal shows what the server holds.
+		await expect(wishRows)
+			.toHaveCount(i, { timeout: 5_000 })
 			.catch(async () => {
 				await openPool();
-				await expect(poolAddButtons).toHaveCount(initialPoolSize - i, { timeout: 15_000 });
+				await expect(wishRows).toHaveCount(i, { timeout: 15_000 });
 			});
 	}
 	await modal.getByRole('button', { name: 'Schließen', exact: true }).click();

@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { defaultLayout } from '#lib/helpers/documentLayout';
 import { m } from '#lib/paraglide/messages';
-import { conferenceSettingSchemas, documentLayoutArgsSchema } from './conferenceSettings';
+import {
+	assertAgeRangeInOrder,
+	conferenceSettingSchemas,
+	documentLayoutArgsSchema
+} from './conferenceSettings';
 
 const accepts = (schema: { safeParse: (value: unknown) => { success: boolean } }, value: unknown) =>
 	schema.safeParse(value).success;
@@ -29,11 +33,40 @@ describe('conferenceSettingSchemas', () => {
 		expect(accepts(conferenceSettingSchemas.currency, 'EURO')).toBe(false);
 	});
 
+	it('takes ages as whole years between 1 and 120', () => {
+		const schema = conferenceSettingSchemas.participantMinAge;
+		expect(accepts(schema, 13)).toBe(true);
+		expect(accepts(schema, 0)).toBe(false);
+		expect(accepts(schema, 121)).toBe(false);
+		expect(accepts(schema, 13.5)).toBe(false);
+	});
+
 	it('leaves out and clears every setting', () => {
 		for (const schema of Object.values(conferenceSettingSchemas)) {
 			expect(accepts(schema, undefined)).toBe(true);
 			expect(accepts(schema, null)).toBe(true);
 		}
+	});
+});
+
+describe('assertAgeRangeInOrder', () => {
+	it('refuses a lower limit above the upper one', () => {
+		expect(() =>
+			assertAgeRangeInOrder({ participantMinAge: 15, participantMaxAge: 21 })
+		).not.toThrow();
+		expect(() =>
+			assertAgeRangeInOrder({ participantMinAge: 21, participantMaxAge: 21 })
+		).not.toThrow();
+		expect(() => assertAgeRangeInOrder({ participantMinAge: 30, participantMaxAge: 26 })).toThrow();
+	});
+
+	it('lets either limit be switched off', () => {
+		expect(() =>
+			assertAgeRangeInOrder({ participantMinAge: null, participantMaxAge: 10 })
+		).not.toThrow();
+		expect(() =>
+			assertAgeRangeInOrder({ participantMinAge: 30, participantMaxAge: null })
+		).not.toThrow();
 	});
 });
 

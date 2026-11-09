@@ -11,10 +11,15 @@ import {
 	createPaymentTransaction,
 	paymentForSchema
 } from './paymentTransactionService';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerPaymentTransactionAbilities();
 
-const PaymentTransactionRef = object({ table: 'paymentTransaction' });
+// a payment is looked up by its id, the reference transfers carry
+const PaymentTransactionRef = object({
+	table: 'paymentTransaction',
+	search: { columns: ['id'] }
+});
 query({ table: 'paymentTransaction' });
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 
@@ -60,6 +65,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updatePaymentTransaction: t.drizzleField({
+		// Settles the payers' payment status, which the payment mails follow from.
+		extensions: mcpTool({ outward: true }),
 		description:
 			"Sets a payment's status and carries it over to everybody the payment covers. Participant care only; NOT_FOUND for a payment the caller may not update.",
 		type: PaymentTransactionRef,

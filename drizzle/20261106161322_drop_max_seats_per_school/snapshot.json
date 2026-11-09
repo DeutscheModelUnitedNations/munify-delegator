@@ -1,0 +1,35 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "877b81e6-4029-4987-9ba8-9225178d9d89",
+  "prevIds": [
+    "d5a381f6-4cd9-4b28-97d7-8aad39f514d8"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "max_seats_per_school"
+      ],
+      "writes": [
+        "s|col|public.conference.max_seats_per_school",
+        "n|col|public.conference.max_seats_per_school",
+        "e|col|public.conference.max_seats_per_school"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conference\",\"max_seats_per_school\"]"
+    }
+  ]
+}

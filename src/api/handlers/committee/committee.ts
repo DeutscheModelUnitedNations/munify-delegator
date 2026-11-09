@@ -16,10 +16,14 @@ import {
 } from './committeeService';
 import { seatCountSchema } from '#api/handlers/seatPlanning/seatRules';
 import { regionalBaselineArgsSchema } from './committeeRules';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCommitteeAbilities();
 
-export const CommitteeRef = object({ table: 'committee' });
+export const CommitteeRef = object({
+	table: 'committee',
+	search: { columns: ['name', 'abbreviation', 'id'] }
+});
 query({ table: 'committee' });
 
 const regionalBaselineEnum = enum_({ tsName: 'regionalBaseline' });
@@ -31,6 +35,7 @@ async function allowedCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
 
 schemaBuilder.mutationFields((t) => ({
 	createCommittee: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name', 'abbreviation'] }),
 		description: 'Adds a committee to the conference.',
 		type: CommitteeRef,
 		args: {
@@ -52,6 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCommittee: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name', 'abbreviation', 'resolutionHeadline'] }),
 		description:
 			'Changes the given fields of a committee; left out or `null` keeps a field, `null` clears the resolution headline. Seats per delegation below the members of one delegation assigned to it are refused with CONFLICT; lowering them drops the applications for its nations that no longer fit.',
 		type: CommitteeRef,
@@ -73,6 +79,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteCommittee: t.field({
+		extensions: mcpTool(),
 		description:
 			'Deletes a committee with its agenda items; its resolutions stay without it, and nations it seated alone stop being offered. Refused with CONFLICT while somebody is assigned to it or one of its agenda items has papers.',
 		type: 'Boolean',
@@ -89,6 +96,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	setCommitteeNationSeat: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['nationAlpha3Code'] }),
 		description:
 			"Sets (rather than toggles) whether a nation holds a seat in a committee, so that concurrent clicks of several people converge on the same state. The first seat makes the nation one of the conference's roles, the last one ends that unless a delegation holds it. Taking a seat away is refused with CONFLICT while members of the delegation holding the nation sit in the committee; an unknown nation is NOT_FOUND.",
 		type: CommitteeRef,
@@ -112,6 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	setCommitteeRegionalBaseline: t.drizzleField({
+		extensions: mcpTool(),
 		description:
 			'Sets what the regional distribution of the committee is compared to in the seat planning. Manual targets are kept when switching to a template, so switching back restores them.',
 		type: CommitteeRef,

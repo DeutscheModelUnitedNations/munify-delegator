@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
 import { customAlphabet } from 'nanoid';
-import { SECRET } from '$app/env/private';
+import { CERTIFICATE_SECRET } from '$app/env/private';
 
 /** The header a linked instance sends its token in. Not `Authorization`: OIDC takes bearer tokens. */
 export const LINK_TOKEN_HEADER = 'x-munify-link-token';
@@ -19,10 +19,13 @@ export function hashLinkToken(token: string) {
 }
 
 function sealingKey() {
-	return createHash('sha256').update(`munify-instance-link\n${SECRET}`).digest();
+	return createHash('sha256').update(`munify-instance-link\n${CERTIFICATE_SECRET}`).digest();
 }
 
-/** The token this instance sends, encrypted for the database (AES-256-GCM under `SECRET`). */
+/**
+ * The token this instance sends, encrypted for the database: AES-256-GCM under a key derived from
+ * `CERTIFICATE_SECRET` with a label of its own.
+ */
 export function sealLinkToken(token: string) {
 	const iv = randomBytes(12);
 	const cipher = createCipheriv('aes-256-gcm', sealingKey(), iv);

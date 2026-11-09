@@ -5,15 +5,18 @@
 
 	/**
 	 * What applying the draft would do that is allowed but worth a second look: required
-	 * applications left without a seat, and every seat taken, with none left for whoever the
-	 * waiting list has to fill in. Shown on the summary and again when applying.
+	 * applications left without a seat, seated applications on another role than the prioritized
+	 * one, and every seat taken, with none left for whoever the waiting list has to fill in. Shown
+	 * on the summary and again when applying.
 	 */
 	interface Props {
 		missingRequired: readonly RequiredApplication[];
+		/** By application id: the roles it would hold, and the one prioritized for it. */
+		missedPriorities: readonly { id: string; held: string; prioritized: string }[];
 		occupancy: { total: number; free: number };
 	}
 
-	let { missingRequired, occupancy }: Props = $props();
+	let { missingRequired, missedPriorities, occupancy }: Props = $props();
 
 	const nameOf = (application: RequiredApplication) =>
 		codenamize(
@@ -40,6 +43,25 @@
 					<li>
 						{m.assignmentRequiredWithoutSeat({
 							name: bracket ? `${nameOf(application)} (${bracket})` : nameOf(application)
+						})}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	</div>
+{/if}
+{#if missedPriorities.length > 0}
+	<div class="alert alert-info alert-soft" role="status">
+		<i class="fa-sharp-duotone fa-solid fa-bullseye-arrow text-xl"></i>
+		<div class="flex flex-col gap-1">
+			<h3 class="font-bold">{m.assignmentPrioritizedElsewhereTitle()}</h3>
+			<ul class="list-inside list-disc text-sm">
+				{#each missedPriorities as missed (missed.id)}
+					<li>
+						{m.assignmentPrioritizedElsewhere({
+							name: codenamize(missed.id),
+							role: missed.held,
+							prioritized: missed.prioritized
 						})}
 					</li>
 				{/each}

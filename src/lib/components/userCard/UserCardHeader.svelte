@@ -250,51 +250,60 @@
 	};
 </script>
 
-<div class="flex items-center gap-3 px-3 pt-3 pb-2 sm:px-5 md:px-10 lg:px-16">
+<div class="flex items-center gap-3 px-3 pt-2 pb-1 sm:px-5 sm:pt-3 sm:pb-2 md:px-10 lg:px-16">
 	<div
-		class="border-base-300 from-primary/10 to-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-3 border bg-linear-to-br p-3 sm:p-4"
+		class="border-base-300 from-primary/10 to-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-2 border bg-linear-to-br p-2.5 sm:gap-3 sm:p-4"
 	>
-		<!-- On a phone the actions take a row of their own below the name -->
-		<div class="flex flex-wrap items-start gap-x-4 gap-y-2 sm:flex-nowrap">
+		<!-- On a phone the actions sit beside the role summary, under the full-width name -->
+		<div
+			class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start sm:gap-y-1.5"
+		>
 			<!-- Initials, so a card is recognisable at a glance -->
-			<div class="avatar avatar-placeholder hidden sm:flex">
+			<div
+				class="avatar avatar-placeholder hidden sm:col-start-1 sm:row-span-3 sm:row-start-1 sm:flex"
+			>
 				<div class="bg-primary/20 text-primary w-14 rounded-full text-xl font-bold">
 					<span>{initials}</span>
 				</div>
 			</div>
 
-			<div class="flex min-w-0 flex-1 flex-col gap-1.5 max-sm:basis-full">
-				<!-- Clear of the drawer's close button, which a phone puts over the card -->
-				<div
-					class="flex flex-wrap items-center gap-x-3 gap-y-1 {mode === 'drawer'
-						? 'max-sm:pr-8'
-						: ''}"
-				>
-					<h2 class="text-2xl font-bold break-words sm:text-3xl">{displayName}</h2>
-					<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
-					{#if pronouns}
-						<span class="text-base-content/60 text-sm">({pronouns})</span>
-					{/if}
-					{#if stage}
-						{@const shown = STAGES[stage]}
-						<span class="badge badge-soft gap-1.5 {shown.badge}">
-							<i class="fa-sharp-duotone fa-solid {shown.icon} text-xs"></i>
-							{shown.label()}
-						</span>
-					{/if}
-					<PossibleDuplicateBadge {userId} {conferenceId} />
-				</div>
+			<!-- Clear of the drawer's close button, which a phone puts over the card -->
+			<div
+				class="col-span-2 col-start-1 row-start-1 flex flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 {mode ===
+				'drawer'
+					? 'max-sm:pr-8'
+					: ''}"
+			>
+				<h2 class="text-xl font-bold break-words sm:text-3xl">{displayName}</h2>
+				<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
+				{#if pronouns}
+					<span class="text-base-content/60 text-sm">({pronouns})</span>
+				{/if}
+				{#if stage}
+					{@const shown = STAGES[stage]}
+					<span class="badge badge-soft gap-1.5 max-sm:badge-sm {shown.badge}">
+						<i class="fa-sharp-duotone fa-solid {shown.icon} text-xs"></i>
+						{shown.label()}
+					</span>
+				{/if}
+				<PossibleDuplicateBadge {userId} {conferenceId} />
+			</div>
+
+			<div class="col-start-1 row-start-2 min-w-0 sm:col-start-2">
 				<UserCardRoleSummary
 					{delegationMember}
 					{singleParticipant}
 					{conferenceSupervisor}
 					{teamMember}
 				/>
+			</div>
+
+			<div class="col-span-2 col-start-1 row-start-3 min-w-0 sm:col-span-1 sm:col-start-2">
 				<ContactButtons {userId} />
 			</div>
 
 			<!-- Action buttons -->
-			<div class="flex items-center gap-1 max-sm:-ml-2">
+			<div class="col-start-2 row-start-2 flex items-center gap-1 sm:col-start-3 sm:row-start-1">
 				<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
 				{#if badgeSeat}
 					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
@@ -312,8 +321,7 @@
 
 				<!-- The rarer actions, the destructive one last -->
 				<!-- A <details> opens on click only, never because focus moved into it -->
-				<!-- Opens to the right on a phone, where the actions sit at the left edge -->
-				<details class="dropdown sm:dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
+				<details class="dropdown dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
 					<summary
 						class="btn btn-ghost btn-sm btn-square list-none"
 						aria-label={m.userCardMoreActions()}

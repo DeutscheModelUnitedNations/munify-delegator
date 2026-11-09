@@ -44,15 +44,16 @@ const requiredAtRuntime = <T extends z.ZodType<unknown, string | undefined>>({
 export const variables = defineEnvVars({
 	// --- Private ---
 	DATABASE_URL: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
+	/** Connections each app instance may hold open to Postgres at once. */
+	DATABASE_POOL_SIZE: {
+		schema: numberOr(20).pipe(z.number().int().min(1, 'must be at least 1'))
+	},
 	NODE_ENV: {
 		schema: requiredAtRuntime({
 			schema: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
 			placeholder: 'production'
 		})
 	},
-	// Unread since the OIDC flow moved to @m1212e/sveltekit-oidc, which manages its own cookies.
-	// Kept required so a deployment does not silently lose it before something needs it again.
-	SECRET: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 	CERTIFICATE_SECRET: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 
 	OIDC_SCOPES: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
@@ -83,8 +84,9 @@ export const variables = defineEnvVars({
 				.optional()
 		)
 	},
-	// The resource indicator the impersonation's token exchange asks for (Logto requires one). Sign
-	// in sends none.
+	// The API resource the sign-in, every refresh and the impersonation's token exchange ask tokens
+	// for. With it, Logto issues JWT access tokens that are verified offline; without it, opaque
+	// ones, which cost a request to Logto's introspection endpoint on every request.
 	OIDC_RESOURCE: { schema: z.string().url().optional() },
 	// Machine-to-machine credentials for the Logto Management API, which issues the subject tokens
 	// impersonation exchanges (#api/handlers/user/impersonation). Without them it is unavailable.
@@ -93,10 +95,20 @@ export const variables = defineEnvVars({
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)
 	OIDC_M2M_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
 
+	// The MCP server for AI assistants (`src/api/mcp/`, served at `/mcp`): its public URL, which is
+	// also the API resource (RFC 8707) the provider issues its access tokens for and the audience
+	// they are checked against. Unset, the server is off and `/mcp` answers 404.
+	MCP_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
+	// Space-separated scopes the provider defines on that API resource, advertised to MCP clients
+	// in the protected resource metadata. Optional.
+	MCP_SCOPES: { schema: unlessEmpty(z.string().optional()) },
+
 	OTEL_SERVICE_NAME: { schema: z.string().default('MUNIFY-DELEGATOR') },
 	OTEL_SERVICE_VERSION: { schema: z.string().optional() },
 	OTEL_ENDPOINT_URL: { schema: z.string().optional() },
 	OTEL_AUTHORIZATION_HEADER: { schema: z.string().optional() },
+	// The share of traces kept, 0 to 1 (`#lib/tracing`)
+	OTEL_TRACES_SAMPLER_ARG: { schema: numberOr(1).pipe(z.number().min(0).max(1)) },
 
 	// SMTP / Transactional Email Configuration
 	SMTP_HOST: { schema: z.string().default('localhost') },

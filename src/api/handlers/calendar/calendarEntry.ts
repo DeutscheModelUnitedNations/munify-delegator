@@ -11,6 +11,7 @@ import {
 import { calendarEntryPubsub } from '#api/pubsub';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
 import { entryTimesSchema, entryTrackIdsSchema } from './entryRules';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCalendarEntryAbilities();
 
@@ -29,6 +30,7 @@ const surveyOptionsDescription =
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarEntry: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name', 'description', 'room', 'fontAwesomeIcon'] }),
 		description:
 			"Adds an entry to a schedule day, on the given tracks of the day. An entry ending before it starts, without a track, or naming a track, place or survey option that is not the day's conference's is refused with INVALID_INPUT.",
 		type: CalendarEntryRef,
@@ -74,6 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCalendarEntry: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name', 'description', 'room', 'fontAwesomeIcon'] }),
 		description:
 			"Changes the given fields of a schedule entry; left out keeps a field, `null` clears a nullable one. An entry ending before it starts as written, an empty track list, or a day, track, place or survey option that is not the entry's conference's is refused with INVALID_INPUT; moving to another day keeps the tracks only if that day has them too.",
 		type: CalendarEntryRef,
@@ -123,6 +126,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteCalendarEntry: t.field({
+		extensions: mcpTool(),
 		description: 'Deletes a schedule entry.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },

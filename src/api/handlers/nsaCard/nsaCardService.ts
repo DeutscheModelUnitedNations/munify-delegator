@@ -2,9 +2,8 @@ import { db, schema } from '#api/db/db';
 import { and, eq, lt, sql } from 'drizzle-orm';
 import { conferenceParticipantPubsub } from '#api/pubsub';
 import { apiError } from '#api/services/errors';
-import { identityCardExpiry, MAX_CARD_NUMBER } from '#lib/helpers/identityCode';
 import { m } from '#lib/paraglide/messages';
-import { issueIdentityCard } from '#api/handlers/identityCode/identityKeyPair';
+import { issueNsaCardCode, MAX_NSA_CARD_NUMBER } from '#api/handlers/signedCode/signedCodeService';
 
 /**
  * Printed NSA cards (`docs/plans/chase-link.md`): a signed card code per member of a non-state
@@ -48,7 +47,6 @@ export async function nsaCards({
 			}
 		}
 	});
-	const expiresAtSeconds = identityCardExpiry(conference.endConference);
 	const cards = await Promise.all(
 		members.map(async ({ participant, delegation }) => ({
 			conferenceParticipantId: participant.id,
@@ -57,10 +55,10 @@ export async function nsaCards({
 			nsaName: delegation.assignedRole?.name ?? null,
 			nsaIcon: delegation.assignedRole?.fontAwesomeIcon ?? null,
 			cardNumber: participant.nsaCardNumber,
-			code: await issueIdentityCard({
+			code: await issueNsaCardCode({
 				userId: participant.userId,
 				conferenceId,
-				expiresAtSeconds,
+				endConference: conference.endConference,
 				cardNumber: participant.nsaCardNumber
 			})
 		}))
@@ -95,7 +93,7 @@ export async function reprintNsaCard({
 		.where(
 			and(
 				eq(schema.conferenceParticipant.id, conferenceParticipantId),
-				lt(schema.conferenceParticipant.nsaCardNumber, MAX_CARD_NUMBER)
+				lt(schema.conferenceParticipant.nsaCardNumber, MAX_NSA_CARD_NUMBER)
 			)
 		)
 		.returning({ id: schema.conferenceParticipant.id });

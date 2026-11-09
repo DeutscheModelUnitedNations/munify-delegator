@@ -7,13 +7,15 @@ const mocks = vi.hoisted(() => ({
 	committees: vi.fn(),
 	committeeAgendaItems: vi.fn(),
 	paymentTransactions: vi.fn(),
-	conferenceParticipants: vi.fn()
+	conferenceParticipants: vi.fn(),
+	schools: vi.fn()
 }));
 
 vi.mock('#lib/api/rumbleClient/client', () => ({ client: { query: mocks } }));
 
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { searchConference } from './commandPaletteSearch';
+import { logger } from '#lib/logger';
 
 const conferenceId = 'conf-1';
 const inConference = { conferenceId: { eq: conferenceId } };
@@ -34,11 +36,11 @@ function argsOf(mock: ReturnType<typeof vi.fn>, call = 0) {
 
 /**
  * `delegations` is asked twice: for the delegation group and for the seats, whose query is the
- * one that filters with an `OR`. Answers only the one asked for.
+ * one that matches the assigned role. Answers only the one asked for.
  */
 function answerDelegations(asked: 'delegations' | 'seats', rows: unknown[]) {
 	mocks.delegations.mockImplementation(async ({ __args }) =>
-		'OR' in __args.where === (asked === 'seats') ? rows : []
+		JSON.stringify(__args.where).includes('assignedRole') === (asked === 'seats') ? rows : []
 	);
 }
 
@@ -52,6 +54,7 @@ describe('searchConference', () => {
 		expect(results).toEqual({
 			users: [],
 			delegations: [],
+			schools: [],
 			seats: [],
 			committees: [],
 			foreignUsers: [],
@@ -165,7 +168,8 @@ describe('searchConference', () => {
 					assignedRole: {
 						OR: [{ name: { ilike: '%zzzzqqq%' } }, { abbreviation: { ilike: '%zzzzqqq%' } }]
 					}
-				}
+				},
+				{ id: { eq: 'zzzzqqq' }, assignedRoleId: { isNotNull: true } }
 			]);
 		});
 
@@ -174,7 +178,10 @@ describe('searchConference', () => {
 
 			expect(argsOf(mocks.singleParticipants).where).toEqual({
 				...registeredIn,
-				assignedRole: { name: { ilike: '%press%' } }
+				OR: [
+					{ assignedRole: { name: { ilike: '%press%' } } },
+					{ id: { eq: 'press' }, assignedRoleId: { isNotNull: true } }
+				]
 			});
 		});
 
@@ -288,5 +295,67 @@ describe('searchConference', () => {
 				{ id: 'd1', school: 'Gym, Lyzeum', memberCount: 2, headDelegateUserId: 'u1' }
 			]);
 		});
+	});
+
+	describe('schools', () => {
+		test('are not asked for unless the caller may open the schools page', async () => {
+			const { schools } = await searchConference({ conferenceId, searchTerm: 'gym' });
+
+			expect(mocks.schools).not.toHaveBeenCalled();
+			expect(schools).toEqual([]);
+		});
+
+		test("are searched by rumble among the conference's people and waiting list", async () => {
+			mocks.schools.mockResolvedValueOnce([
+				{ id: 's1', name: 'Goethe-Gymnasium', city: 'Berlin' },
+				{ id: 's2', name: 'Gymnasium Nord', city: null }
+			]);
+
+			const { schools } = await searchConference({
+				conferenceId,
+				searchTerm: ' gym ',
+				withSchools: true
+			});
+
+			expect(argsOf(mocks.schools)).toEqual({
+				search: 'gym',
+				where: { OR: [{ participants: inConference }, { waitingListEntries: inConference }] },
+				limit: 10
+			});
+			expect(schools).toEqual([
+				{ id: 's1', name: 'Goethe-Gymnasium', city: 'Berlin' },
+				{ id: 's2', name: 'Gymnasium Nord', city: null }
+			]);
+		});
+	});
+
+	test('a delegation is found again by its id, as a past search replays it', async () => {
+		await searchConference({ conferenceId, searchTerm: 'cef4dbbbe7f865fa542f1ff2' });
+
+		const delegationGroup = mocks.delegations.mock.calls
+			.map(([query]) => query.__args.where)
+			.find((where) => !JSON.stringify(where).includes('assignedRole'));
+		expect(delegationGroup.OR).toContainEqual({ id: { eq: 'cef4dbbbe7f865fa542f1ff2' } });
+	});
+
+	test('a failing group is logged and leaves the others', async () => {
+		const error = new Error('column "search_distance" does not exist');
+		const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+		mocks.paymentTransactions.mockRejectedValueOnce(error);
+		mocks.schools.mockResolvedValueOnce([{ id: 's1', name: 'Gym', city: null }]);
+
+		const { transactions, schools } = await searchConference({
+			conferenceId,
+			searchTerm: 'gym',
+			withSchools: true
+		});
+
+		expect(transactions).toEqual([]);
+		expect(schools).toEqual([{ id: 's1', name: 'Gym', city: null }]);
+		expect(logged).toHaveBeenCalledWith('A command palette search failed', {
+			group: 'transactions',
+			error
+		});
+		logged.mockRestore();
 	});
 });

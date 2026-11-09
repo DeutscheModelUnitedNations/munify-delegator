@@ -1,0 +1,90 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d3a0be81-930e-4fde-bf48-377e6a2ea57b",
+  "prevIds": [
+    "5c3bba0f-0623-41e7-9102-245907f5ca63"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "assignment_review",
+        "prioritized_role_id"
+      ],
+      "writes": [
+        "s|col|public.assignment_review.prioritized_role_id",
+        "n|col|public.assignment_review.prioritized_role_id",
+        "e|col|public.assignment_review.prioritized_role_id"
+      ],
+      "reads": [
+        "n|tbl|public.assignment_review",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "assignment_review"
+      ],
+      "writes": [
+        "s|fk|public.assignment_review.assignment_review_prioritized_role_id_conference_role_id_fkey",
+        "n|fk|public.assignment_review.assignment_review_prioritized_role_id_conference_role_id_fkey",
+        "e|fk|public.assignment_review.assignment_review_prioritized_role_id_conference_role_id_fkey",
+        "n|con|public.assignment_review.assignment_review_prioritized_role_id_conference_role_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.assignment_review",
+        "n|sch|public",
+        "n|tbl|public.conference_role",
+        "n|sch|public",
+        "n|col|public.assignment_review.prioritized_role_id",
+        "n|col|public.conference_role.id",
+        "e|uniqueness|public.conference_role.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "assignment_review",
+        "name": "prioritized_role_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "assignment_review",
+        "name": "assignment_review_prioritized_role_id_conference_role_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "prioritized_role_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference_role",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    }
+  ]
+}

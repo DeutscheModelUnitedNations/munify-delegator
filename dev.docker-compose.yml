@@ -37,8 +37,6 @@ services:
   #     - PUBLIC_OIDC_CLIENT_ID=delegator
   #     # - PUBLIC_OIDC_CLIENT_ID=275671515582758948@dev
 
-  #     - SECRET=123
-
   listmonk_app:
     image: listmonk/listmonk:latest
     container_name: listmonk_app

@@ -5,7 +5,7 @@ import PaperHubLinkInfo from '#lib/components/dashboard/PaperHubLinkInfo.svelte'
 import TeamEntryInfo from '#lib/components/dashboard/TeamEntryInfo.svelte';
 import { m } from '#lib/paraglide/messages';
 import type { DashboardHref } from '#lib/data/dashboardLinks';
-import { publicCalendarPath, publicSeatsPath, teamRoutesFor } from '#lib/data/teamRoutes';
+import { firstTeamPagePath, publicCalendarPath, publicSeatsPath } from '#lib/data/teamRoutes';
 import type { TeamAccess } from '#lib/helpers/teamAccess';
 
 export interface TeamDashboardLinkContext {
@@ -35,7 +35,7 @@ export interface TeamDashboardLink {
 export function getTeamEntryLink(
 	access: TeamAccess & { canSeePaperHub?: boolean }
 ): TeamDashboardLink | undefined {
-	const first = teamRoutesFor(access).find((route) => route.path.startsWith('team/'));
+	const first = firstTeamPagePath(access);
 	if (!first) return undefined;
 	return {
 		id: 'team',
@@ -43,7 +43,7 @@ export function getTeamEntryLink(
 		info: TeamEntryInfo,
 		getTitle: () => m.team(),
 		getDescription: () => m.manageConference(),
-		getHref: (ctx) => resolve(`dashboard/${ctx.conferenceId}/${first.path}`)
+		getHref: (ctx) => resolve(`dashboard/${ctx.conferenceId}/${first}`)
 	};
 }
 

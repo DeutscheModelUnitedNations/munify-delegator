@@ -151,6 +151,12 @@ export const possibleDuplicate = snakeCase.table(
 		/** `MatchReason`s: which signals the two accounts share */
 		reasons: text().array().notNull(),
 		status: possibleDuplicateStatus().notNull().default('OPEN'),
+		/**
+		 * Confirmed because other confirmed pairs link the two accounts (A is B, B is C, so A is C),
+		 * not by a decision of its own; it follows those (`reconcileLinks`). A pair only the links
+		 * made has a score of 0 and no reasons.
+		 */
+		inferred: boolean().notNull().default(false),
 		decidedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
 		decidedAt: timestamp({ precision: 3 })
 	},

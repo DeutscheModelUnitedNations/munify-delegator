@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
@@ -11,7 +14,15 @@
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import type { TeamAccess } from '#lib/helpers/teamAccess';
-	import { getAllPages, getConfigEntries, type PageEntry, type ConfigEntry } from './pageRegistry';
+	import { mayOpenTeamRoute, teamRoutes } from '#lib/data/teamRoutes';
+	import {
+		getAllPages,
+		getConfigEntries,
+		manualPaletteEntry,
+		matchesManual,
+		type PageEntry,
+		type ConfigEntry
+	} from './pageRegistry';
 	import {
 		describeItem,
 		flattenResults,
@@ -25,10 +36,6 @@
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '#lib/components/Kbd.svelte';
 	import QuickScan from '#lib/components/scanner/QuickScan.svelte';
-	import { acceptScannedCode } from '#lib/api/identityCodeCheck';
-	import { readAimIdentifier } from '#lib/components/scanner/aimIdentifier';
-	import { looksLikeUserId } from '#lib/components/scanner/suggestions';
-	import { toast } from 'svelte-sonner';
 	import {
 		consumeHandoff,
 		getAvailableHandoff,
@@ -69,6 +76,10 @@
 		})
 	);
 
+	// The manual's page about the page on screen, offered when the search is empty or asks for help
+	const manualEntry = $derived(manualPaletteEntry(page.route.id));
+	const manualResults = $derived(matchesManual(searchInput) ? [manualEntry] : []);
+
 	let pageResults = $derived.by(() => {
 		if (!searchInput.trim()) {
 			// Show top 5 pages as quick navigation
@@ -97,6 +108,7 @@
 
 	let userResults = $state<SearchResults['users']>([]);
 	let delegationResults = $state<SearchResults['delegations']>([]);
+	let schoolResults = $state<SearchResults['schools']>([]);
 	let foreignUserResults = $state<SearchResults['foreignUsers']>([]);
 	let transactionResults = $state<SearchResults['transactions']>([]);
 	let seatResults = $state<SearchResults['seats']>([]);
@@ -107,13 +119,20 @@
 		flattenResults({
 			users: userResults,
 			delegations: delegationResults,
+			schools: schoolResults,
 			seats: seatResults,
 			committees: committeeResults,
 			transactions: transactionResults,
 			pages: pageResults,
 			configs: configResults,
-			foreignUsers: foreignUserResults
+			foreignUsers: foreignUserResults,
+			manual: manualResults
 		})
+	);
+
+	// A school result opens its page, so only those who may open the schools page are offered any
+	const withSchools = $derived(
+		teamRoutes.some((route) => route.id === 'schools' && mayOpenTeamRoute({ route, access }))
 	);
 
 	// Debounced server search — called from oninput handler, not from $effect
@@ -123,6 +142,7 @@
 		if (term.trim().length < 2) {
 			userResults = [];
 			delegationResults = [];
+			schoolResults = [];
 			transactionResults = [];
 			seatResults = [];
 			committeeResults = [];
@@ -135,9 +155,10 @@
 		searchLoading = true;
 		debounceTimer = setTimeout(async () => {
 			try {
-				const result = await searchConference({ conferenceId, searchTerm: term });
+				const result = await searchConference({ conferenceId, searchTerm: term, withSchools });
 				userResults = result.users;
 				delegationResults = result.delegations;
+				schoolResults = result.schools;
 				foreignUserResults = result.foreignUsers;
 				transactionResults = result.transactions;
 				seatResults = result.seats;
@@ -166,6 +187,7 @@
 				seatResults = [];
 				committeeResults = [];
 				delegationResults = [];
+				schoolResults = [];
 				foreignUserResults = [];
 				activeIndex = 0;
 				searchLoading = false;
@@ -173,20 +195,14 @@
 		}
 	});
 
-	/** A scanned code opens the person it stands for, checked the way the scanner page checks it. */
-	async function handleScan(scan: { rawValue: string; format: string }) {
+	/**
+	 * A scanned code opens the person it stands for, checked the way the scanners check it: the
+	 * nametag, the application documents and a printed nametag's barcode. The verdict already
+	 * decided the code is one: a signed code's user id is the account's OIDC subject, which need not
+	 * look like an id at all (`dev-team-pm`, Logto's twelve characters).
+	 */
+	function handleScan({ userId }: { userId: string }) {
 		scanning = false;
-		const read = readAimIdentifier(scan.rawValue.trim());
-		const result = await acceptScannedCode({ code: read.code, format: read.format ?? scan.format });
-		if (!result.accepted) {
-			toast.error(result.message);
-			return;
-		}
-		const userId = result.code;
-		if (!looksLikeUserId(userId)) {
-			toast.error(m.notFound());
-			return;
-		}
 		void recordScan({ conferenceId, userId });
 		closeCommandPalette();
 		openUserCard(userId);
@@ -221,6 +237,8 @@
 		const target = resultTarget({ item, conferenceId });
 		if ('userId' in target) {
 			openUserCard(target.userId);
+		} else if ('newTab' in target) {
+			window.open(target.newTab, '_blank', 'noopener');
 		} else goto(target.href);
 	}
 
@@ -263,12 +281,14 @@
 			icon: 'fa-users-viewfinder',
 			fromServer: true
 		},
+		school: { title: m.schools, icon: 'fa-school', fromServer: true },
 		seat: { title: m.seats, icon: 'fa-chair', fromServer: true },
 		committee: { title: m.committees, icon: 'fa-podium', fromServer: true },
 		transaction: { title: m.payment, icon: 'fa-money-bill-transfer', fromServer: true },
 		page: { title: m.commandPalettePages, icon: 'fa-file', fromServer: false },
 		config: { title: m.commandPaletteConfiguration, icon: 'fa-gears', fromServer: false },
-		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'fa-user-xmark', fromServer: false }
+		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'fa-user-xmark', fromServer: false },
+		manual: { title: m.help, icon: 'fa-circle-question', fromServer: false }
 	};
 
 	/** `flatList` cut into its groups, each item with its index in the flat list. */
@@ -314,6 +334,7 @@
 		class="fixed inset-0 z-50 flex justify-center bg-black/40 max-sm:px-2"
 		onkeydown={handleKeydown}
 		onclick={() => closeCommandPalette()}
+		transition:fade={{ duration: 120 }}
 	>
 		<!-- Panel -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -321,6 +342,7 @@
 		<div
 			class="border-base-300 bg-base-100 rounded-box mt-4 h-fit w-full max-w-xl border shadow-2xl sm:mt-[15vh]"
 			onclick={(e) => e.stopPropagation()}
+			transition:fly={{ y: -12, duration: 150, easing: cubicOut }}
 		>
 			<!-- Search input -->
 			<div class="border-base-300 flex items-center gap-3 border-b px-4 py-3">
@@ -346,7 +368,11 @@
 
 			{#if scanning}
 				<div class="border-base-300 border-b p-2">
-					<QuickScan onscan={handleScan} onclose={() => (scanning = false)} />
+					<QuickScan
+						acceptance={{ conferenceId, kinds: ['live', 'print'], printedNametags: true }}
+						onscan={handleScan}
+						onclose={() => (scanning = false)}
+					/>
 				</div>
 			{/if}
 

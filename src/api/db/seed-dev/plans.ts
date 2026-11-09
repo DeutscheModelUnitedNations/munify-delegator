@@ -146,13 +146,14 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'closed',
 		summary:
-			'PARTICIPANT_REGISTRATION: deadline and grace period over, seats being assigned (draft in progress, 4 seats per school)',
+			'PARTICIPANT_REGISTRATION: deadline and grace period over, seats being assigned (draft in progress, groups of up to 4 decided together, 2 guaranteed seats per Auslandsschule)',
 		conference: {
 			title: 'Seed 4 · Registration closed',
 			longTitle: 'Seed-Konferenz nach Anmeldeschluss, Zuteilung läuft',
 			state: 'PARTICIPANT_REGISTRATION',
-			// Low, so the assignment board's per-school warning shows with the seeded schools
-			maxSeatsPerSchool: 4
+			// Low, so the assignment's school warnings show with the seeded schools and supervisors
+			maxCollectiveGroupSize: 4,
+			maxGuaranteedSeatsPerForeignSchool: 2
 		},
 		days: { applicationDeadline: -3, startConference: 40, endConference: 43 },
 		assigned: false,
@@ -291,7 +292,8 @@ export const conferencePlans: ConferencePlan[] = [
 			state: 'PREPARATION',
 			unlockPayments: true,
 			unlockPostals: true,
-			maxSeatsPerSchool: null
+			maxCollectiveGroupSize: null,
+			maxGuaranteedSeatsPerForeignSchool: null
 		},
 		days: { applicationDeadline: -25, startConference: 21, endConference: 24 },
 		assigned: true,

@@ -16,7 +16,7 @@ This document provides guidance for building consistent user interfaces in MUNif
 Components are located in `src/lib/components/`.
 
 **Naming convention**: directories are `camelCase`, component files are `PascalCase`
-(e.g. `tanStackTable/ui/ManagedTable.svelte`). This matches munify-chase.
+(e.g. `dataGrid/DataGrid.svelte`). This matches munify-chase.
 
 Key directories:
 
@@ -661,19 +661,20 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ## BarcodeScanner Component
 
-Use `BarcodeScanner` for pages that need barcode scanning via camera or manual text input. Encapsulates camera management, barcode detection, device switching, and manual input fallback.
+Use `BarcodeScanner` for pages that need barcode scanning via camera or manual text input. Encapsulates camera management, barcode detection, device switching, and manual input fallback. Every code read or typed is checked against `acceptance` (`scanAcceptance.ts`, signatures included) before it reaches `scannedCode`; a refused one is reported as a toast. `QuickScan` (the command palette's camera) takes the same `acceptance`.
 
 ### Props
 
-| Prop                | Type                        | Description                                                |
-| ------------------- | --------------------------- | ---------------------------------------------------------- |
-| `scannedCode`       | `string \| null` (bindable) | The detected/entered code                                  |
-| `persistKey`        | `string`                    | localStorage key for camera preference                     |
-| `barcodeFormats`    | `BarcodeFormat[]`           | Formats to detect (default: `['data_matrix', 'code_128']`) |
-| `manualPlaceholder` | `string`                    | Placeholder for manual input field                         |
-| `scanPromptText`    | `string`                    | Prompt shown while camera is scanning                      |
-| `cameraZIndex`      | `string`                    | z-index class for camera preview (default: `'z-30'`)       |
-| `extraControls`     | `Snippet`                   | Optional controls between camera settings and input        |
+| Prop                | Type                        | Description                                                                                                       |
+| ------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `scannedCode`       | `string \| null` (bindable) | The accepted code: a bare signed code, or the user id as read or picked; `userIdOfCode` gives the user            |
+| `acceptance`        | `ScanAcceptance`            | The conference, the signed code kinds (`live`, `print`) and whether printed nametags (unsigned 1D barcodes) count |
+| `persistKey`        | `string`                    | localStorage key for camera preference                                                                            |
+| `barcodeFormats`    | `BarcodeFormat[]`           | Formats to detect (default: `['qr_code', 'code_128']`)                                                            |
+| `manualPlaceholder` | `string`                    | Placeholder for manual input field                                                                                |
+| `scanPromptText`    | `string`                    | Prompt shown while camera is scanning                                                                             |
+| `cameraZIndex`      | `string`                    | z-index class for camera preview (default: `'z-30'`)                                                              |
+| `extraControls`     | `Snippet`                   | Optional controls between camera settings and input                                                               |
 
 ### Exposed Methods
 
@@ -684,6 +685,7 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 ```svelte
 <script lang="ts">
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
+	import { userIdOfCode } from '#lib/components/scanner/scanAcceptance';
 	import { queryParameters } from 'sveltekit-search-params';
 
 	const params = queryParameters({ queryUserId: true });
@@ -692,8 +694,11 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 
 <BarcodeScanner
 	bind:this={scannerRef}
-	bind:scannedCode={params.queryUserId}
-	barcodeFormats={['data_matrix', 'code_128']}
+	bind:scannedCode={
+		() => params.queryUserId, (code) => (params.queryUserId = code ? userIdOfCode(code) : code)
+	}
+	acceptance={{ conferenceId, kinds: ['print'], printedNametags: false }}
+	barcodeFormats={['qr_code']}
 	persistKey="useCameraForMyPage"
 	manualPlaceholder="Enter code..."
 	scanPromptText="Present the barcode..."
@@ -737,6 +742,8 @@ Main section wrapper with icon, title, and description:
 - `defaultCollapsed`: Boolean for initial collapsed state
 - `collapsed`: Bindable boolean to track/control collapsed state externally
 - `headerAction`: Optional snippet for header actions
+- `tourAnchor`: Optional `data-tour` anchor a guided tour points at (see "User manual, help and
+  tours" in CLAUDE.md)
 
 ### DashboardLinkCard
 
@@ -873,105 +880,100 @@ Shows an open/closed badge with the deadline formatted in the conference timezon
 
 ## Data Display
 
-### ManagedTable
+### DataGrid
 
-The table of the management pages, built on TanStack Table
-(`#lib/components/tanStackTable/ui/ManagedTable.svelte`): sortable, paginated, with a search box
-kept in the URL (`?filter=`), an export button and the size / zebra settings. Columns are
-`ManagedColumn<Row>` definitions; the accessor is what gets sorted and searched (every term must
-occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
+The table of the team's pages (`#lib/components/dataGrid/DataGrid.svelte`), after the member table
+of the Mitgliedshub: a search box, a **filter builder** (conditions and groups of conditions, joined
+by AND / OR, one level deep), sorting by up to five columns (shift-click adds a column), **grouping**
+by up to three columns with collapsible groups and their counts (dates by day, month or year,
+numbers in ranges), columns to show, move and resize (the `alwaysVisible` column and the actions
+stay pinned), pages, row selection and the export (CSV, JSON, print; the selection when there is
+one, else every matching row). With `views` it keeps **saved views** - personal or shared, the
+conference's or global - in the database.
 
 ```svelte
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
+	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
+	import BadgeCell from '#lib/components/dataGrid/cells/BadgeCell.svelte';
 
-	const columns: ManagedColumn<Row>[] = [
-		{ id: 'name', header: 'Name', accessorFn: (row) => row.name },
+	const columns: GridColumn<Row>[] = [
+		{ id: 'name', type: 'text', label: 'Name', alwaysVisible: true, value: (row) => row.name },
 		{
 			id: 'role',
-			header: 'Role',
-			accessorFn: (row) => row.role,
-			cell: ({ row }) =>
-				renderComponent({ component: BadgeCell, props: { label: row.original.role } })
+			type: 'enum',
+			label: 'Role',
+			options: ROLES,
+			optionLabel: translateRole,
+			value: (row) => row.role,
+			cell: (row) => cellOf({ component: BadgeCell, props: { label: translateRole(row.role) } })
 		}
 	];
+	const source = createLocalSource({ rows: () => rows, columns: () => columns });
 </script>
 
-<ManagedTable
+<DataGrid
 	{columns}
-	rows={data}
-	columnClasses={{ role: 'text-center' }}
-	onRowClick={(row) => handleRowClick(row)}
-	isRowSelected={(row) => row.id === selectedId}
+	{source}
+	rowId={(row) => row.id}
+	base={{ sorting: [{ id: 'name', desc: false }], pageSize: 50 }}
+	label="Roles"
+	exportName="roles"
+	onRowClick={(row) => open(row)}
 />
 ```
 
-Cells are Svelte components under `tanStackTable/cells/` (`BadgeCell`, `AssignmentBadge`, …),
-never HTML strings. A cell text longer than 24ch is truncated. The first column has to be an
-accessor column.
+**A column says what kind of value it holds** (`type`: `text`, `number`, `date`, `enum`,
+`multiEnum`, `boolean`), and everything follows from that: the filter operators
+(`#lib/dataGrid/operators.ts`), sorting (enums in the order of their `options`, empty values last
+either way), grouping and the cell's default text. `value` is the row's value, `text` / `cell`
+what the cell shows (a component through `cellOf`, never HTML), `exportValue` what the export holds
+where it differs. `defaultVisible: false` hides a column until someone shows it; `group` sorts the
+menus into headings, `description` explains a column there; `filterable` / `sortable` /
+`groupable: false` take a column out of a menu. A column whose values are (nearly) one per row -
+names, contact details, ids, free texts - is always `groupable: false`: every row would be a group
+of its own, one database query each (`#lib/dataGrid/tables/groupable.test.ts` pins the list). A
+saved view or URL still grouping by such a column drops that level, in the grid
+(`applicableGrouping`) and the API alike. `base` is the table's built-in view: its sorting,
+filter, grouping and page size.
 
-Extra controls go in the `toolbar` snippet (inside the search row; it gets the table).
+**Where the rows come from is the `source`, and the grid does not care which:**
 
-**Filters and columns come with the table.** A column opts into filtering with a typed `filter`:
-`{ type: 'text' | 'boolean' | 'range' }` or `{ type: 'enum', label?: (value) => string }`, plus an
-optional `hint` (shown in the drawer) and `alwaysAvailable` (offered while the column is hidden).
-The type picks the control and the filter function, so a column never sets `filterFn` itself. Any
-table with a filterable column gets a Filters button, active-filter chips and a filter drawer, and
-`defaultFilters` is what it opens with (and what the drawer's reset returns to). Every table gets a Columns drawer: `defaultVisible` says what shows
-before anyone configures it, `group` and `groupOrder` sort the drawers into sections,
-`description` explains a column, and `storageKey` remembers the choice in the browser.
+- `createLocalSource({ rows, columns })` for rows the page holds (a parsed upload, the seat
+  overview): `#lib/dataGrid/localEngine.ts` searches, filters, sorts and groups them in the browser.
+- `createServerSource({ table, conferenceId, rowsFor, changes })` for the team's big tables: the API's table
+  engine (`dataTablePage`, `dataTableGroups`, see CLAUDE.md "Data tables") does all of it in the
+  database and answers row ids; `rowsFor` fetches those rows through the page's own live queries
+  and answers a **reader** building them. Live results are only tracked where they are read
+  synchronously in a `$derived`, never after an `await`, so `FlatGrid` / `GroupRows` await the
+  request in one derived and call the reader in another: that is what makes the table follow a
+  live update. The engine's answers are not live, so a reader only follows rows already on
+  screen; `changes` (a live query of the table's rows in the conference, read as a short text:
+  how many and the newest) is what tells the grid a row was added or removed elsewhere: it asks
+  for its pages and groups again with that text as `GridRequest.revision`, which the engine takes
+  as its ignored `revision` argument, so the client's cache does not answer with the old ids. The
+  team and the waiting list pass one. A table with columns of its own (`#lib/dataGrid/tables/…`)
+  builds its grid columns with `defineColumns`, which refuses a column the API knows and the page forgot.
 
-**The table's state lives in the URL**, so a copied link shows the same table: `?filter=` (the
-search, or `queryParamKey`), `filters=` (JSON; `[]` is "no filters", a missing parameter is the
-defaults), `sort=family_name,-email` (`none` for no sorting), `columns=` (the shown column ids),
-`page=` and `size=`. A parameter is dropped again when the value equals what the page would show
-anyway. The codecs are in `managedTable.ts`, the sync is `sveltekit-search-params`. The size and
-zebra settings are personal preferences kept per browser and are not part of the link.
+**State.** `gridState.svelte.ts` holds the view's state, the search, the page and the selection;
+`gridUrl.svelte.ts` mirrors it into the URL (`?view=`, `state=` only when the view was changed,
+`q=`, `page=`; `urlPrefix` for a page with several grids) with a shallow `goto` once Svelte has
+settled - a navigation landing while the rows load trips Svelte's "Batch has scheduled effects"
+invariant. Edits write only the parts of the state that changed, and the queries read an
+**applied** copy one task behind (`grid.applied`, `grid.query(path)`): otherwise Svelte commits a
+panel's edit together with the fetch it causes, and the panel would only update once the rows have
+arrived. Group a query's derived on what it reads; never on the whole state.
 
-**Export** (CSV, JSON, print) is built into the table from the shown columns and every row the
-filters let through, in sort order. A column exports its accessor's value as text (booleans as
-Ja/Nein, dates formatted); give it `exportValue: (row) => string` when the cell shows something
-else, such as a translated enum. A column with neither accessor nor `exportValue` (an actions
-column) is not exported.
+**Structure.** `DataGrid.svelte` only composes: `toolbar/` (search, the panel buttons, settings,
+export), `filter/` (the builder, one component per row, group, connective and value input),
+`columns/`, `grouping/` (the panel, `GroupLevel` fetching one level's groups, `GroupRows` one
+group's page), `table/` (frame, header cell with sort / filter / resize, row, cell, pager) and
+`views/` (menu, name dialog, the API calls). Pure logic is in `#lib/dataGrid/` and unit tested.
 
-While a search is active the table drops its sorting so the best match comes first; clearing the
-search brings `initialSorting` back.
-
-**Client mode vs. server mode.** Without `tableState` the table holds every row and searches
-(Fuse), filters, sorts and pages them in the browser - only right for a few hundred rows (an
-upload, a conference's schools). **Any table over registrations, people or applications runs in
-server mode**, where the backend does the work:
-
-```svelte
-<script lang="ts">
-	const tableState = createTableState(); // $lib/components/tanStackTable/tableState.svelte
-	const page = $derived(await fetchThingsPage(conferenceId, tableState)); // thingsQuery.ts
-</script>
-
-<ManagedTable {columns} rows={page.rows} {tableState} rowCount={page.total} {exportRows} />
-```
-
-`createTableState` owns the URL state (`search` is the typed text once typing paused 250 ms;
-`sorting`, `columnFilters`, `pagination`). The page's `*Query.ts` turns it into rumble arguments
-with the helpers of `tanStackTable/serverQuery.ts`: `pageArgs` (asks for one row more than a page),
-`pageOf` (splits that row off into `hasMore`), `orderFrom` (sorting to `orderBy`, with a tiebreaker),
-`searchWords` / `containing` / `personContains` (every word has to occur somewhere: `ilike` over the
-columns and the related people), `stringFilter` / `booleanFilter` / `enumFilter` / `rangeFilter`
-(the filter drawer's values to `where`). `exportRows` fetches every matching row with
-`fetchEveryRow`. The total comes from the entity's rumble count query (`countQuery({ table })` in
-its handler, e.g. `delegationsCount(where)`, same `where` as the page, wrapped in `asCount`) and goes
-to the table as `rowCount`: it gives the pager its page count and last-page button; without it the
-pager only knows `hasMore`. `*Query.ts` next to the page is the model: `team/participants/`.
-
-What the backend cannot do, the table does not offer: `orderBy` only reaches a row's own columns
-(not the person's name behind a relation), and computed values (codenames, translated nation names
-
-- search sends `nationCodesMatching(term)` instead - member counts) cannot be sorted or filtered.
-  Such a column sets `enableSorting: false`; an enum filter in server mode gives its `options`
-  (the drawer cannot count values it has not loaded).
+`openSoleMatch` opens the one row a link's search (`?q=`) finds, as links to a person from
+elsewhere do. The page's own controls go in the `toolbar` snippet (it gets the grid's state; the
+participants' quick filters use it); row buttons go in `actions` (a column pinned to the right).
 
 ### CollapsibleCard
 
@@ -1035,15 +1037,15 @@ The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/tea
 
 ### Structure
 
-| File                                          | Role                                                                                                                                                                                                                                                                                                                                         |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                                                                                        |
-| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table on the shared `DataTable.Root` shell (`#lib/components/tanStackTable/ui`: scroll container, zebra and size from the table settings; `SortButton` is the shared sort header button), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row |
-| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                                                                                                |
-| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                                                                                     |
-| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets)                                                                     |
-| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                                                                                                 |
-| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                                                                                            |
+| File                                          | Role                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                                                                                 |
+| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table on the shared `Table` shell (`#lib/components/table/Table.svelte`: scroll container, zebra and size from the table settings; `SortButton` is the shared sort header button), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row |
+| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                                                                                         |
+| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                                                                              |
+| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets)                                                              |
+| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                                                                                          |
+| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                                                                                     |
 
 ### Rules
 
@@ -1378,9 +1380,106 @@ For card-based layouts:
 
 ---
 
+## Navigation
+
+Client-side navigations are instant: the next page's skeleton shows at once, the pages cross-fade,
+and a bar along the top edge reports a navigation that is still loading. Everything lives in
+`src/lib/components/navigation/` and `#lib/helpers/`.
+
+### PageBoundary
+
+`src/lib/components/navigation/PageBoundary.svelte`
+
+A layout wraps the pages it renders in it. It is a `<svelte:boundary>` whose `pending` snippet is a
+`PageSkeleton`, re-created for every `key` (the pathname), which is what makes the skeleton show on
+every navigation: a boundary that has settled never shows `pending` again. The snippet is only
+passed in the browser, so a full page load is still server-rendered with its content.
+
+```svelte
+<script lang="ts">
+	import { page } from '$app/state';
+	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
+	import { boundaryKey } from '#lib/helpers/boundaryKey';
+
+	import { TEAM_SKELETONS } from '#lib/data/teamSkeletons';
+
+	const pathname = $derived(page.url.pathname);
+	// pages inside `team/assignment` share one key: that layout has a PageBoundary of its own
+	const pageKey = $derived(boundaryKey({ pathname, frames: ['team/assignment'] }));
+</script>
+
+<PageBoundary key={pageKey} skeleton={TEAM_SKELETONS.participants}>
+	{@render children()}
+</PageBoundary>
+```
+
+| Prop       | Type             | Description                                                  |
+| ---------- | ---------------- | ------------------------------------------------------------ |
+| `key`      | `string`         | A new value creates a new boundary, which shows the skeleton |
+| `skeleton` | `SkeletonLayout` | What to draw; `PAGE_SKELETON` when left out                  |
+
+Where it sits: the team shell (`team/TeamShell.svelte`, `teamSkeletonForPath`), the assignment
+layout (below its tabs, `ASSIGNMENT_TAB_SKELETONS`), and `dashboard/+layout.svelte` (every
+dashboard page but the paper hub's, whose shell shows it). A layout that keeps state across its
+pages must not sit inside a boundary keyed by the pathname: name it as a frame in `boundaryKey`
+and give it a `PageBoundary` of its own.
+
+### PageSkeleton
+
+`src/lib/components/navigation/PageSkeleton.svelte` - draws a `SkeletonLayout`, `role="status"`
+and `aria-busy`, its name as `data-skeleton`. It stays invisible for its first 120 ms
+(`.page-skeleton` in `app.css`), so cached data that resolves at once never flashes it.
+
+A layout is a tree of `SkeletonNode`s (`skeletonShapes.ts`): a node with `children` is a plain
+element (a card's frame, a row, a grid), one without a grey `skeleton` block. **Each team page has
+its own**, in `#lib/data/teamSkeletons.ts`, drawn after the page: its wrapper's classes, its
+grids and breakpoints, then its sections in the typical populated state, so the skeleton reflows
+like the page and nothing jumps when the data arrives. Build them from the shared blocks
+(`dataGrid`, `tabs`, `formSection`, `field`, `stat`, `toggle`, `paragraph`, `table`) and write
+class strings out whole, since Tailwind only finds literal ones. A new team page gets an entry in
+`TEAM_SKELETONS` and names it as its registry entry's `skeleton`; a page below an entry that looks
+different (a detail page, a page the entry `owns`) goes into `SUBPAGE_SKELETONS`. **When a page's
+layout changes, change its skeleton too.**
+
+### NavigationProgress
+
+`src/lib/components/navigation/NavigationProgress.svelte`, mounted once in the root layout. Shows a
+thin `bg-primary` bar along the top edge while `navigating.to` is set - the route guard, the page's
+code and its first render - after a 200 ms delay, so a navigation that finishes at once shows
+nothing.
+
+### View transitions
+
+`enableViewTransitionApi()` (`#lib/helpers/viewTransitionApi.svelte`, after chase) runs in the root
+layout and turns every non-shallow navigation into a `document.startViewTransition`. `app.css` sets
+the animation: the old page fades out, the new one rises in; `prefers-reduced-motion` switches it
+off. Parts that are the same on both pages carry a `view-transition-name` so they stay put instead
+of cross-fading with the content: `app-header` (`AuthenticatedHeader`), `team-nav`
+(`SideNavigationDrawer`), `app-footer` (`Footer`). A name must be unique on the page while a
+transition runs, or the browser skips the transition. To morph an element across pages the way
+chase does with committee titles, give it the same name on both (`view-transition-name: thing-{id}`).
+
+### Code preloading
+
+`<body data-sveltekit-preload-data="hover">` (app.html) preloads a link's route guard and code on
+hover. The team side navigation adds `data-sveltekit-preload-code="viewport"`, so the code of
+every entry on screen is fetched ahead and opening one waits for its data at most.
+
+### Svelte transitions
+
+Overlays animate in and out through Svelte transitions, never through CSS classes toggled on mount
+(daisyUI's `.modal` transition never runs on an element that is created open): `Modal` and
+`DialogHost` fade with the box scaling from 96 %, `Drawer` and `SlidePanel` fly in from the edge,
+the command palette drops in, `MaintenanceBanner` slides. Use `transition:slide` for a block that
+appears inside a page (the seats page's assign banner, collapsibles) and `transition:fade` for an
+overlay (the statistics' refetch overlay); keep durations at 150-300 ms and respect what is there.
+
 ## Common Patterns
 
 ### Loading States
+
+For a whole page, see "Navigation" above: the layout's `PageBoundary` shows the skeleton. Inside a
+page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a `pending` snippet.
 
 ```svelte
 <!-- Spinner -->

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createFuzzySearch } from '#lib/components/tanStackTable/search';
+	import { createFuzzySearch } from '#lib/helpers/fuzzySearch';
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';

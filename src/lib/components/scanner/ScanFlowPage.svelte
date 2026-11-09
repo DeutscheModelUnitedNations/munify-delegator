@@ -8,6 +8,7 @@
 	import ScanResultPanel from '#lib/components/scanner/ScanResultPanel.svelte';
 	import ScanHistory, { type ScanHistoryEntry } from '#lib/components/scanner/ScanHistory.svelte';
 	import type { ScannedUserData, ScannedUserFlow } from './scannedUserFlow.svelte';
+	import { userIdOfCode, type ScanAcceptance } from './scanAcceptance';
 
 	interface Props {
 		flow: ScannedUserFlow<S>;
@@ -17,6 +18,8 @@
 		/** Controls between the description and the scanner */
 		header?: Snippet;
 		barcodeFormats: BarcodeFormat[];
+		/** Which codes the scanner takes (see `BarcodeScanner`) */
+		acceptance: ScanAcceptance;
 		/** Key the scanner persists its camera preference under */
 		persistKey: string;
 		/** Shown when the scanned code matches nobody */
@@ -38,6 +41,7 @@
 		description,
 		header,
 		barcodeFormats,
+		acceptance,
 		persistKey,
 		notFoundMessage,
 		drawerTitle,
@@ -85,10 +89,14 @@
 
 	{@render header?.()}
 
+	<!-- The URL holds the person, not the code: a signed code is checked once, as it is scanned -->
 	<BarcodeScanner
 		bind:this={flow.scanner}
-		bind:scannedCode={flow.queryUserId}
+		bind:scannedCode={
+			() => flow.queryUserId, (code) => (flow.queryUserId = code ? userIdOfCode(code) : code)
+		}
 		{barcodeFormats}
+		{acceptance}
 		{persistKey}
 		{conferenceId}
 		manualPlaceholder={m.enterPostalRegistrationCode()}

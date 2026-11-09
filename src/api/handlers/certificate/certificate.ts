@@ -3,11 +3,13 @@ import { assertCanGetCertificate } from './certificatePermissions';
 import { certificatePublicKey, issueCertificate } from './certificateService';
 
 /**
- * The public key certificates are verified with. Only the members of an RSA public key: a JWK
- * type that also had the private members would be one export away from publishing them.
+ * The public key the certificates issued as JWTs (before signed codes) are verified with. Only the
+ * members of an RSA public key: a JWK type that also had the private members would be one export
+ * away from publishing them.
  */
 const JWK = schemaBuilder.simpleObject('JWK', {
-	description: 'The public RSA key certificates are signed with, as a JSON Web Key.',
+	description:
+		'The public RSA key the certificates issued as JWTs were signed with, as a JSON Web Key.',
 	fields: (t) => ({
 		kty: t.string({ nullable: true, description: 'The key type, `RSA`.' }),
 		alg: t.string({ nullable: true, description: 'The signing algorithm, `RS256`.' }),
@@ -17,10 +19,14 @@ const JWK = schemaBuilder.simpleObject('JWK', {
 	})
 });
 
-const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
+const Certificate = schemaBuilder.simpleObject('Certificate', {
 	description: 'A signed participation certificate, or nulls while attendance is not recorded.',
 	fields: (t) => ({
-		jwt: t.string({ nullable: true, description: 'The certificate, a JWT signed with RS256.' }),
+		code: t.string({
+			nullable: true,
+			description:
+				'The certificate as a signed code (`#lib/signedCode/signedCode`), which the PDF shows as a QR code linking to its check.'
+		}),
 		fullName: t.string({
 			nullable: true,
 			description: "The holder's name as the certificate states it."
@@ -33,10 +39,10 @@ const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
 });
 
 schemaBuilder.queryFields((t) => ({
-	getCertificateJWT: t.field({
+	getCertificate: t.field({
 		description:
 			'Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".',
-		type: CertificateJWT,
+		type: Certificate,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			userId: t.arg.id({ required: true, description: "The holder's user id." })
@@ -49,7 +55,7 @@ schemaBuilder.queryFields((t) => ({
 
 	getCertificateJWTPublicKeyObject: t.field({
 		description:
-			'The public half of the signing key, so certificates can be verified without this app. Open to anybody.',
+			'The public half of the key certificates issued as JWTs were signed with, which `/validateCertificate` still checks them against. New certificates are signed codes, checked against `signedCodeKeys`. Open to anybody.',
 		type: JWK,
 		resolve: () => certificatePublicKey()
 	})

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import DrawerHeader from './DrawerHeader.svelte';
 
 	interface Props {
@@ -45,10 +47,12 @@
 		aria-hidden="true"
 		onclick={close}
 		class="fixed top-0 left-0 z-30 h-screen w-screen bg-black opacity-30"
+		transition:fade={{ duration: 200 }}
 	></div>
 	<div
-		class="no-scrollbar fixed top-0 right-0 z-40 h-screen max-w-full overflow-y-auto duration-300"
+		class="no-scrollbar fixed top-0 right-0 z-40 h-screen max-w-full overflow-y-auto"
 		style="width: {width}"
+		transition:fly={{ x: '100%', duration: 300, easing: cubicOut }}
 	>
 		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10 max-sm:gap-6 max-sm:px-4">
 			<DrawerHeader {id} {title} {titleSnippet} {category} {loading} />

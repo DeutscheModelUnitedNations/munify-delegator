@@ -10,6 +10,8 @@
 	import ChaseStatusCard from './ChaseStatusCard.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
+	import { isOnTeam } from '#lib/helpers/teamAccess';
+	import { rememberTeamConference } from '#lib/state/lastTeamConference.svelte.js';
 	import { PUBLIC_DOCS_URL } from '$app/env/public';
 	import { fetchCanOpenPaperHub } from '../../paperhub/myPaperHubRoles';
 	import {
@@ -30,6 +32,11 @@
 		})
 	);
 	const access = $derived(await fetchTeamAccess(conferenceId));
+
+	// The home page offers the way back into this conference's team area
+	$effect(() => {
+		if (isOnTeam(access)) rememberTeamConference(conferenceId);
+	});
 
 	// A snapshot of a boolean, decided the same way as the team navigation's paper hub entry
 	const canSeePaperHub = $derived(await fetchCanOpenPaperHub(conferenceId));

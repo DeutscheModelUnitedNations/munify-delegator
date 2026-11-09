@@ -64,7 +64,7 @@ test('every management route renders for an authorised admin', async ({ page }) 
 
 		const body = await page.locator('body').innerText();
 		// SvelteKit's error page for a failed load, and the app's own access-denied copy.
-		if (/hier haben sie keinen zugriff|you don't have access to this page/i.test(body)) {
+		if (/hier hast du keinen zugriff|you don't have access to this page/i.test(body)) {
 			failures.push(`${path}: rendered access-denied for an admin`);
 		}
 		const realErrors = pageErrors.filter((e) => !DEV_SERVER_NOISE.test(e));

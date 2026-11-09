@@ -1,8 +1,8 @@
 import { getLocale } from '#lib/paraglide/runtime';
-import { renderComponent } from '#lib/components/tanStackTable/index';
-import { columnIdOf, type ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 import { m } from '#lib/paraglide/messages';
 import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter';
+import { cellOf, defineColumns, type GridColumn } from '#lib/components/dataGrid/gridColumn';
+import { PARTICIPANTS_COLUMNS } from '#lib/dataGrid/tables/participants';
 import {
 	translateAdministrativeStatus,
 	translateFoodPreference,
@@ -10,9 +10,7 @@ import {
 	translateParticipationRole,
 	translateTeamRole
 } from '#lib/utils/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type { ParticipantRow } from './types';
-import { getPlainTextValue } from './exportHelpers';
 import RoleBadge from './RoleBadge.svelte';
 import StatusIcon from './StatusIcon.svelte';
 import FlagCell from './FlagCell.svelte';
@@ -22,443 +20,297 @@ import GuardianConsentCell from './GuardianConsentCell.svelte';
 import MonoCell from './MonoCell.svelte';
 import ConferenceBirthdayCell from './ConferenceBirthdayCell.svelte';
 
-const GENDERS = ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT'];
-const FOOD_PREFERENCES = ['OMNIVORE', 'VEGETARIAN', 'VEGAN'];
-const PARTICIPATION_ROLES = [
-	'DELEGATION_MEMBER',
-	'SINGLE_PARTICIPANT',
-	'SUPERVISOR',
-	'TEAM_MEMBER',
-	'WAITING_LIST'
-];
-const TEAM_ROLES = [
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE',
-	'MEMBER',
-	'REVIEWER',
-	'TEAM_COORDINATOR',
-	'CONTENT_LEAD'
-];
-const ADMINISTRATIVE_STATUSES = ['DONE', 'PENDING', 'PROBLEM'];
-
-function formatDate(date: Date | null) {
-	return date ? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(date) : '';
+/** A nation (by alpha-3 code) or non-state actor (by name) the nation column offers. */
+export interface NationOption {
+	value: string;
+	label: string;
 }
 
-function participantColumns(): ManagedColumn<ParticipantRow>[] {
-	return [
-		// --- Personal ---
-		{
-			accessorKey: 'userId',
-			header: m.userId(),
-			cell: ({ row }) =>
-				renderComponent({ component: MonoCell, props: { value: row.original.userId } }),
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'family_name',
-			header: m.familyName(),
-			cell: ({ row }) => capitalizeFirstLetter(row.original.family_name),
-			group: m.personalData(),
-			defaultVisible: true,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'given_name',
-			header: m.givenName(),
-			cell: ({ row }) => capitalizeFirstLetter(row.original.given_name),
-			group: m.personalData(),
-			defaultVisible: true,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'email',
-			header: m.email(),
-			cell: ({ row }) => row.original.email ?? '',
-			group: m.personalData(),
-			defaultVisible: true,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'phone',
-			header: m.phone(),
-			cell: ({ row }) => row.original.phone ?? '',
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'birthday',
-			header: m.birthday(),
-			cell: ({ row }) =>
-				row.original.birthday
-					? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(
-							row.original.birthday
-						)
-					: '',
-			sortFn: (rowA, rowB) => {
-				const a = rowA.original.birthday?.getTime() ?? 0;
-				const b = rowB.original.birthday?.getTime() ?? 0;
-				return a - b;
-			},
-			group: m.personalData(),
-			defaultVisible: false
-		},
-		{
-			accessorKey: 'ageAtConference',
-			header: m.conferenceAge(),
-			group: m.computedValues(),
-			defaultVisible: false,
-			filter: { type: 'range' }
-		},
-		{
-			accessorKey: 'hasBirthdayDuringConference',
-			header: m.conferenceBirthday(),
-			cell: ({ row }) =>
-				renderComponent({
-					component: ConferenceBirthdayCell,
-					props: {
-						hasBirthday: row.original.hasBirthdayDuringConference
-					}
-				}),
-			group: m.computedValues(),
-			defaultVisible: false,
-			filter: { type: 'boolean' }
-		},
-		{
-			accessorKey: 'gender',
-			header: m.gender(),
-			cell: ({ row }) => (row.original.gender ? translateGender(row.original.gender) : ''),
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: {
-				type: 'enum',
-				options: [...GENDERS, '—'],
-				label: translateGender
-			}
-		},
-		{
-			accessorKey: 'pronouns',
-			header: m.pronouns(),
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'foodPreference',
-			header: m.foodPreference(),
-			cell: ({ row }) =>
-				renderComponent({
-					component: FoodPreferenceCell,
-					props: { value: row.original.foodPreference }
-				}),
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: {
-				type: 'enum',
-				options: [...FOOD_PREFERENCES, '—'],
-				label: translateFoodPreference
-			}
-		},
-		{
-			accessorKey: 'city',
-			header: m.city(),
-			cell: ({ row }) => (row.original.city ? capitalizeFirstLetter(row.original.city) : ''),
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'country',
-			header: m.country(),
-			group: m.personalData(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
+const dateText = (date: Date | null) =>
+	date ? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(date) : '';
 
-		// --- Role ---
-		{
-			accessorKey: 'role',
-			header: m.participationType(),
-			cell: ({ row }) =>
-				renderComponent({ component: RoleBadge, props: { role: row.original.role } }),
-			group: m.participation(),
-			defaultVisible: true,
-			filter: {
-				type: 'enum',
-				options: PARTICIPATION_ROLES,
-				label: translateParticipationRole
-			}
-		},
-		{
-			id: 'nation',
-			accessorFn: (row) =>
-				row.nsaName ??
-				(row.nationAlpha3Code
-					? getFullTranslatedCountryNameFromISO3Code(row.nationAlpha3Code)
-					: ''),
-			header: m.nation(),
-			cell: ({ row }) =>
-				renderComponent({
-					component: FlagCell,
-					props: {
-						alpha2Code: row.original.nationAlpha2Code,
-						alpha3Code: row.original.nationAlpha3Code,
-						nsaName: row.original.nsaName,
-						nsaIcon: row.original.nsaIcon
-					}
-				}),
-			sortFn: (rowA, rowB, columnId) => {
-				const a = rowA.getValue<string>(columnId) ?? '';
-				const b = rowB.getValue<string>(columnId) ?? '';
-				return a.localeCompare(b);
-			},
-			group: m.participation(),
-			defaultVisible: true,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'committee',
-			header: m.committee(),
-			group: m.participation(),
-			defaultVisible: true,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'school',
-			header: m.schoolOrInstitution(),
-			group: m.participation(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'isHeadDelegate',
-			header: m.headDelegate(),
-			cell: ({ row }) =>
-				renderComponent({ component: BooleanIcon, props: { value: row.original.isHeadDelegate } }),
-			group: m.participation(),
-			defaultVisible: false,
-			filter: { type: 'boolean' }
-		},
-		{
-			accessorKey: 'assignedRoleName',
-			header: m.assignedRole(),
-			cell: ({ row }) => {
-				const icon = row.original.assignedRoleIcon;
-				const name = row.original.assignedRoleName;
-				if (!name) return '';
-				if (icon) return `${name}`;
-				return name;
-			},
-			group: m.participation(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'teamRole',
-			header: m.teamMember(),
-			cell: ({ row }) => (row.original.teamRole ? translateTeamRole(row.original.teamRole) : ''),
-			group: m.participation(),
-			defaultVisible: false,
-			filter: {
-				type: 'enum',
-				options: [...TEAM_ROLES, '—'],
-				label: translateTeamRole
-			}
-		},
-		{
-			accessorKey: 'onWaitingList',
-			header: m.onWaitingList(),
-			cell: ({ row }) =>
-				renderComponent({ component: BooleanIcon, props: { value: row.original.onWaitingList } }),
-			group: m.participation(),
-			defaultVisible: false,
-			description: m.onWaitingListDescription(),
-			filter: { type: 'boolean', alwaysAvailable: true }
-		},
-		{
-			accessorKey: 'waitingListSince',
-			header: m.waitingListSince(),
-			cell: ({ row }) => formatDate(row.original.waitingListSince),
-			group: m.participation(),
-			defaultVisible: false
-		},
-		{
-			accessorKey: 'seatedFromWaitingListAt',
-			header: m.seatedFromWaitingListAt(),
-			cell: ({ row }) => formatDate(row.original.seatedFromWaitingListAt),
-			group: m.participation(),
-			defaultVisible: false,
-			description: m.seatedFromWaitingListAtDescription()
-		},
-		{
-			accessorKey: 'plansOwnAttendance',
-			header: m.attendancePlan(),
-			cell: ({ row }) =>
-				renderComponent({
-					component: BooleanIcon,
-					props: { value: row.original.plansOwnAttendance }
-				}),
-			group: m.participation(),
-			defaultVisible: false,
-			filter: { type: 'boolean' }
-		},
+const booleanCell = (value: boolean | null) => cellOf({ component: BooleanIcon, props: { value } });
+const statusCell = (status: ParticipantRow['paymentStatus']) =>
+	cellOf({ component: StatusIcon, props: { status } });
 
-		// --- Status ---
-		{
-			accessorKey: 'paymentStatus',
-			header: m.payment(),
-			cell: ({ row }) =>
-				renderComponent({ component: StatusIcon, props: { status: row.original.paymentStatus } }),
-			group: m.status(),
-			defaultVisible: true,
-			filter: {
-				type: 'enum',
-				options: ADMINISTRATIVE_STATUSES,
-				label: translateAdministrativeStatus,
-				alwaysAvailable: true
-			}
-		},
-		{
-			accessorKey: 'postalRegistrationStatus',
-			header: m.postalRegistration(),
-			cell: ({ row }) =>
-				renderComponent({
-					component: StatusIcon,
-					props: { status: row.original.postalRegistrationStatus }
-				}),
-			group: m.status(),
-			defaultVisible: true,
-			filter: {
-				type: 'enum',
-				options: ADMINISTRATIVE_STATUSES,
-				label: translateAdministrativeStatus,
-				alwaysAvailable: true
-			}
-		},
-		{
-			accessorKey: 'didAttend',
-			header: m.attendance(),
-			cell: ({ row }) =>
-				renderComponent({ component: BooleanIcon, props: { value: row.original.didAttend } }),
-			group: m.status(),
-			defaultVisible: true,
-			filter: { type: 'boolean' }
-		},
-		{
-			accessorKey: 'termsAndConditions',
-			header: m.termsAndConditions(),
-			cell: ({ row }) =>
-				renderComponent({
-					component: StatusIcon,
-					props: { status: row.original.termsAndConditions }
-				}),
-			group: m.status(),
-			defaultVisible: false,
-			filter: {
-				type: 'enum',
-				options: ADMINISTRATIVE_STATUSES,
-				label: translateAdministrativeStatus,
-				alwaysAvailable: true
-			}
-		},
-		{
-			accessorKey: 'guardianConsent',
-			header: m.guardianConsent(),
-			id: 'guardianConsent',
-			cell: ({ row }) =>
-				renderComponent({
-					component: GuardianConsentCell,
-					props: {
-						status: row.original.guardianConsent,
-						ageAtConference: row.original.ageAtConference
-					}
-				}),
-			group: m.status(),
-			defaultVisible: false,
-			filter: {
-				type: 'enum',
-				options: ADMINISTRATIVE_STATUSES,
-				label: translateAdministrativeStatus,
-				alwaysAvailable: true
-			}
-		},
-		{
-			accessorKey: 'mediaConsent',
-			header: m.mediaConsentStatus(),
-			id: 'mediaConsent',
-			cell: ({ row }) =>
-				renderComponent({ component: StatusIcon, props: { status: row.original.mediaConsent } }),
-			group: m.status(),
-			defaultVisible: false,
-			filter: {
-				type: 'enum',
-				options: ADMINISTRATIVE_STATUSES,
-				label: translateAdministrativeStatus,
-				alwaysAvailable: true
-			}
-		},
-		{
-			accessorKey: 'documentNumber',
-			header: m.documentNumber(),
-			group: m.status(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
-		{
-			accessorKey: 'accessCardId',
-			header: m.accessCardId(),
-			group: m.status(),
-			defaultVisible: false,
-			filter: { type: 'text' }
-		},
+/**
+ * The participants table's columns: the API's metadata (`PARTICIPANTS_COLUMNS`) with labels, cells
+ * and headings. The nation column offers the conference's nations and non-state actors.
+ */
+export function participantColumns({
+	nations
+}: {
+	nations: readonly NationOption[];
+}): GridColumn<ParticipantRow>[] {
+	const personal = m.personalData();
+	const participation = m.participation();
+	const status = m.status();
+	const computed = m.computedValues();
+	const nationLabels = new Map(nations.map((nation) => [nation.value, nation.label]));
 
-		// --- Computed ---
-		{
-			accessorKey: 'accepted',
-			header: m.accepted(),
-			cell: ({ row }) =>
-				renderComponent({ component: BooleanIcon, props: { value: row.original.accepted } }),
-			group: m.computedValues(),
-			defaultVisible: true,
-			filter: { type: 'boolean', alwaysAvailable: true }
-		},
-		{
-			accessorKey: 'hasOpenIssue',
-			header: m.openIssues(),
-			cell: ({ row }) =>
-				renderComponent({ component: BooleanIcon, props: { value: row.original.hasOpenIssue } }),
-			group: m.computedValues(),
-			defaultVisible: false,
-			description: m.openIssuesDescription(),
-			filter: { type: 'boolean', alwaysAvailable: true, hint: m.openIssuesExplanation() }
-		},
-		{
-			accessorKey: 'participationCount',
-			header: m.participationCount(),
-			group: m.computedValues(),
-			defaultVisible: false,
-			filter: { type: 'range' }
+	return defineColumns<ParticipantRow, (typeof PARTICIPANTS_COLUMNS)[number]>({
+		metas: PARTICIPANTS_COLUMNS,
+		extras: {
+			userId: {
+				label: m.userId(),
+				group: personal,
+				defaultVisible: false,
+				value: (row) => row.userId,
+				cell: (row) => cellOf({ component: MonoCell, props: { value: row.userId } })
+			},
+			family_name: {
+				label: m.familyName(),
+				group: personal,
+				alwaysVisible: true,
+				size: 170,
+				value: (row) => row.family_name,
+				text: (row) => capitalizeFirstLetter(row.family_name)
+			},
+			given_name: {
+				label: m.givenName(),
+				group: personal,
+				value: (row) => row.given_name,
+				text: (row) => capitalizeFirstLetter(row.given_name)
+			},
+			email: { label: m.email(), group: personal, size: 220, value: (row) => row.email },
+			phone: {
+				label: m.phone(),
+				group: personal,
+				defaultVisible: false,
+				value: (row) => row.phone
+			},
+			birthday: {
+				label: m.birthday(),
+				group: personal,
+				defaultVisible: false,
+				value: (row) => row.birthday,
+				text: (row) => dateText(row.birthday)
+			},
+			ageAtConference: {
+				label: m.conferenceAge(),
+				group: computed,
+				defaultVisible: false,
+				align: 'right',
+				size: 110,
+				value: (row) => row.ageAtConference
+			},
+			hasBirthdayDuringConference: {
+				label: m.conferenceBirthday(),
+				group: computed,
+				defaultVisible: false,
+				value: (row) => row.hasBirthdayDuringConference,
+				cell: (row) =>
+					cellOf({
+						component: ConferenceBirthdayCell,
+						props: { hasBirthday: row.hasBirthdayDuringConference }
+					})
+			},
+			gender: {
+				label: m.gender(),
+				group: personal,
+				defaultVisible: false,
+				optionLabel: translateGender,
+				value: (row) => row.gender
+			},
+			pronouns: {
+				label: m.pronouns(),
+				group: personal,
+				defaultVisible: false,
+				value: (row) => row.pronouns
+			},
+			foodPreference: {
+				label: m.foodPreference(),
+				group: personal,
+				defaultVisible: false,
+				optionLabel: translateFoodPreference,
+				value: (row) => row.foodPreference,
+				cell: (row) =>
+					cellOf({ component: FoodPreferenceCell, props: { value: row.foodPreference } }),
+				exportValue: (row) =>
+					row.foodPreference ? translateFoodPreference(row.foodPreference) : ''
+			},
+			city: {
+				label: m.city(),
+				group: personal,
+				defaultVisible: false,
+				value: (row) => row.city,
+				text: (row) => (row.city ? capitalizeFirstLetter(row.city) : '')
+			},
+			country: {
+				label: m.country(),
+				group: personal,
+				defaultVisible: false,
+				value: (row) => row.country
+			},
+			role: {
+				label: m.participationType(),
+				group: participation,
+				optionLabel: translateParticipationRole,
+				value: (row) => row.role,
+				cell: (row) => cellOf({ component: RoleBadge, props: { role: row.role } }),
+				exportValue: (row) => translateParticipationRole(row.role)
+			},
+			nation: {
+				label: m.nation(),
+				group: participation,
+				options: nations.map((nation) => nation.value),
+				optionLabel: (value) => nationLabels.get(value) ?? value,
+				value: (row) => row.nsaName ?? row.nationAlpha3Code,
+				cell: (row) =>
+					cellOf({
+						component: FlagCell,
+						props: {
+							alpha2Code: row.nationAlpha2Code,
+							alpha3Code: row.nationAlpha3Code,
+							nsaName: row.nsaName,
+							nsaIcon: row.nsaIcon
+						}
+					})
+			},
+			committee: { label: m.committee(), group: participation, value: (row) => row.committee },
+			school: {
+				label: m.schoolOrInstitution(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.school
+			},
+			isHeadDelegate: {
+				label: m.headDelegate(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.isHeadDelegate,
+				cell: (row) => booleanCell(row.isHeadDelegate)
+			},
+			assignedRoleName: {
+				label: m.assignedRole(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.assignedRoleName
+			},
+			teamRole: {
+				label: m.teamMember(),
+				group: participation,
+				defaultVisible: false,
+				optionLabel: translateTeamRole,
+				value: (row) => row.teamRole
+			},
+			onWaitingList: {
+				label: m.onWaitingList(),
+				description: m.onWaitingListDescription(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.onWaitingList,
+				cell: (row) => booleanCell(row.onWaitingList)
+			},
+			waitingListSince: {
+				label: m.waitingListSince(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.waitingListSince,
+				text: (row) => dateText(row.waitingListSince)
+			},
+			seatedFromWaitingListAt: {
+				label: m.seatedFromWaitingListAt(),
+				description: m.seatedFromWaitingListAtDescription(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.seatedFromWaitingListAt,
+				text: (row) => dateText(row.seatedFromWaitingListAt)
+			},
+			plansOwnAttendance: {
+				label: m.attendancePlan(),
+				group: participation,
+				defaultVisible: false,
+				value: (row) => row.plansOwnAttendance,
+				cell: (row) => booleanCell(row.plansOwnAttendance)
+			},
+			paymentStatus: {
+				label: m.payment(),
+				group: status,
+				optionLabel: translateAdministrativeStatus,
+				value: (row) => row.paymentStatus,
+				cell: (row) => statusCell(row.paymentStatus)
+			},
+			postalRegistrationStatus: {
+				label: m.postalRegistration(),
+				group: status,
+				optionLabel: translateAdministrativeStatus,
+				value: (row) => row.postalRegistrationStatus,
+				cell: (row) => statusCell(row.postalRegistrationStatus)
+			},
+			didAttend: {
+				label: m.attendance(),
+				group: status,
+				value: (row) => row.didAttend,
+				cell: (row) => booleanCell(row.didAttend)
+			},
+			termsAndConditions: {
+				label: m.termsAndConditions(),
+				group: status,
+				defaultVisible: false,
+				optionLabel: translateAdministrativeStatus,
+				value: (row) => row.termsAndConditions,
+				cell: (row) => statusCell(row.termsAndConditions)
+			},
+			guardianConsent: {
+				label: m.guardianConsent(),
+				group: status,
+				defaultVisible: false,
+				optionLabel: translateAdministrativeStatus,
+				value: (row) => row.guardianConsent,
+				cell: (row) =>
+					cellOf({
+						component: GuardianConsentCell,
+						props: { status: row.guardianConsent, ageAtConference: row.ageAtConference }
+					}),
+				exportValue: (row) =>
+					row.ageAtConference !== null && row.ageAtConference >= 18
+						? m.notRequired()
+						: row.guardianConsent
+							? translateAdministrativeStatus(row.guardianConsent)
+							: ''
+			},
+			mediaConsent: {
+				label: m.mediaConsentStatus(),
+				group: status,
+				defaultVisible: false,
+				optionLabel: translateAdministrativeStatus,
+				value: (row) => row.mediaConsent,
+				cell: (row) => statusCell(row.mediaConsent)
+			},
+			documentNumber: {
+				label: m.documentNumber(),
+				group: status,
+				defaultVisible: false,
+				value: (row) => (row.documentNumber === null ? null : String(row.documentNumber))
+			},
+			accessCardId: {
+				label: m.accessCardId(),
+				group: status,
+				defaultVisible: false,
+				value: (row) => row.accessCardId
+			},
+			accepted: {
+				label: m.accepted(),
+				group: computed,
+				value: (row) => row.accepted,
+				cell: (row) => booleanCell(row.accepted)
+			},
+			hasOpenIssue: {
+				label: m.openIssues(),
+				description: m.openIssuesExplanation(),
+				group: computed,
+				defaultVisible: false,
+				value: (row) => row.hasOpenIssue,
+				cell: (row) => booleanCell(row.hasOpenIssue)
+			},
+			participationCount: {
+				label: m.participationCount(),
+				group: computed,
+				defaultVisible: false,
+				align: 'right',
+				value: (row) => row.participationCount
+			}
 		}
-	];
-}
-
-/** The columns, each exporting the text `getPlainTextValue` gives for it. */
-export function createColumnDefs(): ManagedColumn<ParticipantRow>[] {
-	return participantColumns().map((column) => {
-		const id = columnIdOf(column);
-		return id === undefined
-			? column
-			: { ...column, exportValue: (row) => getPlainTextValue({ row, columnId: id }) };
 	});
 }
-
-/** The order of the groups in the filter and column drawers. */
-export const participantGroupOrder = () => [
-	m.personalData(),
-	m.participation(),
-	m.status(),
-	m.computedValues()
-];

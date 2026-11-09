@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { requiredApplicationOf, requiredWithoutSeat, seatOccupancy } from './seatChecks';
+import {
+	prioritizedApplicationOf,
+	prioritizedElsewhere,
+	requiredApplicationOf,
+	requiredWithoutSeat,
+	seatOccupancy
+} from './seatChecks';
 
 test('requiredApplicationOf reads which application a review row is about', () => {
 	expect(requiredApplicationOf({ delegationId: 'd', singleParticipantId: null })).toEqual([
@@ -102,5 +108,68 @@ describe('seatOccupancy', () => {
 				roleSeats: new Map()
 			})
 		).toEqual({ total: 2, taken: 3, free: 0 });
+	});
+});
+
+test('prioritizedApplicationOf reads the prioritized wish of a review row', () => {
+	expect(prioritizedApplicationOf({ delegationId: 'd', prioritizedRoleId: 'fra' })).toEqual([
+		{ delegationId: 'd', roleId: 'fra' }
+	]);
+	expect(
+		prioritizedApplicationOf({ singleParticipantId: 's', prioritizedRoleId: 'press' })
+	).toEqual([{ singleParticipantId: 's', roleId: 'press' }]);
+	expect(prioritizedApplicationOf({ delegationId: 'd', prioritizedRoleId: null })).toEqual([]);
+});
+
+describe('prioritizedElsewhere', () => {
+	const state = {
+		groups: [
+			group('onIt', 'fra'),
+			group('elsewhere', 'chn'),
+			group('split', 'gbr'),
+			group('split', 'fra'),
+			group('unseated', null),
+			group(null, 'usa', 1, 'converted')
+		],
+		singles: [
+			{ singleParticipantId: 'press', roleId: 'press' },
+			{ singleParticipantId: 'judge', roleId: 'judge' },
+			{ singleParticipantId: 'waiting', roleId: null }
+		]
+	};
+
+	test('lists seated applications holding another role than the prioritized one', () => {
+		const found = prioritizedElsewhere({
+			prioritized: [
+				{ delegationId: 'onIt', roleId: 'fra' },
+				{ delegationId: 'elsewhere', roleId: 'fra' },
+				{ singleParticipantId: 'judge', roleId: 'press' },
+				{ singleParticipantId: 'press', roleId: 'press' },
+				{ singleParticipantId: 'converted', roleId: 'press' }
+			],
+			state
+		});
+		expect(found).toEqual([
+			{ application: { delegationId: 'elsewhere', roleId: 'fra' }, heldRoleIds: ['chn'] },
+			{ application: { singleParticipantId: 'judge', roleId: 'press' }, heldRoleIds: ['judge'] },
+			{
+				application: { singleParticipantId: 'converted', roleId: 'press' },
+				heldRoleIds: ['usa']
+			}
+		]);
+	});
+
+	test('leaves out applications without a seat and split delegations with a part on it', () => {
+		expect(
+			prioritizedElsewhere({
+				prioritized: [
+					{ delegationId: 'split', roleId: 'fra' },
+					{ delegationId: 'unseated', roleId: 'fra' },
+					{ delegationId: 'notOnBoard', roleId: 'fra' },
+					{ singleParticipantId: 'waiting', roleId: 'press' }
+				],
+				state
+			})
+		).toEqual([]);
 	});
 });

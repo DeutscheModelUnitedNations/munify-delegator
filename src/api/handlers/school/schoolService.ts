@@ -15,7 +15,7 @@ import { m } from '#lib/paraglide/messages';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
-import { cleanSchoolName, type ConferenceSchoolSortColumn } from './schoolArgs';
+import { cleanSchoolName } from './schoolArgs';
 
 /**
  * The school a person names for themselves (when applying, as a supervisor, on the waiting list or
@@ -87,7 +87,9 @@ type EditableSchoolField =
 	| 'notes';
 
 /** The fields of a school the team edits; an omitted field stays, `null` clears it (not the name). */
-export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null };
+export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null } & {
+	isForeignSchool?: boolean;
+};
 
 /**
  * Changes the given fields of a school the caller may update (`assertCanUpdateSchools`); an
@@ -143,24 +145,7 @@ export async function mergeSchools({
 			)
 		);
 		const participantIds = participants.map((row) => row.id);
-		// registrations read their school through the participant row
-		const registrationWhere = { conferenceParticipantId: { in: participantIds } };
-		const [members, singleParticipants, supervisors] = participantIds.length
-			? await Promise.all([
-					tx.query.delegationMember.findMany({
-						where: registrationWhere,
-						columns: { id: true, delegationId: true }
-					}),
-					tx.query.singleParticipant.findMany({
-						where: registrationWhere,
-						columns: { id: true }
-					}),
-					tx.query.conferenceSupervisor.findMany({
-						where: registrationWhere,
-						columns: { id: true }
-					})
-				])
-			: [[], [], []];
+		const registrations = await registrationsOf({ tx, participantIds });
 
 		await tx
 			.update(schema.school)
@@ -172,6 +157,8 @@ export async function mergeSchools({
 				city: fill('city'),
 				region: fill('region'),
 				country: fill('country'),
+				// one of them known to be abroad is enough
+				isForeignSchool: rows.some((row) => row.isForeignSchool),
 				website: fill('website'),
 				contactName: fill('contactName'),
 				contactEmail: fill('contactEmail'),
@@ -194,10 +181,7 @@ export async function mergeSchools({
 		return {
 			waitingListEntryIds: waitingListEntries.map((row) => row.id),
 			participantIds,
-			memberIds: members.map((row) => row.id),
-			delegationIds: [...new Set(members.map((row) => row.delegationId))],
-			singleParticipantIds: singleParticipants.map((row) => row.id),
-			supervisorIds: supervisors.map((row) => row.id)
+			...registrations
 		};
 	});
 	schoolPubsub.updated(targetId);
@@ -205,15 +189,85 @@ export async function mergeSchools({
 	// the sources' variants cascaded, and suggestions left with one school may be gone
 	schoolSuggestionPubsub.removed();
 	schoolSuggestionVariantPubsub.removed();
+	announceSchoolChanged(repointed);
+}
+
+/** The registrations that read their school through these participant rows. */
+async function registrationsOf({ tx, participantIds }: { tx: Db; participantIds: string[] }) {
+	if (participantIds.length === 0) {
+		return { memberIds: [], delegationIds: [], singleParticipantIds: [], supervisorIds: [] };
+	}
+	const where = { conferenceParticipantId: { in: participantIds } };
+	const [members, singleParticipants, supervisors] = await Promise.all([
+		tx.query.delegationMember.findMany({ where, columns: { id: true, delegationId: true } }),
+		tx.query.singleParticipant.findMany({ where, columns: { id: true } }),
+		tx.query.conferenceSupervisor.findMany({ where, columns: { id: true } })
+	]);
+	return {
+		memberIds: members.map((row) => row.id),
+		delegationIds: [...new Set(members.map((row) => row.delegationId))],
+		singleParticipantIds: singleParticipants.map((row) => row.id),
+		supervisorIds: supervisors.map((row) => row.id)
+	};
+}
+
+/** Announces the rows whose school changed, and the registrations reading it through them. */
+function announceSchoolChanged(
+	changed: { waitingListEntryIds: string[]; participantIds: string[] } & Awaited<
+		ReturnType<typeof registrationsOf>
+	>
+) {
 	const announce: [{ updated: (ids: string[]) => void }, string[]][] = [
-		[waitingListEntryPubsub, repointed.waitingListEntryIds],
-		[conferenceParticipantPubsub, repointed.participantIds],
-		[delegationMemberPubsub, repointed.memberIds],
-		[delegationPubsub, repointed.delegationIds],
-		[singleParticipantPubsub, repointed.singleParticipantIds],
-		[conferenceSupervisorPubsub, repointed.supervisorIds]
+		[waitingListEntryPubsub, changed.waitingListEntryIds],
+		[conferenceParticipantPubsub, changed.participantIds],
+		[delegationMemberPubsub, changed.memberIds],
+		[delegationPubsub, changed.delegationIds],
+		[singleParticipantPubsub, changed.singleParticipantIds],
+		[conferenceSupervisorPubsub, changed.supervisorIds]
 	];
 	for (const [pubsub, ids] of announce) if (ids.length > 0) pubsub.updated(ids);
+}
+
+/**
+ * Deletes a school the caller may delete (the `delete` ability), for a name typed wrongly: the
+ * people and waiting list entries naming it are left without a school, and suggestions left with
+ * a single school go too.
+ */
+export async function deleteSchool(id: string) {
+	const cleared = await db.transaction(async (tx) => {
+		const [waitingListEntries, participants] = await Promise.all([
+			tx.query.waitingListEntry.findMany({ where: { schoolId: id }, columns: { id: true } }),
+			tx.query.conferenceParticipant.findMany({ where: { schoolId: id }, columns: { id: true } })
+		]);
+		const suggestionIds = (
+			await tx.query.schoolSuggestionVariant.findMany({
+				where: { schoolId: id },
+				columns: { suggestionId: true }
+			})
+		).map((row) => row.suggestionId);
+		// references set null, the school's variants cascade
+		await tx.delete(schema.school).where(whereRows({ table: schema.school, filter: { id } }));
+		if (suggestionIds.length > 0) {
+			await tx.execute(sql`
+				delete from school_suggestion s
+				where s.id in (${sql.join(
+					suggestionIds.map((suggestionId) => sql`${suggestionId}`),
+					sql`, `
+				)})
+					and (select count(*) from school_suggestion_variant v where v.suggestion_id = s.id) < 2
+			`);
+		}
+		const participantIds = participants.map((row) => row.id);
+		return {
+			waitingListEntryIds: waitingListEntries.map((row) => row.id),
+			participantIds,
+			...(await registrationsOf({ tx, participantIds }))
+		};
+	});
+	schoolPubsub.removed();
+	schoolSuggestionPubsub.removed();
+	schoolSuggestionVariantPubsub.removed();
+	announceSchoolChanged(cleared);
 }
 
 /**
@@ -319,111 +373,4 @@ export async function schoolMetrics({
 		.array(z.object({ result: schoolMetricsRowSchema }))
 		.parse(result.rows)
 		.map((row) => row.result);
-}
-
-const conferenceSchoolRowSchema = z.object({
-	schoolId: z.string(),
-	name: z.string(),
-	city: z.string().nullable(),
-	delegations: z.number(),
-	participants: z.number(),
-	applied: z.number(),
-	seated: z.number(),
-	supervisors: z.number(),
-	waitingList: z.number()
-});
-
-/**
- * The schools of the people in one conference - participants, supervisors and those on the
- * waiting list - with how many people each sends, one page at a time.
- */
-export async function conferenceSchoolsPage(args: {
-	conferenceId: string;
-	search?: string | null;
-	sortColumn: ConferenceSchoolSortColumn;
-	sortDesc: boolean;
-	limit: number;
-	offset: number;
-}) {
-	const term = args.search ? cleanSchoolName(args.search) : '';
-	const like = `%${escapeLike(term)}%`;
-	const direction = args.sortDesc ? sql`desc` : sql`asc`;
-	const orderColumn = sql.identifier(
-		args.sortColumn === 'waitingList' ? 'waiting_list' : args.sortColumn
-	);
-
-	const result = await db.execute<{ result: unknown; total: unknown }>(sql`
-		-- each person by their own school, whatever delegation the assignment put them in
-		with people as (
-			select cp.school_id, d.id as delegation_id, d.applied, d.assigned_role_id is not null as seated,
-				'MEMBER' as kind
-			from conference_participant cp
-			join delegation_member dm on dm.conference_participant_id = cp.id
-			join delegation d on d.id = dm.delegation_id
-			where cp.conference_id = ${args.conferenceId} and cp.school_id is not null
-			union all
-			select cp.school_id, null, sp.applied, sp.assigned_role_id is not null, 'SINGLE'
-			from single_participant sp join conference_participant cp on cp.id = sp.conference_participant_id
-			where cp.conference_id = ${args.conferenceId} and cp.school_id is not null
-			union all
-			select cp.school_id, null, true, false, 'SUPERVISOR'
-			from conference_supervisor cs join conference_participant cp on cp.id = cs.conference_participant_id
-			where cp.conference_id = ${args.conferenceId} and cp.school_id is not null
-			union all
-			select w.school_id, null, false, false, 'WAITING'
-			from waiting_list_entry w
-			where w.conference_id = ${args.conferenceId} and w.school_id is not null and w.assigned_at is null
-		),
-		rows as (
-			select s.id as school_id, s.name, s.city,
-				count(distinct p.delegation_id)::int as delegations,
-				count(*) filter (where p.kind in ('MEMBER', 'SINGLE'))::int as participants,
-				count(*) filter (where p.kind in ('MEMBER', 'SINGLE') and p.applied)::int as applied,
-				count(*) filter (where p.seated)::int as seated,
-				count(*) filter (where p.kind = 'SUPERVISOR')::int as supervisors,
-				count(*) filter (where p.kind = 'WAITING')::int as waiting_list
-			from people p join school s on s.id = p.school_id
-			where ${term ? sql`(s.name ilike ${like} or s.city ilike ${like})` : sql`true`}
-			group by s.id
-		)
-		select json_build_object(
-			'schoolId', school_id, 'name', name, 'city', city, 'delegations', delegations,
-			'participants', participants, 'applied', applied, 'seated', seated,
-			'supervisors', supervisors, 'waitingList', waiting_list
-		) as result, count(*) over ()::int as total
-		from rows
-		order by ${orderColumn} ${direction} nulls last, name, school_id
-		limit ${args.limit + 1} offset ${args.offset}`);
-
-	const rows = z
-		.array(z.object({ result: conferenceSchoolRowSchema, total: z.number() }))
-		.parse(result.rows);
-	return {
-		rows: rows.slice(0, args.limit).map((row) => row.result),
-		hasMore: rows.length > args.limit,
-		total:
-			rows[0]?.total ??
-			(args.offset > 0
-				? await countConferenceSchools({ conferenceId: args.conferenceId, term })
-				: 0)
-	};
-}
-
-/** How many schools a page past the end would have listed, for its total. */
-async function countConferenceSchools({
-	conferenceId,
-	term
-}: {
-	conferenceId: string;
-	term: string;
-}) {
-	const page = await conferenceSchoolsPage({
-		conferenceId,
-		search: term,
-		sortColumn: 'name',
-		sortDesc: false,
-		limit: 1,
-		offset: 0
-	});
-	return page.total;
 }

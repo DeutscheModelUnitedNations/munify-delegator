@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	acceptsApplications,
+	acceptsSupervisorSignups,
 	applicationTextsComplete,
 	selectionInProgress,
 	technicalRegistrationDeadline
@@ -69,5 +70,18 @@ describe('selectionInProgress', () => {
 		expect(
 			selectionInProgress({ conference: noGrace, now: Date.parse('2026-03-01T12:00:01Z') })
 		).toBe(true);
+	});
+});
+
+describe('acceptsSupervisorSignups', () => {
+	test.each(['PRE', 'PARTICIPANT_REGISTRATION', 'PREPARATION', 'ACTIVE'] as const)(
+		'takes supervisors in %s, registration window or not',
+		(state) => {
+			expect(acceptsSupervisorSignups({ conference: { state } })).toBe(true);
+		}
+	);
+
+	test('takes no supervisors once the conference is over', () => {
+		expect(acceptsSupervisorSignups({ conference: { state: 'POST' } })).toBe(false);
 	});
 });

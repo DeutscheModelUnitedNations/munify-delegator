@@ -95,7 +95,8 @@
 <ScanFlowPage
 	{flow}
 	conferenceId={routeParams.conferenceId}
-	barcodeFormats={['data_matrix']}
+	barcodeFormats={['qr_code']}
+	acceptance={{ conferenceId: routeParams.conferenceId, kinds: ['print'], printedNametags: false }}
 	persistKey="useCameraForPostalRegistration"
 	notFoundMessage={m.userNotFoundForPostalRegistration()}
 	drawerTitle={m.postalRegistration()}

@@ -4,15 +4,19 @@
 	import { toast } from 'svelte-sonner';
 	import { m } from '#lib/paraglide/messages';
 	import ScanViewfinder from './ScanViewfinder.svelte';
+	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
+	import { readAimIdentifier } from './aimIdentifier';
 
 	interface Props {
-		/** Called once for each code the camera reads, with the format it was read in. */
-		onscan: (scan: { rawValue: string; format: string }) => void;
+		/** Which codes it takes; a refused one is reported, and the camera waits for the next. */
+		acceptance: ScanAcceptance;
+		/** Called once for the first code the camera reads that is accepted. */
+		onscan: (scan: { code: string; userId: string }) => void;
 		/** Called when the camera is turned off or cannot start. */
 		onclose: () => void;
 	}
 
-	let { onscan, onclose }: Props = $props();
+	let { acceptance, onscan, onclose }: Props = $props();
 
 	let videoElem = $state<HTMLVideoElement>();
 	let streaming = $state(false);
@@ -22,6 +26,25 @@
 	// Created on first use: the polyfill cannot be constructed during SSR
 	let detector: BarcodeDetector | undefined;
 	let detecting = false;
+	/** The code refused last, passed over while it is still in the picture. */
+	let refused: string | null = null;
+
+	async function check(found: { rawValue: string; format: string }) {
+		const read = readAimIdentifier(found.rawValue.trim());
+		const verdict = await acceptScan({
+			text: read.code,
+			format: read.format ?? found.format,
+			acceptance
+		});
+		if (!verdict.accepted) {
+			refused = found.rawValue;
+			toast.error(verdict.message);
+			return;
+		}
+		// one scan per opening: the caller closes the camera or opens it again
+		handled = found.rawValue;
+		onscan({ code: verdict.code, userId: verdict.userId });
+	}
 
 	function stopVideo() {
 		if (videoElem?.srcObject instanceof MediaStream) {
@@ -55,12 +78,10 @@
 		detecting = true;
 		try {
 			detector ??= new BarcodeDetector();
-			const found = (await detector.detect(videoElem)).find((barcode) => barcode.rawValue);
-			if (found) {
-				// one scan per opening: the caller closes the camera or opens it again
-				handled = found.rawValue;
-				onscan({ rawValue: found.rawValue, format: found.format });
-			}
+			const found = (await detector.detect(videoElem)).find(
+				(barcode) => barcode.rawValue && barcode.rawValue !== refused
+			);
+			if (found) await check(found);
 		} catch (error) {
 			toast.error(m.barcodeDetectError({ error: String(error) }));
 		} finally {

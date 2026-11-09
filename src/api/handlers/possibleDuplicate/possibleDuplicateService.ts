@@ -1,10 +1,13 @@
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
-import { db, schema } from '#api/db/db';
+import { db, schema, type Transaction } from '#api/db/db';
 import { participatesIn } from '#api/services/authHelper/rules';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
 import { possibleDuplicatePubsub, userPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors';
+import { reconcileLinks, type LinkChanges, type LinkPair } from './sameLinks';
 
 /*
  * Looks for accounts that may belong to the same person, so a care note survives a fresh signup.
@@ -225,9 +228,83 @@ export async function attendancesOf(userId: string): Promise<Attendance[]> {
 	].sort((a, b) => b.startConference.getTime() - a.startConference.getTime());
 }
 
+/** Everyone `accounts` reach through confirmed pairs, as they were linked so far. */
+async function linkedAccounts({ tx, accounts }: { tx: Transaction; accounts: string[] }) {
+	const reached = new Set(accounts);
+	let frontier = [...reached];
+	while (frontier.length > 0) {
+		const linked = await tx.query.possibleDuplicate.findMany({
+			columns: { userId: true, candidateId: true },
+			where: {
+				status: 'CONFIRMED',
+				OR: [{ userId: { in: frontier } }, { candidateId: { in: frontier } }]
+			}
+		});
+		frontier = linked
+			.flatMap((row) => [row.userId, row.candidateId])
+			.filter((account) => !reached.has(account));
+		for (const account of frontier) reached.add(account);
+	}
+	return [...reached];
+}
+
+async function assertNoLinkConflict({
+	tx,
+	conflict
+}: {
+	tx: Transaction;
+	conflict: LinkPair | undefined;
+}) {
+	if (!conflict) return;
+	const names = await tx.query.user.findMany({
+		columns: { id: true, givenName: true, familyName: true },
+		where: { id: { in: [conflict.userId, conflict.candidateId] } }
+	});
+	const [first, second] = names.map((user) => `${user.givenName} ${user.familyName}`);
+	throw apiError({
+		code: 'CONFLICT',
+		message: m.possibleDuplicateLinkConflict({ first: first ?? '', second: second ?? '' })
+	});
+}
+
+async function writeLinkChanges({
+	tx,
+	changes,
+	decidedById,
+	decidedAt
+}: {
+	tx: Transaction;
+	changes: LinkChanges;
+	decidedById: string;
+	decidedAt: Date | null;
+}) {
+	const pairsIn = (ids: string[]) =>
+		whereRows({ table: schema.possibleDuplicate, filter: { id: { in: ids } } });
+	const linked = { status: 'CONFIRMED' as const, inferred: true, decidedById, decidedAt };
+	if (changes.confirm.length > 0) {
+		await tx.update(schema.possibleDuplicate).set(linked).where(pairsIn(changes.confirm));
+	}
+	if (changes.reopen.length > 0) {
+		await tx
+			.update(schema.possibleDuplicate)
+			.set({ status: 'OPEN', inferred: false, decidedById: null, decidedAt: null })
+			.where(pairsIn(changes.reopen));
+	}
+	if (changes.remove.length > 0) {
+		await tx.delete(schema.possibleDuplicate).where(pairsIn(changes.remove));
+	}
+	if (changes.insert.length > 0) {
+		await tx
+			.insert(schema.possibleDuplicate)
+			.values(changes.insert.map((link) => ({ ...link, score: 0, reasons: [], ...linked })));
+	}
+}
+
 /**
  * Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`, which
- * forgets who decided and when.
+ * forgets who decided and when. The links follow (`reconcileLinks`): confirming pairs every account
+ * of the person with every other one, reopening or dismissing takes back what only this pair
+ * implied. CONFLICT when a confirmation would make one person of two accounts a pair says are two.
  */
 export async function decidePossibleDuplicate({
 	id,
@@ -239,23 +316,46 @@ export async function decidePossibleDuplicate({
 	decidedById: string;
 }) {
 	const decided = status !== 'OPEN';
-	const updated = await db
-		.update(schema.possibleDuplicate)
-		.set({
-			status,
-			decidedById: decided ? decidedById : null,
-			decidedAt: decided ? new Date() : null
-		})
-		.where(whereRows({ table: schema.possibleDuplicate, filter: { id } }))
-		.returning({
-			userId: schema.possibleDuplicate.userId,
-			candidateId: schema.possibleDuplicate.candidateId
-		});
+	const decidedAt = decided ? new Date() : null;
+	const touched = await db.transaction(async (tx) => {
+		// decisions are rare; one at a time keeps two of them from linking past each other
+		await tx.execute(sql`select pg_advisory_xact_lock(hashtext('possible_duplicate_links'))`);
+		const [pair] = await tx
+			.update(schema.possibleDuplicate)
+			.set({ status, inferred: false, decidedById: decided ? decidedById : null, decidedAt })
+			.where(whereRows({ table: schema.possibleDuplicate, filter: { id } }))
+			.returning({
+				userId: schema.possibleDuplicate.userId,
+				candidateId: schema.possibleDuplicate.candidateId
+			});
+		if (!pair) return { pairIds: [id], userIds: [], created: false, removed: false };
 
-	possibleDuplicatePubsub.updated(id);
-	// what of each account the care team may read follows the decision
-	for (const pair of updated) {
-		userPubsub.updated(pair.userId);
-		userPubsub.updated(pair.candidateId);
-	}
+		const among = await linkedAccounts({ tx, accounts: [pair.userId, pair.candidateId] });
+		const pairs = await tx.query.possibleDuplicate.findMany({
+			columns: {
+				id: true,
+				userId: true,
+				candidateId: true,
+				status: true,
+				inferred: true,
+				reasons: true
+			},
+			where: { userId: { in: among }, candidateId: { in: among } }
+		});
+		const changes = reconcileLinks(pairs);
+		await assertNoLinkConflict({ tx, conflict: changes.conflicts[0] });
+		await writeLinkChanges({ tx, changes, decidedById, decidedAt });
+		return {
+			pairIds: [id, ...changes.confirm, ...changes.reopen],
+			// what of each account the care team may read follows the decision
+			userIds: among,
+			created: changes.insert.length > 0,
+			removed: changes.remove.length > 0
+		};
+	});
+
+	possibleDuplicatePubsub.updated(touched.pairIds);
+	if (touched.created) possibleDuplicatePubsub.created();
+	if (touched.removed) possibleDuplicatePubsub.removed();
+	if (touched.userIds.length > 0) userPubsub.updated(touched.userIds);
 }

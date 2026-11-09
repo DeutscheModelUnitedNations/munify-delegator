@@ -33,9 +33,10 @@
 
 	let { params: routeParams }: PageProps = $props();
 
-	// A navigation hands the page fresh params; reading them inside an awaited derived would ask
-	// again for everything on every card turn, from the state of a batch still under way.
-	const conferenceId = $derived(routeParams.conferenceId);
+	// Read once: the assignment layout keys each tab by its pathname, so this instance never
+	// changes conference. Read live, every card turn (a navigation of the query) and hydration's
+	// pending batch re-ran the deck's queries from a `params` still showing `{}`.
+	const conferenceId = untrack(() => routeParams.conferenceId);
 
 	// No defaults written into the URL: that is a navigation on arrival, which pushes a history
 	// entry and traps the back button when the page is entered with `?application=`.
@@ -143,6 +144,14 @@
 					}))
 	);
 
+	// The people's schools, for the school rules
+	const schools = $derived(
+		detail &&
+			(detail.kind === 'single'
+				? { singleParticipant: { school: detail.single.school } }
+				: { delegation: { members: detail.delegation.members } })
+	);
+
 	// The cards around the one on top are what the next key presses open; they are read ahead,
 	// reviews included, nearest first.
 	const PREFETCH_AHEAD = 5;
@@ -199,21 +208,6 @@
 <svelte:window onpopstate={onPopstate} />
 
 <div class="flex flex-col gap-4">
-	<div class="alert alert-info alert-soft">
-		<i class="fa-sharp-duotone fa-solid fa-eye text-xl"></i>
-		<div class="flex flex-col gap-1">
-			<p>{m.assignmentSightingHint()}</p>
-			<progress
-				class="progress progress-primary w-full max-w-64"
-				value={deck.overallRated}
-				max={deck.overallTotal}
-			></progress>
-			<span class="text-xs">
-				{m.assignmentSightingProgress({ rated: deck.overallRated, total: deck.overallTotal })}
-			</span>
-		</div>
-	</div>
-
 	<div class="flex flex-wrap items-end gap-2">
 		<label class="input">
 			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass opacity-60"></i>
@@ -260,7 +254,7 @@
 			total={searchShown.length}
 			onSelect={pick}
 		/>
-	{:else if current && currentKind && application}
+	{:else if current && currentKind && application && schools}
 		{#key current.id}
 			<div
 				class="sm:h-[46rem] sm:max-h-[75vh]"
@@ -274,6 +268,8 @@
 					{application}
 					{startConference}
 					onReview={reviewCurrent}
+					{conferenceId}
+					{schools}
 				/>
 			</div>
 		{/key}

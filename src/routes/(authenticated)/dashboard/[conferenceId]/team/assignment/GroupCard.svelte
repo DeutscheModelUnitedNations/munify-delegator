@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PrioritizedMark from './PrioritizedMark.svelte';
 	import BusyOverlay from './BusyOverlay.svelte';
 	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 	import { canSplit, cardBorder, wishList, wishStatus, type BoardReviewRow } from './boardState';
@@ -74,7 +75,8 @@
 		wishList({
 			wishes: delegation?.appliedForRoles,
 			target: group.target,
-			nationName: getFullTranslatedCountryNameFromISO3Code
+			nationName: getFullTranslatedCountryNameFromISO3Code,
+			prioritizedRoleId: review?.prioritizedRoleId
 		})
 	);
 	/** Holds a role, but none of the wishes is it. */
@@ -129,6 +131,7 @@
 						<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-warning shrink-0"></i>
 					{/if}
 					<span class="truncate">{item.name}</span>
+					<PrioritizedMark show={item.prioritized} />
 				</li>
 			{/each}
 		</ul>

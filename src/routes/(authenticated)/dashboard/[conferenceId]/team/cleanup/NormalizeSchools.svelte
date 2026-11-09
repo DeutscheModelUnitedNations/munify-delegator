@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { m } from '#lib/paraglide/messages';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import { toast } from 'svelte-sonner';
-	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
+	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
+	import type { GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import SchoolSuggestions from './SchoolSuggestions.svelte';
@@ -25,32 +27,18 @@
 		sumParticipants: true
 	} as const;
 
-	function fetchSchools() {
-		return client.query.conference({
+	const conference = $derived(
+		await client.liveQuery.conference({
 			__args: { id: conferenceId },
-			id: true,
 			schools: schoolSelection
-		});
-	}
+		})
+	);
+	const snapshot = liveSnapshot<(typeof conference.schools)[number]>();
+	const schools = $derived(snapshot(conference.schools));
 
-	type SchoolRow = Awaited<ReturnType<typeof fetchSchools>>['schools'][number];
+	type SchoolRow = (typeof schools)[number];
 
-	let schoolsLoading = $state(true);
 	let normalizing = $state(false);
-	let loadedSchools = $state<SchoolRow[]>([]);
-
-	async function loadSchools() {
-		try {
-			const conference = await fetchSchools();
-			loadedSchools = conference.schools;
-		} finally {
-			schoolsLoading = false;
-		}
-	}
-
-	$effect(() => {
-		if (conferenceId) void loadSchools();
-	});
 
 	/** A school picked for merging. */
 	type PickedSchool = { id: string; name: string };
@@ -58,7 +46,6 @@
 	let newSchoolName = $state('');
 	let selectedSchools = $state<PickedSchool[]>([]);
 
-	const schools = $derived(loadedSchools);
 	const isSelected = (id: string) => selectedSchools.some((school) => school.id === id);
 
 	$effect(() => {
@@ -67,40 +54,56 @@
 		}
 	});
 
-	const columns: ManagedColumn<SchoolRow>[] = [
+	const countColumn = ({
+		id,
+		label,
+		value
+	}: {
+		id: string;
+		label: string;
+		value: (row: SchoolRow) => number;
+	}): GridColumn<SchoolRow> => ({
+		id,
+		type: 'number',
+		label,
+		align: 'center',
+		size: 150,
+		value,
+		searchable: false
+	});
+
+	const columns: GridColumn<SchoolRow>[] = [
 		{
 			id: 'school',
-			header: m.cleanupNormalizeSchoolsColumnSchool(),
-			accessorFn: (row) => row.school
+			type: 'text',
+			label: m.cleanupNormalizeSchoolsColumnSchool(),
+			alwaysVisible: true,
+			size: 300,
+			value: (row) => row.school
 		},
-		{
+		countColumn({
 			id: 'delegationCount',
-			header: m.cleanupNormalizeSchoolsColumnDelegations(),
-			accessorFn: (row) => row.delegationCount
-		},
-		{
+			label: m.cleanupNormalizeSchoolsColumnDelegations(),
+			value: (row) => row.delegationCount
+		}),
+		countColumn({
 			id: 'delegationMembers',
-			header: m.cleanupNormalizeSchoolsColumnDelegationMembers(),
-			accessorFn: (row) => row.delegationMembers
-		},
-		{
+			label: m.cleanupNormalizeSchoolsColumnDelegationMembers(),
+			value: (row) => row.delegationMembers
+		}),
+		countColumn({
 			id: 'singleParticipants',
-			header: m.singleParticipants(),
-			accessorFn: (row) => row.singleParticipants
-		},
-		{
+			label: m.singleParticipants(),
+			value: (row) => row.singleParticipants
+		}),
+		countColumn({
 			id: 'sumParticipants',
-			header: m.cleanupNormalizeSchoolsColumnTotalParticipants(),
-			accessorFn: (row) => row.sumParticipants
-		}
+			label: m.cleanupNormalizeSchoolsColumnTotalParticipants(),
+			value: (row) => row.sumParticipants
+		})
 	];
 
-	const columnClasses = Object.fromEntries(
-		['delegationCount', 'delegationMembers', 'singleParticipants', 'sumParticipants'].map((id) => [
-			id,
-			'text-center'
-		])
-	);
+	const source = createLocalSource({ rows: () => schools, columns: () => columns });
 
 	function toggleSchool(row: SchoolRow) {
 		selectedSchools = isSelected(row.schoolId)
@@ -136,7 +139,6 @@
 			const merged = new Set([targetId, ...sources]);
 			selectedSchools = selectedSchools.filter((school) => !merged.has(school.id));
 			newSchoolName = '';
-			await loadSchools();
 			return true;
 		} catch (error) {
 			toast.error(m.cleanupNormalizeSchoolsFailed());
@@ -178,11 +180,7 @@
 	});
 </script>
 
-{#if schoolsLoading}
-	<div class="flex items-center justify-center p-8">
-		<span class="loading loading-spinner loading-lg"></span>
-	</div>
-{:else if schools.length > 0}
+{#if schools.length > 0}
 	<div class="mt-4">
 		<SchoolSuggestions
 			{conferenceId}
@@ -246,13 +244,16 @@
 			</div>
 		</div>
 
-		<ManagedTable
+		<DataGrid
 			{columns}
-			rows={schools}
-			{columnClasses}
+			{source}
+			rowId={(row) => row.schoolId}
+			base={{ sorting: [{ id: 'school', desc: false }], pageSize: 50 }}
+			label={m.cleanupNormalizeSchoolsColumnSchool()}
+			exportName="schools-cleanup"
 			onRowClick={toggleSchool}
-			isRowSelected={(row) => isSelected(row.schoolId)}
-			initialSorting={[{ id: 'school', desc: false }]}
+			isRowHighlighted={(row) => isSelected(row.schoolId)}
+			urlPrefix="schools-"
 		/>
 	</div>
 {:else}

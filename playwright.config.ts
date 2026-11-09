@@ -64,11 +64,18 @@ export default defineConfig({
 		}
 	],
 	webServer: {
-		command: SERVER === 'build' ? `NODE_ENV=production bun run build && ${serve}` : serve,
+		command:
+			SERVER === 'build'
+				? `NODE_ENV=production PRECOMPRESS=false bun run build && ${serve}`
+				: serve,
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		// A build takes a few minutes on a slow machine.
 		timeout: SERVER === 'build' ? 600_000 : 120_000,
+		// warn even against a dev server, which would log every GraphQL operation at debug.
+		// MCP_RESOURCE switches the MCP server on (e2e/authorization/mcp.spec.ts), at this server's
+		// own address whatever `.env` names for the dev server.
+		env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn', MCP_RESOURCE: `${baseURL}/mcp` },
 		stdout: 'pipe',
 		stderr: 'pipe'
 	}

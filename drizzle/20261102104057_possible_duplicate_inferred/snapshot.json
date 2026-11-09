@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "60dc2278-d2fc-4a73-86ed-3dac41c63b9c",
+  "prevIds": [
+    "47a6a452-0be1-4da6-af77-6a9f5fd5b5ae"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "possible_duplicate",
+        "inferred"
+      ],
+      "writes": [
+        "s|col|public.possible_duplicate.inferred",
+        "n|col|public.possible_duplicate.inferred",
+        "e|col|public.possible_duplicate.inferred"
+      ],
+      "reads": [
+        "n|tbl|public.possible_duplicate",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "possible_duplicate",
+        "name": "inferred",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

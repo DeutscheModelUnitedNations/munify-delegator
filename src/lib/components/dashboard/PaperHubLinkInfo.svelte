@@ -7,7 +7,7 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client';
-	import { asCount } from '#lib/components/tanStackTable/serverQuery';
+	import { asCount } from '#lib/api/queryHelpers';
 	import PaperHubStats from './PaperHubStats.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

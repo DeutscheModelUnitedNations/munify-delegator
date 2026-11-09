@@ -1,5 +1,6 @@
 import { client } from '#lib/api/rumbleClient/client';
-import { containing } from '#lib/components/tanStackTable/serverQuery';
+import { logger } from '#lib/logger';
+import { containing } from '#lib/api/queryHelpers';
 import {
 	getFullTranslatedCountryNameFromISO3Code,
 	translatedNationCodeAddressFormOptions
@@ -11,6 +12,7 @@ import {
 	type SearchDelegation,
 	type SearchCommittee,
 	type SearchForeignUser,
+	type SearchSchool,
 	type SearchSeat,
 	type SearchTransaction,
 	type SearchUser
@@ -85,7 +87,9 @@ async function searchSeats({
 		...(nationCodes.length > 0
 			? [{ assignedRole: { nationAlpha3Code: { in: nationCodes } } }]
 			: []),
-		{ assignedRole: { OR: [{ name: nameLike }, { abbreviation: nameLike }] } }
+		{ assignedRole: { OR: [{ name: nameLike }, { abbreviation: nameLike }] } },
+		// a past result from the search history comes back as its id
+		{ id: { eq: term }, assignedRoleId: { isNotNull: true } }
 	];
 
 	const [delegations, singles] = await Promise.all([
@@ -100,7 +104,13 @@ async function searchSeats({
 		}),
 		client.query.singleParticipants({
 			__args: {
-				where: { ...registrationIn(conferenceId), assignedRole: { name: nameLike } },
+				where: {
+					...registrationIn(conferenceId),
+					OR: [
+						{ assignedRole: { name: nameLike } },
+						{ id: { eq: term }, assignedRoleId: { isNotNull: true } }
+					]
+				},
 				limit: RESULT_LIMIT
 			},
 			id: true,
@@ -165,13 +175,52 @@ async function searchCommittees({
 	];
 }
 
+/**
+ * Schools someone in the conference has as their own, or waits with. A school is shared by every
+ * conference, so the filter keeps out those only other conferences know.
+ */
+async function searchSchools({
+	conferenceId,
+	term
+}: {
+	conferenceId: string;
+	term: string;
+}): Promise<SearchSchool[]> {
+	const inConference = { conferenceId: { eq: conferenceId } };
+	const schools = await client.query.schools({
+		__args: {
+			search: term,
+			where: { OR: [{ participants: inConference }, { waitingListEntries: inConference }] },
+			limit: RESULT_LIMIT
+		},
+		id: true,
+		name: true,
+		city: true
+	});
+	return schools.map((school) => ({ id: school.id, name: school.name, city: school.city }));
+}
+
 interface SearchResults {
 	users: SearchUser[];
 	delegations: SearchDelegation[];
+	schools: SearchSchool[];
 	seats: SearchSeat[];
 	committees: SearchCommittee[];
 	foreignUsers: SearchForeignUser[];
 	transactions: SearchTransaction[];
+}
+
+/**
+ * One group's results, or none when its query fails: the groups are asked for together, and one
+ * failing must not leave the palette without the others.
+ */
+async function orNone<T>({ group, results }: { group: string; results: Promise<T[]> }) {
+	try {
+		return await results;
+	} catch (error) {
+		logger.error('A command palette search failed', { group, error });
+		return [];
+	}
 }
 
 /** The parts a person may hold in one conference, which decide whether they take part in it. */
@@ -187,17 +236,24 @@ export function participation(conferenceId: string) {
 	} as const;
 }
 
+/**
+ * Everything the search box finds in one conference. Schools are asked for only when the caller
+ * may open the schools page (`withSchools`), which is where a school result leads.
+ */
 export async function searchConference({
 	conferenceId,
-	searchTerm
+	searchTerm,
+	withSchools = false
 }: {
 	conferenceId: string;
 	searchTerm: string;
+	withSchools?: boolean;
 }): Promise<SearchResults> {
 	if (searchTerm.trim().length < MIN_SEARCH_LENGTH) {
 		return {
 			users: [],
 			delegations: [],
+			schools: [],
 			seats: [],
 			committees: [],
 			foreignUsers: [],
@@ -206,78 +262,91 @@ export async function searchConference({
 	}
 	const inConference = { conferenceId: { eq: conferenceId } };
 
-	const [users, cardHolders, foreignUsers, delegations, transactions, seats, committees] =
+	const term = searchTerm.trim();
+	const [users, cardHolders, foreignUsers, delegations, transactions, seats, committees, schools] =
 		await Promise.all([
-			client.query.users({
-				__args: {
-					search: searchTerm.trim(),
-					where: participatesIn(conferenceId),
-					limit: RESULT_LIMIT
-				},
-				id: true,
-				givenName: true,
-				familyName: true,
-				email: true,
-				...participation(conferenceId)
-			}),
-			// The access card of the external ID card, so scanning or typing it finds its owner. Only
-			// rows the caller may read come back.
-			client.query.conferenceParticipants({
-				__args: {
-					where: { ...inConference, accessCardId: { ilike: `%${searchTerm.trim()}%` } },
-					limit: RESULT_LIMIT
-				},
-				user: {
+			orNone({
+				group: 'users',
+				results: client.query.users({
+					__args: { search: term, where: participatesIn(conferenceId), limit: RESULT_LIMIT },
 					id: true,
 					givenName: true,
 					familyName: true,
 					email: true,
 					...participation(conferenceId)
-				}
+				})
 			}),
-			client.query.users({
-				__args: {
-					search: searchTerm.trim(),
-					where: { NOT: participatesIn(conferenceId) },
-					limit: RESULT_LIMIT
-				},
-				id: true,
-				givenName: true,
-				familyName: true,
-				email: true
-			}),
-			// Delegations by the schools their members come from. `entryCode` is the delegation's join
-			// secret, masked for team members who do not hand it out, and a masked column fails the
-			// whole query: it is neither selected nor searched.
-			client.query.delegations({
-				__args: {
-					where: {
-						...inConference,
-						members: { school: { name: containing(searchTerm.trim()) } }
+			// The access card of the external ID card, so scanning or typing it finds its owner. Only
+			// rows the caller may read come back.
+			orNone({
+				group: 'cardHolders',
+				results: client.query.conferenceParticipants({
+					__args: {
+						where: { ...inConference, accessCardId: { ilike: `%${term}%` } },
+						limit: RESULT_LIMIT
 					},
-					limit: RESULT_LIMIT
-				},
-				id: true,
-				members: { isHeadDelegate: true, user: { id: true }, school: { name: true } }
+					user: {
+						id: true,
+						givenName: true,
+						familyName: true,
+						email: true,
+						...participation(conferenceId)
+					}
+				})
 			}),
-			client.query.paymentTransactions({
-				__args: {
-					search: searchTerm.trim(),
-					where: registrationIn(conferenceId),
-					limit: RESULT_LIMIT
-				},
-				id: true,
-				amount: true,
-				recievedAt: true,
-				conference: { currency: true }
+			orNone({
+				group: 'foreignUsers',
+				results: client.query.users({
+					__args: {
+						search: term,
+						where: { NOT: participatesIn(conferenceId) },
+						limit: RESULT_LIMIT
+					},
+					id: true,
+					givenName: true,
+					familyName: true,
+					email: true
+				})
 			}),
-			searchSeats({ conferenceId, term: searchTerm.trim() }),
-			searchCommittees({ conferenceId, term: searchTerm.trim() })
+			// Delegations by the schools their members come from, or by id, which is how a past result
+			// from the search history comes back. `entryCode` is the delegation's join secret, masked
+			// for team members who do not hand it out, and a masked column fails the whole query: it is
+			// neither selected nor searched.
+			orNone({
+				group: 'delegations',
+				results: client.query.delegations({
+					__args: {
+						where: {
+							...inConference,
+							OR: [{ members: { school: { name: containing(term) } } }, { id: { eq: term } }]
+						},
+						limit: RESULT_LIMIT
+					},
+					id: true,
+					members: { isHeadDelegate: true, user: { id: true }, school: { name: true } }
+				})
+			}),
+			orNone({
+				group: 'transactions',
+				results: client.query.paymentTransactions({
+					__args: { search: term, where: registrationIn(conferenceId), limit: RESULT_LIMIT },
+					id: true,
+					amount: true,
+					recievedAt: true,
+					conference: { currency: true }
+				})
+			}),
+			orNone({ group: 'seats', results: searchSeats({ conferenceId, term }) }),
+			orNone({ group: 'committees', results: searchCommittees({ conferenceId, term }) }),
+			withSchools
+				? orNone({ group: 'schools', results: searchSchools({ conferenceId, term }) })
+				: []
 		]);
 
 	return {
 		seats,
 		committees,
+		schools,
 		users: [...cardHolders.map((status) => status.user), ...users]
 			.filter((user, index, all) => all.findIndex((other) => other.id === user.id) === index)
 			.map((user) => ({

@@ -68,10 +68,49 @@ export function sessionClaims(session: OIDCSession | undefined): Record<string, 
 	};
 }
 
+/**
+ * Who an AI assistant acts for over the MCP server (`locals.mcp`, set by `/mcp` once the bearer
+ * token checked out): only their id. Over MCP nobody holds a system role, an admin included:
+ * `isTeamMemberOf` gives an admin every team role in the conference of the tool call, and nothing
+ * beyond it.
+ */
+function mcpUser(mcp: NonNullable<RequestEvent['locals']['mcp']>): ReturnType<typeof sessionUser> {
+	const OIDCRoleNames: OidcRole[] = [];
+	return {
+		sub: mcp.userId,
+		email: undefined,
+		OIDCRoleNames,
+		hasRole: () => false
+	};
+}
+
+/**
+ * Who a request acts as: the signed-in session's user, or for an AI assistant's request over MCP
+ * (`locals.mcp`) the account it acts with, without any system role and with the conference its
+ * tool call is about (`mcp`).
+ */
+export function requestIdentity(locals: RequestEvent['locals']) {
+	const mcp = locals.mcp;
+	if (mcp) {
+		const OIDCRoleNames: OidcRole[] = [];
+		return {
+			session: undefined,
+			OIDCRoleNames,
+			user: mcpUser(mcp),
+			mcp: { isAdmin: mcp.isAdmin, conferenceId: mcp.conferenceId }
+		};
+	}
+	const OIDCRoleNames = effectiveRoles(locals.oidc);
+	return {
+		session: locals.oidc,
+		OIDCRoleNames,
+		user: sessionUser({ locals, OIDCRoleNames }),
+		mcp: undefined
+	};
+}
+
 export function context(req: RequestEvent) {
-	const session = req.locals.oidc;
-	const OIDCRoleNames = effectiveRoles(session);
-	const user = sessionUser({ locals: req.locals, OIDCRoleNames });
+	const { session, OIDCRoleNames, user, mcp } = requestIdentity(req.locals);
 	const claims = sessionClaims(session);
 	const linkToken = req.request.headers.get(LINK_TOKEN_HEADER);
 	let linkCaller: Promise<LinkCaller | undefined> | undefined;
@@ -83,6 +122,13 @@ export function context(req: RequestEvent) {
 			/** The signed in user's own identity while they impersonate `user`, else undefined. */
 			impersonator: session?.impersonator?.user
 		},
+		/**
+		 * Set when an AI assistant asks through the MCP server: every team and participant rule then
+		 * reaches only `conferenceId`, the conference the tool call is about, and only while it has
+		 * switched MCP on (`isTeamMemberOf`). `isAdmin` stands for the system admin role, which
+		 * grants nothing beyond that conference there.
+		 */
+		mcp,
 		/**
 		 * A function, read only by the resolvers that need it: SvelteKit 3 throws on `event.url`
 		 * inside a remote query, which is how SSR runs the schema (`graphql.remote.ts`), and rumble

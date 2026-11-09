@@ -70,8 +70,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../config', () => ({ config: h.config }));
 vi.mock('../logs', () => ({
-	logTaskStart: () => 0,
-	logTaskEnd: () => {},
 	taskWarning: ({ message }: { taskName: string; message: string }) =>
 		h.errors.push(`warning: ${message}`),
 	taskError: ({ message }: { taskName: string; message: string }) =>

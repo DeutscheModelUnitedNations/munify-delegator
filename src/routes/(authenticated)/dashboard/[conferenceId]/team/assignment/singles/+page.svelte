@@ -17,7 +17,6 @@
 	import {
 		fetchAssignmentDraft,
 		fetchAssignmentRoles,
-		fetchSchoolSeatLimit,
 		fetchSeatedApplications,
 		fetchSinglePoolPage,
 		type BoardSingleParticipant,
@@ -32,24 +31,25 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '../schoolSeats';
-	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
-	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
+	import SchoolRuleWarnings from '../SchoolRuleWarnings.svelte';
 	import type { PageProps } from './$types';
+	import { untrack } from 'svelte';
 
 	let { params }: PageProps = $props();
 
+	// Read once: the assignment layout keys each tab by its pathname, so this instance never
+	// changes conference. Read live, a re-run inside hydration's pending batch sees `params` as `{}`.
+	const conferenceId = untrack(() => params.conferenceId);
+
 	// Nothing here depends on the draft through a query: the draft brings the applications it
 	// touches along, so a move arrives as one live update and asks for nothing afterwards.
-	const [roles, draft, seated, schoolLimit] = $derived(
+	const [roles, draft, seated] = $derived(
 		await Promise.all([
-			fetchAssignmentRoles(params.conferenceId),
-			fetchAssignmentDraft(params.conferenceId),
-			fetchSeatedApplications(params.conferenceId),
-			fetchSchoolSeatLimit(params.conferenceId)
+			fetchAssignmentRoles(conferenceId),
+			fetchAssignmentDraft(conferenceId),
+			fetchSeatedApplications(conferenceId)
 		])
 	);
-	const maxSeatsPerSchool = $derived(schoolLimit.maxSeatsPerSchool ?? null);
 	// Plain copies of the live results the board works over (see `liveSnapshot`).
 	const roleSnapshot = {
 		committees: liveSnapshot<(typeof roles.committees)[number]>(),
@@ -71,9 +71,8 @@
 	// plain data, read once; what the draft or applying changes about them comes in live through
 	// `seated`, which is listed last so it wins.
 	const search = createPoolSearch();
-	const poolKey = $derived(`${params.conferenceId}|${search.term}`);
+	const poolKey = $derived(`${conferenceId}|${search.term}`);
 	const poolLoader = createPool<BoardSingleParticipant>(() => {
-		const { conferenceId } = params;
 		const term = search.term;
 		return {
 			key: poolKey,
@@ -107,7 +106,7 @@
 	async function autoAssign() {
 		busy = true;
 		const mutation = Promise.resolve(
-			client.mutate.autoAssignSingleParticipants({ __args: { conferenceId: params.conferenceId } })
+			client.mutate.autoAssignSingleParticipants({ __args: { conferenceId } })
 		);
 		if (await succeeded(mutation)) {
 			toast.success(m.assignmentSinglesAutoAssigned({ count: await mutation }));
@@ -128,24 +127,6 @@
 	$effect(() => moves.settle());
 
 	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));
-	const schoolLookups = $derived(
-		schoolLookupsOf({ delegations: seatedSet.delegations, singles: singleParticipants })
-	);
-	const schoolCounts = $derived(schoolSeats({ view, lookups: schoolLookups }));
-
-	/** Warns (never blocks) when a single participant taking a role takes their school past the limit. */
-	const holdsRole = (singleParticipantId: string) =>
-		view.singles.some(
-			(single) => single.singleParticipantId === singleParticipantId && !!single.roleId
-		);
-
-	function warnAboutSchool(singleParticipantId: string) {
-		const single = { delegationId: null, singleParticipantId, memberIds: [] };
-		const added = holdsRole(singleParticipantId)
-			? []
-			: schoolsOfGroup({ group: single, lookups: schoolLookups });
-		warnAboutSchoolSeats({ counts: schoolCounts, added, limit: maxSeatsPerSchool });
-	}
 	const openSingles = $derived(view.singles.filter((single) => !single.roleId));
 	// a search's matches are what its pages hold
 	const pool = $derived(
@@ -191,7 +172,6 @@
 			container: dropState.targetContainer
 		});
 		if (!action) return;
-		if (action.type === 'role' && action.roleId) warnAboutSchool(singleParticipantId);
 		void moves.track({
 			key: singleParticipantId,
 			change: () =>
@@ -224,7 +204,7 @@
 		roleId={single.roleId}
 		{container}
 		onDragChange={(isDragging) => (dragging = isDragging)}
-		conferenceId={params.conferenceId}
+		{conferenceId}
 		{fluid}
 		busy={moves.has(single.singleParticipantId)}
 	/>
@@ -281,7 +261,7 @@
 				{onDrop}
 				onRevert={revert}
 			/>
-			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} nearLimitOnly />
+			<SchoolRuleWarnings {conferenceId} plan={view} variant="board" />
 		</div>
 
 		<section

@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { conferenceDatesProblem } from '#lib/helpers/conferenceDates';
 import { apiError } from '#api/services/errors';
 import { LAYOUT_DOCUMENTS, documentLayoutSchema } from '#lib/helpers/documentLayout';
+import type { AgeLimits } from '#lib/helpers/plausibilityRules';
+import { ageLimitSchema } from '#lib/schemata/ageLimit';
 
 /** The checks of the conference settings, kept apart from the database so they are unit tested. */
 
@@ -13,11 +15,18 @@ import { LAYOUT_DOCUMENTS, documentLayoutSchema } from '#lib/helpers/documentLay
  * column.
  */
 export const conferenceSettingSchemas = {
-	maxSeatsPerSchool: z
+	maxCollectiveGroupSize: z
 		.number()
-		.min(1, { error: () => m.conferenceMaxSeatsPerSchoolRange() })
+		.min(1, { error: () => m.conferenceMaxCollectiveGroupSizeRange() })
+		.nullish(),
+	maxGuaranteedSeatsPerForeignSchool: z
+		.number()
+		.min(0, { error: () => m.conferenceMaxGuaranteedSeatsRange() })
 		.nullish(),
 	nametagBinCount: binCountSchema.nullish(),
+	participantMinAge: ageLimitSchema(),
+	participantMaxAge: ageLimitSchema(),
+	supervisorMinAge: ageLimitSchema(),
 	language: z
 		.string()
 		.refine(isConferenceLanguage, { error: () => m.conferenceLanguageUnsupported() })
@@ -40,6 +49,18 @@ export const conferenceSettingSchemas = {
 		.length(3, { error: () => m.currencyMustBe3Characters() })
 		.nullish()
 };
+
+/** Refuses (INVALID_INPUT) a range whose lower limit lies above its upper one. */
+export function assertAgeRangeInOrder({
+	participantMinAge,
+	participantMaxAge
+}: Pick<AgeLimits, 'participantMinAge' | 'participantMaxAge'>) {
+	if (participantMinAge !== null && participantMaxAge !== null) {
+		if (participantMinAge > participantMaxAge) {
+			throw apiError({ code: 'INVALID_INPUT', message: m.conferenceAgeRangeOutOfOrder() });
+		}
+	}
+}
 
 /** The arguments of `setDocumentLayout`: a layout has to fit its document; null clears it. */
 export const documentLayoutArgsSchema = z

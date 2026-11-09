@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '#api/db/schema/index';
 import { relations } from '#api/db/relations';
+import { listenForPoolErrors } from '#api/db/poolErrors';
 import { databaseConfig } from './config';
 
 /**
@@ -11,4 +12,5 @@ import { databaseConfig } from './config';
 const { DATABASE_URL: connectionString } = databaseConfig();
 
 export const db = drizzle({ connection: { connectionString }, relations });
+listenForPoolErrors(db.$client);
 export { schema };

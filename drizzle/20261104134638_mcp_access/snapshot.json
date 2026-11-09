@@ -1,0 +1,417 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "14b9d272-8c1e-4519-a376-176b36dd5d02",
+  "prevIds": [
+    "60dc2278-d2fc-4a73-86ed-3dac41c63b9c"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "mcp_call_outcome"
+      ],
+      "writes": [
+        "s|enum|public.mcp_call_outcome",
+        "n|enum|public.mcp_call_outcome",
+        "e|enum|public.mcp_call_outcome",
+        "n|type|public.mcp_call_outcome"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "mcp_audit_entry"
+      ],
+      "writes": [
+        "s|tbl|public.mcp_audit_entry",
+        "n|tbl|public.mcp_audit_entry",
+        "e|tbl|public.mcp_audit_entry",
+        "n|rel|public.mcp_audit_entry",
+        "n|type|public.mcp_audit_entry",
+        "n|rel|public.mcp_audit_entry_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.mcp_call_outcome"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "mcp_enabled"
+      ],
+      "writes": [
+        "s|col|public.conference.mcp_enabled",
+        "n|col|public.conference.mcp_enabled",
+        "e|col|public.conference.mcp_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "mcp_audit_entry",
+        "mcp_audit_entry_conference_id_created_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.mcp_audit_entry_conference_id_created_at_idx",
+        "n|idx|public.mcp_audit_entry_conference_id_created_at_idx",
+        "e|idx|public.mcp_audit_entry_conference_id_created_at_idx",
+        "n|rel|public.mcp_audit_entry_conference_id_created_at_idx"
+      ],
+      "reads": [
+        "n|tbl|public.mcp_audit_entry",
+        "n|sch|public",
+        "n|col|public.mcp_audit_entry.conference_id",
+        "n|col|public.mcp_audit_entry.created_at"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "mcp_audit_entry"
+      ],
+      "writes": [
+        "s|fk|public.mcp_audit_entry.mcp_audit_entry_conference_id_conference_id_fkey",
+        "n|fk|public.mcp_audit_entry.mcp_audit_entry_conference_id_conference_id_fkey",
+        "e|fk|public.mcp_audit_entry.mcp_audit_entry_conference_id_conference_id_fkey",
+        "n|con|public.mcp_audit_entry.mcp_audit_entry_conference_id_conference_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.mcp_audit_entry",
+        "n|sch|public",
+        "n|tbl|public.conference",
+        "n|sch|public",
+        "n|col|public.mcp_audit_entry.conference_id",
+        "n|col|public.conference.id",
+        "e|uniqueness|public.conference.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "mcp_audit_entry"
+      ],
+      "writes": [
+        "s|fk|public.mcp_audit_entry.mcp_audit_entry_user_id_user_id_fkey",
+        "n|fk|public.mcp_audit_entry.mcp_audit_entry_user_id_user_id_fkey",
+        "e|fk|public.mcp_audit_entry.mcp_audit_entry_user_id_user_id_fkey",
+        "n|con|public.mcp_audit_entry.mcp_audit_entry_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.mcp_audit_entry",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.mcp_audit_entry.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "mcp_audit_entry",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "mcp_call_outcome",
+        "values": [
+          "OK",
+          "REFUSED",
+          "ERROR"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "mcp_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "conference_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "client_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "tool",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "arguments",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "outcome",
+        "type": "mcp_call_outcome",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "message",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "duration_ms",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "mcp_audit_entry_conference_id_created_at_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "mcp_audit_entry_conference_id_conference_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "mcp_audit_entry_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "mcp_audit_entry",
+        "name": "mcp_audit_entry_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

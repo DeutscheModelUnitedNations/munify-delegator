@@ -24,22 +24,30 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bun run format:check
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
+      # `bun run lint` caches by file content, so the last run's cache holds across checkouts and only
+      # changed files are linted again. Saved under the commit, restored from the newest one; a
+      # dependency or config change starts over.
+      - uses: actions/cache@v6
+        with:
+          path: .eslintcache
+          key: eslint-${{ hashFiles('bun.lock', 'eslint.config.js') }}-${{ github.sha }}
+          restore-keys: eslint-${{ hashFiles('bun.lock', 'eslint.config.js') }}-
       - run: bun run lint
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       # Coverage ends in scripts/mergeCoverage.ts, which writes the HTML report to coverage/report/;
@@ -47,22 +55,27 @@ jobs:
       - run: bun run coverage
       - name: Upload unit test coverage
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: report-coverage
           path: coverage/report/
           if-no-files-found: ignore
           retention-days: 7
 
-  e2e:
+  # The suite in four shards, each on a runner of its own: on one runner the server, Postgres and
+  # two browsers starve each other's four cores, so the tests ran ~11 minutes and timed out.
+  e2e-shard:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       PUBLIC_OIDC_AUTHORITY: http://127.0.0.1:8090/oidc/.well-known/openid-configuration
       PUBLIC_OIDC_CLIENT_ID: delegator
       OIDC_SCOPES: 'openid profile offline_access email'
       OIDC_ROLE_CLAIM: roles
-      SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
       CERTIFICATE_SECRET: e2e-ci-certificate-secret
       # Any values work against oidc-mock, which serves Logto's Management API for impersonation
       OIDC_M2M_CLIENT_ID: e2e-m2m
@@ -75,28 +88,72 @@ jobs:
       # (playwright.config.ts). Signing in against the plain-HTTP oidc-mock still works, since
       # src/api/services/oidc/OIDC.ts trusts a provider on the loopback address over HTTP.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       # The OIDC provider (oidc-mock) starts with the Vite dev server that Playwright launches, so
       # Postgres and the S3 bucket are the only containers. Reuse the project's compose definition.
-      - run: docker compose -f dev.docker-compose.yml up -d postgres s3 s3-init
-      - name: Wait for the bucket
-        run: docker compose -f dev.docker-compose.yml wait s3-init
+      - run: docker compose -f dev.docker-compose.yml up -d postgres s3
+      # Creates the bucket in the foreground: `run` waits for s3 to be healthy and fails with the
+      # one-shot's exit code. (`compose wait` finds no container once s3-init has already exited.)
+      - name: Create the bucket
+        run: docker compose -f dev.docker-compose.yml run --rm s3-init
       - name: Wait for postgres
         run: timeout 120 bash -c 'until docker exec postgres-dev-delegator pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done'
       - run: bunx svelte-kit sync
       - run: bun run db:migrate
       - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e
+      # The shard's spec files, packed by their recorded durations (scripts/e2eShards.ts): Playwright's
+      # --shard splits by test count, which left one shard running three times as long as another.
+      # A blob report per shard, merged into one HTML report by the e2e job below.
+      - run: bun run test:e2e --reporter=github,blob $(bun scripts/e2eShards.ts split ${{ matrix.shard }} 4)
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
+      - name: Upload the shard's report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+  # The shards' verdict under one name, which publish-reports and the image builds wait for, and
+  # their reports merged into one.
+  e2e:
+    needs: [e2e-shard]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: bunx playwright merge-reports --reporter html ./all-blob-reports
+      # The durations the shards are packed by, as measured here. Copy the artifact's file over
+      # e2e/durations.json when the shards drift apart.
+      - name: Record spec durations
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=e2e-report.json bunx playwright merge-reports --reporter json ./all-blob-reports
+          bun scripts/e2eShards.ts record e2e-report.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: e2e-durations
+          path: e2e/durations.json
+          retention-days: 7
       # The HTML report embeds the traces, screenshots and videos of the failed tests, so it is
       # all the publish-reports job needs to host it.
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: failure()
+        uses: actions/upload-artifact@v7
+        if: ${{ needs.e2e-shard.result != 'success' }}
         with:
           name: report-playwright
           path: playwright-report/
           retention-days: 7
+      - name: Fail when a shard failed
+        if: ${{ needs.e2e-shard.result != 'success' }}
+        run: exit 1
 
   # Hosts the HTML reports of this run on GitHub Pages (gh-pages branch) instead of leaving them
   # as zip downloads: the Playwright report when e2e fails, and the unit test coverage. Runs in
@@ -117,11 +174,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: .github/scripts
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: report-*
           path: reports
@@ -136,7 +193,7 @@ jobs:
       # Runs even when nothing was published, so a PR comment from an earlier e2e failure is
       # still brought up to date.
       - name: Link reports
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           REPORTS: ${{ steps.publish.outputs.reports }}
           REPORTS_PATH: ${{ steps.publish.outputs.path }}
@@ -181,7 +238,7 @@ jobs:
   i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bun run i18n:check
       - run: bun run i18n:validate
@@ -189,9 +246,9 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
-      - uses: aquasecurity/trivy-action@v0.35.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -207,7 +264,7 @@ jobs:
   typecheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
@@ -219,7 +276,7 @@ jobs:
     env:
       NODE_OPTIONS: '--max-old-space-size=8192'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
@@ -238,7 +295,7 @@ jobs:
       pull-requests: write
       checks: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # Full history: fallow scopes PR runs to the diff against the base SHA.
           fetch-depth: 0
@@ -255,7 +312,7 @@ jobs:
       - run: bun run coverage
       # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
       # with write permissions on every PR.
-      - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
+      - uses: fallow-rs/fallow@a6956af63dd896d6106a7d28361585e0ff1c250b # v3.39.0
         env:
           FALLOW_COVERAGE: coverage/coverage-final.json
         with:
@@ -290,25 +347,25 @@ jobs:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_URL: ${{ secrets.SENTRY_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - if: github.event_name == 'push'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - if: github.event_name == 'push'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ghcr.io/${{ github.repository }}
@@ -326,7 +383,7 @@ jobs:
         run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           # Publish only on push; on PRs and manual dispatch load the image
           # locally so Trivy can scan it without publishing.
@@ -346,7 +403,7 @@ jobs:
       - id: split-tags
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
 
-      - uses: aquasecurity/trivy-action@v0.35.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.split-tags.outputs.fragment }}
           format: 'table'
@@ -414,12 +471,12 @@ jobs:
     needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
       # Path filter: only build when job-relevant files changed
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
@@ -437,16 +494,16 @@ jobs:
 
       # Always build on tag push (release), conditionally on branch push
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -454,7 +511,7 @@ jobs:
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ghcr.io/${{ github.repository }}-jobs
@@ -470,7 +527,7 @@ jobs:
         run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           file: Dockerfile.jobs
           push: true
@@ -487,7 +544,7 @@ jobs:
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
 
       - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.split-tags.outputs.fragment }}
           format: 'table'
@@ -505,9 +562,10 @@ jobs:
   # Triggers a Dokploy redeploy once the new images have been built, pushed and
   # passed the Trivy scans above. Dokploy's per-app deploy webhook just needs a
   # POST to its URL — the application to redeploy is encoded in the URL itself,
-  # so no body or auth header is needed. An unconfigured webhook is skipped with a
-  # warning instead of failing the run. The jobs image needs no redeploy: the
-  # scheduler that runs it pulls the tag it is given.
+  # so no body or auth header is needed. DOKPLOY_DEPLOY_WEBHOOK_URL holds a
+  # comma-separated list of them (the app, the jobs container, …); every one is
+  # called, and the step fails if any of them did. An unconfigured secret is
+  # skipped with a warning instead of failing the run.
 
   deploy:
     if: github.event_name == 'push'
@@ -516,16 +574,34 @@ jobs:
     env:
       DOKPLOY_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}
     steps:
-      - name: Trigger Dokploy deployment (app)
+      - name: Trigger Dokploy deployments
         if: env.DOKPLOY_DEPLOY_WEBHOOK_URL != ''
-        run: curl --fail --silent --show-error -X POST "$DOKPLOY_DEPLOY_WEBHOOK_URL"
+        run: |
+          # GitHub masks only the whole secret, so mask each URL on its own before
+          # anything could print it, and refer to them by position only.
+          IFS=',' read -ra urls <<< "$DOKPLOY_DEPLOY_WEBHOOK_URL"
+          index=0
+          failed=0
+          for url in "${urls[@]}"; do
+            url="$(echo "$url" | xargs)"
+            [ -z "$url" ] && continue
+            echo "::add-mask::$url"
+            index=$((index + 1))
+            if curl --fail --silent --show-error -X POST "$url"; then
+              echo "Webhook $index triggered"
+            else
+              echo "::error::Dokploy webhook $index failed"
+              failed=1
+            fi
+          done
+          exit $failed
 
-      - name: App deploy skipped
+      - name: Deploy skipped
         if: env.DOKPLOY_DEPLOY_WEBHOOK_URL == ''
         run: |
-          echo "::warning::Dokploy app deploy skipped - DOKPLOY_DEPLOY_WEBHOOK_URL not configured"
-          echo "To enable auto-deploy, add the DOKPLOY_DEPLOY_WEBHOOK_URL secret (from the"
-          echo "application's Webhook URL in Dokploy's deployment logs) to this repository."
+          echo "::warning::Dokploy deploy skipped - DOKPLOY_DEPLOY_WEBHOOK_URL not configured"
+          echo "To enable auto-deploy, add the DOKPLOY_DEPLOY_WEBHOOK_URL secret to this repository:"
+          echo "a comma-separated list of the Webhook URLs (from each service's deployment logs in Dokploy)."
 
   # ============================================
   # LAYER 3: RELEASE (tag push only)
@@ -538,13 +614,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Extract version
         id: version
         run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           body: |

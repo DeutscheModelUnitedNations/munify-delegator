@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import {
+	firstTeamPagePath,
 	groupedTeamRoutes,
 	mayOpenTeamRoute,
+	teamRelativePath,
 	teamRouteForPath,
 	teamRoutes,
 	teamRoutesFor
@@ -103,5 +105,50 @@ describe('teamRouteForPath', () => {
 		expect(mayOpenTeamRoute({ route: route('seatPlanning'), access: as('CONTENT_LEAD') })).toBe(
 			true
 		);
+	});
+});
+
+describe('teamRelativePath', () => {
+	const conferenceId = 'conf-1';
+
+	test('is the path below the conference dashboard', () => {
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1/team/stats', conferenceId })).toBe(
+			'team/stats'
+		);
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1/team/user/u1/', conferenceId })).toBe(
+			'team/user/u1'
+		);
+	});
+
+	test('ignores a locale prefix, which page.url keeps', () => {
+		expect(teamRelativePath({ pathname: '/en/dashboard/conf-1/team/stats', conferenceId })).toBe(
+			'team/stats'
+		);
+		expect(
+			teamRouteForPath(
+				teamRelativePath({ pathname: '/en/dashboard/conf-1/team/seats', conferenceId })
+			)?.id
+		).toBe('seats');
+	});
+
+	test('is empty for the dashboard itself and for another conference', () => {
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1', conferenceId })).toBe('');
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1/', conferenceId })).toBe('');
+		expect(teamRelativePath({ pathname: '/dashboard/conf-12/team/stats', conferenceId })).toBe('');
+		expect(teamRelativePath({ pathname: '/dashboard/other/team/stats', conferenceId })).toBe('');
+	});
+});
+
+describe('firstTeamPagePath', () => {
+	test('is the first team page the caller may open, in registry order', () => {
+		for (const access of [as('PARTICIPANT_CARE'), as('REVIEWER'), { isAdmin: true, roles: [] }]) {
+			const first = teamRoutesFor(access).find((entry) => entry.path.startsWith('team/'));
+			expect(firstTeamPagePath(access)).toBe(first?.path);
+			expect(firstTeamPagePath(access)?.startsWith('team/')).toBe(true);
+		}
+	});
+
+	test('is undefined for someone not on the team', () => {
+		expect(firstTeamPagePath(NO_TEAM_ACCESS)).toBeUndefined();
 	});
 });

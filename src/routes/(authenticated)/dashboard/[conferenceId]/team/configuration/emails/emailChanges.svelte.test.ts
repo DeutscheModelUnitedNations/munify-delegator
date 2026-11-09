@@ -25,9 +25,27 @@ describe('createEmailChanges', () => {
 			change: { kind: 'PAYMENT_RECEIVED', enabled: false, notifyExisting: false, openCount: 0 },
 			stored: true
 		});
-		changes.saved();
+		changes.saved({ pace: changes.pace, switches: changes.list });
 		expect(changes.list).toEqual([]);
 		expect(changes.revision).toBe(1);
+	});
+
+	test('keeps what was changed while the save was on its way', () => {
+		const changes = createEmailChanges();
+		changes.stage({
+			change: { kind: 'PAYMENT_RECEIVED', enabled: false, notifyExisting: false, openCount: 0 },
+			stored: true
+		});
+		changes.stagePace({ before: null, after: 5 });
+		const saving = { pace: changes.pace, switches: changes.list };
+		changes.stage({
+			change: { kind: 'POSTAL_RECEIVED', enabled: true, notifyExisting: false, openCount: 0 },
+			stored: false
+		});
+		changes.stagePace({ before: 5, after: null });
+		changes.saved(saving);
+		expect(changes.list.map((change) => change.kind)).toEqual(['POSTAL_RECEIVED']);
+		expect(changes.pace).toEqual({ before: 5, after: null });
 	});
 });
 
@@ -41,7 +59,7 @@ describe('the sending pace', () => {
 		expect(changes.paceOf(null)).toBeNull();
 
 		changes.stagePace({ before: 10, after: null });
-		changes.saved();
+		changes.saved({ pace: changes.pace, switches: changes.list });
 		expect(changes.pace).toBeUndefined();
 	});
 

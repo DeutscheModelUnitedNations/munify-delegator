@@ -1,17 +1,37 @@
 type NamedSchool = { name: string } | null | undefined;
 
+/** Each school once, the most common first (then by name); `key` says which are the same. */
+function distinctBy<S extends { name: string }>({
+	schools,
+	key
+}: {
+	schools: readonly (S | null | undefined)[];
+	key: (school: S) => string;
+}) {
+	const counts = new Map<string, { school: S; count: number }>();
+	for (const school of schools) {
+		if (!school) continue;
+		const seen = counts.get(key(school));
+		counts.set(key(school), { school, count: (seen?.count ?? 0) + 1 });
+	}
+	return [...counts.values()]
+		.toSorted((a, b) => b.count - a.count || a.school.name.localeCompare(b.school.name))
+		.map(({ school }) => school);
+}
+
 /**
  * The schools of a delegation, which keeps none of its own: its members' own schools, each named
  * once, the most common first (then by name). Members without a school are left out.
  */
 export function distinctSchoolNames(schools: readonly NamedSchool[]) {
-	const counts = new Map<string, number>();
-	for (const school of schools) {
-		if (school) counts.set(school.name, (counts.get(school.name) ?? 0) + 1);
-	}
-	return [...counts]
-		.toSorted(([a, countA], [b, countB]) => countB - countA || a.localeCompare(b))
-		.map(([name]) => name);
+	return distinctBy({ schools, key: (school) => school.name }).map((school) => school.name);
+}
+
+/** Like `distinctSchoolNames`, but the schools themselves, for linking to them. */
+export function distinctSchools<S extends { id: string; name: string }>(
+	schools: readonly (S | null | undefined)[]
+) {
+	return distinctBy({ schools, key: (school) => school.id });
 }
 
 /** The members' schools as one line, for a card or a table cell; null when none has one. */

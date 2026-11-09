@@ -11,7 +11,10 @@ const NsaCard = schemaBuilder.simpleObject('NsaCard', {
 		nsaName: t.string({ nullable: true }),
 		nsaIcon: t.string({ nullable: true }),
 		cardNumber: t.int(),
-		code: t.string({ description: 'The signed card code (`MUC1…`), for the QR code.' })
+		code: t.string({
+			description:
+				'The signed card code (kind `nsaCard`); `signedCodeLink` makes it the link the QR code holds.'
+		})
 	})
 });
 

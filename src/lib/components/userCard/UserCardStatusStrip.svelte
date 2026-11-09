@@ -44,7 +44,7 @@
 
 {#snippet pill(title: string, value: Tone, icon: string, tab: UserCardTab, mono = false)}
 	<button
-		class="btn btn-ghost btn-xs gap-1.5 font-normal {tone[value].text}"
+		class="btn btn-ghost btn-xs shrink-0 gap-1.5 font-normal whitespace-nowrap {tone[value].text}"
 		class:font-mono={mono}
 		onclick={() => onOpenTab(tab)}
 	>
@@ -58,9 +58,13 @@
 {/snippet}
 
 {#if status}
-	<div class="border-base-content/10 border-t pt-2">
+	<div class="border-base-content/10 border-t pt-1.5 sm:pt-2">
 		<!-- Pulled out by the buttons' padding, so their text lines up with the name above -->
-		<div class="-mx-2 flex flex-wrap items-center gap-x-1 text-sm">
+		<!-- One line a phone scrolls sideways, rather than three that push the tabs down -->
+		<div
+			class="-mx-2 flex items-center gap-x-1 text-sm max-sm:overflow-x-auto sm:flex-wrap"
+			data-vaul-no-drag
+		>
 			{@render administrative(m.payment(), status.paymentStatus)}
 			{@render administrative(m.userAgreement(), status.termsAndConditions)}
 			{#if needsGuardian}

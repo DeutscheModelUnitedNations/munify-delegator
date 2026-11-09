@@ -17,6 +17,7 @@
 		formalities: { icon: 'fa-clipboard-check', label: () => m.userCardTabFormalities() },
 		conference: { icon: 'fa-calendar-check', label: () => m.accessAndAttendance() },
 		surveys: { icon: 'fa-chart-pie', label: () => m.survey() },
+		calendar: { icon: 'fa-calendar-days', label: () => m.calendar() },
 		papers: { icon: 'fa-file-lines', label: () => m.userCardTabPapers() },
 		history: { icon: 'fa-clock-rotate-left', label: () => m.userCardTabHistory() }
 	};

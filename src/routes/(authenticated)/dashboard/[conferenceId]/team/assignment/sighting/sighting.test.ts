@@ -41,30 +41,31 @@ describe('application details', () => {
 						isHeadDelegate: true,
 						user: person('1'),
 						supervisors: [supervisor],
-						school: { name: 'B' }
+						school: { id: 'b', name: 'B' }
 					},
 					{
 						isHeadDelegate: false,
 						user: person('2'),
 						supervisors: [supervisor],
-						school: { name: 'A' }
+						school: { id: 'a', name: 'A' }
 					}
 				],
 				appliedForRoles: [
-					{ rank: 2, role: { name: 'Amnesty', nation: null } },
-					{ rank: 1, role: { nation: { alpha3Code: 'FRA', alpha2Code: 'FR' } } },
-					{ rank: 3, role: {} }
+					{ rank: 2, roleId: 'r-amnesty', role: { name: 'Amnesty', nation: null } },
+					{ rank: 1, roleId: 'r-fra', role: { nation: { alpha3Code: 'FRA', alpha2Code: 'FR' } } },
+					{ rank: 3, roleId: 'r-none', role: {} }
 				]
 			},
 			nationName: (code) => `name of ${code}`
 		});
 		expect(details.wishes).toEqual([
-			{ name: 'name of FRA', alpha2Code: 'FR' },
-			{ name: 'Amnesty', icon: undefined },
-			{ name: '', icon: undefined }
+			{ roleId: 'r-fra', name: 'name of FRA', alpha2Code: 'FR' },
+			{ roleId: 'r-amnesty', name: 'Amnesty', icon: undefined },
+			{ roleId: 'r-none', name: '', icon: undefined }
 		]);
 		// the members' own schools, one line
 		expect(details.school).toBe('A, B');
+		expect(details.schools.map((school) => school.id)).toEqual(['a', 'b']);
 		expect(details.people.map((p) => [p.id, p.isHeadDelegate])).toEqual([
 			['1', true],
 			['2', false]
@@ -83,13 +84,13 @@ describe('application details', () => {
 			motivation: 'yes',
 			user: person('s'),
 			supervisors: [],
-			appliedForRoles: [{ name: 'Press' }]
+			appliedForRoles: [{ id: 'r-press', name: 'Press' }]
 		});
 		expect(details).toMatchObject({
 			school: null,
 			motivation: 'yes',
 			people: [{ id: 's', isHeadDelegate: false }],
-			wishes: [{ name: 'Press' }]
+			wishes: [{ roleId: 'r-press', name: 'Press' }]
 		});
 	});
 
@@ -114,7 +115,7 @@ describe('application details', () => {
 	it('collects what a search looks through, and says where a term was found', () => {
 		const fields = searchFieldsOf(
 			singleApplication({
-				school: { name: 'Gym' },
+				school: { id: 'g', name: 'Gym' },
 				motivation: 'a long burning fire',
 				user: { ...person('s'), email: 'a@b.c' },
 				supervisors: [{ ...supervisor, user: { ...supervisor.user, email: 'max@x.y' } }],
@@ -180,7 +181,12 @@ describe('searchHitEntries', () => {
 			{
 				id: 'd1',
 				members: [
-					{ isHeadDelegate: true, user: person, supervisors: [], school: { name: 'Goethe' } }
+					{
+						isHeadDelegate: true,
+						user: person,
+						supervisors: [],
+						school: { id: 'goethe', name: 'Goethe' }
+					}
 				],
 				appliedForRoles: []
 			}

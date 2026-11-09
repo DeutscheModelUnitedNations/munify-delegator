@@ -6,8 +6,10 @@ import {
 	E2E_UNRELEASED_CODELEGATE_MEMBER_ID,
 	E2E_UNRELEASED_COMMITTEE_ID,
 	E2E_UNRELEASED_CONFERENCE_ID,
+	E2E_UNRELEASED_DELEGATION_ID,
 	E2E_UNRELEASED_NATION_ALPHA3,
-	E2E_UNRELEASED_PARTICIPANT_USER_ID
+	E2E_UNRELEASED_PARTICIPANT_USER_ID,
+	E2E_UNRELEASED_REVIEW_NOTE
 } from '../seed/seed';
 import { nationRoleId } from '../support/roles';
 
@@ -115,17 +117,34 @@ test('a participant sees their role only while the assignment is released', asyn
 	}
 });
 
+/** The review of the participant's delegation, asked for directly and through the delegation. */
+const reviewQuery = `query ($d: ID!) {
+	assignmentUnits(where: { conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" } }) { id }
+	assignmentReviews(where: { conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" } }) { note }
+	delegation(id: $d) { assignmentReview { note } }
+}`;
+
 test('a participant does not read the assignment draft', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
 
-	const draft = await gql(
-		page,
-		`query {
-			assignmentUnits(where: { conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" } }) { id }
-			assignmentReviews(where: { conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" } }) { id }
-		}`
-	);
-	expect(draft.data, JSON.stringify(draft)).toEqual({ assignmentUnits: [], assignmentReviews: [] });
+	const draft = await gql(page, reviewQuery, { d: E2E_UNRELEASED_DELEGATION_ID });
+	expect(draft.data, JSON.stringify(draft)).toEqual({
+		assignmentUnits: [],
+		assignmentReviews: [],
+		delegation: { assignmentReview: null }
+	});
+});
+
+// The counterpart: the seeded review exists, so the empty answer above is the ability's doing.
+test('participant care reads the review note', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
+
+	const draft = await gql(page, reviewQuery, { d: E2E_UNRELEASED_DELEGATION_ID });
+	expect(draft.data, JSON.stringify(draft)).toEqual({
+		assignmentUnits: [],
+		assignmentReviews: [{ note: E2E_UNRELEASED_REVIEW_NOTE }],
+		delegation: { assignmentReview: { note: E2E_UNRELEASED_REVIEW_NOTE } }
+	});
 });
 
 // Masking hides the values, but a filter on a masked column - or on a relation leading to it - is

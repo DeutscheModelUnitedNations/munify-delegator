@@ -1,1 +1,0 @@
-ALTER TABLE "conference_participant" ADD COLUMN "nsa_card_number" integer DEFAULT 1 NOT NULL;

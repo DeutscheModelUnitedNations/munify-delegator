@@ -64,7 +64,12 @@
 
 <PhoneReadyHint {conferenceId} conferenceState={conference.state} />
 
-<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
+<DashboardSection
+	icon="link"
+	title={m.quickLinks()}
+	description={m.quickLinksDescription()}
+	tourAnchor="dashboard.quick-links"
+>
 	<DashboardLinksGrid>
 		{#each visibleLinks as link (link.id)}
 			{@const badge = link.getBadge?.(linkContext)}

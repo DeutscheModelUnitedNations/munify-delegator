@@ -73,7 +73,7 @@
 		</div>
 		<input
 			type="range"
-			class="range range-xs range-primary w-full"
+			class="range range-sm range-primary w-full sm:range-xs"
 			min="1"
 			max={Math.max(deck.total, 1)}
 			value={sliderValue}
@@ -102,17 +102,22 @@
 					? `${codename}: ${statusLabels[status]}, ${m.assignmentRequired()}`
 					: `${codename}: ${statusLabels[status]}`}
 				<li class="w-5 min-w-1 shrink max-sm:min-w-0.5">
+					<!-- The button is taller than the segment it draws, so a finger hits it -->
 					<button
-						class="block h-3 w-full cursor-pointer rounded-selector transition-all {entry.required
-							? requiredColor
-							: segmentColors[status]} {current
-							? 'ring-primary ring-offset-base-100 h-4 ring-2 ring-offset-1'
-							: 'opacity-70 hover:opacity-100'}"
+						class="group flex h-8 w-full cursor-pointer items-center sm:h-5"
 						aria-label={label}
 						aria-current={current}
 						title={label}
 						onclick={() => onSelect(entry.id)}
-					></button>
+					>
+						<span
+							class="block w-full rounded-selector transition-all {entry.required
+								? requiredColor
+								: segmentColors[status]} {current
+								? 'ring-primary ring-offset-base-100 h-5 ring-2 ring-offset-1 sm:h-4'
+								: 'h-4 opacity-70 group-hover:opacity-100 sm:h-3'}"
+						></span>
+					</button>
 				</li>
 			{/each}
 		</ol>
@@ -121,9 +126,11 @@
 		</span>
 	</div>
 
-	<div class="flex flex-wrap items-center justify-center gap-2">
+	<div
+		class="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-center"
+	>
 		<button
-			class="btn btn-sm"
+			class="btn sm:btn-sm"
 			disabled={!previousId}
 			onclick={() => previousId && onSelect(previousId)}
 		>
@@ -134,13 +141,13 @@
 		<span class="px-2 text-sm font-medium tabular-nums" data-testid="deck-position">
 			{m.assignmentDeckPosition({ current: position.index + 1, total: deck.total })}
 		</span>
-		<button class="btn btn-sm" disabled={!nextId} onclick={() => nextId && onSelect(nextId)}>
+		<button class="btn sm:btn-sm" disabled={!nextId} onclick={() => nextId && onSelect(nextId)}>
 			{m.assignmentDeckNext()}
 			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 			<kbd class="kbd kbd-xs hidden sm:inline-block">→</kbd>
 		</button>
 		<button
-			class="btn btn-sm btn-primary"
+			class="btn btn-primary col-span-3 sm:btn-sm"
 			disabled={!unreviewedId}
 			onclick={() => unreviewedId && onSelect(unreviewedId)}
 		>

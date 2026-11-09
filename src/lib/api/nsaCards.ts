@@ -3,6 +3,7 @@ import { iconPng, loadSheetAssets } from '#lib/api/nametagSheetImages';
 import { downloadPdf } from '#lib/api/nametagSheetsPdf';
 import { buildNsaCardsPdf } from '#lib/api/nsaCardsPdf';
 import { m } from '#lib/paraglide/messages';
+import { signedCodeLink } from '#lib/signedCode/signedCode';
 
 const cardSelection = {
 	givenName: true,
@@ -48,7 +49,8 @@ async function download({
 					nsaName: card.nsaName,
 					icon: await iconOf(card.nsaIcon),
 					cardNumber: card.cardNumber,
-					code: card.code
+					// a link, like every signed code's QR: the camera app opens it too
+					code: signedCodeLink({ origin: location.origin, code: card.code })
 				}))
 			),
 			conferenceTitle: assets.conferenceTitle,

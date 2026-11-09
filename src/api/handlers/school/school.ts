@@ -2,28 +2,26 @@ import { db } from '#api/db/db';
 import { sql } from 'drizzle-orm';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { assertAllowed } from '#api/services/authHelper/utils';
+import { m } from '#lib/paraglide/messages';
 import {
-	assertCanReadConferenceSchools,
 	assertCanReadSchoolMetrics,
 	assertCanUpdateSchools,
 	registerSchoolAbilities
 } from './schoolPermissions';
 import {
-	conferenceSchoolsPage,
+	deleteSchool,
 	mergeSchools,
 	schoolMetrics,
 	searchSchoolIds,
 	updateSchool
 } from './schoolService';
-import {
-	conferenceSchoolsArgsSchema,
-	schoolRenameSchema,
-	searchSchoolsArgsSchema
-} from './schoolArgs';
+import { schoolRenameSchema, searchSchoolsArgsSchema } from './schoolArgs';
 
 registerSchoolAbilities();
 
-const SchoolRef = object({ table: 'school' });
+// by name and place, and by id: a past search in the command palette comes back as its id
+const SchoolRef = object({ table: 'school', search: { columns: ['name', 'city', 'id'] } });
 query({ table: 'school' });
 
 const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {
@@ -40,28 +38,6 @@ const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {
 		supervisors: t.int(),
 		waitingList: t.int(),
 		fromWaitingList: t.int({ description: 'Waiting list entries that were given a seat' })
-	})
-});
-
-const ConferenceSchoolRow = schemaBuilder.simpleObject('ConferenceSchoolRow', {
-	fields: (t) => ({
-		schoolId: t.id(),
-		name: t.string(),
-		city: t.string({ nullable: true }),
-		delegations: t.int(),
-		participants: t.int({ description: 'Delegation members and single participants' }),
-		applied: t.int(),
-		seated: t.int({ description: 'Participants holding a role' }),
-		supervisors: t.int(),
-		waitingList: t.int({ description: 'Entries still waiting' })
-	})
-});
-
-const ConferenceSchoolsPage = schemaBuilder.simpleObject('ConferenceSchoolsPage', {
-	fields: (t) => ({
-		rows: t.field({ type: [ConferenceSchoolRow] }),
-		hasMore: t.boolean(),
-		total: t.int()
 	})
 });
 
@@ -95,29 +71,6 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	conferenceSchools: t.field({
-		description:
-			'The schools of the people in a conference (participants, supervisors, the waiting list), with how many people each sends, a page at a time. Participant care only.',
-		type: ConferenceSchoolsPage,
-		args: t.validate(
-			{
-				conferenceId: t.arg.id({ required: true }),
-				search: t.arg.string({ description: "Part of a school's name or city." }),
-				sortColumn: t.arg.string({
-					description: 'A column of the page; the participants when left out.'
-				}),
-				sortDesc: t.arg.boolean({ description: 'Descending, unless false.' }),
-				limit: t.arg.int({ required: true, description: 'At most 500.' }),
-				offset: t.arg.int({ required: true })
-			},
-			conferenceSchoolsArgsSchema
-		),
-		resolve: async (_root, args, ctx) => {
-			await assertCanReadConferenceSchools({ ctx, conferenceId: args.conferenceId });
-			return conferenceSchoolsPage(args);
-		}
-	}),
-
 	schoolMetrics: t.field({
 		description:
 			'Per conference, how many people from the school registered, applied, got a seat and came: in the conferences where the caller is participant care (every one for a system admin). NOT_FOUND unless the caller may update the school.',
@@ -144,18 +97,27 @@ schemaBuilder.mutationFields((t) => ({
 			city: t.arg.string(),
 			region: t.arg.string(),
 			country: t.arg.string({ description: 'ISO 3166-1 alpha-3' }),
+			isForeignSchool: t.arg.boolean({
+				description:
+					'An Auslandsschule, whose guaranteed seats are limited by `conference.maxGuaranteedSeatsPerForeignSchool`.'
+			}),
 			website: t.arg.string(),
 			contactName: t.arg({ type: 'PersonName' }),
 			contactEmail: t.arg({ type: 'EmailAddress' }),
 			contactPhone: t.arg({ type: 'PhoneNumber' }),
 			notes: t.arg.string()
 		},
-		resolve: async (query, _root, { id, contactPhone, ...update }, ctx) => {
+		resolve: async (query, _root, { id, contactPhone, isForeignSchool, ...update }, ctx) => {
 			await assertCanUpdateSchools({ ctx, ids: [id] });
 			await updateSchool({
 				id,
 				// stored as E.164, like a person's phone
-				update: { ...update, contactPhone: contactPhone === null ? null : contactPhone?.number }
+				update: {
+					...update,
+					// not nullable: null keeps it
+					isForeignSchool: isForeignSchool ?? undefined,
+					contactPhone: contactPhone === null ? null : contactPhone?.number
+				}
 			});
 			return db.query.school
 				.findFirst(
@@ -192,6 +154,24 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
+		}
+	}),
+
+	deleteSchool: t.field({
+		description:
+			'Deletes a school, for a name typed wrongly: everybody naming it is left without a school. Participant care deletes the schools of its people that nobody outside its conferences names; NOT_FOUND otherwise.',
+		type: 'Boolean',
+		args: { id: t.arg.id({ required: true }) },
+		resolve: async (_root, { id }, ctx) => {
+			await assertAllowed({
+				ctx,
+				table: 'school',
+				action: 'delete',
+				id,
+				options: { message: m.schoolDeleteNotAllowed }
+			});
+			await deleteSchool(id);
+			return true;
 		}
 	})
 }));

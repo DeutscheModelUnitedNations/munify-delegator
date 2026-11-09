@@ -26,6 +26,44 @@ enum AdministrativestatusEnum {
   PROBLEM
 }
 
+"""
+How someone's age on the first conference day misses the conference's range.
+"""
+enum AgeIssue {
+  """
+  A participant older than `participantMaxAge`, old enough to be a supervisor.
+  """
+  shouldBeSupervisor
+
+  """A supervisor younger than `supervisorMinAge`."""
+  shouldNotBeSupervisor
+
+  """
+  A participant older than `participantMaxAge`, yet younger than `supervisorMinAge`.
+  """
+  tooOld
+
+  """A participant younger than `participantMinAge`."""
+  tooYoung
+}
+
+"""
+The caller's age does not fit the conference's range, and the limits it missed.
+"""
+type AgeNotice {
+  """Their age on the first conference day."""
+  age: Int!
+  issue: AgeIssue!
+  participantMaxAge: Int
+  participantMinAge: Int
+  supervisorMinAge: Int
+}
+
+enum AgeRole {
+  participant
+  supervisor
+}
+
 type AgendaItemPaperGroup {
   """
   Groups are keyed by agenda item, so there is always one - papers without an agenda item are introduction papers and have their own query.
@@ -62,6 +100,10 @@ type Assignmentreview {
   flagged: Boolean!
   id: ID!
   note: String
+
+  """Get the conferenceRoles related to this assignmentReview"""
+  prioritizedRole(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
+  prioritizedRoleId: ID
   required: Boolean!
 
   """
@@ -84,6 +126,7 @@ input AssignmentreviewOrderInputArgument {
   flagged: SortingParameter
   id: SortingParameter
   note: SortingParameter
+  prioritizedRoleId: SortingParameter
   required: SortingParameter
   singleParticipantId: SortingParameter
   updatedAt: SortingParameter
@@ -103,6 +146,8 @@ input AssignmentreviewWhereInputArgument {
   flagged: BooleanWhereInputArgument
   id: IDWhereInputArgument
   note: StringWhereInputArgument
+  prioritizedRole: ConferenceroleWhereInputArgument
+  prioritizedRoleId: IDWhereInputArgument
   required: BooleanWhereInputArgument
   singleParticipant: SingleparticipantWhereInputArgument
   singleParticipantId: IDWhereInputArgument
@@ -646,12 +691,14 @@ input CalendartrackWhereInputArgument {
 """
 A signed participation certificate, or nulls while attendance is not recorded.
 """
-type CertificateJWT {
+type Certificate {
+  """
+  The certificate as a signed code (`#lib/signedCode/signedCode`), which the PDF shows as a QR code linking to its check.
+  """
+  code: String
+
   """The holder's name as the certificate states it."""
   fullName: String
-
-  """The certificate, a JWT signed with RS256."""
-  jwt: String
 
   """
   The names of the conference's check-in occasions the holder was checked in at, in the order they started; the team can take one off the certificates.
@@ -698,6 +745,39 @@ input ChasepresenceWhereInputArgument {
   data: JSONWhereInputArgument
   fetchedAt: DateTimeWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
+}
+
+"""
+The applied students of one supervisor from one school, with every member from that school of a delegation the supervisor is linked to through any member, as long as there are at most `conference.maxCollectiveGroupSize` of them: they all get a seat or none.
+"""
+type CollectiveGroup {
+  """The supervisor and the school, as one key."""
+  key: String!
+  members: [CollectiveGroupMember!]!
+  school: CollectiveGroupSchool!
+  singleParticipantIds: [ID!]!
+
+  """Delegation members and single participants together."""
+  size: Int!
+
+  """The conference supervisor."""
+  supervisorId: ID!
+}
+
+"""A delegation member of a group decided together."""
+type CollectiveGroupMember {
+  """The delegation whose review decides about the member."""
+  delegationId: ID!
+  delegationMemberId: ID!
+}
+
+"""The school of a group decided together."""
+type CollectiveGroupSchool {
+  id: ID!
+
+  """An Auslandsschule."""
+  isForeignSchool: Boolean!
+  name: String!
 }
 
 type Committee {
@@ -898,7 +978,9 @@ type Conference {
   logoFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
   logoFileId: ID
   longTitle: String
-  maxSeatsPerSchool: Int
+  maxCollectiveGroupSize: Int
+  maxGuaranteedSeatsPerForeignSchool: Int
+  mcpEnabled: Boolean!
 
   """Get the storedFiles related to this conference"""
   mediaConsentFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
@@ -912,6 +994,8 @@ type Conference {
 
   """Get the papers related to this conference"""
   papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  participantMaxAge: Int
+  participantMinAge: Int
 
   """Get the paymentTransactions related to this conference"""
   paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: String, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
@@ -948,6 +1032,7 @@ type Conference {
   singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
   startConference: DateTime!
   state: ConferencestateEnum!
+  supervisorMinAge: Int
 
   """Get the surveyQuestions related to this conference"""
   surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: String, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
@@ -1014,9 +1099,13 @@ input ConferenceOrderInputArgument {
   location: SortingParameter
   logoFileId: SortingParameter
   longTitle: SortingParameter
-  maxSeatsPerSchool: SortingParameter
+  maxCollectiveGroupSize: SortingParameter
+  maxGuaranteedSeatsPerForeignSchool: SortingParameter
+  mcpEnabled: SortingParameter
   mediaConsentFileId: SortingParameter
   nametagBinCount: SortingParameter
+  participantMaxAge: SortingParameter
+  participantMinAge: SortingParameter
   postalApartment: SortingParameter
   postalCity: SortingParameter
   postalCountry: SortingParameter
@@ -1028,6 +1117,7 @@ input ConferenceOrderInputArgument {
   showInfoExpanded: SortingParameter
   startConference: SortingParameter
   state: SortingParameter
+  supervisorMinAge: SortingParameter
   termsAndConditionsFileId: SortingParameter
   timezone: SortingParameter
   title: SortingParameter
@@ -1035,24 +1125,6 @@ input ConferenceOrderInputArgument {
   unlockPostals: SortingParameter
   updatedAt: SortingParameter
   website: SortingParameter
-}
-
-type ConferenceSchoolRow {
-  applied: Int!
-  city: String
-  delegations: Int!
-  name: String!
-
-  """Delegation members and single participants"""
-  participants: Int!
-  schoolId: ID!
-
-  """Participants holding a role"""
-  seated: Int!
-  supervisors: Int!
-
-  """Entries still waiting"""
-  waitingList: Int!
 }
 
 type ConferenceSchools {
@@ -1064,12 +1136,6 @@ type ConferenceSchools {
   schoolId: ID!
   singleParticipants: Int!
   sumParticipants: Int!
-}
-
-type ConferenceSchoolsPage {
-  hasMore: Boolean!
-  rows: [ConferenceSchoolRow!]!
-  total: Int!
 }
 
 input ConferenceWhereInputArgument {
@@ -1119,11 +1185,15 @@ input ConferenceWhereInputArgument {
   logoFile: StoredfileWhereInputArgument
   logoFileId: IDWhereInputArgument
   longTitle: StringWhereInputArgument
-  maxSeatsPerSchool: IntWhereInputArgument
+  maxCollectiveGroupSize: IntWhereInputArgument
+  maxGuaranteedSeatsPerForeignSchool: IntWhereInputArgument
+  mcpEnabled: BooleanWhereInputArgument
   mediaConsentFile: StoredfileWhereInputArgument
   mediaConsentFileId: IDWhereInputArgument
   nametagBinCount: IntWhereInputArgument
   papers: PaperWhereInputArgument
+  participantMaxAge: IntWhereInputArgument
+  participantMinAge: IntWhereInputArgument
   paymentTransactions: PaymenttransactionWhereInputArgument
   places: PlaceWhereInputArgument
   postalApartment: StringWhereInputArgument
@@ -1140,6 +1210,7 @@ input ConferenceWhereInputArgument {
   singleParticipants: SingleparticipantWhereInputArgument
   startConference: DateTimeWhereInputArgument
   state: ConferencestateEnum
+  supervisorMinAge: IntWhereInputArgument
   surveyQuestions: SurveyquestionWhereInputArgument
   teamMemberInvitations: TeammemberinvitationWhereInputArgument
   teamMembers: TeammemberWhereInputArgument
@@ -1572,6 +1643,36 @@ type CreatedInvitation {
   Plaintext, for copy-to-clipboard. Null when the user was added directly.
   """
   token: String
+}
+
+"""One group of a grouped data table."""
+type DataTableGroup {
+  """How many rows the group holds."""
+  count: Int!
+
+  """
+  What names the group (`#lib/dataGrid/grouping`): the value, a day, month or year, or the lower end of a range; null for the rows without one.
+  """
+  value: String
+}
+
+"""One page of a data table: the rows the table shows, in its order."""
+type DataTablePage {
+  """Whether another page follows."""
+  hasMore: Boolean!
+
+  """The page's rows, in order."""
+  ids: [ID!]!
+
+  """
+  Every row the search and filter match within the group, across all pages.
+  """
+  total: Int!
+
+  """
+  The rows' column values by column id, in order, for the tables that answer them (schools); null for the others, whose rows are read through their own queries by id.
+  """
+  values: [JSON!]
 }
 
 """
@@ -2028,14 +2129,6 @@ input IDWhereInputArgument {
   notLike: String
 }
 
-type IdentityCode {
-  code: String!
-}
-
-type IdentityCodePublicKey {
-  publicKey: String!
-}
-
 type ImpersonationStatus {
   impersonatedUser: ImpersonationUser
   isImpersonating: Boolean!
@@ -2172,7 +2265,9 @@ input JSONWhereInputArgument {
   notIn: [JSON!]
 }
 
-"""The public RSA key certificates are signed with, as a JSON Web Key."""
+"""
+The public RSA key the certificates issued as JWTs were signed with, as a JSON Web Key.
+"""
 type JWK {
   """The signing algorithm, `RS256`."""
   alg: String
@@ -2199,6 +2294,67 @@ enum LayoutDocument {
 
 """The locale in the format of a BCP 47 (RFC 5646) standard string"""
 scalar Locale
+
+type Mcpauditentry {
+  arguments: JSON!
+  clientId: ID
+
+  """Get the conferences related to this mcpAuditEntry"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
+  conferenceId: ID!
+  createdAt: DateTime!
+  durationMs: Int!
+  id: ID!
+  message: String
+  outcome: McpcalloutcomeEnum!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  tool: String!
+
+  """Get the users related to this mcpAuditEntry"""
+  user(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
+  userId: ID
+}
+
+input McpauditentryOrderInputArgument {
+  arguments: SortingParameter
+  clientId: SortingParameter
+  conferenceId: SortingParameter
+  createdAt: SortingParameter
+  durationMs: SortingParameter
+  id: SortingParameter
+  message: SortingParameter
+  outcome: SortingParameter
+  tool: SortingParameter
+  userId: SortingParameter
+}
+
+input McpauditentryWhereInputArgument {
+  AND: [McpauditentryWhereInputArgument!]
+  NOT: McpauditentryWhereInputArgument
+  OR: [McpauditentryWhereInputArgument!]
+  arguments: JSONWhereInputArgument
+  clientId: IDWhereInputArgument
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  durationMs: IntWhereInputArgument
+  id: IDWhereInputArgument
+  message: StringWhereInputArgument
+  outcome: McpcalloutcomeEnum
+  tool: StringWhereInputArgument
+  user: UserWhereInputArgument
+  userId: IDWhereInputArgument
+}
+
+enum McpcalloutcomeEnum {
+  ERROR
+  OK
+  REFUSED
+}
 
 enum MediaconsentstatusEnum {
   ALLOWED_ALL
@@ -2264,6 +2420,23 @@ type Mutation {
 
   """Plans to turn a single participant into a delegation of their own."""
   convertSingleParticipant(singleParticipantId: ID!): Boolean!
+
+  """
+  Saves a copy of a view the caller reads under a new name: a shared view as a personal one anyone may make, or a personal view as a shared one (publishing it). Creating the copy needs what `createTableView` needs for its scope; the original stays.
+  """
+  copyTableView(
+    """The conference the table is opened in."""
+    conferenceId: ID!
+
+    """Offered in every conference; false when left out."""
+    global: Boolean
+    id: ID!
+
+    """A shared copy becomes the default; shared copies only."""
+    isDefault: Boolean
+    name: String!
+    shared: Boolean!
+  ): Tableview!
 
   """
   Adds an agenda item (a topic) to a committee: `planSeats` (project management and content lead) in its conference. NOT_FOUND otherwise.
@@ -2360,7 +2533,7 @@ type Mutation {
   ): Committee!
 
   """
-  Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT outside the registration window, or when the person takes part in the conference already or is on its team.
+  Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT for a sign-up of their own once the conference is over (any earlier stage takes one), or when the person takes part in the conference already or is on its team.
   """
   createConferenceSupervisor(
     conferenceId: ID!
@@ -2594,6 +2767,24 @@ type Mutation {
   ): Surveyquestion!
 
   """
+  Saves a view of a team table (`#lib/dataGrid`): personal (only the caller's), or shared with everyone who opens the table. A view is the conference's, or with `global` offered in every conference. Needs the table's permission in the conference; shared views `manageTableViews` there, global shared ones a system admin (FORBIDDEN otherwise). A shared view with `isDefault` becomes the table's default in place of the old one.
+  """
+  createTableView(
+    """The conference the table is opened in, even for a global view."""
+    conferenceId: ID!
+
+    """Offered in every conference; false when left out."""
+    global: Boolean
+
+    """Shared views only."""
+    isDefault: Boolean
+    name: String!
+    shared: Boolean!
+    state: JSON!
+    tableKey: String!
+  ): Tableview!
+
+  """
   Invites several people at once: an address with an account joins the team right away, any other gets a mailed link. Each address is handled independently: one failure (no valid address, already on the team or invited, taking part in the conference, a role the caller may not hand out) is reported in `errors` and the rest still go through, which is why this returns a result object rather than throwing. Project management invites to any role, team coordinators to any but project management.
   """
   createTeamMemberInvitations(conferenceId: ID!, invitations: [CreateInvitationInput!]!): CreateInvitationsResult!
@@ -2687,6 +2878,11 @@ type Mutation {
   deleteRoleApplication(id: ID!): Boolean!
 
   """
+  Deletes a school, for a name typed wrongly: everybody naming it is left without a school. Participant care deletes the schools of its people that nobody outside its conferences names; NOT_FOUND otherwise.
+  """
+  deleteSchool(id: ID!): Boolean!
+
+  """
   Withdraws a single participant's registration: the participant until it is sent in, participant care at any time.
   """
   deleteSingleParticipant(id: ID!): Boolean!
@@ -2710,6 +2906,11 @@ type Mutation {
   Deletes a survey question. Refused with CONFLICT while it still has options: delete those first.
   """
   deleteSurveyQuestion(id: ID!): Boolean!
+
+  """
+  Deletes a view, for everyone who sees it; whoever opened the table with it as their own default opens it with the shared default again. Who may is as for `updateTableView`.
+  """
+  deleteTableView(id: ID!): Boolean!
 
   """
   Removes someone from the conference's team: project management anybody, team coordinators anybody but project management. NOT_FOUND otherwise; CONFLICT for the last project management (only a system admin may remove them).
@@ -2750,9 +2951,19 @@ type Mutation {
   endAttendanceSession(id: ID!): Boolean!
 
   """
-  A fresh identity code for the caller, to show as a QR code for the team to scan. A mutation so no client cache can hand back an old, expired one; it writes nothing, so it publishes nothing. Only ever the caller's own id is signed.
+  The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.
   """
-  issueIdentityCode: IdentityCode!
+  issueDocumentCode(
+    conferenceId: ID!
+
+    """The holder's user id."""
+    userId: ID!
+  ): SignedCode!
+
+  """
+  A fresh code for the caller's digital nametag in the conference, good for ten minutes, to show as a QR code for the team to scan. A mutation so no client cache can hand back an old, expired one; it writes nothing, so it publishes nothing. Only ever the caller's own id is signed.
+  """
+  issueNametagCode(conferenceId: ID!): SignedCode!
 
   """
   The printable cards of the conference's NSA delegates, all of them or those of the given participant rows (participant care). A mutation so no cache hands back old codes; signing writes nothing, so a card comes out the same until its number is raised.
@@ -2948,6 +3159,11 @@ type Mutation {
   setConferenceEmailsPerSecond(conferenceId: ID!, emailsPerSecond: Int): Boolean!
 
   """
+  Switches AI assistants' access to a conference (the MCP server at `/mcp`) on or off. While it is off, no assistant sees anything of the conference, whoever connects. Project management only; FORBIDDEN for anyone else.
+  """
+  setConferenceMcpEnabled(conferenceId: ID!, enabled: Boolean!): Boolean!
+
+  """
   Places a document's generated parts on the conference's template (the layout editor in the document settings); `null` returns that document to the default positions. A layout that does not fit the document is refused with INVALID_INPUT.
   """
   setDocumentLayout(
@@ -2959,6 +3175,11 @@ type Mutation {
     """
     layout: JSON
   ): Conference!
+
+  """
+  Picks the view the caller opens a table with in a conference - one of their own or a shared one, of that table and conference or global - or, with `viewId` null, none (the conference's shared default applies again). Needs the table's permission in the conference.
+  """
+  setMyTableViewDefault(conferenceId: ID!, tableKey: String!, viewId: ID): Boolean!
 
   """
   Sets a person's school in a conference: the only school a person taking part has, which the seats and numbers per school count, and which the assignment never changes. Without `id` it is the caller's own (as a delegate, single participant or supervisor); with it, participant care correcting somebody's. Both school arguments null removes it, both left out keeps it.
@@ -2975,6 +3196,11 @@ type Mutation {
     """The name of a school to find (ignoring case and spacing) or create."""
     schoolName: String
   ): Conferenceparticipant!
+
+  """
+  Makes a shared view the default its table opens with in its conference (or, for a global view, in every conference without one of its own), or takes that from it. Who may is as for `updateTableView`; a personal view is refused with INVALID_INPUT (pick it with `setMyTableViewDefault`).
+  """
+  setTableViewDefault(id: ID!, isDefault: Boolean!): Tableview!
 
   """
   Marks everything of `kinds` the conference owes right now as skipped, so it is never sent. Answers how many mails that was.
@@ -3170,9 +3396,14 @@ type Mutation {
     longTitle: String
 
     """
-    How many seats one school may be given before the assignment warns; `null` for no limit.
+    Up to how many applicants of one supervisor and school are decided on together (all get a seat or none), which the assignment warns about; `null` switches it off.
     """
-    maxSeatsPerSchool: Int
+    maxCollectiveGroupSize: Int
+
+    """
+    How many people of one Auslandsschule may be given a guaranteed seat before the assignment warns; `null` for no limit.
+    """
+    maxGuaranteedSeatsPerForeignSchool: Int
 
     """
     A file uploaded through `requestFileUpload` for this field of this conference; `null` removes the stored one, left out keeps it.
@@ -3181,6 +3412,16 @@ type Mutation {
 
     """How many tables the nametags are handed out at."""
     nametagBinCount: Int
+
+    """
+    How old participants are at most on the first conference day; `null` for no upper limit.
+    """
+    participantMaxAge: Int
+
+    """
+    How old participants are at least on the first conference day; `null` for no lower limit. Outside the range the entry flows warn, nothing is refused.
+    """
+    participantMinAge: Int
     postalApartment: String
     postalCity: String
     postalCountry: String
@@ -3194,6 +3435,11 @@ type Mutation {
     showInfoExpanded: Boolean
     startConference: DateTime
     state: ConferencestateEnum
+
+    """
+    How old supervisors are at least on the first conference day; `null` for no limit.
+    """
+    supervisorMinAge: Int
 
     """
     A file uploaded through `requestFileUpload` for this field of this conference; `null` removes the stored one, left out keeps it.
@@ -3329,6 +3575,11 @@ type Mutation {
     """ISO 3166-1 alpha-3"""
     country: String
     id: ID!
+
+    """
+    An Auslandsschule, whose guaranteed seats are limited by `conference.maxGuaranteedSeatsPerForeignSchool`.
+    """
+    isForeignSchool: Boolean
     name: String
     notes: String
     region: String
@@ -3376,6 +3627,11 @@ type Mutation {
   updateSurveyQuestion(deadline: DateTime, description: String, draft: Boolean, hidden: Boolean, id: ID!, showSelectionOnDashboard: Boolean, title: String): Surveyquestion!
 
   """
+  Changes the name and/or the state of a view; a field left out stays. Personal views are their owner's to change, shared ones `manageTableViews`'s of their conference, global shared ones system admins' (NOT_FOUND otherwise).
+  """
+  updateTableView(id: ID!, name: String, state: JSON): Tableview!
+
+  """
   Gives a team member another role. Project management changes anybody on its team; team coordinators anybody but project management, and never to project management. NOT_FOUND for a member the caller may not change, FORBIDDEN for a role they may not hand out, CONFLICT for demoting the last project management (only a system admin may).
   """
   updateTeamMemberRole(id: ID!, role: TeamroleEnum!): Teammember!
@@ -3420,9 +3676,9 @@ type Mutation {
   ): Waitinglistentry!
 
   """
-  Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating or the note.
+  Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating, the note or the prioritized role. The prioritized role has to be one of the application's wishes: the automatic distribution treats it as the first.
   """
-  upsertAssignmentReview(delegationId: ID, disqualified: Boolean, evaluation: Float, flagged: Boolean, note: String, required: Boolean, singleParticipantId: ID): Assignmentreview!
+  upsertAssignmentReview(delegationId: ID, disqualified: Boolean, evaluation: Float, flagged: Boolean, note: String, prioritizedRoleId: ID, required: Boolean, singleParticipantId: ID): Assignmentreview!
 
   """
   Changes the given weights of the automatic assignment; the others stay as they are.
@@ -3763,63 +4019,6 @@ input PaperversionWhereInputArgument {
   version: IntWhereInputArgument
 }
 
-"""
-One column filter of the participants table. Which of the value fields applies follows from the column: text columns take `mode` and `text`, enum columns `values`, boolean columns `bool`, number columns `min` / `max`. The nation column also takes `values`, the nation codes whose (translated) name matched.
-"""
-input ParticipantFilterInput {
-  """The value a boolean column must have; left out filters nothing."""
-  bool: Boolean
-
-  """
-  The column filtered; one the table does not have is refused with INVALID_INPUT.
-  """
-  column: String!
-
-  """The highest value a number column may have."""
-  max: Float
-
-  """The lowest value a number column may have."""
-  min: Float
-
-  """
-  How a text column compares: `contains` (also for an unknown mode), `containsNot`, `equals`, `equalsNot`, `startsWith`, `startsWithNot`, `isEmpty` or `isNotEmpty`.
-  """
-  mode: String
-
-  """The text a text column is compared with; empty filters nothing."""
-  text: String
-
-  """
-  The values an enum column may have; `—` stands for none. Empty filters nothing.
-  """
-  values: [String!]
-}
-
-"""One column to order the participants table by."""
-input ParticipantSortInput {
-  """
-  The column; one the backend does not know (a column the table computes itself) is skipped.
-  """
-  column: String!
-
-  """Descending rather than ascending."""
-  desc: Boolean!
-}
-
-"""
-The users of one page of the participants table, in the order the table shows.
-"""
-type ParticipantsPage {
-  """Whether another page follows."""
-  hasMore: Boolean!
-
-  """Everyone the search and filters match, across all pages."""
-  total: Int!
-
-  """The page's users, in order."""
-  userIds: [ID!]!
-}
-
 type Paymenttransaction {
   amount: Float!
 
@@ -4010,6 +4209,7 @@ type Possibleduplicate {
   decidedBy(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
   decidedById: ID
   id: ID!
+  inferred: Boolean!
   reasons: [String!]!
   score: Float!
 
@@ -4036,6 +4236,7 @@ input PossibleduplicateOrderInputArgument {
   decidedAt: SortingParameter
   decidedById: SortingParameter
   id: SortingParameter
+  inferred: SortingParameter
   reasons: SortingParameter
   score: SortingParameter
   status: SortingParameter
@@ -4054,6 +4255,7 @@ input PossibleduplicateWhereInputArgument {
   decidedBy: UserWhereInputArgument
   decidedById: IDWhereInputArgument
   id: IDWhereInputArgument
+  inferred: BooleanWhereInputArgument
   reasons: StringArrayWhereInputArgument
   score: FloatWhereInputArgument
   status: PossibleduplicatestatusEnum
@@ -4158,6 +4360,11 @@ type Query {
   """
   checkTeamInvitationEmails(conferenceId: ID!, emails: [String!]!): [EmailStatusResult!]!
 
+  """
+  The conference's groups decided together, by school name; none while the rule is switched off. A student with two supervisors is in two groups. Not live: ask again to see new supervisions. Participant care only (FORBIDDEN otherwise).
+  """
+  collectiveGroups(conferenceId: ID!): [CollectiveGroup!]!
+
   """Get a single committee by ID"""
   committee(id: ID!): Committee!
 
@@ -4208,26 +4415,6 @@ type Query {
   """List all conferenceRoles"""
   conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
-  """
-  The schools of the people in a conference (participants, supervisors, the waiting list), with how many people each sends, a page at a time. Participant care only.
-  """
-  conferenceSchools(
-    conferenceId: ID!
-
-    """At most 500."""
-    limit: Int!
-    offset: Int!
-
-    """Part of a school's name or city."""
-    search: String
-
-    """A column of the page; the participants when left out."""
-    sortColumn: String
-
-    """Descending, unless false."""
-    sortDesc: Boolean
-  ): ConferenceSchoolsPage!
-
   """Get a single conferenceSupervisor by ID"""
   conferenceSupervisor(id: ID!): Conferencesupervisor!
 
@@ -4236,6 +4423,62 @@ type Query {
 
   """List all conferences"""
   conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+
+  """
+  The groups of the level below `query.path` of a grouped team table, with how many rows each holds, at most 1000; empty when the query groups no further. Who may ask is as for `dataTablePage`.
+  """
+  dataTableGroups(
+    conferenceId: ID!
+
+    """
+    The filter tree, sorting and grouping, and the group asked for (`path`), as `#lib/dataGrid/stateSchema` describes them. Conditions, sorting and grouping on columns the table does not have count for nothing.
+    """
+    query: JSON!
+
+    """
+    Ignored; a new value makes the client ask again after the table's rows changed (the answers are not live, and the client's cache would answer the same arguments with the old ids).
+    """
+    revision: String
+
+    """Words that each have to occur in one of the searched columns."""
+    search: String
+
+    """
+    Which table: `participants`, `waitingList`, `teamMembers` or `schools`.
+    """
+    table: String!
+  ): [DataTableGroup!]!
+
+  """
+  One page of a team table (participants, waiting list, team, schools), searched, filtered, sorted and - within the group `query.path` names - grouped by the backend. Answers the rows' ids; the page reads them through the ordinary queries. Each table is for the team permission its page asks for (FORBIDDEN otherwise): participant care for all but the team, which is the team admins'. Columns the caller may not read of a row (a teammate's address) count as empty. Not live: the page asks again when the rows it shows change.
+  """
+  dataTablePage(
+    conferenceId: ID!
+
+    """Rows per page, 1 to 1000."""
+    limit: Int!
+
+    """Rows to skip before the page."""
+    offset: Int!
+
+    """
+    The filter tree, sorting and grouping, and the group asked for (`path`), as `#lib/dataGrid/stateSchema` describes them. Conditions, sorting and grouping on columns the table does not have count for nothing.
+    """
+    query: JSON!
+
+    """
+    Ignored; a new value makes the client ask again after the table's rows changed (the answers are not live, and the client's cache would answer the same arguments with the old ids).
+    """
+    revision: String
+
+    """Words that each have to occur in one of the searched columns."""
+    search: String
+
+    """
+    Which table: `participants`, `waitingList`, `teamMembers` or `schools`.
+    """
+    table: String!
+  ): DataTablePage!
 
   """Get a single delegation by ID"""
   delegation(id: ID!): Delegation!
@@ -4317,15 +4560,15 @@ type Query {
   """
   Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
   """
-  getCertificateJWT(
+  getCertificate(
     conferenceId: ID!
 
     """The holder's user id."""
     userId: ID!
-  ): CertificateJWT!
+  ): Certificate!
 
   """
-  The public half of the signing key, so certificates can be verified without this app. Open to anybody.
+  The public half of the key certificates issued as JWTs were signed with, which `/validateCertificate` still checks them against. New certificates are signed codes, checked against `signedCodeKeys`. Open to anybody.
   """
   getCertificateJWTPublicKeyObject: JWK!
 
@@ -4341,11 +4584,6 @@ type Query {
     filter: StatsFilter = ALL
   ): StatisticsResult!
 
-  """
-  The public key identity codes and NSA cards are checked against, raw and base64url. Public by nature, but only handed to signed-in callers and the linked CHASE (UNAUTHENTICATED otherwise).
-  """
-  identityCodePublicKey: IdentityCodePublicKey!
-
   """Whether the caller is acting as somebody else, and if so who both are."""
   impersonationStatus: ImpersonationStatus!
 
@@ -4357,6 +4595,22 @@ type Query {
 
   """Where to send the browser to end the session at the identity provider."""
   logoutUrl: String!
+
+  """List all mcpAuditEntries"""
+  mcpAuditEntries(limit: Int, offset: Int, orderBy: McpauditentryOrderInputArgument, search: String, where: McpauditentryWhereInputArgument): [Mcpauditentry!]!
+
+  """Get a single mcpAuditEntry by ID"""
+  mcpAuditEntry(id: ID!): Mcpauditentry!
+
+  """
+  The address AI assistants connect to (the MCP server), or null while it is not set up for this app. Each conference still switches assistants on for itself (`setConferenceMcpEnabled`).
+  """
+  mcpServerUrl: String
+
+  """
+  Whether the caller's age on the first conference day fits the conference's range for taking part as `role`; null when it does or no birthday is known. Only a warning: nothing refuses a registration by age.
+  """
+  myAgeNotice(conferenceId: ID!, role: AgeRole!): AgeNotice
 
   """
   The system roles the identity provider grants the caller; empty when signed out.
@@ -4430,28 +4684,6 @@ type Query {
   """Count all papers"""
   papersCount(where: PaperWhereInputArgument): Int!
 
-  """
-  The users of one page of the participants table. The table merges four kinds of registration, the team and the waiting list, and the status of each person's paperwork into one row, so it has no list query of its own to search, filter and order by: this answers with the ordered ids, and the page reads the rows' details through the ordinary queries by id. Participant care only (FORBIDDEN for anybody else): filtering and ordering by contact data and care status would otherwise reveal it. A team member's address, gender and food preference count as empty for a caller who may not read them (only team admins do). Ties are ordered by family name, then id. Not live; the page refetches when it is told the registrations changed.
-  """
-  participantsPage(
-    conferenceId: ID!
-
-    """Column filters, all of which have to match."""
-    filters: [ParticipantFilterInput!]
-
-    """People per page, 1 to 1000."""
-    limit: Int!
-
-    """People to skip before the page."""
-    offset: Int!
-
-    """Text the full name (given name first) or the email has to contain."""
-    search: String
-
-    """The order, most significant column first."""
-    sort: [ParticipantSortInput!]
-  ): ParticipantsPage!
-
   """Get a single paymentTransaction by ID"""
   paymentTransaction(id: ID!): Paymenttransaction!
 
@@ -4515,7 +4747,7 @@ type Query {
   roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: String, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
 
   """
-  Looks a scanned code (a user id) up for the entrance scanner. Any team member may use it, which the scanner is for (FORBIDDEN for anybody else), so it answers with this fixed set of fields instead of letting the caller read the participant's user and status rows, which only participant care may - and only for people with a part in the conference; anybody else is "not found". With a session it also tells whether the person picked one of the survey options the session expects; the titles come along, since the team members working the scanner may not read the survey itself. The check itself is made here: `issues`, `checkPassed` and `mayRecordAnyway` are what the scanner shows and acts on.
+  Looks a scanned code up for the entrance scanner: a digital nametag's signed code, which has to be genuine, current and of this conference (INVALID_INPUT otherwise), or a user id - a printed nametag's barcode, or a person picked by hand. Any team member may use it, which the scanner is for (FORBIDDEN for anybody else), so it answers with this fixed set of fields instead of letting the caller read the participant's user and status rows, which only participant care may - and only for people with a part in the conference; anybody else is "not found". With a session it also tells whether the person picked one of the survey options the session expects; the titles come along, since the team members working the scanner may not read the survey itself. The check itself is made here: `issues`, `checkPassed` and `mayRecordAnyway` are what the scanner shows and acts on.
   """
   scanLookup(
     """
@@ -4523,7 +4755,7 @@ type Query {
     """
     asScan: Boolean
 
-    """The scanned code: a user id."""
+    """The scanned code: a nametag's signed code (or its link), or a user id."""
     code: String!
     conferenceId: ID!
 
@@ -4649,11 +4881,21 @@ type Query {
     search: String
   ): [SightingSchool!]!
 
+  """
+  The public keys signed codes are checked against, so a scanner checks them without asking the server and anybody can check a certificate. Open to anybody.
+  """
+  signedCodeKeys: [SignedCodeKey!]!
+
   """Get a single singleParticipant by ID"""
   singleParticipant(id: ID!): Singleparticipant!
 
   """List all singleParticipants"""
   singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+
+  """
+  Whether supervisors may sign themselves up to the conference right now: in every stage until it is over. Readable by anyone, so the supervisor page can say so to someone who cannot read the conference; it tells nothing else about it. False for an unknown conference.
+  """
+  supervisorSignupOpen(conferenceId: ID!): Boolean!
 
   """Get a single surveyAnswer by ID"""
   surveyAnswer(id: ID!): Surveyanswer!
@@ -4672,6 +4914,18 @@ type Query {
 
   """List all surveyQuestions"""
   surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: String, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
+
+  """Get a single tableView by ID"""
+  tableView(id: ID!): Tableview!
+
+  """Get a single tableViewDefault by ID"""
+  tableViewDefault(id: ID!): Tableviewdefault!
+
+  """List all tableViewDefaults"""
+  tableViewDefaults(limit: Int, offset: Int, orderBy: TableviewdefaultOrderInputArgument, search: String, where: TableviewdefaultWhereInputArgument): [Tableviewdefault!]!
+
+  """List all tableViews"""
+  tableViews(limit: Int, offset: Int, orderBy: TableviewOrderInputArgument, search: String, where: TableviewWhereInputArgument): [Tableview!]!
 
   """Get a single teamMember by ID"""
   teamMember(id: ID!): Teammember!
@@ -4988,6 +5242,7 @@ type School {
   country: String
   createdAt: DateTime!
   id: ID!
+  isForeignSchool: Boolean!
   name: String!
   notes: String
 
@@ -5040,6 +5295,7 @@ input SchoolOrderInputArgument {
   country: SortingParameter
   createdAt: SortingParameter
   id: SortingParameter
+  isForeignSchool: SortingParameter
   name: SortingParameter
   notes: SortingParameter
   region: SortingParameter
@@ -5061,6 +5317,7 @@ input SchoolWhereInputArgument {
   country: StringWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
+  isForeignSchool: BooleanWhereInputArgument
   name: StringWhereInputArgument
   notes: StringWhereInputArgument
   participants: ConferenceparticipantWhereInputArgument
@@ -5329,6 +5586,22 @@ type SightingSchool {
 
   """None for the people without a school."""
   schoolId: ID
+}
+
+"""
+A signed code in the scanner safe alphabet; `signedCodeLink` (`#lib/signedCode/signedCode`) makes it the link a QR code shows.
+"""
+type SignedCode {
+  code: String!
+}
+
+"""A public key signed codes are checked against."""
+type SignedCodeKey {
+  """The key id codes name in their `kid` header."""
+  kid: Int!
+
+  """The Ed25519 public key, raw and base64url."""
+  publicKey: String!
 }
 
 type Singleparticipant {
@@ -6335,6 +6608,12 @@ type Subscription {
   """List all instanceLinks"""
   instanceLinks(limit: Int, offset: Int, orderBy: InstancelinkOrderInputArgument, search: String, where: InstancelinkWhereInputArgument): [Instancelink!]!
 
+  """List all mcpAuditEntries"""
+  mcpAuditEntries(limit: Int, offset: Int, orderBy: McpauditentryOrderInputArgument, search: String, where: McpauditentryWhereInputArgument): [Mcpauditentry!]!
+
+  """Get a single mcpAuditEntry by ID"""
+  mcpAuditEntry(id: ID!): Mcpauditentry!
+
   """Get a single nation by ID"""
   nation(id: ID!): Nation!
 
@@ -6427,6 +6706,18 @@ type Subscription {
 
   """List all surveyQuestions"""
   surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: String, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
+
+  """Get a single tableView by ID"""
+  tableView(id: ID!): Tableview!
+
+  """Get a single tableViewDefault by ID"""
+  tableViewDefault(id: ID!): Tableviewdefault!
+
+  """List all tableViewDefaults"""
+  tableViewDefaults(limit: Int, offset: Int, orderBy: TableviewdefaultOrderInputArgument, search: String, where: TableviewdefaultWhereInputArgument): [Tableviewdefault!]!
+
+  """List all tableViews"""
+  tableViews(limit: Int, offset: Int, orderBy: TableviewOrderInputArgument, search: String, where: TableviewWhereInputArgument): [Tableview!]!
 
   """Get a single teamMember by ID"""
   teamMember(id: ID!): Teammember!
@@ -6624,6 +6915,108 @@ input SurveyquestionWhereInputArgument {
   surveyAnswers: SurveyanswerWhereInputArgument
   title: StringWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
+}
+
+type Tableview {
+  """Get the conferences related to this tableView"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference
+  conferenceId: ID
+  createdAt: DateTime!
+  createdById: ID
+  id: ID!
+  isDefault: Boolean!
+  name: String!
+
+  """Get the users related to this tableView"""
+  owner(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
+  ownerUserId: ID
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  shared: Boolean!
+  state: JSON!
+  tableKey: String!
+  updatedAt: DateTime!
+}
+
+input TableviewOrderInputArgument {
+  conferenceId: SortingParameter
+  createdAt: SortingParameter
+  createdById: SortingParameter
+  id: SortingParameter
+  isDefault: SortingParameter
+  name: SortingParameter
+  ownerUserId: SortingParameter
+  shared: SortingParameter
+  state: SortingParameter
+  tableKey: SortingParameter
+  updatedAt: SortingParameter
+}
+
+input TableviewWhereInputArgument {
+  AND: [TableviewWhereInputArgument!]
+  NOT: TableviewWhereInputArgument
+  OR: [TableviewWhereInputArgument!]
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  createdById: IDWhereInputArgument
+  id: IDWhereInputArgument
+  isDefault: BooleanWhereInputArgument
+  name: StringWhereInputArgument
+  owner: UserWhereInputArgument
+  ownerUserId: IDWhereInputArgument
+  shared: BooleanWhereInputArgument
+  state: JSONWhereInputArgument
+  tableKey: StringWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
+}
+
+type Tableviewdefault {
+  """Get the conferences related to this tableViewDefault"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
+  conferenceId: ID!
+  createdAt: DateTime!
+  id: ID!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  tableKey: String!
+  updatedAt: DateTime!
+  userId: ID!
+
+  """Get the tableViews related to this tableViewDefault"""
+  view(orderBy: TableviewOrderInputArgument, where: TableviewWhereInputArgument): Tableview!
+  viewId: ID!
+}
+
+input TableviewdefaultOrderInputArgument {
+  conferenceId: SortingParameter
+  createdAt: SortingParameter
+  id: SortingParameter
+  tableKey: SortingParameter
+  updatedAt: SortingParameter
+  userId: SortingParameter
+  viewId: SortingParameter
+}
+
+input TableviewdefaultWhereInputArgument {
+  AND: [TableviewdefaultWhereInputArgument!]
+  NOT: TableviewdefaultWhereInputArgument
+  OR: [TableviewdefaultWhereInputArgument!]
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  id: IDWhereInputArgument
+  tableKey: StringWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
+  userId: IDWhereInputArgument
+  view: TableviewWhereInputArgument
+  viewId: IDWhereInputArgument
 }
 
 enum TeamInvitationEmailStatus {

@@ -35,6 +35,8 @@ export const reviewArgsSchema = z
 		disqualified: flagChange,
 		/** Must get a seat. */
 		required: flagChange,
+		/** One of the application's wishes, treated as its first; `null` clears it. */
+		prioritizedRoleId: z.string().nullish(),
 		note: z
 			.string()
 			.nullish()
@@ -54,9 +56,33 @@ export const reviewArgsSchema = z
 export type ReviewUpdate = z.output<typeof reviewArgsSchema>;
 export type ReviewedApplication = ReviewUpdate['application'];
 
+/** Whether the application applied for the role. */
+async function isWishOf({
+	tx,
+	application,
+	roleId
+}: {
+	tx: Transaction;
+	application: ReviewedApplication;
+	roleId: string;
+}) {
+	const wish =
+		application.kind === 'delegation'
+			? await tx.query.roleApplication.findFirst({
+					where: { delegationId: application.id, roleId },
+					columns: { id: true }
+				})
+			: await tx.query.singleParticipant.findFirst({
+					where: { id: application.id, appliedForRoles: { id: roleId } },
+					columns: { id: true }
+				});
+	return !!wish;
+}
+
 /**
  * Changes the given fields of the team's review of one application, creating it on the first
- * change. Refuses a change that leaves it both required and excluded. Returns its id.
+ * change. Refuses a change that leaves it both required and excluded, and a prioritized role the
+ * application did not wish for. Returns its id.
  */
 export async function upsertAssignmentReview({
 	conferenceId,
@@ -66,6 +92,12 @@ export async function upsertAssignmentReview({
 	review: ReviewUpdate;
 }) {
 	const id = await db.transaction(async (tx) => {
+		if (
+			changes.prioritizedRoleId &&
+			!(await isWishOf({ tx, application, roleId: changes.prioritizedRoleId }))
+		) {
+			throw apiError({ code: 'INVALID_INPUT', message: m.assignmentPrioritizedNotAWish() });
+		}
 		const [row] = await tx
 			.insert(schema.assignmentReview)
 			.values({ conferenceId, ...keys, ...changes })
@@ -237,7 +269,7 @@ async function writeSingleParticipantPlan({
  * Plans a role for a group of the board: through its own unit for a part of a split delegation or
  * a converted single participant, otherwise for the whole delegation.
  */
-async function writeGroupPlan({
+export async function writeGroupPlan({
 	tx,
 	conferenceId,
 	group,

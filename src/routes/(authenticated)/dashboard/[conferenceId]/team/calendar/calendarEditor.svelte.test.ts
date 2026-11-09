@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import type { EditorDay } from './calendarEditor.svelte';
+import type { EditorDay } from './calendarEditor.svelte.js';
 
 const updateCalendarEntry = vi.fn();
 vi.mock('#lib/api/rumbleClient/client', () => ({
@@ -14,7 +14,7 @@ vi.mock('svelte-sonner', () => ({
 	}
 }));
 
-const { createCalendarEditor } = await import('./calendarEditor.svelte');
+const { createCalendarEditor } = await import('./calendarEditor.svelte.js');
 
 const at = (day: string, time: string) => new Date(`${day}T${time}:00Z`);
 

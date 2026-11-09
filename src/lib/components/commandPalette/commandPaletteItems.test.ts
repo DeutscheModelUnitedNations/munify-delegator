@@ -28,6 +28,7 @@ const delegation = {
 	memberCount: 3,
 	headDelegateUserId: 'u9'
 };
+const manual = { id: 'manual', title: () => 'Manual', href: '/docs/user-manual/introduction' };
 const transaction = { id: 't1', amount: 10, currency: 'EUR', recievedAt: null };
 const page: PageEntry = {
 	id: 'stats',
@@ -47,34 +48,45 @@ const config: ConfigEntry = {
 };
 const seat = { id: 's1', title: 'Frankreich', subtitle: 'Gym', holderUserId: 'u9' };
 const committee = { id: 'c1', title: 'Sicherheitsrat', subtitle: 'SC' };
+const school = { id: 'sch1', name: 'Goethe-Gymnasium', city: 'Berlin' };
 const foreignUser = { id: 'f1', email: 'f@b.c', givenName: 'Fo', familyName: 'Reign' };
 
 describe('flattenResults', () => {
 	test('orders the groups', () => {
 		const items = flattenResults({
 			users: [user],
+			schools: [school],
 			delegations: [delegation],
 			seats: [seat],
 			committees: [committee],
 			transactions: [transaction],
 			pages: [page],
 			configs: [config],
-			foreignUsers: [foreignUser]
+			foreignUsers: [foreignUser],
+			manual: [manual]
 		});
 		expect(items.map((i) => i.type)).toEqual([
 			'user',
+			'school',
 			'delegation',
 			'seat',
 			'committee',
 			'transaction',
 			'page',
 			'config',
-			'foreignUser'
+			'foreignUser',
+			'manual'
 		]);
 	});
 });
 
 describe('resultTarget', () => {
+	test('the manual opens in a new tab', () => {
+		expect(resultTarget({ item: { type: 'manual', data: manual }, conferenceId })).toEqual({
+			newTab: '/docs/user-manual/introduction'
+		});
+	});
+
 	test('a seat opens its holder, or the participant list when nobody holds it', () => {
 		expect(resultTarget({ item: { type: 'seat', data: seat }, conferenceId })).toEqual({
 			userId: 'u9'
@@ -82,6 +94,14 @@ describe('resultTarget', () => {
 		expect(
 			resultTarget({ item: { type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId })
 		).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
+	});
+	test('a school opens its page', () => {
+		expect(resultTarget({ item: { type: 'school', data: school }, conferenceId })).toEqual({
+			href: resolve('/(authenticated)/dashboard/[conferenceId]/team/schools/[schoolId]', {
+				conferenceId,
+				schoolId: 'sch1'
+			})
+		});
 	});
 	test('a committee opens the committees tab', () => {
 		expect(
@@ -178,11 +198,27 @@ describe('describeItem', () => {
 		],
 		[
 			{ type: 'delegation', data: delegation },
-			{ icon: 'fa-users-viewfinder', primary: 'Gym', secondary: `3 ${m.members()}` }
+			{
+				icon: 'fa-users-viewfinder',
+				primary: `${m.delegation()} · Gym`,
+				secondary: `3 ${m.members()}`
+			}
 		],
 		[
 			{ type: 'delegation', data: { ...delegation, school: null } },
-			{ icon: 'fa-users-viewfinder', primary: 'd1', secondary: `3 ${m.members()}` }
+			{
+				icon: 'fa-users-viewfinder',
+				primary: `${m.delegation()} · d1`,
+				secondary: `3 ${m.members()}`
+			}
+		],
+		[
+			{ type: 'school', data: school },
+			{ icon: 'fa-school', primary: 'Goethe-Gymnasium', secondary: 'Berlin' }
+		],
+		[
+			{ type: 'school', data: { ...school, city: null } },
+			{ icon: 'fa-school', primary: 'Goethe-Gymnasium', secondary: undefined }
 		],
 		[
 			{ type: 'page', data: page },
