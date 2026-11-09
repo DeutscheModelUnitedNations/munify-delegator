@@ -96,7 +96,8 @@ export default defineConfig({
 		tailwindcss(),
 		// The local OIDC provider (oidc-mock.yaml). Only runs under `vite dev` and `vite preview`;
 		// it has to come before SvelteKit so it can answer the login page itself.
-		oidcMock(),
+		// a second dev server (another checkout) runs its own mock on another port
+		oidcMock({ port: process.env.OIDC_MOCK_PORT ? Number(process.env.OIDC_MOCK_PORT) : undefined }),
 		rebuildRumbleOnSchemaChange(),
 		sveltekit({
 			preprocess: vitePreprocess(),

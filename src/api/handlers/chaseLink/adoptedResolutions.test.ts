@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { adoptedResolutions, resolutionChanges, type ChasePaper } from './adoptedResolutions';
+import {
+	adoptedResolutions,
+	readableResolution,
+	resolutionChanges,
+	type ChasePaper
+} from './adoptedResolutions';
 
 const text = JSON.stringify({ committeeName: 'GA', preamble: [], operative: [] });
 
@@ -10,12 +15,12 @@ const paper = (overrides: Partial<ChasePaper> = {}): ChasePaper => ({
 	committeeId: 'ga',
 	agendaItemId: 'climate',
 	vote: { outcome: 'ADOPTED' },
-	snapshots: [{ id: 'snap', content: text, createdAt: '2027-03-02T10:00:00Z' }],
+	snapshots: [{ id: 'snap', createdAt: '2027-03-02T10:00:00Z' }],
 	...overrides
 });
 
 describe('adoptedResolutions', () => {
-	it('takes a paper its final vote adopted, with the text of that vote', () => {
+	it('takes a paper its final vote adopted, with the snapshot of that vote', () => {
 		expect(adoptedResolutions([paper()])).toEqual([
 			{
 				paperId: 'paper',
@@ -23,8 +28,7 @@ describe('adoptedResolutions', () => {
 				title: 'Climate',
 				documentNumber: 'GA/1',
 				committeeId: 'ga',
-				agendaItemId: 'climate',
-				content: { committeeName: 'GA', preamble: [], operative: [] }
+				agendaItemId: 'climate'
 			}
 		]);
 	});
@@ -34,16 +38,14 @@ describe('adoptedResolutions', () => {
 		expect(adoptedResolutions([paper({ vote: null })])).toEqual([]);
 	});
 
-	it('leaves out a paper without a printable text', () => {
+	it('leaves out a paper without a snapshot', () => {
 		expect(adoptedResolutions([paper({ snapshots: [] })])).toEqual([]);
-		const broken = [{ id: 'snap', content: '{', createdAt: '2027-03-02T10:00:00Z' }];
-		expect(adoptedResolutions([paper({ snapshots: broken })])).toEqual([]);
 	});
 
 	it('takes the latest snapshot when the vote was concluded twice', () => {
 		const snapshots = [
-			{ id: 'old', content: text, createdAt: '2027-03-02T10:00:00Z' },
-			{ id: 'new', content: text, createdAt: '2027-03-02T11:00:00Z' }
+			{ id: 'old', createdAt: '2027-03-02T10:00:00Z' },
+			{ id: 'new', createdAt: '2027-03-02T11:00:00Z' }
 		];
 		expect(adoptedResolutions([paper({ snapshots })])[0].snapshotId).toBe('new');
 	});
@@ -66,5 +68,13 @@ describe('resolutionChanges', () => {
 	it('removes resolutions whose paper is no longer adopted', () => {
 		const existing = [{ id: 'r', chasePaperId: 'gone', chaseSnapshotId: 'snap' }];
 		expect(resolutionChanges({ adopted: [adopted], existing }).remove).toEqual(['r']);
+	});
+});
+
+describe('readableResolution', () => {
+	it('reads a resolution and refuses anything else', () => {
+		expect(readableResolution(text)).toEqual({ committeeName: 'GA', preamble: [], operative: [] });
+		expect(readableResolution('{')).toBeUndefined();
+		expect(readableResolution('{"text":"tiptap"}')).toBeUndefined();
 	});
 });

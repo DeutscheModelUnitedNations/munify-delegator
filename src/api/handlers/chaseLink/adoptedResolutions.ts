@@ -7,7 +7,8 @@ import {
  * Which of the linked CHASE's papers are adopted resolutions here (`docs/plans/chase-link.md`),
  * and what the link worker has to do about them. A paper counts once its final vote adopted it;
  * its text is the snapshot taken when that vote was concluded (the latest, should a chair have
- * concluded it twice). A resolution is rendered again only when that snapshot changes.
+ * concluded it twice). A resolution is rendered again only when that snapshot changes, so the
+ * texts are read only for those (`readableResolution`).
  */
 
 export interface ChasePaper {
@@ -17,7 +18,7 @@ export interface ChasePaper {
 	committeeId: string;
 	agendaItemId: string;
 	vote?: { outcome?: 'ADOPTED' | 'REJECTED' | null } | null;
-	snapshots: readonly { id: string; content: string; createdAt: Date | string }[];
+	snapshots: readonly { id: string; createdAt: Date | string }[];
 }
 
 export interface AdoptedResolution {
@@ -27,11 +28,10 @@ export interface AdoptedResolution {
 	documentNumber: string | undefined;
 	committeeId: string;
 	agendaItemId: string;
-	content: Resolution;
 }
 
 /** The text of a snapshot, or undefined when it is not a resolution this editor can print. */
-function parseContent(content: string): Resolution | undefined {
+export function readableResolution(content: string): Resolution | undefined {
 	try {
 		const parsed = ResolutionSchema.safeParse(JSON.parse(content));
 		return parsed.success ? parsed.data : undefined;
@@ -46,8 +46,7 @@ export function adoptedResolutions(papers: readonly ChasePaper[]): AdoptedResolu
 		const snapshot = paper.snapshots.toSorted(
 			(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
 		)[0];
-		const content = snapshot && parseContent(snapshot.content);
-		if (!snapshot || !content) return [];
+		if (!snapshot) return [];
 		return [
 			{
 				paperId: paper.id,
@@ -55,8 +54,7 @@ export function adoptedResolutions(papers: readonly ChasePaper[]): AdoptedResolu
 				title: paper.title?.trim() || undefined,
 				documentNumber: paper.documentNumber?.trim() || undefined,
 				committeeId: paper.committeeId,
-				agendaItemId: paper.agendaItemId,
-				content
+				agendaItemId: paper.agendaItemId
 			}
 		];
 	});

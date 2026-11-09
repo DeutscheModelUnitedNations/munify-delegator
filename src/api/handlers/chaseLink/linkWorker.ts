@@ -1,31 +1,36 @@
+import { isDeepStrictEqual } from 'node:util';
 import { db, schema } from '#api/db/db';
 import { eq } from 'drizzle-orm';
 import { chasePresencePubsub, instanceLinkPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
+import { parseLinkedPresence } from '#lib/schemata/chasePresence';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
+import { watchChaseTables, type ChaseTables } from './chaseTables';
 import { openLinkToken } from './linkTokens';
-import { presenceFromChase } from './presenceMirror';
+import { createGate, handled, listen } from './liveTable';
+import { joinPresence, presenceFromChase, type ChasePresenceTables } from './presenceMirror';
 import { syncResolutions } from './resolutionSync';
-import { readAll } from './readAll';
 
 /**
  * The link worker (`docs/plans/chase-link.md`): reads back what the linked CHASE records about this
  * instance's conferences - their presence and the resolutions they adopted. It runs in one app
- * process at a time (a Postgres advisory lock), subscribes to CHASE's live queries, and on any
- * change reads that part of the conference afresh: the presence into `chase_presence`, the
- * adopted resolutions into `resolution` (`resolutionSync.ts`). The WebSocket's (re)connect reads everything
+ * process at a time (a Postgres advisory lock) and keeps CHASE's tables of each conference in
+ * memory through live queries (`chaseTables.ts`): a change answers with the rows of the table it
+ * touched, and the presence (`chase_presence`) and the adopted resolutions (`resolution`,
+ * `resolutionSync.ts`) are worked out from memory. The WebSocket's (re)connect asks every table
  * again, since updates may have been missed while it was down. There is no timer: a dead socket is
  * noticed by graphql-ws's keep-alive, and the reconnect catches up.
  */
 
 /** pg advisory lock key for the worker, any constant no other lock uses. */
 const LEADER_LOCK_KEY = 4_812_772;
-/** A roll call writes a record per delegate; one read after it is enough. */
+/** A roll call writes a record per delegate; one write after it is enough. */
 const DEBOUNCE_MS = 1_000;
+/** First answers awaited at once, so starting up does not ask CHASE for everything at once. */
+const FIRST_ANSWERS_AT_ONCE = 4;
 
 /** What the worker reads back, each on its own schedule: a presence change never compiles a PDF. */
 type Readback = 'presence' | 'resolutions';
-const READBACKS: Readback[] = ['presence', 'resolutions'];
 
 let running: { stop: () => void } | undefined;
 
@@ -71,28 +76,33 @@ function runWorker() {
 		const link = await db.query.instanceLink.findFirst({ where: { status: 'ACTIVE' } });
 		if (!link?.outboundToken) return stop();
 
-		const watchers = new Map<string, () => void>();
+		const watches = new Map<string, ChaseTables>();
 		const timers = new Map<string, ReturnType<typeof setTimeout>>();
 		/** Resolution syncs run one after another: each may compile PDFs. */
 		let resolutionQueue = Promise.resolve();
 		cleanups.push(() => {
 			for (const timer of timers.values()) clearTimeout(timer);
-			for (const unwatch of watchers.values()) unwatch();
+			for (const tables of watches.values()) tables.stop();
 		});
 
 		const read = ({ readback, conferenceId }: { readback: Readback; conferenceId: string }) => {
+			const tables = watches.get(conferenceId);
+			if (!tables) return;
 			if (readback === 'presence') {
+				if (!tables.presenceReady()) return;
+				const presence = tables.presence();
 				return recorded({ linkId: link.id, conferenceId, what: 'presence' }, () =>
-					readPresence({ remote, conferenceId })
+					storePresence({ conferenceId, tables: presence })
 				);
 			}
-			resolutionQueue = resolutionQueue.then(() =>
-				stopped
-					? undefined
-					: recorded({ linkId: link.id, conferenceId, what: 'resolutions' }, () =>
-							syncResolutions({ remote, conferenceId })
-						)
-			);
+			resolutionQueue = resolutionQueue.then(() => {
+				// read when its turn comes: the tables may have changed while it waited
+				if (stopped || !tables.resolutionsReady()) return;
+				const papers = tables.papers();
+				return recorded({ linkId: link.id, conferenceId, what: 'resolutions' }, () =>
+					syncResolutions({ remote, conferenceId, papers })
+				);
+			});
 			return resolutionQueue;
 		};
 
@@ -107,86 +117,57 @@ function runWorker() {
 				}, DEBOUNCE_MS)
 			);
 		};
-		const scheduleAll = (conferenceId: string) => {
-			for (const readback of READBACKS) schedule({ readback, conferenceId });
-		};
 
 		let reconnected = () => {};
 		const remote: ChaseClient = createChaseClient({
 			url: link.remoteUrl,
 			token: openLinkToken(link.outboundToken),
-			onConnected: () => {
-				reconnected();
-				for (const conferenceId of watchers.keys()) scheduleAll(conferenceId);
-			}
+			onConnected: () => reconnected()
 		});
 		cleanups.push(() => remote.dispose());
 
 		// A live query's first answer may fail (CHASE unreachable, a rule refusing): that is noted on
-		// the link and retried on the next (re)connect, never left to crash the app.
+		// the link and asked again on the next (re)connect, never left to crash the app.
 		const failed = (error: unknown) => {
 			logger.warn('A live query to CHASE failed', error);
 			void noteError({ linkId: link.id, error });
 		};
 
-		// CHASE lets the link read back only the conferences that came from here
-		// Set up again on every (re)connect: a first answer that failed (the other side was away)
-		// leaves no watch behind otherwise.
+		// CHASE lets the link read back only the conferences that came from here. Set up again on
+		// every (re)connect: a first answer that failed (the other side was away) leaves no watch
+		// behind otherwise.
+		const gate = createGate(FIRST_ANSWERS_AT_ONCE);
 		let unwatchConferences: (() => void) | undefined;
 		const watchConferences = () => {
 			unwatchConferences?.();
 			const conferences = handled(remote.liveQuery.conferences({ id: true }), failed);
 			unwatchConferences = listen(conferences, (list) => {
 				if (!list || stopped) return;
-				const current = new Set(list.map((conference) => conference.id));
-				for (const [conferenceId, unwatch] of watchers) {
+				const current = new Set(Array.from(list).map((conference) => conference.id));
+				for (const [conferenceId, tables] of watches) {
 					if (current.has(conferenceId)) continue;
-					unwatch();
-					watchers.delete(conferenceId);
+					tables.stop();
+					watches.delete(conferenceId);
 				}
 				for (const conferenceId of current) {
-					if (watchers.has(conferenceId)) continue;
-					const events = handled(
-						remote.liveQuery.presenceEvents({
-							__args: { where: { committee: { conferenceId: { eq: conferenceId } } } },
-							id: true,
-							present: true
-						}),
-						failed
+					if (watches.has(conferenceId)) continue;
+					watches.set(
+						conferenceId,
+						watchChaseTables({
+							remote,
+							conferenceId,
+							onPresence: () => schedule({ readback: 'presence', conferenceId }),
+							onResolutions: () => schedule({ readback: 'resolutions', conferenceId }),
+							onError: failed,
+							gate
+						})
 					);
-					// A concluded vote adds a snapshot; the outcome is set on the vote, which the nested
-					// selection listens on too.
-					const adoptions = handled(
-						remote.liveQuery.paperContentSnapshots({
-							__args: {
-								where: {
-									trigger: 'VOTE_CONCLUDED',
-									paper: { committee: { conferenceId: { eq: conferenceId } } }
-								}
-							},
-							id: true,
-							paper: { id: true, vote: { id: true, outcome: true } }
-						}),
-						failed
-					);
-					const unwatchEvents = listen(events, () =>
-						schedule({ readback: 'presence', conferenceId })
-					);
-					const unwatchAdoptions = listen(adoptions, () =>
-						schedule({ readback: 'resolutions', conferenceId })
-					);
-					watchers.set(conferenceId, () => {
-						unwatchEvents();
-						unwatchAdoptions();
-					});
-					scheduleAll(conferenceId);
 				}
 			});
 		};
-		// A socket that broke may have taken its subscriptions along, so every watch starts afresh
+		// A socket that broke may have taken its subscriptions along, so every table is asked again
 		reconnected = () => {
-			for (const unwatch of watchers.values()) unwatch();
-			watchers.clear();
+			for (const tables of watches.values()) tables.refresh();
 			watchConferences();
 		};
 		watchConferences();
@@ -198,34 +179,6 @@ function runWorker() {
 	});
 
 	return { stop };
-}
-
-/**
- * Subscribes to a live query and answers how to stop. rumble types `subscribe` as answering an
- * unsubscribe function, but its observable answers `{ unsubscribe }`: calling that threw and
- * stopped the worker hearing of changes. Both shapes are handled.
- */
-function listen<T>(
-	result: { subscribe: (next: (value: T) => void) => unknown },
-	next: (value: T) => void
-) {
-	const subscription: unknown = result.subscribe(next);
-	return () => {
-		if (typeof subscription === 'function') subscription();
-		else if (
-			typeof subscription === 'object' &&
-			subscription !== null &&
-			'unsubscribe' in subscription &&
-			typeof subscription.unsubscribe === 'function'
-		)
-			subscription.unsubscribe();
-	};
-}
-
-/** Lets a live query's first answer fail without an unhandled rejection; it still subscribes. */
-function handled<T extends PromiseLike<unknown>>(result: T, onError: (error: unknown) => void): T {
-	Promise.resolve(result).then(undefined, onError);
-	return result;
 }
 
 /** Notes a failure on the link, for the pairing page. */
@@ -260,37 +213,25 @@ async function recorded(
 	}
 }
 
-/** Reads one conference's presence from CHASE as it is now and stores it. */
-async function readPresence({
-	remote,
-	conferenceId
+/**
+ * Stores one conference's presence as CHASE records it now, unless it is what is stored already:
+ * every scan answers, and most change one person's events only.
+ */
+async function storePresence({
+	conferenceId,
+	tables
 }: {
-	remote: ChaseClient;
 	conferenceId: string;
+	tables: ChasePresenceTables;
 }) {
-	const representation = {
-		id: true,
-		type: true,
-		alpha2Code: true,
-		alpha3Code: true,
-		faIcon: true,
-		name: true
-	} as const;
-	const users = await readAll((page) =>
-		remote.query.conferenceUsers({
-			__args: {
-				...page,
-				where: { conferenceId: { eq: conferenceId } }
-			},
-			conferenceUserType: true,
-			userEmail: true,
-			committeeMember: { committeeId: true, representation },
-			conferenceMember: { representation },
-			presenceEvents: { id: true, committeeId: true, present: true, type: true, timestamp: true }
-		})
-	);
 	const now = new Date();
-	const data = presenceFromChase({ conferenceId, users: Array.from(users), now });
+	const data = presenceFromChase({ conferenceId, users: joinPresence(tables), now });
+	const stored = await db.query.chasePresence.findFirst({
+		where: { conferenceId },
+		columns: { data: true }
+	});
+	const before = stored && parseLinkedPresence(stored.data);
+	if (before?.success && isDeepStrictEqual(before.data.participants, data.participants)) return;
 
 	await db
 		.insert(schema.chasePresence)
@@ -299,6 +240,6 @@ async function readPresence({
 			target: schema.chasePresence.conferenceId,
 			set: { data, fetchedAt: now, updatedAt: now }
 		});
-	chasePresencePubsub.created();
+	if (!stored) chasePresencePubsub.created();
 	chasePresencePubsub.updated(conferenceId);
 }

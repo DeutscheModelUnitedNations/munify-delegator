@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import { inArray } from 'drizzle-orm';
 import { unEmblemSvg } from '@deutschemodelunitednations/munify-resolution-editor';
 import { resolutionToTypst } from '@deutschemodelunitednations/munify-resolution-editor/res-markup';
-import type { ResolutionHeaderData } from '@deutschemodelunitednations/munify-resolution-editor/schema';
+import type {
+	Resolution,
+	ResolutionHeaderData
+} from '@deutschemodelunitednations/munify-resolution-editor/schema';
 import { db, schema } from '#api/db/db';
 import { resolutionPubsub } from '#api/pubsub';
 import { compileTypst } from '#api/services/typst';
@@ -13,42 +16,32 @@ import { filePurpose } from '#api/handlers/storedFile/storageClient';
 import { m } from '#lib/paraglide/messages';
 import {
 	adoptedResolutions,
+	readableResolution,
 	resolutionChanges,
-	type AdoptedResolution
+	type AdoptedResolution,
+	type ChasePaper
 } from './adoptedResolutions';
 import type { ChaseClient } from './chaseRemote';
-import { readAll } from './readAll';
+import { PAGE_SIZE } from './liveTable';
 
 /**
  * Takes the resolutions the linked CHASE adopted for one conference over as the conference's
  * resolutions (`docs/plans/chase-link.md`): renders each adopted text here, in this conference's
  * header (its emblem, the committee's resolution headline), stores the PDF and keeps one
- * `resolution` row per paper. A paper that is no longer adopted takes its resolution with it; the
- * old PDFs are left to the file cleanup.
+ * `resolution` row per paper. The worker hands over the papers as it keeps them, without texts;
+ * only the texts to render are read. A paper that is no longer adopted takes its resolution with
+ * it; the old PDFs are left to the file cleanup.
  */
 export async function syncResolutions({
 	remote,
-	conferenceId
+	conferenceId,
+	papers
 }: {
 	remote: ChaseClient;
 	conferenceId: string;
+	papers: readonly ChasePaper[];
 }) {
-	const papers = await readAll((page) =>
-		remote.query.resolutionPapers({
-			__args: {
-				...page,
-				where: { status: 'FINAL', committee: { conferenceId: { eq: conferenceId } } }
-			},
-			id: true,
-			title: true,
-			documentNumber: true,
-			committeeId: true,
-			agendaItemId: true,
-			vote: { id: true, outcome: true },
-			snapshots: { id: true, content: true, createdAt: true }
-		})
-	);
-	const adopted = adoptedResolutions(Array.from(papers));
+	const adopted = adoptedResolutions(papers);
 
 	const existing = (
 		await db.query.resolution.findMany({
@@ -66,10 +59,19 @@ export async function syncResolutions({
 	}
 	if (render.length === 0) return;
 
+	const contents = await readTexts({
+		remote,
+		snapshotIds: render.map((resolution) => resolution.snapshotId)
+	});
 	const context = await headerContext(conferenceId);
 	for (const resolution of render) {
+		const text = contents.get(resolution.snapshotId);
+		const content = text === undefined ? undefined : readableResolution(text);
+		// not a text this editor can print; it stays behind until a newer vote
+		if (!content) continue;
 		const pdf = await renderPdf({
 			resolution,
+			content,
 			header: headerFor({ resolution, context }),
 			emblem: context.emblem
 		});
@@ -103,6 +105,26 @@ export async function syncResolutions({
 		resolutionPubsub.created();
 		if (row) resolutionPubsub.updated(row.id);
 	}
+}
+
+/** The texts of the given snapshots, by id; a list answers at most a page. */
+async function readTexts({
+	remote,
+	snapshotIds
+}: {
+	remote: ChaseClient;
+	snapshotIds: readonly string[];
+}) {
+	const texts = new Map<string, string>();
+	for (let start = 0; start < snapshotIds.length; start += PAGE_SIZE) {
+		const snapshots = await remote.query.paperContentSnapshots({
+			__args: { where: { id: { in: snapshotIds.slice(start, start + PAGE_SIZE) } } },
+			id: true,
+			content: true
+		});
+		for (const snapshot of snapshots) texts.set(snapshot.id, snapshot.content);
+	}
+	return texts;
 }
 
 /** What the headers of a conference's resolutions print, read once per sync. */
@@ -157,10 +179,12 @@ const EMBLEM_EXTENSIONS: Record<string, string> = {
 
 async function renderPdf({
 	resolution,
+	content,
 	header,
 	emblem
 }: {
 	resolution: AdoptedResolution;
+	content: Resolution;
 	header: ResolutionHeaderData;
 	emblem?: HeaderContext['emblem'];
 }) {
@@ -169,7 +193,7 @@ async function renderPdf({
 		const extension = emblem && EMBLEM_EXTENSIONS[emblem.mimeType];
 		const emblemPath = extension ? `emblem.${extension}` : 'emblem.svg';
 		await writeFile(join(dir, emblemPath), extension && emblem ? emblem.bytes : unEmblemSvg);
-		const source = resolutionToTypst(resolution.content, header, { emblemPath });
+		const source = resolutionToTypst(content, header, { emblemPath });
 		return await compileTypst({ dir, source });
 	} finally {
 		await rm(dir, { recursive: true, force: true });

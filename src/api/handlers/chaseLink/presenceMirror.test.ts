@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chasePresenceSchema } from '#lib/schemata/chasePresence';
-import { presenceFromChase, type ChasePresenceUser } from './presenceMirror';
+import { joinPresence, presenceFromChase, type ChasePresenceUser } from './presenceMirror';
 
 const event = (present: boolean) => ({
 	id: `e-${present}`,
@@ -80,6 +80,47 @@ describe('presenceFromChase', () => {
 				present: false,
 				type: 'ROLL_CALL',
 				timestamp: '2027-03-02T09:00:00.000Z'
+			}
+		]);
+	});
+});
+
+describe('joinPresence', () => {
+	it("puts each person's seat, representation and events together, events in time order", () => {
+		const de = { id: 'role-de', type: 'DELEGATION' as const, alpha2Code: 'de', alpha3Code: 'deu' };
+		const late = { ...event(false), id: 'late', timestamp: new Date('2027-03-02T10:00:00Z') };
+		const joined = joinPresence({
+			users: [
+				{
+					id: 'anna',
+					conferenceUserType: 'DELEGATE',
+					userEmail: 'anna@example.org',
+					committeeMemberId: 'seat'
+				},
+				{ id: 'tom', conferenceUserType: 'TEAM', userEmail: 'tom@example.org' }
+			],
+			committeeMembers: [{ id: 'seat', committeeId: 'ga', representationId: 'role-de' }],
+			conferenceMembers: [],
+			representations: [de],
+			events: [
+				{ ...late, conferenceUserId: 'anna' },
+				{ ...event(true), conferenceUserId: 'anna' }
+			]
+		});
+		expect(joined).toEqual([
+			{
+				conferenceUserType: 'DELEGATE',
+				userEmail: 'anna@example.org',
+				committeeMember: { committeeId: 'ga', representation: de },
+				conferenceMember: undefined,
+				presenceEvents: [event(true), late]
+			},
+			{
+				conferenceUserType: 'TEAM',
+				userEmail: 'tom@example.org',
+				committeeMember: undefined,
+				conferenceMember: undefined,
+				presenceEvents: []
 			}
 		]);
 	});
