@@ -74,8 +74,18 @@ export default defineConfig({
 		timeout: SERVER === 'build' ? 600_000 : 120_000,
 		// warn even against a dev server, which would log every GraphQL operation at debug.
 		// MCP_RESOURCE switches the MCP server on (e2e/authorization/mcp.spec.ts), at this server's
-		// own address whatever `.env` names for the dev server.
-		env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn', MCP_RESOURCE: `${baseURL}/mcp` },
+		// own address whatever `.env` names for the dev server. The LINK_* variables link a CHASE that
+		// is never there (e2e/authorization/chase-link.spec.ts): the spec calls as it, with a token
+		// oidc-mock issues with the `chase` scope, and the link worker only notes it cannot reach it.
+		env: {
+			LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn',
+			MCP_RESOURCE: `${baseURL}/mcp`,
+			LINK_REMOTE_URL: 'https://chase.e2e.invalid',
+			LINK_REMOTE_RESOURCE: 'https://chase.e2e.invalid/api',
+			LINK_RESOURCE: `${baseURL}/api`,
+			OIDC_M2M_CLIENT_ID: process.env.OIDC_M2M_CLIENT_ID || 'delegator-e2e',
+			OIDC_M2M_CLIENT_SECRET: process.env.OIDC_M2M_CLIENT_SECRET || 'e2e'
+		},
 		stdout: 'pipe',
 		stderr: 'pipe'
 	}

@@ -21,13 +21,13 @@
 					where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 				},
 				assignedCommittee: { id: true },
-				delegation: { assignedRole: { kind: true, chaseAccess: true } }
+				delegation: { assignedRole: { kind: true } }
 			}),
 			client.liveQuery.singleParticipants({
 				__args: {
 					where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 				},
-				assignedRole: { kind: true, chaseAccess: true }
+				assignedRole: { kind: true }
 			})
 		])
 	);

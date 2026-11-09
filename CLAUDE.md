@@ -1234,12 +1234,19 @@ bun run preview
 #### 14. The CHASE link
 
 - **One MUNify CHASE instance can be linked to this one**, system-wide (`docs/plans/chase-link.md`,
-  the same plan as chase's `docs/plans/delegator-link.md`). A system admin requests it on
-  `dashboard/chase-link`, a chase global admin approves it with the confirmation code;
-  unlinking on either side freezes it. `instanceLink` holds the single row: the inbound token as a
-  SHA-256 hash, the outbound one sealed under a key derived from `CERTIFICATE_SECRET`.
-- **Chase reads through link read rules**, not through dedicated queries: it calls the API with
-  the `x-munify-link-token` header (`ctx.linkCaller()`), and `linkedChase(grant)`
+  the same plan as chase's `docs/plans/delegator-link.md`). **The link is configuration**, through
+  the OIDC provider both sign people in at, so a person's id is the same in both: `LINK_REMOTE_URL`,
+  `LINK_REMOTE_RESOURCE` and `LINK_RESOURCE` (or `OIDC_RESOURCE`), with the M2M app
+  (`OIDC_M2M_CLIENT_ID`), which gets tokens for chase's API by client credentials asking for the
+  `delegator` scope (`chaseLink/linkAuth.ts`, copied into chase). There is no pairing; the
+  `dashboard/chase-link` page only shows the state. `instanceLink` holds that state, one row,
+  written at start-up (`syncLinkRow`); removing the configuration ends the link at the next
+  start.
+- **Chase reads through link read rules**, not through dedicated queries: it calls the API with a
+  token in the `x-munify-link-token` header, which `linkHandle` (`hooks.server.ts`) checks once:
+  for this API (`LINK_RESOURCE`), granting the `chase` role by the role claim or as a scope. The
+  context then holds `chase` like any system role (never from a session), `isLinkedChase` is
+  `ctx.hasRole('chase')`, and `linkedChase(grant)`
   (`authHelper/rules.ts`) grants it rows of mirrored conferences (`MIRRORED_CONFERENCE`, and
   `RELEASED_MIRRORED_CONFERENCE` for anything about participants) with only the listed columns.
   A new field chase needs is a column in such a rule.
@@ -1255,7 +1262,7 @@ bun run preview
   (final papers) is asked again when another table names a row it lacks. The worker starts from
   the `init` hook; chase's worker works the same way the other way round.
 - **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
-  the API: the custom roles' "In CHASE" column, the dashboard's CHASE card, the
+  the API: the dashboard's CHASE card, the
   `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
 - **NSA cards** are signed codes of the kind `nsaCard` (`#lib/signedCode/signedCode`, copied into
   chase), naming the person, the conference, an expiry and the card number on the participant

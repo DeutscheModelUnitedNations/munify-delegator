@@ -14,6 +14,8 @@ import { impersonationHandle } from '#api/handlers/user/userPermissions';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
 import { resumeLinkWorker } from '#api/handlers/chaseLink/linkWorker';
+import { LINK_TOKEN_HEADER } from '#api/handlers/chaseLink/linkAuth';
+import { isLinkCall } from '#api/handlers/chaseLink/linkCaller';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 
 // Initialize Sentry (only if DSN provided and not building)
@@ -75,8 +77,17 @@ export const handleError: HandleServerError = ({ error, event, kind }) => {
 		route: event.route.id ?? undefined
 	});
 };
+// The linked CHASE calls with a token of its own instead of a session; whether it grants the
+// `chase` role is checked once here, and the context hands it on as that role.
+const linkHandle: Handle = async ({ event, resolve }) => {
+	const token = event.request.headers.get(LINK_TOKEN_HEADER);
+	if (token) event.locals.linkCaller = await isLinkCall(token);
+	return resolve(event);
+};
+
 export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
+	linkHandle,
 	// Protects the authenticated routes, serves both callback routes and puts the validated session
 	// on `event.locals.oidc`. Everything auth-related used to be spread across route loads.
 	oidcHandle,

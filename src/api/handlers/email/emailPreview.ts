@@ -59,8 +59,7 @@ export async function previewEmail({
 				id: 'sample',
 				kind: 'NATION',
 				name: null,
-				nationAlpha3Code: 'FRA',
-				chaseAccess: 'SPECTATOR'
+				nationAlpha3Code: 'FRA'
 			},
 			committee: 'GV',
 			committeeId: 'sample-committee'

@@ -837,7 +837,6 @@ export type Conferenceuser = {
   createdAt: DateTime,
   currentCheckedInSince: DateTime | null,
   currentCommitteeId: String | null,
-  delegatorUserId: ID | null,
   id: ID,
   isCheckedIn: Boolean,
   managedByDelegator: Boolean,
@@ -884,7 +883,6 @@ export type ConferenceuserOrderInputArgument = {
   conferenceMemberId?: SortingParameter | null | undefined,
   conferenceUserType?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
-  delegatorUserId?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   managedByDelegator?: SortingParameter | null | undefined,
   name?: SortingParameter | null | undefined,
@@ -906,7 +904,6 @@ export type ConferenceuserWhereInputArgument = {
   conferenceMemberId?: IDWhereInputArgument | null | undefined,
   conferenceUserType?: ConferenceusertypeEnum | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
-  delegatorUserId?: IDWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   managedByDelegator?: BooleanWhereInputArgument | null | undefined,
   name?: StringWhereInputArgument | null | undefined,
@@ -1113,34 +1110,24 @@ export type ImportDataRequestType = {
 };
 		
 export type Instancelink = {
-  confirmationCode: String,
   createdAt: DateTime,
   id: ID,
-  inboundTokenHash: String | null,
   lastError: String | null,
   lastEventAt: DateTime | null,
   lastReconcileAt: DateTime | null,
-  linkedAt: DateTime | null,
-  outboundToken: String,
   remoteSigningKeys: JSON | null,
   remoteUrl: String,
-  status: InstancelinkstatusEnum,
   updatedAt: DateTime | null    
 };
 		
 export type InstancelinkOrderInputArgument = {
-  confirmationCode?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
-  inboundTokenHash?: SortingParameter | null | undefined,
   lastError?: SortingParameter | null | undefined,
   lastEventAt?: SortingParameter | null | undefined,
   lastReconcileAt?: SortingParameter | null | undefined,
-  linkedAt?: SortingParameter | null | undefined,
-  outboundToken?: SortingParameter | null | undefined,
   remoteSigningKeys?: SortingParameter | null | undefined,
   remoteUrl?: SortingParameter | null | undefined,
-  status?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -1148,22 +1135,15 @@ export type InstancelinkWhereInputArgument = {
   AND?: InstancelinkWhereInputArgument[] | undefined,
   NOT?: InstancelinkWhereInputArgument | null | undefined,
   OR?: InstancelinkWhereInputArgument[] | undefined,
-  confirmationCode?: StringWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
-  inboundTokenHash?: StringWhereInputArgument | null | undefined,
   lastError?: StringWhereInputArgument | null | undefined,
   lastEventAt?: DateTimeWhereInputArgument | null | undefined,
   lastReconcileAt?: DateTimeWhereInputArgument | null | undefined,
-  linkedAt?: DateTimeWhereInputArgument | null | undefined,
-  outboundToken?: StringWhereInputArgument | null | undefined,
   remoteSigningKeys?: JSONWhereInputArgument | null | undefined,
   remoteUrl?: StringWhereInputArgument | null | undefined,
-  status?: InstancelinkstatusEnum | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
-		
-export type InstancelinkstatusEnum = "ACTIVE" | "FROZEN" | "PENDING";
 		
 export type IntWhereInputArgument = {
   AND?: IntWhereInputArgument[] | undefined,
@@ -1274,9 +1254,6 @@ export type Mutation = {
     position?: Int | null | undefined,
     speakersListId: ID
   }) => Speakeronlist,
-  approveDelegatorLink: (p: {
-    confirmationCode: String
-  }) => Boolean,
   castDeviceVote: (p: {
     committeeMemberId?: ID | null | undefined,
     id?: ID | null | undefined,
@@ -1472,7 +1449,6 @@ export type Mutation = {
   rejectAmendment: (p: {
     id: ID
   }) => Amendment,
-  rejectDelegatorLink: Boolean,
   removeAmendmentSponsor: (p: {
     id: ID
   }) => Boolean,
@@ -1489,11 +1465,6 @@ export type Mutation = {
     conferenceId: ID,
     conferenceUserId: ID
   }) => NsaCard,
-  requestDelegatorLink: (p: {
-    confirmationCode: String,
-    delegatorUrl: String,
-    token: String
-  }) => Boolean,
   resolveRequest: (p: {
     id: ID
   }) => Request,
@@ -1555,7 +1526,6 @@ export type Mutation = {
   submitAmendment: (p: {
     id: ID
   }) => Amendment,
-  unlinkDelegator: Boolean,
   unlinkOperativeClauseVote: (p: {
     clauseId: String,
     paperId: ID

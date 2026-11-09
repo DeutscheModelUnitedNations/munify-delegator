@@ -3,24 +3,19 @@ import { chaseLinks, chaseRoleOf } from './chaseLinks';
 
 describe('chaseRoleOf', () => {
 	it('makes a seated nation a delegate, a non-state actor an NSA', () => {
-		const nation = { kind: 'NATION', chaseAccess: 'SPECTATOR' } as const;
+		const nation = { kind: 'NATION' } as const;
 		expect(chaseRoleOf({ role: nation, committeeId: 'ga' })).toBe('DELEGATE');
 		expect(chaseRoleOf({ role: nation, committeeId: null })).toBeNull();
 		expect(
 			chaseRoleOf({
-				role: { kind: 'NON_STATE_ACTOR', chaseAccess: 'SPECTATOR' },
+				role: { kind: 'NON_STATE_ACTOR' },
 				committeeId: null
 			})
 		).toBe('NSA');
 	});
 
-	it('follows a custom role’s CHASE access', () => {
-		expect(chaseRoleOf({ role: { kind: 'CUSTOM', chaseAccess: 'TEAM' }, committeeId: null })).toBe(
-			'SPECTATOR'
-		);
-		expect(
-			chaseRoleOf({ role: { kind: 'CUSTOM', chaseAccess: 'NONE' }, committeeId: null })
-		).toBeNull();
+	it('makes a custom role a spectator', () => {
+		expect(chaseRoleOf({ role: { kind: 'CUSTOM' }, committeeId: null })).toBe('SPECTATOR');
 		expect(chaseRoleOf({ role: null, committeeId: 'ga' })).toBeNull();
 	});
 });

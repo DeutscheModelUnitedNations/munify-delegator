@@ -10,7 +10,6 @@ describe('customRoleRow', () => {
 				description: 'Berichtet',
 				icon: 'newspaper',
 				seatAmount: 4,
-				chaseAccess: 'TEAM',
 				assignedSingleParticipants: [{}, {}]
 			})
 		).toEqual({
@@ -19,22 +18,18 @@ describe('customRoleRow', () => {
 			description: 'Berichtet',
 			icon: 'newspaper',
 			seatAmount: 4,
-			holders: 2,
-			chaseAccess: 'TEAM'
+			holders: 2
 		});
 	});
 
 	test('fills in what is unset', () => {
-		expect(
-			customRoleRow({ id: 'r2', chaseAccess: 'SPECTATOR', assignedSingleParticipants: [] })
-		).toEqual({
+		expect(customRoleRow({ id: 'r2', assignedSingleParticipants: [] })).toEqual({
 			id: 'r2',
 			name: '',
 			description: '',
 			icon: null,
 			seatAmount: 0,
-			holders: 0,
-			chaseAccess: 'SPECTATOR'
+			holders: 0
 		});
 	});
 });

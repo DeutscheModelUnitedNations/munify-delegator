@@ -1,0 +1,144 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "6d172a25-7a01-49d4-9b54-17ca703f830f",
+  "prevIds": [
+    "b15da493-112d-4be3-8169-c9a2486aa351"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "instance_link",
+        "status"
+      ],
+      "writes": [
+        "s|col|public.instance_link.status",
+        "n|col|public.instance_link.status",
+        "e|col|public.instance_link.status"
+      ],
+      "reads": [
+        "n|tbl|public.instance_link",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "instance_link",
+        "inbound_token_hash"
+      ],
+      "writes": [
+        "s|col|public.instance_link.inbound_token_hash",
+        "n|col|public.instance_link.inbound_token_hash",
+        "e|col|public.instance_link.inbound_token_hash"
+      ],
+      "reads": [
+        "n|tbl|public.instance_link",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "instance_link",
+        "outbound_token"
+      ],
+      "writes": [
+        "s|col|public.instance_link.outbound_token",
+        "n|col|public.instance_link.outbound_token",
+        "e|col|public.instance_link.outbound_token"
+      ],
+      "reads": [
+        "n|tbl|public.instance_link",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "instance_link",
+        "confirmation_code"
+      ],
+      "writes": [
+        "s|col|public.instance_link.confirmation_code",
+        "n|col|public.instance_link.confirmation_code",
+        "e|col|public.instance_link.confirmation_code"
+      ],
+      "reads": [
+        "n|tbl|public.instance_link",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "instance_link",
+        "linked_at"
+      ],
+      "writes": [
+        "s|col|public.instance_link.linked_at",
+        "n|col|public.instance_link.linked_at",
+        "e|col|public.instance_link.linked_at"
+      ],
+      "reads": [
+        "n|tbl|public.instance_link",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "instance_link_status"
+      ],
+      "writes": [
+        "s|enum|public.instance_link_status",
+        "n|enum|public.instance_link_status",
+        "e|enum|public.instance_link_status",
+        "n|type|public.instance_link_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"instance_link_status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"instance_link\",\"status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"instance_link\",\"inbound_token_hash\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"instance_link\",\"outbound_token\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"instance_link\",\"confirmation_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"instance_link\",\"linked_at\"]"
+    }
+  ]
+}

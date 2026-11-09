@@ -6,11 +6,7 @@ export interface CustomRole {
 	icon: string | null;
 	seatAmount: number;
 	holders: number;
-	/** What its people are in a linked CHASE. */
-	chaseAccess: ChaseAccess;
 }
-
-export type ChaseAccess = 'SPECTATOR' | 'TEAM' | 'NONE';
 
 /** A custom role as the table shows it, its unset fields filled in. */
 export function customRoleRow(role: {
@@ -19,7 +15,6 @@ export function customRoleRow(role: {
 	description?: string | null;
 	icon?: string | null;
 	seatAmount?: number | null;
-	chaseAccess: ChaseAccess;
 	assignedSingleParticipants: readonly unknown[];
 }): CustomRole {
 	return {
@@ -28,8 +23,7 @@ export function customRoleRow(role: {
 		description: role.description ?? '',
 		icon: role.icon ?? null,
 		seatAmount: role.seatAmount ?? 0,
-		holders: role.assignedSingleParticipants.length,
-		chaseAccess: role.chaseAccess
+		holders: role.assignedSingleParticipants.length
 	};
 }
 

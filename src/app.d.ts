@@ -27,6 +27,11 @@ declare global {
 			 * out: whose account it acts with, whether that account is a system admin, and the one
 			 * conference the tool call is about (`#api/context`, `src/api/mcp/`).
 			 */
+			/**
+			 * Whether the linked CHASE is calling: set by `linkHandle` (`hooks.server.ts`) when the
+			 * request's link token grants the `chase` role (`#api/handlers/chaseLink/linkAuth`).
+			 */
+			linkCaller?: boolean;
 			mcp?: {
 				userId: string;
 				isAdmin: boolean;

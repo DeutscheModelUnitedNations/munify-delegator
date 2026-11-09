@@ -2,8 +2,6 @@ import { describe, expect, test, vi } from 'vitest';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 
 vi.mock('$app/env/private', () => ({ OIDC_ROLE_CLAIM: 'roles', OIDC_ROLE_MAP: undefined }));
-// the link lookup reaches the database, which these tests never get to
-vi.mock('#api/handlers/chaseLink/linkCaller', () => ({ findLinkCaller: async () => undefined }));
 
 const { effectiveRoles, requestIdentity, rolesOfSession, sessionClaims, sessionUser } =
 	await import('./context');
@@ -97,6 +95,14 @@ describe('sessionClaims', () => {
 });
 
 describe('requestIdentity', () => {
+	test('grants the link role only to the linked CHASE, never to a session', () => {
+		expect(requestIdentity({ oidc: session('a', ['admin', 'chase']) }).OIDCRoleNames).toEqual([
+			'admin'
+		]);
+		expect(requestIdentity({ linkCaller: true }).OIDCRoleNames).toEqual(['chase']);
+		expect(requestIdentity({ linkCaller: false }).OIDCRoleNames).toEqual([]);
+	});
+
 	test('is the session for a signed-in request', () => {
 		const identity = requestIdentity({ oidc: session('a', ['admin']) });
 		expect(identity.mcp).toBeUndefined();

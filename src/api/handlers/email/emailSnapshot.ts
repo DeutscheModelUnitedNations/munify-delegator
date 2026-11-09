@@ -1,4 +1,5 @@
 import { db } from '#api/db/db';
+import { linkConfig } from '#api/handlers/chaseLink/linkAuth';
 import type {
 	EmailSnapshot,
 	SnapshotPerson,
@@ -9,7 +10,7 @@ import type {
 } from './dueEmails';
 
 const ROLE = {
-	columns: { id: true, kind: true, name: true, nationAlpha3Code: true, chaseAccess: true }
+	columns: { id: true, kind: true, name: true, nationAlpha3Code: true }
 } as const;
 const USER = {
 	columns: {
@@ -40,10 +41,7 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 		}
 	});
 	if (!conference) return undefined;
-	const chaseLink = await db.query.instanceLink.findFirst({
-		where: { status: 'ACTIVE' },
-		columns: { remoteUrl: true }
-	});
+	const chaseLink = linkConfig();
 
 	const [participants, seatedEntries, reviews, surveys, teamMembers, acceptedInvitations] =
 		await Promise.all([

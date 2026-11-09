@@ -14,8 +14,7 @@ const france = {
 	id: 'role-fra',
 	kind: 'NATION' as const,
 	name: null,
-	nationAlpha3Code: 'FRA',
-	chaseAccess: 'SPECTATOR' as const
+	nationAlpha3Code: 'FRA'
 };
 
 let counter = 0;
@@ -372,7 +371,7 @@ describe('the CHASE introduction', () => {
 	const key = (p: SnapshotPerson) =>
 		`CHASE_INTRO_REMINDER:${p.user.id}:${start.toISOString().slice(0, 10)}`;
 
-	test('invites delegates with a committee, NSAs and singles with CHASE access, ten days before', () => {
+	test('invites delegates with a committee, NSAs and singles, ten days before', () => {
 		const delegate = seated();
 		const nsa = person({
 			delegation: {
@@ -385,13 +384,7 @@ describe('the CHASE introduction', () => {
 		const press = person({
 			single: { applied: true, role: { ...france, id: 'press', kind: 'CUSTOM' } }
 		});
-		const outsider = person({
-			single: {
-				applied: true,
-				role: { ...france, id: 'host', kind: 'CUSTOM', chaseAccess: 'NONE' }
-			}
-		});
-		const kinds = kindsOf(snapshot([delegate, nsa, press, outsider], linked));
+		const kinds = kindsOf(snapshot([delegate, nsa, press], linked));
 		expect(kinds.filter((k) => k.startsWith('CHASE_INTRO_REMINDER'))).toEqual([
 			key(delegate),
 			key(nsa),

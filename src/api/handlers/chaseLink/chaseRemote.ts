@@ -9,7 +9,7 @@ import {
 } from '@m1212e/rumble/client';
 import { schema } from './chaseClient/schema';
 import type { Mutation, Query, Subscription } from './chaseClient/client';
-import { LINK_TOKEN_HEADER } from './linkTokens';
+import { LINK_TOKEN_HEADER } from './linkAuth';
 
 /** How long a WebSocket may take to open before it is given up and tried again. */
 const OPEN_TIMEOUT_MS = 10_000;
@@ -47,9 +47,10 @@ const availableSubscriptions = new Set(
 
 /**
  * A typed client of a CHASE instance (`docs/plans/chase-link.md`), generated from its schema
- * (`bun run link:client`). Calls carry the link token when given one; subscriptions share one
- * WebSocket to CHASE's `/api/graphql`, which takes the token in its connection parameters. No
- * cache: the link worker reads current state.
+ * (`bun run link:client`). Calls carry a fresh link token when given a source of them
+ * (`linkAccessToken`); subscriptions share one WebSocket to CHASE's `/api/graphql`, which takes the
+ * token in its connection parameters on every (re)connect. No cache: the link worker reads current
+ * state.
  */
 export function createChaseClient({
 	url,
@@ -58,20 +59,27 @@ export function createChaseClient({
 	onError
 }: {
 	url: string;
-	token?: string;
+	/** The current link token, asked for every call: tokens expire. */
+	token?: () => Promise<string>;
 	/** Every (re)connect of the WebSocket, when updates may have been missed. */
 	onConnected?: () => void;
 	/** An update a live query skipped, keeping its last rows. */
 	onError?: (error: CombinedError) => void;
 }) {
-	const headers: Record<string, string> = token ? { [LINK_TOKEN_HEADER]: token } : {};
+	const linkHeaders = async (): Promise<Record<string, string>> =>
+		token ? { [LINK_TOKEN_HEADER]: await token() } : {};
+	const linkFetch: typeof fetch = async (input, init) => {
+		const headers = new Headers(init?.headers);
+		for (const [name, value] of Object.entries(await linkHeaders())) headers.set(name, value);
+		return fetch(input, { ...init, headers });
+	};
 	const wsUrl = new URL('/api/graphql', url);
 	wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
 	// connected from the start, so a CHASE that comes back is noticed (`onConnected`) even while
 	// nothing is subscribed
 	const ws = createWSClient({
 		url: wsUrl.toString(),
-		connectionParams: headers,
+		connectionParams: linkHeaders,
 		lazy: false,
 		// keep trying while CHASE is away; the worker reconciles once it is back. Every failure counts:
 		// graphql-ws retries only close events by default, and a CHASE restarting refuses the
@@ -86,7 +94,7 @@ export function createChaseClient({
 	const urqlClient = new Client({
 		url: new URL('/api/graphql', url).toString(),
 		requestPolicy: 'network-only',
-		fetchOptions: () => ({ headers }),
+		fetch: linkFetch,
 		exchanges: [
 			nativeDateExchange,
 			fetchExchange,

@@ -10,20 +10,17 @@ import {
 import { grantWhere } from '#api/services/authHelper/utils';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { linkConfig } from '#api/handlers/chaseLink/linkAuth';
 
 const NOT_FROM_CHASE = { chasePaperId: { isNull: true } } as const;
 
 /**
  * While a CHASE link is active, a resolution it adopted is the link's: deleting it would only bring
- * it back with the next sync. Without a link (unlinking also clears the column, `freezeChaseLink`)
+ * it back with the next sync. Without a link (ending it also clears the column, `syncLinkRow`)
  * it is an ordinary one.
  */
-async function deletableResolutions() {
-	const link = await db.query.instanceLink.findFirst({
-		where: { status: 'ACTIVE' },
-		columns: { id: true }
-	});
-	return link ? NOT_FROM_CHASE : {};
+function deletableResolutions() {
+	return linkConfig() ? NOT_FROM_CHASE : {};
 }
 
 /** The abilities of adopted resolutions. */
@@ -31,7 +28,7 @@ export function registerResolutionAbilities() {
 	abilityBuilder.resolution.allow(['read', 'update']).when(systemAdmin);
 	abilityBuilder.resolution
 		.allow('delete')
-		.when(async (ctx) => (systemAdmin(ctx) ? { where: await deletableResolutions() } : undefined));
+		.when((ctx) => (systemAdmin(ctx) ? { where: deletableResolutions() } : undefined));
 
 	// Everybody with a part in the conference reads (downloads) its adopted resolutions: its
 	// participants (delegates, single participants, supervisors) and its whole team.
@@ -45,9 +42,9 @@ export function registerResolutionAbilities() {
 	abilityBuilder.resolution
 		.allow('update')
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: CONFERENCE_CONTENT_ROLES })));
-	abilityBuilder.resolution.allow('delete').when(async (ctx) => {
+	abilityBuilder.resolution.allow('delete').when((ctx) => {
 		const team = isTeamMemberOfConference({ ctx, roles: CONFERENCE_CONTENT_ROLES });
-		return team && { where: { ...team, ...(await deletableResolutions()) } };
+		return team && { where: { ...team, ...deletableResolutions() } };
 	});
 }
 

@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
-	import { optionalText, type ChaseAccess, type CustomRole } from './customRoles';
-	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
+	import { optionalText, type CustomRole } from './customRoles';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import RoleAddButton from './RoleAddButton.svelte';
@@ -20,23 +19,6 @@
 	let { conferenceId, customRoles }: Props = $props();
 
 	const emptyDraft = () => ({ name: '', description: '', icon: '', seatAmount: 1 });
-
-	// what a role's people are in CHASE matters only while this instance is linked to one
-	const chaseLink = $derived(await fetchActiveChaseLink());
-	const columns = $derived(chaseLink ? 7 : 6);
-
-	const chaseAccessOptions: { value: ChaseAccess; label: () => string }[] = [
-		{ value: 'SPECTATOR', label: () => m.chaseAccessSpectator() },
-		{ value: 'TEAM', label: () => m.chaseAccessTeam() },
-		{ value: 'NONE', label: () => m.chaseAccessNone() }
-	];
-
-	function setChaseAccess({ id, chaseAccess }: { id: string; chaseAccess: ChaseAccess }) {
-		const promise = Promise.resolve(
-			client.mutate.updateCustomRole({ __args: { id, chaseAccess }, chaseAccess: true })
-		);
-		toast.promise(promise, genericPromiseToastMessages);
-	}
 
 	let draft = $state(emptyDraft());
 	let toDelete = $state<CustomRole>();
@@ -105,9 +87,6 @@
 					<th>{m.description()}</th>
 					<th class="w-28">{m.seats()}</th>
 					<th class="w-28">{m.seatPlanningCustomRoleHolders()}</th>
-					{#if chaseLink}
-						<th class="w-40" title={m.chaseAccessHint()}>{m.chaseAccess()}</th>
-					{/if}
 					<th class="w-12"></th>
 				</tr>
 			</thead>
@@ -180,25 +159,6 @@
 								{role.holders} / {role.seatAmount}
 							</span>
 						</td>
-						{#if chaseLink}
-							<td>
-								<select
-									class="select select-sm"
-									aria-label={m.chaseAccess()}
-									value={role.chaseAccess}
-									onchange={(e) => {
-										const chaseAccess = chaseAccessOptions.find(
-											(option) => option.value === e.currentTarget.value
-										)?.value;
-										if (chaseAccess) setChaseAccess({ id: role.id, chaseAccess });
-									}}
-								>
-									{#each chaseAccessOptions as option (option.value)}
-										<option value={option.value}>{option.label()}</option>
-									{/each}
-								</select>
-							</td>
-						{/if}
 						<td>
 							<span
 								class={role.holders > 0 ? 'tooltip tooltip-left' : ''}
@@ -217,7 +177,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td colspan={columns} class="text-base-content/60 text-center">
+						<td colspan={6} class="text-base-content/60 text-center">
 							{m.seatPlanningNoCustomRoles()}
 						</td>
 					</tr>
@@ -247,9 +207,6 @@
 							{m.seatPlanningCustomRolesTotal({ holders: totalHolders, seats: totalSeats })}
 						</span>
 					</td>
-					{#if chaseLink}
-						<td></td>
-					{/if}
 					<td>
 						<RoleAddButton disabled={!draftValid} onclick={create} />
 					</td>

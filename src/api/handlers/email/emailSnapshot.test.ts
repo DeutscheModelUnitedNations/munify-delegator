@@ -8,8 +8,7 @@ const germany = {
 	id: 'r1',
 	kind: 'NATION' as const,
 	name: null,
-	nationAlpha3Code: 'DEU',
-	chaseAccess: 'SPECTATOR' as const
+	nationAlpha3Code: 'DEU'
 };
 
 describe('delegationPart', () => {

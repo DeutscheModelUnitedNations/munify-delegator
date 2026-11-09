@@ -8,23 +8,22 @@
 export type ChaseRole = 'DELEGATE' | 'NSA' | 'SPECTATOR';
 
 type RoleKind = 'NATION' | 'NON_STATE_ACTOR' | 'CUSTOM';
-type ChaseAccess = 'SPECTATOR' | 'TEAM' | 'NONE';
 
 /**
  * What a seat is in CHASE: a nation's seat in a committee makes a delegate, a non-state actor an
- * NSA, a custom role whatever access it gives (none: not in CHASE). `null` for no part there.
+ * NSA, a custom role a spectator. `null` for no part there.
  */
 export function chaseRoleOf({
 	role,
 	committeeId
 }: {
-	role: { kind: RoleKind; chaseAccess: ChaseAccess } | null | undefined;
+	role: { kind: RoleKind } | null | undefined;
 	committeeId: string | null | undefined;
 }): ChaseRole | null {
 	if (!role) return null;
 	if (role.kind === 'NATION') return committeeId ? 'DELEGATE' : null;
 	if (role.kind === 'NON_STATE_ACTOR') return 'NSA';
-	return role.chaseAccess === 'NONE' ? null : 'SPECTATOR';
+	return 'SPECTATOR';
 }
 
 const MANUAL_PAGES: Record<ChaseRole, string> = {

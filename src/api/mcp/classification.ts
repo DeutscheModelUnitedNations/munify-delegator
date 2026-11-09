@@ -299,7 +299,6 @@ const FIELDS: Record<string, TypeClassification> = {
 	Conferencerole: {
 		visible: [
 			...ROW,
-			'chaseAccess',
 			'abbreviation',
 			'conferenceId',
 			'description',
@@ -383,8 +382,8 @@ const FIELDS: Record<string, TypeClassification> = {
 
 	// --- The CHASE link -------------------------------------------------------------------------
 	Instancelink: {
-		visible: [...ROW, 'remoteUrl', 'status', 'linkedAt', 'lastEventAt', 'lastReconcileAt'],
-		redacted: ['confirmationCode', 'inboundTokenHash', 'outboundToken', 'lastError']
+		visible: [...ROW, 'remoteUrl', 'lastEventAt', 'lastReconcileAt'],
+		redacted: ['lastError']
 	},
 	// CHASE's presence records hold the people's e-mail addresses.
 	Chasepresence: {

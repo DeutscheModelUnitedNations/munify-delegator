@@ -1,16 +1,12 @@
-import { db } from '#api/db/db';
-import { hashLinkToken } from './linkTokens';
+import { isRemoteInstanceToken, linkConfig } from './linkAuth';
 
 /**
- * The link a request's token belongs to, if any: the linked CHASE instance calling. Looked up only
- * when a request carries a token, and once per request (`context` keeps the promise).
+ * Whether a request is the linked CHASE calling: it carries a token the provider issued to CHASE's
+ * client for this instance's API (`linkAuth.ts`). Checked only when a request carries one, and
+ * once per request (`context` keeps the promise).
  */
-export async function findLinkCaller(token: string | null) {
-	if (!token) return undefined;
-	return db.query.instanceLink.findFirst({
-		where: { inboundTokenHash: hashLinkToken(token), status: { ne: 'FROZEN' } },
-		columns: { id: true, status: true }
-	});
+export async function isLinkCall(token: string | null) {
+	const config = linkConfig();
+	if (!token || !config) return false;
+	return isRemoteInstanceToken({ token, config });
 }
-
-export type LinkCaller = NonNullable<Awaited<ReturnType<typeof findLinkCaller>>>;

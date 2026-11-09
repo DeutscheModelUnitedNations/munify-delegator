@@ -88,8 +88,9 @@ export const variables = defineEnvVars({
 	// for. With it, Logto issues JWT access tokens that are verified offline; without it, opaque
 	// ones, which cost a request to Logto's introspection endpoint on every request.
 	OIDC_RESOURCE: { schema: z.string().url().optional() },
-	// Machine-to-machine credentials for the Logto Management API, which issues the subject tokens
-	// impersonation exchanges (#api/handlers/user/impersonation). Without them it is unavailable.
+	// Machine-to-machine credentials: for the Logto Management API, which issues the subject tokens
+	// impersonation exchanges (#api/handlers/user/impersonation), and for the link to CHASE
+	// (`#api/handlers/chaseLink/linkAuth`). Without them neither is available.
 	OIDC_M2M_CLIENT_ID: { schema: z.string().optional() },
 	OIDC_M2M_CLIENT_SECRET: { schema: z.string().optional() },
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)
@@ -102,6 +103,18 @@ export const variables = defineEnvVars({
 	// Space-separated scopes the provider defines on that API resource, advertised to MCP clients
 	// in the protected resource metadata. Optional.
 	MCP_SCOPES: { schema: unlessEmpty(z.string().optional()) },
+
+	// The link to MUNify CHASE (`docs/plans/chase-link.md`), through the OIDC provider both trust:
+	// each instance asks it for a token with its machine-to-machine client (OIDC_M2M_CLIENT_ID and
+	// OIDC_M2M_CLIENT_SECRET, the client credentials grant) and calls the other with it. The link is
+	// on while LINK_REMOTE_URL and LINK_REMOTE_RESOURCE are set. A call is CHASE's when its token
+	// grants the `chase` role (OIDC_ROLE_CLAIM / OIDC_ROLE_MAP, or the `chase` scope).
+	// Where CHASE is reached, its origin.
+	LINK_REMOTE_URL: { schema: unlessEmpty(z.string().url().optional()) },
+	// The resource indicator of CHASE's API, which this instance asks its tokens for.
+	LINK_REMOTE_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
+	// The resource indicator CHASE's tokens have to be issued for; OIDC_RESOURCE when unset.
+	LINK_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
 
 	OTEL_SERVICE_NAME: { schema: z.string().default('MUNIFY-DELEGATOR') },
 	OTEL_SERVICE_VERSION: { schema: z.string().optional() },

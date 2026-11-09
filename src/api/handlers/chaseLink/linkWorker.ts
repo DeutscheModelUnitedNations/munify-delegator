@@ -6,7 +6,8 @@ import { logger } from '#lib/logger';
 import { parseLinkedPresence } from '#lib/schemata/chasePresence';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { watchChaseTables, type ChaseTables } from './chaseTables';
-import { openLinkToken } from './linkTokens';
+import { linkAccessToken, linkConfig } from './linkAuth';
+import { syncLinkRow } from './chaseLinkService';
 import { createGate, handled } from './liveTable';
 import { joinPresence, presenceFromChase, type ChasePresenceTables } from './presenceMirror';
 import { syncResolutions } from './resolutionSync';
@@ -43,13 +44,9 @@ export function stopLinkWorker() {
 	running = undefined;
 }
 
-/** On server start: picks the link up again when this instance is linked. */
+/** On server start: brings the link's row in line with the configuration and starts reading. */
 export async function resumeLinkWorker() {
-	const link = await db.query.instanceLink.findFirst({
-		where: { status: 'ACTIVE' },
-		columns: { id: true }
-	});
-	if (link) startLinkWorker();
+	if (await syncLinkRow()) startLinkWorker();
 }
 
 function runWorker() {
@@ -73,8 +70,9 @@ function runWorker() {
 		await leadership.query('select pg_advisory_lock($1)', [LEADER_LOCK_KEY]);
 		if (stopped) return;
 
-		const link = await db.query.instanceLink.findFirst({ where: { status: 'ACTIVE' } });
-		if (!link?.outboundToken) return stop();
+		const config = linkConfig();
+		const link = await db.query.instanceLink.findFirst({ columns: { id: true } });
+		if (!config || !link) return stop();
 
 		const watches = new Map<string, ChaseTables>();
 		const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -127,8 +125,8 @@ function runWorker() {
 
 		let reconnected = () => {};
 		const remote: ChaseClient = createChaseClient({
-			url: link.remoteUrl,
-			token: openLinkToken(link.outboundToken),
+			url: config.remoteUrl,
+			token: () => linkAccessToken(config),
 			onError: failed,
 			onConnected: () => reconnected()
 		});
@@ -182,7 +180,7 @@ function runWorker() {
 	return { stop };
 }
 
-/** Notes a failure on the link, for the pairing page. */
+/** Notes a failure on the link, for the link page. */
 async function noteError({ linkId, error }: { linkId: string; error: unknown }) {
 	await db
 		.update(schema.instanceLink)

@@ -706,12 +706,6 @@ type Certificate {
   sessions: [String!]!
 }
 
-enum ChaseaccessEnum {
-  NONE
-  SPECTATOR
-  TEAM
-}
-
 type Chasepresence {
   """Get the conferences related to this chasePresence"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
@@ -1466,7 +1460,6 @@ type Conferencerole {
 
   """Get the calendarTracks related to this conferenceRole"""
   calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
-  chaseAccess: ChaseaccessEnum!
 
   """Get the committees related to this conferenceRole"""
   committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: String, where: CommitteeWhereInputArgument): [Committee!]!
@@ -1498,7 +1491,6 @@ type Conferencerole {
 
 input ConferenceroleOrderInputArgument {
   abbreviation: SortingParameter
-  chaseAccess: SortingParameter
   conferenceId: SortingParameter
   createdAt: SortingParameter
   description: SortingParameter
@@ -1520,7 +1512,6 @@ input ConferenceroleWhereInputArgument {
   assignedDelegations: DelegationWhereInputArgument
   assignedSingleParticipants: SingleparticipantWhereInputArgument
   calendarTracks: CalendartrackWhereInputArgument
-  chaseAccess: ChaseaccessEnum
   committees: CommitteeWhereInputArgument
   conference: ConferenceWhereInputArgument
   conferenceId: IDWhereInputArgument
@@ -2144,37 +2135,27 @@ type ImpersonationUser {
 }
 
 type Instancelink {
-  confirmationCode: String!
   createdAt: DateTime!
   id: ID!
-  inboundTokenHash: String!
   lastError: String
   lastEventAt: DateTime
   lastReconcileAt: DateTime
-  linkedAt: DateTime
-  outboundToken: String
   remoteUrl: String!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
   """
   search_distance: Float
-  status: InstancelinkstatusEnum!
   updatedAt: DateTime!
 }
 
 input InstancelinkOrderInputArgument {
-  confirmationCode: SortingParameter
   createdAt: SortingParameter
   id: SortingParameter
-  inboundTokenHash: SortingParameter
   lastError: SortingParameter
   lastEventAt: SortingParameter
   lastReconcileAt: SortingParameter
-  linkedAt: SortingParameter
-  outboundToken: SortingParameter
   remoteUrl: SortingParameter
-  status: SortingParameter
   updatedAt: SortingParameter
 }
 
@@ -2182,24 +2163,13 @@ input InstancelinkWhereInputArgument {
   AND: [InstancelinkWhereInputArgument!]
   NOT: InstancelinkWhereInputArgument
   OR: [InstancelinkWhereInputArgument!]
-  confirmationCode: StringWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
-  inboundTokenHash: StringWhereInputArgument
   lastError: StringWhereInputArgument
   lastEventAt: DateTimeWhereInputArgument
   lastReconcileAt: DateTimeWhereInputArgument
-  linkedAt: DateTimeWhereInputArgument
-  outboundToken: StringWhereInputArgument
   remoteUrl: StringWhereInputArgument
-  status: InstancelinkstatusEnum
   updatedAt: DateTimeWhereInputArgument
-}
-
-enum InstancelinkstatusEnum {
-  ACTIVE
-  FROZEN
-  PENDING
 }
 
 input IntArrayWhereInputArgument {
@@ -2401,11 +2371,6 @@ type Mutation {
   Plans a custom role for each single participant without one, among the roles they applied for; roles planned by hand stay. Returns how many got one.
   """
   autoAssignSingleParticipants(conferenceId: ID!): Int!
-
-  """
-  Called by the CHASE instance whose admin approved the pending request, with the token this instance calls it with.
-  """
-  confirmChaseLink(confirmationCode: String!, token: String!): Boolean!
 
   """
   Puts a delegate or single participant into a supervisor's care by the supervisor's connection code: the caller themselves, or, with `userId`, participant care someone else. A wrong code answers NOT_FOUND (ten in ten minutes: TOO_MANY_ATTEMPTS); a supervisor or team member cannot be supervised (CONFLICT).
@@ -3038,11 +3003,6 @@ type Mutation {
   reprintNsaCard(conferenceParticipantId: ID!): NsaCard!
 
   """
-  Asks a MUNify CHASE instance to link with this one. The link waits until an admin there approves it, comparing the confirmation code both sides show. CONFLICT when a link exists or CHASE does not answer.
-  """
-  requestChaseLink(chaseUrl: String!): ID!
-
-  """
   Records an upload of one file for the field `field` of a `kind` row of the conference (`conference`/`logo`, `place`/`sitePlan`, `resolution`/`content`, …) and answers with the file: its `id` goes into the mutation saving the row (`logoFileId`, …), its `uploadUrl` is where the bytes go. Only who may set that field may upload (FORBIDDEN otherwise), and only an allowed type and size (INVALID_INPUT otherwise, as for a field that takes no file).
   """
   requestFileUpload(
@@ -3274,11 +3234,6 @@ type Mutation {
   undoDelegationSplit(delegationId: ID!): Boolean!
 
   """
-  Ends the link, or withdraws a pending request. Both sides keep what they have. Called by a system admin here, or by CHASE when it unlinks.
-  """
-  unlinkChase: Boolean!
-
-  """
   Removes every trace of a user's participation in one conference - delegation membership, single participant entry, supervisor entry and participant status - while leaving the user account itself alone. Each delete carries its own ability filter, so a caller who may remove one kind of participation but not another removes only what they are allowed to. NOT_FOUND when the user takes no part in the conference.
   """
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
@@ -3468,10 +3423,9 @@ type Mutation {
   updateConferenceSupervisor(id: ID!, plansOwnAttendenceAtConference: Boolean!): Conferencesupervisor!
 
   """
-  Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has. `chaseAccess` is what its people are in a linked CHASE.
+  Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has.
   """
   updateCustomRole(
-    chaseAccess: ChaseaccessEnum
     description: String
 
     """
@@ -3834,6 +3788,7 @@ type NsaCard {
 
 enum OIDCRolesEnum {
   admin
+  chase
   member
   service_user
 }

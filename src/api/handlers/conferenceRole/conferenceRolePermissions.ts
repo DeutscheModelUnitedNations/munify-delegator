@@ -25,8 +25,7 @@ export function registerConferenceRoleAbilities() {
 				nationAlpha3Code: true,
 				name: true,
 				abbreviation: true,
-				icon: true,
-				chaseAccess: true
+				icon: true
 			}
 		})
 	);

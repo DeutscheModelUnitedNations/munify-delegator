@@ -29,8 +29,6 @@ export interface SnapshotRole {
 	kind: (typeof schema.conferenceRoleKind.enumValues)[number];
 	name: string | null;
 	nationAlpha3Code: string | null;
-	/** What a custom role's holders are in a linked CHASE. */
-	chaseAccess: (typeof schema.chaseAccess.enumValues)[number];
 }
 
 /** Who a mail goes to. */

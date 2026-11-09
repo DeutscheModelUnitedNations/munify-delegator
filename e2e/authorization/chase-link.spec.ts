@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-import pg from 'pg';
 import type { APIRequestContext } from '@playwright/test';
 import { test, expect } from '../support/test';
 import {
@@ -8,63 +6,57 @@ import {
 	E2E_UNRELEASED_CONFERENCE_ID
 } from '../seed/seed';
 
-// The linked CHASE reads through link read rules (`docs/plans/chase-link.md`): with its token it
-// reaches the rows of mirrored conferences, only the listed columns, and participants only once
-// the assignment is released; without the token, or with another one, it reaches nothing more
-// than anybody. The link row is written straight into the database: pairing needs a CHASE to
-// call back.
-//
-// While this file runs, an ACTIVE link exists, which shows the CHASE hints on other pages too;
-// the spec only reads, and removes the link again.
+// The linked CHASE reads through link read rules (`docs/plans/chase-link.md`): with a token for
+// this API granting the `chase` role, it reaches the rows of mirrored conferences, only
+// the listed columns, and participants only once the assignment is released; without one, or with
+// any other, it reaches nothing more than anybody. The server links a CHASE that is never there
+// (the LINK_* variables in playwright.config.ts); oidc-mock issues the tokens.
 
-const TOKEN = 'e2e-chase-link-token-0000000000000000000000000000';
+const ISSUER = 'http://127.0.0.1:8090/oidc';
 
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
+
+/**
+ * A client credentials token from oidc-mock, which issues one to any client, with whatever scope
+ * it asks for: the `chase` scope is how Logto hands CHASE's M2M app the `chase` role.
+ */
+async function clientToken({
+	request,
+	resource,
+	scope = 'chase'
+}: {
+	request: APIRequestContext;
+	resource: string;
+	scope?: string;
+}) {
+	const res = await request.post(`${ISSUER}/token`, {
+		form: { grant_type: 'client_credentials', client_id: 'chase-e2e', resource, scope }
+	});
+	return String((await res.json()).access_token);
+}
 
 async function asChase({
 	request,
 	query,
-	token = TOKEN
+	token
 }: {
 	request: APIRequestContext;
 	query: string;
 	token?: string | null;
 }) {
+	const linkToken =
+		token === undefined
+			? await clientToken({
+					request,
+					resource: new URL('/api', String(test.info().project.use.baseURL)).href
+				})
+			: token;
 	const res = await request.post('/api/graphql', {
-		headers: { 'x-locale': 'en', ...(token ? { 'x-munify-link-token': token } : {}) },
+		headers: { 'x-locale': 'en', ...(linkToken ? { 'x-munify-link-token': linkToken } : {}) },
 		data: { query }
 	});
 	return (await res.json()) as GraphQLResult;
 }
-
-async function withDatabase(run: (client: pg.Client) => Promise<unknown>) {
-	const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
-	await client.connect();
-	try {
-		await run(client);
-	} finally {
-		await client.end();
-	}
-}
-
-test.describe.configure({ mode: 'serial' });
-
-test.beforeAll(async () => {
-	await withDatabase(async (client) => {
-		await client.query('DELETE FROM instance_link');
-		await client.query(
-			`INSERT INTO instance_link (id, remote_url, status, inbound_token_hash, confirmation_code, linked_at)
-			 VALUES ('e2e-chase-link', 'https://chase.e2e.invalid', 'ACTIVE', $1, 'E2E000', now())`,
-			[createHash('sha256').update(TOKEN).digest('hex')]
-		);
-	});
-});
-
-test.afterAll(async () => {
-	await withDatabase((client) =>
-		client.query("DELETE FROM instance_link WHERE id = 'e2e-chase-link'")
-	);
-});
 
 const participantsOf = (conferenceId: string) => `{
 	conferenceParticipants(where: { conference: { id: { eq: "${conferenceId}" } } }) { id userId }
@@ -117,20 +109,27 @@ test("the linked CHASE reads a participant's name and e-mail, nothing more", asy
 	});
 });
 
-test('the link token is the only way in: none or another reaches nothing', async ({ request }) => {
-	for (const token of [null, 'not-the-token']) {
+test('only a token for this API granting the chase role counts', async ({ request }) => {
+	const baseURL = String(test.info().project.use.baseURL);
+	const tokens = [
+		null,
+		'not-a-token',
+		// a machine of the same provider without the role
+		await clientToken({ request, resource: `${baseURL}/api`, scope: 'something-else' }),
+		// the role, but on a token meant for another API
+		await clientToken({ request, resource: 'https://other.e2e.invalid' })
+	];
+	for (const token of tokens) {
 		const result = await asChase({ request, token, query: participantsOf(E2E_PREP_CONFERENCE_ID) });
 		const participants = result.data?.conferenceParticipants;
 		expect(participants ?? [], JSON.stringify(result)).toEqual([]);
 	}
 });
 
-test('the linked CHASE never reads the link tokens', async ({ request }) => {
-	const result = await asChase({
-		request,
-		query: '{ instanceLinks { id remoteUrl status } }'
-	});
+test('the link state names where CHASE is, nothing more', async ({ request }) => {
+	const result = await asChase({ request, query: '{ instanceLinks { id remoteUrl lastError } }' });
 	expect(result.errors, JSON.stringify(result)).toBeUndefined();
-	const withTokens = await asChase({ request, query: '{ instanceLinks { inboundTokenHash } }' });
-	expect(withTokens.errors ?? [], JSON.stringify(withTokens)).not.toEqual([]);
+	expect(result.data?.instanceLinks).toEqual([
+		expect.objectContaining({ remoteUrl: 'https://chase.e2e.invalid' })
+	]);
 });

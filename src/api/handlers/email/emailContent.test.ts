@@ -46,8 +46,7 @@ const person: SnapshotPerson = {
 			id: 'r1',
 			kind: 'NATION',
 			name: null,
-			nationAlpha3Code: 'FRA',
-			chaseAccess: 'SPECTATOR'
+			nationAlpha3Code: 'FRA'
 		},
 		committee: 'GV',
 		committeeId: 'c-gv'

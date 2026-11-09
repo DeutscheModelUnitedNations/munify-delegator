@@ -1,0 +1,56 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "b15da493-112d-4be3-8169-c9a2486aa351",
+  "prevIds": [
+    "265d90f5-7253-4add-abd2-ea85694db4c3"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference_role",
+        "chase_access"
+      ],
+      "writes": [
+        "s|col|public.conference_role.chase_access",
+        "n|col|public.conference_role.chase_access",
+        "e|col|public.conference_role.chase_access"
+      ],
+      "reads": [
+        "n|tbl|public.conference_role",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "chase_access"
+      ],
+      "writes": [
+        "s|enum|public.chase_access",
+        "n|enum|public.chase_access",
+        "e|enum|public.chase_access",
+        "n|type|public.chase_access"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"chase_access\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conference_role\",\"chase_access\"]"
+    }
+  ]
+}

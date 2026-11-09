@@ -681,8 +681,6 @@ export type Certificate = {
   sessions: String[]    
 };
 		
-export type ChaseaccessEnum = "NONE" | "SPECTATOR" | "TEAM";
-		
 export type Chasepresence = {
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
@@ -1502,7 +1500,6 @@ export type Conferencerole = {
     search?: String | null | undefined,
     where?: CalendartrackWhereInputArgument | null | undefined
   }) => Calendartrack[],
-  chaseAccess: ChaseaccessEnum,
   committees: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1540,7 +1537,6 @@ export type Conferencerole = {
 		
 export type ConferenceroleOrderInputArgument = {
   abbreviation?: SortingParameter | null | undefined,
-  chaseAccess?: SortingParameter | null | undefined,
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   description?: SortingParameter | null | undefined,
@@ -1562,7 +1558,6 @@ export type ConferenceroleWhereInputArgument = {
   assignedDelegations?: DelegationWhereInputArgument | null | undefined,
   assignedSingleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   calendarTracks?: CalendartrackWhereInputArgument | null | undefined,
-  chaseAccess?: ChaseaccessEnum | null | undefined,
   committees?: CommitteeWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
@@ -2112,33 +2107,23 @@ export type ImpersonationUser = {
 };
 		
 export type Instancelink = {
-  confirmationCode: String,
   createdAt: DateTime,
   id: ID,
-  inboundTokenHash: String,
   lastError: String | null,
   lastEventAt: DateTime | null,
   lastReconcileAt: DateTime | null,
-  linkedAt: DateTime | null,
-  outboundToken: String | null,
   remoteUrl: String,
   search_distance: Float | null,
-  status: InstancelinkstatusEnum,
   updatedAt: DateTime    
 };
 		
 export type InstancelinkOrderInputArgument = {
-  confirmationCode?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
-  inboundTokenHash?: SortingParameter | null | undefined,
   lastError?: SortingParameter | null | undefined,
   lastEventAt?: SortingParameter | null | undefined,
   lastReconcileAt?: SortingParameter | null | undefined,
-  linkedAt?: SortingParameter | null | undefined,
-  outboundToken?: SortingParameter | null | undefined,
   remoteUrl?: SortingParameter | null | undefined,
-  status?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -2146,21 +2131,14 @@ export type InstancelinkWhereInputArgument = {
   AND?: InstancelinkWhereInputArgument[] | undefined,
   NOT?: InstancelinkWhereInputArgument | null | undefined,
   OR?: InstancelinkWhereInputArgument[] | undefined,
-  confirmationCode?: StringWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
-  inboundTokenHash?: StringWhereInputArgument | null | undefined,
   lastError?: StringWhereInputArgument | null | undefined,
   lastEventAt?: DateTimeWhereInputArgument | null | undefined,
   lastReconcileAt?: DateTimeWhereInputArgument | null | undefined,
-  linkedAt?: DateTimeWhereInputArgument | null | undefined,
-  outboundToken?: StringWhereInputArgument | null | undefined,
   remoteUrl?: StringWhereInputArgument | null | undefined,
-  status?: InstancelinkstatusEnum | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
-		
-export type InstancelinkstatusEnum = "ACTIVE" | "FROZEN" | "PENDING";
 		
 export type Int = number;
 		
@@ -2323,10 +2301,6 @@ export type Mutation = {
   autoAssignSingleParticipants: (p: {
     conferenceId: ID
   }) => Int,
-  confirmChaseLink: (p: {
-    confirmationCode: String,
-    token: String
-  }) => Boolean,
   connectToConferenceSupervisor: (p: {
     conferenceId: ID,
     connectionCode: String,
@@ -2647,9 +2621,6 @@ export type Mutation = {
   reprintNsaCard: (p: {
     conferenceParticipantId: ID
   }) => NsaCard,
-  requestChaseLink: (p: {
-    chaseUrl: String
-  }) => ID,
   requestFileUpload: (p: {
     conferenceId: ID,
     field: String,
@@ -2787,7 +2758,6 @@ export type Mutation = {
   undoDelegationSplit: (p: {
     delegationId: ID
   }) => Boolean,
-  unlinkChase: Boolean,
   unregisterParticipant: (p: {
     conferenceId: ID,
     userId: ID
@@ -2890,7 +2860,6 @@ export type Mutation = {
     plansOwnAttendenceAtConference: Boolean
   }) => Conferencesupervisor,
   updateCustomRole: (p: {
-    chaseAccess?: ChaseaccessEnum | null | undefined,
     description?: String | null | undefined,
     icon?: String | null | undefined,
     id: ID,
@@ -3151,7 +3120,7 @@ export type NsaCard = {
   nsaName: String | null    
 };
 		
-export type OIDCRolesEnum = "admin" | "member" | "service_user";
+export type OIDCRolesEnum = "admin" | "chase" | "member" | "service_user";
 		
 export type OfflineUser = {
   email: String,
