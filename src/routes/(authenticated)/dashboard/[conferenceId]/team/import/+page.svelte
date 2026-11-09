@@ -9,6 +9,7 @@
 	import { createLocalSource, type GridSource } from '#lib/components/dataGrid/dataSource';
 	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
 	import RepresentationBadge from './RepresentationBadge.svelte';
+	import ChasePresenceNotice from './ChasePresenceNotice.svelte';
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
@@ -21,6 +22,7 @@
 		type ScoredNsa
 	} from './presenceImport';
 	import {
+		CHASE_PRESENCE_SCHEMA_URL,
 		parseLinkedPresence,
 		type ChasePresenceRepresentation
 	} from '#lib/schemata/chasePresence';
@@ -46,23 +48,52 @@
 
 	let parsed = $derived(fileInput === undefined ? undefined : parsePresenceExport(fileInput));
 
-	// While linked, CHASE's records arrive on their own (`docs/plans/chase-link.md`); a file
-	// uploaded below still wins, for a conference that ran on another CHASE
+	// While linked, the page asks CHASE for its records when it opens and on "read again"
+	// (`docs/plans/chase-link.md`); nothing of them is kept here. A file uploaded below still wins,
+	// for a conference that ran on another CHASE.
 	const chaseLink = $derived(await fetchActiveChaseLink());
 	const linked = $derived(chaseLink !== undefined);
-	const linkedRows = $derived(
-		linked
-			? await client.liveQuery.chasePresences({
-					__args: { where: { conferenceId: { eq: conferenceId } } },
-					// its cache key (`customKeyFields`)
-					conferenceId: true,
-					data: true,
-					fetchedAt: true
-				})
-			: []
+	let chaseReads = $state(0);
+
+	/** CHASE's presence now, `failed` when CHASE could not be asked. */
+	async function readChasePresence() {
+		try {
+			const data = await client.query.chasePresence({
+				__args: { conferenceId },
+				exportedAt: true,
+				conferenceId: true,
+				participants: {
+					email: true,
+					kind: true,
+					committeeId: true,
+					representation: {
+						type: true,
+						alpha2Code: true,
+						alpha3Code: true,
+						icon: true,
+						name: true
+					},
+					events: { committeeId: true, present: true, type: true, timestamp: true }
+				}
+			});
+			const presence =
+				data &&
+				parseLinkedPresence({
+					$schema: CHASE_PRESENCE_SCHEMA_URL,
+					exportedAt: data.exportedAt,
+					conferenceId: data.conferenceId,
+					participants: data.participants
+				});
+			return { failed: false, presence: presence ?? undefined };
+		} catch {
+			return { failed: true, presence: undefined };
+		}
+	}
+	// `chaseReads` counts the "read again" clicks, each of which asks CHASE anew
+	const chaseRead = $derived(
+		linked && chaseReads >= 0 ? await readChasePresence() : { failed: false, presence: undefined }
 	);
-	const linkedRow = $derived(linkedRows.at(0));
-	const fromChase = $derived(linkedRow ? parseLinkedPresence(linkedRow.data) : undefined);
+	const fromChase = $derived(chaseRead.presence);
 
 	let participants = $derived(
 		parsed?.ok
@@ -208,23 +239,14 @@
 	</div>
 	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
 		{#if chaseLink}
-			<div class="alert {parsed?.ok ? 'alert-warning' : 'alert-info'} mt-4">
-				<i aria-hidden="true" class="ph-duotone ph-link"></i>
-				<span>
-					{#if parsed?.ok}
-						{m.importPresenceFileInsteadOfChase()}
-					{:else if linkedRow}
-						{m.importPresenceFromChase({
-							time: linkedRow.fetchedAt.toLocaleString(getLocale(), {
-								dateStyle: 'medium',
-								timeStyle: 'short'
-							})
-						})}
-					{:else}
-						{m.importPresenceFromChaseNothingYet()}
-					{/if}
-				</span>
-			</div>
+			<ChasePresenceNotice
+				fromFile={!!parsed?.ok}
+				failed={chaseRead.failed}
+				readAt={fromChase?.success && fromChase.data.participants.length > 0
+					? fromChase.data.exportedAt
+					: undefined}
+				onReadAgain={() => (chaseReads += 1)}
+			/>
 		{/if}
 		{#if chaseLink}
 			<details class="mt-4">

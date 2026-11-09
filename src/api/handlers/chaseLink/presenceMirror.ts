@@ -1,4 +1,9 @@
 import { CHASE_PRESENCE_SCHEMA_URL, type ChasePresence } from '#lib/schemata/chasePresence';
+import { apiError } from '#api/services/errors';
+import { logger } from '#lib/logger';
+import { m } from '#lib/paraglide/messages';
+import { createChaseClient } from './chaseRemote';
+import { linkAccessToken, linkConfig } from './linkAuth';
 
 /**
  * CHASE's presence records of one conference, in the shape of CHASE's presence export
@@ -27,56 +32,6 @@ export interface ChasePresenceUser {
 		type: string;
 		timestamp: Date | string;
 	}[];
-}
-
-/**
- * CHASE's tables of one conference as the link worker keeps them (`liveTable`), rows pointing at
- * each other by id.
- */
-export interface ChasePresenceTables {
-	users: readonly {
-		id: string;
-		conferenceUserType: string;
-		userEmail: string;
-		committeeMemberId?: string | null;
-		conferenceMemberId?: string | null;
-	}[];
-	committeeMembers: readonly { id: string; committeeId: string; representationId: string }[];
-	conferenceMembers: readonly { id: string; representationId: string }[];
-	representations: readonly ChaseRepresentation[];
-	events: readonly (ChasePresenceUser['presenceEvents'][number] & { conferenceUserId: string })[];
-}
-
-/** The tables put together per person, as `presenceFromChase` takes them. */
-export function joinPresence(tables: ChasePresenceTables): ChasePresenceUser[] {
-	const representations = new Map(tables.representations.map((row) => [row.id, row]));
-	const committeeMembers = new Map(tables.committeeMembers.map((row) => [row.id, row]));
-	const conferenceMembers = new Map(tables.conferenceMembers.map((row) => [row.id, row]));
-	const eventsOf = Map.groupBy(tables.events, (event) => event.conferenceUserId);
-	return tables.users.map((user) => {
-		const seat = user.committeeMemberId ? committeeMembers.get(user.committeeMemberId) : undefined;
-		const member = user.conferenceMemberId
-			? conferenceMembers.get(user.conferenceMemberId)
-			: undefined;
-		return {
-			conferenceUserType: user.conferenceUserType,
-			userEmail: user.userEmail,
-			committeeMember: seat && {
-				committeeId: seat.committeeId,
-				representation: representations.get(seat.representationId)
-			},
-			conferenceMember: member && { representation: representations.get(member.representationId) },
-			presenceEvents: (eventsOf.get(user.id) ?? [])
-				.toSorted((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-				.map(({ id, committeeId, present, type, timestamp }) => ({
-					id,
-					committeeId,
-					present,
-					type,
-					timestamp
-				}))
-		};
-	});
 }
 
 function representationOf(representation: ChaseRepresentation | null | undefined) {
@@ -120,15 +75,68 @@ export function presenceFromChase({
 					representation: representationOf(
 						user.committeeMember?.representation ?? user.conferenceMember?.representation
 					),
-					events: user.presenceEvents.map((event) => ({
-						id: event.id,
-						committeeId: event.committeeId,
-						present: event.present,
-						type: event.type,
-						timestamp: new Date(event.timestamp).toISOString()
-					}))
+					events: user.presenceEvents
+						.toSorted((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+						.map((event) => ({
+							id: event.id,
+							committeeId: event.committeeId,
+							present: event.present,
+							type: event.type,
+							timestamp: new Date(event.timestamp).toISOString()
+						}))
 				}
 			];
 		})
 	};
+}
+
+/** CHASE answers lists in pages; the people of a conference fit in a few. */
+const PAGE_SIZE = 1000;
+
+const REPRESENTATION = {
+	type: true,
+	alpha2Code: true,
+	alpha3Code: true,
+	icon: true,
+	name: true
+} as const;
+
+/**
+ * What the linked CHASE recorded about a conference's presence right now, asked of it through its
+ * own queries of the people, their seats and presence events: nothing of it is kept here. Undefined
+ * while no CHASE is linked; an unreachable CHASE is an error the page shows.
+ */
+export async function fetchChasePresence({ conferenceId }: { conferenceId: string }) {
+	const config = linkConfig();
+	if (!config) return undefined;
+	const remote = createChaseClient({
+		url: config.remoteUrl,
+		token: () => linkAccessToken(config)
+	});
+	try {
+		const users: ChasePresenceUser[] = [];
+		for (let offset = 0; ; offset += PAGE_SIZE) {
+			const page = await remote.query.conferenceUsers({
+				__args: {
+					where: { conferenceId: { eq: conferenceId } },
+					orderBy: { id: 'asc' },
+					limit: PAGE_SIZE,
+					offset
+				},
+				conferenceUserType: true,
+				userEmail: true,
+				committeeMember: { committeeId: true, representation: REPRESENTATION },
+				conferenceMember: { representation: REPRESENTATION },
+				presenceEvents: { committeeId: true, present: true, type: true, timestamp: true }
+			});
+			users.push(...page);
+			if (page.length < PAGE_SIZE) break;
+		}
+		return presenceFromChase({ conferenceId, users, now: new Date() });
+	} catch (error) {
+		logger.warn('Reading the presence from CHASE failed', { error, conferenceId });
+		throw apiError({ code: 'CONFLICT', message: m.importPresenceFromChaseFailed() });
+	} finally {
+		remote.dispose();
+	}
 }

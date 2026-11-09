@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { chasePresenceSchema } from '#lib/schemata/chasePresence';
-import { joinPresence, presenceFromChase, type ChasePresenceUser } from './presenceMirror';
+
+vi.mock('$app/env/private', () => ({}));
+vi.mock('$app/env/public', () => ({ PUBLIC_OIDC_AUTHORITY: 'https://idp.example' }));
+
+const { presenceFromChase } = await import('./presenceMirror');
+type ChasePresenceUser = import('./presenceMirror').ChasePresenceUser;
 
 const event = (present: boolean) => ({
 	id: `e-${present}`,
@@ -83,45 +88,15 @@ describe('presenceFromChase', () => {
 			}
 		]);
 	});
-});
 
-describe('joinPresence', () => {
-	it("puts each person's seat, representation and events together, events in time order", () => {
-		const de = { id: 'role-de', type: 'DELEGATION' as const, alpha2Code: 'de', alpha3Code: 'deu' };
-		const late = { ...event(false), id: 'late', timestamp: new Date('2027-03-02T10:00:00Z') };
-		const joined = joinPresence({
-			users: [
-				{
-					id: 'anna',
-					conferenceUserType: 'DELEGATE',
-					userEmail: 'anna@example.org',
-					committeeMemberId: 'seat'
-				},
-				{ id: 'tom', conferenceUserType: 'TEAM', userEmail: 'tom@example.org' }
-			],
-			committeeMembers: [{ id: 'seat', committeeId: 'ga', representationId: 'role-de' }],
-			conferenceMembers: [],
-			representations: [de],
-			events: [
-				{ ...late, conferenceUserId: 'anna' },
-				{ ...event(true), conferenceUserId: 'anna' }
-			]
-		});
-		expect(joined).toEqual([
-			{
-				conferenceUserType: 'DELEGATE',
-				userEmail: 'anna@example.org',
-				committeeMember: { committeeId: 'ga', representation: de },
-				conferenceMember: undefined,
-				presenceEvents: [event(true), late]
-			},
-			{
-				conferenceUserType: 'TEAM',
-				userEmail: 'tom@example.org',
-				committeeMember: undefined,
-				conferenceMember: undefined,
-				presenceEvents: []
-			}
-		]);
+	it("puts each person's events in time order", () => {
+		const later = { ...event(false), id: 'later', timestamp: new Date('2027-03-02T10:00:00Z') };
+		const earlier = { ...event(true), id: 'earlier', timestamp: new Date('2027-03-02T08:00:00Z') };
+		const [anna] = presenceFromChase({
+			conferenceId: 'conf',
+			users: [{ ...users[0], presenceEvents: [later, earlier] }],
+			now: new Date()
+		}).participants;
+		expect(anna.events.map((e) => e.id)).toEqual(['earlier', 'later']);
 	});
 });

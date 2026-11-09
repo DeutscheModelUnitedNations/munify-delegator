@@ -23,7 +23,6 @@ export const delegationPubsub = pubsub({ table: 'delegation' });
 export const delegationMemberPubsub = pubsub({ table: 'delegationMember' });
 export const emailLogPubsub = pubsub({ table: 'emailLog' });
 export const instanceLinkPubsub = pubsub({ table: 'instanceLink' });
-export const chasePresencePubsub = pubsub({ table: 'chasePresence' });
 export const mcpAuditEntryPubsub = pubsub({ table: 'mcpAuditEntry' });
 export const paperPubsub = pubsub({ table: 'paper' });
 export const paperReviewPubsub = pubsub({ table: 'paperReview' });

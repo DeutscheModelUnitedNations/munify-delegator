@@ -1,26 +1,23 @@
 import type { ChasePaper } from './adoptedResolutions';
 import type { ChaseClient } from './chaseRemote';
 import { liveTable, type Gate, type LiveResult } from './liveTable';
-import type { ChasePresenceTables } from './presenceMirror';
 
 /**
  * Watches what DELEGATOR reads back of one conference from the linked CHASE
- * (`docs/plans/chase-link.md`), each table with its own live queries (`liveTable`): presence (the
- * people, their seats and their presence events) and the adopted resolutions (the final papers and
- * the snapshots their votes took, without the texts). A change answers with the rows of the one
- * table it touched, so a scan reads one event, not the conference.
+ * (`docs/plans/chase-link.md`), each table with its own live queries (`liveTable`): the adopted
+ * resolutions (the final papers and the snapshots their votes took, without the texts). A change
+ * answers with the rows of the one table it touched. Presence is not watched: the import page asks
+ * CHASE for it when it opens (`fetchChasePresence`).
  */
 export function watchChaseTables({
 	remote,
 	conferenceId,
-	onPresence,
 	onResolutions,
 	onError,
 	gate
 }: {
 	remote: ChaseClient;
 	conferenceId: string;
-	onPresence: () => void;
 	onResolutions: () => void;
 	onError: (error: unknown) => void;
 	gate: Gate;
@@ -45,31 +42,8 @@ export function watchChaseTables({
 			gate
 		});
 
-	const inConference = { conferenceId: { eq: conferenceId } };
-	const ofCommittees = { committee: inConference };
+	const ofCommittees = { committee: { conferenceId: { eq: conferenceId } } };
 
-	const USER = {
-		conferenceUserType: true,
-		userEmail: true,
-		committeeMemberId: true,
-		conferenceMemberId: true
-	} as const;
-	const SEAT = { committeeId: true, representationId: true } as const;
-	const MEMBER = { representationId: true } as const;
-	const REPRESENTATION = {
-		type: true,
-		alpha2Code: true,
-		alpha3Code: true,
-		icon: true,
-		name: true
-	} as const;
-	const EVENT = {
-		conferenceUserId: true,
-		committeeId: true,
-		present: true,
-		type: true,
-		timestamp: true
-	} as const;
 	const PAPER = {
 		title: true,
 		documentNumber: true,
@@ -79,38 +53,6 @@ export function watchChaseTables({
 	} as const;
 	const SNAPSHOT = { paperId: true, createdAt: true } as const;
 
-	const presence = {
-		users: table({
-			where: inConference,
-			live: (args) => remote.liveQuery.conferenceUsers({ __args: args, ...USER }),
-			read: (args) => remote.query.conferenceUsers({ __args: args, ...USER }),
-			onChange: onPresence
-		}),
-		committeeMembers: table({
-			where: ofCommittees,
-			live: (args) => remote.liveQuery.committeeMembers({ __args: args, ...SEAT }),
-			read: (args) => remote.query.committeeMembers({ __args: args, ...SEAT }),
-			onChange: onPresence
-		}),
-		conferenceMembers: table({
-			where: inConference,
-			live: (args) => remote.liveQuery.conferenceMembers({ __args: args, ...MEMBER }),
-			read: (args) => remote.query.conferenceMembers({ __args: args, ...MEMBER }),
-			onChange: onPresence
-		}),
-		representations: table({
-			where: inConference,
-			live: (args) => remote.liveQuery.representations({ __args: args, ...REPRESENTATION }),
-			read: (args) => remote.query.representations({ __args: args, ...REPRESENTATION }),
-			onChange: onPresence
-		}),
-		events: table({
-			where: ofCommittees,
-			live: (args) => remote.liveQuery.presenceEvents({ __args: args, ...EVENT }),
-			read: (args) => remote.query.presenceEvents({ __args: args, ...EVENT }),
-			onChange: onPresence
-		})
-	};
 	const resolutions = {
 		papers: table({
 			where: { status: 'FINAL' as const, ...ofCommittees },
@@ -149,18 +91,9 @@ export function watchChaseTables({
 		}
 		onResolutions();
 	}
-	const all = [...Object.values(presence), ...Object.values(resolutions)];
+	const all = Object.values(resolutions);
 
 	return {
-		/** Every presence table answered: only then is what they hold all there is. */
-		presenceReady: () => Object.values(presence).every((t) => t.ready()),
-		presence: (): ChasePresenceTables => ({
-			users: presence.users.rows(),
-			committeeMembers: presence.committeeMembers.rows(),
-			conferenceMembers: presence.conferenceMembers.rows(),
-			representations: presence.representations.rows(),
-			events: presence.events.rows()
-		}),
 		resolutionsReady: () => Object.values(resolutions).every((t) => t.ready()),
 		/** The final papers with the snapshots their votes took. */
 		papers: (): ChasePaper[] => {

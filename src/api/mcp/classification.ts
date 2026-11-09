@@ -385,11 +385,13 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [...ROW, 'remoteUrl', 'lastEventAt', 'lastReconcileAt'],
 		redacted: ['lastError']
 	},
-	// CHASE's presence records hold the people's e-mail addresses.
-	Chasepresence: {
-		visible: ['createdAt', 'updatedAt', 'search_distance', 'conferenceId', 'fetchedAt'],
-		redacted: ['data']
+	// CHASE's presence records name people by their e-mail address.
+	ChasePresence: { visible: ['conferenceId', 'exportedAt'] },
+	ChasePresenceParticipant: { visible: ['kind', 'committeeId'], redacted: ['email'] },
+	ChasePresenceRepresentation: {
+		visible: ['id', 'type', 'alpha2Code', 'alpha3Code', 'icon', 'name']
 	},
+	ChasePresenceEvent: { visible: ['id', 'committeeId', 'present', 'type', 'timestamp'] },
 	NsaCard: {
 		visible: ['conferenceParticipantId', 'cardNumber', 'nsaIcon', 'nsaName'],
 		redacted: ['givenName', 'familyName', 'code']

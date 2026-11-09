@@ -681,37 +681,35 @@ export type Certificate = {
   sessions: String[]    
 };
 		
-export type Chasepresence = {
-  conference: (p?: {
-    orderBy?: ConferenceOrderInputArgument | null | undefined,
-    where?: ConferenceWhereInputArgument | null | undefined
-  }) => Conference,
+export type ChasePresence = {
   conferenceId: ID,
-  createdAt: DateTime,
-  data: JSON,
-  fetchedAt: DateTime,
-  search_distance: Float | null,
-  updatedAt: DateTime    
+  exportedAt: String,
+  participants: () => ChasePresenceParticipant[]    
 };
 		
-export type ChasepresenceOrderInputArgument = {
-  conferenceId?: SortingParameter | null | undefined,
-  createdAt?: SortingParameter | null | undefined,
-  data?: SortingParameter | null | undefined,
-  fetchedAt?: SortingParameter | null | undefined,
-  updatedAt?: SortingParameter | null | undefined    
+export type ChasePresenceEvent = {
+  committeeId: ID,
+  id: ID,
+  present: Boolean,
+  timestamp: String,
+  type: String    
 };
 		
-export type ChasepresenceWhereInputArgument = {
-  AND?: ChasepresenceWhereInputArgument[] | undefined,
-  NOT?: ChasepresenceWhereInputArgument | null | undefined,
-  OR?: ChasepresenceWhereInputArgument[] | undefined,
-  conference?: ConferenceWhereInputArgument | null | undefined,
-  conferenceId?: IDWhereInputArgument | null | undefined,
-  createdAt?: DateTimeWhereInputArgument | null | undefined,
-  data?: JSONWhereInputArgument | null | undefined,
-  fetchedAt?: DateTimeWhereInputArgument | null | undefined,
-  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+export type ChasePresenceParticipant = {
+  committeeId: ID | null,
+  email: String,
+  events: () => ChasePresenceEvent[],
+  kind: String,
+  representation: () => ChasePresenceRepresentation | null    
+};
+		
+export type ChasePresenceRepresentation = {
+  alpha2Code: String | null,
+  alpha3Code: String | null,
+  icon: String | null,
+  id: ID,
+  name: String | null,
+  type: String    
 };
 		
 export type CollectiveGroup = {
@@ -3643,15 +3641,8 @@ export type Query = {
     targetUserId: ID
   }) => Boolean,
   chasePresence: (p: {
-    id: ID
-  }) => Chasepresence,
-  chasePresences: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: ChasepresenceOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: ChasepresenceWhereInputArgument | null | undefined
-  }) => Chasepresence[],
+    conferenceId: ID
+  }) => ChasePresence | null,
   checkTeamInvitationEmails: (p: {
     conferenceId: ID,
     emails: String[]
@@ -5222,16 +5213,6 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: CalendartrackWhereInputArgument | null | undefined
   }) => Calendartrack[],
-  chasePresence: (p: {
-    id: ID
-  }) => Chasepresence,
-  chasePresences: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: ChasepresenceOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: ChasepresenceWhereInputArgument | null | undefined
-  }) => Chasepresence[],
   committee: (p: {
     id: ID
   }) => Committee,
@@ -6354,7 +6335,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chasePresence", "chasePresences", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

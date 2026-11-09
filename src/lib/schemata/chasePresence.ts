@@ -44,7 +44,7 @@ export type ChasePresenceParticipant = ChasePresence['participants'][number];
 export type ChasePresenceRepresentation = z.infer<typeof representationSchema>;
 
 /**
- * CHASE's presence as the link stored it (`chasePresence.data`). The browser's client turns
+ * CHASE's presence as the link answers it (the `chasePresence` query). The browser's client turns
  * date-like strings into `Date`s on the way in (`nativeDateExchange`), which the export's schema,
  * written for files, does not take: written as JSON again they are the strings they were.
  */

@@ -1,23 +1,20 @@
-import { isDeepStrictEqual } from 'node:util';
 import { db, schema } from '#api/db/db';
 import { eq } from 'drizzle-orm';
-import { chasePresencePubsub, instanceLinkPubsub } from '#api/pubsub';
+import { instanceLinkPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
-import { parseLinkedPresence } from '#lib/schemata/chasePresence';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { watchChaseTables, type ChaseTables } from './chaseTables';
 import { linkAccessToken, linkConfig } from './linkAuth';
 import { syncLinkRow } from './chaseLinkService';
 import { createGate, handled } from './liveTable';
-import { joinPresence, presenceFromChase, type ChasePresenceTables } from './presenceMirror';
 import { syncResolutions } from './resolutionSync';
 
 /**
  * The link worker (`docs/plans/chase-link.md`): reads back what the linked CHASE records about this
- * instance's conferences - their presence and the resolutions they adopted. It runs in one app
- * process at a time (a Postgres advisory lock) and keeps CHASE's tables of each conference in
- * memory through live queries (`chaseTables.ts`): a change answers with the rows of the table it
- * touched, and the presence (`chase_presence`) and the adopted resolutions (`resolution`,
+ * instance's conferences - the resolutions they adopted (presence is asked for when needed,
+ * `fetchChasePresence`). It runs in one app process at a time (a Postgres advisory lock) and keeps
+ * CHASE's tables of each conference in memory through live queries (`chaseTables.ts`): a change
+ * answers with the rows of the table it touched, and the adopted resolutions (`resolution`,
  * `resolutionSync.ts`) are worked out from memory. The WebSocket's (re)connect asks every table
  * again, since updates may have been missed while it was down. There is no timer: a dead socket is
  * noticed by graphql-ws's keep-alive, and the reconnect catches up.
@@ -25,13 +22,10 @@ import { syncResolutions } from './resolutionSync';
 
 /** pg advisory lock key for the worker, any constant no other lock uses. */
 const LEADER_LOCK_KEY = 4_812_772;
-/** A roll call writes a record per delegate; one write after it is enough. */
+/** A vote's conclusion touches the paper and its snapshot; one sync after both is enough. */
 const DEBOUNCE_MS = 1_000;
 /** First answers awaited at once, so starting up does not ask CHASE for everything at once. */
 const FIRST_ANSWERS_AT_ONCE = 4;
-
-/** What the worker reads back, each on its own schedule: a presence change never compiles a PDF. */
-type Readback = 'presence' | 'resolutions';
 
 let running: { stop: () => void } | undefined;
 
@@ -83,35 +77,27 @@ function runWorker() {
 			for (const tables of watches.values()) tables.stop();
 		});
 
-		const read = ({ readback, conferenceId }: { readback: Readback; conferenceId: string }) => {
+		const read = (conferenceId: string) => {
 			const tables = watches.get(conferenceId);
 			if (!tables) return;
-			if (readback === 'presence') {
-				if (!tables.presenceReady()) return;
-				const presence = tables.presence();
-				return recorded({ linkId: link.id, conferenceId, what: 'presence' }, () =>
-					storePresence({ conferenceId, tables: presence })
-				);
-			}
 			resolutionQueue = resolutionQueue.then(() => {
 				// read when its turn comes: the tables may have changed while it waited
 				if (stopped || !tables.resolutionsReady()) return;
 				const papers = tables.papers();
-				return recorded({ linkId: link.id, conferenceId, what: 'resolutions' }, () =>
+				return recorded({ linkId: link.id, conferenceId }, () =>
 					syncResolutions({ remote, conferenceId, papers })
 				);
 			});
 			return resolutionQueue;
 		};
 
-		const schedule = ({ readback, conferenceId }: { readback: Readback; conferenceId: string }) => {
-			const key = `${readback}:${conferenceId}`;
-			clearTimeout(timers.get(key));
+		const schedule = (conferenceId: string) => {
+			clearTimeout(timers.get(conferenceId));
 			timers.set(
-				key,
+				conferenceId,
 				setTimeout(() => {
-					timers.delete(key);
-					if (!stopped) void read({ readback, conferenceId });
+					timers.delete(conferenceId);
+					if (!stopped) void read(conferenceId);
 				}, DEBOUNCE_MS)
 			);
 		};
@@ -155,8 +141,7 @@ function runWorker() {
 						watchChaseTables({
 							remote,
 							conferenceId,
-							onPresence: () => schedule({ readback: 'presence', conferenceId }),
-							onResolutions: () => schedule({ readback: 'resolutions', conferenceId }),
+							onResolutions: () => schedule(conferenceId),
 							onError: failed,
 							gate
 						})
@@ -195,7 +180,7 @@ async function noteError({ linkId, error }: { linkId: string; error: unknown }) 
  * A failure is logged and kept for the link page; the next change or reconnect tries again.
  */
 async function recorded(
-	{ linkId, conferenceId, what }: { linkId: string; conferenceId: string; what: Readback },
+	{ linkId, conferenceId }: { linkId: string; conferenceId: string },
 	readback: () => Promise<unknown>
 ) {
 	try {
@@ -207,38 +192,7 @@ async function recorded(
 			.where(eq(schema.instanceLink.id, linkId));
 		instanceLinkPubsub.updated(linkId);
 	} catch (error) {
-		logger.warn('Reading back from CHASE failed', { error, conferenceId, what });
+		logger.warn('Reading back from CHASE failed', { error, conferenceId });
 		await noteError({ linkId, error });
 	}
-}
-
-/**
- * Stores one conference's presence as CHASE records it now, unless it is what is stored already:
- * every scan answers, and most change one person's events only.
- */
-async function storePresence({
-	conferenceId,
-	tables
-}: {
-	conferenceId: string;
-	tables: ChasePresenceTables;
-}) {
-	const now = new Date();
-	const data = presenceFromChase({ conferenceId, users: joinPresence(tables), now });
-	const stored = await db.query.chasePresence.findFirst({
-		where: { conferenceId },
-		columns: { data: true }
-	});
-	const before = stored && parseLinkedPresence(stored.data);
-	if (before?.success && isDeepStrictEqual(before.data.participants, data.participants)) return;
-
-	await db
-		.insert(schema.chasePresence)
-		.values({ conferenceId, data, fetchedAt: now })
-		.onConflictDoUpdate({
-			target: schema.chasePresence.conferenceId,
-			set: { data, fetchedAt: now, updatedAt: now }
-		});
-	if (!stored) chasePresencePubsub.created();
-	chasePresencePubsub.updated(conferenceId);
 }

@@ -1255,12 +1255,13 @@ bun run preview
   client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`). It
   keeps chase's tables of each conference in memory (`liveTable.ts`: a live query per page of
   1000, so a change answers with the rows of the one table it touched, and nothing is read again)
-  and works out from them the presence into `chase_presence` (the attendance import page) and the
-  adopted resolutions, rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
+  and works out from them the adopted resolutions, rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
   not deletable while linked; only the texts to render are read). **A list hears changes to the
   rows it shows, not of a row coming into its filter**: a table filtered by a column that changes
   (final papers) is asked again when another table names a row it lacks. The worker starts from
-  the `init` hook; chase's worker works the same way the other way round.
+  the `init` hook; chase's worker works the same way the other way round. **Presence is not
+  copied**: the attendance import page's `chasePresence` query asks chase's own queries when it
+  is called (`fetchChasePresence`, `chaseLink/presenceMirror.ts`).
 - **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
   the API: the dashboard's CHASE card, the
   `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
