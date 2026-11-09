@@ -168,3 +168,32 @@ describe('signed codes', () => {
 		}
 	});
 });
+
+describe('NSA cards', () => {
+	const card: SignedCodeClaims = {
+		kind: 'nsaCard',
+		userId: 'nsa-user',
+		conferenceId: 'conference1',
+		issuedAt,
+		expiresAt: issuedAt + 3 * 24 * 60 * 60,
+		cardNumber: 2
+	};
+
+	test('a card keeps its number and counts until it expires', async () => {
+		const code = await sign({ claims: card });
+		expect(await verifySignedCode({ text: code, keys, now: NOW })).toEqual({
+			valid: true,
+			claims: card,
+			code
+		});
+		expect(
+			await verifySignedCode({ text: code, keys, now: NOW + 4 * 24 * 60 * 60 * 1000 })
+		).toEqual({ valid: false, reason: 'expired' });
+	});
+
+	test('a card read from its link is the same card', async () => {
+		const code = await sign({ claims: card });
+		const link = signedCodeLink({ origin: 'https://delegator.example', code });
+		expect(parseSignedCode(link)?.claims).toEqual(card);
+	});
+});

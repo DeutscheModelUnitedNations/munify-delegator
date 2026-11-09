@@ -3,6 +3,8 @@ import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	assertTeamPermission,
 	isTeamMemberOfConference,
+	linkedChase,
+	MIRRORED_CONFERENCE,
 	PROJECT_MANAGEMENT_ROLES,
 	readableConference,
 	SEAT_PLANNING_ROLES,
@@ -13,6 +15,14 @@ import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`), with only these columns.
+	abilityBuilder.committee.allow('read').when(
+		linkedChase({
+			where: { conference: MIRRORED_CONFERENCE },
+			columns: { id: true, name: true, abbreviation: true, conferenceId: true }
+		})
+	);
+
 	// Anyone who may read the conference (`readableConference`) reads its committees: they are part
 	// of the seat overview.
 	abilityBuilder.committee

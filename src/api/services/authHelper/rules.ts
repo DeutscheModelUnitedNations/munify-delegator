@@ -30,6 +30,25 @@ export function systemAdmin(ctx: Context) {
 	return isSystemAdmin(ctx) ? ('allow' as const) : undefined;
 }
 
+/** The linked CHASE instance calling with its token, once the link is approved. */
+export async function isLinkedChase(ctx: Context) {
+	return (await ctx.linkCaller())?.status === 'ACTIVE';
+}
+
+/** The conferences CHASE mirrors: every one that is not over yet. */
+export const MIRRORED_CONFERENCE = { state: { ne: 'POST' as const } };
+
+/** Mirrored conferences whose assignment is released: only then do participants reach CHASE. */
+export const RELEASED_MIRRORED_CONFERENCE = { ...MIRRORED_CONFERENCE, assignmentReleased: true };
+
+/**
+ * For `.when(linkedChase(...))`: the rows the linked CHASE instance reads, and only the columns it
+ * mirrors. Grants nothing to anybody else.
+ */
+export function linkedChase<R>(grant: R) {
+	return async (ctx: Context) => ((await isLinkedChase(ctx)) ? grant : undefined);
+}
+
 /** System-wide admin, via the OIDC role claim. */
 export function isSystemAdmin(ctx: Context) {
 	return ctx.hasRole('admin');

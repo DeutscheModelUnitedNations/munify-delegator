@@ -1231,6 +1231,37 @@ bun run preview
   `refreshAbilities(ctx.abilities)`** before the second read: rumble resolves relational rules
   once per request, and the written row is not in that snapshot (the view mutations do).
 
+#### 14. The CHASE link
+
+- **One MUNify CHASE instance can be linked to this one**, system-wide (`docs/plans/chase-link.md`,
+  the same plan as chase's `docs/plans/delegator-link.md`). A system admin requests it on
+  `dashboard/chase-link`, a chase global admin approves it with the confirmation code;
+  unlinking on either side freezes it. `instanceLink` holds the single row: the inbound token as a
+  SHA-256 hash, the outbound one sealed under a key derived from `CERTIFICATE_SECRET`.
+- **Chase reads through link read rules**, not through dedicated queries: it calls the API with
+  the `x-munify-link-token` header (`ctx.linkCaller()`), and `linkedChase(grant)`
+  (`authHelper/rules.ts`) grants it rows of mirrored conferences (`MIRRORED_CONFERENCE`, and
+  `RELEASED_MIRRORED_CONFERENCE` for anything about participants) with only the listed columns.
+  A new field chase needs is a column in such a rule.
+- **Delegator reads chase back with its link worker** (`#api/handlers/chaseLink/linkWorker.ts`):
+  one app process at a time (a Postgres advisory lock), live queries through the generated chase
+  client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`). It
+  keeps chase's tables of each conference in memory (`liveTable.ts`: a live query per page of
+  1000, so a change answers with the rows of the one table it touched, and nothing is read again)
+  and works out from them the presence into `chase_presence` (the attendance import page) and the
+  adopted resolutions, rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
+  not deletable while linked; only the texts to render are read). **A list hears changes to the
+  rows it shows, not of a row coming into its filter**: a table filtered by a column that changes
+  (final papers) is asked again when another table names a row it lacks. The worker starts from
+  the `init` hook; chase's worker works the same way the other way round.
+- **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
+  the API: the custom roles' "In CHASE" column, the dashboard's CHASE card, the
+  `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
+- **NSA cards** are signed codes of the kind `nsaCard` (`#lib/signedCode/signedCode`, copied into
+  chase), naming the person, the conference, an expiry and the card number on the participant
+  row (`nsaCardNumber`); `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts` prints them. Chase's
+  scanner checks them, and the `live` nametags, against `signedCodeKeys`.
+
 ### Logging
 
 - **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after
@@ -1609,7 +1640,8 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Since 0.30.0 `subscribe`
   answers the unsubscribe function (it answered `{ unsubscribe }` while typed as one), result
   types carry the auto included `id`, a live query started before its first answer asks once, and
-  `onError` hears the updates a live result skips. Keep rumble at ≥ 0.30.0.
+  `onError` hears the updates a live result skips (the CHASE link reports them). Keep rumble at
+  ≥ 0.30.0.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.

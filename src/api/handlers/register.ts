@@ -8,6 +8,8 @@ import './calendar/calendarTrack';
 import './collectiveGroup/collectiveGroup';
 import './committee/committee';
 import './committeeAgendaItem/committeeAgendaItem';
+import './chaseLink/chaseLink';
+import './chasePresence/chasePresence';
 import './conference/conference';
 import './conferenceParticipant/conferenceParticipant';
 import './conferenceRole/conferenceRole';
@@ -35,6 +37,7 @@ import './schoolSuggestion/schoolSuggestion';
 import './mcpAuditEntry/mcpAuditEntry';
 import './scanLookup/scanLookup';
 import './signedCode/signedCode';
+import './nsaCard/nsaCard';
 import './seatPlanning/seatPlanning';
 import './nametagBins/nametagBins';
 import './sightingDeck/sightingDeck';
@@ -51,7 +54,8 @@ import './userReferenceInPaymentTransaction/userReferenceInPaymentTransaction';
 import './waitingListEntry/waitingListEntry';
 
 import { building, dev } from '$app/env';
-import { clientCreator } from '#api/rumble';
+import { buildSchema, clientCreator } from '#api/rumble';
+import { writeSchemaFile } from '#api/services/schemaFile';
 
 if (dev || building) {
 	await clientCreator({
@@ -63,4 +67,6 @@ if (dev || building) {
 		// selection embedded and overwrites the link other queries of the same field hold.
 		autoIncludeIdField: true
 	});
+	// The linked CHASE generates its client of this API from it (`bun run link:client` there).
+	await writeSchemaFile({ schema: buildSchema(), path: 'schema.graphql' });
 }

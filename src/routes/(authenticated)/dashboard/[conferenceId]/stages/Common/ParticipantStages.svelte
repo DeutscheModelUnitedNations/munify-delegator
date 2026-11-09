@@ -8,6 +8,7 @@
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import type Certificate from './Certificate.svelte';
 	import SelectionPendingStage from './SelectionPendingStage.svelte';
+	import ChaseCard from './ChaseCard.svelte';
 
 	/**
 	 * What a delegation member or single participant sees in each phase of the conference: their
@@ -67,6 +68,7 @@
 	<ApplicationRejected conferenceIdForWaitingListLink={isPreparing ? conferenceId : undefined} />
 {:else if isPreparing}
 	<ConferenceStatusWidget {conferenceId} {status} ofAgeAtConference={ofAge} surveyUserId={userId} />
+	<ChaseCard {conferenceId} {userId} />
 	{@render preparation()}
 {:else if conferenceState === 'POST'}
 	{#await import('./Certificate.svelte') then { default: LazyCertificate }}

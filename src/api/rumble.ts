@@ -28,7 +28,8 @@ export const {
 	pubsub,
 	createYoga,
 	enum_,
-	clientCreator
+	clientCreator,
+	buildSchema
 } = rumble({
 	db,
 	schema,

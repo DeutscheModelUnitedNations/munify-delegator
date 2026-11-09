@@ -5,6 +5,8 @@ import {
 	isParticipantOf,
 	isSystemAdmin,
 	isTeamMemberOf,
+	linkedChase,
+	MIRRORED_CONFERENCE,
 	PROJECT_MANAGEMENT_ROLES,
 	publicConference,
 	systemAdmin
@@ -39,6 +41,23 @@ const MEMBERS_ONLY = {
 const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false, emailsPerSecond: false };
 
 export function registerConferenceAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`), with only these columns.
+	abilityBuilder.conference.allow('read').when(
+		linkedChase({
+			where: MIRRORED_CONFERENCE,
+			columns: {
+				id: true,
+				title: true,
+				location: true,
+				startConference: true,
+				endConference: true,
+				state: true,
+				assignmentReleased: true,
+				language: true
+			}
+		})
+	);
+
 	// Anyone (signed in or not) reads the public conferences - open for registration or, from the
 	// assignment on, for the waiting list - without the members-only and team-only columns. Any other
 	// conference is read only by those who have a part in it (the rules below).

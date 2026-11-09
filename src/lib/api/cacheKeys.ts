@@ -2,13 +2,17 @@ import type { KeyingConfig } from '@urql/exchange-graphcache';
 import type { IntrospectionQuery } from 'graphql';
 
 /**
- * Types keyed by something other than `id`. A nation is identified by its ISO code; it has no
- * surrogate key.
+ * Types keyed by something other than `id`. A nation is identified by its ISO code, and what the
+ * linked CHASE recorded about a conference's presence by the conference; neither has a surrogate
+ * key.
  *
  * `id` itself never needs selecting: the generated client adds it to every selection of a type
  * that has one (`autoIncludeIdField` in `src/api/handlers/register.ts`).
  */
-const customKeyFields: Record<string, string> = { Nation: 'alpha3Code' };
+const customKeyFields: Record<string, string> = {
+	Nation: 'alpha3Code',
+	Chasepresence: 'conferenceId'
+};
 
 type IntrospectionType = IntrospectionQuery['__schema']['types'][number];
 type IntrospectionObjectType = Extract<IntrospectionType, { kind: 'OBJECT' }>;

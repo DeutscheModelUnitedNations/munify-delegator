@@ -6,8 +6,10 @@ import {
 	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
+	linkedChase,
 	PARTICIPANT_CARE_ROLES,
 	participatesIn,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
@@ -15,6 +17,16 @@ import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
 
 export function registerConferenceParticipantAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
+	// once the assignment is released.
+	abilityBuilder.conferenceParticipant.allow('read').when(
+		linkedChase({
+			where: { conference: RELEASED_MIRRORED_CONFERENCE },
+			// the card number, so CHASE's scanner refuses NSA cards printed before the current one
+			columns: { id: true, userId: true, conferenceId: true, nsaCardNumber: true }
+		})
+	);
+
 	// System admins read, update and delete every participant row.
 	abilityBuilder.conferenceParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 

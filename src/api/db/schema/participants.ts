@@ -58,6 +58,11 @@ export const conferenceParticipant = snakeCase.table(
 		assignedDocumentNumber: integer('assigend_document_number'),
 		accessCardId: text(),
 		/**
+		 * The number of the person's current printed NSA card (`nsaCard/`). Printing a new card raises
+		 * it, so scanners refuse the earlier ones.
+		 */
+		nsaCardNumber: integer().default(1).notNull(),
+		/**
 		 * The person's own school, the only place a school of someone taking part is kept. Given when
 		 * they apply (or carried over from their waiting list entry), changed by themselves or by
 		 * participant care, and kept when the assignment merges delegations of several schools, so

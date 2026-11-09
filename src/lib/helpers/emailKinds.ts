@@ -9,8 +9,18 @@ import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
 export const APPLICATION_REMINDER_DAYS = 3;
 /** Days before the conference the reminder of open paperwork and payment goes out. */
 export const OPEN_ISSUES_REMINDER_DAYS = 14;
+/**
+ * Days before the conference the invitation to look around MUNify CHASE goes out; only while an
+ * instance is linked (`docs/plans/chase-link.md`).
+ */
+export const CHASE_INTRO_REMINDER_DAYS = 10;
 /** Days before the conference the reminder to get MUNify ready on the phone goes out. */
 export const PHONE_READY_REMINDER_DAYS = 7;
+/**
+ * The days that pass between two reminders to the same person: one due sooner waits for the next
+ * sweep after them, unless its window closes before (`#api/handlers/email/reminderSpacing`).
+ */
+export const REMINDER_GAP_DAYS = 2;
 /** Days before a survey's deadline the reminder to answer it goes out. */
 export const SURVEY_REMINDER_DAYS = 3;
 
@@ -66,9 +76,17 @@ export function settingsEmailKinds(changedFields: readonly string[]): EmailkindE
 export const REMINDER_KINDS = [
 	'APPLICATION_DEADLINE_REMINDER',
 	'OPEN_ISSUES_REMINDER',
+	'CHASE_INTRO_REMINDER',
 	'PHONE_READY_REMINDER',
 	'SURVEY_REMINDER'
 ] as const satisfies readonly EmailkindEnum[];
+
+/** The kinds that exist only while a CHASE instance is linked. */
+const CHASE_KINDS = ['CHASE_INTRO_REMINDER'] as const satisfies readonly EmailkindEnum[];
+
+/** Whether the kind applies: a CHASE kind only while an instance is linked. */
+export const kindApplies = ({ kind, chaseLinked }: { kind: string; chaseLinked: boolean }) =>
+	chaseLinked || !CHASE_KINDS.some((chaseKind) => chaseKind === kind);
 
 /** How the e-mail page groups the mails, in this order. */
 export const EMAIL_GROUPS = [

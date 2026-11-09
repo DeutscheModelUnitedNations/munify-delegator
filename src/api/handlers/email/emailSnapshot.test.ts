@@ -4,7 +4,13 @@ vi.mock('#api/db/db', () => ({ db: {} }));
 
 const { delegationPart, reviewPart } = await import('./emailSnapshot');
 
-const germany = { id: 'r1', kind: 'NATION' as const, name: null, nationAlpha3Code: 'DEU' };
+const germany = {
+	id: 'r1',
+	kind: 'NATION' as const,
+	name: null,
+	nationAlpha3Code: 'DEU',
+	chaseAccess: 'SPECTATOR' as const
+};
 
 describe('delegationPart', () => {
 	test('is nothing outside a delegation', () => {
@@ -17,20 +23,21 @@ describe('delegationPart', () => {
 		expect(
 			delegationPart({
 				delegation: { applied: true, assignedRole: germany },
-				assignedCommittee: { abbreviation: 'GA' }
+				assignedCommittee: { id: 'c-ga', abbreviation: 'GA' }
 			})
-		).toEqual({ applied: true, role: germany, committee: 'GA' });
+		).toEqual({ applied: true, role: germany, committee: 'GA', committeeId: 'c-ga' });
 	});
 
 	test('a member without a role or committee has none', () => {
 		expect(delegationPart({ delegation: { applied: false } })).toEqual({
 			applied: false,
 			role: null,
-			committee: null
+			committee: null,
+			committeeId: null
 		});
 		expect(
 			delegationPart({ delegation: { applied: true, assignedRole: null }, assignedCommittee: null })
-		).toEqual({ applied: true, role: null, committee: null });
+		).toEqual({ applied: true, role: null, committee: null, committeeId: null });
 	});
 });
 

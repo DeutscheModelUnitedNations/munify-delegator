@@ -5,9 +5,11 @@ import {
 	hasTeamPermission,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
+	linkedChase,
 	maskedUntilRelease,
 	onceReleased,
 	PARTICIPANT_CARE_ROLES,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
@@ -26,6 +28,20 @@ function supervisedMember(ctx: Context) {
 }
 
 export function registerDelegationMemberAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
+	// once the assignment is released.
+	abilityBuilder.delegationMember.allow('read').when(
+		linkedChase({
+			where: { conference: RELEASED_MIRRORED_CONFERENCE },
+			columns: {
+				id: true,
+				delegationId: true,
+				conferenceParticipantId: true,
+				assignedCommitteeId: true
+			}
+		})
+	);
+
 	abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Delegates read the members of their own delegation, supervisors those of the delegations they

@@ -87,7 +87,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'mediaConsentStatus',
 			'ofAgeAtConference',
 			'paymentStatus',
-			'termsAndConditions'
+			'termsAndConditions',
+			'nsaCardNumber'
 		],
 		// The number printed on the person's badge.
 		redacted: ['accessCardId']
@@ -298,6 +299,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	Conferencerole: {
 		visible: [
 			...ROW,
+			'chaseAccess',
 			'abbreviation',
 			'conferenceId',
 			'description',
@@ -367,7 +369,32 @@ const FIELDS: Record<string, TypeClassification> = {
 			'startedAt'
 		]
 	},
-	Resolution: { visible: [...ROW, 'committeeId', 'conferenceId', 'fileId', 'title'] },
+	Resolution: {
+		visible: [
+			...ROW,
+			'committeeId',
+			'conferenceId',
+			'fileId',
+			'title',
+			'chasePaperId',
+			'chaseSnapshotId'
+		]
+	},
+
+	// --- The CHASE link -------------------------------------------------------------------------
+	Instancelink: {
+		visible: [...ROW, 'remoteUrl', 'status', 'linkedAt', 'lastEventAt', 'lastReconcileAt'],
+		redacted: ['confirmationCode', 'inboundTokenHash', 'outboundToken', 'lastError']
+	},
+	// CHASE's presence records hold the people's e-mail addresses.
+	Chasepresence: {
+		visible: ['createdAt', 'updatedAt', 'search_distance', 'conferenceId', 'fetchedAt'],
+		redacted: ['data']
+	},
+	NsaCard: {
+		visible: ['conferenceParticipantId', 'cardNumber', 'nsaIcon', 'nsaName'],
+		redacted: ['givenName', 'familyName', 'code']
+	},
 	Storedfile: {
 		// Every stored file is a conference picture, template, site plan or resolution.
 		visible: [...ROW, 'fileName', 'key', 'mimeType', 'purpose', 'size', 'uploadedById', 'url'],

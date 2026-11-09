@@ -6,6 +6,8 @@ import { appRolesOf, roleNamesInClaims } from './services/oidc/roleClaims';
 import { userInfoClaims } from './services/oidc/userInfoClaims';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { findLinkCaller, type LinkCaller } from '#api/handlers/chaseLink/linkCaller';
+import { LINK_TOKEN_HEADER } from '#api/handlers/chaseLink/linkTokens';
 
 /**
  * The system roles a session grants: the role names in the claim `OIDC_ROLE_CLAIM` names, in the
@@ -110,6 +112,8 @@ export function requestIdentity(locals: RequestEvent['locals']) {
 export function context(req: RequestEvent) {
 	const { session, OIDCRoleNames, user, mcp } = requestIdentity(req.locals);
 	const claims = sessionClaims(session);
+	const linkToken = req.request.headers.get(LINK_TOKEN_HEADER);
+	let linkCaller: Promise<LinkCaller | undefined> | undefined;
 
 	return {
 		oidc: {
@@ -140,7 +144,9 @@ export function context(req: RequestEvent) {
 			}
 			return user;
 		},
-		hasRole: (role: OidcRole) => OIDCRoleNames.includes(role)
+		hasRole: (role: OidcRole) => OIDCRoleNames.includes(role),
+		/** The linked CHASE instance, when it is the one calling (`#api/handlers/chaseLink`). */
+		linkCaller: () => (linkCaller ??= findLinkCaller(linkToken))
 	};
 }
 

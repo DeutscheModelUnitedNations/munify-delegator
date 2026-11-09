@@ -2,14 +2,17 @@ import { m } from '#lib/paraglide/messages';
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	PAPER_ROLES,
-	PARTICIPANT_CARE_ROLES,
-	TEAM_ADMIN_ROLES,
 	isCaredForUser,
 	isSystemAdmin,
 	isTeamMemberOf,
+	linkedChase,
+	MIRRORED_CONFERENCE,
+	PAPER_ROLES,
+	PARTICIPANT_CARE_ROLES,
 	participatesIn,
-	systemAdmin
+	RELEASED_MIRRORED_CONFERENCE,
+	systemAdmin,
+	TEAM_ADMIN_ROLES
 } from '#api/services/authHelper/rules';
 import { assertAllowed, callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -87,6 +90,20 @@ function supervisedByCaller(ctx: Context) {
 }
 
 export function registerUserAbilities() {
+	// The linked CHASE mirrors the team of every conference it mirrors, and the participants once the
+	// assignment is released: their name and email only (`docs/plans/chase-link.md`).
+	abilityBuilder.user.allow('read').when(
+		linkedChase({
+			where: {
+				OR: [
+					{ teamMember: { conference: MIRRORED_CONFERENCE } },
+					{ conferenceParticipants: { conference: RELEASED_MIRRORED_CONFERENCE } }
+				]
+			},
+			columns: { id: true, email: true, givenName: true, familyName: true }
+		})
+	);
+
 	abilityBuilder.user.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Everyone reads their own account, but for the care notes about them, and updates it.

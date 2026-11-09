@@ -10,7 +10,13 @@ import {
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = new Date('2026-11-01T12:00:00Z');
-const france = { id: 'role-fra', kind: 'NATION' as const, name: null, nationAlpha3Code: 'FRA' };
+const france = {
+	id: 'role-fra',
+	kind: 'NATION' as const,
+	name: null,
+	nationAlpha3Code: 'FRA',
+	chaseAccess: 'SPECTATOR' as const
+};
 
 let counter = 0;
 function person(overrides: Partial<SnapshotPerson> = {}): SnapshotPerson {
@@ -57,6 +63,7 @@ function snapshot(
 			startConference: new Date(now.getTime() + 60 * DAY),
 			timezone: 'Europe/Berlin',
 			certificateAvailable: false,
+			chaseUrl: null,
 			...conference
 		},
 		people,
@@ -71,9 +78,12 @@ const kindsOf = (snap: EmailSnapshot, at = now) =>
 		(email) => `${email.kind}:${email.recipient.id}:${email.subjectKey}`
 	);
 
-const seated = () => person({ delegation: { applied: true, role: france, committee: 'GV' } });
-const rejected = () => person({ delegation: { applied: true, role: null, committee: null } });
-const unsent = () => person({ delegation: { applied: false, role: null, committee: null } });
+const seated = () =>
+	person({ delegation: { applied: true, role: france, committee: 'GV', committeeId: 'c-gv' } });
+const rejected = () =>
+	person({ delegation: { applied: true, role: null, committee: null, committeeId: null } });
+const unsent = () =>
+	person({ delegation: { applied: false, role: null, committee: null, committeeId: null } });
 
 describe('the assignment result', () => {
 	test('accepts the seated and rejects who applied without a seat, once released', () => {
@@ -167,7 +177,9 @@ describe('paperwork and payment', () => {
 describe('reminders', () => {
 	test('reminds unsent applications in the last days of the application phase', () => {
 		const a = unsent();
-		const sent = person({ delegation: { applied: true, role: null, committee: null } });
+		const sent = person({
+			delegation: { applied: true, role: null, committee: null, committeeId: null }
+		});
 		const deadline = new Date(now.getTime() + 2 * DAY);
 		const snap = snapshot([a, sent], {
 			state: 'PARTICIPANT_REGISTRATION',
@@ -239,7 +251,9 @@ describe('survey reminders', () => {
 	test('remind everybody seated who has not answered, in the last days before the deadline', () => {
 		const answered = seated();
 		const open = seated();
-		const unseated = person({ delegation: { applied: true, role: null, committee: null } });
+		const unseated = person({
+			delegation: { applied: true, role: null, committee: null, committeeId: null }
+		});
 		const deadline = new Date(now.getTime() + 2 * DAY);
 		const snap = snapshot([answered, open, unseated], {}, [], [survey(deadline, [answered])]);
 		expect(surveyKinds(snap)).toEqual([
@@ -349,5 +363,49 @@ describe('the team welcome', () => {
 		expect(due?.teamMember).toBe(a);
 		expect(due?.recipient).toBe(a.user);
 		expect(due?.person).toBeUndefined();
+	});
+});
+
+describe('the CHASE introduction', () => {
+	const start = new Date(now.getTime() + 8 * DAY);
+	const linked = { startConference: start, chaseUrl: 'https://chase.example' };
+	const key = (p: SnapshotPerson) =>
+		`CHASE_INTRO_REMINDER:${p.user.id}:${start.toISOString().slice(0, 10)}`;
+
+	test('invites delegates with a committee, NSAs and singles with CHASE access, ten days before', () => {
+		const delegate = seated();
+		const nsa = person({
+			delegation: {
+				applied: true,
+				role: { ...france, id: 'nsa', kind: 'NON_STATE_ACTOR', nationAlpha3Code: null },
+				committee: null,
+				committeeId: null
+			}
+		});
+		const press = person({
+			single: { applied: true, role: { ...france, id: 'press', kind: 'CUSTOM' } }
+		});
+		const outsider = person({
+			single: {
+				applied: true,
+				role: { ...france, id: 'host', kind: 'CUSTOM', chaseAccess: 'NONE' }
+			}
+		});
+		const kinds = kindsOf(snapshot([delegate, nsa, press, outsider], linked));
+		expect(kinds.filter((k) => k.startsWith('CHASE_INTRO_REMINDER'))).toEqual([
+			key(delegate),
+			key(nsa),
+			key(press)
+		]);
+		expect(
+			kindsOf(
+				snapshot([delegate], { ...linked, startConference: new Date(now.getTime() + 12 * DAY) })
+			)
+		).not.toContain(key(delegate));
+	});
+
+	test('owes nothing while no CHASE instance is linked', () => {
+		const kinds = kindsOf(snapshot([seated()], { ...linked, chaseUrl: null }));
+		expect(kinds.some((k) => k.startsWith('CHASE_INTRO_REMINDER'))).toBe(false);
 	});
 });

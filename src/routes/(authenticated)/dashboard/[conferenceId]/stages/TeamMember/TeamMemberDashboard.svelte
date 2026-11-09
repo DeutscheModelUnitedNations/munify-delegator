@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
 	import DashboardLinkCards from '#lib/components/dashboard/DashboardLinkCards.svelte';
+	import ChaseStatusCard from './ChaseStatusCard.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { isOnTeam } from '#lib/helpers/teamAccess';
@@ -57,3 +58,4 @@
 </script>
 
 <DashboardLinkCards {links} {context} {conferenceId} />
+<ChaseStatusCard {conferenceId} />

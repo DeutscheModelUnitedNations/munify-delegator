@@ -21,7 +21,8 @@ const conference: EmailSnapshot['conference'] = {
 	applicationDeadline: new Date('2026-12-01T12:00:00Z'),
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
-	certificateAvailable: true
+	certificateAvailable: true,
+	chaseUrl: null
 };
 
 const person: SnapshotPerson = {
@@ -41,8 +42,15 @@ const person: SnapshotPerson = {
 	didAttend: true,
 	delegation: {
 		applied: true,
-		role: { id: 'r1', kind: 'NATION', name: null, nationAlpha3Code: 'FRA' },
-		committee: 'GV'
+		role: {
+			id: 'r1',
+			kind: 'NATION',
+			name: null,
+			nationAlpha3Code: 'FRA',
+			chaseAccess: 'SPECTATOR'
+		},
+		committee: 'GV',
+		committeeId: 'c-gv'
 	},
 	single: null,
 	supervisor: null,

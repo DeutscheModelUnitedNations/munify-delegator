@@ -44,6 +44,43 @@ export function issuePrintCode({
 	return signCode({ kind: 'print', userId, conferenceId, issuedAt: secondsOf(now) });
 }
 
+/** The largest card number a card carries; a reprint past it is refused. */
+export const MAX_NSA_CARD_NUMBER = 0xffff;
+
+/**
+ * When an NSA card for a conference ending on `endConference` stops counting: the end of the day
+ * after that day (Unix seconds, UTC).
+ */
+export function nsaCardExpiry(endConference: Date) {
+	const end = new Date(endConference);
+	end.setUTCHours(0, 0, 0, 0);
+	return secondsOf(end.getTime()) + 2 * 24 * 60 * 60;
+}
+
+/** The code on an NSA's printed card in the conference, with the person's current card number. */
+export function issueNsaCardCode({
+	userId,
+	conferenceId,
+	endConference,
+	cardNumber,
+	now = Date.now()
+}: {
+	userId: string;
+	conferenceId: string;
+	endConference: Date;
+	cardNumber: number;
+	now?: number;
+}) {
+	return signCode({
+		kind: 'nsaCard',
+		userId,
+		conferenceId,
+		issuedAt: secondsOf(now),
+		expiresAt: nsaCardExpiry(endConference),
+		cardNumber
+	});
+}
+
 /** The code of a participation certificate stating `certificate`. */
 export function issueCertificateCode({
 	certificate,

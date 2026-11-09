@@ -3,6 +3,8 @@ import {
 	PAPER_ROLES,
 	isInOwnDelegation,
 	isTeamMemberOf,
+	linkedChase,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
@@ -14,6 +16,20 @@ import { supervisedDelegationOf } from '../paper/paperPermissions';
  */
 export function registerPaperVersionAbilities() {
 	abilityBuilder.paperVersion.allow(['read', 'update', 'delete']).when(systemAdmin);
+
+	// The accepted versions of working papers, for the linked CHASE's drafts.
+	abilityBuilder.paperVersion.allow('read').when(
+		linkedChase({
+			where: {
+				status: 'ACCEPTED' as const,
+				paper: {
+					type: 'WORKING_PAPER' as const,
+					delegation: { conference: RELEASED_MIRRORED_CONFERENCE }
+				}
+			},
+			columns: { id: true, paperId: true, version: true, content: true, status: true }
+		})
+	);
 
 	// Authors read every version of their own papers, drafts included.
 	abilityBuilder.paperVersion.allow('read').when((ctx) => {

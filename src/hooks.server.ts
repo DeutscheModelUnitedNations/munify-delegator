@@ -1,13 +1,19 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection';
 import { graphqlLogger, logger } from '#lib/logger';
-import { sequence, type Handle, type HandleServerError } from '@sveltejs/kit/hooks';
+import {
+	sequence,
+	type Handle,
+	type HandleServerError,
+	type ServerInit
+} from '@sveltejs/kit/hooks';
 
 import { oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
 import { paraglideMiddleware } from '#lib/paraglide/server';
 import { impersonationHandle } from '#api/handlers/user/userPermissions';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
+import { resumeLinkWorker } from '#api/handlers/chaseLink/linkWorker';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 
 // Initialize Sentry (only if DSN provided and not building)
@@ -26,6 +32,12 @@ if (!building && SENTRY_DSN) {
 	});
 	Sentry.pinoIntegration.untrackLogger(graphqlLogger);
 }
+
+// Picks the CHASE link up again (`docs/plans/chase-link.md`); never in the way of starting.
+export const init: ServerInit = async () => {
+	if (building) return;
+	await resumeLinkWorker().catch((error) => logger.error('Resuming the CHASE link failed', error));
+};
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>

@@ -15,8 +15,9 @@ function mayOpen({ id, access }: { id: string; access: TeamAccess }) {
 /**
  * Where a team member who opens a code's link is sent, or `null` when their part in the team
  * does not let them check it:
- * - a digital nametag: the person's user card for participant care, the entrance scanner (which
- *   checks the code again and records nothing without a session) for the rest of the team;
+ * - a digital nametag or an NSA card: the person's user card for participant care, the entrance
+ *   scanner (which checks the code again and records nothing without a session) for the rest of
+ *   the team;
  * - the application documents: the postal registration, opened on the person.
  * Certificates are public and never come here.
  */

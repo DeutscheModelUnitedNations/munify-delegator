@@ -40,7 +40,8 @@ const conference: EmailSnapshot['conference'] = {
 	applicationDeadline: new Date('2026-12-01T12:00:00Z'),
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
-	certificateAvailable: true
+	certificateAvailable: true,
+	chaseUrl: null
 };
 
 const user: SnapshotPerson['user'] = {

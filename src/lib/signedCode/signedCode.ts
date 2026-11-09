@@ -28,6 +28,7 @@ const CLAIM_EXP = 4;
 const CLAIM_IAT = 6;
 const CLAIM_KIND = 'k';
 const CLAIM_CONFERENCE = 'c';
+const CLAIM_CARD_NUMBER = 'v';
 
 /** How long a live code counts, counted from when it was issued. */
 export const LIVE_CODE_VALIDITY_SECONDS = 10 * 60;
@@ -39,7 +40,11 @@ const CLOCK_SKEW_SECONDS = 2 * 60;
  * - `live`: the digital nametag, renewed while it is shown and good for minutes only, so a
  *   screenshot passed on is of little use;
  * - `print`: the application documents, printed and sent by post, good for as long as the paper;
- * - `certificate`: a participation certificate, which anybody may check (`/validateCertificate`).
+ * - `certificate`: a participation certificate, which anybody may check (`/validateCertificate`);
+ * - `nsaCard`: a non-state actor's printed card, which MUNify CHASE's chairs scan to check them in
+ *   and out of committees (`docs/plans/chase-link.md`). Good until the day after the conference
+ *   ends, and only while its `cardNumber` is the person's current one: printing a new card raises
+ *   it, so a lost card stops counting.
  */
 export type SignedCodeClaims =
 	| {
@@ -52,11 +57,24 @@ export type SignedCodeClaims =
 			expiresAt: number;
 	  }
 	| { kind: 'print'; userId: string; conferenceId: string; issuedAt: number }
+	| {
+			kind: 'nsaCard';
+			userId: string;
+			conferenceId: string;
+			issuedAt: number;
+			expiresAt: number;
+			cardNumber: number;
+	  }
 	| { kind: 'certificate'; issuedAt: number; certificate: CertificateJWTPayload };
 
 export type SignedCodeKind = SignedCodeClaims['kind'];
 
-const KIND_LETTERS: Record<SignedCodeKind, string> = { live: 'l', print: 'p', certificate: 'c' };
+const KIND_LETTERS: Record<SignedCodeKind, string> = {
+	live: 'l',
+	print: 'p',
+	certificate: 'c',
+	nsaCard: 'n'
+};
 
 function claimsMap(claims: SignedCodeClaims): Map<number | string, unknown> {
 	const map = new Map<number | string, unknown>([
@@ -71,7 +89,8 @@ function claimsMap(claims: SignedCodeClaims): Map<number | string, unknown> {
 	}
 	map.set(CLAIM_SUB, claims.userId);
 	map.set(CLAIM_CONFERENCE, claims.conferenceId);
-	if (claims.kind === 'live') map.set(CLAIM_EXP, claims.expiresAt);
+	if (claims.kind === 'live' || claims.kind === 'nsaCard') map.set(CLAIM_EXP, claims.expiresAt);
+	if (claims.kind === 'nsaCard') map.set(CLAIM_CARD_NUMBER, claims.cardNumber);
 	return map;
 }
 
@@ -88,7 +107,7 @@ function certificateOf(map: Map<unknown, unknown>): CertificateJWTPayload | null
 	return { n, t, s, e, a };
 }
 
-/** The claims of a code naming a participant (`print` or `live`), or `null`. */
+/** The claims of a code naming a participant (`print`, `live` or `nsaCard`), or `null`. */
 function participantClaims({
 	map,
 	kind,
@@ -103,8 +122,12 @@ function participantClaims({
 	if (!isId(userId) || !isId(conferenceId)) return null;
 	if (kind === KIND_LETTERS.print) return { kind: 'print', userId, conferenceId, issuedAt };
 	const expiresAt = map.get(CLAIM_EXP);
-	if (kind !== KIND_LETTERS.live || !isTime(expiresAt)) return null;
-	return { kind: 'live', userId, conferenceId, issuedAt, expiresAt };
+	if (!isTime(expiresAt)) return null;
+	if (kind === KIND_LETTERS.live)
+		return { kind: 'live', userId, conferenceId, issuedAt, expiresAt };
+	const cardNumber = map.get(CLAIM_CARD_NUMBER);
+	if (kind !== KIND_LETTERS.nsaCard || !isTime(cardNumber)) return null;
+	return { kind: 'nsaCard', userId, conferenceId, issuedAt, expiresAt, cardNumber };
 }
 
 /** The claims a decoded payload holds, or `null` when it is not one of ours. */
@@ -256,7 +279,7 @@ function fromBase64Url(text: string): Uint8Array<ArrayBuffer> {
 function expired({ claims, now }: { claims: SignedCodeClaims; now: number }) {
 	const seconds = now / 1000;
 	if (claims.issuedAt > seconds + CLOCK_SKEW_SECONDS) return true;
-	return claims.kind === 'live' && claims.expiresAt < seconds;
+	return (claims.kind === 'live' || claims.kind === 'nsaCard') && claims.expiresAt < seconds;
 }
 
 /**

@@ -4,6 +4,7 @@ import {
 	MUTED,
 	NEUTRAL,
 	PRIMARY,
+	encodable,
 	roundedRectPath,
 	WHITE,
 	type NametagFonts
@@ -43,22 +44,6 @@ const PAGE_HEIGHT = 595.28;
 const MARGIN = 44;
 const HEADER_HEIGHT = 56;
 const FOOTER_HEIGHT = 34;
-
-function isKnown({ known, char }: { known: Set<number>; char: string }): boolean {
-	return known.has(char.codePointAt(0) ?? -1);
-}
-
-function encodableChar({ char, known }: { char: string; known: Set<number> }): string {
-	if (isKnown({ known, char })) return char;
-	const plain = char.normalize('NFD').replace(/[̀-ͯ]/g, '');
-	return plain && [...plain].every((c) => isKnown({ known, char: c })) ? plain : '?';
-}
-
-/** Text the font has no glyph for loses its diacritics, or becomes a "?". */
-function encodable({ font, text }: { font: PDFFont; text: string }): string {
-	const known = new Set(font.getCharacterSet());
-	return [...text].map((char) => encodableChar({ char, known })).join('');
-}
 
 interface Row {
 	text: string;

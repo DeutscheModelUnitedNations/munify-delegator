@@ -4,9 +4,11 @@ import {
 	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
+	linkedChase,
 	maskedUntilRelease,
 	onceReleased,
 	PARTICIPANT_CARE_ROLES,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
@@ -23,6 +25,15 @@ function supervisedParticipant(ctx: Context) {
 }
 
 export function registerSingleParticipantAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
+	// once the assignment is released.
+	abilityBuilder.singleParticipant.allow('read').when(
+		linkedChase({
+			where: { conference: RELEASED_MIRRORED_CONFERENCE },
+			columns: { id: true, conferenceParticipantId: true, assignedRoleId: true }
+		})
+	);
+
 	abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Everyone reads their own registration; `assignedRoleId` stays masked until the assignment is

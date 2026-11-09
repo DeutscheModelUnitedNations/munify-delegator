@@ -95,6 +95,11 @@ export function createStorage(config: StorageConfig) {
 			return internal.getContentLength(key);
 		},
 
+		/** The object's bytes, or null while nothing is stored under `key`. */
+		read(key: string) {
+			return internal.getObjectArrayBuffer(key);
+		},
+
 		async put({ key, bytes, mimeType }: { key: string; bytes: Uint8Array; mimeType: string }) {
 			await internal.putObject(key, bytes, mimeType);
 		},

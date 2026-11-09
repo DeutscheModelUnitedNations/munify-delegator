@@ -3,9 +3,11 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	hasTeamPermission,
 	isTeamMemberOfConference,
+	linkedChase,
 	maskedUntilRelease,
 	onceReleased,
 	PARTICIPANT_CARE_ROLES,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
@@ -28,6 +30,15 @@ function supervisedDelegation(ctx: Context) {
 }
 
 export function registerDelegationAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
+	// once the assignment is released.
+	abilityBuilder.delegation.allow('read').when(
+		linkedChase({
+			where: { conference: RELEASED_MIRRORED_CONFERENCE },
+			columns: { id: true, conferenceId: true, assignedRoleId: true }
+		})
+	);
+
 	abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Delegates read their own delegation, supervisors the ones they supervise; `assignedRoleId`

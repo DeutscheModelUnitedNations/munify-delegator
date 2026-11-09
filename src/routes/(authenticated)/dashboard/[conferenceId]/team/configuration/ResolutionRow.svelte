@@ -16,10 +16,13 @@
 	let {
 		resolutionId,
 		committees,
+		linked,
 		ondelete
 	}: {
 		resolutionId: string;
 		committees: ResolutionCommittee[];
+		/** Whether a CHASE link is active: the resolutions it adopted are then its to keep. */
+		linked: boolean;
 		ondelete: (resolution: { id: string; title: string }) => void;
 	} = $props();
 
@@ -28,9 +31,11 @@
 			__args: { id: resolutionId },
 			title: true,
 			committeeId: true,
+			chasePaperId: true,
 			file: { fileName: true }
 		})
 	);
+	const fromChase = $derived(linked && resolution.chasePaperId !== null);
 
 	async function update(changes: { title?: string; committeeId?: string | null }) {
 		const promise = client.mutate.updateResolution({
@@ -70,6 +75,12 @@
 		<div class="mt-1 text-xs opacity-60">
 			<i aria-hidden="true" class="ph-duotone ph-file-pdf"></i>
 			{resolution.file.fileName}
+			{#if fromChase}
+				<span class="badge badge-sm badge-ghost ml-1" title={m.resolutionFromChaseLocked()}>
+					<i aria-hidden="true" class="ph-duotone ph-link"></i>
+					{m.resolutionFromChase()}
+				</span>
+			{/if}
 		</div>
 	</td>
 	<td>
@@ -98,13 +109,19 @@
 		>
 			<i aria-hidden="true" class="ph-fill ph-download-simple"></i>
 		</button>
-		<button
-			type="button"
-			class="btn btn-ghost btn-sm text-error"
-			onclick={() => ondelete({ id: resolutionId, title: resolution.title })}
-			aria-label={m.delete()}
+		<span
+			class={fromChase ? 'tooltip tooltip-left' : undefined}
+			data-tip={fromChase ? m.resolutionFromChaseLocked() : undefined}
 		>
-			<i aria-hidden="true" class="ph-fill ph-trash"></i>
-		</button>
+			<button
+				type="button"
+				class="btn btn-ghost btn-sm text-error"
+				disabled={fromChase}
+				onclick={() => ondelete({ id: resolutionId, title: resolution.title })}
+				aria-label={m.delete()}
+			>
+				<i aria-hidden="true" class="ph-fill ph-trash"></i>
+			</button>
+		</span>
 	</td>
 </tr>

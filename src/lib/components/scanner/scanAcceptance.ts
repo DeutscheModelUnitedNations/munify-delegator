@@ -4,14 +4,18 @@ import {
 	looksLikeSignedCode,
 	parseSignedCode,
 	verifySignedCode,
-	type SignedCodeCheck
+	type SignedCodeCheck,
+	type SignedCodeKind
 } from '#lib/signedCode/signedCode';
 
 /** What a scanner takes: the signed codes of its conference it is for, and maybe printed nametags. */
 export interface ScanAcceptance {
 	conferenceId: string;
-	/** The signed codes it takes: the digital nametag (`live`), the application documents (`print`). */
-	kinds: readonly ('live' | 'print')[];
+	/**
+	 * The signed codes it takes: the digital nametag (`live`), the application documents (`print`);
+	 * NSA cards (`nsaCard`) are MUNify CHASE's to check.
+	 */
+	kinds: readonly Exclude<SignedCodeKind, 'certificate'>[];
 	/** Whether it takes the barcode of a printed nametag, which is a plain user id, unsigned. */
 	printedNametags: boolean;
 }

@@ -117,7 +117,10 @@
 		status: m.emailPlaceholderStatus,
 		role: m.emailPlaceholderRole,
 		inviter: m.emailPlaceholderInviter,
-		survey: m.emailPlaceholderSurvey
+		survey: m.emailPlaceholderSurvey,
+		committee: m.emailPlaceholderCommittee,
+		chaseLink: m.emailPlaceholderChaseLink,
+		manualLink: m.emailPlaceholderManualLink
 	};
 </script>
 

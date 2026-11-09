@@ -42,3 +42,12 @@ export const chasePresenceSchema = z.object({
 export type ChasePresence = z.infer<typeof chasePresenceSchema>;
 export type ChasePresenceParticipant = ChasePresence['participants'][number];
 export type ChasePresenceRepresentation = z.infer<typeof representationSchema>;
+
+/**
+ * CHASE's presence as the link stored it (`chasePresence.data`). The browser's client turns
+ * date-like strings into `Date`s on the way in (`nativeDateExchange`), which the export's schema,
+ * written for files, does not take: written as JSON again they are the strings they were.
+ */
+export function parseLinkedPresence(data: unknown) {
+	return chasePresenceSchema.safeParse(JSON.parse(JSON.stringify(data ?? null)));
+}
