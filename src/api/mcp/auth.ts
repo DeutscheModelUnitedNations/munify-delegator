@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { MCP_RESOURCE, MCP_SCOPES, OIDC_ROLE_CLAIM, OIDC_ROLE_MAP } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY } from '$app/env/public';
 import { appRolesOf, roleNamesInClaims } from '#api/services/oidc/roleClaims';
+import { discoveryUrl } from '#api/services/oidc/discoveryUrl';
 import { logger } from '#lib/logger';
 
 /**
@@ -44,18 +45,6 @@ type Provider = z.infer<typeof discoverySchema> & {
 	/** The discovery document as the provider sent it. */
 	document: Record<string, unknown>;
 };
-
-/**
- * Where the provider's discovery document is. `PUBLIC_OIDC_AUTHORITY` may be the issuer
- * (`https://logto.example/oidc`) or the document itself; like openid-client, which the sign-in uses,
- * an issuer gets `/.well-known/openid-configuration` appended (OIDC Discovery §4).
- */
-export function discoveryUrl(authority: string) {
-	const url = new URL(authority);
-	if (url.href.includes('/.well-known/')) return url;
-	url.pathname = `${url.pathname.replace(/\/+$/, '')}/.well-known/openid-configuration`;
-	return url;
-}
 
 let provider: Promise<Provider> | undefined;
 

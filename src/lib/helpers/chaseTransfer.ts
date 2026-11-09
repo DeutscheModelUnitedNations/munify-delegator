@@ -20,3 +20,39 @@ export function chaseTransferIssue({
 	}
 	return null;
 }
+
+interface TransferPaper {
+	id: string;
+	agendaItem:
+		| {
+				title: string;
+				committee: { abbreviation: string; roles: readonly { id: string }[] };
+		  }
+		| null
+		| undefined;
+	delegation: {
+		assignedRoleId: string | null | undefined;
+		assignedRole: { name?: string | null; nationAlpha3Code?: string | null } | null | undefined;
+	};
+}
+
+/** The papers that do not reach CHASE, each with a label (role, agenda item) and why. */
+export function keptBackPapers(papers: readonly TransferPaper[]) {
+	return papers.flatMap((paper) => {
+		const issue = chaseTransferIssue({
+			agendaItem: paper.agendaItem,
+			assignedRoleId: paper.delegation.assignedRoleId
+		});
+		return issue ? [{ id: paper.id, label: paperLabel(paper), issue }] : [];
+	});
+}
+
+function paperLabel({ agendaItem, delegation }: TransferPaper) {
+	const role = delegation.assignedRole;
+	return [
+		role?.name ?? role?.nationAlpha3Code,
+		agendaItem && `${agendaItem.committee.abbreviation}: ${agendaItem.title}`
+	]
+		.filter(Boolean)
+		.join(' · ');
+}

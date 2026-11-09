@@ -1,4 +1,4 @@
-import { CombinedError } from '@urql/core';
+import { isNetworkError } from '#lib/api/errorCodes';
 
 export interface QueueEntry {
 	localId: string;
@@ -15,9 +15,9 @@ export interface QueueEntry {
 }
 
 /** Whether a failed sync is worth retrying: the request never reached the server. */
-export function isNetworkError(err: unknown) {
-	// urql wraps a failed fetch; the answer of a server that was reached has no `networkError`.
-	if (err instanceof CombinedError) return err.networkError !== undefined;
+export function neverReachedServer(err: unknown) {
+	// urql wraps a failed fetch; a bare one throws itself
+	if (isNetworkError(err)) return true;
 	return err instanceof TypeError || (err instanceof Error && err.name === 'AbortError');
 }
 

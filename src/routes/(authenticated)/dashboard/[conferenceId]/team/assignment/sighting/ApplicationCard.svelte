@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PreviousParticipations from './PreviousParticipations.svelte';
 	import { genderIcon, type delegationApplication, type SightingReview } from './sighting';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { getAgeAtConference } from '#lib/helpers/ageChecker';
@@ -79,12 +80,7 @@
 						<span class="flex items-center gap-3 text-base font-normal tabular-nums">
 							<span title={m.assignmentAge()}>{age ?? '?'}</span>
 							<i aria-hidden="true" class="ph-duotone ph-{genderIcon(person.gender)}"></i>
-							{#if (person.conferenceParticipationsCount ?? 0) > 0}
-								<span class="text-warning" title={m.assignmentPreviousParticipations()}>
-									<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
-									{person.conferenceParticipationsCount}
-								</span>
-							{/if}
+							<PreviousParticipations count={person.conferenceParticipationsCount} />
 							{#if careNotesOf(person)}
 								<i
 									aria-hidden="true"

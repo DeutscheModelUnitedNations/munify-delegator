@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chaseLinks, chaseRoleOf } from './chaseLinks';
+import { chaseLinks, chasePlaceOf, chaseRoleOf } from './chaseLinks';
 
 describe('chaseRoleOf', () => {
 	it('makes a seated nation a delegate, a non-state actor an NSA', () => {
@@ -44,5 +44,43 @@ describe('chaseLinks', () => {
 				role: 'NSA'
 			}).app
 		).toBe('https://chase.example/app/conf');
+	});
+});
+
+describe('chasePlaceOf', () => {
+	const base = { chaseUrl: 'https://chase.example/', conferenceId: 'conf' };
+
+	it('sends a seated delegate to their committee', () => {
+		expect(
+			chasePlaceOf({
+				...base,
+				member: {
+					assignedCommittee: { id: 'ga' },
+					delegation: { assignedRole: { kind: 'NATION' } }
+				}
+			})
+		).toEqual({
+			role: 'DELEGATE',
+			links: {
+				app: 'https://chase.example/app/conf/ga',
+				manual: 'https://chase.example/docs/user-manual/participant/getting-started'
+			}
+		});
+	});
+
+	it("takes a single participant's role", () => {
+		expect(chasePlaceOf({ ...base, single: { assignedRole: { kind: 'CUSTOM' } } })?.role).toBe(
+			'SPECTATOR'
+		);
+	});
+
+	it('names no place without a part there', () => {
+		expect(chasePlaceOf(base)).toBeUndefined();
+		expect(
+			chasePlaceOf({
+				...base,
+				member: { assignedCommittee: null, delegation: { assignedRole: { kind: 'NATION' } } }
+			})
+		).toBeUndefined();
 	});
 });

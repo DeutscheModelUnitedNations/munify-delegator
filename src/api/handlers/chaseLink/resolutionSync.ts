@@ -2,19 +2,17 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inArray } from 'drizzle-orm';
-import { unEmblemSvg } from '@deutschemodelunitednations/munify-resolution-editor';
 import { resolutionToTypst } from '@deutschemodelunitednations/munify-resolution-editor/res-markup';
 import type {
 	Resolution,
 	ResolutionHeaderData
 } from '@deutschemodelunitednations/munify-resolution-editor/schema';
-import { resolutionHeader } from './resolutionHeader';
+import { emblemFileOf, resolutionHeader, resolutionTitle } from './resolutionHeader';
 import { db, schema } from '#api/db/db';
 import { resolutionPubsub } from '#api/pubsub';
 import { compileTypst } from '#api/services/typst';
 import { readStoredFile, storeGeneratedFile } from '#api/handlers/storedFile/storedFileService';
 import { filePurpose } from '#api/handlers/storedFile/storageClient';
-import { m } from '#lib/paraglide/messages';
 import {
 	adoptedResolutions,
 	readableResolution,
@@ -42,22 +40,11 @@ export async function syncResolutions({
 	conferenceId: string;
 	papers: readonly ChasePaper[];
 }) {
-	const adopted = adoptedResolutions(papers);
-
-	const existing = (
-		await db.query.resolution.findMany({
-			where: { conferenceId, chasePaperId: { isNotNull: true } },
-			columns: { id: true, chasePaperId: true, chaseSnapshotId: true }
-		})
-	).flatMap(({ id, chasePaperId, chaseSnapshotId }) =>
-		chasePaperId ? [{ id, chasePaperId, chaseSnapshotId }] : []
-	);
-	const { render, remove } = resolutionChanges({ adopted, existing });
-
-	if (remove.length > 0) {
-		await db.delete(schema.resolution).where(inArray(schema.resolution.id, remove));
-		resolutionPubsub.removed();
-	}
+	const { render, remove } = resolutionChanges({
+		adopted: adoptedResolutions(papers),
+		existing: await linkedResolutions(conferenceId)
+	});
+	await removeResolutions(remove);
 	if (render.length === 0) return;
 
 	const contents = await readTexts({
@@ -66,11 +53,31 @@ export async function syncResolutions({
 	});
 	const context = await headerContext(conferenceId);
 	for (const resolution of render) {
-		const text = contents.get(resolution.snapshotId);
-		const content = text === undefined ? undefined : readableResolution(text);
+		const content = readableText(contents.get(resolution.snapshotId));
 		// not a text this editor can print; it stays behind until a newer vote
 		if (content) await storeResolution({ conferenceId, resolution, content, context });
 	}
+}
+
+/** The conference's resolutions the link brought. */
+async function linkedResolutions(conferenceId: string) {
+	const rows = await db.query.resolution.findMany({
+		where: { conferenceId, chasePaperId: { isNotNull: true } },
+		columns: { id: true, chasePaperId: true, chaseSnapshotId: true }
+	});
+	return rows.flatMap(({ id, chasePaperId, chaseSnapshotId }) =>
+		chasePaperId ? [{ id, chasePaperId, chaseSnapshotId }] : []
+	);
+}
+
+async function removeResolutions(ids: string[]) {
+	if (ids.length === 0) return;
+	await db.delete(schema.resolution).where(inArray(schema.resolution.id, ids));
+	resolutionPubsub.removed();
+}
+
+function readableText(text: string | undefined) {
+	return text === undefined ? undefined : readableResolution(text);
 }
 
 /** Renders one adopted resolution, stores its PDF and writes its `resolution` row. */
@@ -92,7 +99,7 @@ async function storeResolution({
 		header: resolutionHeader({ resolution, conference: context.conference, committee }),
 		emblem: context.emblem
 	});
-	const title = resolution.title ?? resolution.documentNumber ?? m.resolution();
+	const title = resolutionTitle(resolution);
 	const fileId = await storeGeneratedFile({
 		conferenceId,
 		purpose: filePurpose({ kind: 'resolution', field: 'content' }),
@@ -152,23 +159,20 @@ async function headerContext(conferenceId: string) {
 		columns: { id: true, abbreviation: true, name: true, resolutionHeadline: true },
 		with: { agendaItems: { columns: { id: true, title: true } } }
 	});
-	const emblemFile = conference?.emblemFile;
-	const emblemBytes = emblemFile ? await readStoredFile(emblemFile.key) : null;
 	return {
 		conference,
 		committees: new Map(committees.map((committee) => [committee.id, committee])),
-		emblem: emblemFile && emblemBytes ? { mimeType: emblemFile.mimeType, bytes: emblemBytes } : null
+		emblem: await readEmblem(conference?.emblemFile)
 	};
 }
 
-type HeaderContext = Awaited<ReturnType<typeof headerContext>>;
+async function readEmblem(file: { key: string; mimeType: string } | null | undefined) {
+	if (!file) return null;
+	const bytes = await readStoredFile(file.key);
+	return bytes ? { mimeType: file.mimeType, bytes } : null;
+}
 
-const EMBLEM_EXTENSIONS: Record<string, string> = {
-	'image/svg+xml': 'svg',
-	'image/png': 'png',
-	'image/jpeg': 'jpg',
-	'image/gif': 'gif'
-};
+type HeaderContext = Awaited<ReturnType<typeof headerContext>>;
 
 async function renderPdf({
 	resolution,
@@ -183,10 +187,9 @@ async function renderPdf({
 }) {
 	const dir = await mkdtemp(join(tmpdir(), 'mun-link-'));
 	try {
-		const extension = emblem && EMBLEM_EXTENSIONS[emblem.mimeType];
-		const emblemPath = extension ? `emblem.${extension}` : 'emblem.svg';
-		await writeFile(join(dir, emblemPath), extension && emblem ? emblem.bytes : unEmblemSvg);
-		const source = resolutionToTypst(content, header, { emblemPath });
+		const emblemFile = emblemFileOf(emblem);
+		await writeFile(join(dir, emblemFile.path), emblemFile.bytes);
+		const source = resolutionToTypst(content, header, { emblemPath: emblemFile.path });
 		return await compileTypst({ dir, source });
 	} finally {
 		await rm(dir, { recursive: true, force: true });

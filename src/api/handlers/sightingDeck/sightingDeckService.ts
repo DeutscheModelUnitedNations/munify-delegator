@@ -92,8 +92,13 @@ export async function findSightingNameMatches({
 	const term = search.trim().toLowerCase();
 	if (!term) return [];
 	const result = await db.execute<{ id: string }>(applicationIdsSql(conferenceId));
+	return nameMatches({ ids: result.rows.map(({ id }) => id), term });
+}
+
+/** The ids whose codename or id contains the lowercase `term`, at most `MAX_NAME_MATCHES`. */
+export function nameMatches({ ids, term }: { ids: readonly string[]; term: string }) {
 	const matches: { id: string }[] = [];
-	for (const { id } of result.rows) {
+	for (const id of ids) {
 		if (`${codenmz(id)} ${id}`.toLowerCase().includes(term)) matches.push({ id });
 		if (matches.length >= MAX_NAME_MATCHES) break;
 	}

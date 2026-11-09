@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
-	import { chaseLinks, chaseRoleOf } from '#lib/helpers/chaseLinks';
+	import { chasePlaceOf } from '#lib/helpers/chaseLinks';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 
 	/**
@@ -32,20 +32,16 @@
 		])
 	);
 
-	const place = $derived.by(() => {
-		const member = members.at(0);
-		const single = singles.at(0);
-		const committeeId = member?.assignedCommittee?.id ?? null;
-		const role = chaseRoleOf({
-			role: member?.delegation.assignedRole ?? single?.assignedRole,
-			committeeId
-		});
-		if (!chaseLink || !role) return undefined;
-		return {
-			role,
-			links: chaseLinks({ chaseUrl: chaseLink.remoteUrl, conferenceId, committeeId, role })
-		};
-	});
+	const place = $derived(
+		chaseLink
+			? chasePlaceOf({
+					chaseUrl: chaseLink.remoteUrl,
+					conferenceId,
+					member: members.at(0),
+					single: singles.at(0)
+				})
+			: undefined
+	);
 </script>
 
 {#if place}

@@ -77,19 +77,17 @@ export function watchChaseTables({
 	 * snapshot naming a paper the table does not hold asks for the papers again, once per paper.
 	 */
 	function snapshotsChanged() {
-		const { papers, snapshots } = resolutions;
-		if (papers.ready() && snapshots.ready()) {
-			const held = new Set(papers.rows().map((paper) => paper.id));
-			const missing = snapshots
-				.rows()
-				.map((snapshot) => snapshot.paperId)
-				.filter((paperId) => !held.has(paperId) && !askedFor.has(paperId));
-			if (missing.length > 0) {
-				for (const paperId of missing) askedFor.add(paperId);
-				papers.refresh();
-			}
-		}
+		if (resolutions.papers.ready() && resolutions.snapshots.ready()) askForMissingPapers();
 		onResolutions();
+	}
+	function askForMissingPapers() {
+		const missing = papersToAskFor({
+			held: resolutions.papers.rows().map((paper) => paper.id),
+			named: resolutions.snapshots.rows().map((snapshot) => snapshot.paperId),
+			askedFor
+		});
+		for (const paperId of missing) askedFor.add(paperId);
+		if (missing.length > 0) resolutions.papers.refresh();
 	}
 	const all = Object.values(resolutions);
 
@@ -114,3 +112,17 @@ export function watchChaseTables({
 }
 
 export type ChaseTables = ReturnType<typeof watchChaseTables>;
+
+/** The papers snapshots name that the papers table does not hold, and that were not asked for yet. */
+export function papersToAskFor({
+	held,
+	named,
+	askedFor
+}: {
+	held: readonly string[];
+	named: readonly string[];
+	askedFor: ReadonlySet<string>;
+}) {
+	const heldIds = new Set(held);
+	return named.filter((paperId) => !heldIds.has(paperId) && !askedFor.has(paperId));
+}

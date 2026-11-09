@@ -131,12 +131,29 @@ export async function connectParticipantToSupervisor({
 		.values({ a: supervisorId, b: participantId })
 		.onConflictDoNothing();
 
-	// Nothing on these rows changed, but who supervises whom did.
+	announceSupervision({
+		supervisorId,
+		participantId,
+		delegationMemberId: participation.foundDelegationMember?.id,
+		singleParticipantId: participation.foundSingleParticipant?.id
+	});
+}
+
+/** Announces a changed supervision: nothing on these rows changed, but who supervises whom did. */
+function announceSupervision({
+	supervisorId,
+	participantId,
+	delegationMemberId,
+	singleParticipantId
+}: {
+	supervisorId: string;
+	participantId: string;
+	delegationMemberId: string | undefined;
+	singleParticipantId: string | undefined;
+}) {
 	conferenceSupervisorPubsub.updated(supervisorId);
 	conferenceParticipantPubsub.updated(participantId);
-	const delegationMemberId = participation.foundDelegationMember?.id;
 	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
-	const singleParticipantId = participation.foundSingleParticipant?.id;
 	if (singleParticipantId) singleParticipantPubsub.updated(singleParticipantId);
 }
 
@@ -166,12 +183,12 @@ export async function disconnectParticipantFromSupervisor({
 			whereRows({ table: schema.supervision, filter: { a: supervisorId, b: participant.id } })
 		);
 
-	conferenceSupervisorPubsub.updated(supervisorId);
-	conferenceParticipantPubsub.updated(participant.id);
-	const delegationMemberId = participant.delegationMember?.id;
-	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
-	const singleParticipantId = participant.singleParticipant?.id;
-	if (singleParticipantId) singleParticipantPubsub.updated(singleParticipantId);
+	announceSupervision({
+		supervisorId,
+		participantId: participant.id,
+		delegationMemberId: participant.delegationMember?.id,
+		singleParticipantId: participant.singleParticipant?.id
+	});
 }
 
 /**

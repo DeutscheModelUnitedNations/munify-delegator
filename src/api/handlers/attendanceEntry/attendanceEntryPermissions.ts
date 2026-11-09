@@ -10,6 +10,7 @@ import {
 import { callerUserId } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { scanSubjectProblem } from './scanSubject';
 
 /** The abilities of attendance entries and of the sessions they are recorded in. */
 export function registerAttendanceEntryAbilities() {
@@ -118,17 +119,14 @@ async function assertParticipantToScan({
 			teamMember: { where: { conferenceId }, columns: { id: true } }
 		}
 	});
-	const participates =
-		!!subject &&
-		(subject.delegationMemberships.length > 0 ||
-			subject.singleParticipant.length > 0 ||
-			subject.conferenceSupervisor.length > 0);
-	if (participates) return;
-	if (subject && subject.teamMember.length > 0) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.teamMembersAreNotScanned() });
-	}
-	throw apiError({ code: 'INVALID_INPUT', message: m.userNotInConference() });
+	const problem = scanSubjectProblem(subject);
+	if (problem) throw apiError({ code: 'INVALID_INPUT', message: SCAN_PROBLEMS[problem]() });
 }
+
+const SCAN_PROBLEMS = {
+	teamMember: () => m.teamMembersAreNotScanned(),
+	notInConference: () => m.userNotInConference()
+};
 
 /**
  * Refuses unless the caller is on the conference's team (any role: the scanner is on every team

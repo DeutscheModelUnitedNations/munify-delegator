@@ -4,9 +4,9 @@ import { instanceLinkPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { watchChaseTables, type ChaseTables } from './chaseTables';
-import { linkAccessToken, linkConfig } from './linkAuth';
+import { linkAccessToken, linkConfig, type LinkConfig } from './linkAuth';
 import { syncLinkRow } from './chaseLinkService';
-import { createGate, handled } from './liveTable';
+import { createGate, handled, reconcileWatches } from './liveTable';
 import { syncResolutions } from './resolutionSync';
 
 /**
@@ -29,18 +29,9 @@ const FIRST_ANSWERS_AT_ONCE = 4;
 
 let running: { stop: () => void } | undefined;
 
-export function startLinkWorker() {
-	running ??= runWorker();
-}
-
-export function stopLinkWorker() {
-	running?.stop();
-	running = undefined;
-}
-
 /** On server start: brings the link's row in line with the configuration and starts reading. */
 export async function resumeLinkWorker() {
-	if (await syncLinkRow()) startLinkWorker();
+	if (await syncLinkRow()) running ??= runWorker();
 }
 
 function runWorker() {
@@ -52,110 +43,10 @@ function runWorker() {
 	};
 
 	(async () => {
-		// a string under `drizzle.mock()`, which only `vite build` uses
-		if (typeof db.$client === 'string') return;
-		const leadership = await db.$client.connect();
-		cleanups.push(() => {
-			void leadership
-				.query('select pg_advisory_unlock($1)', [LEADER_LOCK_KEY])
-				.finally(() => leadership.release());
-		});
-		// waits for the instance holding the worker to stop or die
-		await leadership.query('select pg_advisory_lock($1)', [LEADER_LOCK_KEY]);
-		if (stopped) return;
-
-		const config = linkConfig();
-		const link = await db.query.instanceLink.findFirst({ columns: { id: true } });
-		if (!config || !link) return stop();
-
-		const watches = new Map<string, ChaseTables>();
-		const timers = new Map<string, ReturnType<typeof setTimeout>>();
-		/** Resolution syncs run one after another: each may compile PDFs. */
-		let resolutionQueue = Promise.resolve();
-		cleanups.push(() => {
-			for (const timer of timers.values()) clearTimeout(timer);
-			for (const tables of watches.values()) tables.stop();
-		});
-
-		const read = (conferenceId: string) => {
-			const tables = watches.get(conferenceId);
-			if (!tables) return;
-			resolutionQueue = resolutionQueue.then(() => {
-				// read when its turn comes: the tables may have changed while it waited
-				if (stopped || !tables.resolutionsReady()) return;
-				const papers = tables.papers();
-				return recorded({ linkId: link.id, conferenceId }, () =>
-					syncResolutions({ remote, conferenceId, papers })
-				);
-			});
-			return resolutionQueue;
-		};
-
-		const schedule = (conferenceId: string) => {
-			clearTimeout(timers.get(conferenceId));
-			timers.set(
-				conferenceId,
-				setTimeout(() => {
-					timers.delete(conferenceId);
-					if (!stopped) void read(conferenceId);
-				}, DEBOUNCE_MS)
-			);
-		};
-
-		// A live query's answer may fail (CHASE unreachable, a rule refusing): that is noted on the
-		// link, never left to crash the app. A first answer is asked again, an update waits for the next.
-		const failed = (error: unknown) => {
-			logger.warn('A live query to CHASE failed', error);
-			void noteError({ linkId: link.id, error });
-		};
-
-		let reconnected = () => {};
-		const remote: ChaseClient = createChaseClient({
-			url: config.remoteUrl,
-			token: () => linkAccessToken(config),
-			onError: failed,
-			onConnected: () => reconnected()
-		});
-		cleanups.push(() => remote.dispose());
-
-		// CHASE lets the link read back only the conferences that came from here. Set up again on
-		// every (re)connect: a first answer that failed (the other side was away) leaves no watch
-		// behind otherwise.
-		const gate = createGate(FIRST_ANSWERS_AT_ONCE);
-		let unwatchConferences: (() => void) | undefined;
-		const watchConferences = () => {
-			unwatchConferences?.();
-			const conferences = handled(remote.liveQuery.conferences({ id: true }), failed);
-			unwatchConferences = conferences.subscribe((list) => {
-				if (!list || stopped) return;
-				const current = new Set(Array.from(list).map((conference) => conference.id));
-				for (const [conferenceId, tables] of watches) {
-					if (current.has(conferenceId)) continue;
-					tables.stop();
-					watches.delete(conferenceId);
-				}
-				for (const conferenceId of current) {
-					if (watches.has(conferenceId)) continue;
-					watches.set(
-						conferenceId,
-						watchChaseTables({
-							remote,
-							conferenceId,
-							onResolutions: () => schedule(conferenceId),
-							onError: failed,
-							gate
-						})
-					);
-				}
-			});
-		};
-		// A socket that broke may have taken its subscriptions along, so every table is asked again
-		reconnected = () => {
-			for (const tables of watches.values()) tables.refresh();
-			watchConferences();
-		};
-		watchConferences();
-		cleanups.push(() => unwatchConferences?.());
+		if (!(await holdLeadership(cleanups)) || stopped) return;
+		const link = await linkToRead();
+		if (!link) return stop();
+		watchLink({ ...link, cleanups, isStopped: () => stopped });
 	})().catch((error) => {
 		logger.error('The CHASE link worker stopped', error);
 		stop();
@@ -163,6 +54,120 @@ function runWorker() {
 	});
 
 	return { stop };
+}
+
+/** Waits for the worker's lock: the instance holding it has to stop or die first. */
+async function holdLeadership(cleanups: (() => void)[]) {
+	// a string under `drizzle.mock()`, which only `vite build` uses
+	if (typeof db.$client === 'string') return false;
+	const leadership = await db.$client.connect();
+	cleanups.push(() => {
+		void leadership
+			.query('select pg_advisory_unlock($1)', [LEADER_LOCK_KEY])
+			.finally(() => leadership.release());
+	});
+	await leadership.query('select pg_advisory_lock($1)', [LEADER_LOCK_KEY]);
+	return true;
+}
+
+/** The configured link and its row, or undefined while either is missing. */
+async function linkToRead() {
+	const config = linkConfig();
+	const link = await db.query.instanceLink.findFirst({ columns: { id: true } });
+	return config && link ? { config, linkId: link.id } : undefined;
+}
+
+/** Watches CHASE's tables of every conference it lets the link read, until the cleanups run. */
+function watchLink({
+	config,
+	linkId,
+	cleanups,
+	isStopped
+}: {
+	config: LinkConfig;
+	linkId: string;
+	cleanups: (() => void)[];
+	isStopped: () => boolean;
+}) {
+	const watches = new Map<string, ChaseTables>();
+	const timers = new Map<string, ReturnType<typeof setTimeout>>();
+	/** Resolution syncs run one after another: each may compile PDFs. */
+	let resolutionQueue = Promise.resolve();
+	cleanups.push(() => {
+		for (const timer of timers.values()) clearTimeout(timer);
+		for (const tables of watches.values()) tables.stop();
+	});
+
+	const read = (conferenceId: string) => {
+		const tables = watches.get(conferenceId);
+		if (!tables) return;
+		resolutionQueue = resolutionQueue.then(() => {
+			// read when its turn comes: the tables may have changed while it waited
+			if (isStopped() || !tables.resolutionsReady()) return;
+			const papers = tables.papers();
+			return recorded({ linkId, conferenceId }, () =>
+				syncResolutions({ remote, conferenceId, papers })
+			);
+		});
+		return resolutionQueue;
+	};
+
+	const schedule = (conferenceId: string) => {
+		clearTimeout(timers.get(conferenceId));
+		timers.set(
+			conferenceId,
+			setTimeout(() => {
+				timers.delete(conferenceId);
+				if (!isStopped()) void read(conferenceId);
+			}, DEBOUNCE_MS)
+		);
+	};
+
+	// A live query's answer may fail (CHASE unreachable, a rule refusing): that is noted on the
+	// link, never left to crash the app. A first answer is asked again, an update waits for the next.
+	const failed = (error: unknown) => {
+		logger.warn('A live query to CHASE failed', error);
+		void noteError({ linkId, error });
+	};
+
+	let reconnected = () => {};
+	const remote: ChaseClient = createChaseClient({
+		url: config.remoteUrl,
+		token: () => linkAccessToken(config),
+		onError: failed,
+		onConnected: () => reconnected()
+	});
+	cleanups.push(() => remote.dispose());
+
+	// CHASE lets the link read back only the conferences that came from here. Set up again on
+	// every (re)connect: a first answer that failed (the other side was away) leaves no watch
+	// behind otherwise.
+	const gate = createGate(FIRST_ANSWERS_AT_ONCE);
+	const start = (conferenceId: string) =>
+		watchChaseTables({
+			remote,
+			conferenceId,
+			onResolutions: () => schedule(conferenceId),
+			onError: failed,
+			gate
+		});
+	let unwatchConferences: (() => void) | undefined;
+	const watchConferences = () => {
+		unwatchConferences?.();
+		const conferences = handled(remote.liveQuery.conferences({ id: true }), failed);
+		unwatchConferences = conferences.subscribe((list) => {
+			if (!list || isStopped()) return;
+			const current = new Set(Array.from(list).map((conference) => conference.id));
+			reconcileWatches({ watches, current, start });
+		});
+	};
+	// A socket that broke may have taken its subscriptions along, so every table is asked again
+	reconnected = () => {
+		for (const tables of watches.values()) tables.refresh();
+		watchConferences();
+	};
+	watchConferences();
+	cleanups.push(() => unwatchConferences?.());
 }
 
 /** Notes a failure on the link, for the link page. */

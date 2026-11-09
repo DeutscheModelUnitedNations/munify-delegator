@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolutionHeader } from './resolutionHeader';
+import { emblemFileOf, resolutionHeader, resolutionTitle } from './resolutionHeader';
 
 const resolution = {
 	paperId: 'paper',
@@ -55,5 +55,27 @@ describe('resolutionHeader', () => {
 	it('names no topic for an agenda item the committee does not have', () => {
 		const elsewhere = { ...resolution, agendaItemId: 'other' };
 		expect(resolutionHeader({ resolution: elsewhere, committee }).topic).toBeUndefined();
+	});
+});
+
+describe('resolutionTitle', () => {
+	it("is the paper's title, else its document number", () => {
+		expect(resolutionTitle({ title: 'Climate', documentNumber: 'GA/1' })).toBe('Climate');
+		expect(resolutionTitle({ title: undefined, documentNumber: 'GA/1' })).toBe('GA/1');
+		expect(resolutionTitle({ title: undefined, documentNumber: undefined })).toBeTruthy();
+	});
+});
+
+describe('emblemFileOf', () => {
+	const bytes = new Uint8Array([1, 2, 3]);
+
+	it("writes the conference's emblem under its type's extension", () => {
+		expect(emblemFileOf({ mimeType: 'image/png', bytes })).toEqual({ path: 'emblem.png', bytes });
+	});
+
+	it("falls back to the UN's for no emblem or a type Typst cannot show", () => {
+		expect(emblemFileOf(null).path).toBe('emblem.svg');
+		expect(emblemFileOf({ mimeType: 'image/webp', bytes }).path).toBe('emblem.svg');
+		expect(emblemFileOf({ mimeType: 'image/webp', bytes }).bytes).not.toBe(bytes);
 	});
 });

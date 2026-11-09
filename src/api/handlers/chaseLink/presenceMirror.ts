@@ -2,7 +2,7 @@ import { CHASE_PRESENCE_SCHEMA_URL, type ChasePresence } from '#lib/schemata/cha
 import { apiError } from '#api/services/errors';
 import { logger } from '#lib/logger';
 import { m } from '#lib/paraglide/messages';
-import { createChaseClient } from './chaseRemote';
+import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { linkAccessToken, linkConfig } from './linkAuth';
 
 /**
@@ -114,29 +114,40 @@ export async function fetchChasePresence({ conferenceId }: { conferenceId: strin
 		token: () => linkAccessToken(config)
 	});
 	try {
-		const users: ChasePresenceUser[] = [];
-		for (let offset = 0; ; offset += PAGE_SIZE) {
-			const page = await remote.query.conferenceUsers({
-				__args: {
-					where: { conferenceId: { eq: conferenceId } },
-					orderBy: { id: 'asc' },
-					limit: PAGE_SIZE,
-					offset
-				},
-				conferenceUserType: true,
-				userEmail: true,
-				committeeMember: { committeeId: true, representation: REPRESENTATION },
-				conferenceMember: { representation: REPRESENTATION },
-				presenceEvents: { committeeId: true, present: true, type: true, timestamp: true }
-			});
-			users.push(...page);
-			if (page.length < PAGE_SIZE) break;
-		}
+		const users = await readConferenceUsers({ remote, conferenceId });
 		return presenceFromChase({ conferenceId, users, now: new Date() });
 	} catch (error) {
 		logger.warn('Reading the presence from CHASE failed', { error, conferenceId });
 		throw apiError({ code: 'CONFLICT', message: m.importPresenceFromChaseFailed() });
 	} finally {
 		remote.dispose();
+	}
+}
+
+/** The conference's people as CHASE has them, a page at a time. */
+async function readConferenceUsers({
+	remote,
+	conferenceId
+}: {
+	remote: ChaseClient;
+	conferenceId: string;
+}) {
+	const users: ChasePresenceUser[] = [];
+	for (let offset = 0; ; offset += PAGE_SIZE) {
+		const page = await remote.query.conferenceUsers({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { id: 'asc' },
+				limit: PAGE_SIZE,
+				offset
+			},
+			conferenceUserType: true,
+			userEmail: true,
+			committeeMember: { committeeId: true, representation: REPRESENTATION },
+			conferenceMember: { representation: REPRESENTATION },
+			presenceEvents: { committeeId: true, present: true, type: true, timestamp: true }
+		});
+		users.push(...page);
+		if (page.length < PAGE_SIZE) return users;
 	}
 }

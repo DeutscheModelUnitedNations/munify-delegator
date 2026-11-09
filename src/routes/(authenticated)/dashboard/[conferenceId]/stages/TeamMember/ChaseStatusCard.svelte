@@ -4,7 +4,7 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
-	import { chaseTransferIssue } from '#lib/helpers/chaseTransfer';
+	import { keptBackPapers } from '#lib/helpers/chaseTransfer';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 
 	/**
@@ -33,29 +33,7 @@
 		])
 	);
 
-	const keptBack = $derived(
-		papers.flatMap((paper) => {
-			const issue = chaseTransferIssue({
-				agendaItem: paper.agendaItem,
-				assignedRoleId: paper.delegation.assignedRoleId
-			});
-			if (!issue) return [];
-			const role = paper.delegation.assignedRole;
-			return [
-				{
-					id: paper.id,
-					label: [
-						role?.name ?? role?.nationAlpha3Code,
-						paper.agendaItem &&
-							`${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
-					]
-						.filter(Boolean)
-						.join(' · '),
-					reason: issue === 'noAgendaItem' ? m.chaseStatusNoAgendaItem() : m.chaseStatusNoSeat()
-				}
-			];
-		})
-	);
+	const keptBack = $derived(keptBackPapers(papers));
 </script>
 
 {#if chaseLink}
@@ -101,7 +79,11 @@
 										}
 									)}>{paper.label || m.chaseStatusPaper()}</a
 								>
-								<span class="text-base-content/60">: {paper.reason}</span>
+								<span class="text-base-content/60"
+									>: {paper.issue === 'noAgendaItem'
+										? m.chaseStatusNoAgendaItem()
+										: m.chaseStatusNoSeat()}</span
+								>
 							</li>
 						{/each}
 					</ul>

@@ -1,5 +1,5 @@
 import { hasErrorCode } from '#lib/api/errorCodes';
-import { isNetworkError, type QueueEntry } from './attendanceQueue';
+import { neverReachedServer, type QueueEntry } from './attendanceQueue';
 import type { FoundPerson } from './scanLoad';
 
 /** One scan in a session's local log. */
@@ -44,7 +44,7 @@ export function scanErrorText({
 	offlineText: string;
 	fallback: string;
 }) {
-	if (isNetworkError(err)) return offlineText;
+	if (neverReachedServer(err)) return offlineText;
 	return err instanceof Error ? err.message : fallback;
 }
 

@@ -197,3 +197,23 @@ export function liveTable<Row extends { id: string }>({
 		}
 	};
 }
+
+/**
+ * Keeps one watch per id of `current`: stops those whose id is gone, starts one for each new id.
+ */
+export function reconcileWatches<W extends { stop: () => void }>({
+	watches,
+	current,
+	start
+}: {
+	watches: Map<string, W>;
+	current: ReadonlySet<string>;
+	start: (id: string) => W;
+}) {
+	for (const [id, watch] of watches) {
+		if (current.has(id)) continue;
+		watch.stop();
+		watches.delete(id);
+	}
+	for (const id of current) if (!watches.has(id)) watches.set(id, start(id));
+}

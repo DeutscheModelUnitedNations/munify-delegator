@@ -52,3 +52,29 @@ export function chaseLinks({
 		manual: `${base}/docs/${MANUAL_PAGES[role]}`
 	};
 }
+
+type Seat = { kind: RoleKind } | null | undefined;
+
+/**
+ * Where a participant goes in CHASE, from their delegation membership or single participation:
+ * their role there and its links. Undefined for no part there.
+ */
+export function chasePlaceOf({
+	chaseUrl,
+	conferenceId,
+	member,
+	single
+}: {
+	chaseUrl: string;
+	conferenceId: string;
+	member?: { assignedCommittee?: { id: string } | null; delegation: { assignedRole?: Seat } };
+	single?: { assignedRole?: Seat };
+}) {
+	const committeeId = member?.assignedCommittee?.id ?? null;
+	const role = chaseRoleOf({
+		role: member?.delegation.assignedRole ?? single?.assignedRole,
+		committeeId
+	});
+	if (!role) return undefined;
+	return { role, links: chaseLinks({ chaseUrl, conferenceId, committeeId, role }) };
+}

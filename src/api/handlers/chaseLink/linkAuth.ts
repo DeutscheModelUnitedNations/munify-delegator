@@ -12,6 +12,7 @@ import {
 } from '$app/env/private';
 import { appRolesOf, roleNamesInClaims } from '#api/services/oidc/roleClaims';
 import { LINK_ROLE, REMOTE_LINK_ROLE } from '#api/services/oidc/oidcRoles';
+import { discoveryUrl } from '#api/services/oidc/discoveryUrl';
 import { PUBLIC_OIDC_AUTHORITY } from '$app/env/public';
 import { logger } from '#lib/logger';
 
@@ -34,28 +35,53 @@ export const LINK_TOKEN_HEADER = 'x-munify-link-token';
 const RENEW_BEFORE_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 10_000;
 
+const linkSettingsSchema = z.object({
+	LINK_REMOTE_URL: z.string().min(1),
+	LINK_REMOTE_RESOURCE: z.string().min(1),
+	'LINK_RESOURCE or OIDC_RESOURCE': z.string().min(1),
+	OIDC_M2M_CLIENT_ID: z.string().min(1),
+	OIDC_M2M_CLIENT_SECRET: z.string().min(1)
+});
+
+/** The variables the link needs, by the name a warning gives them. */
+type LinkSettings = Partial<Record<keyof z.infer<typeof linkSettingsSchema>, string>>;
+
+/**
+ * The link's configuration from its variables: undefined while the link is not set up at all, and
+ * the variables still `missing` while it is only partly.
+ */
+export function linkConfigOf(settings: LinkSettings) {
+	if (!settings.LINK_REMOTE_URL && !settings.LINK_REMOTE_RESOURCE)
+		return { missing: [], config: undefined };
+	const parsed = linkSettingsSchema.safeParse(settings);
+	if (!parsed.success) {
+		return { missing: parsed.error.issues.map(({ path }) => String(path[0])), config: undefined };
+	}
+	const values = parsed.data;
+	return {
+		missing: [],
+		config: {
+			remoteUrl: new URL(values.LINK_REMOTE_URL).origin,
+			remoteResource: values.LINK_REMOTE_RESOURCE,
+			resource: values['LINK_RESOURCE or OIDC_RESOURCE'],
+			clientId: values.OIDC_M2M_CLIENT_ID,
+			clientSecret: values.OIDC_M2M_CLIENT_SECRET
+		}
+	};
+}
+
 /** The link's configuration, or undefined while it is not (completely) set. */
 export function linkConfig() {
-	const values = {
+	const { config, missing } = linkConfigOf({
 		LINK_REMOTE_URL,
 		LINK_REMOTE_RESOURCE,
 		'LINK_RESOURCE or OIDC_RESOURCE': LINK_RESOURCE ?? OIDC_RESOURCE,
 		OIDC_M2M_CLIENT_ID,
 		OIDC_M2M_CLIENT_SECRET
-	};
-	const missing = Object.entries(values).flatMap(([name, value]) => (value ? [] : [name]));
-	if (!LINK_REMOTE_URL && !LINK_REMOTE_RESOURCE) return undefined;
-	if (missing.length > 0) {
+	});
+	if (missing.length > 0)
 		logger.warn('The link is only partly configured, so it is off', { missing });
-		return undefined;
-	}
-	return {
-		remoteUrl: new URL(LINK_REMOTE_URL ?? '').origin,
-		remoteResource: LINK_REMOTE_RESOURCE ?? '',
-		resource: LINK_RESOURCE ?? OIDC_RESOURCE ?? '',
-		clientId: OIDC_M2M_CLIENT_ID ?? '',
-		clientSecret: OIDC_M2M_CLIENT_SECRET ?? ''
-	};
+	return config;
 }
 
 export type LinkConfig = NonNullable<ReturnType<typeof linkConfig>>;
@@ -65,14 +91,6 @@ const discoverySchema = z.object({
 	jwks_uri: z.string().url(),
 	token_endpoint: z.string().url()
 });
-
-/** The provider's discovery document: `PUBLIC_OIDC_AUTHORITY` is the issuer or the document. */
-function discoveryUrl(authority: string) {
-	const url = new URL(authority);
-	if (url.href.includes('/.well-known/')) return url;
-	url.pathname = `${url.pathname.replace(/\/+$/, '')}/.well-known/openid-configuration`;
-	return url;
-}
 
 type Provider = z.infer<typeof discoverySchema> & { keys: ReturnType<typeof createRemoteJWKSet> };
 

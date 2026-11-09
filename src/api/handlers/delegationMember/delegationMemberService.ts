@@ -26,7 +26,7 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import type { SeatSwitch } from '#lib/helpers/seatSwitch';
 import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { headDelegateChanges, isSameSeat, type Seat } from './seatSwitch';
-import { placementProblem } from './placementRules';
+import { displacedBy, partToClear, placementProblem } from './placementRules';
 import { roleSeats } from '#lib/helpers/conferenceRole';
 
 /**
@@ -203,19 +203,15 @@ async function clearParticipation({
 		}),
 		tx.query.teamMember.findFirst({ where: { conferenceId, userId }, columns: { id: true } })
 	]);
-	if (teamMember || participant?.conferenceSupervisor) {
+	const part = partToClear({ participant, isTeamMember: !!teamMember });
+	if (part.kind === 'refused') {
 		throw apiError({ code: 'CONFLICT', message: m.delegationMemberUserAlreadyInConference() });
 	}
-	if (participant?.delegationMember) {
-		return { leave: await leaveDelegation({ tx, memberId: participant.delegationMember.id }) };
-	}
-	if (participant?.singleParticipant) {
-		await tx.delete(schema.singleParticipant).where(
-			whereRows({
-				table: schema.singleParticipant,
-				filter: { id: participant.singleParticipant.id }
-			})
-		);
+	if (part.kind === 'member') return { leave: await leaveDelegation({ tx, memberId: part.id }) };
+	if (part.kind === 'single') {
+		await tx
+			.delete(schema.singleParticipant)
+			.where(whereRows({ table: schema.singleParticipant, filter: { id: part.id } }));
 		return { removedSingle: true };
 	}
 	return {};
@@ -264,17 +260,22 @@ async function assertPlacementFits({
 	]);
 	const problem = placementProblem({
 		roleSeats: roleSeats({ role, committees }),
-		members: (existing?.members ?? []).map((member) => ({
-			assignedCommitteeId: member.assignedCommitteeId ?? null
-		})),
+		members: placedMembers(existing),
 		committee: committees.find((committee) => committee.id === assignedCommitteeId)
 	});
-	if (problem === 'roleFull') {
-		throw apiError({ code: 'CONFLICT', message: m.placementRoleFull() });
-	}
-	if (problem === 'committeeFull') {
-		throw apiError({ code: 'CONFLICT', message: m.placementCommitteeFull() });
-	}
+	if (problem) throw apiError({ code: 'CONFLICT', message: PLACEMENT_PROBLEMS[problem]() });
+}
+
+const PLACEMENT_PROBLEMS = {
+	roleFull: () => m.placementRoleFull(),
+	committeeFull: () => m.placementCommitteeFull()
+};
+
+/** The delegation's members before a placement, with the committee each sits in. */
+function placedMembers(existing: AssignedDelegation | undefined) {
+	return (existing?.members ?? []).map((member) => ({
+		assignedCommitteeId: member.assignedCommitteeId ?? null
+	}));
 }
 
 /**
@@ -400,12 +401,7 @@ export async function placeUserInAssignedDelegation({
  * this member is leaving - a swap, rather than a refusal; anybody else is refused (CONFLICT).
  */
 export async function moveMemberToCommittee({ member, committee, mayDisplace }: CommitteeMove) {
-	const siblings = member.delegation.members.filter((x) => x.id !== member.id);
-	const occupying = siblings.filter((x) => x.assignedCommitteeId === committee.id);
-	const displaced =
-		occupying.length >= committee.numOfSeatsPerDelegation
-			? occupying.toSorted((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime())[0]
-			: undefined;
+	const displaced = displacedBy({ member, members: member.delegation.members, committee });
 	if (displaced && !mayDisplace) {
 		throw apiError({ code: 'CONFLICT', message: m.committeeSeatsExceeded() });
 	}

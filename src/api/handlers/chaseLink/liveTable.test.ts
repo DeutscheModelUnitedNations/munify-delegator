@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGate, liveTable, PAGE_SIZE } from './liveTable';
+import { createGate, liveTable, PAGE_SIZE, reconcileWatches } from './liveTable';
 
 type Row = { id: string };
 
@@ -161,5 +161,24 @@ describe('createGate', () => {
 		leaves[0]();
 		await settled();
 		expect(entered).toEqual([3]);
+	});
+});
+
+describe('reconcileWatches', () => {
+	const watch = () => ({ stop: vi.fn() });
+
+	it('stops the watches of ids that are gone and starts one per new id', () => {
+		const kept = watch();
+		const gone = watch();
+		const watches = new Map([
+			['kept', kept],
+			['gone', gone]
+		]);
+		const start = vi.fn(() => watch());
+		reconcileWatches({ watches, current: new Set(['kept', 'new']), start });
+		expect(gone.stop).toHaveBeenCalledOnce();
+		expect(kept.stop).not.toHaveBeenCalled();
+		expect(start).toHaveBeenCalledExactlyOnceWith('new');
+		expect([...watches.keys()]).toEqual(['kept', 'new']);
 	});
 });

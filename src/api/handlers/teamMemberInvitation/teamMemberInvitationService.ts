@@ -357,18 +357,11 @@ export async function updateInvitation({
 	const refusal = updateRefusal({ invitation, revoke });
 	if (refusal) throw apiError({ code: 'CONFLICT', message: refusal });
 
-	const link = regenerate
-		? { token: makeInvitationToken(), expiresAt: getInvitationExpiryDate() }
-		: undefined;
+	const link = regenerate && freshLink();
 	await refusingSecondPending(
 		db
 			.update(schema.teamMemberInvitation)
-			// a fresh link also undoes a revocation
-			.set(
-				link
-					? { token: hashToken(link.token), expiresAt: link.expiresAt, revokedAt: null }
-					: { revokedAt: new Date() }
-			)
+			.set(invitationChange(link))
 			.where(
 				whereRows({
 					table: schema.teamMemberInvitation,
@@ -377,16 +370,38 @@ export async function updateInvitation({
 			)
 	);
 	teamMemberInvitationPubsub.updated(invitation.id);
-
-	if (link && regenerate?.sendEmail) {
-		const context = await invitationContext({
-			callerId: regenerate.callerId,
-			origin: regenerate.origin,
-			conferenceId: invitation.conferenceId
-		});
-		mailInvitation({ context, invitation, ...link });
-	}
+	await mailFreshLink({ invitation, link, regenerate });
 	return link;
+}
+
+function freshLink(): FreshLink {
+	return { token: makeInvitationToken(), expiresAt: getInvitationExpiryDate() };
+}
+
+/** A fresh link replaces the token and expiry, and also undoes a revocation; none revokes. */
+function invitationChange(link: FreshLink | undefined) {
+	return link
+		? { token: hashToken(link.token), expiresAt: link.expiresAt, revokedAt: null }
+		: { revokedAt: new Date() };
+}
+
+/** Mails a fresh link when the regeneration asked for it. */
+async function mailFreshLink({
+	invitation,
+	link,
+	regenerate
+}: {
+	invitation: Invitation;
+	link: FreshLink | undefined;
+	regenerate: Regeneration | undefined;
+}) {
+	if (!link || !regenerate?.sendEmail) return;
+	const context = await invitationContext({
+		callerId: regenerate.callerId,
+		origin: regenerate.origin,
+		conferenceId: invitation.conferenceId
+	});
+	mailInvitation({ context, invitation, ...link });
 }
 
 /**
