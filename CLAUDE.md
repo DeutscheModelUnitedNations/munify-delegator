@@ -1606,7 +1606,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   filter arguments ("Release is only visibility") landed upstream in 0.26.0. Since 0.26.2 a live
   result's Svelte subscriber also skips the replay it is handed when it subscribes (the data the
   reader already shows), which, announced as an update while a page's first async work was
-  pending, tripped Svelte's "Batch has scheduled effects" invariant. Keep rumble at ≥ 0.26.2.
+  pending, tripped Svelte's "Batch has scheduled effects" invariant. Since 0.30.0 `subscribe`
+  answers the unsubscribe function (it answered `{ unsubscribe }` while typed as one), result
+  types carry the auto included `id`, a live query started before its first answer asks once, and
+  `onError` hears the updates a live result skips. Keep rumble at ≥ 0.30.0.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
