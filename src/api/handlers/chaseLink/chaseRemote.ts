@@ -11,6 +11,33 @@ import { schema } from './chaseClient/schema';
 import type { Mutation, Query, Subscription } from './chaseClient/client';
 import { LINK_TOKEN_HEADER } from './linkTokens';
 
+/** How long a WebSocket may take to open before it is given up and tried again. */
+const OPEN_TIMEOUT_MS = 10_000;
+
+/**
+ * The platform's WebSocket, closed when it does not open in time. A server that accepts the
+ * connection but never answers the upgrade (CHASE while it starts) would otherwise keep it
+ * connecting forever, and graphql-ws would never try again.
+ */
+const TimedWebSocket = Object.assign(
+	function TimedWebSocket(url: string | URL, protocols?: string | string[]) {
+		const socket = new WebSocket(url, protocols);
+		const timer = setTimeout(() => {
+			if (socket.readyState === WebSocket.CONNECTING) socket.close();
+		}, OPEN_TIMEOUT_MS);
+		const settle = () => clearTimeout(timer);
+		socket.addEventListener('open', settle);
+		socket.addEventListener('close', settle);
+		return socket;
+	},
+	{
+		CONNECTING: WebSocket.CONNECTING,
+		OPEN: WebSocket.OPEN,
+		CLOSING: WebSocket.CLOSING,
+		CLOSED: WebSocket.CLOSED
+	}
+);
+
 /** The subscriptions CHASE's schema offers, which a live query subscribes to by name. */
 const availableSubscriptions = new Set(
 	schema.__schema.types
@@ -43,9 +70,13 @@ export function createChaseClient({
 		url: wsUrl.toString(),
 		connectionParams: headers,
 		lazy: false,
-		// keep trying while CHASE is away; the worker reconciles once it is back
+		// keep trying while CHASE is away; the worker reconciles once it is back. Every failure counts:
+		// graphql-ws retries only close events by default, and a CHASE restarting refuses the
+		// connection instead, which left the client stopped for good.
 		retryAttempts: Infinity,
+		shouldRetry: () => true,
 		keepAlive: 30_000,
+		webSocketImpl: TimedWebSocket,
 		on: { connected: () => onConnected?.() }
 	});
 
