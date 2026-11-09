@@ -1,4 +1,5 @@
 <script lang="ts">
+	import HeadDelegateMark from './HeadDelegateMark.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
 	import type { Snippet } from 'svelte';
@@ -83,6 +84,7 @@
 {#snippet statusCell(status: AdministrativestatusEnum, tooltip: string)}
 	<div class="tooltip" data-tip={tooltip}>
 		<i class="ph-fill {statusIcons[status]}"></i>
+		<span class="sr-only">{tooltip}</span>
 	</div>
 {/snippet}
 
@@ -105,9 +107,7 @@
 	<td
 		><span class="mr-2">{name}</span>
 		{#if headDelegate}
-			<div class="tooltip" data-tip={m.headDelegate()}>
-				<i class="ph-duotone ph-medal ml-2"></i>
-			</div>
+			<HeadDelegateMark />
 		{/if}
 	</td>
 	<td>
@@ -147,6 +147,7 @@
 				<span class="badge badge-sm badge-soft badge-primary">{paperCount}</span>
 			{:else}
 				<i class="ph-fill ph-minus text-base-300"></i>
+				<span class="sr-only">0</span>
 			{/if}
 		</td>
 	{/if}

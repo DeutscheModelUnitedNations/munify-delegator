@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modalFocus } from '#lib/helpers/modalFocus';
 	import TableSizeControl from './SizeControl.svelte';
 	import ZebraControl from './ZebraControl.svelte';
 	import { m } from '#lib/paraglide/messages';
@@ -15,7 +16,12 @@
 </button>
 
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
-	<div class="modal-box relative">
+	<div
+		class="modal-box relative"
+		role="dialog"
+		aria-modal="true"
+		{@attach confirmDialogOpen ? modalFocus(() => (confirmDialogOpen = false)) : undefined}
+	>
 		<h3 class="text-xl font-bold">{m.settings()}</h3>
 		<div class="flex flex-col gap-6 py-5">
 			<TableSizeControl />
@@ -32,6 +38,6 @@
 		</div>
 	</div>
 	<form method="dialog" class="modal-backdrop" onsubmit={() => (confirmDialogOpen = false)}>
-		<button>{m.close()}</button>
+		<button tabindex="-1">{m.close()}</button>
 	</form>
 </dialog>

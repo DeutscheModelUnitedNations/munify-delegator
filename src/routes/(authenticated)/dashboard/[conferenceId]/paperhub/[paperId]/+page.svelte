@@ -239,7 +239,9 @@
 			class="bg-warning p-2 sm:p-4 rounded-box shadow-lg tooltip tooltip-right sm:tooltip-left tooltip-warning"
 			data-tip={m.paperNotSavedAlert()}
 		>
-			<i class="ph-duotone ph-warning icon-beat-fade text-2xl sm:text-4xl"></i>
+			<i class="ph-duotone ph-warning icon-beat-fade text-2xl sm:text-4xl"
+			></i>
+			<span class="sr-only">{m.paperNotSavedAlert()}</span>
 		</div>
 	</div>
 {/if}

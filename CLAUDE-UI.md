@@ -10,6 +10,38 @@ This document provides guidance for building consistent user interfaces in MUNif
 2. **DaisyUI Native**: Prefer standard DaisyUI components and utilities over custom solutions
 3. **Minimal & Clean**: Favor simplicity, whitespace, and clear visual hierarchy
 4. **Svelte 5 Runes**: Use `$state`, `$derived`, `$effect` for reactivity (never legacy stores)
+5. **Accessible by default**: Participants include blind and low-vision people; see below
+
+## Accessibility
+
+`e2e/accessibility/accessibility.spec.ts` runs axe-core (WCAG 2.2 A/AA, serious and critical) over
+the public and participant pages, contrast in the high contrast variant, plus the keyboard paths.
+
+- **Dialogs** go through `Modal`, `Drawer`, `ActionModal` or bits-ui's `Dialog`. A hand-rolled one
+  gets `role="dialog"` (or `alertdialog`), `aria-modal="true"` and
+  `{@attach modalFocus(close)}` (`#lib/helpers/modalFocus`): focus moves in, Tab stays inside,
+  Escape closes, and focus returns to the opener. One that stays mounted attaches it only while
+  open: `{@attach open ? modalFocus(close) : undefined}`. Without a label it is named after its
+  first heading. The backdrop button gets `tabindex="-1"`.
+- **Every page has one `<main id="main-content" tabindex="-1">`**, which the root layout's skip
+  link targets: the layouts hold it (`(authenticated)`, `docs`), pages outside them their own.
+  Components never render a `<main>`.
+- **Icon-only means unnamed.** A button or link showing only an icon takes `aria-label`. A tooltip
+  (`data-tip`, `title`) shows on hover only, so an icon that carries meaning (a status, a table
+  header) repeats the tooltip as `<span class="sr-only">`. If the button shows text, put the name
+  in that text rather than an `aria-label` that does not contain it (voice users say what they see).
+- **State is never colour alone**: toggles use `aria-pressed`, tabs `aria-selected`, sortable
+  headers `aria-sort` with a `<button>` inside. A control that looks disabled is `disabled`, not
+  just `btn-disabled`.
+- **Clickable rows** keep their table semantics: the row's `onclick` is for the mouse, a real
+  `<a href>` in a cell is for everyone else (`PaperTable`). Never `role="button"` on a `<tr>`.
+- **`<dl>`**: each `<div>` wrapper holds one `<dt>`/`<dd>` pair and nothing else (an icon goes
+  inside the `<dt>`).
+- **High contrast** (`#lib/helpers/contrast`, the footer's `ContrastToggle`, or the system's
+  "increase contrast") sets `data-contrast="more"`; `app.css` darkens the semantic colours and
+  lifts muted text there. Muted text by opacity (`text-base-content/60`, `opacity-50`) is fine in
+  the default look; do not hard-code a colour around it.
+- Font Awesome 7 gives its glyphs empty alternative text itself, so plain `<i>` icons are silent.
 
 ## Component Library Overview
 
@@ -495,7 +527,9 @@ unless `toastProgress: false`. Prefer it over spelling the options out.
 
 ## Modal Component
 
-Use `Modal` for dialogs. It handles backdrop clicks and accessibility.
+Use `Modal` for dialogs. It closes on a backdrop click or Escape, is a `role="dialog"` named by
+its `title` (or its first heading), keeps focus inside while open and hands it back on close
+(`modalFocus`).
 
 ### Props
 
@@ -611,7 +645,8 @@ page.
 
 ## Drawer Component
 
-Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
+Use `Drawer` for slide-out panels (e.g., detail views, edit forms). Like `Modal` it is a focus-keeping
+dialog, named by its `title` (or `category`), closing on Escape.
 
 ### Props
 

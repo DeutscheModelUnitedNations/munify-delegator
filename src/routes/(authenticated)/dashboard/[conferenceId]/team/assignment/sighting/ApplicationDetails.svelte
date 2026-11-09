@@ -48,6 +48,7 @@
 					<th class="text-center"><i class="ph-duotone ph-gender-intersex"></i></th>
 					<th class="text-right" title={m.assignmentPreviousParticipations()}>
 						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
+						<span class="sr-only">{m.assignmentPreviousParticipations()}</span>
 					</th>
 				</tr>
 			</thead>

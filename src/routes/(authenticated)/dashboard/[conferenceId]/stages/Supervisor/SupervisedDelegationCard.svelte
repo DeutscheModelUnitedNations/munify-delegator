@@ -1,4 +1,5 @@
 <script lang="ts">
+	import HeadDelegateMark from '#lib/components/delegationStatusTable/HeadDelegateMark.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import codenamize from '#lib/helpers/codenamize';
@@ -154,9 +155,7 @@
 					<td colspan="5" class="text-gray-500 italic">
 						{m.hiddenMember()}
 						{#if member.isHeadDelegate}
-							<div class="tooltip" data-tip={m.headDelegate()}>
-								<i class="ph-duotone ph-medal ml-2"></i>
-							</div>
+							<HeadDelegateMark />
 						{/if}
 					</td>
 				</tr>

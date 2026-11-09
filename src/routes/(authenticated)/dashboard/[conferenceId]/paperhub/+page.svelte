@@ -62,6 +62,7 @@
 </script>
 
 <div class="flex flex-col gap-4 w-full py-4 sm:p-6">
+	<h1 class="sr-only">{m.paperHub()}</h1>
 	<div class="flex flex-col gap-2">
 		{#if showViewToggle}
 			<div role="tablist" class="tabs tabs-border mt-2 max-sm:flex-nowrap max-sm:overflow-x-auto">
@@ -70,6 +71,7 @@
 						role="tab"
 						class="tab shrink-0 whitespace-nowrap"
 						class:tab-active={currentView === tab.view}
+						aria-selected={currentView === tab.view}
 						onclick={() => (params.view = tab.view)}
 					>
 						<i class="ph-duotone {tab.icon} mr-1"></i>

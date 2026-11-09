@@ -36,7 +36,7 @@
 		<span class="text-base-content/60 text-sm">{m.noSchoolGiven()}</span>
 	{/if}
 	{#snippet actions()}
-		<button class="btn btn-sm" onclick={() => (changing = true)} aria-label={m.a11yEditSchool()}>
+		<button class="btn btn-sm" onclick={() => (changing = true)}>
 			<i class="ph-duotone ph-pencil-simple"></i>
 			{m.changeSchool()}
 		</button>

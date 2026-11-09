@@ -115,6 +115,8 @@
 			data-tip={m.tooManySeatsForDelegationSize({ size: delegationSize, seats })}
 		>
 			<i class="ph-fill ph-warning text-warning ml-1"></i>
+			<span class="sr-only">{m.tooManySeatsForDelegationSize({ size: delegationSize, seats })}</span
+			>
 		</div>
 	{/if}
 {/snippet}
@@ -140,6 +142,7 @@
 						</td>
 						<td class="tooltip" data-tip={getNationRegionalGroup(nation.nation.alpha3Code)}>
 							<i class="ph-duotone ph-globe"></i>
+							<span class="sr-only">{getNationRegionalGroup(nation.nation.alpha3Code)}</span>
 						</td>
 						{#each committees as committee, committeeIndex (committeeIndex)}
 							<td class="text-center">{@render committeeSeats(committee, nation)}</td>

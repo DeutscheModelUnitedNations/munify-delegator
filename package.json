@@ -24,6 +24,7 @@
 		"typst": "^0.10.0-8"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.14.0",
 		"@better-svelte-email/components": "^2.3.0",
 		"@better-svelte-email/server": "^2.3.0",
 		"@bwip-js/browser": "^4.11.4",

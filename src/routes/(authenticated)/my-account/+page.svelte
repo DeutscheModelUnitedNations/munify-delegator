@@ -113,6 +113,7 @@
 	<div class="backdrop"></div>
 {/if}
 <div class="flex w-full flex-col items-center p-4 max-sm:px-0 sm:p-10">
+	<h1 class="sr-only">{m.myAccount()}</h1>
 	<section class="max-ch-md z-20 mt-6 text-center">
 		<p>{m.herYouFindYourAccountInfo()}</p>
 

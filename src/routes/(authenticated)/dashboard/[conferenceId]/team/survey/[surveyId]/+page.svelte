@@ -91,6 +91,7 @@
 			role="tab"
 			class="tab gap-2"
 			class:tab-active={activeTab === 'results'}
+			aria-selected={activeTab === 'results'}
 			onclick={() => (activeTab = 'results')}
 		>
 			<i class="ph-duotone ph-chart-pie"></i>
@@ -100,6 +101,7 @@
 			role="tab"
 			class="tab gap-2"
 			class:tab-active={activeTab === 'settings'}
+			aria-selected={activeTab === 'settings'}
 			onclick={() => (activeTab = 'settings')}
 		>
 			<i class="ph-duotone ph-gear"></i>

@@ -68,7 +68,7 @@
 						<th class="w-0 whitespace-nowrap">{m.paperCreatedAt()}</th>
 						<th class="w-0 whitespace-nowrap">{m.paperUpdatedAt()}</th>
 						<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
-						<th class="w-0"></th>
+						<th class="w-0"><span class="sr-only">{m.actions()}</span></th>
 					</tr>
 				</thead>
 				<tbody>

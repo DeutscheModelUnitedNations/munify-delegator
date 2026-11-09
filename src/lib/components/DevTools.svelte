@@ -3,7 +3,7 @@
 	import graphqlIcon from '#assets/graphqlIcon.svg';
 </script>
 
-<div class="fab">
+<div class="fab" data-dev-tools>
 	<div tabindex="0" role="button" class="btn btn-lg btn-circle btn-primary">
 		<i class="ph-fill ph-wrench"></i>
 	</div>

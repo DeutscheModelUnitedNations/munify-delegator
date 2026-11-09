@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { clickedLink } from '#lib/helpers/clickedLink';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -63,8 +64,12 @@
 		accepted: papersData.filter((p) => p.status === 'ACCEPTED').length
 	});
 
-	const handlePaperClick = (paperId: string) => {
-		goto(resolve(`dashboard/${conferenceId}/paperhub/${paperId}`));
+	const paperHref = (paperId: string) => resolve(`dashboard/${conferenceId}/paperhub/${paperId}`);
+
+	// The row is a bigger target for the mouse; keyboard and screen readers use the link in it
+	const handleRowClick = ({ e, paperId }: { e: MouseEvent; paperId: string }) => {
+		if (clickedLink(e)) return;
+		goto(paperHref(paperId));
 	};
 
 	const formatDate = (date: Date | string | null | undefined) => {
@@ -140,17 +145,14 @@
 									<th>{m.paperTopic()}</th>
 									<th class="w-0 whitespace-nowrap">{m.author()}</th>
 									<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
-									<th class="w-0"></th>
+									<th class="w-0"><span class="sr-only">{m.openPaper()}</span></th>
 								</tr>
 							</thead>
 							<tbody>
 								{#each delegation.papers as paper (paper.id)}
 									<tr
 										class="hover cursor-pointer"
-										onclick={() => handlePaperClick(paper.id)}
-										role="button"
-										tabindex="0"
-										onkeydown={(e) => e.key === 'Enter' && handlePaperClick(paper.id)}
+										onclick={(e) => handleRowClick({ e, paperId: paper.id })}
 									>
 										<PaperTypeStatusColumns {paper} />
 										<td class="align-middle break-words">{@render topic(paper.agendaItem)}</td>
@@ -163,9 +165,13 @@
 										>
 
 										<td class="align-middle">
-											<button class="btn btn-ghost btn-xs" aria-label={m.openPaper()}>
+											<a
+												href={paperHref(paper.id)}
+												class="btn btn-ghost btn-xs"
+												aria-label={m.openPaper()}
+											>
 												<i class="ph-duotone ph-arrow-right"></i>
-											</button>
+											</a>
 										</td>
 									</tr>
 								{/each}

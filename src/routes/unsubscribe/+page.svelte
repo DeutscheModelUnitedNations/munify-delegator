@@ -33,7 +33,9 @@
 	};
 </script>
 
-<div
+<main
+	id="main-content"
+	tabindex="-1"
 	class="bg-base-200 flex min-h-screen w-full flex-col items-center justify-center p-5 text-center sm:p-10"
 >
 	{#if !unsubscribed}
@@ -43,9 +45,11 @@
 				<input
 					class="input input-bordered mt-6 w-lg max-w-full text-center"
 					type="email"
+					autocomplete="email"
+					aria-label={m.email()}
 					bind:value={email}
 				/>
-				<button class="btn btn-error {email ? '' : 'btn-disabled'} mt-5" onclick={unsubscribe}
+				<button class="btn btn-error mt-5" disabled={!email} onclick={unsubscribe}
 					>{m.unsubscribeAllNewslettersButton()}</button
 				>
 				<h3 class="mt-6 text-lg">{m.unsubscribeSomeOnly()}</h3>
@@ -65,4 +69,4 @@
 			</div>
 		</div>
 	{/if}
-</div>
+</main>

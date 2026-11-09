@@ -10,9 +10,7 @@
 	let { conferenceIdForWaitingListLink }: Props = $props();
 </script>
 
-<main
-	class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4 max-sm:px-0"
->
+<div class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4 max-sm:px-0">
 	<img src={cancel} alt="Empty" class="w-1/2" />
 	<h1 class="text-center text-3xl">{m.applicationRejected()}</h1>
 	<p class="text-center">{m.applicationRejectedText()}</p>
@@ -36,4 +34,4 @@
 	<div class="flex flex-col gap-4 md:flex-row-reverse">
 		<a class="btn" href={resolve('/')}>{m.backToHome()}</a>
 	</div>
-</main>
+</div>

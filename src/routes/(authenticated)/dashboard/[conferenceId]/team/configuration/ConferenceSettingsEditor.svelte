@@ -426,6 +426,7 @@
 				<button
 					role="tab"
 					class="tab min-w-0 shrink px-3 {currentTab === tab.value ? 'tab-active' : ''}"
+					aria-selected={currentTab === tab.value}
 					title={tab.label}
 					onclick={() => setTab(tab.value)}
 				>

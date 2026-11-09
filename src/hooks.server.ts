@@ -33,7 +33,12 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		const render = () =>
 			resolve(event, {
 				transformPageChunk: ({ html }) => {
-					return html.replace('%lang%', locale);
+					return (
+						html
+							.replace('%lang%', locale)
+							// Every locale the app speaks is written left to right
+							.replace('%paraglide.textDirection%', 'ltr')
+					);
 				}
 			});
 

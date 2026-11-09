@@ -103,6 +103,7 @@
 						{#if member.isHeadDelegate}
 							<div class="tooltip tooltip-left" data-tip={m.headDelegate()}>
 								<i class="ph-duotone ph-star text-warning"></i>
+								<span class="sr-only">{m.headDelegate()}</span>
 							</div>
 						{/if}
 						{#if showCommittee && member.assignedCommittee}

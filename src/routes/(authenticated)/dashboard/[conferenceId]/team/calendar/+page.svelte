@@ -16,6 +16,7 @@
 		<button
 			role="tab"
 			class="tab {activeTab === 'calendar' ? 'tab-active' : ''}"
+			aria-selected={activeTab === 'calendar'}
 			onclick={() => (activeTab = 'calendar')}
 		>
 			{m.calendar()}
@@ -23,6 +24,7 @@
 		<button
 			role="tab"
 			class="tab {activeTab === 'days' ? 'tab-active' : ''}"
+			aria-selected={activeTab === 'days'}
 			onclick={() => (activeTab = 'days')}
 		>
 			{m.calendarDaysAndTracks()}
@@ -30,6 +32,7 @@
 		<button
 			role="tab"
 			class="tab {activeTab === 'places' ? 'tab-active' : ''}"
+			aria-selected={activeTab === 'places'}
 			onclick={() => (activeTab = 'places')}
 		>
 			{m.calendarPlaces()}

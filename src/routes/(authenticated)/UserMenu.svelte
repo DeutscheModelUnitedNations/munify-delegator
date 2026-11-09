@@ -36,10 +36,11 @@
 		<div
 			tabindex="0"
 			role="button"
-			aria-label={displayName || user.email}
 			class="from-primary to-primary/70 grid size-9 cursor-pointer place-items-center rounded-full bg-gradient-to-br text-xs font-bold tracking-wide text-white"
 		>
-			{initials}
+			<!-- Initials only say something to whoever sees the full name in the menu -->
+			<span aria-hidden="true">{initials}</span>
+			<span class="sr-only">{displayName || user.email}</span>
 		</div>
 		<div
 			tabindex="-1"

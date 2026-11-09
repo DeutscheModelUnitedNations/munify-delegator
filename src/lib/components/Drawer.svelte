@@ -4,6 +4,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import DrawerHeader from './DrawerHeader.svelte';
+	import { modalFocus } from '#lib/helpers/modalFocus';
 
 	interface Props {
 		open: boolean;
@@ -52,6 +53,10 @@
 	<div
 		class="no-scrollbar fixed top-0 right-0 z-40 h-screen max-w-full overflow-y-auto"
 		style="width: {width}"
+		role="dialog"
+		aria-modal="true"
+		aria-label={title ?? category}
+		{@attach modalFocus(close)}
 		transition:fly={{ x: '100%', duration: 300, easing: cubicOut }}
 	>
 		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10 max-sm:gap-6 max-sm:px-4">

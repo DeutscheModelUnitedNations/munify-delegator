@@ -2,6 +2,7 @@
 	import dmunLogo from '#assets/logo/dmun-lang.svg';
 	import dmunLogoDark from '#assets/logo/dmun-lang-darkmode.svg';
 	import { PUBLIC_SHA, PUBLIC_VERSION } from '$app/env/public';
+	import ContrastToggle from '#lib/components/ContrastToggle.svelte';
 	import LanguageSwitcher from '#lib/components/LanguageSwitcher.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { resolve } from '$app/paths';
@@ -25,8 +26,11 @@
 				{@html m.imprintAndPrivacy()}
 			</a>
 		</nav>
-		<LanguageSwitcher />
-		<nav>
+		<div class="flex flex-wrap items-center justify-center gap-4">
+			<LanguageSwitcher />
+			<ContrastToggle />
+		</div>
+		<nav aria-label="Social Media">
 			<div class="grid grid-flow-col gap-4" id="socials">
 				<a href="https://www.instagram.com/dmun_ev/" aria-label="Instagram">
 					<i class="ph ph-instagram-logo text-3xl"></i>
@@ -39,7 +43,7 @@
 				</a>
 			</div>
 		</nav>
-		<aside>
+		<div>
 			<p>{m.aServiceBy()}</p>
 			<a href="https://dmun.de" target="_blank" class="transition-all duration-300 hover:scale-105">
 				<img
@@ -79,7 +83,7 @@
 					</div>
 				</div>
 			</div>
-		</aside>
+		</div>
 	</footer>
 </div>
 

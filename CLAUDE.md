@@ -1299,6 +1299,14 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - Color theming and icons
 - Code examples for common patterns
 
+**Accessibility** (vision-impaired participants attend; details in CLAUDE-UI.md): dialogs through
+`Modal`/`Drawer` or `modalFocus` (`#lib/helpers/modalFocus`), one `<main id="main-content">` per
+page for the skip link, names for icon-only controls (tooltips are hover-only), state as
+`aria-pressed` / `aria-selected` / `aria-sort` rather than colour, real `disabled`. The default
+look keeps DMUN's pale semantic colours; the high contrast variant (`#lib/helpers/contrast`,
+`data-contrast="more"`, the footer's toggle or the system's "increase contrast") is what has to
+pass 4.5:1. `e2e/accessibility/` runs axe-core over the public and participant pages.
+
 **Quick reference**:
 
 - **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping

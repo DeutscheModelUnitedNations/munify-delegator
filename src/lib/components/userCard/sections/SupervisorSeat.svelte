@@ -206,7 +206,7 @@
 				<th>{m.name()}</th>
 				<th>{m.schoolOrInstitution()}</th>
 				<th>{m.assignedRole()}</th>
-				<th></th>
+				<th><span class="sr-only">{m.actions()}</span></th>
 			</tr>
 		</thead>
 		<tbody>

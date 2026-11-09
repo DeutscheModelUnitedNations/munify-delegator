@@ -116,7 +116,7 @@
 					<tr>
 						<th>{m.name()}</th>
 						<th>{m.committee()}</th>
-						<th></th>
+						<th><span class="sr-only">{m.actions()}</span></th>
 					</tr>
 				</thead>
 				<tbody>

@@ -130,7 +130,7 @@
 						<th>{m.status()}</th>
 						<th>{m.expiresAt()}</th>
 						<th>{m.invitedBy()}</th>
-						<th></th>
+						<th><span class="sr-only">{m.actions()}</span></th>
 					</tr>
 				</thead>
 				<tbody>

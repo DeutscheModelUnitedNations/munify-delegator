@@ -40,15 +40,17 @@
 				{/if}
 				{#if withPostalSatus}
 					<th class="text-center">
-						<div class="tooltip" data-tip="Postialische Anmeldung">
+						<div class="tooltip" data-tip={m.postalRegistration()}>
 							<i class="ph-duotone ph-envelope-simple"></i>
+							<span class="sr-only">{m.postalRegistration()}</span>
 						</div>
 					</th>
 				{/if}
 				{#if withPaymentStatus}
 					<th class="text-center">
-						<div class="tooltip" data-tip="Beitragszahlung">
+						<div class="tooltip" data-tip={m.payment()}>
 							<i class="ph-duotone ph-money-wavy"></i>
+							<span class="sr-only">{m.payment()}</span>
 						</div>
 					</th>
 				{/if}
@@ -56,10 +58,11 @@
 					<th class="text-center">
 						<div class="tooltip" data-tip={m.papers()}>
 							<i class="ph-duotone ph-file-text"></i>
+							<span class="sr-only">{m.papers()}</span>
 						</div>
 					</th>
 				{/if}
-				<th></th>
+				<th><span class="sr-only">{m.actions()}</span></th>
 			</tr>
 		</thead>
 		<tbody>

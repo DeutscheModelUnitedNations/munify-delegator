@@ -16,19 +16,21 @@
 
 <div class="flex w-full flex-col">
 	<HomeNavbar />
-	<DocsShell
-		{nav}
-		titles={data.titles}
-		{current}
-		href={(slug) => localizeHref(resolve('/docs/[...slug]', { slug }))}
-		labels={{
-			menu: m.docsMenu(),
-			close: m.close(),
-			navigation: m.docsTitle(),
-			overview: m.docsOverview()
-		}}
-		iconPrefix={DOCS_ICON_PREFIX}
-	>
-		{@render children()}
-	</DocsShell>
+	<main id="main-content" tabindex="-1" class="w-full">
+		<DocsShell
+			{nav}
+			titles={data.titles}
+			{current}
+			href={(slug) => localizeHref(resolve('/docs/[...slug]', { slug }))}
+			labels={{
+				menu: m.docsMenu(),
+				close: m.close(),
+				navigation: m.docsTitle(),
+				overview: m.docsOverview()
+			}}
+			iconPrefix={DOCS_ICON_PREFIX}
+		>
+			{@render children()}
+		</DocsShell>
+	</main>
 </div>

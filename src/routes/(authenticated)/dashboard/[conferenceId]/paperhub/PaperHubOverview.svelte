@@ -273,6 +273,7 @@
 				role="tab"
 				class="tab shrink-0 whitespace-nowrap"
 				class:tab-active={section === tab.id}
+				aria-selected={section === tab.id}
 				onclick={() => (section = tab.id)}
 			>
 				<i class="ph-duotone {tab.icon} mr-1"></i>
