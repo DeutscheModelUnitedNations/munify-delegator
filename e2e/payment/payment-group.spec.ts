@@ -23,7 +23,7 @@ test('a supervisor can generate a group payment reference covering themselves an
 	// Paying for others selects the supervisor + all supervised participants - wait for that
 	// default selection instead of driving the multi-select UI by hand.
 	await page.getByLabel(/für andere mitbezahlen|pay for others too/i).check();
-	const generateButton = page.locator('button:has(.fa-sparkles)');
+	const generateButton = page.locator('button:has(.ph-sparkle)');
 	await expect(generateButton).toBeEnabled({ timeout: 15_000 });
 	await generateButton.click();
 

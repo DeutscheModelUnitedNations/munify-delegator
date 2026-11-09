@@ -50,7 +50,7 @@ export const ConferenceSeedingSchema = z.object({
 				abbreviation: z.string().refine((x) => x.length < 6),
 				seatAmount: z.number().min(1).optional().default(1),
 				description: z.string(),
-				fontAwesomeIcon: z.string()
+				icon: z.string()
 			})
 		)
 		.refine((nsas) => hasUniqueValues(nsas.map((nsa) => nsa.abbreviation)), {
@@ -80,7 +80,7 @@ export const ConferenceSeedingSchema = z.object({
 		z.object({
 			name: z.string(),
 			description: z.string(),
-			fontAwesomeIcon: z.string(),
+			icon: z.string(),
 			/** How many single participants the role seats. */
 			seatAmount: z.number().int().min(1).default(1)
 		})

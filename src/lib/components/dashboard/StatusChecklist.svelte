@@ -30,7 +30,7 @@
 			task: 'text-base-content/50 line-through decoration-success decoration-2'
 		},
 		PROBLEM: {
-			icon: 'exclamation',
+			icon: 'exclamation-mark',
 			mark: 'bg-error text-error-content',
 			badge: 'badge-error',
 			task: ''
@@ -85,7 +85,7 @@
 			<li class="border-base-300 flex items-center gap-3 border-b py-3">
 				<span class="flex size-7 shrink-0 items-center justify-center rounded-full {look.mark}">
 					{#if look.icon}
-						<i class="fa-solid fa-{look.icon} text-sm"></i>
+						<i class="ph-fill ph-{look.icon} text-sm"></i>
 					{/if}
 				</span>
 				<span class="flex min-w-0 flex-1 flex-col">

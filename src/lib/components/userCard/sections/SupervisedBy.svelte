@@ -69,14 +69,14 @@
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h3 class="text-lg font-bold">{m.supervisors()}</h3>
 		<button class="btn btn-sm" onclick={() => (assignSupervisorModalOpen = true)}>
-			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
+			<i class="ph-duotone ph-chalkboard-teacher"></i>
 			{m.assignSupervisor()}
 		</button>
 	</div>
 
 	{#if supervisors.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
+			<i class="ph-duotone ph-chalkboard-teacher"></i>
 			<span>{m.userCardNoSupervisors()}</span>
 		</div>
 	{:else}
@@ -101,9 +101,9 @@
 							</td>
 							<td class="text-center">
 								{#if sup.plansOwnAttendenceAtConference}
-									<i class="fas fa-check text-success"></i>
+									<i class="ph-fill ph-check text-success"></i>
 								{:else}
-									<i class="fas fa-xmark text-error"></i>
+									<i class="ph-fill ph-x text-error"></i>
 								{/if}
 							</td>
 							<td>
@@ -116,7 +116,7 @@
 										aria-label={m.removeSupervision()}
 										title={m.removeSupervision()}
 									>
-										<i class="fa-sharp-duotone fa-solid fa-link-slash"></i>
+										<i class="ph-duotone ph-link-break"></i>
 									</button>
 								</div>
 							</td>

@@ -16,7 +16,7 @@
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col">
 	<div class="mb-3 flex items-center gap-2">
 		<a href={resolve(`dashboard/${conferenceId}/team/participants`)} class="btn btn-ghost btn-sm">
-			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+			<i class="ph-duotone ph-arrow-left"></i>
 			{m.back()}
 		</a>
 		<h1 class="text-xl font-bold">{m.adminUserCard()}</h1>

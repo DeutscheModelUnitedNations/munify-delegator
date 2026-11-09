@@ -7,7 +7,7 @@
 		role:
 			| {
 					kind: ConferenceRoleKind;
-					fontAwesomeIcon?: string | null;
+					icon?: string | null;
 					nation?: { alpha2Code: string } | null;
 			  }
 			| null
@@ -23,5 +23,5 @@
 {#if nation}
 	<Flag {size} alpha2Code={nation.alpha2Code} />
 {:else if nonStateActor}
-	<Flag {size} nsa={true} icon={nonStateActor.fontAwesomeIcon} />
+	<Flag {size} nsa={true} icon={nonStateActor.icon} />
 {/if}

@@ -15,7 +15,7 @@ test('the sighting turns through the applications one card at a time', async ({ 
 
 	const position = page.getByTestId('deck-position');
 	await expect(position).toHaveText(/^1 (von|of) \d+$/);
-	const heading = page.locator('h3').filter({ has: page.locator('i.fa-users, i.fa-user') });
+	const heading = page.locator('h3').filter({ has: page.locator('i.ph-users, i.ph-user') });
 	await expect(heading).toHaveCount(1);
 	const first = await heading.innerText();
 
@@ -99,7 +99,7 @@ test('the sighting seeks, filters and searches in the backend', async ({ page })
 	});
 	const position = page.getByTestId('deck-position');
 	await expect(position).toHaveText(/^1 (von|of) \d+$/);
-	const heading = page.locator('h3').filter({ has: page.locator('i.fa-users, i.fa-user') });
+	const heading = page.locator('h3').filter({ has: page.locator('i.ph-users, i.ph-user') });
 	const first = await heading.innerText();
 
 	// the slider seeks to a place in the deck

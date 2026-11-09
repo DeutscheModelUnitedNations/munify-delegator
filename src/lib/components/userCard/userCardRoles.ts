@@ -61,7 +61,7 @@ export async function fetchUserCardRoles({
 					id: true,
 					kind: true,
 					name: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					nation: { alpha2Code: true, alpha3Code: true }
 				}
 			}
@@ -70,7 +70,7 @@ export async function fetchUserCardRoles({
 			__args: registrationOfUser,
 			id: true,
 			applied: true,
-			assignedRole: { id: true, name: true, fontAwesomeIcon: true }
+			assignedRole: { id: true, name: true, icon: true }
 		}),
 		client.liveQuery.conferenceSupervisors({
 			__args: registrationOfUser,

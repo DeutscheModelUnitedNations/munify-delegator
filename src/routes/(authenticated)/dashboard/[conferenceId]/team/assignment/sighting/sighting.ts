@@ -152,7 +152,7 @@ export interface SightedDelegation extends ApplicationTexts {
 		roleId: string;
 		role: {
 			name?: Nullable<string>;
-			fontAwesomeIcon?: Nullable<string>;
+			icon?: Nullable<string>;
 			nation?: Nullable<{ alpha3Code: string; alpha2Code: string }>;
 		};
 	}[];
@@ -194,7 +194,7 @@ const wishOf = ({
 		: {
 				roleId: wish.roleId,
 				name: wish.role.name ?? '',
-				icon: wish.role.fontAwesomeIcon ?? undefined
+				icon: wish.role.icon ?? undefined
 			};
 
 /** A delegation's application as the sighting shows it; wishes in the order they were ranked. */
@@ -307,10 +307,11 @@ export function memberSummary({
 	};
 }
 
-const GENDER_ICONS: Record<string, string> = { FEMALE: 'venus', MALE: 'mars' };
+const GENDER_ICONS: Record<string, string> = { FEMALE: 'gender-female', MALE: 'gender-male' };
 
 /** The icon of a gender, a neutral one when it is unknown or neither. */
-export const genderIcon = (gender: Nullable<string>) => GENDER_ICONS[gender ?? ''] ?? 'venus-mars';
+export const genderIcon = (gender: Nullable<string>) =>
+	GENDER_ICONS[gender ?? ''] ?? 'gender-intersex';
 
 /**
  * The arguments of `upsertAssignmentReview`: only `change`, for the delegation or single

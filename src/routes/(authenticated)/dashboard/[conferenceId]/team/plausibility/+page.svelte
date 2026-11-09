@@ -112,7 +112,7 @@
 
 <div class="flex flex-col gap-6 py-4 sm:p-6">
 	<p class="text-base-content/70 text-sm">
-		<i class="fa-sharp-duotone fa-solid fa-cake-candles mr-1"></i>
+		<i class="ph-duotone ph-cake mr-1"></i>
 		{limitsText ? m.plausibilityAgeLimits({ limits: limitsText }) : m.plausibilityAgeLimitsOff()}
 	</p>
 	<div class="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">

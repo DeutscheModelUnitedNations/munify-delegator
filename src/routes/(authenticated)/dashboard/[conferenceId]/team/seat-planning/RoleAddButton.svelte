@@ -10,5 +10,5 @@
 </script>
 
 <button class="btn btn-primary btn-sm btn-square" aria-label={m.add()} {disabled} {onclick}>
-	<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+	<i class="ph-duotone ph-plus"></i>
 </button>

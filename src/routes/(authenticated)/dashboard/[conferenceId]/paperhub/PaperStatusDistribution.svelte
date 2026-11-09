@@ -25,7 +25,7 @@
 					style="width: {(counts.submitted / counts.total) * 100}%"
 					data-tip="{m.paperStatusSubmitted()}: {counts.submitted}"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+					<i class="ph-duotone ph-paper-plane-tilt"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.submitted}</span
 					>
@@ -37,7 +37,7 @@
 					style="width: {(counts.revised / counts.total) * 100}%"
 					data-tip="{m.paperStatusRevised()}: {counts.revised}"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-rotate"></i>
+					<i class="ph-duotone ph-arrows-clockwise"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.revised}</span
 					>
@@ -49,7 +49,7 @@
 					style="width: {(counts.changesRequested / counts.total) * 100}%"
 					data-tip="{m.paperStatusChangesRequested()}: {counts.changesRequested}"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+					<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.changesRequested}</span
 					>
@@ -61,7 +61,7 @@
 					style="width: {(counts.accepted / counts.total) * 100}%"
 					data-tip="{m.paperStatusAccepted()}: {counts.accepted}"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-check"></i>
+					<i class="ph-duotone ph-check"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.accepted}</span
 					>

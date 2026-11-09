@@ -3,12 +3,12 @@
 
 	interface Props {
 		title: string;
-		fontAwesomeIcon?: string;
+		icon?: string;
 		children?: Snippet;
 		content?: string | number | null;
 	}
 
-	let { title, fontAwesomeIcon, children, content: textContent }: Props = $props();
+	let { title, icon, children, content: textContent }: Props = $props();
 </script>
 
 {#snippet Content()}
@@ -17,14 +17,14 @@
 	{:else if children}
 		{@render children?.()}
 	{:else}
-		<i class="fa-sharp-duotone fa-solid fa-dash"></i>
+		<i class="ph-duotone ph-minus"></i>
 	{/if}
 {/snippet}
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 	<legend class="fieldset-legend">
-		{#if fontAwesomeIcon}
-			<i class="fa-sharp-duotone fa-solid fa-{fontAwesomeIcon.replace('fa-', '')}"></i>
+		{#if icon}
+			<i class="ph-duotone ph-{icon}"></i>
 		{/if}
 		{title}
 	</legend>

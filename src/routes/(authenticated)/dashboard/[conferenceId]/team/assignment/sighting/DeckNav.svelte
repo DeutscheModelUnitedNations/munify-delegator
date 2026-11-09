@@ -134,7 +134,7 @@
 			disabled={!previousId}
 			onclick={() => previousId && onSelect(previousId)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+			<i class="ph-duotone ph-arrow-left"></i>
 			{m.assignmentDeckPrevious()}
 			<kbd class="kbd kbd-xs hidden sm:inline-block">←</kbd>
 		</button>
@@ -143,7 +143,7 @@
 		</span>
 		<button class="btn sm:btn-sm" disabled={!nextId} onclick={() => nextId && onSelect(nextId)}>
 			{m.assignmentDeckNext()}
-			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+			<i class="ph-duotone ph-arrow-right"></i>
 			<kbd class="kbd kbd-xs hidden sm:inline-block">→</kbd>
 		</button>
 		<button
@@ -151,7 +151,7 @@
 			disabled={!unreviewedId}
 			onclick={() => unreviewedId && onSelect(unreviewedId)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-forward-step"></i>
+			<i class="ph-duotone ph-skip-forward"></i>
 			{m.assignmentDeckNextUnreviewed()}
 			<kbd class="kbd kbd-xs hidden sm:inline-block">{NEXT_UNREVIEWED_KEY.toUpperCase()}</kbd>
 		</button>

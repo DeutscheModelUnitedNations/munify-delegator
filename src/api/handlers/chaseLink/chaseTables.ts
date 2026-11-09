@@ -60,7 +60,7 @@ export function watchChaseTables({
 		type: true,
 		alpha2Code: true,
 		alpha3Code: true,
-		faIcon: true,
+		icon: true,
 		name: true
 	} as const;
 	const EVENT = {

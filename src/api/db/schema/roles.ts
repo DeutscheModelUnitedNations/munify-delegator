@@ -45,7 +45,7 @@ export const conferenceRole = snakeCase.table(
 		/** Only non-state actors have one. */
 		abbreviation: text(),
 		description: text(),
-		fontAwesomeIcon: text(),
+		icon: text(),
 		/** How many people the role seats: a non-state actor's delegation size, a custom role's places. */
 		seatAmount: integer(),
 		/** Custom roles only: what their people are in a linked CHASE. */

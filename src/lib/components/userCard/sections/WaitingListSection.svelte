@@ -51,21 +51,21 @@
 					class="btn btn-primary btn-sm ml-auto"
 					href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-user-plus"></i>
+					<i class="ph-duotone ph-user-plus"></i>
 					{m.assignSeat()}
 				</a>
 			{/if}
 		</div>
 		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-			<InfoRow title={m.waitingListSince()} faIcon="hourglass-half">
+			<InfoRow title={m.waitingListSince()} icon="hourglass-medium">
 				<span class="text-sm">{formatDate(entry.createdAt)}</span>
 			</InfoRow>
 			{#if entry.assignedAt}
-				<InfoRow title={m.userCardSeatedAt()} faIcon="chair">
+				<InfoRow title={m.userCardSeatedAt()} icon="chair">
 					<span class="text-sm">{formatDate(entry.assignedAt)}</span>
 				</InfoRow>
 			{/if}
-			<InfoRow title={m.schoolOrInstitution()} faIcon="school">
+			<InfoRow title={m.schoolOrInstitution()} icon="graduation-cap">
 				<span class="text-sm">{entry.school?.name ?? m.noSchoolGiven()}</span>
 			</InfoRow>
 		</div>

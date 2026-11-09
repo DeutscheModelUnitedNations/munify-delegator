@@ -11,7 +11,7 @@
 		flagAlpha2Code?: string | null;
 		flagAlpha3Code?: string | null;
 		flagType: 'NATION' | 'NSA';
-		fontAwesomeIcon?: string | null;
+		icon?: string | null;
 		pieceName: string;
 		isComplete: boolean;
 		foundCount: number;
@@ -26,7 +26,7 @@
 		flagAlpha2Code,
 		flagAlpha3Code,
 		flagType,
-		fontAwesomeIcon,
+		icon,
 		pieceName,
 		isComplete,
 		foundCount,
@@ -56,9 +56,9 @@
 
 		<div class="animate-bounce">
 			{#if isComplete}
-				<i class="fa-sharp-duotone fa-solid fa-trophy text-6xl text-warning"></i>
+				<i class="ph-duotone ph-trophy text-6xl text-warning"></i>
 			{:else}
-				<i class="fa-sharp-duotone fa-solid fa-puzzle-piece text-6xl text-primary"></i>
+				<i class="ph-duotone ph-puzzle-piece text-6xl text-primary"></i>
 			{/if}
 		</div>
 
@@ -76,7 +76,7 @@
 			{#if flagType === 'NATION' && flagAlpha2Code}
 				<Flag size="sm" alpha2Code={flagAlpha2Code} />
 			{:else}
-				<Flag size="sm" nsa={true} icon={fontAwesomeIcon} />
+				<Flag size="sm" nsa={true} {icon} />
 			{/if}
 			<div>
 				<div class="font-semibold">{displayName}</div>
@@ -94,7 +94,7 @@
 
 		{#if isComplete}
 			<div class="alert alert-success">
-				<i class="fa-sharp-duotone fa-solid fa-party-horn"></i>
+				<i class="ph-duotone ph-confetti"></i>
 				<span>{m.congratulationsFlagComplete()}</span>
 			</div>
 		{/if}
@@ -104,16 +104,16 @@
 		<div class="flex gap-2">
 			{#if onViewCollection}
 				<button class="btn btn-ghost" onclick={handleViewCollection}>
-					<i class="fa-sharp-duotone fa-solid fa-puzzle-piece"></i>
+					<i class="ph-duotone ph-puzzle-piece"></i>
 					{m.viewCollection()}
 				</button>
 			{/if}
 			<button class="btn btn-primary" onclick={() => (open = false)}>
 				{#if isComplete}
-					<i class="fa-sharp-duotone fa-solid fa-party-horn"></i>
+					<i class="ph-duotone ph-confetti"></i>
 					{m.celebrate()}
 				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+					<i class="ph-duotone ph-arrow-right"></i>
 					{m.continueReviewing()}
 				{/if}
 			</button>

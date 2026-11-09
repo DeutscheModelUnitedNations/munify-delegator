@@ -14,7 +14,7 @@
 	let { open = $bindable(), grid }: Props = $props();
 </script>
 
-<SideDrawer bind:open title={m.filters()} icon="fa-filter">
+<SideDrawer bind:open title={m.filters()} icon="ph-funnel">
 	<FilterBuilder
 		filter={grid.state.filter}
 		columns={grid.columns}
@@ -26,7 +26,7 @@
 			disabled={grid.state.filter.items.length === 0}
 			onclick={() => grid.setFilter(emptyFilter())}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-filter-circle-xmark"></i>
+			<i class="ph-duotone ph-funnel-x"></i>
 			{m.dataGridClearFilter()}
 		</button>
 		<button class="btn btn-primary btn-sm ml-auto" onclick={() => (open = false)}>

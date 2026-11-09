@@ -34,7 +34,7 @@ describe('copiedEntryArgs', () => {
 					description: 'Welcome',
 					startTime: new Date('2026-03-12T09:00:00Z'),
 					endTime: '2026-03-12T10:30:00Z',
-					fontAwesomeIcon: 'flag',
+					icon: 'flag',
 					color: 'SESSION',
 					placeId: 'p1',
 					room: 'Aula',
@@ -51,7 +51,7 @@ describe('copiedEntryArgs', () => {
 			description: 'Welcome',
 			startTime: new Date('2026-03-14T09:00:00Z'),
 			endTime: new Date('2026-03-14T10:30:00Z'),
-			fontAwesomeIcon: 'flag',
+			icon: 'flag',
 			color: 'SESSION',
 			placeId: 'p1',
 			room: 'Aula',
@@ -75,7 +75,7 @@ describe('copiedEntryArgs', () => {
 		).toMatchObject({
 			calendarTrackIds: [],
 			description: null,
-			fontAwesomeIcon: null,
+			icon: null,
 			placeId: null,
 			room: null,
 			surveyOptionIds: []

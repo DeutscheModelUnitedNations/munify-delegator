@@ -20,11 +20,11 @@
 		{#if isAdmin}
 			<div class="flex shrink-0 flex-col gap-2 max-sm:w-full sm:flex-row">
 				<a class="btn btn-ghost sm:btn-lg gap-2" href={resolve('dashboard/chase-link')}>
-					<i class="fa-sharp-duotone fa-solid fa-link sm:text-2xl"></i>
+					<i class="ph-duotone ph-link sm:text-2xl"></i>
 					{m.chaseLinkTitle()}
 				</a>
 				<a class="btn btn-primary sm:btn-lg gap-2" href={resolve('dashboard/create')}>
-					<i class="fa-sharp-duotone fa-solid fa-plus sm:text-2xl"></i>
+					<i class="ph-duotone ph-plus sm:text-2xl"></i>
 					{m.seedConference()}
 				</a>
 			</div>

@@ -15,6 +15,9 @@
 
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
+	import '@phosphor-icons/web/regular/style.css';
+	import '@phosphor-icons/web/fill/style.css';
+	import '@phosphor-icons/web/duotone/style.css';
 	import { dev } from '$app/env';
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';

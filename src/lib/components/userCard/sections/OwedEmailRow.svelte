@@ -26,7 +26,7 @@
 		{#if sending}
 			<span class="loading loading-spinner loading-xs"></span>
 		{:else}
-			<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+			<i class="ph-duotone ph-paper-plane-tilt"></i>
 		{/if}
 		{sent ? m.emailSendAgain() : m.emailSendNow()}
 	</button>

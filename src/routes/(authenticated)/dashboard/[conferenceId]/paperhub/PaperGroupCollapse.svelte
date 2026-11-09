@@ -44,7 +44,7 @@
 	>
 		<span class="flex min-w-0 items-center {isCommittee ? 'gap-3' : 'gap-2'}">
 			<i
-				class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/50 text-sm transition-transform duration-200 {expanded
+				class="ph-duotone ph-caret-right text-base-content/50 text-sm transition-transform duration-200 {expanded
 					? 'rotate-90'
 					: ''}"
 			></i>

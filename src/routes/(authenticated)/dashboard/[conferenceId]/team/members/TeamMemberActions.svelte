@@ -20,7 +20,7 @@
 			onOpenUserCard();
 		}}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
+		<i class="ph-duotone ph-identification-card"></i>
 	</button>
 	{#if onImpersonate}
 		<button
@@ -31,7 +31,7 @@
 				onImpersonate();
 			}}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-user-secret"></i>
+			<i class="ph-duotone ph-detective"></i>
 		</button>
 	{/if}
 	<button
@@ -42,6 +42,6 @@
 			onDelete();
 		}}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+		<i class="ph-duotone ph-trash"></i>
 	</button>
 </div>

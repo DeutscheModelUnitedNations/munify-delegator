@@ -25,7 +25,7 @@
 	use:droppable={{ container: CONVERT_CONTAINER, callbacks: { onDrop } }}
 >
 	<h3 class="font-bold">
-		<i class="fa-sharp-duotone fa-solid fa-user-plus"></i>
+		<i class="ph-duotone ph-user-plus"></i>
 		{m.assignmentConvertToDelegation()}
 	</h3>
 	<p class="text-base-content/60 text-xs">{m.assignmentConvertHint()}</p>
@@ -48,7 +48,7 @@
 					{#if reverting(singleParticipantId)}
 						<span class="loading loading-spinner loading-xs"></span>
 					{:else}
-						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 					{/if}
 					{m.assignmentRevertConversion()}
 				</button>

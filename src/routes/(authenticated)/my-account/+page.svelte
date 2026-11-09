@@ -120,7 +120,7 @@
 		 and we want to show a hint -->
 		{#if redirectUrl}
 			<div class="alert alert-warning mt-10">
-				<i class="fas fa-exclamation-triangle text-3xl"></i>
+				<i class="ph-fill ph-warning text-3xl"></i>
 				<div>
 					<h2 class="text-xl font-bold">{m.completeData()}</h2>
 					<p>
@@ -139,7 +139,7 @@
 		>
 			<div class="card-body bg-base-100 rounded-box max-sm:p-4">
 				<h2 class="card-title mb-4 justify-center">
-					<i class="fa-sharp-duotone fa-solid fa-user-pen text-primary"></i>
+					<i class="ph-duotone ph-pencil-simple-line text-primary"></i>
 					{m.personalData()}
 				</h2>
 				<Form {form}>
@@ -215,7 +215,7 @@
 							/>
 						</div>
 					</FormSection>
-					<FormSection title={m.newsletters()} icon="envelope-open-text">
+					<FormSection title={m.newsletters()} icon="envelope-open">
 						<FormCheckbox
 							{form}
 							name="wantsToReceiveGeneralInformation"

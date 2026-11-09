@@ -25,7 +25,7 @@ export async function fetchMyParticipations(userId: string) {
 				assignedRole: {
 					kind: true,
 					name: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					nation: { alpha3Code: true, alpha2Code: true }
 				}
 			}
@@ -34,7 +34,7 @@ export async function fetchMyParticipations(userId: string) {
 			__args: { where: byUser },
 			conference: { id: true },
 			applied: true,
-			assignedRole: { name: true, fontAwesomeIcon: true }
+			assignedRole: { name: true, icon: true }
 		}),
 		client.liveQuery.conferenceSupervisors({
 			__args: { where: byUser },

@@ -8,7 +8,7 @@ describe('nonStateActorRow', () => {
 			name: 'Greenpeace',
 			abbreviation: 'GP',
 			description: 'An environmental organisation',
-			fontAwesomeIcon: 'fa-tree',
+			icon: 'tree',
 			seatAmount: 2
 		};
 		expect(nonStateActorRow(role)).toEqual(role);
@@ -21,7 +21,7 @@ describe('nonStateActorRow', () => {
 				name: null,
 				abbreviation: undefined,
 				description: null,
-				fontAwesomeIcon: undefined,
+				icon: undefined,
 				seatAmount: null
 			})
 		).toEqual({
@@ -29,7 +29,7 @@ describe('nonStateActorRow', () => {
 			name: '',
 			abbreviation: '',
 			description: '',
-			fontAwesomeIcon: null,
+			icon: null,
 			seatAmount: 0
 		});
 	});

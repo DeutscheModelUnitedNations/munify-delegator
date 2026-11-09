@@ -13,26 +13,25 @@ type Describe = (current: SavedView | null) => ViewActionEntry;
 const ENTRIES: Record<ViewAction, Describe> = {
 	save: (current) => ({
 		label: m.dataGridViewSave({ name: current?.name ?? '' }),
-		icon: 'fa-floppy-disk'
+		icon: 'ph-floppy-disk'
 	}),
-	discard: () => ({ label: m.dataGridViewDiscard(), icon: 'fa-rotate-left' }),
-	saveAs: () => ({ label: m.dataGridViewSaveAs(), icon: 'fa-plus' }),
-	rename: () => ({ label: m.dataGridViewRename(), icon: 'fa-pen' }),
+	discard: () => ({ label: m.dataGridViewDiscard(), icon: 'ph-arrow-counter-clockwise' }),
+	saveAs: () => ({ label: m.dataGridViewSaveAs(), icon: 'ph-plus' }),
+	rename: () => ({ label: m.dataGridViewRename(), icon: 'ph-pen' }),
 	setDefault: (current) =>
 		current?.isDefault
-			? { label: m.dataGridViewUnsetDefault(), icon: 'fa-star-half-stroke' }
-			: { label: m.dataGridViewSetDefault(), icon: 'fa-star' },
+			? { label: m.dataGridViewUnsetDefault(), icon: 'ph-star-half' }
+			: { label: m.dataGridViewSetDefault(), icon: 'ph-star' },
 	myDefault: (current) => {
-		if (current?.isMyDefault)
-			return { label: m.dataGridViewUnsetMyDefault(), icon: 'fa-bookmark-slash' };
+		if (current?.isMyDefault) return { label: m.dataGridViewUnsetMyDefault(), icon: 'ph-x-circle' };
 		return {
 			label: current ? m.dataGridViewSetMyDefault() : m.dataGridViewBaseAsMyDefault(),
-			icon: 'fa-bookmark'
+			icon: 'ph-bookmark-simple'
 		};
 	},
-	publish: () => ({ label: m.dataGridViewPublish(), icon: 'fa-share-nodes' }),
-	duplicate: () => ({ label: m.dataGridViewDuplicate(), icon: 'fa-copy' }),
-	delete: () => ({ label: m.dataGridViewDelete(), icon: 'fa-trash', danger: true })
+	publish: () => ({ label: m.dataGridViewPublish(), icon: 'ph-share-network' }),
+	duplicate: () => ({ label: m.dataGridViewDuplicate(), icon: 'ph-copy' }),
+	delete: () => ({ label: m.dataGridViewDelete(), icon: 'ph-trash', danger: true })
 };
 
 /** How the views menu words and marks an action, for the view it acts on. */

@@ -14,10 +14,10 @@
 <button class="flex items-center gap-2 {className}" class:cursor-pointer={canSort} {...rest}>
 	{@render children()}
 	{#if sorted === 'asc'}
-		<i class="fa-sharp-duotone fa-solid fa-arrow-down-a-z text-xs"></i>
+		<i class="ph-duotone ph-sort-ascending text-xs"></i>
 	{:else if sorted === 'desc'}
-		<i class="fa-sharp-duotone fa-solid fa-arrow-down-z-a text-xs"></i>
+		<i class="ph-duotone ph-sort-descending text-xs"></i>
 	{:else if canSort}
-		<i class="fa-sharp-duotone fa-solid fa-arrows-up-down text-xs opacity-30"></i>
+		<i class="ph-duotone ph-arrows-down-up text-xs opacity-30"></i>
 	{/if}
 </button>

@@ -58,7 +58,7 @@
 <div class="flex flex-col gap-10 sm:gap-20">
 	{#if showSeatPlanningHint}
 		<div role="note" class="alert alert-info alert-soft text-sm">
-			<i class="fa-sharp-duotone fa-solid fa-table-cells"></i>
+			<i class="ph-duotone ph-table"></i>
 			<span>{m.committeesSeatPlanningHint()}</span>
 			<a
 				class="btn btn-sm btn-ghost"
@@ -67,7 +67,7 @@
 				})}
 			>
 				{m.seatPlanningOpen()}
-				<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+				<i class="ph-duotone ph-arrow-right"></i>
 			</a>
 		</div>
 	{/if}
@@ -77,7 +77,7 @@
 			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"
 			onclick={() => (addCommitteeModalOpen = true)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+			<i class="ph-duotone ph-plus"></i>
 			{m.addCommittee()}
 		</button>
 	{/if}

@@ -19,7 +19,7 @@ const entrySchema = z
 		description: z.string().nullable(),
 		startTime: z.string().regex(timeRegex),
 		endTime: z.string().regex(timeRegex),
-		fontAwesomeIcon: z.string().nullable(),
+		icon: z.string().nullable(),
 		color: z.enum(allColors),
 		room: z.string().nullable(),
 		// Files from before an entry could span tracks name one `trackName`

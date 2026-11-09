@@ -4,7 +4,7 @@ export interface NonStateActor {
 	name: string;
 	abbreviation: string;
 	description: string;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	seatAmount: number;
 }
 
@@ -17,7 +17,7 @@ export function nonStateActorRow(role: {
 	name?: string | null;
 	abbreviation?: string | null;
 	description?: string | null;
-	fontAwesomeIcon?: string | null;
+	icon?: string | null;
 	seatAmount?: number | null;
 }): NonStateActor {
 	return {
@@ -25,7 +25,7 @@ export function nonStateActorRow(role: {
 		name: role.name ?? '',
 		abbreviation: role.abbreviation ?? '',
 		description: role.description ?? '',
-		fontAwesomeIcon: role.fontAwesomeIcon ?? null,
+		icon: role.icon ?? null,
 		seatAmount: role.seatAmount ?? 0
 	};
 }

@@ -46,17 +46,15 @@
 				<span class="truncate">{column.label}</span>
 				{#if sorted}
 					<i
-						class="fa-sharp-duotone fa-solid {sorted.desc
-							? 'fa-arrow-down-wide-short'
-							: 'fa-arrow-up-short-wide'} text-primary text-xs"
+						class="ph-duotone {sorted.desc
+							? 'ph-sort-descending'
+							: 'ph-sort-ascending'} text-primary text-xs"
 					></i>
 					{#if grid.state.sorting.length > 1}
 						<span class="text-primary text-[0.6rem]">{sortIndex + 1}</span>
 					{/if}
 				{:else}
-					<i
-						class="fa-sharp-duotone fa-solid fa-arrows-up-down text-xs opacity-0 group-hover/head:opacity-30"
-					></i>
+					<i class="ph-duotone ph-arrows-down-up text-xs opacity-0 group-hover/head:opacity-30"></i>
 				{/if}
 			</button>
 		{:else}
@@ -71,7 +69,7 @@
 					onfilter();
 				}}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-filter text-xs"></i>
+				<i class="ph-duotone ph-funnel text-xs"></i>
 			</button>
 		{/if}
 	</div>

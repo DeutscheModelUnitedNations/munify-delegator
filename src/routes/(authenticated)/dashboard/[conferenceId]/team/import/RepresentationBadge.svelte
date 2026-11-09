@@ -15,5 +15,5 @@
 		flagCode={representation.alpha2Code ?? undefined}
 	/>
 {:else if representation.type === 'NSA'}
-	<AssignmentBadge tooltip={representation.name ?? ''} icon={representation.faIcon} />
+	<AssignmentBadge tooltip={representation.name ?? ''} icon={representation.icon} />
 {/if}

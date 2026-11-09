@@ -13,7 +13,7 @@ const germany: Delegation = {
 	assignedRole: {
 		kind: 'NATION',
 		name: null,
-		fontAwesomeIcon: null,
+		icon: null,
 		nation: { alpha2Code: 'de', alpha3Code: 'DEU' }
 	}
 };
@@ -22,7 +22,7 @@ const amnesty: Delegation = {
 	assignedRole: {
 		kind: 'NON_STATE_ACTOR',
 		name: 'Amnesty',
-		fontAwesomeIcon: 'candle',
+		icon: 'fire-simple',
 		nation: null
 	}
 };
@@ -59,7 +59,7 @@ describe('groupPapersByDelegation', () => {
 			delegationName: 'Amnesty',
 			alpha2Code: undefined,
 			nsa: true,
-			icon: 'candle',
+			icon: 'fire-simple',
 			papers: [papers[1]]
 		});
 		expect(groups.find((g) => g.delegationId === 'x')?.nsa).toBe(false);

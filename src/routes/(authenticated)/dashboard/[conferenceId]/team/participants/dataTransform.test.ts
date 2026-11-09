@@ -66,7 +66,7 @@ describe('transformParticipants', () => {
 								id: 'role-1',
 								kind: 'NATION',
 								name: null,
-								fontAwesomeIcon: null,
+								icon: null,
 								nation: { alpha2Code: 'de', alpha3Code: 'deu' }
 							}
 						},
@@ -115,7 +115,7 @@ describe('transformParticipants', () => {
 								id: 'role-2',
 								kind: 'NON_STATE_ACTOR',
 								name: 'Greenpeace',
-								fontAwesomeIcon: 'leaf',
+								icon: 'leaf',
 								nation: null
 							}
 						},
@@ -209,7 +209,7 @@ describe('transformParticipants', () => {
 						id: 'single-5',
 						applied: true,
 						school: { id: 'school-2', name: 'School' },
-						assignedRole: { id: 'role-3', name: 'Press', fontAwesomeIcon: 'newspaper' },
+						assignedRole: { id: 'role-3', name: 'Press', icon: 'newspaper' },
 						user: user('p1')
 					},
 					{ id: 'single-1', applied: true, school: null, assignedRole: null, user: user('p2') }

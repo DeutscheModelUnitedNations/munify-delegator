@@ -17,7 +17,7 @@ export interface FlagProgress {
 	alpha3Code: string | null;
 	name: string;
 	abbreviation: string | null;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	totalPieces: number;
 	foundPieces: number;
 	unlockedPieces: number;
@@ -190,7 +190,7 @@ function nationFlagsOf({
 			alpha3Code: nation.alpha3Code,
 			name: getNationName(alpha3Code),
 			abbreviation: null,
-			fontAwesomeIcon: null,
+			icon: null,
 			totalPieces: pieces.length,
 			foundPieces,
 			unlockedPieces,
@@ -228,7 +228,7 @@ function nsaFlagsOf({
 			alpha3Code: null,
 			name: nsa.name ?? '',
 			abbreviation: nsa.abbreviation,
-			fontAwesomeIcon: nsa.fontAwesomeIcon,
+			icon: nsa.icon,
 			totalPieces: NSA_PIECE_COUNT,
 			foundPieces,
 			unlockedPieces,

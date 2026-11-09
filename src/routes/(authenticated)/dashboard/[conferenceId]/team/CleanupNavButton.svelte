@@ -27,7 +27,7 @@
 
 <NavMenuButton
 	href="/dashboard/{conferenceId}/team/cleanup"
-	icon="fa-broom"
+	icon="ph-broom"
 	{active}
 	title={m.cleanup()}
 	attention={count > 0}

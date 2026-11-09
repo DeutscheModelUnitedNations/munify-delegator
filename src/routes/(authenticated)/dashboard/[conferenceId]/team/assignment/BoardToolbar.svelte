@@ -38,7 +38,7 @@
 	{#if running === action}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else}
-		<i class="fa-sharp-duotone fa-solid {name}"></i>
+		<i class="ph-duotone {name}"></i>
 	{/if}
 {/snippet}
 
@@ -88,7 +88,7 @@
 		</label>
 		<div class="ml-auto flex flex-wrap items-center gap-2">
 			<button class="btn btn-ghost btn-sm" disabled={busy} onclick={onReset}>
-				{@render icon('reset', 'fa-rotate-left')}
+				{@render icon('reset', 'ph-arrow-counter-clockwise')}
 				{m.assignmentResetSeats({ count: seats })}
 			</button>
 			<button
@@ -96,7 +96,7 @@
 				disabled={busy || !canAutoAssign}
 				onclick={onAutoAssign}
 			>
-				{@render icon('autoAssign', 'fa-wand-magic-sparkles')}
+				{@render icon('autoAssign', 'ph-magic-wand')}
 				{m.assignmentAutoAssign({ size })}
 			</button>
 		</div>

@@ -53,11 +53,11 @@
 		<div class="flex flex-col gap-3">
 			<div class="flex flex-wrap gap-2">
 				<a class="btn btn-primary" href={place.links.app} target="_blank" rel="noopener">
-					<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+					<i class="ph-duotone ph-arrow-square-out"></i>
 					{place.role === 'DELEGATE' ? m.chaseCardOpenCommittee() : m.chaseCardOpenConference()}
 				</a>
 				<a class="btn" href={place.links.manual} target="_blank" rel="noopener">
-					<i class="fa-sharp-duotone fa-solid fa-book"></i>
+					<i class="ph-duotone ph-book"></i>
 					{m.chaseCardManual()}
 				</a>
 			</div>

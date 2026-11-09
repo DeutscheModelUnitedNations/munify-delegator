@@ -16,7 +16,7 @@
 			__args: { id: singleParticipantId },
 			id: true,
 			applied: true,
-			assignedRole: { id: true, name: true, fontAwesomeIcon: true }
+			assignedRole: { id: true, name: true, icon: true }
 		})
 	);
 </script>
@@ -26,7 +26,7 @@
 	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-center gap-3">
 			{#if participant.assignedRole}
-				<Flag nsa icon={participant.assignedRole.fontAwesomeIcon ?? 'fa-hand-point-up'} size="xs" />
+				<Flag nsa icon={participant.assignedRole.icon ?? 'hand-pointing'} size="xs" />
 				<span class="text-lg font-bold">{participant.assignedRole.name}</span>
 			{:else}
 				<NoAssignmentNotice applied={participant.applied} />

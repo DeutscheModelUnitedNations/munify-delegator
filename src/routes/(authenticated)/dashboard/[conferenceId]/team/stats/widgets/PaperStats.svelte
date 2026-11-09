@@ -71,7 +71,7 @@
 	<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-12">
 		<div class="card-body p-4">
 			<h2 class="card-title text-base font-semibold">
-				<i class="fa-sharp-duotone fa-solid fa-file-lines text-base-content/70"></i>
+				<i class="ph-duotone ph-file-text text-base-content/70"></i>
 				{m.statsPaperOverview()}
 			</h2>
 

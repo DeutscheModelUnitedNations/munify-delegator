@@ -108,7 +108,7 @@
 >
 	<div class="flex items-baseline gap-1.5">
 		<span class="text-base-content/60 shrink-0" title={m.assignmentGroupSize()}>
-			<i class="fa-sharp-duotone fa-solid fa-users"></i>
+			<i class="ph-duotone ph-users"></i>
 			{group.size}
 		</span>
 		<span class="truncate font-bold">{names}</span>
@@ -126,9 +126,9 @@
 			{#each wishes as item (item.key)}
 				<li class="flex items-center gap-1 {wishTone(item.matches)}" title={item.name}>
 					{#if item.matches}
-						<i class="fa-sharp-duotone fa-solid fa-circle-check shrink-0"></i>
+						<i class="ph-duotone ph-check-circle shrink-0"></i>
 					{:else if unwished}
-						<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-warning shrink-0"></i>
+						<i class="ph-duotone ph-warning text-warning shrink-0"></i>
 					{/if}
 					<span class="truncate">{item.name}</span>
 					<PrioritizedMark show={item.prioritized} />
@@ -146,7 +146,7 @@
 				aria-label={m.assignmentCardSighting()}
 				title={m.assignmentCardSighting()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+				<i class="ph-duotone ph-arrow-left"></i>
 			</a>
 		{/if}
 		<GroupActions {...actions} />

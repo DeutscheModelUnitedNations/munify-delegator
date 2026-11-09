@@ -19,13 +19,13 @@ type Role = NonNullable<Parameters<typeof delegationFlag>[0]>['assignedRole'];
 const nation: Role = {
 	kind: 'NATION',
 	name: null,
-	fontAwesomeIcon: null,
+	icon: null,
 	nation: { alpha2Code: 'fr', alpha3Code: 'FRA' }
 };
 const nsa: Role = {
 	kind: 'NON_STATE_ACTOR',
 	name: 'Greenpeace',
-	fontAwesomeIcon: 'fa-leaf',
+	icon: 'leaf',
 	nation: null
 };
 
@@ -37,13 +37,13 @@ describe('delegationFlag', () => {
 		});
 		expect(delegationFlag({ assignedRole: nsa })).toEqual({
 			type: 'nsa',
-			fontAwesomeIcon: 'fa-leaf'
+			icon: 'leaf'
 		});
 		expect(
 			delegationFlag({
-				assignedRole: { kind: 'NON_STATE_ACTOR', name: 'X', fontAwesomeIcon: null, nation: null }
+				assignedRole: { kind: 'NON_STATE_ACTOR', name: 'X', icon: null, nation: null }
 			})
-		).toEqual({ type: 'nsa', fontAwesomeIcon: 'fa-hand-point-up' });
+		).toEqual({ type: 'nsa', icon: 'hand-pointing' });
 		expect(delegationFlag({ assignedRole: null })).toBeUndefined();
 		expect(delegationFlag(null)).toBeUndefined();
 	});
@@ -75,7 +75,7 @@ describe('entries', () => {
 			endDate: end,
 			roleType: 'delegation',
 			roleLabel: m.delegationMember(),
-			icon: 'fa-users',
+			icon: 'ph-users',
 			flag: { type: 'nation', alpha2Code: 'fr' },
 			assignmentName: getFullTranslatedCountryNameFromISO3Code('FRA'),
 			committeeName: 'GA',
@@ -95,16 +95,15 @@ describe('entries', () => {
 		expect(
 			singleParticipantEntry({
 				conference,
-				assignedRole: { name: 'Press', fontAwesomeIcon: 'fa-camera' }
+				assignedRole: { name: 'Press', icon: 'camera' }
 			})
 		).toMatchObject({
 			roleType: 'singleParticipant',
-			flag: { type: 'nsa', fontAwesomeIcon: 'fa-camera' },
+			flag: { type: 'nsa', icon: 'camera' },
 			assignmentName: 'Press'
 		});
 		expect(
-			singleParticipantEntry({ conference, assignedRole: { name: 'P', fontAwesomeIcon: null } })
-				.flag
+			singleParticipantEntry({ conference, assignedRole: { name: 'P', icon: null } }).flag
 		).toBeUndefined();
 		expect(singleParticipantEntry({ conference, assignedRole: null })).toMatchObject({
 			flag: undefined,
@@ -116,7 +115,7 @@ describe('entries', () => {
 		expect(supervisorEntry({ conference })).toMatchObject({
 			roleType: 'supervisor',
 			roleLabel: m.supervisor(),
-			icon: 'fa-chalkboard-user'
+			icon: 'ph-chalkboard-teacher'
 		});
 		expect(teamMemberEntry({ conference, role: 'ADMIN' })).toMatchObject({
 			roleType: 'team',

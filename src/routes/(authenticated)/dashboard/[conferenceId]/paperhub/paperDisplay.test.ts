@@ -29,7 +29,7 @@ function workingPaper(overrides: Partial<PaperIdentity> = {}): PaperIdentity {
 			assignedRole: {
 				kind: 'NATION',
 				name: null,
-				fontAwesomeIcon: null,
+				icon: null,
 				nation: { alpha2Code: 'DE', alpha3Code: 'DEU' }
 			}
 		},
@@ -111,7 +111,7 @@ describe('buildResolutionHeaderData', () => {
 					assignedRole: {
 						kind: 'NON_STATE_ACTOR',
 						name: 'Amnesty',
-						fontAwesomeIcon: null,
+						icon: null,
 						nation: null
 					}
 				}

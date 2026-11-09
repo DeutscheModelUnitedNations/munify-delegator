@@ -46,7 +46,7 @@ const entry = (
 	description: null,
 	startTime: '09:30',
 	endTime: '10:15',
-	fontAwesomeIcon: null,
+	icon: null,
 	color: 'SESSION',
 	room: null,
 	trackNames: [],

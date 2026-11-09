@@ -24,7 +24,7 @@ test('a participant can generate a payment reference and an admin can mark it re
 	await participantPage.goto(`/dashboard/${E2E_CONFERENCE_ID}/payment`);
 	await waitForHydration(participantPage);
 
-	const generateButton = participantPage.locator('button:has(.fa-sparkles)');
+	const generateButton = participantPage.locator('button:has(.ph-sparkle)');
 	await expect(generateButton).toBeVisible({ timeout: 15_000 });
 	await generateButton.click();
 
@@ -79,7 +79,7 @@ test('a participant can generate a payment reference and an admin can mark it re
 
 	await participantPage.reload();
 	await waitForHydration(participantPage);
-	await expect(participantPage.locator('button:has(.fa-sparkles)')).toHaveCount(0);
+	await expect(participantPage.locator('button:has(.ph-sparkle)')).toHaveCount(0);
 	await expect(participantPage.locator('.alert-success')).toBeVisible({ timeout: 15_000 });
 
 	await participantContext.close();

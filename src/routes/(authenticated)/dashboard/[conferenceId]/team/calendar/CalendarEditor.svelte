@@ -47,7 +47,7 @@
 				name: true,
 				startTime: true,
 				endTime: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				color: true,
 				room: true,
 				tracks: { id: true },
@@ -250,17 +250,17 @@
 	<div
 		class="bg-base-200 flex flex-col items-center justify-center rounded-box p-6 text-center sm:p-12"
 	>
-		<i class="fas fa-calendar-days text-5xl opacity-50"></i>
+		<i class="ph-fill ph-calendar-dots text-5xl opacity-50"></i>
 		<p class="mt-4 text-lg opacity-70">{m.calendarNoDays()}</p>
 		<button class="btn btn-primary mt-4" onclick={onOpenDays}>
-			<i class="fas fa-plus"></i>
+			<i class="ph-fill ph-plus"></i>
 			{m.calendarAddDay()}
 		</button>
 	</div>
 {:else}
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<p class="text-base-content/60 text-sm">
-			<i class="fas fa-hand-pointer"></i>
+			<i class="ph-fill ph-hand-pointing"></i>
 			{m.calendarEditorHint()}
 		</p>
 		<div class="flex items-center gap-2">
@@ -380,7 +380,7 @@
 						<EditorEntryCard
 							id={entry.id}
 							name={entry.name}
-							fontAwesomeIcon={entry.fontAwesomeIcon}
+							icon={entry.icon}
 							color={entry.color}
 							start={entry.start}
 							end={entry.end}

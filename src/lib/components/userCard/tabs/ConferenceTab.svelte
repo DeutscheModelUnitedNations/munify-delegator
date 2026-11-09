@@ -23,15 +23,15 @@
 	const statusId = $derived(status?.id);
 
 	const attendanceOptions: StatusOption<boolean>[] = [
-		{ value: false, label: m.absent(), faIcon: 'xmark', tone: 'error' },
-		{ value: true, label: m.present(), faIcon: 'check', tone: 'success' }
+		{ value: false, label: m.absent(), icon: 'x', tone: 'error' },
+		{ value: true, label: m.present(), icon: 'check', tone: 'success' }
 	];
 </script>
 
 <div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
 	<StatusRow
 		title={m.attendance()}
-		faIcon="calendar-check"
+		icon="calendar-check"
 		active={status?.didAttend ?? false}
 		options={attendanceOptions}
 		change={(didAttend) =>

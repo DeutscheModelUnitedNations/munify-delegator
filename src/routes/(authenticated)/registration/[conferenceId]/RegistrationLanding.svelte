@@ -61,14 +61,14 @@
 {#if status !== 'OPEN'}
 	<NotParticipatingHint {conferenceId} {status} />
 {:else}
-	<DashboardSection icon="file-signature" title={m.signup()}>
+	<DashboardSection icon="signature" title={m.signup()}>
 		{#snippet headerAction()}
 			<a
 				class="btn btn-ghost btn-sm"
 				href={resolve(`dashboard/${conferenceId}/seats`)}
 				data-tour="registration.seats"
 			>
-				<i class="fa-sharp-duotone fa-solid fa-person-seat"></i>
+				<i class="ph-duotone ph-chair"></i>
 				<span class="max-sm:hidden">{m.conferenceSeats()}</span>
 			</a>
 		{/snippet}
@@ -80,7 +80,7 @@
 
 		<div class="bg-base-200 rounded-box mt-6 p-4" data-tour="registration.assistant">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-				<i class="fa-sharp-duotone fa-solid fa-message-question text-info text-2xl"></i>
+				<i class="ph-duotone ph-chat-circle-dots text-info text-2xl"></i>
 				<div class="flex-1">
 					<p class="font-semibold">{m.signUpAssistant()}</p>
 					<p class="text-base-content/70 text-sm">{m.signUpAssistantDescription()}</p>
@@ -92,10 +92,10 @@
 						aria-expanded={showDiagram}
 						onclick={() => (showDiagram = !showDiagram)}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-diagram-project"></i>
+						<i class="ph-duotone ph-tree-structure"></i>
 						{m.howDoIApply()}
 						<i
-							class="fa-sharp-duotone fa-solid fa-chevron-down text-xs transition-transform duration-300 {showDiagram
+							class="ph-duotone ph-caret-down text-xs transition-transform duration-300 {showDiagram
 								? 'rotate-180'
 								: ''}"
 						></i>
@@ -105,7 +105,7 @@
 						type="button"
 						onclick={() => (assistantOpenAt = applyLink)}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-sparkles"></i>
+						<i class="ph-duotone ph-sparkle"></i>
 						{m.openAssistant()}
 					</button>
 				</div>
@@ -127,24 +127,24 @@
 						flowchart TD
 							A[${m.whichRoleDoIWantToTakeInTheConference()}]:::question
 				
-							A --> Delegate[fa:fa-flag\n${m.delegateOfACountry()}]:::role
-							A --> NSA[fa:fa-megaphone\n${m.nonStateActorDiagram()}]:::role
+							A --> Delegate[fa:ph-flag\n${m.delegateOfACountry()}]:::role
+							A --> NSA[fa:ph-megaphone-simple\n${m.nonStateActorDiagram()}]:::role
 							NSA --> B[${m.doIHavePeopleToApplyWith()}]:::question
 							Delegate --> B
 
 							B -->|${m.yes()}| C[${m.didSomeoneOfTheseAlreadyCreateADelegation()}]:::question
-							B --->|${m.no()}| Individual{fa:fa-envelope\n${m.individualApplicationDiagram()}}:::outcome
+							B --->|${m.no()}| Individual{fa:ph-envelope\n${m.individualApplicationDiagram()}}:::outcome
 
-							C --> |${m.no()}| E{fa:fa-plus\n${m.createDelegationDiagram()}}:::outcome
-							C --> |${m.yes()}| D{fa:fa-right-to-bracket\n${m.joinDelegationDiagram()}}:::outcome
+							C --> |${m.no()}| E{fa:ph-plus\n${m.createDelegationDiagram()}}:::outcome
+							C --> |${m.yes()}| D{fa:ph-sign-in\n${m.joinDelegationDiagram()}}:::outcome
 
-							A --> Journalist[fa:fa-newspaper\n${m.journalist()}]:::role ----> Individual
-							A --> Special[fa:fa-gavel\n${m.specialRole()}]:::role ----> Individual
+							A --> Journalist[fa:ph-newspaper\n${m.journalist()}]:::role ----> Individual
+							A --> Special[fa:ph-gavel\n${m.specialRole()}]:::role ----> Individual
 
-							A --> Supervisor[fa:fa-chalkboard-user\n${m.supervisor()}]:::role
+							A --> Supervisor[fa:ph-chalkboard-teacher\n${m.supervisor()}]:::role
 							Supervisor --> F[${m.didMyStudentsAlreadyCreateADelegation()}]:::question
-							F -.-> |${m.no()}| Wait[fa:fa-hourglass-clock\n${m.waitForSignupOfMyStudents()}]:::wait
-							F ---> |${m.yes()}| G{fa:fa-right-to-bracket\n${m.signupAsSupervisor()}}:::outcome
+							F -.-> |${m.no()}| Wait[fa:ph-clock-countdown\n${m.waitForSignupOfMyStudents()}]:::wait
+							F ---> |${m.yes()}| G{fa:ph-sign-in\n${m.signupAsSupervisor()}}:::outcome
 				
 							classDef question fill:#01548F,stroke-width:1px,stroke:#01548F,color:#FFFFFF,font-family:Outfit;
 							classDef role fill:#FFFFFF,stroke:#1B1837,stroke-width:1px,color:#1B1837,font-family:Outfit;

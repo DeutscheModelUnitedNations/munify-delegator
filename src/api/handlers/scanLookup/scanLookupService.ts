@@ -58,7 +58,7 @@ async function findScannedPerson({ conferenceId, code }: { conferenceId: string;
 						columns: {},
 						with: {
 							assignedRole: {
-								columns: { kind: true, name: true, fontAwesomeIcon: true },
+								columns: { kind: true, name: true, icon: true },
 								with: { nation: { columns: { alpha2Code: true, alpha3Code: true } } }
 							}
 						}
@@ -94,9 +94,7 @@ function nationSeat(nation: Role['nation'] | null) {
 }
 
 function actorSeat(actor: Role | null) {
-	return actor
-		? { nonStateActorName: actor.name, nonStateActorIcon: actor.fontAwesomeIcon }
-		: NO_ACTOR;
+	return actor ? { nonStateActorName: actor.name, nonStateActorIcon: actor.icon } : NO_ACTOR;
 }
 
 function describeSeat(person: ScannedPerson) {

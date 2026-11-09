@@ -11,7 +11,7 @@ export interface ChaseRepresentation {
 	type: 'DELEGATION' | 'NSA' | 'UN';
 	alpha2Code?: string | null;
 	alpha3Code?: string | null;
-	faIcon?: string | null;
+	icon?: string | null;
 	name?: string | null;
 }
 
@@ -86,7 +86,7 @@ function representationOf(representation: ChaseRepresentation | null | undefined
 		type: representation.type,
 		alpha2Code: representation.alpha2Code ?? null,
 		alpha3Code: representation.alpha3Code ?? null,
-		faIcon: representation.faIcon ?? null,
+		icon: representation.icon ?? null,
 		name: representation.name ?? null
 	};
 }

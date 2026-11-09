@@ -30,7 +30,7 @@
 		/>
 	</Tabs>
 	<button class="btn btn-primary btn-sm" onclick={() => (inviteMembersModalOpen = true)}>
-		<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
+		<i class="ph-duotone ph-envelope"></i>
 		{m.inviteTeamMembers()}
 	</button>
 </div>

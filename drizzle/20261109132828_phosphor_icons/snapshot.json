@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a10bd86e-a894-425a-a76c-74e6f2740125",
+  "prevIds": [
+    "877b81e6-4029-4987-9ba8-9225178d9d89"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "calendar_entry",
+        "font_awesome_icon"
+      ],
+      "writes": [
+        "s|col|public.calendar_entry.font_awesome_icon",
+        "n|col|public.calendar_entry.font_awesome_icon",
+        "s|col|public.calendar_entry.icon",
+        "n|col|public.calendar_entry.icon"
+      ],
+      "reads": [
+        "n|tbl|public.calendar_entry",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference_role",
+        "font_awesome_icon"
+      ],
+      "writes": [
+        "s|col|public.conference_role.font_awesome_icon",
+        "n|col|public.conference_role.font_awesome_icon",
+        "s|col|public.conference_role.icon",
+        "n|col|public.conference_role.icon"
+      ],
+      "reads": [
+        "n|tbl|public.conference_role",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"calendar_entry\",\"font_awesome_icon\"]",
+      "set": {
+        "name": "icon"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"conference_role\",\"font_awesome_icon\"]",
+      "set": {
+        "name": "icon"
+      }
+    }
+  ]
+}

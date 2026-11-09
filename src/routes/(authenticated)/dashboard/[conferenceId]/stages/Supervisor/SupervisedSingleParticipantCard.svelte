@@ -27,8 +27,8 @@
 				motivation: true,
 				experience: true,
 				applied: true,
-				appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
-				assignedRole: { id: true, name: true, fontAwesomeIcon: true },
+				appliedForRoles: { id: true, name: true, icon: true },
+				assignedRole: { id: true, name: true, icon: true },
 				user: supervisedUserSelection
 			}),
 			fetchPostalConference(conferenceId)
@@ -47,30 +47,17 @@
 	{#snippet detailSpace()}
 		<InfoGrid.Grid>
 			{#if !singleParticipant.assignedRole}
-				<RoleApplicationsEntry
-					fontAwesomeIcon="masks-theater"
-					applications={singleParticipant.appliedForRoles}
-				>
+				<RoleApplicationsEntry icon="mask-happy" applications={singleParticipant.appliedForRoles}>
 					{#snippet role(roleApplication)}
 						<div class="badge">
-							<i
-								class="fa-sharp-duotone fa-solid fa-{roleApplication.fontAwesomeIcon?.replace(
-									'fa-',
-									''
-								)} mr-2"
-							></i>
+							<i class="ph-duotone ph-{roleApplication.icon} mr-2"></i>
 							{roleApplication.name}
 						</div>
 					{/snippet}
 				</RoleApplicationsEntry>
 			{:else}
-				<InfoGrid.Entry title={m.role()} fontAwesomeIcon="masks-theater">
-					<i
-						class="fa-sharp-duotone fa-solid fa-{singleParticipant.assignedRole.fontAwesomeIcon?.replace(
-							'fa-',
-							''
-						)}"
-					></i>
+				<InfoGrid.Entry title={m.role()} icon="mask-happy">
+					<i class="ph-duotone ph-{singleParticipant.assignedRole.icon}"></i>
 					{singleParticipant.assignedRole.name}
 				</InfoGrid.Entry>
 			{/if}

@@ -44,7 +44,7 @@ const FlagProgressRef = schemaBuilder.objectRef<FlagProgress>('FlagProgress').im
 		alpha3Code: t.exposeString('alpha3Code', { nullable: true }),
 		name: t.exposeString('name'),
 		abbreviation: t.exposeString('abbreviation', { nullable: true }),
-		fontAwesomeIcon: t.exposeString('fontAwesomeIcon', { nullable: true }),
+		icon: t.exposeString('icon', { nullable: true }),
 		totalPieces: t.exposeInt('totalPieces'),
 		foundPieces: t.exposeInt('foundPieces'),
 		unlockedPieces: t.exposeInt('unlockedPieces'),

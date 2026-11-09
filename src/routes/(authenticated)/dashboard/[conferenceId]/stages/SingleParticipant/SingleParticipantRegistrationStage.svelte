@@ -34,7 +34,7 @@
 			motivation: true,
 			experience: true,
 			applied: true,
-			appliedForRoles: { id: true, name: true, description: true, fontAwesomeIcon: true }
+			appliedForRoles: { id: true, name: true, description: true, icon: true }
 		})
 	);
 
@@ -117,7 +117,7 @@
 
 <DashboardSection
 	id="application-texts"
-	icon="file-lines"
+	icon="file-text"
 	title={m.informationAndMotivation()}
 	description={m.informationAndMotivationDescriptionHeadDelegate()}
 >

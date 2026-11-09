@@ -100,14 +100,14 @@
 			<dl class="grid grid-cols-2 gap-3">
 				<div class="rounded-field bg-base-100/60 px-3 py-2">
 					<dt class="flex items-center gap-1.5 text-xs text-base-content/60">
-						<i class="fa-sharp-duotone fa-solid fa-clock"></i>
+						<i class="ph-duotone ph-clock"></i>
 						{m.deadline()}
 					</dt>
 					<dd class="font-semibold">{formatDeadline(survey.deadline)}</dd>
 				</div>
 				<div class="rounded-field bg-base-100/60 px-3 py-2">
 					<dt class="flex items-center gap-1.5 text-xs text-base-content/60">
-						<i class="fa-sharp-duotone fa-solid fa-comments"></i>
+						<i class="ph-duotone ph-chats"></i>
 						{m.totalAnswers()}
 					</dt>
 					<dd class="text-lg leading-tight font-bold">{totalAnswers}</dd>
@@ -145,7 +145,7 @@
 				<h3 class="min-w-0 text-xl font-bold break-words">{survey.title}</h3>
 				{#if survey.hidden}
 					<span class="badge badge-soft">
-						<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
+						<i class="ph-duotone ph-archive"></i>
 						{m.archivedSurvey()}
 					</span>
 				{/if}
@@ -157,10 +157,7 @@
 				class="btn btn-ghost btn-sm"
 				onclick={() => toggleDraft({ id: survey.id, currentDraft: survey.draft })}
 			>
-				<i
-					class="fa-sharp-duotone fa-solid {survey.draft
-						? 'fa-eye-slash text-warning'
-						: 'fa-eye text-success'}"
+				<i class="ph-duotone {survey.draft ? 'ph-eye-slash text-warning' : 'ph-eye text-success'}"
 				></i>
 				{survey.draft ? m.surveyIsDraft() : m.surveyIsLive()}
 			</button>
@@ -168,14 +165,14 @@
 				class="btn btn-ghost btn-sm"
 				onclick={() => toggleHidden({ id: survey.id, currentHidden: survey.hidden })}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
+				<i class="ph-duotone ph-archive"></i>
 				{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 			</button>
 			<button
 				class="btn btn-ghost btn-sm text-error"
 				onclick={() => onDelete({ id: survey.id, title: survey.title })}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+				<i class="ph-duotone ph-trash"></i>
 				{m.delete()}
 			</button>
 		</div>
@@ -210,7 +207,7 @@
 			href={resolve(`dashboard/${conferenceId}/team/survey/${survey.id}`)}
 		>
 			{m.details()}
-			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+			<i class="ph-duotone ph-arrow-right"></i>
 		</a>
 	</footer>
 </article>

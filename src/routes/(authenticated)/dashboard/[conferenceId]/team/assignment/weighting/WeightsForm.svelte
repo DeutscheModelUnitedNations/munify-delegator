@@ -140,24 +140,22 @@
 	};
 </script>
 
-{#snippet nullRating()}<i class="fa-sharp-duotone fa-solid fa-star text-warning"></i>{/snippet}
-{#snippet ratingFactor()}<i class="fa-sharp-duotone fa-solid fa-star-half-stroke text-warning"
-	></i>{/snippet}
-{#snippet experienceModifier()}<i class="fa-sharp-duotone fa-solid fa-user-clock text-warning"
-	></i>{/snippet}
-{#snippet markBonus()}<i class="fa-sharp-duotone fa-solid fa-flag text-warning"></i>{/snippet}
+{#snippet nullRating()}<i class="ph-duotone ph-star text-warning"></i>{/snippet}
+{#snippet ratingFactor()}<i class="ph-duotone ph-star-half text-warning"></i>{/snippet}
+{#snippet experienceModifier()}<i class="ph-duotone ph-clock-user text-warning"></i>{/snippet}
+{#snippet markBonus()}<i class="ph-duotone ph-flag text-warning"></i>{/snippet}
 
 <div class="flex flex-col gap-6 lg:flex-row">
 	<div class="flex grow flex-col gap-4">
 		<div class="alert alert-info alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-scale-balanced text-xl"></i>
+			<i class="ph-duotone ph-scales text-xl"></i>
 			<p>{m.assignmentWeightingHint()}</p>
 		</div>
 		<!-- The descriptions here are long, so they get the full width instead of the default 50ch -->
 		<div class="[&_.label-text]:max-w-none">
 			<Form {form}>
 				<FormFieldset title={m.assignmentWeightsRating()}>
-					{#snippet icon()}<i class="fa-sharp-duotone fa-solid fa-star text-warning"></i>{/snippet}
+					{#snippet icon()}<i class="ph-duotone ph-star text-warning"></i>{/snippet}
 					<!-- Each field spans the same four rows (label, description, input, errors) so the inputs stay level -->
 					<div
 						class="grid grid-cols-1 gap-x-4 md:grid-cols-2 md:grid-rows-[auto_1fr_auto_auto] md:[&>div]:row-span-4 md:[&>div]:grid md:[&>div]:grid-rows-subgrid"
@@ -185,7 +183,7 @@
 					</div>
 				</FormFieldset>
 				<FormFieldset title={m.assignmentWeightsWishes()}>
-					{#snippet icon()}<i class="fa-sharp-duotone fa-solid fa-flag text-warning"></i>{/snippet}
+					{#snippet icon()}<i class="ph-duotone ph-flag text-warning"></i>{/snippet}
 					<div
 						class="grid grid-cols-1 gap-x-4 md:grid-cols-2 md:grid-rows-[auto_1fr_auto_auto] md:[&>div]:row-span-4 md:[&>div]:grid md:[&>div]:grid-rows-subgrid"
 					>
@@ -215,8 +213,7 @@
 					</div>
 				</FormFieldset>
 				<FormFieldset title={m.assignmentWeightsExperience()}>
-					{#snippet icon()}<i class="fa-sharp-duotone fa-solid fa-user-clock text-warning"
-						></i>{/snippet}
+					{#snippet icon()}<i class="ph-duotone ph-clock-user text-warning"></i>{/snippet}
 					<div
 						class="grid grid-cols-1 gap-x-4 md:grid-cols-2 md:grid-rows-[auto_1fr_auto_auto] md:[&>div]:row-span-4 md:[&>div]:grid md:[&>div]:grid-rows-subgrid"
 					>
@@ -284,7 +281,7 @@
 			</div>
 		</div>
 		<button type="button" class="btn btn-ghost self-end" onclick={resetToDefaults}>
-			<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+			<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 			{m.assignmentWeightsReset()}
 		</button>
 	</aside>

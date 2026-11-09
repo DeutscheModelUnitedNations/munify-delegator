@@ -14,13 +14,13 @@ interface AssignedNation {
 interface AssignedDelegationRole {
 	kind: ConferenceRoleKind;
 	name: string | null;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 	nation: AssignedNation | null;
 }
 
 interface AssignedRole {
 	name: string | null;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 }
 
 interface AssignedCommittee {
@@ -169,13 +169,13 @@ export type CardParticipation = ReturnType<typeof participationOf>;
 export function roleIcon(participation: CardParticipation) {
 	switch (participation.type) {
 		case 'delegation':
-			return 'fa-users';
+			return 'ph-users';
 		case 'singleParticipant':
-			return `fa-${(participation.customRole?.fontAwesomeIcon ?? 'user').replace('fa-', '')}`;
+			return `ph-${participation.customRole?.icon || 'user'}`;
 		case 'supervisor':
-			return 'fa-chalkboard-teacher';
+			return 'ph-chalkboard-teacher';
 		case 'teamMember':
-			return 'fa-users-gear';
+			return 'ph-user-gear';
 		default:
 			return undefined;
 	}

@@ -24,7 +24,7 @@
 		name: '',
 		abbreviation: '',
 		description: '',
-		fontAwesomeIcon: '',
+		icon: '',
 		seatAmount: 2
 	});
 
@@ -60,7 +60,7 @@
 		if (!draftValid) return;
 		try {
 			await client.mutate.createNonStateActor({
-				__args: { conferenceId, ...draft, fontAwesomeIcon: draft.fontAwesomeIcon || undefined },
+				__args: { conferenceId, ...draft, icon: draft.icon || undefined },
 				name: true
 			});
 		} catch (error) {
@@ -100,14 +100,14 @@
 					<td>
 						<RoleIconInput
 							class="min-w-24"
-							value={nsa.fontAwesomeIcon ?? ''}
+							value={nsa.icon ?? ''}
 							onchange={(e) =>
 								update({
 									input: e.currentTarget,
-									saved: nsa.fontAwesomeIcon ?? '',
+									saved: nsa.icon ?? '',
 									id: nsa.id,
 									data: {
-										fontAwesomeIcon: e.currentTarget.value
+										icon: e.currentTarget.value
 									}
 								})}
 						/>
@@ -181,7 +181,7 @@
 									class="tooltip tooltip-left"
 									data-tip={m.seatPlanningOverfilled({ members, seats: nsa.seatAmount })}
 								>
-									<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error"></i>
+									<i class="ph-duotone ph-warning text-error"></i>
 								</span>
 							{/if}
 						</div>
@@ -197,7 +197,7 @@
 								disabled={members !== undefined}
 								onclick={() => (toDelete = nsa)}
 							>
-								<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+								<i class="ph-duotone ph-trash"></i>
 							</button>
 						</span>
 					</td>
@@ -207,7 +207,7 @@
 		<tfoot>
 			<tr>
 				<td>
-					<RoleIconInput placeholder="fa-tree" bind:value={draft.fontAwesomeIcon} />
+					<RoleIconInput placeholder="tree" bind:value={draft.icon} />
 				</td>
 				<td>
 					<RoleInput draft label={m.name()} bind:value={draft.name} />

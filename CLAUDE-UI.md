@@ -341,7 +341,7 @@ reuses the conference's track of that name, which names are unique for.
 
 `#lib/components/RoleFlag.svelte` shows a delegation's role: a nation's flag or a non-state
 actor's icon (through `Flag`), nothing for no role. Pass the role as selected
-(`assignedRole { kind fontAwesomeIcon nation { alpha2Code } }`) and an optional `size` (`xs` by
+(`assignedRole { kind icon nation { alpha2Code } }`) and an optional `size` (`xs` by
 default). For the name next to it, narrow the role with `splitRole` from `#lib/helpers/conferenceRole`.
 
 ```svelte
@@ -734,7 +734,7 @@ Main section wrapper with icon, title, and description:
 
 **Props:**
 
-- `icon`: FontAwesome icon name (without `fa-` prefix)
+- `icon`: Phosphor icon name (without `ph-` prefix)
 - `title`: Section heading
 - `description`: Optional subtitle
 - `variant`: `"default"` | `"info"` (info uses blue styling)
@@ -1021,9 +1021,9 @@ Key-value pair display:
 </script>
 
 <Grid>
-	<Entry title="Name" fontAwesomeIcon="user" content="John Doe" />
-	<Entry title="Email" fontAwesomeIcon="envelope" content="john@example.com" />
-	<Entry title="Status" fontAwesomeIcon="circle-check">
+	<Entry title="Name" icon="user" content="John Doe" />
+	<Entry title="Email" icon="envelope" content="john@example.com" />
+	<Entry title="Status" icon="check-circle">
 		<span class="badge badge-success">Active</span>
 	</Entry>
 </Grid>
@@ -1168,10 +1168,10 @@ Sidebar navigation:
 </script>
 
 <NavMenu>
-	<NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" />
-	<NavMenuDetails title="Settings" icon="fa-cog">
-		<NavMenuButton title="General" href="/settings/general" icon="fa-gear" />
-		<NavMenuButton title="Security" href="/settings/security" icon="fa-shield" />
+	<NavMenuButton title="Dashboard" href="/dashboard" icon="ph-house" />
+	<NavMenuDetails title="Settings" icon="ph-gear">
+		<NavMenuButton title="General" href="/settings/general" icon="ph-sliders-horizontal" />
+		<NavMenuButton title="Security" href="/settings/security" icon="ph-shield" />
 	</NavMenuDetails>
 </NavMenu>
 ```
@@ -1284,22 +1284,39 @@ Use DaisyUI badges for status labels:
 
 ## Icons
 
-Use FontAwesome Sharp Duotone icons throughout the application:
+Use [Phosphor](https://phosphoricons.com) icons throughout the application, as MUNify CHASE does.
+The root layout loads the regular, fill and duotone weights from `@phosphor-icons/web`; the names
+are Phosphor's own (`@phosphor-icons/core` lists them), not Font Awesome's.
 
 ```svelte
-<!-- Regular duotone icon -->
-<i class="fa-sharp-duotone fa-solid fa-user"></i>
+<!-- Duotone, the default look -->
+<i class="ph-duotone ph-user"></i>
 
-<!-- Solid version for active states -->
-<i class="fas fa-user"></i>
+<!-- Fill for active states -->
+<i class="ph-fill ph-user"></i>
+
+<!-- Regular (outline), for brand logos -->
+<i class="ph ph-github-logo"></i>
 
 <!-- With size -->
-<i class="fa-sharp-duotone fa-solid fa-user text-2xl"></i>
+<i class="ph-duotone ph-user text-2xl"></i>
 
 <!-- With color -->
-<i class="fa-sharp-duotone fa-solid fa-check text-success"></i>
-<i class="fa-sharp-duotone fa-solid fa-times text-error"></i>
+<i class="ph-duotone ph-check text-success"></i>
+<i class="ph-duotone ph-x text-error"></i>
+
+<!-- Animated (app.css): spinner, beat, fade, shake -->
+<i class="ph-fill ph-spinner-gap animate-spin"></i>
+<i class="ph-fill ph-bell icon-shake"></i>
 ```
+
+- Components taking an icon prop take the name without `ph-` (`icon="users"`) unless their
+  doc comment says it is a class (`ph-users`, as in `teamRoutes.ts` and the `SideDrawer`).
+- Icons stored in the database (`conferenceRole.icon`, `calendarEntry.icon`) are bare Phosphor
+  names; the API refuses any other (`iconArgSchema`, `#api/services/iconName`). Let the team pick
+  them with `IconPicker` (`#lib/components/IconPicker.svelte`), which searches the catalogue.
+- Phosphor glyphs are square, so there is no fixed-width class; set a width (`w-5 text-center`)
+  only where icons in a column have to line up.
 
 ---
 
@@ -1496,7 +1513,7 @@ page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a 
 
 ```svelte
 <div class="flex flex-col items-center justify-center py-12 text-center">
-	<i class="fa-sharp-duotone fa-solid fa-inbox text-4xl text-base-content/30 mb-4"></i>
+	<i class="ph-duotone ph-tray text-4xl text-base-content/30 mb-4"></i>
 	<p class="text-base-content/60">No items found</p>
 </div>
 ```
@@ -1515,7 +1532,7 @@ page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a 
 
 <!-- Icon button -->
 <button class="btn btn-square btn-ghost btn-sm">
-	<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
+	<i class="ph-duotone ph-pencil-simple"></i>
 </button>
 ```
 

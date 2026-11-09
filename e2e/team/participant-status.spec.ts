@@ -18,7 +18,7 @@ test('a team member can mark a participant payment status as done from the parti
 	await statusTab.click();
 
 	const paymentDoneButton = page
-		.locator('div:has(> i.fa-money-bill)')
+		.locator('div:has(> i.ph-money)')
 		.getByRole('button', { name: /^(erledigt|done)$/i });
 	await expect(paymentDoneButton).toBeVisible({ timeout: 15_000 });
 	await paymentDoneButton.click();

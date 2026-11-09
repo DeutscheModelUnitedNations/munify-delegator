@@ -48,7 +48,7 @@
 
 <li class="w-full" {title}>
 	<a {href} class="flex w-full items-center gap-2 {showAsActive ? 'menu-active' : ''}">
-		<i class="{showAsActive ? 'fas ' : 'fa-sharp-duotone fa-solid'} {icon} w-5 text-center"></i>
+		<i class="{showAsActive ? 'ph-fill' : 'ph-duotone'} {icon} w-5 text-center"></i>
 
 		<span class="truncate">{title}</span>
 		{#if attention}

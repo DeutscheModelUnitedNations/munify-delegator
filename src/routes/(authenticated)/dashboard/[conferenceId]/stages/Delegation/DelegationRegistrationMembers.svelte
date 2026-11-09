@@ -85,7 +85,7 @@
 
 <DashboardSection {id} icon="users" title={m.delegationMembers()}>
 	<div class="bg-base-200 rounded-box mb-4 flex items-center gap-3 px-4 py-3">
-		<i class="fa-sharp-duotone fa-solid fa-signature text-base-content/50 text-xl"></i>
+		<i class="ph-duotone ph-signature text-base-content/50 text-xl"></i>
 		<div class="flex min-w-0 flex-col">
 			<span class="text-base-content/60 text-xs">
 				{m.delegationName()} · {m.delegationNameExplanation()}

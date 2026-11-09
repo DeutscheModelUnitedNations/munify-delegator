@@ -149,7 +149,7 @@
 
 	{#snippet actions()}
 		<button type="button" class="btn btn-ghost" onclick={restoreDefault}>
-			<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+			<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 			{m.emailTextRestoreDefault()}
 		</button>
 	{/snippet}

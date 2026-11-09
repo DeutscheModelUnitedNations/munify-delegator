@@ -59,7 +59,7 @@ describe('buildChaseImport', () => {
 			{ id: 'sp2', user: person('No', 'Role'), assignedRole: null }
 		],
 		conferenceSupervisors: [{ id: 'sup', user: person('Super', 'Visor') }],
-		nonStateActors: [{ id: 'nsa1', name: 'Greenpeace', fontAwesomeIcon: 'leaf' }],
+		nonStateActors: [{ id: 'nsa1', name: 'Greenpeace', icon: 'leaf' }],
 		delegationMembers: [
 			{
 				id: 'dm1',
@@ -124,7 +124,7 @@ describe('buildChaseImport', () => {
 				alpha2Code: 'fr',
 				regionalGroup: 'WESTERN_EUROPE_OTHERS'
 			},
-			{ id: 'nsa1', representationType: 'NSA', name: 'Greenpeace', faIcon: 'leaf' }
+			{ id: 'nsa1', representationType: 'NSA', name: 'Greenpeace', icon: 'leaf' }
 		]);
 	});
 

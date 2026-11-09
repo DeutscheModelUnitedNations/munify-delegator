@@ -16,10 +16,10 @@
 	<div class="stat">
 		<div class="stat-figure text-primary">
 			<i
-				class="fa-sharp-duotone fa-solid text-4xl"
-				class:fa-circle-check={allAccepted}
+				class="ph-duotone text-4xl"
+				class:ph-check-circle={allAccepted}
 				class:text-success={allAccepted}
-				class:fa-users={!allAccepted}
+				class:ph-users={!allAccepted}
 			></i>
 		</div>
 		<div class="stat-title">{m.studentsAccepted()}</div>

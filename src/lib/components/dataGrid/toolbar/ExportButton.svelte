@@ -30,20 +30,18 @@
 
 <div class="no-print dropdown dropdown-end">
 	<button tabindex="0" class="btn btn-square btn-ghost max-sm:btn-sm" aria-label={m.exportData()}>
-		<i class="fa-sharp-duotone fa-solid fa-file-export text-xl"></i>
+		<i class="ph-duotone ph-file-arrow-down text-xl"></i>
 	</button>
 	<ul class="dropdown-content menu z-10 w-48 rounded-box bg-base-200 p-2 shadow">
 		<li>
-			<button onclick={exportCsv}><i class="fa-sharp-duotone fa-solid fa-file-csv"></i> CSV</button>
+			<button onclick={exportCsv}><i class="ph-duotone ph-file-csv"></i> CSV</button>
 		</li>
 		<li>
-			<button onclick={exportJson}
-				><i class="fa-sharp-duotone fa-solid fa-file-code"></i> JSON</button
-			>
+			<button onclick={exportJson}><i class="ph-duotone ph-file-code"></i> JSON</button>
 		</li>
 		<li>
 			<button onclick={() => window.print()}>
-				<i class="fa-sharp-duotone fa-solid fa-print"></i>
+				<i class="ph-duotone ph-printer"></i>
 				{m.printTable()}
 			</button>
 		</li>

@@ -84,7 +84,7 @@ describe('registrationStatisticsOf', () => {
 					conferenceId: 'c',
 					roleId: 'r2',
 					name: 'Presse',
-					fontAwesomeIcon: null,
+					icon: null,
 					total: 2,
 					applied: 1
 				},
@@ -92,7 +92,7 @@ describe('registrationStatisticsOf', () => {
 					conferenceId: 'c',
 					roleId: 'r1',
 					name: 'Gericht',
-					fontAwesomeIcon: 'gavel',
+					icon: 'gavel',
 					total: 0,
 					applied: 0
 				}
@@ -110,8 +110,8 @@ describe('registrationStatisticsOf', () => {
 			supervisors: 4
 		});
 		expect(stats.singleParticipants.byRole).toEqual([
-			{ role: 'Gericht', fontAwesomeIcon: 'gavel', total: 0, applied: 0, notApplied: 0 },
-			{ role: 'Presse', fontAwesomeIcon: undefined, total: 2, applied: 1, notApplied: 1 }
+			{ role: 'Gericht', icon: 'gavel', total: 0, applied: 0, notApplied: 0 },
+			{ role: 'Presse', icon: undefined, total: 2, applied: 1, notApplied: 1 }
 		]);
 	});
 });

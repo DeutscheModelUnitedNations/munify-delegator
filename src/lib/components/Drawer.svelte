@@ -58,13 +58,13 @@
 			<DrawerHeader {id} {title} {titleSnippet} {category} {loading} />
 			{#if loading}
 				<div class="flex w-full items-center justify-center">
-					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
+					<i class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
 				</div>
 			{:else}
 				{@render children()}
 			{/if}
 			<button class="btn absolute top-4 right-4" onclick={close} aria-label={m.close()}>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+				<i class="ph-duotone ph-x"></i>
 			</button>
 		</div>
 	</div>

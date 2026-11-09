@@ -39,10 +39,7 @@
 </script>
 
 {#snippet delimiter()}
-	<i
-		class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/30 text-[0.6rem]"
-		aria-hidden="true"
-	></i>
+	<i class="ph-duotone ph-caret-right text-base-content/30 text-[0.6rem]" aria-hidden="true"></i>
 {/snippet}
 
 <!-- ATTENTION: importObject is dir route specific. You cannot move this file without adjusting this
@@ -54,7 +51,7 @@ import path via the parameter! The home link is the wordmark in the header, so t
 		{:else}
 			{@const breadcrumb = getBreadcrumb(pathSegment)}
 			{#snippet label()}
-				<i class="fa-sharp-duotone fa-solid fa-{breadcrumb.icon}"></i>
+				<i class="ph-duotone ph-{breadcrumb.icon}"></i>
 				<span class="crumb-label ml-1 truncate">
 					{#if pathSegment.key === 'surveyId' && pathSegment.isParameter}
 						<svelte:boundary>

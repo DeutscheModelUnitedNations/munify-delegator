@@ -178,7 +178,7 @@ export function buildConferenceStructure({
 			name: entry.name,
 			abbreviation: entry.abbreviation,
 			description: faker.lorem.sentence(),
-			fontAwesomeIcon: entry.icon,
+			icon: entry.icon,
 			// The persona actor seats a full delegation, so applying never trims it away.
 			seatAmount: index === 0 ? 3 : faker.number.int({ min: 2, max: 3 })
 		});
@@ -193,7 +193,7 @@ export function buildConferenceStructure({
 			kind: 'CUSTOM',
 			name: entry.name,
 			description: entry.description,
-			fontAwesomeIcon: entry.icon,
+			icon: entry.icon,
 			seatAmount: faker.number.int({ min: 2, max: 5 })
 		});
 		cs.customRoleIds.push(roleId);

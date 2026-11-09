@@ -20,7 +20,7 @@ export function fetchPaperDetail(paperId: string) {
 			assignedRole: {
 				kind: true,
 				name: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				nation: { alpha2Code: true, alpha3Code: true }
 			}
 		},

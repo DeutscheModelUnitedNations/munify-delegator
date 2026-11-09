@@ -35,7 +35,7 @@
 		<NoConferenceIndicator />
 		{#if currentUser?.isAdmin}
 			<a class="btn btn-ghost btn-sm" href={resolve('dashboard/create')}>
-				<i class="fa-sharp-duotone fa-solid fa-seedling"></i>
+				<i class="ph-duotone ph-plant"></i>
 				{m.seedConference()}
 			</a>
 		{/if}

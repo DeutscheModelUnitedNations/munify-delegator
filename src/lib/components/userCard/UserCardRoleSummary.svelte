@@ -29,7 +29,7 @@
 
 {#snippet labelled(icon: string, label: string)}
 	<span class="flex items-center gap-1.5">
-		<i class="fa-sharp-duotone fa-solid {icon} text-base-content/50 text-xs"></i>
+		<i class="ph-duotone {icon} text-base-content/50 text-xs"></i>
 		{label}
 	</span>
 {/snippet}
@@ -43,12 +43,12 @@
 				size="xs"
 				alpha2Code={role.nation?.alpha2Code}
 				nsa={!!role.nonStateActor}
-				icon={role.nonStateActor?.fontAwesomeIcon}
+				icon={role.nonStateActor?.icon}
 			/>
 			{assignmentName(member.delegation.assignedRole)}
 		</span>
 	{:else}
-		{@render labelled('fa-users', m.delegationMember())}
+		{@render labelled('ph-users', m.delegationMember())}
 	{/if}
 	{#if member.assignedCommittee}
 		{@render separator()}
@@ -56,30 +56,25 @@
 	{/if}
 	{#if member.isHeadDelegate}
 		{@render separator()}
-		{@render labelled('fa-medal', m.headDelegate())}
+		{@render labelled('ph-medal', m.headDelegate())}
 	{/if}
 {/snippet}
 
 {#snippet singleParticipantSummary(participant: SingleParticipant)}
 	{#if participant.assignedRole}
 		<span class="flex items-center gap-1.5 font-semibold">
-			{#if participant.assignedRole.fontAwesomeIcon}
-				<i
-					class="fa-sharp-duotone fa-solid fa-{participant.assignedRole.fontAwesomeIcon.replace(
-						'fa-',
-						''
-					)}"
-				></i>
+			{#if participant.assignedRole.icon}
+				<i class="ph-duotone ph-{participant.assignedRole.icon}"></i>
 			{/if}
 			{participant.assignedRole.name}
 		</span>
 	{:else}
-		{@render labelled('fa-user', m.singleParticipant())}
+		{@render labelled('ph-user', m.singleParticipant())}
 	{/if}
 {/snippet}
 
 {#snippet teamMemberSummary(member: TeamMember)}
-	{@render labelled('fa-people-group', m.teamMember())}
+	{@render labelled('ph-users-three', m.teamMember())}
 	{#if member.role}
 		{@render separator()}
 		<span>{translateTeamRole(member.role)}</span>
@@ -93,7 +88,7 @@
 		{:else if singleParticipant}
 			{@render singleParticipantSummary(singleParticipant)}
 		{:else if conferenceSupervisor}
-			{@render labelled('fa-chalkboard-user', m.supervisor())}
+			{@render labelled('ph-chalkboard-teacher', m.supervisor())}
 		{:else if teamMember}
 			{@render teamMemberSummary(teamMember)}
 		{/if}

@@ -58,7 +58,7 @@
 			title={m.copy()}
 			onclick={() => copy(text)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+			<i class="ph-duotone ph-copy"></i>
 		</button>
 	{/if}
 </div>

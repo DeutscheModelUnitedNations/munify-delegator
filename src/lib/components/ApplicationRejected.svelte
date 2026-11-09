@@ -19,7 +19,7 @@
 
 	{#if conferenceIdForWaitingListLink}
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-user-clock text-2xl"></i>
+			<i class="ph-duotone ph-clock-user text-2xl"></i>
 			<div class="flex flex-col gap-2">
 				<h2 class="text-2xl font-bold">{m.joinWaitingList()}</h2>
 				<p>{m.joinWaitingListText()}</p>
@@ -27,7 +27,7 @@
 					href={resolve('/(authenticated)/registration/[conferenceId]/waiting-list', {
 						conferenceId: conferenceIdForWaitingListLink
 					})}
-					class="btn">{m.joinWaitingListBtn()}<i class="fas fa-arrow-right"></i></a
+					class="btn">{m.joinWaitingListBtn()}<i class="ph-fill ph-arrow-right"></i></a
 				>
 			</div>
 		</div>

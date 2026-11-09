@@ -209,7 +209,7 @@
 	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
 		{#if chaseLink}
 			<div class="alert {parsed?.ok ? 'alert-warning' : 'alert-info'} mt-4">
-				<i class="fa-sharp-duotone fa-solid fa-link"></i>
+				<i class="ph-duotone ph-link"></i>
 				<span>
 					{#if parsed?.ok}
 						{m.importPresenceFileInsteadOfChase()}
@@ -351,7 +351,7 @@
 	/>
 	{#if parsed && !parsed.ok}
 		<div class="alert alert-error mt-4">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+			<i class="ph-duotone ph-warning"></i>
 			<span>{m.importPresenceInvalidFile()}</span>
 		</div>
 	{/if}
@@ -359,9 +359,9 @@
 
 {#snippet saveIcon()}
 	{#if loading}
-		<i class="fas fa-spinner fa-spin"></i>
+		<i class="ph-fill ph-spinner-gap animate-spin"></i>
 	{:else}
-		<i class="fas fa-save"></i>
+		<i class="ph-fill ph-floppy-disk"></i>
 	{/if}
 {/snippet}
 
@@ -372,7 +372,7 @@
 		class="min-w-0"
 	>
 		<button class="btn btn-primary max-w-full">
-			<i class="fas fa-arrow-up-right-from-square"></i>
+			<i class="ph-fill ph-arrow-square-out"></i>
 			<span class="truncate">{selectedEmail}</span>
 		</button>
 	</a>

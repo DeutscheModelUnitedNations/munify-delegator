@@ -181,7 +181,7 @@ Above the matrix you search for a state (**Search state**) and filter by **Regio
 
 ### Non-state actors and individual roles
 
-Under **Non-State Actors** you create actors with **Name**, **Abbreviation**, **Description**, **Icon** and **Seats**, which is the size of their delegation. Under **Individual roles** you create roles for single participants, such as the conference press. Here the **Seats** decide how many people can be given the role, and **Assigned** counts how many already have it. Fields save when you leave them, and the plus in the last row creates a new role. A role still assigned to someone cannot be deleted.
+Under **Non-State Actors** you create actors with **Name**, **Abbreviation**, **Description**, **Icon** and **Seats**, which is the size of their delegation. Pick the icon from the Phosphor icons with the button in front of the field, or type its name (such as `tree`). Under **Individual roles** you create roles for single participants, such as the conference press. Here the **Seats** decide how many people can be given the role, and **Assigned** counts how many already have it. Fields save when you leave them, and the plus in the last row creates a new role. A role still assigned to someone cannot be deleted.
 
 ### Hints
 

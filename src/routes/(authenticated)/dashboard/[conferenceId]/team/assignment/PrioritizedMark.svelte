@@ -7,7 +7,7 @@
 
 {#if show}
 	<i
-		class="fa-sharp-duotone fa-solid fa-bullseye-arrow text-primary shrink-0"
+		class="ph-duotone ph-target text-primary shrink-0"
 		role="img"
 		aria-label={m.assignmentPrioritized()}
 		title={m.assignmentPrioritized()}

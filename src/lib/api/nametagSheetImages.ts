@@ -77,36 +77,27 @@ export async function flagPng(alpha2Code: string): Promise<Uint8Array | null> {
 }
 
 /**
- * The icon font the sign draws with. The app shows Sharp Duotone, which paints its second tone
- * through a font feature canvas text cannot use, so only half of each icon would appear. The solid
- * Sharp font of the same release holds the whole shape; it sits beside the duotone one on the CDN
- * the app already loads its icons from. `null` when the app's icon stylesheet is not on the page.
+ * The icon font the sign draws with: Phosphor's fill weight, whose glyphs are whole shapes (the
+ * duotone weight paints its second tone as a separate layer canvas text cannot reproduce). The
+ * app's stylesheet declares it; `null` when it cannot be loaded.
  */
-let solidIconFont: Promise<string | null> | undefined;
-function loadSolidIconFont(): Promise<string | null> {
-	solidIconFont ??= (async () => {
-		const stylesheet = document.querySelector<HTMLLinkElement>('link[href*="sharp-duotone"]');
-		if (!stylesheet) return null;
-		const url = stylesheet.href.replace(/css\/[^/]*$/, 'webfonts/fa-sharp-solid-900.woff2');
-		const family = 'NametagSheetIcons';
-		try {
-			const face = new FontFace(family, `url(${url})`, { weight: '900' });
-			document.fonts.add(await face.load());
-			return family;
-		} catch {
-			return null;
-		}
-	})();
-	return solidIconFont;
+const ICON_FONT = 'Phosphor-Fill';
+let iconFont: Promise<string | null> | undefined;
+function loadIconFont(): Promise<string | null> {
+	iconFont ??= document.fonts
+		.load(`1em "${ICON_FONT}"`)
+		.then((faces) => (faces.length > 0 ? ICON_FONT : null))
+		.catch(() => null);
+	return iconFont;
 }
 
-/** A Font Awesome icon (as `fa-name` or `name`) on a grey tile, the way the app shows non-state actors. */
+/** A Phosphor icon (by name, without `ph-`) on a grey tile, the way the app shows non-state actors. */
 export async function iconPng(icon: string | null): Promise<Uint8Array> {
-	const name = (icon ?? 'hand-point-up').replace('fa-', '');
+	const name = icon || 'hand-pointing';
 
 	// the icon's character is what the app's stylesheet puts into the icon element
 	const probe = document.createElement('i');
-	probe.className = `fa-sharp-duotone fa-solid fa-${name}`;
+	probe.className = `ph-fill ph-${name}`;
 	probe.style.cssText = 'position:absolute;visibility:hidden';
 	document.body.appendChild(probe);
 	const glyph = decodeCssString(getComputedStyle(probe, '::before').content);
@@ -116,10 +107,10 @@ export async function iconPng(icon: string | null): Promise<Uint8Array> {
 	context.fillStyle = '#E5E7EB';
 	context.fillRect(0, 0, WIDTH, HEIGHT);
 
-	const family = await loadSolidIconFont();
+	const family = await loadIconFont();
 	if (family && glyph) {
 		const size = HEIGHT * 0.6;
-		context.font = `900 ${size}px ${family}`;
+		context.font = `${size}px "${family}"`;
 		context.fillStyle = '#1B1837';
 		context.textAlign = 'center';
 		context.textBaseline = 'alphabetic';

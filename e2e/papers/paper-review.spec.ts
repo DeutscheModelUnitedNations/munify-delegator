@@ -14,7 +14,7 @@ test('a delegate can submit a position paper and a reviewer can accept it', asyn
 	await delegatePage.locator('select[name="agendaItemId"]').selectOption({ index: 1 });
 	await delegatePage.locator('[contenteditable="true"]').first().fill('E2E test paper content.');
 
-	await delegatePage.locator('button:has(.fa-paper-plane)').click();
+	await delegatePage.locator('button:has(.ph-paper-plane-tilt)').click();
 	await delegatePage.waitForURL(new RegExp(`/paperhub$`), { timeout: 15_000 });
 
 	await delegateContext.close();

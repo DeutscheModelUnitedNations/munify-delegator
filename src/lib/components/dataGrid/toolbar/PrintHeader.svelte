@@ -25,7 +25,7 @@
 	{/if}
 
 	<div class="alert alert-warning mt-6">
-		<i class="fas fa-diamond-exclamation"></i>
+		<i class="ph-fill ph-warning-diamond"></i>
 		<p>
 			{m.thisExportContainsSensitiveData()}
 		</p>

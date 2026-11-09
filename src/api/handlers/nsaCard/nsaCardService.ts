@@ -43,7 +43,7 @@ export async function nsaCards({
 			},
 			delegation: {
 				columns: {},
-				with: { assignedRole: { columns: { name: true, fontAwesomeIcon: true } } }
+				with: { assignedRole: { columns: { name: true, icon: true } } }
 			}
 		}
 	});
@@ -53,7 +53,7 @@ export async function nsaCards({
 			givenName: participant.user.givenName,
 			familyName: participant.user.familyName,
 			nsaName: delegation.assignedRole?.name ?? null,
-			nsaIcon: delegation.assignedRole?.fontAwesomeIcon ?? null,
+			nsaIcon: delegation.assignedRole?.icon ?? null,
 			cardNumber: participant.nsaCardNumber,
 			code: await issueNsaCardCode({
 				userId: participant.userId,

@@ -52,10 +52,7 @@
 						onclick={() => onSelect(entry.id)}
 					>
 						<span class="h-10 w-1.5 shrink-0 rounded-selector {statusColors[entry.status]}"></span>
-						<i
-							class="fa-sharp-duotone fa-solid {entry.kind === 'delegation'
-								? 'fa-users'
-								: 'fa-user'} text-lg"
+						<i class="ph-duotone {entry.kind === 'delegation' ? 'ph-users' : 'ph-user'} text-lg"
 						></i>
 						<span class="flex min-w-0 flex-1 flex-col gap-1">
 							<span class="font-bold">{entry.codename}</span>
@@ -87,7 +84,7 @@
 	</div>
 {:else}
 	<div class="text-base-content/60 flex flex-col items-center py-12 text-center">
-		<i class="fa-sharp-duotone fa-solid fa-magnifying-glass mb-4 text-4xl opacity-30"></i>
+		<i class="ph-duotone ph-magnifying-glass mb-4 text-4xl opacity-30"></i>
 		<p>{m.assignmentNoApplications()}</p>
 	</div>
 {/if}

@@ -81,13 +81,13 @@
 	const genderIcon = $derived.by(() => {
 		switch (gender) {
 			case 'MALE':
-				return 'mars';
+				return 'gender-male';
 			case 'FEMALE':
-				return 'venus';
+				return 'gender-female';
 			case 'DIVERSE':
-				return 'transgender';
+				return 'gender-intersex';
 			default:
-				return 'genderless';
+				return 'user';
 		}
 	});
 
@@ -103,28 +103,32 @@
 		waitingList: {
 			label: () => m.userCardStageWaitingList(),
 			badge: 'badge-info',
-			icon: 'fa-hourglass-clock'
+			icon: 'ph-clock-countdown'
 		},
 		registered: {
 			label: () => m.userCardStageRegistered(),
 			badge: 'badge-warning',
-			icon: 'fa-pen-line'
+			icon: 'ph-pencil-line'
 		},
-		applied: { label: () => m.userCardStageApplied(), badge: 'badge-info', icon: 'fa-paper-plane' },
+		applied: {
+			label: () => m.userCardStageApplied(),
+			badge: 'badge-info',
+			icon: 'ph-paper-plane-tilt'
+		},
 		notSeated: {
 			label: () => m.userCardStageNotSeated(),
 			badge: 'badge-error',
-			icon: 'fa-circle-xmark'
+			icon: 'ph-x-circle'
 		},
 		seated: {
 			label: () => m.userCardStageSeated(),
 			badge: 'badge-success',
-			icon: 'fa-chair-office'
+			icon: 'ph-chair'
 		},
 		attended: {
 			label: () => m.userCardStageAttended(),
 			badge: 'badge-success',
-			icon: 'fa-calendar-check'
+			icon: 'ph-calendar-check'
 		}
 	};
 
@@ -275,14 +279,14 @@
 					: ''}"
 			>
 				<h2 class="text-xl font-bold break-words sm:text-3xl">{displayName}</h2>
-				<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
+				<i class="ph-duotone ph-{genderIcon} text-base-content/50"></i>
 				{#if pronouns}
 					<span class="text-base-content/60 text-sm">({pronouns})</span>
 				{/if}
 				{#if stage}
 					{@const shown = STAGES[stage]}
 					<span class="badge badge-soft gap-1.5 max-sm:badge-sm {shown.badge}">
-						<i class="fa-sharp-duotone fa-solid {shown.icon} text-xs"></i>
+						<i class="ph-duotone {shown.icon} text-xs"></i>
 						{shown.label()}
 					</span>
 				{/if}
@@ -312,7 +316,7 @@
 							aria-label={m.generateBadge()}
 							onclick={() => (badgeModalOpen = true)}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
+							<i class="ph-duotone ph-identification-badge"></i>
 						</button>
 					</div>
 				{/if}
@@ -327,20 +331,20 @@
 						aria-label={m.userCardMoreActions()}
 						title={m.userCardMoreActions()}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-ellipsis-vertical"></i>
+						<i class="ph-duotone ph-dots-three-vertical"></i>
 					</summary>
 					<ul
 						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
 					>
 						<li>
 							<button onclick={menuAction(() => (careNoteOpen = true))}>
-								<i class="fa-sharp-duotone fa-solid fa-note-sticky"></i>
+								<i class="ph-duotone ph-note"></i>
 								{m.editGlobalNotes()}
 							</button>
 						</li>
 						<li>
 							<button onclick={menuAction(copyUserId)}>
-								<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+								<i class="ph-duotone ph-copy"></i>
 								{m.copyUserId()}
 							</button>
 						</li>
@@ -353,7 +357,7 @@
 										deleteModalOpen = true;
 									})}
 								>
-									<i class="fa-sharp-duotone fa-solid fa-user-xmark"></i>
+									<i class="ph-duotone ph-user-minus"></i>
 									{m.deleteParticipant()}
 								</button>
 							</li>
@@ -370,7 +374,7 @@
 						class="btn btn-ghost btn-sm btn-square"
 						title={m.userCardOpenFullPage()}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+						<i class="ph-duotone ph-arrow-square-out"></i>
 					</a>
 				{/if}
 			</div>
@@ -393,7 +397,7 @@
 	<div class="flex flex-col gap-2">
 		{#if PUBLIC_BADGE_GENERATOR_URL}
 			<button class="btn btn-sm btn-primary w-full" onclick={openBadgeGenerator}>
-				<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
+				<i class="ph-duotone ph-magic-wand"></i>
 				{m.badgeGeneratorPrefilled()}
 			</button>
 		{/if}
@@ -417,7 +421,7 @@
 <Modal bind:open={deleteModalOpen} title={m.deleteParticipant()}>
 	<div class="flex flex-col gap-4">
 		<div class="alert alert-error">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
+			<i class="ph-duotone ph-warning text-xl"></i>
 			<span>{m.deleteParticipantWarning()}</span>
 		</div>
 
@@ -432,7 +436,7 @@
 				title={m.copy()}
 			>
 				{confirmDisplayName}
-				<i class="fa-sharp-duotone fa-solid fa-copy text-xs"></i>
+				<i class="ph-duotone ph-copy text-xs"></i>
 			</button>
 		</p>
 
@@ -456,7 +460,7 @@
 			{#if deleteLoading}
 				<span class="loading loading-spinner loading-sm"></span>
 			{/if}
-			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+			<i class="ph-duotone ph-trash"></i>
 			{m.deleteParticipantConfirmButton()}
 		</button>
 	{/snippet}

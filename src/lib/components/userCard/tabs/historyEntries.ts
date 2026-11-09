@@ -11,7 +11,7 @@ export interface HistoryEntry {
 	roleType: 'delegation' | 'singleParticipant' | 'supervisor' | 'team';
 	roleLabel: string;
 	icon: string;
-	flag?: { type: 'nation'; alpha2Code: string } | { type: 'nsa'; fontAwesomeIcon: string };
+	flag?: { type: 'nation'; alpha2Code: string } | { type: 'nsa'; icon: string };
 	assignmentName?: string;
 	committeeName?: string;
 	isHeadDelegate?: boolean;
@@ -30,7 +30,7 @@ interface HistoryDelegation {
 	assignedRole: {
 		kind: ConferenceRoleKind;
 		name: string | null;
-		fontAwesomeIcon: string | null;
+		icon: string | null;
 		nation: { alpha2Code: string; alpha3Code: string } | null;
 	} | null;
 }
@@ -50,7 +50,7 @@ export function delegationFlag(delegation: HistoryDelegation | null): HistoryEnt
 	const { nation, nonStateActor } = splitRole(delegation?.assignedRole);
 	if (nation) return { type: 'nation', alpha2Code: nation.alpha2Code };
 	if (!nonStateActor) return undefined;
-	return { type: 'nsa', fontAwesomeIcon: nonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up' };
+	return { type: 'nsa', icon: nonStateActor.icon ?? 'hand-pointing' };
 }
 
 /** What a delegation was assigned: the nation's translated name, or the NSA's name. */
@@ -70,7 +70,7 @@ export function delegationMemberEntry(dm: {
 		...conferenceFields(dm.conference),
 		roleType: 'delegation',
 		roleLabel: m.delegationMember(),
-		icon: 'fa-users',
+		icon: 'ph-users',
 		flag: delegationFlag(dm.delegation),
 		assignmentName: delegationAssignmentName(dm.delegation),
 		committeeName: dm.assignedCommittee?.abbreviation,
@@ -80,15 +80,15 @@ export function delegationMemberEntry(dm: {
 
 export function singleParticipantEntry(sp: {
 	conference: ConferenceSummary;
-	assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null;
+	assignedRole: { name: string | null; icon: string | null } | null;
 }): HistoryEntry {
-	const icon = sp.assignedRole?.fontAwesomeIcon;
+	const icon = sp.assignedRole?.icon;
 	return {
 		...conferenceFields(sp.conference),
 		roleType: 'singleParticipant',
 		roleLabel: m.singleParticipant(),
-		icon: 'fa-user',
-		flag: icon ? { type: 'nsa', fontAwesomeIcon: icon } : undefined,
+		icon: 'ph-user',
+		flag: icon ? { type: 'nsa', icon: icon } : undefined,
 		assignmentName: sp.assignedRole?.name ?? undefined
 	};
 }
@@ -98,7 +98,7 @@ export function supervisorEntry(sup: { conference: ConferenceSummary }): History
 		...conferenceFields(sup.conference),
 		roleType: 'supervisor',
 		roleLabel: m.supervisor(),
-		icon: 'fa-chalkboard-user'
+		icon: 'ph-chalkboard-teacher'
 	};
 }
 
@@ -110,7 +110,7 @@ export function teamMemberEntry(tm: {
 		...conferenceFields(tm.conference),
 		roleType: 'team',
 		roleLabel: m.teamMember(),
-		icon: 'fa-shield-halved',
+		icon: 'ph-shield-check',
 		assignmentName: tm.role ? translateTeamRole(tm.role) : undefined
 	};
 }
@@ -140,7 +140,7 @@ export function linkedAttendanceEntry({
 			...base,
 			roleType: 'singleParticipant',
 			roleLabel: m.singleParticipant(),
-			icon: 'fa-user'
+			icon: 'ph-user'
 		};
 	}
 	if (attendance.role === 'SUPERVISOR') {
@@ -148,10 +148,10 @@ export function linkedAttendanceEntry({
 			...base,
 			roleType: 'supervisor',
 			roleLabel: m.supervisor(),
-			icon: 'fa-chalkboard-user'
+			icon: 'ph-chalkboard-teacher'
 		};
 	}
-	return { ...base, roleType: 'delegation', roleLabel: m.delegationMember(), icon: 'fa-users' };
+	return { ...base, roleType: 'delegation', roleLabel: m.delegationMember(), icon: 'ph-users' };
 }
 
 /** Newest conference first; entries without a start date last. */

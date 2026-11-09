@@ -28,7 +28,7 @@
 		placeholder="https://chase.example.org"
 	/>
 	<button type="submit" class="btn btn-primary mt-4 self-start" disabled={$submitting}>
-		<i class="fa-sharp-duotone fa-solid fa-link"></i>
+		<i class="ph-duotone ph-link"></i>
 		{m.chaseLinkSendRequest()}
 	</button>
 </Form>

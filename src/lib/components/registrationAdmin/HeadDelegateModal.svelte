@@ -69,7 +69,7 @@
 					<span>{member.user.givenName} {member.user.familyName}</span>
 					{#if member.isHeadDelegate}
 						<span class="badge badge-accent">
-							<i class="fa-sharp-duotone fa-solid fa-medal"></i>
+							<i class="ph-duotone ph-medal"></i>
 						</span>
 					{/if}
 				</label>

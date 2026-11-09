@@ -9,6 +9,7 @@ import { whereRows } from '#api/db/whereRows';
 import { nullToUndefined } from '#api/services/args';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { apiError } from '#api/services/errors';
+import { isPhosphorIcon } from '#api/services/iconName';
 import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout';
 import { jsonDocument } from '#api/services/argSchemas';
 import { z } from 'zod';
@@ -256,7 +257,19 @@ async function announceReleaseVisibility(conferenceId: string) {
 
 /** A seeding document, as JSON string or parsed. */
 export const seedingDataSchema = jsonDocument({
-	schema: ConferenceSeedingSchema,
+	schema: ConferenceSeedingSchema.superRefine((data, ctx) => {
+		const icons = [
+			...data.nsa.map(({ icon }, index) => ({ icon, path: ['nsa', index, 'icon'] })),
+			...data.customConferenceRole.map(({ icon }, index) => ({
+				icon,
+				path: ['customConferenceRole', index, 'icon']
+			}))
+		];
+		for (const { icon, path } of icons) {
+			if (icon !== '' && !isPhosphorIcon(icon))
+				ctx.addIssue({ code: 'custom', path, message: m.unknownIcon() });
+		}
+	}),
 	malformed: () => m.plausibilityIncompleteOrInvalidData(),
 	invalid: (details) => m.conferenceSeedingInvalid({ details })
 });

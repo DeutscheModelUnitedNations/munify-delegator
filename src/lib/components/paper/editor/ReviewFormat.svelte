@@ -186,11 +186,15 @@
 <div class="flex w-full flex-col" bind:this={editorElement}>
 	{#if $editor}
 		<Menu.Wrapper>
-			<Menu.Button onClick={() => $editor.commands.undo()} label={m.undo()} icon="fa-rotate-left" />
+			<Menu.Button
+				onClick={() => $editor.commands.undo()}
+				label={m.undo()}
+				icon="ph-arrow-counter-clockwise"
+			/>
 			<Menu.Button
 				onClick={() => $editor.commands.redo()}
 				label={m.redo()}
-				icon="fa-rotate-right"
+				icon="ph-arrow-clockwise"
 			/>
 			<Menu.Divider />
 			<Menu.TextStyleButtons editor={$editor} />
@@ -198,7 +202,7 @@
 				onClick={setLink}
 				active={$editor.isActive('link')}
 				label={m.link()}
-				icon="fa-link"
+				icon="ph-link"
 			/>
 
 			<Menu.Divider />
@@ -211,13 +215,13 @@
 				onClick={() => $editor.chain().focus().liftListItem('listItem').run()}
 				disabled={!$editor.can().liftListItem('listItem')}
 				label={m.outdent()}
-				icon="fa-outdent"
+				icon="ph-text-outdent"
 			/>
 			<Menu.Button
 				onClick={() => $editor.chain().focus().sinkListItem('listItem').run()}
 				disabled={!$editor.can().sinkListItem('listItem')}
 				label={m.indent()}
-				icon="fa-indent"
+				icon="ph-text-indent"
 			/>
 
 			{#if snippets.length > 0}

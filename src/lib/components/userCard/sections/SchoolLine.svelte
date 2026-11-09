@@ -19,7 +19,7 @@
 	let changing = $state(false);
 </script>
 
-<InfoRow title={label} faIcon="school" {hint}>
+<InfoRow title={label} icon="graduation-cap" {hint}>
 	{#if school}
 		<span class="text-sm">
 			{#if href}
@@ -37,7 +37,7 @@
 	{/if}
 	{#snippet actions()}
 		<button class="btn btn-sm" onclick={() => (changing = true)} aria-label={m.a11yEditSchool()}>
-			<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
+			<i class="ph-duotone ph-pencil-simple"></i>
 			{m.changeSchool()}
 		</button>
 	{/snippet}

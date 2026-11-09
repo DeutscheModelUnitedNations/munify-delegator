@@ -13,11 +13,11 @@
 
 {#if loading}
 	<div class="flex justify-center p-8">
-		<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-4xl"></i>
+		<i class="ph-duotone ph-spinner-gap animate-spin text-4xl"></i>
 	</div>
 {:else if error}
 	<div class="alert alert-error">
-		<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle"></i>
+		<i class="ph-duotone ph-warning"></i>
 		<span>{error}</span>
 	</div>
 {:else}

@@ -136,9 +136,9 @@ describe('application details', () => {
 	});
 
 	it('picks a gender icon', () => {
-		expect(genderIcon('FEMALE')).toBe('venus');
-		expect(genderIcon('DIVERSE')).toBe('venus-mars');
-		expect(genderIcon(null)).toBe('venus-mars');
+		expect(genderIcon('FEMALE')).toBe('gender-female');
+		expect(genderIcon('DIVERSE')).toBe('gender-intersex');
+		expect(genderIcon(null)).toBe('gender-intersex');
 	});
 });
 

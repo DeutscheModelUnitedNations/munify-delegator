@@ -40,13 +40,13 @@
 	const attendanceChoices = $derived([
 		{
 			attends: true,
-			icon: 'person-walking-luggage',
+			icon: 'suitcase-rolling',
 			title: m.supervisorAttendsTitle(),
 			text: m.supervisorAttendsText()
 		},
 		{
 			attends: false,
-			icon: 'laptop-house',
+			icon: 'laptop',
 			title: m.supervisorRemoteTitle(),
 			text: m.supervisorRemoteText()
 		}
@@ -95,7 +95,7 @@
 	/>
 	<button class="btn btn-primary mt-4 self-end" type="button" onclick={confirmSchool}>
 		{m.next()}
-		<i class="fa-sharp-duotone fa-solid fa-arrow-down"></i>
+		<i class="ph-duotone ph-arrow-down"></i>
 	</button>
 </FlowStep>
 
@@ -118,7 +118,7 @@
 							? 'bg-primary text-primary-content'
 							: 'bg-primary/10 text-primary'}"
 					>
-						<i class="fa-sharp-duotone fa-solid fa-{choice.icon}"></i>
+						<i class="ph-duotone ph-{choice.icon}"></i>
 					</span>
 					<span class="flex flex-col gap-1">
 						<span class="font-semibold">{choice.title}</span>
@@ -137,7 +137,7 @@
 				<span class="loading loading-spinner loading-sm"></span>
 			{/if}
 			{m.supervisorSignupButton()}
-			<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+			<i class="ph-duotone ph-paper-plane-tilt"></i>
 		</button>
 	</FlowStep>
 {/if}

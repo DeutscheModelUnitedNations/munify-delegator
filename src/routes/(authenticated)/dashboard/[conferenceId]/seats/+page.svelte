@@ -40,7 +40,7 @@
 	<Tabs>
 		<Tab
 			title="{m.committeesAndAgendaItems()} ({conference.committees.length})"
-			icon="podium"
+			icon="lectern"
 			active={tab === 'committees'}
 			onclick={() => (params.tab = null)}
 		/>
@@ -52,7 +52,7 @@
 		/>
 		<Tab
 			title="{m.nsaPool()} ({nonStateActors.length})"
-			icon="megaphone"
+			icon="megaphone-simple"
 			active={tab === 'nsas'}
 			onclick={() => (params.tab = 'nsas')}
 		/>

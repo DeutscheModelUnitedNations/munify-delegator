@@ -56,9 +56,9 @@
 		<div class="w-full" transition:slide={{ duration: 200 }}>
 			<div class="alert alert-warning w-full">
 				{#if assignUserLoading}
-					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin"></i>
+					<i class="ph-duotone ph-spinner-gap animate-spin"></i>
 				{:else if assignUser}
-					<i class="fa-sharp-duotone fa-solid fa-user-plus fa-beat-fade"></i>
+					<i class="ph-duotone ph-user-plus icon-beat-fade"></i>
 					<div>
 						{m.assigningUser()}
 						<span class="font-bold">
@@ -70,7 +70,7 @@
 						({assignUser.id})
 					</div>
 				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-user-xmark fa-shake"></i>
+					<i class="ph-duotone ph-user-minus icon-shake"></i>
 					{m.userNotFound()}
 				{/if}
 			</div>
@@ -86,20 +86,20 @@
 				class="toggle toggle-primary toggle-sm"
 				bind:checked={seatSwitch.enabled}
 			/>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-right-arrow-left"></i>
+			<i class="ph-duotone ph-arrows-left-right"></i>
 			<span class="font-bold">{m.seatSwitch()}</span>
 		</label>
 		{#if seatSwitch.enabled}
 			<span class="opacity-70">
 				{#if seatSwitch.selected}
 					{seatSwitch.selected.name} ({seatSwitch.selected.seatLabel})
-					<i class="fa-sharp-duotone fa-solid fa-arrow-right mx-1"></i>
+					<i class="ph-duotone ph-arrow-right mx-1"></i>
 				{/if}
 				{m.seatSwitchHint()}
 			</span>
 		{:else if showSeatPlanningHint}
 			<span class="text-base-content/70 ml-auto flex items-center gap-2">
-				<i class="fa-sharp-duotone fa-solid fa-circle-info text-primary"></i>
+				<i class="ph-duotone ph-info text-primary"></i>
 				{m.seatsSeatPlanningHint()}
 				<a
 					class="link link-primary whitespace-nowrap"

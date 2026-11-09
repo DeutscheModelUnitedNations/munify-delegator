@@ -25,7 +25,7 @@ export function registerConferenceRoleAbilities() {
 				nationAlpha3Code: true,
 				name: true,
 				abbreviation: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				chaseAccess: true
 			}
 		})

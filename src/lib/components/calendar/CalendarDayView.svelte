@@ -176,7 +176,7 @@
 						>
 							<CalendarEntryCard
 								name={entry.name}
-								fontAwesomeIcon={entry.fontAwesomeIcon}
+								icon={entry.icon}
 								color={entry.color}
 								startTime={new Date(entry.startTime)}
 								endTime={new Date(entry.endTime)}

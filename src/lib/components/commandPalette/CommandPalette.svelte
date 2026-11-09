@@ -275,20 +275,20 @@
 		ResultItem['type'],
 		{ title: () => string; icon: string; fromServer: boolean }
 	> = {
-		user: { title: m.commandPaletteUsers, icon: 'fa-users', fromServer: true },
+		user: { title: m.commandPaletteUsers, icon: 'ph-users', fromServer: true },
 		delegation: {
 			title: m.commandPaletteDelegations,
-			icon: 'fa-users-viewfinder',
+			icon: 'ph-user-focus',
 			fromServer: true
 		},
-		school: { title: m.schools, icon: 'fa-school', fromServer: true },
-		seat: { title: m.seats, icon: 'fa-chair', fromServer: true },
-		committee: { title: m.committees, icon: 'fa-podium', fromServer: true },
-		transaction: { title: m.payment, icon: 'fa-money-bill-transfer', fromServer: true },
-		page: { title: m.commandPalettePages, icon: 'fa-file', fromServer: false },
-		config: { title: m.commandPaletteConfiguration, icon: 'fa-gears', fromServer: false },
-		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'fa-user-xmark', fromServer: false },
-		manual: { title: m.help, icon: 'fa-circle-question', fromServer: false }
+		school: { title: m.schools, icon: 'ph-graduation-cap', fromServer: true },
+		seat: { title: m.seats, icon: 'ph-chair', fromServer: true },
+		committee: { title: m.committees, icon: 'ph-lectern', fromServer: true },
+		transaction: { title: m.payment, icon: 'ph-money-wavy', fromServer: true },
+		page: { title: m.commandPalettePages, icon: 'ph-file', fromServer: false },
+		config: { title: m.commandPaletteConfiguration, icon: 'ph-gear-six', fromServer: false },
+		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'ph-user-minus', fromServer: false },
+		manual: { title: m.help, icon: 'ph-question', fromServer: false }
 	};
 
 	/** `flatList` cut into its groups, each item with its index in the flat list. */
@@ -346,7 +346,7 @@
 		>
 			<!-- Search input -->
 			<div class="border-base-300 flex items-center gap-3 border-b px-4 py-3">
-				<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-base-content/40"></i>
+				<i class="ph-duotone ph-magnifying-glass text-base-content/40"></i>
 				<input
 					bind:this={inputEl}
 					bind:value={searchInput}
@@ -361,7 +361,7 @@
 					aria-label={m.quickScan()}
 					title={m.quickScan()}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-camera"></i>
+					<i class="ph-duotone ph-camera"></i>
 				</button>
 				<span class="max-sm:hidden"><Kbd hotkey="Esc" size="xs" /></span>
 			</div>
@@ -379,14 +379,14 @@
 			<!-- Results -->
 			<div class="max-h-80 overflow-y-auto p-1" role="listbox">
 				{#if userResults.length === 0 && searchLoading && searchTerm.length >= 2}
-					<CommandPaletteResultGroup title={m.commandPaletteUsers()} icon="fa-users" loading={true}>
+					<CommandPaletteResultGroup title={m.commandPaletteUsers()} icon="ph-users" loading={true}>
 						<div class="px-3 py-2 text-sm text-base-content/40"></div>
 					</CommandPaletteResultGroup>
 				{/if}
 
 				{#if handoff}
 					<CommandPaletteItem
-						icon="fa-mobile-screen"
+						icon="ph-device-mobile"
 						primary={handoff.label}
 						secondary={m.searchHandoffAvailable()}
 						active={false}
@@ -396,10 +396,10 @@
 				{/if}
 
 				{#if history.length > 0}
-					<CommandPaletteResultGroup title={m.searchHistory()} icon="fa-clock-rotate-left">
+					<CommandPaletteResultGroup title={m.searchHistory()} icon="ph-clock-counter-clockwise">
 						{#each history as entry (entry.id)}
 							<CommandPaletteItem
-								icon="fa-clock-rotate-left"
+								icon="ph-clock-counter-clockwise"
 								primary={entry.label}
 								active={false}
 								onclick={() => runEntry(entry)}

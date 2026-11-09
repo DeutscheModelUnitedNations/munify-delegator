@@ -68,7 +68,7 @@
 					target="_blank"
 					rel="noopener"
 				>
-					<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+					<i class="ph-duotone ph-arrow-square-out"></i>
 					{m.chaseStatusOpen()}
 				</a>
 				<span class="text-base-content/70 text-sm">

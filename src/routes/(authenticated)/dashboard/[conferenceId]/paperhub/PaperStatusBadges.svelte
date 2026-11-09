@@ -19,25 +19,25 @@
 	const chips = $derived([
 		{
 			tip: translatePaperStatus('SUBMITTED'),
-			icon: 'fa-paper-plane',
+			icon: 'ph-paper-plane-tilt',
 			color: 'text-warning',
 			count: counts.SUBMITTED
 		},
 		{
 			tip: translatePaperStatus('REVISED'),
-			icon: 'fa-rotate',
+			icon: 'ph-arrows-clockwise',
 			color: 'text-info',
 			count: counts.REVISED
 		},
 		{
 			tip: translatePaperStatus('CHANGES_REQUESTED'),
-			icon: 'fa-exclamation-triangle',
+			icon: 'ph-warning',
 			color: 'text-error',
 			count: counts.CHANGES_REQUESTED
 		},
 		{
 			tip: translatePaperStatus('ACCEPTED'),
-			icon: 'fa-check-circle',
+			icon: 'ph-check-circle',
 			color: 'text-success',
 			count: counts.ACCEPTED
 		}
@@ -52,7 +52,7 @@
 				? 'text-xs'
 				: 'text-sm'}"
 		>
-			<i class="fa-sharp-duotone fa-solid fa-file-lines"></i>
+			<i class="ph-duotone ph-file-text"></i>
 			<span class:blur-sm={blur} class:select-none={blur}>{counts.total}</span>
 		</span>
 	</div>
@@ -63,7 +63,7 @@
 					? 'text-xs'
 					: 'text-sm'} {chip.count === 0 ? 'opacity-30' : 'font-semibold'}"
 			>
-				<i class="fa-sharp-duotone fa-solid {chip.icon}"></i>
+				<i class="ph-duotone {chip.icon}"></i>
 				<span class:blur-sm={blur} class:select-none={blur}>{chip.count}</span>
 			</span>
 		</div>

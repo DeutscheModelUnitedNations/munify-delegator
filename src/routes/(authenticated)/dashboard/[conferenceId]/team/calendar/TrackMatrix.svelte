@@ -152,16 +152,16 @@
 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
 	<div class="flex gap-1">
 		<button class="btn btn-ghost btn-sm" disabled={tracks.length === 0} onclick={selectAll}>
-			<i class="fas fa-square-check"></i>
+			<i class="ph-fill ph-check-square"></i>
 			{m.calendarSelectAllTracks()}
 		</button>
 		<button class="btn btn-ghost btn-sm" disabled={tracks.length === 0} onclick={deselectAll}>
-			<i class="fas fa-square"></i>
+			<i class="ph-fill ph-square"></i>
 			{m.calendarDeselectAllTracks()}
 		</button>
 	</div>
 	<button class="btn btn-ghost btn-sm" onclick={() => (rowForm = {})}>
-		<i class="fas fa-plus"></i>
+		<i class="ph-fill ph-plus"></i>
 		{m.calendarAddTrack()}
 	</button>
 </div>
@@ -187,22 +187,22 @@
 						</div>
 						<div class="mt-1 flex">
 							<RowActionButton
-								icon="fa-clone"
+								icon="ph-copy-simple"
 								label={m.calendarCopyDayEntries()}
 								onclick={() => onCopyEntries(day)}
 							/>
 							<RowActionButton
-								icon="fa-download"
+								icon="ph-download-simple"
 								label={m.calendarExportDay()}
 								onclick={() => exportCalendarDay(day.id)}
 							/>
 							<RowActionButton
-								icon="fa-edit"
+								icon="ph-pencil-simple"
 								label={m.calendarEditDay()}
 								onclick={() => onEdit(day)}
 							/>
 							<RowActionButton
-								icon="fa-trash"
+								icon="ph-trash"
 								label={m.calendarDeleteDay()}
 								danger
 								onclick={() => onDelete(day)}
@@ -247,7 +247,7 @@
 								}}
 								ondragend={endDrag}
 							>
-								<i class="fas fa-grip-vertical"></i>
+								<i class="ph-fill ph-dots-six-vertical"></i>
 							</span>
 							<div class="min-w-0 grow">
 								<div class="font-medium">{track.name}</div>
@@ -263,7 +263,7 @@
 								title={m.calendarEditTrack()}
 								onclick={() => (rowForm = { track })}
 							>
-								<i class="fas fa-edit"></i>
+								<i class="ph-fill ph-pencil-simple"></i>
 							</button>
 							<button
 								class="btn btn-ghost btn-error btn-xs"
@@ -271,7 +271,7 @@
 								title={m.calendarDeleteTrack()}
 								onclick={() => deleteTrack(track)}
 							>
-								<i class="fas fa-trash"></i>
+								<i class="ph-fill ph-trash"></i>
 							</button>
 						</div>
 					</td>

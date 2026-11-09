@@ -165,7 +165,7 @@
 
 		{#if !inConference}
 			<div class="alert alert-warning mx-3 sm:mx-5 md:mx-10 lg:mx-16" role="status">
-				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+				<i class="ph-duotone ph-warning"></i>
 				<span>{m.notInConference()}</span>
 			</div>
 		{/if}

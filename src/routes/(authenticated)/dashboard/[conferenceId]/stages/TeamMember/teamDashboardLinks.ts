@@ -39,7 +39,7 @@ export function getTeamEntryLink(
 	if (!first) return undefined;
 	return {
 		id: 'team',
-		icon: 'users-gear',
+		icon: 'user-gear',
 		info: TeamEntryInfo,
 		getTitle: () => m.team(),
 		getDescription: () => m.manageConference(),
@@ -99,7 +99,7 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 		}),
 		{
 			id: 'seats',
-			icon: 'person-seat',
+			icon: 'chair',
 			getTitle: () => m.conferenceSeats(),
 			getDescription: () => m.seatsLinkDescription(),
 			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicSeatsPath}`)
@@ -108,7 +108,7 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 			url: ctx.docsUrl,
 			link: {
 				id: 'appDocs',
-				icon: 'circle-question',
+				icon: 'question',
 				getTitle: () => m.appDocs(),
 				getDescription: () => m.appDocsDescription()
 			}
@@ -116,7 +116,7 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 		{
 			id: 'calendar',
 			info: CalendarLinkInfo,
-			icon: 'calendar-days',
+			icon: 'calendar-dots',
 			getTitle: () => m.calendarSectionTitle(),
 			getDescription: () => m.calendarSectionDescription(),
 			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicCalendarPath}`)

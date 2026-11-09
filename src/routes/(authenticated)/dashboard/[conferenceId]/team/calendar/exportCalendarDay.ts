@@ -15,7 +15,7 @@ export async function exportCalendarDay(dayId: string) {
 			description: true,
 			startTime: true,
 			endTime: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			color: true,
 			room: true,
 			tracks: { id: true },

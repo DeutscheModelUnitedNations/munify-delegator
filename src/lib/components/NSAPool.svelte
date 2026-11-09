@@ -5,7 +5,7 @@
 
 	type NonStateActorPool = Pick<
 		typeof schema.conferenceRole.$inferSelect,
-		'id' | 'name' | 'description' | 'seatAmount' | 'fontAwesomeIcon'
+		'id' | 'name' | 'description' | 'seatAmount' | 'icon'
 	>[];
 
 	interface Props {
@@ -20,9 +20,9 @@
 	<table class="table">
 		<thead>
 			<tr>
-				<th><i class="fa-sharp-duotone fa-solid fa-megaphone"></i></th>
-				<th><i class="fa-sharp-duotone fa-solid fa-info"></i></th>
-				<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
+				<th><i class="ph-duotone ph-megaphone-simple"></i></th>
+				<th><i class="ph-duotone ph-info"></i></th>
+				<th class="text-center"><i class="ph-duotone ph-users"></i></th>
 				{#if actionCell}<th></th>{/if}
 			</tr>
 		</thead>
@@ -31,7 +31,7 @@
 				<tr>
 					<td class="align-top md:align-middle">
 						<div class="flex items-center gap-4">
-							<Flag nsa icon={nsa.fontAwesomeIcon ?? undefined} size="xs" />
+							<Flag nsa icon={nsa.icon ?? undefined} size="xs" />
 							<span>{nsa.name}</span>
 						</div>
 					</td>

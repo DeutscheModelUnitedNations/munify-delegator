@@ -36,23 +36,21 @@
 		</button>
 		{#if note}
 			<i
-				class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error ml-1.5 text-lg"
+				class="ph-duotone ph-warning text-error ml-1.5 text-lg"
 				title={note}
 				aria-label={m.globalNotes()}
 			></i>
 		{/if}
 		{#if person.isHeadDelegate}
-			<i class="fa-sharp-duotone fa-solid fa-crown text-warning ml-1" title={m.headDelegate()}></i>
+			<i class="ph-duotone ph-crown text-warning ml-1" title={m.headDelegate()}></i>
 		{/if}
 	</td>
 	<td class="text-right tabular-nums">{age ?? '?'}</td>
-	<td class="text-center"
-		><i class="fa-sharp-duotone fa-solid fa-{genderIcon(person.gender)}"></i></td
-	>
+	<td class="text-center"><i class="ph-duotone ph-{genderIcon(person.gender)}"></i></td>
 	<td class="text-right tabular-nums">
 		{#if (person.conferenceParticipationsCount ?? 0) > 0}
 			<span class="text-warning" title={m.assignmentPreviousParticipations()}>
-				<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+				<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 				{person.conferenceParticipationsCount}
 			</span>
 		{:else}

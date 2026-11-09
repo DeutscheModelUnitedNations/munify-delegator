@@ -5,15 +5,15 @@
 
 	/** The roles applied for, one `role` each, or a dash when there are none. */
 	interface Props {
-		fontAwesomeIcon: string;
+		icon: string;
 		applications: T[];
 		role: Snippet<[T]>;
 	}
 
-	let { fontAwesomeIcon, applications, role }: Props = $props();
+	let { icon, applications, role }: Props = $props();
 </script>
 
-<InfoGrid.Entry title={m.roleApplications()} {fontAwesomeIcon}>
+<InfoGrid.Entry title={m.roleApplications()} {icon}>
 	{#if applications.length > 0}
 		<div class="flex flex-wrap gap-2">
 			{#each applications as application (application.id)}
@@ -21,6 +21,6 @@
 			{/each}
 		</div>
 	{:else}
-		<i class="fa-sharp-duotone fa-solid fa-dash"></i>
+		<i class="ph-duotone ph-minus"></i>
 	{/if}
 </InfoGrid.Entry>

@@ -53,14 +53,14 @@
 
 <div class="flex justify-end">
 	<button class="btn btn-primary btn-sm" onclick={() => (placeModal = {})}>
-		<i class="fas fa-plus"></i>
+		<i class="ph-fill ph-plus"></i>
 		{m.calendarAddPlace()}
 	</button>
 </div>
 
 <CalendarListTable
 	empty={places.length === 0}
-	emptyIcon="fa-location-dot"
+	emptyIcon="ph-map-pin"
 	emptyText={m.calendarNoPlaces()}
 	headers={[
 		m.calendarPlaceName(),
@@ -72,7 +72,7 @@
 >
 	{#snippet emptyAction()}
 		<button class="btn btn-primary mt-4" onclick={() => (placeModal = {})}>
-			<i class="fas fa-plus"></i>
+			<i class="ph-fill ph-plus"></i>
 			{m.calendarAddPlace()}
 		</button>
 	{/snippet}
@@ -83,19 +83,19 @@
 			<td>{formatCoordinates(place)}</td>
 			<td>
 				{#if place.sitePlanFile}
-					<i class="fas fa-file-pdf text-success"></i>
+					<i class="ph-fill ph-file-pdf text-success"></i>
 				{:else}
 					–
 				{/if}
 			</td>
 			<td class="flex gap-2">
 				<RowActionButton
-					icon="fa-edit"
+					icon="ph-pencil-simple"
 					label={m.calendarEditPlace()}
 					onclick={() => (placeModal = { placeId: place.id })}
 				/>
 				<RowActionButton
-					icon="fa-trash"
+					icon="ph-trash"
 					label={m.calendarDeletePlace()}
 					danger
 					onclick={() => (placeToDelete = place)}

@@ -57,7 +57,7 @@ const roles: BoardRoles = {
 			id: 'nsa-amnesty',
 			name: 'Amnesty',
 			abbreviation: 'AI',
-			fontAwesomeIcon: 'dove',
+			icon: 'bird',
 			seatAmount: 2
 		}
 	]
@@ -361,7 +361,7 @@ describe('describeRole and wishRank', () => {
 			title: 'AI',
 			subtitle: 'Amnesty',
 			alpha2Code: undefined,
-			icon: 'dove'
+			icon: 'bird'
 		});
 		expect(describeRole({ target: { roleId: 'x' }, roles, nationName: name }).title).toBe('');
 	});

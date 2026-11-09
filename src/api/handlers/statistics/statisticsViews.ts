@@ -124,7 +124,7 @@ export function registrationStatisticsOf({
 				.toSorted((a, b) => a.name.localeCompare(b.name))
 				.map((role) => ({
 					role: role.name,
-					fontAwesomeIcon: role.fontAwesomeIcon ?? undefined,
+					icon: role.icon ?? undefined,
 					...appliedSplit({ total: role.total, applied: role.applied })
 				}))
 		},

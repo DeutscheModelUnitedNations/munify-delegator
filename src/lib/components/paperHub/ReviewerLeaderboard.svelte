@@ -48,9 +48,9 @@
 	type Reviewer = NonNullable<typeof leaderboard>[number];
 
 	const rankIcons = [
-		'fa-trophy text-amber-400',
-		'fa-medal text-slate-400',
-		'fa-award text-amber-800'
+		'ph-trophy text-amber-400',
+		'ph-medal text-slate-400',
+		'ph-medal text-amber-800'
 	] as const;
 </script>
 
@@ -75,7 +75,7 @@
 		<!-- Rank -->
 		<span class="w-8 text-right font-bold text-base-content/50">
 			{#if rankIcons[i]}
-				<i class="fa-sharp-duotone fa-solid {rankIcons[i]}"></i>
+				<i class="ph-duotone {rankIcons[i]}"></i>
 			{:else}
 				#{i + 1}
 			{/if}
@@ -106,7 +106,7 @@
 
 <CollapsibleCard
 	collapsible={false}
-	icon="ranking-star"
+	icon="ranking"
 	title={m.reviewerLeaderboard()}
 	description={m.reviewerLeaderboardDescription()}
 	bind:expanded={isExpanded}
@@ -115,7 +115,7 @@
 	{#snippet badge()}
 		{#if leaderboard?.length}
 			<div class="badge badge-primary badge-lg gap-2">
-				<i class="fa-sharp-duotone fa-solid fa-users"></i>
+				<i class="ph-duotone ph-users"></i>
 				{leaderboard.length}
 			</div>
 		{/if}
@@ -142,7 +142,7 @@
 			</div>
 		{:else}
 			<div class="alert alert-info">
-				<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
+				<i class="ph-duotone ph-info"></i>
 				<span>{m.noReviewsYet()}</span>
 			</div>
 		{/if}

@@ -154,7 +154,7 @@
 
 <DashboardSection
 	id="application-texts"
-	icon="file-lines"
+	icon="file-text"
 	title={m.informationAndMotivation()}
 	description={userIsHeadDelegate
 		? m.informationAndMotivationDescriptionHeadDelegate()

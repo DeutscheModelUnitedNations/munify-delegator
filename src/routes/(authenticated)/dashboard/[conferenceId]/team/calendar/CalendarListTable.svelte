@@ -4,7 +4,7 @@
 	/** A calendar tab's list: an empty state while there is nothing, a table otherwise. */
 	interface Props {
 		empty: boolean;
-		/** FontAwesome icon class of the empty state (e.g. 'fa-calendar-days') */
+		/** Phosphor icon class of the empty state (e.g. 'ph-calendar-dots') */
 		emptyIcon: string;
 		emptyText: string;
 		/** A call to action under the empty state's text */
@@ -22,7 +22,7 @@
 	<div
 		class="bg-base-200 flex flex-col items-center justify-center rounded-box p-6 text-center sm:p-12"
 	>
-		<i class="fas {emptyIcon} text-5xl opacity-50"></i>
+		<i class="ph-fill {emptyIcon} text-5xl opacity-50"></i>
 		<p class="mt-4 text-lg opacity-70">{emptyText}</p>
 		{@render emptyAction?.()}
 	</div>

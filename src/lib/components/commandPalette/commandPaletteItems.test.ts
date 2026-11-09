@@ -33,7 +33,7 @@ const transaction = { id: 't1', amount: 10, currency: 'EUR', recievedAt: null };
 const page: PageEntry = {
 	id: 'stats',
 	title: () => 'Stats',
-	icon: 'fa-chart-pie',
+	icon: 'ph-chart-pie',
 	href: resolve('/(authenticated)/dashboard/[conferenceId]/team/stats', { conferenceId }),
 	category: 'management',
 	keywords: []
@@ -42,7 +42,7 @@ const config: ConfigEntry = {
 	id: 'c',
 	title: () => 'Title',
 	section: () => 'Section',
-	icon: 'fa-gears',
+	icon: 'ph-gear-six',
 	tab: 'general',
 	keywords: []
 };
@@ -194,12 +194,12 @@ describe('describeItem', () => {
 	const cases: [ResultItem, { icon: string; primary: string; secondary?: string }][] = [
 		[
 			{ type: 'user', data: user },
-			{ icon: 'fa-user', primary: 'Ada Lovelace', secondary: `a@b.c · ${m.singleParticipant()}` }
+			{ icon: 'ph-user', primary: 'Ada Lovelace', secondary: `a@b.c · ${m.singleParticipant()}` }
 		],
 		[
 			{ type: 'delegation', data: delegation },
 			{
-				icon: 'fa-users-viewfinder',
+				icon: 'ph-user-focus',
 				primary: `${m.delegation()} · Gym`,
 				secondary: `3 ${m.members()}`
 			}
@@ -207,40 +207,40 @@ describe('describeItem', () => {
 		[
 			{ type: 'delegation', data: { ...delegation, school: null } },
 			{
-				icon: 'fa-users-viewfinder',
+				icon: 'ph-user-focus',
 				primary: `${m.delegation()} · d1`,
 				secondary: `3 ${m.members()}`
 			}
 		],
 		[
 			{ type: 'school', data: school },
-			{ icon: 'fa-school', primary: 'Goethe-Gymnasium', secondary: 'Berlin' }
+			{ icon: 'ph-graduation-cap', primary: 'Goethe-Gymnasium', secondary: 'Berlin' }
 		],
 		[
 			{ type: 'school', data: { ...school, city: null } },
-			{ icon: 'fa-school', primary: 'Goethe-Gymnasium', secondary: undefined }
+			{ icon: 'ph-graduation-cap', primary: 'Goethe-Gymnasium', secondary: undefined }
 		],
 		[
 			{ type: 'page', data: page },
-			{ icon: 'fa-chart-pie', primary: 'Stats' }
+			{ icon: 'ph-chart-pie', primary: 'Stats' }
 		],
 		[
 			{ type: 'config', data: config },
-			{ icon: 'fa-gears', primary: 'Title', secondary: 'Section' }
+			{ icon: 'ph-gear-six', primary: 'Title', secondary: 'Section' }
 		],
 		[
 			{ type: 'foreignUser', data: foreignUser },
-			{ icon: 'fa-user-xmark', primary: 'Fo Reign', secondary: 'f@b.c' }
+			{ icon: 'ph-user-minus', primary: 'Fo Reign', secondary: 'f@b.c' }
 		]
 	];
 	test.each(cases)('%o', (item, expected) => {
 		expect(describeItem(item)).toEqual(expected);
 	});
 	test('transactions show whether they arrived', () => {
-		expect(describeItem({ type: 'transaction', data: transaction }).icon).toBe('fa-circle-xmark');
+		expect(describeItem({ type: 'transaction', data: transaction }).icon).toBe('ph-x-circle');
 		expect(
 			describeItem({ type: 'transaction', data: { ...transaction, recievedAt: '2026-01-01' } }).icon
-		).toBe('fa-circle-check');
+		).toBe('ph-check-circle');
 	});
 });
 

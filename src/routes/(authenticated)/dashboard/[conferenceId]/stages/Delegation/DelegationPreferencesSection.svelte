@@ -33,7 +33,7 @@
 >
 	{#if empty}
 		<div class="alert alert-warning alert-soft text-sm">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+			<i class="ph-duotone ph-warning"></i>
 			{m.noRoleApplications()}
 		</div>
 	{:else}
@@ -48,7 +48,7 @@
 						delegationPreferencesModalOpen = true;
 					}}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-pen"></i>
+					<i class="ph-duotone ph-pen"></i>
 					{m.setDelegationPreferences()}
 				</button>
 			{/if}
@@ -56,7 +56,7 @@
 				class="btn {userIsHeadDelegate ? 'btn-ghost' : 'btn-primary'}"
 				href={resolve(`dashboard/${conferenceId}/seats`)}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+				<i class="ph-duotone ph-arrow-right"></i>
 				{m.conferenceSeats()}
 			</a>
 		</div>

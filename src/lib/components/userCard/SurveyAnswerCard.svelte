@@ -76,17 +76,17 @@
 
 <div class="flex flex-col gap-2 px-4 py-3">
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-		<i class="fa-sharp-duotone fa-solid fa-poll text-base-content/60 w-6 text-center text-lg"></i>
+		<i class="ph-duotone ph-chart-bar-horizontal text-base-content/60 w-6 text-center text-lg"></i>
 		<div class="flex min-w-48 grow flex-col">
 			<span class="font-semibold">{survey.title}</span>
 			{#if surveyAnswer}
 				<span class="text-sm">
-					<i class="fa-sharp-duotone fa-solid fa-circle-check text-success mr-1"></i>
+					<i class="ph-duotone ph-check-circle text-success mr-1"></i>
 					{surveyAnswer.option.title}
 				</span>
 			{:else}
 				<span class="text-error text-sm">
-					<i class="fa-sharp-duotone fa-solid fa-circle-xmark mr-1"></i>
+					<i class="ph-duotone ph-x-circle mr-1"></i>
 					{m.noAnswer()}
 				</span>
 			{/if}
@@ -97,9 +97,9 @@
 				onclick={() => (optionsOpen = !optionsOpen)}
 			>
 				{#if optionsOpen}
-					<i class="fa-sharp-duotone fa-solid fa-check"></i>{m.done()}
+					<i class="ph-duotone ph-check"></i>{m.done()}
 				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>{m.edit()}
+					<i class="ph-duotone ph-pencil-simple"></i>{m.edit()}
 				{/if}
 			</button>
 			<a
@@ -111,7 +111,7 @@
 				aria-label={m.a11yEditSurvey()}
 				title={m.a11yEditSurvey()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+				<i class="ph-duotone ph-arrow-square-out"></i>
 			</a>
 		</div>
 	</div>
@@ -126,7 +126,7 @@
 					disabled={loading}
 					onclick={clearAnswer}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-eraser"></i>
+					<i class="ph-duotone ph-eraser"></i>
 					{m.withdrawSurveyAnswer()}
 				</button>
 			{/if}

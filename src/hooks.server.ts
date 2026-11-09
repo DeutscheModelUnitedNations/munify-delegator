@@ -15,10 +15,6 @@ import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
 import { resumeLinkWorker } from '#api/handlers/chaseLink/linkWorker';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
-import {
-	PUBLIC_FONTAWESOME_CSS_URL,
-	PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL
-} from '$app/env/public';
 
 // Initialize Sentry (only if DSN provided and not building)
 if (!building && SENTRY_DSN) {
@@ -49,13 +45,7 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		const render = () =>
 			resolve(event, {
 				transformPageChunk: ({ html }) => {
-					return html
-						.replace('%lang%', locale)
-						.replace(
-							'%fontawesome.stylesheet%',
-							`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
-								`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
-						);
+					return html.replace('%lang%', locale);
 				}
 			});
 

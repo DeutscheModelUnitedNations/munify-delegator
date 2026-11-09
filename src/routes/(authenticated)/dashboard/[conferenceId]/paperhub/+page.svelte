@@ -45,15 +45,15 @@
 
 	// The tabs, in order, and whether this user can see each view
 	let viewTabs = $derived([
-		{ view: 'participant', available: isPaperAuthor, icon: 'fa-file-lines', label: m.myPapers },
+		{ view: 'participant', available: isPaperAuthor, icon: 'ph-file-text', label: m.myPapers },
 		{
 			view: 'supervisor',
 			available: isSupervisor,
-			icon: 'fa-chalkboard-user',
+			icon: 'ph-chalkboard-teacher',
 			label: m.supervisorView
 		},
-		{ view: 'team', available: isTeamMember, icon: 'fa-user-group', label: m.teamView },
-		{ view: 'global', available: isParticipant, icon: 'fa-globe', label: m.conferencePapers }
+		{ view: 'team', available: isTeamMember, icon: 'ph-users', label: m.teamView },
+		{ view: 'global', available: isParticipant, icon: 'ph-globe', label: m.conferencePapers }
 	] satisfies { view: PaperHubView; available: boolean; icon: string; label: () => string }[]);
 
 	let isNSA = $derived(
@@ -72,7 +72,7 @@
 						class:tab-active={currentView === tab.view}
 						onclick={() => (params.view = tab.view)}
 					>
-						<i class="fa-sharp-duotone fa-solid {tab.icon} mr-1"></i>
+						<i class="ph-duotone {tab.icon} mr-1"></i>
 						{tab.label()}
 					</button>
 				{/each}

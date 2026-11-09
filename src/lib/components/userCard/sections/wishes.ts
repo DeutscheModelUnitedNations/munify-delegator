@@ -14,7 +14,7 @@ interface RoleApplication {
 	role: {
 		kind: ConferenceRoleKind;
 		name: string | null;
-		fontAwesomeIcon: string | null;
+		icon: string | null;
 		nation: { alpha2Code: string; alpha3Code: string } | null;
 	};
 }
@@ -44,7 +44,7 @@ export function delegationWishes({
 			return {
 				id: application.id,
 				label: nonStateActor?.name ?? 'N/A',
-				icon: nonStateActor?.fontAwesomeIcon
+				icon: nonStateActor?.icon
 			};
 		});
 }

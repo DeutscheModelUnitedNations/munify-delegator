@@ -48,10 +48,10 @@
 	<thead>
 		<tr>
 			<td>
-				<i class="fa-sharp-duotone fa-solid fa-users"></i>
+				<i class="ph-duotone ph-users"></i>
 			</td>
 			<td>
-				<i class="fa-sharp-duotone fa-solid fa-sigma"></i>
+				<i class="ph-duotone ph-sigma"></i>
 			</td>
 		</tr>
 	</thead>
@@ -89,7 +89,7 @@
 						/>
 					</div>
 				{:else}
-					<i class="fas fa-dash text-gray-400"></i>
+					<i class="ph-fill ph-minus text-gray-400"></i>
 				{/if}
 			</td>
 			<td>

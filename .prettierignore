@@ -2,7 +2,6 @@
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
-fontawesome
 i18n
 .claude
 drizzle/**/snapshot.json

@@ -53,7 +53,7 @@
 		},
 		{
 			path: 'joinDelegation' as const,
-			icon: 'right-to-bracket',
+			icon: 'sign-in',
 			title: m.joinDelegation(),
 			description: m.joinDelegationDescription(),
 			disabled: false
@@ -67,7 +67,7 @@
 		},
 		{
 			path: 'supervisor' as const,
-			icon: 'chalkboard-user',
+			icon: 'chalkboard-teacher',
 			title: m.supervisor(),
 			description: m.applyAsSupervisorDescription(),
 			disabled: false
@@ -114,7 +114,7 @@
 							<span
 								class="bg-primary/10 text-primary group-enabled:group-hover:bg-primary group-enabled:group-hover:text-primary-content rounded-box flex size-10 shrink-0 items-center justify-center text-lg transition-colors duration-200"
 							>
-								<i class="fa-sharp-duotone fa-solid fa-{option.icon}"></i>
+								<i class="ph-duotone ph-{option.icon}"></i>
 							</span>
 							<span class="card-title text-base">{option.title}</span>
 						</span>
@@ -123,7 +123,7 @@
 							<span class="badge badge-ghost">{m.RegistrationNotPossible()}</span>
 						{:else}
 							<i
-								class="fa-sharp-duotone fa-solid fa-arrow-down text-primary self-end transition-transform duration-200 group-hover:translate-y-1"
+								class="ph-duotone ph-arrow-down text-primary self-end transition-transform duration-200 group-hover:translate-y-1"
 							></i>
 						{/if}
 					</span>

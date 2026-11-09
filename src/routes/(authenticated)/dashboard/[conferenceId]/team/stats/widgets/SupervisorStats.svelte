@@ -66,7 +66,7 @@
 >
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user text-base-content/70"></i>
+			<i class="ph-duotone ph-chalkboard-teacher text-base-content/70"></i>
 			{m.statsSupervisorOverview()}
 		</h2>
 

@@ -27,7 +27,7 @@
 		name: true,
 		description: true,
 		seatAmount: true,
-		fontAwesomeIcon: true,
+		icon: true,
 		nation: { alpha3Code: true, alpha2Code: true }
 	} as const;
 
@@ -129,7 +129,7 @@
 	{@const { nation, nonStateActor } = splitRole(application.role)}
 	<div class="flex items-center gap-4">
 		{#if nonStateActor}
-			<Flag nsa size="xs" icon={nonStateActor.fontAwesomeIcon ?? undefined} />
+			<Flag nsa size="xs" icon={nonStateActor.icon ?? undefined} />
 			<span>{nonStateActor.name}</span>
 		{:else}
 			<Flag alpha2Code={nation?.alpha2Code} size="xs" />
@@ -141,13 +141,13 @@
 <!-- A nation's seats in a committee; non-state actors have none -->
 {#snippet committeeCell(application: RoleApplication, committee: Committee)}
 	{#if application.role.kind === 'NON_STATE_ACTOR'}
-		<td class="text-center"><i class="fa-sharp-duotone fa-solid fa-minus"></i></td>
+		<td class="text-center"><i class="ph-duotone ph-minus"></i></td>
 	{:else}
 		<td class="text-center">
 			{#if committee.roles.some((seated) => seated.id === application.role.id)}
 				<div class="tooltip" data-tip={committee.abbreviation}>
 					{#each Array.from({ length: committee.numOfSeatsPerDelegation }, (_, seat) => seat) as seat (seat)}
-						<i class="fa-sharp-duotone fa-solid fa-check"></i>
+						<i class="ph-duotone ph-check"></i>
 					{/each}
 				</div>
 			{/if}
@@ -162,10 +162,10 @@
 			{@render roleName(role)}
 		</td>
 		{#if role.role.kind === 'NON_STATE_ACTOR'}
-			<td><i class="fa-sharp-duotone fa-solid fa-minus"></i></td>
+			<td><i class="ph-duotone ph-minus"></i></td>
 		{:else}
 			<td class="tooltip" data-tip={nation ? getNationRegionalGroup(nation.alpha3Code) : undefined}>
-				<i class="fa-sharp-duotone fa-solid fa-earth"></i>
+				<i class="ph-duotone ph-globe"></i>
 			</td>
 		{/if}
 		{#each conference.committees as committee (committee.id)}
@@ -178,7 +178,7 @@
 			<SquareButtonWithLoadingState
 				cssClass="bg-base-200 {index === 0 && 'opacity-10'}"
 				disabled={index === 0}
-				icon="chevron-up"
+				icon="caret-up"
 				onClick={async () => {
 					const previous = appliedForRoles[index - 1];
 					swapEntry({ firstId: role.id, secondId: previous.id });
@@ -187,7 +187,7 @@
 			<SquareButtonWithLoadingState
 				cssClass="bg-base-200 {index === delegation.appliedForRoles.length - 1 && 'opacity-10'}"
 				disabled={index === delegation.appliedForRoles.length - 1}
-				icon="chevron-down"
+				icon="caret-down"
 				onClick={async () => {
 					const next = appliedForRoles[index + 1];
 					swapEntry({ firstId: role.id, secondId: next.id });
@@ -196,7 +196,7 @@
 			<SquareButtonWithLoadingState
 				cssClass="text-error"
 				duotone={false}
-				icon="fa-xmark"
+				icon="ph-x"
 				onClick={async () => deleteEntry(role.id)}
 			/>
 		</td>
@@ -209,7 +209,7 @@
 		<p class="text-sm">{m.yourPreferencesDescription()}</p>
 		{#if appliedForRoles.length === 0}
 			<div class="alert alert-warning">
-				<i class="fas fa-triangle-exclamation"></i>
+				<i class="ph-fill ph-warning"></i>
 				<p>{m.noPreferencesSet()}</p>
 			</div>
 		{:else}
@@ -246,7 +246,7 @@
 			{@render list()}
 			{#if empty}
 				<div class="alert alert-warning">
-					<i class="fas fa-triangle-exclamation"></i>
+					<i class="ph-fill ph-warning"></i>
 					<p>{emptyText}</p>
 				</div>
 			{/if}
@@ -262,7 +262,7 @@
 	>
 		{#snippet actionCell(nation)}
 			<SquareButtonWithLoadingState
-				icon="fa-chevrons-up"
+				icon="ph-caret-double-up"
 				cssClass="bg-base-300"
 				onClick={async () => applyFor(nation.id)}
 			/>
@@ -274,7 +274,7 @@
 	<NsaPool {nonStateActorPool}>
 		{#snippet actionCell(nsa)}
 			<SquareButtonWithLoadingState
-				icon="fa-chevrons-up"
+				icon="ph-caret-double-up"
 				cssClass="bg-base-300"
 				onClick={async () => applyFor(nsa.id)}
 			/>
@@ -287,7 +287,7 @@
 		<div class="flex flex-col gap-10">
 			{#if maxDelegationSizeReached}
 				<div class="alert alert-error">
-					<i class="fas fa-hexagon-exclamation text-5xl"></i>
+					<i class="ph-fill ph-warning-octagon text-5xl"></i>
 					<div class="flex flex-col gap-2">
 						<h2 class="text-xl font-bold">{m.delegationSizeExceeded()}</h2>
 						<p>{m.delegationSizeExceededDescription()}</p>
@@ -317,7 +317,7 @@
 				onclick={() => {
 					onClose();
 				}}
-				aria-label={m.close()}><i class="fa-sharp-duotone fa-solid fa-xmark"></i></button
+				aria-label={m.close()}><i class="ph-duotone ph-x"></i></button
 			>
 		</div>
 	</div>

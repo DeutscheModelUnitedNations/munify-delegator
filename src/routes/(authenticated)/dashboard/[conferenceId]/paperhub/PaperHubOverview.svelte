@@ -41,7 +41,7 @@
 			assignedRole: {
 				kind: true,
 				name: true,
-				fontAwesomeIcon: true,
+				icon: true,
 				nation: { alpha2Code: true, alpha3Code: true }
 			}
 		},
@@ -107,10 +107,10 @@
 
 	// The section shown below the overview cards. The flag collection is linked as #flag-collection.
 	const sectionTabs = [
-		{ id: 'papers', icon: 'fa-file-lines', label: () => m.papers() },
-		{ id: 'flags', icon: 'fa-puzzle-piece', label: () => m.flagCollection() },
-		{ id: 'leaderboard', icon: 'fa-ranking-star', label: () => m.reviewerLeaderboard() },
-		{ id: 'statistics', icon: 'fa-chart-column', label: () => m.statsDetailedPaperStatistics() }
+		{ id: 'papers', icon: 'ph-file-text', label: () => m.papers() },
+		{ id: 'flags', icon: 'ph-puzzle-piece', label: () => m.flagCollection() },
+		{ id: 'leaderboard', icon: 'ph-ranking', label: () => m.reviewerLeaderboard() },
+		{ id: 'statistics', icon: 'ph-chart-bar', label: () => m.statsDetailedPaperStatistics() }
 	] as const;
 	type Section = (typeof sectionTabs)[number]['id'];
 
@@ -241,7 +241,7 @@
 				<div class="flex flex-wrap items-center gap-2">
 					<div class="tooltip tooltip-left" data-tip={m.focusModeDescription()}>
 						<label class="flex cursor-pointer items-center gap-2 text-sm">
-							<i class="fa-sharp-duotone fa-solid fa-bullseye text-primary"></i>
+							<i class="ph-duotone ph-target text-primary"></i>
 							{m.focusModeLabel()}
 							<input
 								type="checkbox"
@@ -255,7 +255,7 @@
 						class="btn btn-ghost btn-sm"
 						title={m.reviewerSnippetsShortDescription()}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-bookmark"></i>
+						<i class="ph-duotone ph-bookmark-simple"></i>
 						{m.manageSnippets()}
 					</a>
 				</div>
@@ -275,7 +275,7 @@
 				class:tab-active={section === tab.id}
 				onclick={() => (section = tab.id)}
 			>
-				<i class="fa-sharp-duotone fa-solid {tab.icon} mr-1"></i>
+				<i class="ph-duotone {tab.icon} mr-1"></i>
 				{tab.label()}
 			</button>
 		{/each}
@@ -298,7 +298,7 @@
 									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
 								>
 									<div class="flex items-center gap-1 text-sm font-semibold text-warning">
-										<i class="fa-sharp-duotone fa-solid fa-hand"></i>
+										<i class="ph-duotone ph-hand"></i>
 										{helpNeededCount}
 									</div>
 								</div>

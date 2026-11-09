@@ -125,14 +125,14 @@
 				<span class="text-sm text-base-content/70">{committee.name}</span>
 			</div>
 			{#if full}
-				<i class="fa-sharp-duotone fa-solid fa-circle-check text-xl text-success"></i>
+				<i class="ph-duotone ph-check-circle text-xl text-success"></i>
 			{/if}
 		</div>
 		<div class="flex items-center gap-3">
 			<div class="flex gap-1">
 				{#each { length: committee.numOfSeatsPerDelegation } as _, i (i)}
 					<i
-						class="fa-sharp-duotone fa-solid fa-user transition-colors duration-300 {i < taken
+						class="ph-duotone ph-user transition-colors duration-300 {i < taken
 							? 'text-primary'
 							: 'text-base-content/20'}"
 					></i>
@@ -163,7 +163,7 @@
 				</span>
 				{#if member?.isHeadDelegate}
 					<span class="flex items-center gap-1 text-xs text-base-content/60">
-						<i class="fa-sharp-duotone fa-solid fa-crown"></i>
+						<i class="ph-duotone ph-crown"></i>
 						{m.headDelegate()}
 					</span>
 				{/if}
@@ -172,7 +172,7 @@
 
 		{#if memberWithCommittee.alreadyAssigned}
 			<span class="badge badge-success badge-soft gap-2 self-start sm:self-auto">
-				<i class="fa-sharp-duotone fa-solid fa-lock"></i>
+				<i class="ph-duotone ph-lock"></i>
 				<span class="font-bold">{picked?.abbreviation}</span>
 				<span class="text-xs">{m.alreadyAssigned()}</span>
 			</span>
@@ -192,14 +192,14 @@
 							isCommitteeFull({ committee, memberId: memberWithCommittee.delegationMemberId })}
 						onclick={() => pick({ memberWithCommittee, committeeId: committee.id })}
 					>
-						{#if selected}<i class="fa-sharp-duotone fa-solid fa-check"></i>{/if}
+						{#if selected}<i class="ph-duotone ph-check"></i>{/if}
 						{committee.abbreviation}
 					</button>
 				{/each}
 			</div>
 		{:else}
 			<span class="badge badge-ghost gap-2 self-start sm:self-auto">
-				<i class="fa-sharp-duotone fa-solid fa-hourglass-half"></i>
+				<i class="ph-duotone ph-hourglass-medium"></i>
 				{m.notYetAssigned()}
 			</span>
 		{/if}
@@ -217,18 +217,18 @@
 
 	{#if allAssigned}
 		<div class="alert alert-success alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-circle-check text-2xl"></i>
+			<i class="ph-duotone ph-check-circle text-2xl"></i>
 			<span class="font-bold">{m.committeesSuccessfullyAssigned()}</span>
 		</div>
 	{:else if !isHeadDelegate}
 		<div class="alert alert-warning alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-2xl"></i>
+			<i class="ph-duotone ph-warning text-2xl"></i>
 			<span>{m.onlyHeadDelegateCanAssignCommittees()}</span>
 		</div>
 	{/if}
 
 	<DashboardSection
-		icon="podium"
+		icon="lectern"
 		title={m.committees()}
 		description={m.theFollowingCommitteesAreAssignable()}
 	>
@@ -271,7 +271,7 @@
 					{#if saving}
 						<span class="loading loading-spinner loading-sm"></span>
 					{:else}
-						<i class="fa-sharp-duotone fa-solid fa-floppy-disk"></i>
+						<i class="ph-duotone ph-floppy-disk"></i>
 					{/if}
 					{m.save()}
 				</button>

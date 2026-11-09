@@ -1,12 +1,12 @@
 {
-	"FA Icon Duotone": {
-		"body": "<i class=\"fa-sharp-duotone fa-solid fa-$1\"></i>",
-		"description": "Font Awesome Icon Regular",
+	"Phosphor Icon Duotone": {
+		"body": "<i class=\"ph-duotone ph-$1\"></i>",
+		"description": "Phosphor icon, duotone",
 		"prefix": "<ir"
 	},
-	"FA Icon Solid": {
-		"body": "<i class=\"fas fa-$1\"></i>",
-		"description": "Font Awesome Icon Solid",
+	"Phosphor Icon Fill": {
+		"body": "<i class=\"ph-fill ph-$1\"></i>",
+		"description": "Phosphor icon, filled",
 		"prefix": "<is"
 	},
 	"i18n": {

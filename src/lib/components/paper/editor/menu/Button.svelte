@@ -12,6 +12,6 @@
 
 <li class="md:tooltip" data-tip={label}>
 	<button class={active ? 'menu-active' : ''} onclick={onClick} aria-label={label} {disabled}>
-		<i class="fa-{active ? 'solid' : 'duotone'} fa-{icon.replace('fa-', '')}"></i>
+		<i class="{active ? 'ph-fill' : 'ph-duotone'} ph-{icon.replace(/^ph-/, '')}"></i>
 	</button>
 </li>

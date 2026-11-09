@@ -19,7 +19,7 @@ const UnlockedPieceData = schemaBuilder.simpleObject('UnlockedPieceData', {
 		flagType: t.field({ type: FlagTypeForUnlock }),
 		flagAlpha2Code: t.string({ nullable: true }),
 		flagAlpha3Code: t.string({ nullable: true }),
-		fontAwesomeIcon: t.string({ nullable: true }),
+		icon: t.string({ nullable: true }),
 		pieceName: t.string(),
 		foundCount: t.int(),
 		totalCount: t.int(),

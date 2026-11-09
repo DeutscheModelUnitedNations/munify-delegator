@@ -11,8 +11,8 @@
 
 	const actions = $derived(
 		[
-			{ run: onSplit, label: m.assignmentCardSplit(), icon: 'split' },
-			{ run: onUndoSplit, label: m.assignmentCardUndoSplit(), icon: 'object-group' }
+			{ run: onSplit, label: m.assignmentCardSplit(), icon: 'arrows-split' },
+			{ run: onUndoSplit, label: m.assignmentCardUndoSplit(), icon: 'selection-all' }
 		].filter((action) => action.run)
 	);
 </script>
@@ -26,7 +26,7 @@
 				title={action.label}
 				onclick={action.run}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-{action.icon}"></i>
+				<i class="ph-duotone ph-{action.icon}"></i>
 			</button>
 		{/each}
 	</div>

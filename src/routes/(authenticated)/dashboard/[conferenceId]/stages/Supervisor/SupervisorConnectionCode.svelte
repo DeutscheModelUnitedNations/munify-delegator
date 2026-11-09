@@ -37,7 +37,7 @@
 </script>
 
 <DashboardSection
-	icon="users-line"
+	icon="users-three"
 	title={m.connectWithStudents()}
 	description={m.connectWithStudentsDescription()}
 >

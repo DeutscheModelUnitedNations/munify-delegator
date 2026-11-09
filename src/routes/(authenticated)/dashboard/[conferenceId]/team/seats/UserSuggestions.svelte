@@ -32,7 +32,7 @@
 					<span class="text-base-content/60 text-xs">{suggestion.email}</span>
 					{#if inConference.has(suggestion.id)}
 						<span class="badge badge-warning badge-xs ml-auto">
-							<i class="fa-sharp-duotone fa-solid fa-circle-check"></i>
+							<i class="ph-duotone ph-check-circle"></i>
 							{m.alreadyInConference()}
 						</span>
 					{/if}

@@ -21,10 +21,10 @@
 	let { applied, appliedText, supportIdHtml, id, children }: Props = $props();
 </script>
 
-<DashboardSection icon="triangle-exclamation" title={m.dangerZone()}>
+<DashboardSection icon="warning" title={m.dangerZone()}>
 	{#if applied}
 		<div class="bg-base-200 rounded-box flex items-start gap-3 p-4">
-			<i class="fa-sharp-duotone fa-solid fa-lock text-base-content/60 mt-0.5 text-lg"></i>
+			<i class="ph-duotone ph-lock text-base-content/60 mt-0.5 text-lg"></i>
 			<p class="text-sm">{appliedText}</p>
 		</div>
 	{:else}

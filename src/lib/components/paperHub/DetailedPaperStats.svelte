@@ -228,7 +228,7 @@
 
 <div class="card bg-base-200 border border-base-300 p-4">
 	<div class="flex items-center gap-3 mb-4">
-		<i class="fa-sharp-duotone fa-solid fa-chart-pie text-primary text-xl"></i>
+		<i class="ph-duotone ph-chart-pie text-primary text-xl"></i>
 		<h3 class="font-semibold">{m.statsDetailedPaperStatistics()}</h3>
 	</div>
 
@@ -236,7 +236,7 @@
 	<div class="stats stats-vertical sm:stats-horizontal shadow w-full mb-4">
 		<div class="stat">
 			<div class="stat-figure text-primary">
-				<i class="fa-sharp-duotone fa-solid fa-file-lines text-2xl"></i>
+				<i class="ph-duotone ph-file-text text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsPaperTotal()}</div>
 			<div class="stat-value text-primary">{detailedStats.total}</div>
@@ -244,7 +244,7 @@
 
 		<div class="stat">
 			<div class="stat-figure text-info">
-				<i class="fa-sharp-duotone fa-solid fa-comments text-2xl"></i>
+				<i class="ph-duotone ph-chats text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsPapersWithReviews()}</div>
 			<div class="stat-value text-info">{detailedStats.withReviews}</div>
@@ -252,7 +252,7 @@
 
 		<div class="stat">
 			<div class="stat-figure text-warning">
-				<i class="fa-sharp-duotone fa-solid fa-comment-slash text-2xl"></i>
+				<i class="ph-duotone ph-chat-slash text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsPapersWithoutReviews()}</div>
 			<div class="stat-value text-warning">{detailedStats.withoutReviews}</div>
@@ -260,7 +260,7 @@
 
 		<div class="stat">
 			<div class="stat-figure text-success">
-				<i class="fa-sharp-duotone fa-solid fa-check-circle text-2xl"></i>
+				<i class="ph-duotone ph-check-circle text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsAcceptedPapers()}</div>
 			<div class="stat-value text-success">{detailedStats.accepted}</div>
@@ -326,7 +326,7 @@
 	{#if hasCommitteesToShow}
 		<div class="bg-base-100 rounded-box p-3 border border-base-300">
 			<h5 class="text-xs font-medium text-base-content/70 mb-2">
-				<i class="fa-sharp-duotone fa-solid fa-sitemap mr-2"></i>
+				<i class="ph-duotone ph-tree-structure mr-2"></i>
 				{m.statsPapersByCommittee()}
 			</h5>
 			<!-- Legend explanation -->

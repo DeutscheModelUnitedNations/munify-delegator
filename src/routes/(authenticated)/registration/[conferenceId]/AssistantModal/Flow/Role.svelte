@@ -42,13 +42,13 @@
 	delay={2000}
 	answers={[
 		{
-			icon: 'user-tie',
+			icon: 'user-sound',
 			title: m.assistantFlowRoleDelegate1(),
 			reply: m.assistantFlowRoleAnswer1(),
 			next: QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS
 		},
 		{
-			icon: 'megaphone',
+			icon: 'megaphone-simple',
 			title: m.assistantFlowRoleNSA1(),
 			reply: m.assistantFlowRoleAnswer2(),
 			next: QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS

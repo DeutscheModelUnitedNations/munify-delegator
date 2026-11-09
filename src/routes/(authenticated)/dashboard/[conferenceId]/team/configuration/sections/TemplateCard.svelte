@@ -21,7 +21,7 @@
 		/** The form field the new file goes into. */
 		name: N;
 		title: string;
-		/** A FontAwesome icon name, without the `fa-` prefix. */
+		/** A Phosphor icon name, without the `ph-` prefix. */
 		icon: string;
 		/** The template the server holds; null until one is saved. */
 		stored: { url: string } | null;
@@ -53,21 +53,21 @@
 		<div
 			class="bg-primary/10 text-primary rounded-box flex h-10 w-10 shrink-0 items-center justify-center"
 		>
-			<i class="fa-sharp-duotone fa-solid fa-{icon} text-lg"></i>
+			<i class="ph-duotone ph-{icon} text-lg"></i>
 		</div>
 		<div class="flex min-w-0 flex-1 flex-col gap-1">
 			<span class="font-semibold leading-tight">{title}</span>
 			{#if pending}
 				<span class="badge badge-info badge-soft badge-sm">
-					<i class="fa-sharp-duotone fa-solid fa-cloud-arrow-up"></i>{m.templatePending()}
+					<i class="ph-duotone ph-cloud-arrow-up"></i>{m.templatePending()}
 				</span>
 			{:else if stored}
 				<span class="badge badge-success badge-soft badge-sm">
-					<i class="fa-sharp-duotone fa-solid fa-circle-check"></i>{m.templateStored()}
+					<i class="ph-duotone ph-check-circle"></i>{m.templateStored()}
 				</span>
 			{:else}
 				<span class="badge badge-warning badge-soft badge-sm">
-					<i class="fa-sharp-duotone fa-solid fa-circle-exclamation"></i>{m.templateMissing()}
+					<i class="ph-duotone ph-warning-circle"></i>{m.templateMissing()}
 				</span>
 			{/if}
 		</div>
@@ -81,7 +81,7 @@
 				aria-label={m.templateView()}
 				title={m.templateView()}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-eye"></i>
+				<i class="ph-duotone ph-eye"></i>
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
@@ -99,7 +99,7 @@
 		{#if onplace}
 			<span class={blocked ? 'tooltip' : ''} data-tip={blocked}>
 				<button type="button" class="btn btn-sm btn-outline" disabled={!!blocked} onclick={onplace}>
-					<i class="fa-sharp-duotone fa-solid fa-arrows-up-down-left-right"></i>
+					<i class="ph-duotone ph-arrows-out-cardinal"></i>
 					{m.templatePlace()}
 				</button>
 			</span>
@@ -111,8 +111,7 @@
 				disabled={!!testReason || printing}
 				onclick={ontest}
 			>
-				<i class="fa-sharp-duotone fa-solid {printing ? 'fa-spinner fa-spin' : 'fa-flask-vial'}"
-				></i>
+				<i class="ph-duotone {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"></i>
 				{m.templateTest()}
 			</button>
 		</span>

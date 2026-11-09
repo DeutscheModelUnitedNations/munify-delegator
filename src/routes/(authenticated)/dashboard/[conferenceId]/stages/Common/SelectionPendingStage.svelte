@@ -18,7 +18,7 @@
 
 {#if applied}
 	<section role="alert" class="alert alert-success w-full">
-		<i class="fa-sharp-duotone fa-solid fa-circle-check text-3xl"></i>
+		<i class="ph-duotone ph-check-circle text-3xl"></i>
 		<div class="flex flex-col">
 			<p class="font-bold">{m.applicationCompletedTitle()}</p>
 			<p class="mt-2">
@@ -30,7 +30,7 @@
 	</section>
 {:else}
 	<section role="alert" class="alert alert-warning w-full">
-		<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-3xl"></i>
+		<i class="ph-duotone ph-warning text-3xl"></i>
 		<div class="flex flex-col">
 			<p class="font-bold">{m.applicationNotCompletedTitle()}</p>
 			<p class="mt-2">

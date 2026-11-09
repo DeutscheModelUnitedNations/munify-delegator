@@ -54,7 +54,7 @@
 		in:fly={{ x: 50, duration: 300, delay: 300 }}
 		out:fly={{ x: 50, duration: 300 }}
 	>
-		<i class="fas fa-triangle-exclamation"></i>
+		<i class="ph-fill ph-warning"></i>
 		<div>
 			{m.noDelegationsFound()}
 		</div>

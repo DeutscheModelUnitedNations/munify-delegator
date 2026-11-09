@@ -23,7 +23,7 @@
 	aria-selected={active}
 >
 	<i
-		class="fa-sharp-duotone fa-solid {icon} w-5 text-center {highlight
+		class="ph-duotone {icon} w-5 text-center {highlight
 			? 'text-warning animate-pulse'
 			: 'text-base-content/60'}"
 	></i>

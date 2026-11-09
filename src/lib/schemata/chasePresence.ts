@@ -7,7 +7,7 @@ const representationSchema = z.object({
 	id: z.string(),
 	alpha2Code: z.string().nullish(),
 	alpha3Code: z.string().nullish(),
-	faIcon: z.string().nullish(),
+	icon: z.string().nullish(),
 	type: z.enum(['DELEGATION', 'NSA', 'UN']),
 	name: z.string().nullish()
 });

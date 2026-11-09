@@ -34,7 +34,7 @@
 	<div class="flex items-center gap-2 text-sm font-bold">
 		<span class="mr-auto">{m.assignmentPart({ number: index + 1 })}</span>
 		<span class="badge badge-sm {filled ? 'badge-primary' : 'badge-ghost'}">
-			<i class="fa-sharp-duotone fa-solid fa-users"></i>
+			<i class="ph-duotone ph-users"></i>
 			{members.length}
 		</span>
 		{#if onRemove}
@@ -44,7 +44,7 @@
 				aria-label={m.assignmentRemovePart()}
 				onclick={onRemove}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+				<i class="ph-duotone ph-x"></i>
 			</button>
 		{/if}
 	</div>
@@ -66,8 +66,7 @@
 				})}
 			</span>
 			{#if member.isHeadDelegate}
-				<i class="fa-sharp-duotone fa-solid fa-crown text-warning shrink-0" title={m.headDelegate()}
-				></i>
+				<i class="ph-duotone ph-crown text-warning shrink-0" title={m.headDelegate()}></i>
 			{/if}
 			<span class="ml-auto"><DragGrip /></span>
 		</div>

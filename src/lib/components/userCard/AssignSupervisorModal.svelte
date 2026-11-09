@@ -65,7 +65,7 @@
 		{#if searchBusy}
 			<span class="loading loading-xs loading-spinner" aria-label={m.search()}></span>
 		{:else}
-			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
+			<i class="ph-duotone ph-magnifying-glass"></i>
 		{/if}
 	</label>
 	<div class="overflow-x-auto">
@@ -85,7 +85,7 @@
 								aria-label={m.assignSupervisor()}
 								onclick={() => assignSupervisor(supervisor.connectionCode)}
 							>
-								<i class="fa-sharp-duotone fa-solid fa-plus"></i>
+								<i class="ph-duotone ph-plus"></i>
 							</button>
 						</td>
 						<td>

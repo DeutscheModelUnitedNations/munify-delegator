@@ -165,7 +165,7 @@
 			{form}
 			name="contractBasePDF"
 			title={m.userAgreement()}
-			icon="file-signature"
+			icon="signature"
 			stored={storedDocuments.contractFile}
 			onplace={() => (arranging = 'contract')}
 			ontest={handleGeneratePostalPDF}
@@ -176,7 +176,7 @@
 			{form}
 			name="guardianConsentBasePDF"
 			title={m.guardianAgreement()}
-			icon="shield-halved"
+			icon="shield-check"
 			stored={storedDocuments.guardianConsentFile}
 			onplace={() => (arranging = 'guardianConsent')}
 			ontest={handleGeneratePostalPDF}
@@ -198,7 +198,7 @@
 			{form}
 			name="termsAndConditionsBasePDF"
 			title={m.termsAndConditions()}
-			icon="file-lines"
+			icon="file-text"
 			stored={storedDocuments.termsAndConditionsFile}
 			ontest={handleGeneratePostalPDF}
 			printing={loading}
@@ -207,7 +207,7 @@
 	</div>
 </FormSection>
 
-<FormSection title={m.certificate()} icon="award">
+<FormSection title={m.certificate()} icon="medal">
 	{#snippet titleAction()}
 		<PdfTemplateHelp />
 	{/snippet}
@@ -215,7 +215,7 @@
 		{form}
 		name="certificateBasePDF"
 		title={m.certificate()}
-		icon="award"
+		icon="medal"
 		stored={storedDocuments.certificateFile}
 		onplace={() => (arranging = 'certificate')}
 		ontest={handleGenerateCertificatePDF}

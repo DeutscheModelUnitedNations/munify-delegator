@@ -560,7 +560,7 @@ type Calendarentry {
   createdAt: DateTime!
   description: String
   endTime: DateTime!
-  fontAwesomeIcon: String
+  icon: String
   id: ID!
   name: String!
 
@@ -589,7 +589,7 @@ input CalendarentryOrderInputArgument {
   createdAt: SortingParameter
   description: SortingParameter
   endTime: SortingParameter
-  fontAwesomeIcon: SortingParameter
+  icon: SortingParameter
   id: SortingParameter
   name: SortingParameter
   placeId: SortingParameter
@@ -608,7 +608,7 @@ input CalendarentryWhereInputArgument {
   createdAt: DateTimeWhereInputArgument
   description: StringWhereInputArgument
   endTime: DateTimeWhereInputArgument
-  fontAwesomeIcon: StringWhereInputArgument
+  icon: StringWhereInputArgument
   id: IDWhereInputArgument
   name: StringWhereInputArgument
   place: PlaceWhereInputArgument
@@ -1476,7 +1476,7 @@ type Conferencerole {
   conferenceId: ID!
   createdAt: DateTime!
   description: String
-  fontAwesomeIcon: String
+  icon: String
   id: ID!
   kind: ConferencerolekindEnum!
   name: String
@@ -1502,7 +1502,7 @@ input ConferenceroleOrderInputArgument {
   conferenceId: SortingParameter
   createdAt: SortingParameter
   description: SortingParameter
-  fontAwesomeIcon: SortingParameter
+  icon: SortingParameter
   id: SortingParameter
   kind: SortingParameter
   name: SortingParameter
@@ -1526,7 +1526,7 @@ input ConferenceroleWhereInputArgument {
   conferenceId: IDWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   description: StringWhereInputArgument
-  fontAwesomeIcon: StringWhereInputArgument
+  icon: StringWhereInputArgument
   id: IDWhereInputArgument
   kind: ConferencerolekindEnum
   name: StringWhereInputArgument
@@ -2049,8 +2049,8 @@ type FlagProgress {
   abbreviation: String
   alpha2Code: String
   alpha3Code: String
-  fontAwesomeIcon: String
   foundPieces: Int!
+  icon: String
   id: String!
   isComplete: Boolean!
   name: String!
@@ -2488,7 +2488,9 @@ type Mutation {
     color: CalendarentrycolorEnum
     description: String
     endTime: DateTime!
-    fontAwesomeIcon: String
+
+    """A Phosphor icon name (such as `gavel`); empty shows none."""
+    icon: String
     name: String!
     placeId: ID
     room: String
@@ -2560,8 +2562,10 @@ type Mutation {
     conferenceId: ID!
     description: String
 
-    """A FontAwesome icon name; empty or left out shows none."""
-    fontAwesomeIcon: String
+    """
+    A Phosphor icon name (such as `leaf`), see phosphoricons.com; empty or left out shows none.
+    """
+    icon: String
     name: String!
 
     """How many people the role seats."""
@@ -2611,8 +2615,10 @@ type Mutation {
     conferenceId: ID!
     description: String!
 
-    """A FontAwesome icon name; empty or left out shows none."""
-    fontAwesomeIcon: String
+    """
+    A Phosphor icon name (such as `leaf`), see phosphoricons.com; empty or left out shows none.
+    """
+    icon: String
     name: String!
 
     """How many people the role seats."""
@@ -3303,7 +3309,9 @@ type Mutation {
     color: CalendarentrycolorEnum
     description: String
     endTime: DateTime
-    fontAwesomeIcon: String
+
+    """A Phosphor icon name (such as `gavel`); empty shows none."""
+    icon: String
     id: ID!
     name: String
     placeId: ID
@@ -3462,7 +3470,18 @@ type Mutation {
   """
   Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has. `chaseAccess` is what its people are in a linked CHASE.
   """
-  updateCustomRole(chaseAccess: ChaseaccessEnum, description: String, fontAwesomeIcon: String, id: ID!, name: String, seatAmount: Int): Conferencerole!
+  updateCustomRole(
+    chaseAccess: ChaseaccessEnum
+    description: String
+
+    """
+    A Phosphor icon name (such as `leaf`), see phosphoricons.com; empty or left out shows none.
+    """
+    icon: String
+    id: ID!
+    name: String
+    seatAmount: Int
+  ): Conferencerole!
 
   """
   Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications and both texts (CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.
@@ -3491,9 +3510,20 @@ type Mutation {
   updateDelegationMemberCommittee(assignedCommitteeId: ID!, id: ID!): Delegationmember!
 
   """
-  Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `fontAwesomeIcon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.
+  Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `icon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.
   """
-  updateNonStateActor(abbreviation: String, description: String, fontAwesomeIcon: String, id: ID!, name: String, seatAmount: Int): Conferencerole!
+  updateNonStateActor(
+    abbreviation: String
+    description: String
+
+    """
+    A Phosphor icon name (such as `leaf`), see phosphoricons.com; empty or left out shows none.
+    """
+    icon: String
+    id: ID!
+    name: String
+    seatAmount: Int
+  ): Conferencerole!
 
   """
   Saves the paper as a new version rather than editing the previous one. Its author and the paper team edit it; CONFLICT while the conference takes no papers.
@@ -3744,7 +3774,7 @@ type NametagBin {
 }
 
 type NametagBinGroup {
-  fontAwesomeIcon: String
+  icon: String
   nationAlpha2Code: String
   nationAlpha3Code: String
   participants: Int!
@@ -5216,7 +5246,7 @@ type ScanLookupResult {
   """Their delegation's nation (alpha-3)."""
   nationAlpha3Code: String
 
-  """The non-state actor's icon (a FontAwesome name)."""
+  """The non-state actor's icon (a Phosphor name)."""
   nonStateActorIcon: String
 
   """Their delegation's non-state actor."""
@@ -6182,9 +6212,9 @@ type StatisticsResultRegisteredSingleParticipantsByRole {
   applied: Int!
 
   """
-  The role's icon (a FontAwesome name without the `fa-` prefix), if it has one.
+  The role's icon (a Phosphor name without the `ph-` prefix), if it has one.
   """
-  fontAwesomeIcon: String
+  icon: String
 
   """
   The single participants wishing for the role that have not sent their application yet.
@@ -7154,8 +7184,8 @@ type UnlockedPieceData {
   flagId: String!
   flagName: String!
   flagType: FlagTypeForUnlock!
-  fontAwesomeIcon: String
   foundCount: Int!
+  icon: String
   isComplete: Boolean!
   pieceName: String!
   totalCount: Int!

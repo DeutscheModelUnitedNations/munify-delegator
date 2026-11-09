@@ -21,7 +21,7 @@
 	let { wishes, onRemove, onMoveUp, busy = false }: Props = $props();
 </script>
 
-<InfoRow title={m.appliedForRoles()} faIcon="list-ol">
+<InfoRow title={m.appliedForRoles()} icon="list-numbers">
 	{#if wishes.length === 0}
 		<span class="text-base-content/60 text-sm">–</span>
 	{:else}
@@ -44,7 +44,7 @@
 							disabled={busy}
 							onclick={() => onMoveUp(wish, wishes[index - 1])}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+							<i class="ph-duotone ph-arrow-left"></i>
 						</button>
 					{/if}
 					{#if onRemove}
@@ -55,7 +55,7 @@
 							disabled={busy}
 							onclick={() => onRemove(wish)}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+							<i class="ph-duotone ph-x"></i>
 						</button>
 					{/if}
 				</li>

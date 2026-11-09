@@ -73,11 +73,11 @@
 			onblur={saveTitle}
 		/>
 		<div class="mt-1 text-xs opacity-60">
-			<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
+			<i class="ph-duotone ph-file-pdf"></i>
 			{resolution.file.fileName}
 			{#if fromChase}
 				<span class="badge badge-sm badge-ghost ml-1" title={m.resolutionFromChaseLocked()}>
-					<i class="fa-sharp-duotone fa-solid fa-link"></i>
+					<i class="ph-duotone ph-link"></i>
 					{m.resolutionFromChase()}
 				</span>
 			{/if}
@@ -107,7 +107,7 @@
 			onclick={() => downloadResolution(resolutionId)}
 			aria-label={m.resolutionDownload()}
 		>
-			<i class="fas fa-download"></i>
+			<i class="ph-fill ph-download-simple"></i>
 		</button>
 		<span
 			class={fromChase ? 'tooltip tooltip-left' : undefined}
@@ -120,7 +120,7 @@
 				onclick={() => ondelete({ id: resolutionId, title: resolution.title })}
 				aria-label={m.delete()}
 			>
-				<i class="fas fa-trash"></i>
+				<i class="ph-fill ph-trash"></i>
 			</button>
 		</span>
 	</td>

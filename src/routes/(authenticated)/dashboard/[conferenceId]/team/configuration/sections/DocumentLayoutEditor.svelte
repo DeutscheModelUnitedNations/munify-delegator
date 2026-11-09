@@ -264,15 +264,15 @@
 
 	{#snippet action()}
 		<button type="button" class="btn btn-ghost" onclick={() => (layout = defaultLayout(kind))}>
-			<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+			<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 			{m.certificateLayoutReset()}
 		</button>
 		<button type="button" class="btn" disabled={printing || !templateUrl} onclick={print}>
-			<i class="fas {printing ? 'fa-spinner fa-spin' : 'fa-vial'}"></i>
+			<i class="ph-fill {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"></i>
 			{m.postalTemplateTest()}
 		</button>
 		<button type="button" class="btn btn-primary" onclick={save}>
-			<i class="fas fa-save"></i>
+			<i class="ph-fill ph-floppy-disk"></i>
 			{m.save()}
 		</button>
 	{/snippet}

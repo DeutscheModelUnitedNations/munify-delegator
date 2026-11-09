@@ -19,7 +19,7 @@
 
 	let { conferenceId, customRoles }: Props = $props();
 
-	const emptyDraft = () => ({ name: '', description: '', fontAwesomeIcon: '', seatAmount: 1 });
+	const emptyDraft = () => ({ name: '', description: '', icon: '', seatAmount: 1 });
 
 	// what a role's people are in CHASE matters only while this instance is linked to one
 	const chaseLink = $derived(await fetchActiveChaseLink());
@@ -56,7 +56,7 @@
 		input: HTMLInputElement;
 		saved: string | number;
 		id: string;
-		data: { name?: string; description?: string; fontAwesomeIcon?: string; seatAmount?: number };
+		data: { name?: string; description?: string; icon?: string; seatAmount?: number };
 	}) =>
 		saveField({
 			input,
@@ -72,7 +72,7 @@
 					conferenceId,
 					name: draft.name.trim(),
 					description: optionalText(draft.description),
-					fontAwesomeIcon: optionalText(draft.fontAwesomeIcon),
+					icon: optionalText(draft.icon),
 					seatAmount: draft.seatAmount
 				},
 				name: true
@@ -117,14 +117,14 @@
 						<td>
 							<RoleIconInput
 								class="min-w-24"
-								value={role.fontAwesomeIcon ?? ''}
+								value={role.icon ?? ''}
 								onchange={(e) =>
 									update({
 										input: e.currentTarget,
-										saved: role.fontAwesomeIcon ?? '',
+										saved: role.icon ?? '',
 										id: role.id,
 										data: {
-											fontAwesomeIcon: e.currentTarget.value
+											icon: e.currentTarget.value
 										}
 									})}
 							/>
@@ -210,7 +210,7 @@
 									disabled={role.holders > 0}
 									onclick={() => (toDelete = role)}
 								>
-									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+									<i class="ph-duotone ph-trash"></i>
 								</button>
 							</span>
 						</td>
@@ -226,11 +226,7 @@
 			<tfoot>
 				<tr>
 					<td>
-						<RoleIconInput
-							placeholder="fa-newspaper"
-							class="min-w-24"
-							bind:value={draft.fontAwesomeIcon}
-						/>
+						<RoleIconInput placeholder="newspaper" class="min-w-24" bind:value={draft.icon} />
 					</td>
 					<td>
 						<RoleInput class="min-w-36" draft label={m.name()} bind:value={draft.name} />

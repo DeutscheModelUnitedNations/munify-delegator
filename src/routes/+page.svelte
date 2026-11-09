@@ -174,10 +174,10 @@
 						<p class="text-sm font-thin">{conference.longName}</p>
 						<CardInfoSectionWithIcons
 							items={[
-								{ fontAwesomeIcon: 'fa-location-dot', text: conference.location },
-								{ fontAwesomeIcon: 'fa-calendar', text: conference.date },
-								{ fontAwesomeIcon: 'fa-comments', text: conference.lang },
-								{ fontAwesomeIcon: 'fa-globe', text: conference.website, link: conference.website }
+								{ icon: 'ph-map-pin', text: conference.location },
+								{ icon: 'ph-calendar-blank', text: conference.date },
+								{ icon: 'ph-chats', text: conference.lang },
+								{ icon: 'ph-globe', text: conference.website, link: conference.website }
 							]}
 						/>
 					</div>

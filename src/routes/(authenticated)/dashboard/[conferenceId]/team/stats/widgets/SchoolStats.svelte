@@ -55,7 +55,7 @@
 		<div class="card-body p-4">
 			<div class="flex items-center justify-between">
 				<h2 class="card-title text-base font-semibold">
-					<i class="fa-sharp-duotone fa-solid fa-school text-base-content/70"></i>
+					<i class="ph-duotone ph-graduation-cap text-base-content/70"></i>
 					{m.statsSchoolStatistics()}
 				</h2>
 				<div class="join">
@@ -65,7 +65,7 @@
 						aria-label={m.statsShowBarChart()}
 						aria-pressed={!showTable}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-chart-bar"></i>
+						<i class="ph-duotone ph-chart-bar"></i>
 					</button>
 					<button
 						class="btn btn-sm join-item {showTable ? 'btn-active' : ''}"
@@ -73,7 +73,7 @@
 						aria-label={m.statsShowTable()}
 						aria-pressed={showTable}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-table"></i>
+						<i class="ph-duotone ph-table"></i>
 					</button>
 				</div>
 			</div>

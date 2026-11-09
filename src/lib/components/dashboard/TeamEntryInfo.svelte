@@ -13,7 +13,7 @@
 	<ul class="absolute top-4 right-4 flex max-w-1/2 flex-wrap justify-end gap-1.5">
 		{#each roleLabels as label (label)}
 			<li class="badge badge-primary badge-soft gap-1.5">
-				<i class="fa-sharp-duotone fa-solid fa-user-shield text-xs" aria-hidden="true"></i>
+				<i class="ph-duotone ph-shield-star text-xs" aria-hidden="true"></i>
 				{label}
 			</li>
 		{/each}

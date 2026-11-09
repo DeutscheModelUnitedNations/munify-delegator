@@ -11,7 +11,7 @@ export function makeSeedCustomConferenceRole(
 		kind: 'CUSTOM',
 		name: faker.company.name(),
 		description: faker.lorem.sentence(),
-		fontAwesomeIcon: null,
+		icon: null,
 		seatAmount: 1,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()

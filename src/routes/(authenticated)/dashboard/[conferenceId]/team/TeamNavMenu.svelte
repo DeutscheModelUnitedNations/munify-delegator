@@ -27,10 +27,10 @@
 	);
 
 	const groupIcon = {
-		main: 'fa-house',
-		workflows: 'fa-arrows-spin',
-		info: 'fa-comments',
-		maintenance: 'fa-toolbox'
+		main: 'ph-house',
+		workflows: 'ph-arrows-clockwise',
+		info: 'ph-chats',
+		maintenance: 'ph-toolbox'
 	} as const;
 
 	// The manual's page about the team page on screen, or the manual's start
@@ -71,7 +71,7 @@
 <NavMenu>
 	<NavMenuButton
 		href={resolve(`dashboard/${conferenceId}`)}
-		icon="fa-arrow-left"
+		icon="ph-arrow-left"
 		title={m.backToDashboard()}
 		active={false}
 	/>
@@ -98,12 +98,9 @@
 			rel="noopener noreferrer"
 			data-testid="team-manual-link"
 		>
-			<i class="fa-sharp-duotone fa-solid fa-book w-5 text-center"></i>
+			<i class="ph-duotone ph-book w-5 text-center"></i>
 			<span class="flex-1">{help.specific ? m.helpManualForPage() : m.helpManual()}</span>
-			<i
-				class="fa-sharp-duotone fa-solid fa-arrow-up-right text-base-content/50 text-xs"
-				aria-hidden="true"
-			></i>
+			<i class="ph-duotone ph-arrow-up-right text-base-content/50 text-xs" aria-hidden="true"></i>
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</li>

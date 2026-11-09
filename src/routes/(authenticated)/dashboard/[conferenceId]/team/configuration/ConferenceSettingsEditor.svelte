@@ -344,14 +344,14 @@
 	}
 
 	const tabs: { value: TabType; label: string; icon: string }[] = $derived([
-		{ value: 'general', label: m.general(), icon: 'fa-gear' },
-		{ value: 'committees', label: m.committeesAndAgendaItems(), icon: 'fa-podium' },
-		{ value: 'status', label: m.statusAndFeatures(), icon: 'fa-toggle-on' },
-		{ value: 'links', label: m.linksAndContent(), icon: 'fa-link' },
-		{ value: 'payments', label: m.bankingInformation(), icon: 'fa-credit-card' },
-		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' },
+		{ value: 'general', label: m.general(), icon: 'ph-gear' },
+		{ value: 'committees', label: m.committeesAndAgendaItems(), icon: 'ph-lectern' },
+		{ value: 'status', label: m.statusAndFeatures(), icon: 'ph-toggle-right' },
+		{ value: 'links', label: m.linksAndContent(), icon: 'ph-link' },
+		{ value: 'payments', label: m.bankingInformation(), icon: 'ph-credit-card' },
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'ph-file-pdf' },
 		...(canManageEmails
-			? [{ value: 'emails' as const, label: m.emailSettingsTab(), icon: 'fa-envelope' }]
+			? [{ value: 'emails' as const, label: m.emailSettingsTab(), icon: 'ph-envelope' }]
 			: [])
 	]);
 
@@ -430,7 +430,7 @@
 					onclick={() => setTab(tab.value)}
 				>
 					<span class="relative shrink-0 sm:mr-2">
-						<i class="fas {tab.icon}"></i>
+						<i class="ph-fill {tab.icon}"></i>
 						{#if changeCount > 0}
 							<span
 								class="absolute -top-0.5 -left-1.5 flex size-2"
@@ -452,7 +452,7 @@
 
 	{#if !canEdit}
 		<div class="alert alert-info mb-6" role="status">
-			<i class="fa-sharp-duotone fa-solid fa-lock"></i>
+			<i class="ph-duotone ph-lock"></i>
 			<span>
 				{canEditContent ? m.conferenceSettingsContentOnly() : m.conferenceSettingsReadOnly()}
 			</span>
@@ -473,7 +473,7 @@
 			title={saveLabel}
 			aria-label={saveLabel}
 		>
-			<i class="fas fa-save"></i>
+			<i class="ph-fill ph-floppy-disk"></i>
 		</button>
 	</div>
 
@@ -517,7 +517,7 @@
 	{#if canManageEmails}
 		<div class="flex flex-col gap-4" class:hidden={currentTab !== 'emails'}>
 			<p class="text-base-content/70 text-sm">
-				<i class="fa-sharp-duotone fa-solid fa-clock mr-1"></i>
+				<i class="ph-duotone ph-clock mr-1"></i>
 				{m.emailSettingsJobHint()}
 			</p>
 			<EmailSettings {conferenceId} changes={emailChanges} />
@@ -537,7 +537,7 @@
 		class="btn btn-primary mt-6 w-full"
 		disabled={!canEditContent || pendingChanges.length === 0}
 	>
-		<i class="fas fa-save mr-2"></i>
+		<i class="ph-fill ph-floppy-disk mr-2"></i>
 		{saveLabel}
 	</button>
 </div>
@@ -553,7 +553,7 @@
 			disabled={pendingChanges.length === 0}
 			onclick={handleConfirmSave}
 		>
-			<i class="fas fa-save mr-2"></i>
+			<i class="ph-fill ph-floppy-disk mr-2"></i>
 			{m.save()}
 		</button>
 	{/snippet}

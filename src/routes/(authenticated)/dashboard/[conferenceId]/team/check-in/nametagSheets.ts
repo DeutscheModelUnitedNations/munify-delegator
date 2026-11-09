@@ -15,7 +15,7 @@ interface Group {
 	nationAlpha2Code: string | null;
 	roleName: string | null;
 	sortName: string;
-	fontAwesomeIcon: string | null;
+	icon: string | null;
 }
 
 type SortedEntry = NametagSheetEntry & { sortName: string };
@@ -72,7 +72,7 @@ async function otherEntry(group: Group, images: Images): Promise<SortedEntry | n
 	return {
 		label: group.roleName,
 		sortName: group.sortName,
-		image: await images.iconOf(group.fontAwesomeIcon)
+		image: await images.iconOf(group.icon)
 	};
 }
 
@@ -130,7 +130,7 @@ export async function buildSheets({
 			nationAlpha2Code: true,
 			roleName: true,
 			sortName: true,
-			fontAwesomeIcon: true
+			icon: true
 		});
 		const nations = await sortedEntries({ groups, entryOf: nationEntry, images });
 		const others = await sortedEntries({ groups, entryOf: otherEntry, images });

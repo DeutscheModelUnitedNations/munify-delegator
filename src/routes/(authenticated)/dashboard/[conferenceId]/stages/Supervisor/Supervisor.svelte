@@ -180,7 +180,7 @@
 
 	{#if delegationMembers.some((x) => x.delegation.assignedRole?.kind === 'NATION' && !x.assignedCommittee)}
 		<div class="alert alert-warning">
-			<i class="fas fa-arrows-turn-to-dots text-2xl"></i>
+			<i class="ph-fill ph-arrows-split text-2xl"></i>
 			<div>
 				<h3 class="font-bold">{m.committeeAssignment()}</h3>
 				<p>{m.committeeAssignmentAlertDescriptionSupervisor()}</p>
@@ -200,7 +200,7 @@
 			/>
 		{:else}
 			<div class="alert alert-warning">
-				<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
+				<i class="ph-duotone ph-warning text-xl"></i>
 				{m.noDelegationsFound()}
 			</div>
 		{/each}
@@ -215,7 +215,7 @@
 			/>
 		{:else}
 			<div class="alert alert-warning">
-				<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
+				<i class="ph-duotone ph-warning text-xl"></i>
 				{m.noSingleParticipantsFound()}
 			</div>
 		{/each}
@@ -224,7 +224,7 @@
 
 {#snippet outcome()}
 	<DashboardSection
-		icon={allStudentsAccepted ? 'circle-check' : 'user-xmark'}
+		icon={allStudentsAccepted ? 'check-circle' : 'user-minus'}
 		title={allStudentsAccepted ? m.yourStudents() : m.rejectedParticipants()}
 		description={allStudentsAccepted
 			? m.yourStudentsPostDescription()
@@ -258,7 +258,7 @@
 {#snippet beforePost()}
 	{#if isStateParticipantRegistration}
 		<section class="alert alert-info alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
+			<i class="ph-duotone ph-info text-xl"></i>
 			{m.registeredAsSupervisor()}
 		</section>
 	{/if}
@@ -273,7 +273,7 @@
 	{/if}
 
 	<DashboardSection
-		icon="id-card"
+		icon="identification-card"
 		title={m.supervisorDetails()}
 		description={m.supervisorDetailsDescription()}
 	>

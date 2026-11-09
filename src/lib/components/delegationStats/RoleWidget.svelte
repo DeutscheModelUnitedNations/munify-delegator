@@ -11,12 +11,9 @@
 			Pick<typeof schema.committee.$inferSelect, 'name' | 'numOfSeatsPerDelegation'>[] | null;
 		nonStateActor?: Pick<
 			typeof schema.conferenceRole.$inferSelect,
-			'name' | 'fontAwesomeIcon' | 'seatAmount'
+			'name' | 'icon' | 'seatAmount'
 		> | null;
-		customConferenceRole?: Pick<
-			typeof schema.conferenceRole.$inferSelect,
-			'name' | 'fontAwesomeIcon'
-		> | null;
+		customConferenceRole?: Pick<typeof schema.conferenceRole.$inferSelect, 'name' | 'icon'> | null;
 	}
 
 	let { country, nonStateActor, committees, customConferenceRole }: Props = $props();
@@ -27,7 +24,7 @@
 		<div class="stat-figure text-secondary">
 			<Flag
 				alpha2Code={country?.alpha2Code}
-				icon={nonStateActor?.fontAwesomeIcon ?? customConferenceRole?.fontAwesomeIcon ?? 'globe'}
+				icon={nonStateActor?.icon ?? customConferenceRole?.icon ?? 'globe'}
 				nsa={!!nonStateActor || !!customConferenceRole}
 				size="md"
 			/>

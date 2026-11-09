@@ -384,18 +384,18 @@ export const COMMITTEE_CATALOG = [
 ] as const;
 
 export const NSA_CATALOG = [
-	{ name: 'Amnesty International', abbreviation: 'AI', icon: 'candle-holder' },
-	{ name: 'Ärzte ohne Grenzen', abbreviation: 'MSF', icon: 'kit-medical' },
+	{ name: 'Amnesty International', abbreviation: 'AI', icon: 'fire-simple' },
+	{ name: 'Ärzte ohne Grenzen', abbreviation: 'MSF', icon: 'first-aid-kit' },
 	{ name: 'Greenpeace', abbreviation: 'GP', icon: 'leaf' },
 	{ name: 'Internationales Komitee vom Roten Kreuz', abbreviation: 'IKRK', icon: 'plus' },
 	{ name: 'Human Rights Watch', abbreviation: 'HRW', icon: 'eye' },
-	{ name: 'Oxfam', abbreviation: 'OXF', icon: 'hand-holding-heart' },
+	{ name: 'Oxfam', abbreviation: 'OXF', icon: 'hand-heart' },
 	{ name: 'Weltwirtschaftsforum', abbreviation: 'WEF', icon: 'chart-line' },
 	{ name: 'Reporter ohne Grenzen', abbreviation: 'RSF', icon: 'newspaper' },
 	{ name: 'Transparency International', abbreviation: 'TI', icon: 'magnifying-glass' },
-	{ name: 'World Wide Fund for Nature', abbreviation: 'WWF', icon: 'paw' },
-	{ name: 'Save the Children', abbreviation: 'STC', icon: 'children' },
-	{ name: 'Internationaler Gewerkschaftsbund', abbreviation: 'IGB', icon: 'people-group' }
+	{ name: 'World Wide Fund for Nature', abbreviation: 'WWF', icon: 'paw-print' },
+	{ name: 'Save the Children', abbreviation: 'STC', icon: 'baby' },
+	{ name: 'Internationaler Gewerkschaftsbund', abbreviation: 'IGB', icon: 'users-three' }
 ] as const;
 
 export const CUSTOM_ROLE_CATALOG = [
@@ -403,7 +403,7 @@ export const CUSTOM_ROLE_CATALOG = [
 	{
 		name: 'Internationaler Gerichtshof',
 		description: 'Richter*in am Internationalen Gerichtshof.',
-		icon: 'scale-balanced'
+		icon: 'scales'
 	},
 	{
 		name: 'Generalsekretariat',
@@ -411,6 +411,6 @@ export const CUSTOM_ROLE_CATALOG = [
 		icon: 'briefcase'
 	},
 	{ name: 'Fotografie', description: 'Dokumentiert die Konferenz.', icon: 'camera' },
-	{ name: 'Dolmetschen', description: 'Übersetzt in den Ausschüssen.', icon: 'language' },
+	{ name: 'Dolmetschen', description: 'Übersetzt in den Ausschüssen.', icon: 'translate' },
 	{ name: 'Logistik', description: 'Sorgt für einen reibungslosen Ablauf.', icon: 'truck' }
 ] as const;

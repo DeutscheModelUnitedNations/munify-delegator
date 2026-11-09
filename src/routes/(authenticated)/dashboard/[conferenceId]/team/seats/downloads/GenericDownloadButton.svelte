@@ -19,6 +19,6 @@
 
 <div class="tooltip tooltip-right" data-tip={m.downloadParticipantData({ group: tip })}>
 	<button class="btn btn-sm" aria-label={m.a11yDownloadData()} onclick={downloadCommitteeData}>
-		<i class="fa-sharp-duotone fa-solid {loading ? 'fa-spinner fa-spin' : 'fa-download'}"></i>
+		<i class="ph-duotone {loading ? 'ph-spinner-gap animate-spin' : 'ph-download-simple'}"></i>
 	</button>
 </div>

@@ -17,7 +17,7 @@
 		alpha2Code: string | null;
 		alpha3Code: string | null;
 		name: string;
-		fontAwesomeIcon: string | null;
+		icon: string | null;
 		totalPieces: number;
 		foundPieces: number;
 		pieces: Piece[];
@@ -43,9 +43,9 @@
 	);
 
 	const pieceIcons: Record<Piece['state'], string> = {
-		FOUND: 'fa-check text-success',
-		UNLOCKED: 'fa-puzzle-piece text-primary/50',
-		LOCKED: 'fa-lock text-base-content/30'
+		FOUND: 'ph-check text-success',
+		UNLOCKED: 'ph-puzzle-piece text-primary/50',
+		LOCKED: 'ph-lock text-base-content/30'
 	};
 </script>
 
@@ -54,7 +54,7 @@
 		<ul class="text-xs space-y-1">
 			{#each flag.pieces as piece (piece.id)}
 				<li class="flex items-center gap-2">
-					<i class="fa-sharp-duotone fa-solid {pieceIcons[piece.state]}"></i>
+					<i class="ph-duotone {pieceIcons[piece.state]}"></i>
 					<span class="truncate {piece.state === 'LOCKED' ? 'opacity-50' : ''}">
 						{#if piece.committeeAbbreviation}
 							<span class="font-semibold">{piece.committeeAbbreviation}:</span>
@@ -79,8 +79,7 @@
 		<div class="flex items-center justify-between gap-2 mb-2">
 			<span class="font-semibold text-sm truncate flex-1" title={displayName}>{displayName}</span>
 			{#if flag.isComplete}
-				<i class="fa-sharp-duotone fa-solid fa-trophy text-warning text-sm animate-trophy-shine"
-				></i>
+				<i class="ph-duotone ph-trophy text-warning text-sm animate-trophy-shine"></i>
 			{/if}
 		</div>
 
@@ -89,7 +88,7 @@
 			pieces={flag.pieces}
 			type={flag.type}
 			alpha2Code={flag.alpha2Code}
-			fontAwesomeIcon={flag.fontAwesomeIcon}
+			icon={flag.icon}
 			nsaId={flag.type === 'NSA' ? flag.id : null}
 			compact={!expanded}
 		/>

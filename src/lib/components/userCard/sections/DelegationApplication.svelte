@@ -46,7 +46,7 @@
 					role: {
 						kind: true,
 						name: true,
-						fontAwesomeIcon: true,
+						icon: true,
 						nation: { alpha2Code: true, alpha3Code: true }
 					}
 				}
@@ -146,7 +146,7 @@
 				disabled={!delegation.applied}
 				onclick={revokeApplication}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-file-slash"></i>
+				<i class="ph-duotone ph-file-x"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}
@@ -156,16 +156,16 @@
 				: 'ml-auto'}"
 			onclick={deleteDelegation}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+			<i class="ph-duotone ph-trash"></i>
 			{m.deleteDelegation()}
 		</button>
 	</div>
 
 	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<InfoRow title={m.schoolsOfMembers()} faIcon="school">
+		<InfoRow title={m.schoolsOfMembers()} icon="graduation-cap">
 			<span class="text-sm">{delegationSchoolsLabel(delegation.members) ?? m.noSchoolGiven()}</span>
 		</InfoRow>
-		<InfoRow title={m.entryCode()} faIcon="key">
+		<InfoRow title={m.entryCode()} icon="key">
 			<span class="font-mono text-sm tracking-wider">{delegation.entryCode}</span>
 			{#snippet actions()}
 				<div class="join">
@@ -175,10 +175,10 @@
 						aria-label={m.copy()}
 						title={m.copy()}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+						<i class="ph-duotone ph-copy"></i>
 					</button>
 					<button class="btn btn-sm join-item" onclick={rotateEntryCode}>
-						<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
+						<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 						{m.rotateCode()}
 					</button>
 				</div>

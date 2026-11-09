@@ -25,7 +25,7 @@ export interface CalendarEntry {
 	endTime: Date;
 	name: string;
 	description?: string | null;
-	fontAwesomeIcon?: string | null;
+	icon?: string | null;
 	color: CalendarentrycolorEnum;
 	place?: CalendarPlace | null;
 	room?: string | null;

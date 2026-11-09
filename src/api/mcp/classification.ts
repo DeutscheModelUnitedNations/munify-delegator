@@ -303,7 +303,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'abbreviation',
 			'conferenceId',
 			'description',
-			'fontAwesomeIcon',
+			'icon',
 			'kind',
 			'name',
 			'nationAlpha3Code',
@@ -319,7 +319,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'color',
 			'description',
 			'endTime',
-			'fontAwesomeIcon',
+			'icon',
 			'name',
 			'placeId',
 			'room',
@@ -414,7 +414,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	NametagBinGroup: {
 		visible: [
-			'fontAwesomeIcon',
+			'icon',
 			'nationAlpha2Code',
 			'nationAlpha3Code',
 			'participants',
@@ -482,7 +482,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'abbreviation',
 			'alpha2Code',
 			'alpha3Code',
-			'fontAwesomeIcon',
+			'icon',
 			'foundPieces',
 			'id',
 			'isComplete',
@@ -499,7 +499,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'flagId',
 			'flagName',
 			'flagType',
-			'fontAwesomeIcon',
+			'icon',
 			'foundCount',
 			'isComplete',
 			'pieceName',
@@ -721,7 +721,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	StatisticsResultRegisteredSingleParticipants: { visible: ['applied', 'notApplied', 'total'] },
 	StatisticsResultRegisteredSingleParticipantsByRole: {
-		visible: ['applied', 'fontAwesomeIcon', 'notApplied', 'role', 'total']
+		visible: ['applied', 'icon', 'notApplied', 'role', 'total']
 	},
 	StatisticsResultRegistrationTimeline: {
 		visible: [

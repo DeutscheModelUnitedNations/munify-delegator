@@ -68,7 +68,7 @@ test('a head delegate can generate a delegation payment reference covering all m
 	await waitForHydration(headPage);
 	await headPage.getByLabel(/für andere mitbezahlen|pay for others too/i).check();
 
-	const generateButton = headPage.locator('button:has(.fa-sparkles)');
+	const generateButton = headPage.locator('button:has(.ph-sparkle)');
 	await expect(generateButton).toBeEnabled({ timeout: 15_000 });
 	await generateButton.click();
 

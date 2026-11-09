@@ -24,7 +24,7 @@ function days(entryTrackIds: string[] = ['a'], start = '09:00', end = '10:00'): 
 		name,
 		startTime: at('2026-03-12', start),
 		endTime: at('2026-03-12', end),
-		fontAwesomeIcon: null,
+		icon: null,
 		color: 'SESSION' as const,
 		room: null,
 		tracks: trackIds.map((trackId) => ({ id: trackId })),

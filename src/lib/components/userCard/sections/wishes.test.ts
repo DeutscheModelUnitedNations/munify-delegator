@@ -7,7 +7,7 @@ const nation = (id: string, rank: number, alpha3Code: string, alpha2Code: string
 	role: {
 		kind: 'NATION' as const,
 		name: null,
-		fontAwesomeIcon: null,
+		icon: null,
 		nation: { alpha2Code, alpha3Code }
 	}
 });
@@ -36,12 +36,12 @@ describe('delegationWishes', () => {
 			role: {
 				kind: 'NON_STATE_ACTOR' as const,
 				name: 'Red Cross',
-				fontAwesomeIcon: 'fa-cross',
+				icon: 'cross',
 				nation: null
 			}
 		};
 		expect(delegationWishes({ applications: [actor], countryName })).toEqual([
-			{ id: 'n', label: 'Red Cross', icon: 'fa-cross' }
+			{ id: 'n', label: 'Red Cross', icon: 'cross' }
 		]);
 	});
 });

@@ -20,7 +20,7 @@ export function fetchConferenceSeats(conferenceId: string) {
 			abbreviation: true,
 			name: true,
 			description: true,
-			fontAwesomeIcon: true,
+			icon: true,
 			seatAmount: true,
 			nation: { alpha2Code: true, alpha3Code: true }
 		}

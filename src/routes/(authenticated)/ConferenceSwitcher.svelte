@@ -23,9 +23,9 @@
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger class="btn btn-ghost btn-sm max-w-56 gap-1.5 max-sm:px-1.5">
-		<i class="fa-sharp-duotone fa-solid fa-flag"></i>
+		<i class="ph-duotone ph-flag"></i>
 		<span class="crumb-label truncate font-semibold">{current?.title ?? m.conference()}</span>
-		<i class="fa-sharp-duotone fa-solid fa-chevron-down text-base-content/50 text-[0.6rem]"></i>
+		<i class="ph-duotone ph-caret-down text-base-content/50 text-[0.6rem]"></i>
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
 		<!-- the portal and collision handling keep the menu on screen whatever the bar clips -->

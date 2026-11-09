@@ -19,6 +19,6 @@
 		disabled={!seatSwitch.selected}
 		onclick={() => seatSwitch.pick({ kind: 'empty', ...seat })}
 	>
-		<i class="fa-sharp-duotone fa-solid fa-arrow-down-to-bracket"></i>
+		<i class="ph-duotone ph-download-simple"></i>
 	</button>
 </div>

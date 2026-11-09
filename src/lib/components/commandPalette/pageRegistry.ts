@@ -77,7 +77,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-general-title',
 			title: () => m.conferenceTitle(),
 			section: () => m.general(),
-			icon: 'fa-gear',
+			icon: 'ph-gear',
 			tab: 'general',
 			keywords: ['titel', 'title', 'name', 'konferenz', 'conference']
 		},
@@ -85,7 +85,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-general-location',
 			title: () => m.conferenceLocation(),
 			section: () => m.general(),
-			icon: 'fa-gear',
+			icon: 'ph-gear',
 			tab: 'general',
 			keywords: ['ort', 'location', 'stadt', 'city']
 		},
@@ -93,7 +93,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-general-dates',
 			title: () => m.conferenceStart(),
 			section: () => m.general(),
-			icon: 'fa-gear',
+			icon: 'ph-gear',
 			tab: 'general',
 			keywords: ['datum', 'date', 'start', 'ende', 'end', 'zeitraum']
 		},
@@ -101,7 +101,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-general-image',
 			title: () => m.conferenceImage(),
 			section: () => m.general(),
-			icon: 'fa-gear',
+			icon: 'ph-gear',
 			tab: 'general',
 			keywords: ['bild', 'image', 'foto', 'photo', 'logo', 'emblem']
 		},
@@ -110,7 +110,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-committees',
 			title: () => m.committeesAndAgendaItems(),
 			section: () => m.settings(),
-			icon: 'fa-podium',
+			icon: 'ph-lectern',
 			tab: 'committees',
 			keywords: ['gremien', 'committees', 'themen', 'agenda', 'items']
 		},
@@ -119,7 +119,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-status-features',
 			title: () => m.statusAndFeatures(),
 			section: () => m.settings(),
-			icon: 'fa-toggle-on',
+			icon: 'ph-toggle-right',
 			tab: 'status',
 			keywords: [
 				'status',
@@ -137,7 +137,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-status-state',
 			title: () => m.conferenceStatus(),
 			section: () => m.statusAndFeatures(),
-			icon: 'fa-toggle-on',
+			icon: 'ph-toggle-right',
 			tab: 'status',
 			keywords: [
 				'konferenzstatus',
@@ -156,7 +156,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-links',
 			title: () => m.linksAndContent(),
 			section: () => m.settings(),
-			icon: 'fa-link',
+			icon: 'ph-link',
 			tab: 'links',
 			keywords: ['links', 'wiki', 'services', 'dienste', 'preparation', 'vorbereitung']
 		},
@@ -165,7 +165,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-payments',
 			title: () => m.bankingInformation(),
 			section: () => m.settings(),
-			icon: 'fa-credit-card',
+			icon: 'ph-credit-card',
 			tab: 'payments',
 			keywords: [
 				'bank',
@@ -185,7 +185,7 @@ export function getConfigEntries(): ConfigEntry[] {
 			id: 'config-documents',
 			title: () => m.documentsAndTemplates(),
 			section: () => m.settings(),
-			icon: 'fa-file-pdf',
+			icon: 'ph-file-pdf',
 			tab: 'documents',
 			keywords: [
 				'dokumente',

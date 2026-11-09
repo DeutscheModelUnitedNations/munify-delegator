@@ -39,7 +39,7 @@
 						{m.paperUpdatedAt()}: {new Date(paper.updatedAt).toLocaleDateString(getLocale())}
 					</span>
 				</div>
-				<i class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/40"></i>
+				<i class="ph-duotone ph-caret-right text-base-content/40"></i>
 			</a>
 		</li>
 	{/each}

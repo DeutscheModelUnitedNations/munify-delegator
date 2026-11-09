@@ -27,13 +27,13 @@ const nation = { alpha2Code: 'fr', alpha3Code: 'FRA' };
 const nationRole: DelegationRole = {
 	kind: 'NATION',
 	name: null,
-	fontAwesomeIcon: null,
+	icon: null,
 	nation
 };
 const nsa: DelegationRole = {
 	kind: 'NON_STATE_ACTOR',
 	name: 'Greenpeace',
-	fontAwesomeIcon: 'fa-leaf',
+	icon: 'leaf',
 	nation: null
 };
 
@@ -140,7 +140,7 @@ describe('participationOf', () => {
 	});
 
 	test('a single participant', () => {
-		const role = { name: 'Press', fontAwesomeIcon: 'fa-camera' };
+		const role = { name: 'Press', icon: 'camera' };
 		expect(
 			participationOf({
 				myParticipation: { ...none, singleParticipant: { applied: false, assignedRole: role } },
@@ -192,12 +192,12 @@ describe('roleIcon', () => {
 					conferenceState: REG
 				})
 			)
-		).toBe('fa-users');
+		).toBe('ph-users');
 		expect(
 			roleIcon(
 				participationOf({ myParticipation: none, supervisedStudents: {}, conferenceState: REG })
 			)
-		).toBe('fa-chalkboard-teacher');
+		).toBe('ph-chalkboard-teacher');
 		expect(
 			roleIcon(
 				participationOf({
@@ -206,7 +206,7 @@ describe('roleIcon', () => {
 					conferenceState: REG
 				})
 			)
-		).toBe('fa-users-gear');
+		).toBe('ph-user-gear');
 		expect(
 			roleIcon(
 				participationOf({
@@ -218,34 +218,34 @@ describe('roleIcon', () => {
 		).toBeUndefined();
 	});
 
-	test('a single participant shows their role icon without a doubled prefix, or a user', () => {
+	test('a single participant shows their role icon, or a user', () => {
 		const withIcon = participationOf({
 			myParticipation: {
 				...none,
 				singleParticipant: {
 					applied: true,
-					assignedRole: { name: 'P', fontAwesomeIcon: 'fa-camera' }
+					assignedRole: { name: 'P', icon: 'camera' }
 				}
 			},
 			supervisedStudents: undefined,
 			conferenceState: REG
 		});
-		expect(roleIcon(withIcon)).toBe('fa-camera');
+		expect(roleIcon(withIcon)).toBe('ph-camera');
 		const noIcon = participationOf({
 			myParticipation: {
 				...none,
-				singleParticipant: { applied: true, assignedRole: { name: 'P', fontAwesomeIcon: null } }
+				singleParticipant: { applied: true, assignedRole: { name: 'P', icon: null } }
 			},
 			supervisedStudents: undefined,
 			conferenceState: REG
 		});
-		expect(roleIcon(noIcon)).toBe('fa-user');
+		expect(roleIcon(noIcon)).toBe('ph-user');
 		const noRole = participationOf({
 			myParticipation: { ...none, singleParticipant: { applied: true, assignedRole: null } },
 			supervisedStudents: undefined,
 			conferenceState: REG
 		});
-		expect(roleIcon(noRole)).toBe('fa-user');
+		expect(roleIcon(noRole)).toBe('ph-user');
 	});
 });
 
@@ -288,7 +288,7 @@ describe('roleText', () => {
 						...none,
 						singleParticipant: {
 							applied: true,
-							assignedRole: { name: 'Press', fontAwesomeIcon: null }
+							assignedRole: { name: 'Press', icon: null }
 						}
 					},
 					supervisedStudents: undefined,

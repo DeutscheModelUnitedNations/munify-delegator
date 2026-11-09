@@ -22,33 +22,33 @@
 
 <StatusWidget
 	{title}
-	faIcon="camera-slash"
+	icon="camera-slash"
 	activeStatus={status ?? 'NOT_SET'}
 	status={[
 		{
 			value: 'NOT_SET',
 			title: m.mediaConsentStatusNotSet(),
-			faIcon: 'fa-clipboard-question',
+			icon: 'ph-clipboard',
 			color: 'btn-warning'
 		},
 		{
 			value: 'NOT_ALLOWED',
 			title: m.mediaConsentStatusNotAllowed(),
-			faIcon: 'fa-camera-slash',
+			icon: 'ph-camera-slash',
 			color: 'btn-error',
 			hotkey: hotkeyMap?.NOT_ALLOWED
 		},
 		{
 			value: 'PARTIALLY_ALLOWED',
 			title: m.mediaConsentStatusPartiallyAllowed(),
-			faIcon: 'fa-magnifying-glass',
+			icon: 'ph-magnifying-glass',
 			color: 'btn-warning',
 			hotkey: hotkeyMap?.PARTIALLY_ALLOWED
 		},
 		{
 			value: 'ALLOWED_ALL',
 			title: m.mediaConsentStatusAllowedAll(),
-			faIcon: 'fa-camera',
+			icon: 'ph-camera',
 			color: 'btn-success',
 			hotkey: hotkeyMap?.ALLOWED_ALL ?? doneHotkey
 		}

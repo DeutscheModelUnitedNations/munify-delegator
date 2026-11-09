@@ -48,9 +48,7 @@
 {#if participant}
 	{@const id = participant.id}
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-		<i
-			class="fa-sharp-duotone fa-solid fa-address-card text-base-content/60 w-6 text-center text-lg"
-		></i>
+		<i class="ph-duotone ph-identification-card text-base-content/60 w-6 text-center text-lg"></i>
 		<div class="flex min-w-48 grow flex-col">
 			<span class="font-semibold">{m.nsaCard()}</span>
 			<span class="text-base-content/60 text-sm">
@@ -59,7 +57,7 @@
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
 			<button class="btn btn-sm" disabled={busy} onclick={() => print({ id, reprint: false })}>
-				<i class="fa-sharp-duotone fa-solid fa-print"></i>
+				<i class="ph-duotone ph-printer"></i>
 				{m.nsaCardPrint()}
 			</button>
 			{#if confirmingReprint}
@@ -80,7 +78,7 @@
 					title={m.nsaCardReprintHint()}
 					onclick={() => (confirmingReprint = true)}
 				>
-					<i class="fa-sharp-duotone fa-solid fa-arrows-rotate"></i>
+					<i class="ph-duotone ph-arrows-clockwise"></i>
 					{m.nsaCardReprint()}
 				</button>
 			{/if}

@@ -53,7 +53,7 @@ test('the participants table filters, groups and keeps a personal view', async (
 
 	// Saved as a personal view, the table opens on it from the views menu
 	const name = `E2E view ${Date.now()}`;
-	const viewsButton = page.locator('.dropdown > button:has(.fa-table-layout)');
+	const viewsButton = page.locator('.dropdown > button:has(.ph-layout)');
 	await viewsButton.click();
 	await page.getByRole('button', { name: /Als neue Ansicht speichern|Save as a new view/ }).click();
 	await page.locator('#view-name-form input:not([type])').fill(name);

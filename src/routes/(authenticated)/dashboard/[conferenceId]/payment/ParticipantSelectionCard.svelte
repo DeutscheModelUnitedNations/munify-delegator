@@ -21,7 +21,7 @@
 
 <div class="bg-base-200 flex w-full flex-col gap-4 rounded-box p-4 shadow-lg">
 	<h2 class="text-2xl font-bold">
-		<i class="fa-sharp-duotone fa-solid fa-list-check mr-4"></i>
+		<i class="ph-duotone ph-list-checks mr-4"></i>
 		{m.paymentWhoTitle()}
 	</h2>
 
@@ -46,7 +46,7 @@
 				onclick={() => selection.selectAll()}
 				disabled={selection.isReferenceCreated}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-check-double"></i>
+				<i class="ph-duotone ph-checks"></i>
 				{m.selectAll()}
 			</button>
 			<button
@@ -54,7 +54,7 @@
 				onclick={() => selection.clear()}
 				disabled={selection.isReferenceCreated}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+				<i class="ph-duotone ph-x"></i>
 				{m.deselectAll()}
 			</button>
 		</div>
@@ -64,7 +64,7 @@
 		</div>
 
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-info-circle mr-2 text-2xl"></i>
+			<i class="ph-duotone ph-info mr-2 text-2xl"></i>
 			<div>
 				<h3 class="font-bold">{m.participantsNotFoundTitle()}</h3>
 				<p>

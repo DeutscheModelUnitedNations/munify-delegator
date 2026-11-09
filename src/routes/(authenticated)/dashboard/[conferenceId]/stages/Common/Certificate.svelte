@@ -111,19 +111,19 @@
 </script>
 
 <DashboardSection
-	icon="party-horn"
+	icon="confetti"
 	title={m.thanksForParticipating()}
 	description={m.thanksForParticipatingDescription()}
 >
 	<div class="flex flex-col items-center justify-center py-4">
-		<i class="fa-sharp-duotone fa-solid fa-hands-clapping text-6xl text-primary mb-4"></i>
+		<i class="ph-duotone ph-hands-clapping text-6xl text-primary mb-4"></i>
 		<p class="text-center text-base-content/70">{m.conferenceCompleteMessage()}</p>
 	</div>
 </DashboardSection>
 
 {#if hasRole}
 	<DashboardSection
-		icon="masks-theater"
+		icon="mask-happy"
 		title={m.yourRole()}
 		description={m.yourRolePostDescription()}
 	>
@@ -151,17 +151,17 @@
 	{#if certificate}
 		{#if !certificate.templateUrl}
 			<div class="alert alert-warning">
-				<i class="fas fa-hourglass-half"></i>
+				<i class="ph-fill ph-hourglass-medium"></i>
 				<p>{m.certificateNotYetAvailable()}</p>
 			</div>
 		{:else if didAttend && userId && certificate.code}
 			<button class="btn btn-primary self-start" onclick={downloadPDF}>
-				<i class="fas fa-download"></i>
+				<i class="ph-fill ph-download-simple"></i>
 				{m.downloadCertificate()}
 			</button>
 		{:else}
 			<div class="alert alert-error">
-				<i class="fas fa-user-xmark"></i>
+				<i class="ph-fill ph-user-minus"></i>
 				<p>{m.certificateDescriptionNotAttended()}</p>
 			</div>
 		{/if}

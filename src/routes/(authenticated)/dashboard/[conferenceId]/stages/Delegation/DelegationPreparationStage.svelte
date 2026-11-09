@@ -69,7 +69,7 @@
 					<Flag
 						alpha2Code={assignedNation?.alpha2Code}
 						nsa={!!nonStateActor}
-						icon={nonStateActor?.fontAwesomeIcon ?? 'globe'}
+						icon={nonStateActor?.icon ?? 'globe'}
 						size="lg"
 					/>
 				{/if}
@@ -98,14 +98,14 @@
 				class="border-base-300 grid grid-cols-2 gap-4 border-t pt-4 lg:w-80 lg:grid-cols-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
 			>
 				<div class="flex items-center gap-3">
-					<i class="fa-sharp-duotone fa-solid fa-users text-base-content/50 text-xl"></i>
+					<i class="ph-duotone ph-users text-base-content/50 text-xl"></i>
 					<div class="flex flex-col">
 						<dt class="text-base-content/60 text-xs">{m.members()}</dt>
 						<dd class="font-semibold">{delegation.members.length}</dd>
 					</div>
 				</div>
 				<div class="flex items-center gap-3">
-					<i class="fa-sharp-duotone fa-solid fa-signature text-base-content/50 text-xl"></i>
+					<i class="ph-duotone ph-signature text-base-content/50 text-xl"></i>
 					<div class="flex min-w-0 flex-col">
 						<dt class="text-base-content/60 text-xs">{m.delegationName()}</dt>
 						<dd class="font-semibold break-words" title={m.delegationNameExplanation()}>
@@ -133,7 +133,7 @@
 {:else if assignedRole.nonStateActor}
 	{@const nsa = assignedRole.nonStateActor}
 	<DashboardSection
-		icon="building-ngo"
+		icon="building-office"
 		title={m.informationOnYourNSA()}
 		description={m.informationOnYourNSADescription()}
 	>

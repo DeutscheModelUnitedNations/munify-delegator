@@ -150,7 +150,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 				startTime: at({ date: dayDates[dayIndex], hours: from[0], minutes: from[1] }),
 				endTime: at({ date: dayDates[dayIndex], hours: to[0], minutes: to[1] }),
 				color: 'SESSION',
-				fontAwesomeIcon: 'gavel',
+				icon: 'gavel',
 				room: `Raum ${201 + trackIndex}`
 			});
 			trackLinks.push({ a: entry.id, b: track.id });
@@ -165,7 +165,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 		startTime: at({ date: dayDates[1], hours: 12, minutes: 0 }),
 		endTime: at({ date: dayDates[1], hours: 13, minutes: 30 }),
 		color: 'WORKSHOP',
-		fontAwesomeIcon: 'chalkboard-user',
+		icon: 'chalkboard-teacher',
 		room: 'Saal A'
 	});
 	trackLinks.push(
@@ -180,7 +180,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[0], hours: 10, minutes: 0 }),
 			endTime: at({ date: dayDates[0], hours: 11, minutes: 30 }),
 			color: 'CEREMONY',
-			fontAwesomeIcon: 'flag',
+			icon: 'flag',
 			placeId: landtag.id,
 			room: 'Plenarsaal'
 		}),
@@ -190,7 +190,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[0], hours: 11, minutes: 30 }),
 			endTime: at({ date: dayDates[0], hours: 12, minutes: 30 }),
 			color: 'BREAK',
-			fontAwesomeIcon: 'utensils'
+			icon: 'fork-knife'
 		}),
 		...parallelSessions({ dayIndex: 0, name: 'Sitzung I', from: [12, 30], to: [14, 30] }),
 		makeSeedCalendarEntry({
@@ -199,7 +199,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[0], hours: 14, minutes: 30 }),
 			endTime: at({ date: dayDates[0], hours: 15, minutes: 0 }),
 			color: 'BREAK',
-			fontAwesomeIcon: 'mug-hot'
+			icon: 'coffee'
 		}),
 		...parallelSessions({ dayIndex: 0, name: 'Sitzung II', from: [15, 0], to: [17, 0] }),
 		makeSeedCalendarEntry({
@@ -208,7 +208,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[0], hours: 17, minutes: 30 }),
 			endTime: at({ date: dayDates[0], hours: 18, minutes: 30 }),
 			color: 'SOCIAL',
-			fontAwesomeIcon: 'utensils'
+			icon: 'fork-knife'
 		}),
 		...parallelSessions({ dayIndex: 1, name: 'Sitzung III', from: [9, 0], to: [11, 0] }),
 		makeSeedCalendarEntry({
@@ -217,7 +217,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[1], hours: 11, minutes: 0 }),
 			endTime: at({ date: dayDates[1], hours: 12, minutes: 0 }),
 			color: 'BREAK',
-			fontAwesomeIcon: 'utensils'
+			icon: 'fork-knife'
 		}),
 		workshop,
 		...parallelSessions({ dayIndex: 1, name: 'Sitzung IV', from: [13, 30], to: [15, 30] }),
@@ -227,7 +227,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[1], hours: 18, minutes: 0 }),
 			endTime: at({ date: dayDates[1], hours: 22, minutes: 0 }),
 			color: 'SOCIAL',
-			fontAwesomeIcon: 'party-horn',
+			icon: 'confetti',
 			placeId: kulturzentrum.id
 		}),
 		...parallelSessions({ dayIndex: 2, name: 'Sitzung V', from: [9, 0], to: [11, 0] }),
@@ -237,7 +237,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[2], hours: 11, minutes: 0 }),
 			endTime: at({ date: dayDates[2], hours: 12, minutes: 0 }),
 			color: 'BREAK',
-			fontAwesomeIcon: 'utensils'
+			icon: 'fork-knife'
 		}),
 		makeSeedCalendarEntry({
 			calendarDayId: days[2].id,
@@ -245,7 +245,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 			startTime: at({ date: dayDates[2], hours: 12, minutes: 0 }),
 			endTime: at({ date: dayDates[2], hours: 14, minutes: 0 }),
 			color: 'CEREMONY',
-			fontAwesomeIcon: 'award',
+			icon: 'medal',
 			placeId: landtag.id,
 			room: 'Plenarsaal'
 		})

@@ -27,7 +27,7 @@
 
 {#if !user}
 	<a class="btn btn-primary btn-sm" href={resolve('login?next=/dashboard')} rel="external">
-		<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
+		<i class="ph-duotone ph-sign-in"></i>
 
 		{m.signIn()}
 	</a>
@@ -59,7 +59,7 @@
 					</span>
 				</div>
 				<i
-					class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/40 group-hover:text-primary text-xs transition-all group-hover:translate-x-0.5"
+					class="ph-duotone ph-caret-right text-base-content/40 group-hover:text-primary text-xs transition-all group-hover:translate-x-0.5"
 					aria-hidden="true"
 				></i>
 			</a>
@@ -67,21 +67,21 @@
 			<ul class="menu w-full p-2">
 				<li>
 					<a href={resolve('dashboard')}>
-						<i class="fa-sharp-duotone fa-solid fa-gauge w-4"></i>
+						<i class="ph-duotone ph-gauge w-4"></i>
 						{m.dashboard()}
 					</a>
 				</li>
 				{#if PUBLIC_FEEDBACK_URL}
 					<li>
 						<a href={PUBLIC_FEEDBACK_URL} target="_blank" rel="external">
-							<i class="fa-sharp-duotone fa-solid fa-comment w-4"></i>
+							<i class="ph-duotone ph-chat w-4"></i>
 							{m.feedback()}
 						</a>
 					</li>
 				{/if}
 				<li>
 					<a class={logoutUrl ? '' : 'disabled'} href={logoutUrl} rel="external">
-						<i class="fa-sharp-duotone fa-solid fa-sign-out w-4"></i>
+						<i class="ph-duotone ph-sign-out w-4"></i>
 						{m.logout()}
 					</a>
 				</li>

@@ -3,7 +3,7 @@
 	import { toggleButtonProps } from '#lib/helpers/toggleButtonProps';
 
 	interface Props {
-		/** FontAwesome icon name (without the `fa-` prefix) shown next to the title. */
+		/** Phosphor icon name (without the `ph-` prefix) shown next to the title. */
 		icon: string;
 		title: string;
 		description?: string;
@@ -43,13 +43,10 @@
 	>
 		<div class="flex items-center gap-3">
 			{#if collapsible}
-				<i
-					class="fa-sharp-duotone fa-solid {expanded
-						? 'fa-chevron-down'
-						: 'fa-chevron-right'} text-base-content/50"
+				<i class="ph-duotone {expanded ? 'ph-caret-down' : 'ph-caret-right'} text-base-content/50"
 				></i>
 			{/if}
-			<i class="fa-sharp-duotone fa-solid fa-{icon} text-primary text-xl"></i>
+			<i class="ph-duotone ph-{icon} text-primary text-xl"></i>
 			<div>
 				<h3 class="text-lg font-bold">{title}</h3>
 				{#if description}

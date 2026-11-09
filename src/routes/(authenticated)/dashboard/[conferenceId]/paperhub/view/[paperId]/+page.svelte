@@ -24,7 +24,7 @@
 				assignedRole: {
 					kind: true,
 					name: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					nation: { alpha2Code: true, alpha3Code: true }
 				}
 			},
@@ -65,7 +65,7 @@
 			href={resolve(`dashboard/${params.conferenceId}/paperhub?view=global`)}
 			class="btn btn-ghost btn-sm"
 		>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+			<i class="ph-duotone ph-arrow-left"></i>
 			{m.backToConferencePapers()}
 		</a>
 	</div>
@@ -75,12 +75,12 @@
 
 		<!-- Read-Only Info Banner -->
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-eye"></i>
+			<i class="ph-duotone ph-eye"></i>
 			<span>{m.readOnlyViewParticipant()}</span>
 		</div>
 	{:else}
 		<div>
-			<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
+			<i class="ph-duotone ph-spinner-gap animate-spin text-3xl"></i>
 		</div>
 	{/if}
 

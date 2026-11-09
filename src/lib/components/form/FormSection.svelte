@@ -7,7 +7,7 @@
 	 */
 	interface Props {
 		title: string;
-		/** FontAwesome duotone icon name without the `fa-` prefix. */
+		/** Phosphor icon name without the `ph-` prefix, drawn duotone. */
 		icon: string;
 		description?: string;
 		/** Sits beside the title, e.g. a help button. */
@@ -28,7 +28,7 @@
 		<div
 			class="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full"
 		>
-			<i class="fa-sharp-duotone fa-solid fa-{icon}"></i>
+			<i class="ph-duotone ph-{icon}"></i>
 		</div>
 		<div class="flex flex-col gap-1">
 			<div class="flex items-center gap-1">

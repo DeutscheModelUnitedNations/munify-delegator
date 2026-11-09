@@ -24,7 +24,7 @@ const users: ChasePresenceUser[] = [
 		conferenceUserType: 'NON_STATE_ACTOR',
 		userEmail: 'nora@example.org',
 		conferenceMember: {
-			representation: { id: 'role-amnesty', type: 'NSA', name: 'Amnesty', faIcon: 'fa-dove' }
+			representation: { id: 'role-amnesty', type: 'NSA', name: 'Amnesty', icon: 'bird' }
 		},
 		presenceEvents: [event(true)]
 	},

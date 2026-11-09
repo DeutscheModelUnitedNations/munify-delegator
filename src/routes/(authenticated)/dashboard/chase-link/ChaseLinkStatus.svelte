@@ -51,12 +51,12 @@
 		</p>
 	</div>
 	<button class="btn btn-ghost self-start" onclick={unlink}>
-		<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+		<i class="ph-duotone ph-x"></i>
 		{m.chaseLinkWithdraw()}
 	</button>
 {:else}
 	<div class="alert alert-success">
-		<i class="fa-sharp-duotone fa-solid fa-link"></i>
+		<i class="ph-duotone ph-link"></i>
 		<span>{m.chaseLinkActiveIntro({ url: link.remoteUrl })}</span>
 	</div>
 	<dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
@@ -69,17 +69,17 @@
 	</dl>
 	{#if link.lastError}
 		<div class="alert alert-warning">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+			<i class="ph-duotone ph-warning"></i>
 			<span>{m.chaseLinkLastError({ error: link.lastError })}</span>
 		</div>
 	{/if}
 	<div class="flex flex-wrap gap-2">
 		<a class="btn btn-primary" href={link.remoteUrl} target="_blank" rel="noopener">
-			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+			<i class="ph-duotone ph-arrow-square-out"></i>
 			{m.chaseLinkOpen()}
 		</a>
 		<button class="btn btn-error btn-outline" onclick={unlink}>
-			<i class="fa-sharp-duotone fa-solid fa-link-slash"></i>
+			<i class="ph-duotone ph-link-break"></i>
 			{m.chaseLinkUnlink()}
 		</button>
 	</div>

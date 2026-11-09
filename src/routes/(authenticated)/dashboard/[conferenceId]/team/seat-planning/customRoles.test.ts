@@ -8,7 +8,7 @@ describe('customRoleRow', () => {
 				id: 'r1',
 				name: 'Presse',
 				description: 'Berichtet',
-				fontAwesomeIcon: 'newspaper',
+				icon: 'newspaper',
 				seatAmount: 4,
 				chaseAccess: 'TEAM',
 				assignedSingleParticipants: [{}, {}]
@@ -17,7 +17,7 @@ describe('customRoleRow', () => {
 			id: 'r1',
 			name: 'Presse',
 			description: 'Berichtet',
-			fontAwesomeIcon: 'newspaper',
+			icon: 'newspaper',
 			seatAmount: 4,
 			holders: 2,
 			chaseAccess: 'TEAM'
@@ -31,7 +31,7 @@ describe('customRoleRow', () => {
 			id: 'r2',
 			name: '',
 			description: '',
-			fontAwesomeIcon: null,
+			icon: null,
 			seatAmount: 0,
 			holders: 0,
 			chaseAccess: 'SPECTATOR'

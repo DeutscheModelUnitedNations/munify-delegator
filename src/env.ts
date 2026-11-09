@@ -163,30 +163,6 @@ export const variables = defineEnvVars({
 		schema: unlessEmpty(z.stringbool().default(false))
 	},
 
-	// Full URL of the FontAwesome stylesheet (must bundle all used styles, e.g. `all.min.css`)
-	PUBLIC_FONTAWESOME_CSS_URL: {
-		public: true,
-		schema: unlessEmpty(
-			z
-				.string()
-				.url()
-				.default('https://cdn.dmun.de/cdn/fontawesome-pro-7.0.0-web/css/all.min.css?v=825d23a4')
-		)
-	},
-	// Stylesheet with the Sharp Duotone font, which `all.min.css` does not bundle. Without it
-	// `fa-sharp-duotone` draws both duotone layers as the same plain glyph, i.e. every icon twice.
-	PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL: {
-		public: true,
-		schema: unlessEmpty(
-			z
-				.string()
-				.url()
-				.default(
-					'https://cdn.dmun.de/cdn/fontawesome-pro-7.0.0-web/css/sharp-duotone-solid.min.css'
-				)
-		)
-	},
-
 	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: { public: true, schema: numberOr(1200) },
 	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: { public: true, schema: numberOr(100) },
 

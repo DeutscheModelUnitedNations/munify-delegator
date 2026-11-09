@@ -125,26 +125,26 @@
 	const genderIcon = $derived.by(() => {
 		switch (user.gender) {
 			case 'MALE':
-				return 'mars';
+				return 'gender-male';
 			case 'FEMALE':
-				return 'venus';
+				return 'gender-female';
 			case 'DIVERSE':
-				return 'transgender';
+				return 'gender-intersex';
 			default:
-				return 'genderless';
+				return 'user';
 		}
 	});
 
 	const foodIcon = $derived.by(() => {
 		switch (user.foodPreference) {
 			case 'OMNIVORE':
-				return 'drumstick-bite';
+				return 'fork-knife';
 			case 'VEGETARIAN':
 				return 'carrot';
 			case 'VEGAN':
 				return 'leaf';
 			default:
-				return 'utensils';
+				return 'fork-knife';
 		}
 	});
 </script>
@@ -156,7 +156,7 @@
 			<div class="flex flex-col gap-6">
 				<FormFieldset title={m.legalName()}>
 					<div class="mb-2 flex items-center gap-2 text-base-content/60">
-						<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
+						<i class="ph-duotone ph-identification-card"></i>
 					</div>
 					<CopyField value={user.givenName} show={showCopy}>
 						<FormTextInput
@@ -181,7 +181,7 @@
 				<FormFieldset title={m.personalInformation()}>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-sharp-duotone fa-solid fa-birthday-cake"></i>
+							<i class="ph-duotone ph-cake"></i>
 							<span class="text-sm">{m.birthDate()}</span>
 						</div>
 						<CopyField value={birthdayText} show={showCopy}>
@@ -196,7 +196,7 @@
 					</div>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-sharp-duotone fa-solid fa-{genderIcon}"></i>
+							<i class="ph-duotone ph-{genderIcon}"></i>
 							<span class="text-sm">{m.gender()}</span>
 						</div>
 						<CopyField
@@ -217,7 +217,7 @@
 					</CopyField>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-sharp-duotone fa-solid fa-{foodIcon}"></i>
+							<i class="ph-duotone ph-{foodIcon}"></i>
 							<span class="text-sm">{m.diet()}</span>
 						</div>
 						<CopyField
@@ -241,7 +241,7 @@
 					<!-- Email (read-only, from OIDC) with action buttons -->
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
+							<i class="ph-duotone ph-envelope"></i>
 							<span class="text-sm">{m.email()}</span>
 						</div>
 						<div class="flex items-center gap-1">
@@ -259,7 +259,7 @@
 										aria-label={m.copy()}
 										onclick={() => copyToClipboard(user.email ?? '')}
 									>
-										<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+										<i class="ph-duotone ph-copy"></i>
 									</button>
 								</div>
 								<div class="tooltip" data-tip={m.email()}>
@@ -268,7 +268,7 @@
 										class="btn btn-ghost btn-sm btn-square"
 										aria-label={m.email()}
 									>
-										<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
+										<i class="ph-duotone ph-paper-plane-tilt"></i>
 									</a>
 								</div>
 							{/if}
@@ -278,7 +278,7 @@
 					<!-- Phone with action buttons -->
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-sharp-duotone fa-solid fa-phone"></i>
+							<i class="ph-duotone ph-phone"></i>
 							<span class="text-sm">{m.phoneNumber()}</span>
 						</div>
 						<div class="flex items-center gap-1">
@@ -298,7 +298,7 @@
 										aria-label={m.copy()}
 										onclick={() => copyToClipboard(($formData.phone ?? '').toString())}
 									>
-										<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+										<i class="ph-duotone ph-copy"></i>
 									</button>
 								</div>
 								<div class="tooltip" data-tip={m.phoneNumber()}>
@@ -307,7 +307,7 @@
 										class="btn btn-ghost btn-sm btn-square"
 										aria-label={m.phoneNumber()}
 									>
-										<i class="fa-sharp-duotone fa-solid fa-phone-arrow-up-right"></i>
+										<i class="ph-duotone ph-phone-outgoing"></i>
 									</a>
 								</div>
 							{/if}
@@ -315,7 +315,7 @@
 					</div>
 
 					<div class="flex items-center gap-2 text-base-content/60 mt-2">
-						<i class="fa-sharp-duotone fa-solid fa-house"></i>
+						<i class="ph-duotone ph-house"></i>
 						<span class="text-sm">{m.address()}</span>
 					</div>
 					<CopyField value={user.street} show={showCopy}>
@@ -359,7 +359,7 @@
 					</CopyField>
 
 					<div class="flex items-center gap-2 text-base-content/60 mt-2">
-						<i class="fa-sharp-duotone fa-solid fa-light-emergency-on"></i>
+						<i class="ph-duotone ph-siren"></i>
 						<span class="text-sm">{m.emergencyContacts()}</span>
 					</div>
 					<CopyField value={user.emergencyContacts} show={showCopy}>
@@ -379,10 +379,10 @@
 		<div class="flex justify-end">
 			<button class="btn btn-sm {editing ? 'btn-ghost' : 'btn-outline'}" onclick={toggleEdit}>
 				{#if editing}
-					<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+					<i class="ph-duotone ph-x"></i>
 					{m.cancel()}
 				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
+					<i class="ph-duotone ph-note-pencil"></i>
 					{m.edit()}
 				{/if}
 			</button>

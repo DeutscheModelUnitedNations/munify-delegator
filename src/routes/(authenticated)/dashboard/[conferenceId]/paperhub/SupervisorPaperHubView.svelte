@@ -27,7 +27,7 @@
 				assignedRole: {
 					kind: true,
 					name: true,
-					fontAwesomeIcon: true,
+					icon: true,
 					nation: { alpha2Code: true, alpha3Code: true }
 				}
 			},
@@ -113,7 +113,7 @@
 		</div>
 	{:else if papersByDelegation.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
+			<i class="ph-duotone ph-info"></i>
 			<span>{m.supervisorPapersEmpty()}</span>
 		</div>
 	{:else}
@@ -164,7 +164,7 @@
 
 										<td class="align-middle">
 											<button class="btn btn-ghost btn-xs" aria-label={m.openPaper()}>
-												<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+												<i class="ph-duotone ph-arrow-right"></i>
 											</button>
 										</td>
 									</tr>

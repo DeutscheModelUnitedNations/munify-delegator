@@ -90,7 +90,7 @@
 	<div class="flex flex-col items-center gap-1">
 		{#if pair.inferred}
 			<i
-				class="fa-sharp-duotone fa-solid fa-link text-error text-2xl"
+				class="ph-duotone ph-link text-error text-2xl"
 				title={m.possibleDuplicateInferred()}
 				role="img"
 				aria-label={m.possibleDuplicateInferred()}
@@ -110,7 +110,7 @@
 			<!-- Always there, hidden unless confirmed, so the corner keeps its height -->
 			{@const label = confirmed ? m.possibleDuplicateConfirmedBadge() : undefined}
 			<i
-				class="fa-sharp-duotone fa-solid fa-link text-error {confirmed ? '' : 'invisible'}"
+				class="ph-duotone ph-link text-error {confirmed ? '' : 'invisible'}"
 				title={label}
 				aria-label={label}
 				aria-hidden={confirmed ? undefined : true}
@@ -126,19 +126,19 @@
 			<span class="text-base-content/60 text-xs">{m.possibleDuplicateInferred()}</span>
 		{:else if pair.status === 'OPEN'}
 			<button class="btn btn-xs" onclick={() => decide({ id: pair.id, status: 'DISMISSED' })}>
-				<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
+				<i class="ph-duotone ph-arrows-left-right"></i>
 				{m.possibleDuplicateDifferentPeople()}
 			</button>
 			<button
 				class="btn btn-xs btn-warning"
 				onclick={() => decide({ id: pair.id, status: 'CONFIRMED' })}
 			>
-				<i class="fa-sharp-duotone fa-solid fa-link"></i>
+				<i class="ph-duotone ph-link"></i>
 				{m.possibleDuplicateSamePerson()}
 			</button>
 		{:else}
 			<button class="btn btn-xs btn-ghost" onclick={() => decide({ id: pair.id, status: 'OPEN' })}>
-				<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+				<i class="ph-duotone ph-arrow-counter-clockwise"></i>
 				{m.possibleDuplicateReopen()}
 			</button>
 		{/if}
@@ -175,7 +175,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h2 class="text-2xl font-bold">{m.plausibilityPossibleDuplicates()}</h2>
 		<button class="btn btn-sm" onclick={scan} disabled={scanning}>
-			<i class="fa-sharp-duotone fa-solid fa-arrows-rotate {scanning ? 'fa-spin' : ''}"></i>
+			<i class="ph-duotone ph-arrows-clockwise {scanning ? 'animate-spin' : ''}"></i>
 			{m.possibleDuplicatesScan()}
 		</button>
 	</div>
@@ -193,7 +193,7 @@
 
 	{#if confirmed.length > 0}
 		<h3 class="mt-2 flex items-center gap-2 text-lg font-semibold">
-			<i class="fa-sharp-duotone fa-solid fa-link text-error"></i>
+			<i class="ph-duotone ph-link text-error"></i>
 			{m.possibleDuplicatesConfirmed({ count: confirmed.length })}
 		</h3>
 		<div class="grid gap-4 lg:grid-cols-2">
