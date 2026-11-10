@@ -45,6 +45,8 @@ export function chaseLinks({
 }) {
 	const base = chaseUrl.replace(/\/+$/, '');
 	return {
+		/** CHASE's conference selection, which lists each signed-in person their conferences. */
+		launcher: `${base}/app`,
 		app:
 			role === 'DELEGATE' && committeeId
 				? `${base}/app/${conferenceId}/${committeeId}`

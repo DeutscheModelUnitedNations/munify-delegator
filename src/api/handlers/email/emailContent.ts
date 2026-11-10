@@ -180,10 +180,11 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			values: {
 				date: day(conference.startConference),
 				committee: person.delegation?.committee ?? '',
-				chaseLink: links.app,
+				// CHASE's conference selection: it shows each person their conferences there
+				chaseLink: links.launcher,
 				manualLink: links.manual
 			},
-			button: { label: m.emailAutoChaseIntroButton(), url: links.app }
+			button: { label: m.emailAutoChaseIntroButton(), url: links.launcher }
 		};
 	},
 	PHONE_READY_REMINDER: ({ conference, origin }) => ({

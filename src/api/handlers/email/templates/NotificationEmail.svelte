@@ -3,6 +3,7 @@
 	import EmailLayout from './EmailLayout.svelte';
 	import EmailButton from './EmailButton.svelte';
 	import EmailParagraphs from './EmailParagraphs.svelte';
+	import EmailText from './EmailText.svelte';
 	import { smallStyle, textStyle } from './brand';
 
 	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent`). */
@@ -43,7 +44,7 @@
 	{/if}
 
 	{#each closing as paragraph, index (index)}
-		<p style={textStyle}>{paragraph}</p>
+		<EmailText {paragraph} />
 	{/each}
 
 	{#if button}

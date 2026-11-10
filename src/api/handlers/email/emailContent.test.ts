@@ -152,3 +152,36 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 		expect(content.replyTo).toBe(kind === 'PAPER_REVIEWED' ? 'robin@example.org' : undefined);
 	});
 });
+
+describe.each(['de', 'en'] as const)('the CHASE introduction in %s', (locale) => {
+	const linked = { ...conference, chaseUrl: 'https://chase.example.org/' };
+
+	test('sends the button to the conference selection and links the manual', async () => {
+		overwriteGetLocale(() => locale);
+		const content = emailContent({
+			email: dueEmailOf('CHASE_INTRO_REMINDER'),
+			conference: linked,
+			origin: 'https://delegator.example.org'
+		});
+		expect(content.button?.url).toBe('https://chase.example.org/app');
+		// the button is the way there: no CHASE address pasted into the text
+		expect(bodyOf(content)).not.toContain('https://chase.example.org/app');
+
+		const { html, text } = await renderEmail({
+			component: NotificationEmail,
+			props: {
+				heading: content.heading,
+				recipientName: recipientName(person.user),
+				paragraphs: content.paragraphs,
+				button: content.button,
+				conferenceTitle: conference.title
+			}
+		});
+		const manual = 'https://chase.example.org/docs/user-manual/participant/getting-started';
+		expect(html).toMatch(
+			new RegExp(`<a [^>]*href="${manual}"[^>]*>${locale === 'de' ? 'Handbuch' : 'manual'}</a>`)
+		);
+		expect(html).not.toContain('](');
+		expect(text).toContain(manual);
+	});
+});

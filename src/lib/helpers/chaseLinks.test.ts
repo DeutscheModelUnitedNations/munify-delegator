@@ -30,6 +30,7 @@ describe('chaseLinks', () => {
 				role: 'DELEGATE'
 			})
 		).toEqual({
+			launcher: 'https://chase.example/app',
 			app: 'https://chase.example/app/conf/ga',
 			manual: 'https://chase.example/docs/user-manual/participant/getting-started'
 		});
@@ -62,6 +63,7 @@ describe('chasePlaceOf', () => {
 		).toEqual({
 			role: 'DELEGATE',
 			links: {
+				launcher: 'https://chase.example/app',
 				app: 'https://chase.example/app/conf/ga',
 				manual: 'https://chase.example/docs/user-manual/participant/getting-started'
 			}
