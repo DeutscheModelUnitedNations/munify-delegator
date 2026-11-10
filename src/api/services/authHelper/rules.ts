@@ -191,6 +191,16 @@ export async function hasTeamPermission({
 }
 
 /**
+ * Whether the caller is participant care of the conference (`manageParticipants`: project
+ * management and participant care). The team may override what binds applicants: the registration
+ * period for withdrawing, and the plausibility checks for sending an application or confirming a
+ * supervisor's attendance.
+ */
+export function byParticipantCareOf({ ctx, conferenceId }: { ctx: Context; conferenceId: string }) {
+	return hasTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+}
+
+/**
  * Refuses unless the caller holds the team `permission` in the conference (`hasTeamPermission`).
  *
  * This is how a create is authorized: there is no row of its own to run an ability against yet, so

@@ -14,6 +14,7 @@ import {
 	registerSingleParticipantAbilities
 } from './singleParticipantPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { byParticipantCareOf } from '#api/services/authHelper/rules';
 import { singleParticipantPubsub } from '#api/pubsub';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
 import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
@@ -75,7 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateSingleParticipant: t.drizzleField({
 		description:
-			"Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window, and the plausibility checks find nothing about the person (`applicationBlockers`).",
+			"Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window, and the plausibility checks find nothing about the person (`applicationBlockers`) - which participant care may override.",
 		type: SingleParticipantRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -96,8 +97,11 @@ schemaBuilder.mutationFields((t) => ({
 			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateSingleParticipant({ ctx, id: args.id });
-			await updateSingleParticipantApplication(args);
+			const { conferenceId } = await assertCanUpdateSingleParticipant({ ctx, id: args.id });
+			await updateSingleParticipantApplication({
+				...args,
+				byParticipantCare: await byParticipantCareOf({ ctx, conferenceId })
+			});
 
 			return db.query.singleParticipant
 				.findFirst(query(await readableSingleParticipant({ ctx, id: args.id })))

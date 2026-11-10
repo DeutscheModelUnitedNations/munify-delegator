@@ -1584,6 +1584,7 @@ export type ConferencerolekindEnum = "CUSTOM" | "NATION" | "NON_STATE_ACTOR";
 export type ConferencestateEnum = "ACTIVE" | "PARTICIPANT_REGISTRATION" | "POST" | "PRE" | "PREPARATION";
 		
 export type Conferencesupervisor = {
+  applicationBlockers: () => ApplicationBlocker[],
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -3875,6 +3876,9 @@ export type Query = {
     conferenceId: ID
   }) => MyReviewStats | null,
   myReviewerSnippets: () => Reviewersnippet[],
+  mySupervisorSignupBlockers: (p: {
+    conferenceId: ID
+  }) => ApplicationBlocker[],
   nametagBinGroups: (p: {
     binCount: Int,
     conferenceId: ID,

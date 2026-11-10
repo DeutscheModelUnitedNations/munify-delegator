@@ -11,7 +11,12 @@ import {
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
-import { assertSupervisorSignupOpen } from '#api/services/registration/applicationReadiness';
+import {
+	assertNoApplicationBlockers,
+	assertSupervisorSignupOpen,
+	prospectiveSupervisorPeople,
+	supervisorApplicationPeople
+} from '#api/services/registration/applicationReadiness';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -40,7 +45,10 @@ async function unusedConnectionCode() {
  * Registers a user as supervisor of a conference, with the school they name as their own. Refuses
  * (CONFLICT) somebody who takes part in the conference already or is on its team, and a
  * registration of one's own once the conference is over (any earlier stage is fine, registration
- * closed or not). Returns the new row's id.
+ * closed or not). Signing oneself up as attending in person (the default) is a supervisor's
+ * application, so it is refused while the plausibility checks find anything about them
+ * (`assertNoApplicationBlockers`); signing up as not attending is not. The team registering
+ * somebody else places them, which no finding stops. Returns the new row's id.
  */
 export async function registerSupervisor(
 	args: SchoolChoice & {
@@ -60,7 +68,17 @@ export async function registerSupervisor(
 
 	const connectionCode = await unusedConnectionCode();
 	// The person's row and the supervisor entry go in together, so a refused insert leaves neither.
+	const attends = args.plansOwnAttendenceAtConference ?? true;
 	const created = await db.transaction(async (tx) => {
+		if (args.selfService && attends) {
+			assertNoApplicationBlockers(
+				await prospectiveSupervisorPeople({
+					conferenceId: args.conferenceId,
+					userId: args.subjectId,
+					reader: tx
+				})
+			);
+		}
 		const participantId = await ensureConferenceParticipant({
 			tx,
 			conferenceId: args.conferenceId,
@@ -76,7 +94,7 @@ export async function registerSupervisor(
 			.insert(schema.conferenceSupervisor)
 			.values({
 				conferenceParticipantId: participantId,
-				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? true,
+				plansOwnAttendenceAtConference: attends,
 				connectionCode
 			})
 			.returning()
@@ -224,16 +242,22 @@ export async function previewSupervisorByCode({
 
 /**
  * Changes a supervisor's row; an absent field is left as it is. A rotated connection code makes
- * the old one stop working, people already connected stay so.
+ * the old one stop working, people already connected stay so. Confirming they attend in person is
+ * a supervisor's application: refused (CONFLICT) while the plausibility checks find anything
+ * about them (`assertNoApplicationBlockers`), unless participant care confirms it
+ * (`byParticipantCare`), who may override them; taking it back never is.
  */
 export async function updateConferenceSupervisor({
 	id,
 	plansOwnAttendenceAtConference,
-	rotateConnectionCode
+	rotateConnectionCode,
+	byParticipantCare = false
 }: {
 	id: string;
 	plansOwnAttendenceAtConference?: boolean | null;
 	rotateConnectionCode?: boolean;
+	/** Participant care asks (`byParticipantCareOf`). */
+	byParticipantCare?: boolean;
 }) {
 	const values = {
 		plansOwnAttendenceAtConference: plansOwnAttendenceAtConference ?? undefined,
@@ -241,10 +265,17 @@ export async function updateConferenceSupervisor({
 	};
 	// drizzle refuses an empty `set`
 	if (Object.values(values).some((value) => value !== undefined)) {
-		await db
-			.update(schema.conferenceSupervisor)
-			.set(values)
-			.where(whereRows({ table: schema.conferenceSupervisor, filter: { id } }));
+		await db.transaction(async (tx) => {
+			if (plansOwnAttendenceAtConference && !byParticipantCare) {
+				const supervisor = await supervisorApplicationPeople({ supervisorId: id, reader: tx });
+				// confirming again what is confirmed already changes nothing
+				if (!supervisor?.applied) assertNoApplicationBlockers(supervisor);
+			}
+			await tx
+				.update(schema.conferenceSupervisor)
+				.set(values)
+				.where(whereRows({ table: schema.conferenceSupervisor, filter: { id } }));
+		});
 	}
 	conferenceSupervisorPubsub.updated(id);
 }

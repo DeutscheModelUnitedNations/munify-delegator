@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../support/test';
-import { loginAs, makeTestUser } from '../support/auth';
+import { loginAs, makeTestUser, SUPERVISOR_AGE } from '../support/auth';
 import { E2E_LATE_SUPERVISOR_CONFERENCE_ID, E2E_OVER_CONFERENCE_ID } from '../seed/lateSupervisor';
 
 // Supervisors send no application and take no seat, so the registration window does not bind them:
@@ -37,14 +37,14 @@ async function signupOpen(page: Page, conferenceId: string) {
 }
 
 test('a supervisor signs up after registration has closed', async ({ page }) => {
-	await loginAs(page, makeTestUser('late-supervisor'));
+	await loginAs(page, makeTestUser('late-supervisor', SUPERVISOR_AGE));
 	const result = await signUpAsSupervisor(page, E2E_LATE_SUPERVISOR_CONFERENCE_ID);
 	expect(result.errors, JSON.stringify(result)).toBeUndefined();
 	expect(result.data?.createConferenceSupervisor?.id).toBeTruthy();
 });
 
 test('nobody signs up as supervisor once the conference is over', async ({ page }) => {
-	await loginAs(page, makeTestUser('over-supervisor'));
+	await loginAs(page, makeTestUser('over-supervisor', SUPERVISOR_AGE));
 	const result = await signUpAsSupervisor(page, E2E_OVER_CONFERENCE_ID);
 	expect(result.errors?.[0]?.extensions?.code, JSON.stringify(result)).toBe('CONFLICT');
 	expect(result.errors?.[0]?.message).toMatch(/conference is over/);

@@ -39,7 +39,7 @@ const bornIn = (year: number) => new Date(`${year}-03-01T00:00:00Z`);
 
 describe('applicationBlockers', () => {
 	test('finds nothing about a complete person of the right age', () => {
-		expect(applicationBlockers({ conference, people: [ada] })).toEqual([]);
+		expect(applicationBlockers({ role: 'participant', conference, people: [ada] })).toEqual([]);
 	});
 
 	test.each([
@@ -48,7 +48,11 @@ describe('applicationBlockers', () => {
 		[1990, 'shouldBeSupervisor']
 	] as const)('judges someone born in %i as %s', (year, issue) => {
 		expect(
-			applicationBlockers({ conference, people: [{ ...ada, birthday: bornIn(year) }] })
+			applicationBlockers({
+				role: 'participant',
+				conference,
+				people: [{ ...ada, birthday: bornIn(year) }]
+			})
 		).toEqual([{ userId: 'ada', ageIssue: issue, invalidFields: [] }]);
 	});
 
@@ -58,14 +62,14 @@ describe('applicationBlockers', () => {
 			{ ...ada, id: 'fourteen', birthday: new Date('2011-06-02T00:00:00Z') },
 			{ ...ada, id: 'twentyOne', birthday: new Date('2004-06-02T00:00:00Z') }
 		];
-		expect(applicationBlockers({ conference, people })).toEqual([
+		expect(applicationBlockers({ role: 'participant', conference, people })).toEqual([
 			{ userId: 'fourteen', ageIssue: 'tooYoung', invalidFields: [] }
 		]);
 	});
 
 	test('names the fields an incomplete profile lacks, in the form order', () => {
 		const incomplete = { ...ada, phone: null, emergencyContacts: '', street: null, zip: null };
-		expect(applicationBlockers({ conference, people: [incomplete] })).toEqual([
+		expect(applicationBlockers({ role: 'participant', conference, people: [incomplete] })).toEqual([
 			{
 				userId: 'ada',
 				ageIssue: null,
@@ -75,9 +79,9 @@ describe('applicationBlockers', () => {
 	});
 
 	test('counts a missing birthday as a profile finding, not an age one', () => {
-		expect(applicationBlockers({ conference, people: [{ ...ada, birthday: null }] })).toEqual([
-			{ userId: 'ada', ageIssue: null, invalidFields: ['birthday'] }
-		]);
+		expect(
+			applicationBlockers({ role: 'participant', conference, people: [{ ...ada, birthday: null }] })
+		).toEqual([{ userId: 'ada', ageIssue: null, invalidFields: ['birthday'] }]);
 	});
 
 	test('judges everyone of the application and lists only those with a finding', () => {
@@ -86,7 +90,7 @@ describe('applicationBlockers', () => {
 			{ ...ada, id: 'young', birthday: bornIn(2012), phone: 'nope' },
 			{ ...ada, id: 'old', birthday: bornIn(1990) }
 		];
-		expect(applicationBlockers({ conference, people })).toEqual([
+		expect(applicationBlockers({ role: 'participant', conference, people })).toEqual([
 			{ userId: 'young', ageIssue: 'tooYoung', invalidFields: ['phone'] },
 			{ userId: 'old', ageIssue: 'shouldBeSupervisor', invalidFields: [] }
 		]);
@@ -98,7 +102,44 @@ describe('applicationBlockers', () => {
 			{ ...ada, birthday: bornIn(2012) },
 			{ ...ada, id: 'old', birthday: bornIn(1990) }
 		];
-		expect(applicationBlockers({ conference: open, people })).toEqual([]);
+		expect(applicationBlockers({ role: 'participant', conference: open, people })).toEqual([]);
+	});
+});
+
+describe('applicationBlockers for supervisors', () => {
+	const supervisor = { ...ada, id: 'sup', birthday: bornIn(1990) };
+
+	test('finds nothing about a complete supervisor old enough', () => {
+		expect(applicationBlockers({ role: 'supervisor', conference, people: [supervisor] })).toEqual(
+			[]
+		);
+	});
+
+	test('holds back a supervisor younger than supervisorMinAge', () => {
+		expect(
+			applicationBlockers({
+				role: 'supervisor',
+				conference,
+				people: [{ ...supervisor, birthday: bornIn(2003) }]
+			})
+		).toEqual([{ userId: 'sup', ageIssue: 'shouldNotBeSupervisor', invalidFields: [] }]);
+	});
+
+	test('does not hold the participants range against a supervisor', () => {
+		// 36 is past `participantMaxAge`, yet fine for a supervisor; 17 is too young either way
+		expect(applicationBlockers({ role: 'supervisor', conference, people: [supervisor] })).toEqual(
+			[]
+		);
+		expect(applicationBlockers({ role: 'supervisor', conference, people: [ada] })).toEqual([
+			{ userId: 'ada', ageIssue: 'shouldNotBeSupervisor', invalidFields: [] }
+		]);
+	});
+
+	test('holds back an incomplete profile as for anyone', () => {
+		const incomplete = { ...supervisor, phone: null };
+		expect(applicationBlockers({ role: 'supervisor', conference, people: [incomplete] })).toEqual([
+			{ userId: 'sup', ageIssue: null, invalidFields: ['phone'] }
+		]);
 	});
 });
 

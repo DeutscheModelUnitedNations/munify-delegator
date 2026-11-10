@@ -123,6 +123,7 @@ type UserRow = typeof schema.user.$inferSelect;
 
 /** An application's people and what holds each of them back (`applicationBlockers`). */
 export type ApplicationPeople = {
+	/** Sent: applied, or for a supervisor, attending in person. */
 	applied: boolean;
 	people: UserRow[];
 	blockers: ApplicationBlocker[];
@@ -149,7 +150,11 @@ export async function delegationApplicationPeople({
 	return {
 		applied: delegation.applied,
 		people,
-		blockers: applicationBlockers({ conference: delegation.conference, people })
+		blockers: applicationBlockers({
+			conference: delegation.conference,
+			people,
+			role: 'participant'
+		})
 	};
 }
 
@@ -171,7 +176,62 @@ export async function singleParticipantApplicationPeople({
 	return {
 		applied: registration.applied,
 		people,
-		blockers: applicationBlockers({ conference: registration.conference, people })
+		blockers: applicationBlockers({
+			conference: registration.conference,
+			people,
+			role: 'participant'
+		})
+	};
+}
+
+/**
+ * The supervisor and what holds them back from confirming they attend in person, which is their
+ * counterpart of sending an application; undefined for no such supervisor.
+ */
+export async function supervisorApplicationPeople({
+	supervisorId,
+	reader = db
+}: {
+	supervisorId: string;
+	reader?: Reader;
+}): Promise<ApplicationPeople | undefined> {
+	const supervisor = await reader.query.conferenceSupervisor.findFirst({
+		where: { id: supervisorId },
+		columns: { plansOwnAttendenceAtConference: true },
+		with: { conference: { columns: AGE_LIMIT_COLUMNS }, user: true }
+	});
+	if (!supervisor?.conference || !supervisor.user) return undefined;
+	const people = [supervisor.user];
+	return {
+		applied: supervisor.plansOwnAttendenceAtConference,
+		people,
+		blockers: applicationBlockers({ conference: supervisor.conference, people, role: 'supervisor' })
+	};
+}
+
+/**
+ * What holds a user back from signing up to the conference as a supervisor attending in person,
+ * before they have a supervisor row; undefined for an unknown user or conference.
+ */
+export async function prospectiveSupervisorPeople({
+	conferenceId,
+	userId,
+	reader = db
+}: {
+	conferenceId: string;
+	userId: string;
+	reader?: Reader;
+}): Promise<ApplicationPeople | undefined> {
+	const [conference, user] = await Promise.all([
+		reader.query.conference.findFirst({ where: { id: conferenceId }, columns: AGE_LIMIT_COLUMNS }),
+		reader.query.user.findFirst({ where: { id: userId } })
+	]);
+	if (!conference || !user) return undefined;
+	const people = [user];
+	return {
+		applied: false,
+		people,
+		blockers: applicationBlockers({ conference, people, role: 'supervisor' })
 	};
 }
 

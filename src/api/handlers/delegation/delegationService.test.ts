@@ -106,7 +106,7 @@ const apply = (applied: boolean) =>
 	updateDelegationDetails({
 		delegation,
 		args: { id: delegation.id, applied },
-		withdrawAnyTime: false
+		byParticipantCare: false
 	});
 
 describe('updateDelegationDetails applying', () => {
@@ -149,5 +149,18 @@ describe('updateDelegationDetails applying', () => {
 		state.members = [{ user: { ...complete('ada', 'Ada'), phone: null } }];
 		await apply(false);
 		expect(written).toHaveBeenCalledWith({ applied: false });
+	});
+
+	test('lets participant care send it all the same', async () => {
+		state.members = [
+			{ user: complete('ada', 'Ada') },
+			{ user: { ...complete('grace', 'Grace'), birthday: new Date('2012-03-01T00:00:00Z') } }
+		];
+		await updateDelegationDetails({
+			delegation,
+			args: { id: delegation.id, applied: true },
+			byParticipantCare: true
+		});
+		expect(written).toHaveBeenCalledWith({ applied: true });
 	});
 });

@@ -13,24 +13,31 @@
 	 * their profile; everyone else has to complete their own.
 	 */
 	interface Props {
-		conferenceId: string;
 		blockers: {
 			userId: string;
 			ageIssue: AgeIssue | null;
 			invalidFields: ProfileField[];
 			user: { givenName: string; familyName: string } | null;
 		}[];
+		/** What is held back, where it is not an application (a supervisor attending in person). */
+		title?: string;
+		description?: string;
+		/** Spacing around the notice, only there while it is shown. */
+		class?: string;
 	}
 
-	let { conferenceId, blockers }: Props = $props();
+	let {
+		blockers,
+		title = m.applicationBlockersTitle(),
+		description = m.applicationBlockersDescription(),
+		class: className = ''
+	}: Props = $props();
 
 	const currentUser = await getCurrentUser();
 
-	// Back to this dashboard once the profile is saved; the account page only follows its own origin.
+	// Back to this page once the profile is saved; the account page only follows its own origin.
 	const profileHref = $derived(
-		resolve(
-			`my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${conferenceId}`)}`
-		)
+		resolve(`my-account?redirect=${encodeURIComponent(`${page.url.origin}${page.url.pathname}`)}`)
 	);
 	const anyAgeIssue = $derived(blockers.some((blocker) => blocker.ageIssue));
 </script>
@@ -38,13 +45,13 @@
 <div
 	id="application-blockers"
 	role="alert"
-	class="alert bg-error/10 border-error/30 items-start"
+	class="alert bg-error/10 border-error/30 items-start {className}"
 	data-testid="application-blockers"
 >
 	<i aria-hidden="true" class="ph-duotone ph-user-circle-minus text-error mt-0.5 text-xl"></i>
 	<div class="flex w-full flex-col gap-2">
-		<p class="font-semibold">{m.applicationBlockersTitle()}</p>
-		<p class="text-sm">{m.applicationBlockersDescription()}</p>
+		<p class="font-semibold">{title}</p>
+		<p class="text-sm">{description}</p>
 		<ul class="flex flex-col gap-2">
 			{#each blockers as blocker (blocker.userId)}
 				{@const own = blocker.userId === currentUser.sub}

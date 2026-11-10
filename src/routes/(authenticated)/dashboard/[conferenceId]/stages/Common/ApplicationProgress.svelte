@@ -7,7 +7,7 @@
 	import StatusChecklist, {
 		type ChecklistStatus
 	} from '#lib/components/dashboard/StatusChecklist.svelte';
-	import ApplicationBlockers from './ApplicationBlockers.svelte';
+	import ApplicationBlockers from '#lib/components/registration/ApplicationBlockers.svelte';
 
 	/**
 	 * Where an application stands: done, or what is still open before the deadline - each open
@@ -80,7 +80,7 @@
 			<StatusChecklist steps={checklist} legend={false} />
 
 			{#if blockers.length > 0}
-				<ApplicationBlockers {conferenceId} {blockers} />
+				<ApplicationBlockers {blockers} />
 			{/if}
 
 			<div class="flex flex-col gap-2">

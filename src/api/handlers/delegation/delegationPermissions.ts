@@ -1,7 +1,6 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	hasTeamPermission,
 	idIn,
 	isTeamMemberOfConference,
 	ledDelegationIds,
@@ -110,25 +109,6 @@ export async function assertCanUpdateDelegation({ ctx, id }: { ctx: ApiContext; 
 }
 
 export type UpdatableDelegation = Awaited<ReturnType<typeof assertCanUpdateDelegation>>;
-
-/**
- * Whether the caller may withdraw the delegation's application after the conference stopped taking
- * registrations: `manageParticipants` (project management and participant care) may at any stage;
- * applicants only while registration is open.
- */
-export function mayWithdrawAnyTime({
-	ctx,
-	delegation
-}: {
-	ctx: ApiContext;
-	delegation: UpdatableDelegation;
-}) {
-	return hasTeamPermission({
-		ctx,
-		conferenceId: delegation.conferenceId,
-		permission: 'manageParticipants'
-	});
-}
 
 /**
  * Refuses (NOT_FOUND) unless the caller's delete ability reaches the delegation: its head delegate

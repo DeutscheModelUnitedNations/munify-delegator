@@ -156,12 +156,15 @@ export type SingleParticipantUpdate = {
 	applyForRolesIdList?: string[] | null;
 	unApplyForRolesIdList?: string[] | null;
 	applied?: boolean | null;
+	/** Participant care sends it (`byParticipantCareOf`), who may override the plausibility checks. */
+	byParticipantCare?: boolean;
 };
 
 /**
  * Refuses (CONFLICT) sending in the application unless it is ready, judged as it stands inside the
  * transaction, after this update's role changes and with its texts, and unless the plausibility
- * checks find nothing about the person (`assertNoApplicationBlockers`).
+ * checks find nothing about the person (`assertNoApplicationBlockers`) - which participant care
+ * may override (`byParticipantCare`).
  */
 async function assertReadyToApply({
 	tx,
@@ -191,6 +194,7 @@ async function assertReadyToApply({
 		edits: update,
 		minRoleApplications: MIN_ROLE_APPLICATIONS.singleParticipant
 	});
+	if (update.byParticipantCare) return;
 	assertNoApplicationBlockers(
 		await singleParticipantApplicationPeople({ singleParticipantId: update.id, reader: tx })
 	);

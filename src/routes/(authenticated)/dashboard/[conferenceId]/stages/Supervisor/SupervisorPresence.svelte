@@ -4,6 +4,7 @@
 	import InfoRow from '#lib/components/userCard/sections/InfoRow.svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import ApplicationBlockers from '#lib/components/registration/ApplicationBlockers.svelte';
 
 	interface Props {
 		supervisorId: string;
@@ -16,9 +17,18 @@
 	const supervisor = $derived(
 		await client.liveQuery.conferenceSupervisor({
 			__args: { id: supervisorId },
-			plansOwnAttendenceAtConference: true
+			plansOwnAttendenceAtConference: true,
+			applicationBlockers: {
+				userId: true,
+				ageIssue: true,
+				invalidFields: true,
+				user: { givenName: true, familyName: true }
+			}
 		})
 	);
+	const blockers = $derived(supervisor.applicationBlockers);
+	// Attending in person is the supervisor's application: confirming it waits for the findings.
+	const blocked = $derived(!supervisor.plansOwnAttendenceAtConference && blockers.length > 0);
 
 	const handlePresenceChange = async (e: Event & { currentTarget: HTMLInputElement }) => {
 		const promise = client.mutate.updateConferenceSupervisor({
@@ -34,7 +44,11 @@
 <InfoRow
 	title={m.ownPresence()}
 	icon="user-check"
-	hint={editable ? m.ownPresenceDescription() : m.presenceLockedHint()}
+	hint={editable
+		? blocked
+			? m.supervisorAttendanceBlockedHint()
+			: m.ownPresenceDescription()
+		: m.presenceLockedHint()}
 >
 	<span class="text-sm">
 		{#if supervisor.plansOwnAttendenceAtConference}
@@ -59,7 +73,16 @@
 			aria-label={m.presentAtConference()}
 			checked={supervisor.plansOwnAttendenceAtConference}
 			onchange={handlePresenceChange}
-			disabled={!editable}
+			disabled={!editable || blocked}
 		/>
 	{/snippet}
 </InfoRow>
+{#if editable && blocked}
+	<div class="p-3">
+		<ApplicationBlockers
+			{blockers}
+			title={m.supervisorAttendanceBlockersTitle()}
+			description={m.supervisorAttendanceBlockersDescription()}
+		/>
+	</div>
+{/if}

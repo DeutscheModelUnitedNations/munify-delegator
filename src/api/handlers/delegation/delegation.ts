@@ -11,12 +11,12 @@ import {
 import {
 	assertCanDeleteDelegation,
 	assertCanUpdateDelegation,
-	mayWithdrawAnyTime,
 	registerDelegationAbilities
 } from './delegationPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import { byParticipantCareOf } from '#api/services/authHelper/rules';
 import {
 	APPLICATION_BLOCKERS_DESCRIPTION,
 	ApplicationBlockerRef,
@@ -70,7 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateDelegation: t.drizzleField({
 		description:
-			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications, both texts and members the plausibility checks find nothing about (`applicationBlockers`; CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.',
+			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications, both texts and members the plausibility checks find nothing about (`applicationBlockers`; CONFLICT otherwise), which participant care may override; applicants withdraw only while the conference takes registrations, participant care at any stage.',
 		type: DelegationRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -95,7 +95,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateDelegationDetails({
 				delegation,
 				args,
-				withdrawAnyTime: await mayWithdrawAnyTime({ ctx, delegation })
+				byParticipantCare: await byParticipantCareOf({ ctx, conferenceId: delegation.conferenceId })
 			});
 
 			return db.query.delegation

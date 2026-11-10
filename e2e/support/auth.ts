@@ -20,6 +20,12 @@ export interface TestUserClaims {
 let counter = 0;
 
 /**
+ * Claims for a user old enough to supervise (forty this year), which signing up as a supervisor
+ * attending in person takes: `completeMandatoryProfile` enters it as the birthday.
+ */
+export const SUPERVISOR_AGE = { birthdate: `${new Date().getFullYear() - 40}-05-05` };
+
+/**
  * Builds a unique set of OIDC claims for a fresh test user. Uniqueness matters because
  * the app upserts a User row keyed by the token's `sub`/email on first login - reusing
  * claims across tests would make them share (and race on) the same account.
@@ -182,9 +188,14 @@ async function completeMandatoryProfile(page: Page, claims: TestUserClaims): Pro
 	await page
 		.locator('textarea[name="emergencyContacts"]')
 		.fill('Emergency contact: +49 176 12345678');
-	// Seventeen this year: inside every conference's default age range, which an application
-	// has to fit to be sent (`applicationBlockers`), whenever the suite runs.
-	await page.locator('input[name="birthday"]').fill(`${new Date().getFullYear() - 17}-05-05`);
+	// Seventeen this year unless the claims name another (`birthdate`, see `SUPERVISOR_AGE`):
+	// inside every conference's default range for participants, which an application has to fit
+	// to be sent (`applicationBlockers`), whenever the suite runs.
+	const birthday =
+		typeof claims.birthdate === 'string'
+			? claims.birthdate
+			: `${new Date().getFullYear() - 17}-05-05`;
+	await page.locator('input[name="birthday"]').fill(birthday);
 	await page.locator('select[name="foodPreference"]').selectOption('VEGAN');
 	// formsnap generates a random `id` per field (`useId()`), so fields are selected by `name`.
 	await page.locator('select[name="gender"]').selectOption('NO_STATEMENT');

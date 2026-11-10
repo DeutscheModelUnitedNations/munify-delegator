@@ -3,7 +3,10 @@ import { schemaBuilder, type ApiContext } from '#api/rumble';
 import { UserRef } from '#api/handlers/user/user';
 import { ageNoticeFor, findPlausibilityIssues, type PlausibilityUser } from './plausibilityService';
 import { assertCanReadPlausibility, ownAgeNoticeUser } from './plausibilityPermissions';
-import type { ApplicationPeople } from '#api/services/registration/applicationReadiness';
+import {
+	prospectiveSupervisorPeople,
+	type ApplicationPeople
+} from '#api/services/registration/applicationReadiness';
 import type { ApplicationBlocker } from '#lib/helpers/applicationBlockers';
 import { PROFILE_FIELDS } from '#lib/schemata/userForm';
 
@@ -44,7 +47,7 @@ export const ApplicationBlockerRef = schemaBuilder
 				type: AgeIssueEnum,
 				nullable: true,
 				description:
-					"Their age on the first conference day misses the participants' range (never `shouldNotBeSupervisor`).",
+					"Their age on the first conference day misses the range for their role: a participant's issue for delegates and single participants, `shouldNotBeSupervisor` for supervisors.",
 				resolve: (parent) => parent.ageIssue
 			}),
 			invalidFields: t.field({
@@ -63,24 +66,33 @@ export const ApplicationBlockerRef = schemaBuilder
 export function resolveApplicationBlockers(
 	load: (id: string) => Promise<ApplicationPeople | undefined>
 ) {
-	return async (parent: { id: string }, _args: object, ctx: ApiContext) => {
-		const application = await load(parent.id);
-		if (!application || application.applied || application.blockers.length === 0) return [];
-		const readable = await db.query.user.findMany(
-			(await ctx.abilities.user.filter('read')).merge({
-				where: { id: { in: application.blockers.map((blocker) => blocker.userId) } }
-			}).query.many
-		);
-		return application.blockers.map((blocker) => ({
-			...blocker,
-			user: readable.find((user) => user.id === blocker.userId) ?? null
-		}));
-	};
+	return async (parent: { id: string }, _args: object, ctx: ApiContext) =>
+		blockersAsReadBy({ ctx, application: await load(parent.id) });
+}
+
+/** What keeps the application from being sent, each person as far as the caller may read them. */
+async function blockersAsReadBy({
+	ctx,
+	application
+}: {
+	ctx: ApiContext;
+	application: ApplicationPeople | undefined;
+}) {
+	if (!application || application.applied || application.blockers.length === 0) return [];
+	const readable = await db.query.user.findMany(
+		(await ctx.abilities.user.filter('read')).merge({
+			where: { id: { in: application.blockers.map((blocker) => blocker.userId) } }
+		}).query.many
+	);
+	return application.blockers.map((blocker) => ({
+		...blocker,
+		user: readable.find((user) => user.id === blocker.userId) ?? null
+	}));
 }
 
 /** What an `applicationBlockers` field says about itself. */
 export const APPLICATION_BLOCKERS_DESCRIPTION =
-	"The people of the application the plausibility checks find something about (a profile the account form refuses, an age outside the conference's range for participants). Sending the application is refused while there are any; empty once it was sent.";
+	"The people of the application the plausibility checks find something about (a profile the account form refuses, an age outside the conference's range for their role). Sending the application is refused while there are any, unless participant care sends it, who may override them; empty once it was sent.";
 
 const AgeRoleEnum = schemaBuilder.enumType('AgeRole', {
 	values: { participant: {}, supervisor: {} } as const
@@ -126,7 +138,7 @@ const PlausibilityResult = schemaBuilder
 schemaBuilder.queryFields((t) => ({
 	conferencePlausibility: t.field({
 		description:
-			'Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. The same findings keep a delegation or single participant from sending their application (`applicationBlockers`); supervisors are only listed.',
+			'Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. The same findings keep a delegation or single participant from sending their application (`applicationBlockers`); for supervisors they keep them from confirming they attend in person.',
 		type: PlausibilityResult,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -134,6 +146,21 @@ schemaBuilder.queryFields((t) => ({
 			return findPlausibilityIssues({
 				conferenceId: args.conferenceId,
 				readableUsers: await ctx.abilities.user.filter('read')
+			});
+		}
+	}),
+
+	mySupervisorSignupBlockers: t.field({
+		description:
+			'What would keep the caller from signing up to the conference as a supervisor attending in person (`createConferenceSupervisor`): their profile and `supervisorMinAge`. Empty when nothing does; signing up as not attending is open either way.',
+		type: [ApplicationBlockerRef],
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const userId = ownAgeNoticeUser(ctx);
+			if (!userId) return [];
+			return blockersAsReadBy({
+				ctx,
+				application: await prospectiveSupervisorPeople({ conferenceId: args.conferenceId, userId })
 			});
 		}
 	}),

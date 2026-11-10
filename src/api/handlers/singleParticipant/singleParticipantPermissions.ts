@@ -115,13 +115,15 @@ export async function assertCanUpdateSingleParticipant({
 }) {
 	// Checked up front: the role changes go to the join table directly, so an update that matched
 	// no row would otherwise not stop them.
-	await db.query.singleParticipant
+	const singleParticipant = await db.query.singleParticipant
 		.findFirst({
 			...(await ctx.abilities.singleParticipant.filter('update')).merge({ where: { id } }).query
 				.single,
-			columns: { id: true }
+			columns: { id: true },
+			with: { participant: { columns: { conferenceId: true } } }
 		})
 		.then(assertFindFirstExists);
+	return { conferenceId: singleParticipant.participant.conferenceId };
 }
 
 /**

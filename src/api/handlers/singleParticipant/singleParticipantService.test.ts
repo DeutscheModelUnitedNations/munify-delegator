@@ -117,4 +117,14 @@ describe('updateSingleParticipantApplication applying', () => {
 		await apply(false);
 		expect(written).toHaveBeenCalledWith(expect.objectContaining({ applied: false }));
 	});
+
+	test('lets participant care send it all the same', async () => {
+		state.user = { ...complete, phone: null, birthday: new Date('2012-03-01T00:00:00Z') };
+		await updateSingleParticipantApplication({
+			id: 'single-1',
+			applied: true,
+			byParticipantCare: true
+		});
+		expect(written).toHaveBeenCalledWith(expect.objectContaining({ applied: true }));
+	});
 });
