@@ -1660,9 +1660,11 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   provides, and the jobs bundle, the seed and the Bun scripts import messages outside Vite; the unit
   tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
   such code.
-- **graphql-yoga is on 6, a peer of rumble** (since 0.31, listed here for that), with the yoga 6
-  lines of its plugins (`@graphql-yoga/plugin-graphql-sse` 4, `@graphql-yoga/redis-event-target` 4).
-  Yoga 6's `fetchAPI` takes no `crypto` (`src/api/yoga.ts`).
+- **rumble stays on 0.30, graphql-yoga on 5.** rumble 0.31 needs yoga 6, and on yoga 6 the live
+  updates over the SSE stream (`/api/graphql/stream`) stop arriving: the dashboard never noticed a
+  new registration, and the e2e flows waiting on it timed out. CHASE subscribes over WebSocket and
+  runs 0.31 fine. The yoga plugins stay on their yoga 5 lines (`@graphql-yoga/plugin-graphql-sse` 3,
+  `@graphql-yoga/redis-event-target` 3). Move only with the e2e suite green.
 - **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route

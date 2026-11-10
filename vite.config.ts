@@ -101,6 +101,9 @@ export default defineConfig({
 		rebuildRumbleOnSchemaChange(),
 		sveltekit({
 			preprocess: vitePreprocess(),
+			// The unit tests never read `.env`: CI has none, and a test that passes only with the local
+			// one would fail there. A test that needs a variable mocks `$app/env/*`.
+			env: { dir: process.env.VITEST ? 'no-env-for-unit-tests' : '.' },
 			compilerOptions: {
 				// Components fetch through `client.liveQuery`, which is awaited at the top level of
 				// `<script>`. Svelte only allows that in async mode.

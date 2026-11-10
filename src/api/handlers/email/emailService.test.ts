@@ -9,6 +9,8 @@ vi.mock('$app/env/private', () => ({
 }));
 
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
+// the link's configuration reads the environment, which tests do not set
+vi.mock('#api/handlers/chaseLink/linkAuth', () => ({ linkConfig: () => undefined }));
 vi.mock('#api/pubsub', () => ({}));
 vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 

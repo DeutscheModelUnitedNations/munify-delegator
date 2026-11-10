@@ -2,6 +2,8 @@ import { describe, expect, test, vi } from 'vitest';
 import type { DueEmail } from './dueEmails';
 
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
+// the link's configuration reads the environment, which tests do not set
+vi.mock('#api/handlers/chaseLink/linkAuth', () => ({ linkConfig: () => undefined }));
 vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
 

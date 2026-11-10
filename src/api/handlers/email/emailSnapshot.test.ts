@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#api/db/db', () => ({ db: {} }));
+// the link's configuration reads the environment, which tests do not set
+vi.mock('#api/handlers/chaseLink/linkAuth', () => ({ linkConfig: () => undefined }));
 
 const { delegationPart, reviewPart } = await import('./emailSnapshot');
 
