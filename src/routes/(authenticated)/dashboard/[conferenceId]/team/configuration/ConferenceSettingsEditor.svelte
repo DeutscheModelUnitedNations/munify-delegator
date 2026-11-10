@@ -1,8 +1,8 @@
 <!--
 	@component
 	The conference settings: one form spread over tabs, saved in one go after a preview of what
-	changes. The committees tab sits outside that form and edits its rows directly; the e-mails tab
-	holds its switches until the same save, and saves them through their own mutations.
+	changes. The committees tab sits outside that form and edits its rows directly. The automatic
+	mails have their own page (`team/emails`).
 
 	Seeds its form once from `conferenceId`, so the parent must remount it (`{#key}`) when the
 	conference changes.
@@ -18,18 +18,13 @@
 	import { page } from '$app/state';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Form from '#lib/components/form/Form.svelte';
-	import Modal from '#lib/components/Modal.svelte';
 	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile';
-	import {
-		canEditConference,
-		canEditConferenceContent,
-		canManageEmails as mayManageEmails
-	} from '#lib/helpers/teamAccess';
+	import { canEditConference, canEditConferenceContent } from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { conferenceSettingsFormSchema, limitArgs, type ConferenceSettings } from './form-schema';
-	import { collectConfigChanges } from './changePreview';
-	import ConfigChangePreview from './ConfigChangePreview.svelte';
+	import { collectConfigChanges, type ChangeGroupKey } from './changePreview';
+	import ConfigSave from './ConfigSave.svelte';
 	import CommitteesManager from './committees/CommitteesManager.svelte';
 	import TabIntro from './sections/TabIntro.svelte';
 	import GeneralSettings from './sections/GeneralSettings.svelte';
@@ -39,8 +34,6 @@
 	import PaymentSettings from './sections/PaymentSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
 	import ResolutionManager from './ResolutionManager.svelte';
-	import EmailSettings from './emails/EmailSettings.svelte';
-	import { createEmailChanges, emailConfigChanges } from './emails/emailChanges.svelte';
 	import EmailPrompt from '#lib/components/email/EmailPrompt.svelte';
 	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte.js';
 	import { settingsEmailKinds } from '#lib/helpers/emailKinds';
@@ -94,11 +87,6 @@
 	const canEdit = $derived(canEditConference(access));
 	/** The content fields are also kept by participant care and the content lead. */
 	const canEditContent = $derived(canEditConferenceContent(access));
-	/** The automatic mails are participant care's. */
-	const canManageEmails = $derived(mayManageEmails(access));
-
-	/** The e-mail switches, held until the settings' save button like the form's fields. */
-	const emailChanges = createEmailChanges();
 
 	/** Unlocking the paperwork or ending the conference sends nothing; the mails are offered after. */
 	const emailPrompt = createEmailPrompt();
@@ -285,8 +273,8 @@
 
 	let confirmSaveModalOpen = $state(false);
 
-	let pendingChanges = $derived([
-		...collectConfigChanges({
+	let pendingChanges = $derived(
+		collectConfigChanges({
 			saved: savedSettings,
 			current: $formData,
 			tainted: $tainted,
@@ -300,35 +288,24 @@
 				termsAndConditionsBasePDF: !!storedFiles.termsAndConditionsFile,
 				certificateBasePDF: !!storedFiles.certificateFile
 			}
-		}),
-		...emailConfigChanges({ switches: emailChanges.list, pace: emailChanges.pace })
-	]);
+		})
+	);
 
 	let changeCountPerTab = $derived.by(() => {
-		const counts: Partial<Record<TabType, number>> = {};
+		const counts: Partial<Record<TabType | ChangeGroupKey, number>> = {};
 		for (const change of pendingChanges) {
 			counts[change.group] = (counts[change.group] ?? 0) + 1;
 		}
 		return counts;
 	});
 
-	const validTabs = [
-		'general',
-		'committees',
-		'status',
-		'links',
-		'payments',
-		'documents',
-		'emails'
-	] as const;
+	const validTabs = ['general', 'committees', 'status', 'links', 'payments', 'documents'] as const;
 	type TabType = (typeof validTabs)[number];
 	// The tab is kept here and mirrored into the URL without a navigation, like the assignment
 	// board's size: `sveltekit-search-params` reads `page`, which is still the placeholder while the
 	// tabs' first queries are pending, and a tab container updated in that window stayed hidden.
 	let pickedTab = $state(page.url.searchParams.get('tab'));
-	let currentTab = $derived<TabType>(
-		validTabs.find((tab) => tab === pickedTab && (tab !== 'emails' || canManageEmails)) ?? 'general'
-	);
+	let currentTab = $derived<TabType>(validTabs.find((tab) => tab === pickedTab) ?? 'general');
 
 	function setTab(tab: TabType) {
 		pickedTab = tab;
@@ -349,10 +326,7 @@
 		{ value: 'status', label: m.statusAndFeatures(), icon: 'ph-toggle-right' },
 		{ value: 'links', label: m.linksAndContent(), icon: 'ph-link' },
 		{ value: 'payments', label: m.bankingInformation(), icon: 'ph-credit-card' },
-		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'ph-file-pdf' },
-		...(canManageEmails
-			? [{ value: 'emails' as const, label: m.emailSettingsTab(), icon: 'ph-envelope' }]
-			: [])
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'ph-file-pdf' }
 	]);
 
 	const tabIntros: Record<TabType, () => string> = {
@@ -361,8 +335,7 @@
 		status: m.tabExplanationStatus,
 		links: m.tabExplanationLinks,
 		payments: m.tabExplanationPayments,
-		documents: m.tabExplanationDocuments,
-		emails: m.emailSettingsIntro
+		documents: m.tabExplanationDocuments
 	};
 	let tabIntro = $derived(tabIntros[currentTab]());
 
@@ -371,48 +344,6 @@
 			? m.saveSettingsWithChangeCount({ count: pendingChanges.length })
 			: m.saveSettings()
 	);
-
-	/** One mutation for the pace and one per switch; switching on owes what the sweep then sends. */
-	async function saveEmailChanges() {
-		const pace = emailChanges.pace;
-		const switches = emailChanges.list;
-		const promise = Promise.all([
-			...(pace
-				? [
-						client.mutate.setConferenceEmailsPerSecond({
-							__args: { conferenceId, emailsPerSecond: pace.after }
-						})
-					]
-				: []),
-			...switches.map((change) =>
-				client.mutate.setConferenceEmailEnabled({
-					__args: {
-						conferenceId,
-						kind: change.kind,
-						enabled: change.enabled,
-						notifyExisting: change.notifyExisting
-					}
-				})
-			)
-		]);
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		emailChanges.saved({ pace, switches });
-	}
-
-	const emailsChanged = $derived(
-		canManageEmails && (emailChanges.list.length > 0 || !!emailChanges.pace)
-	);
-	// e-mail switches alone are no reason to submit the form
-	const formChanged = $derived(
-		canEditContent && pendingChanges.some((change) => change.group !== 'emails')
-	);
-
-	function handleConfirmSave() {
-		confirmSaveModalOpen = false;
-		if (emailsChanged) void saveEmailChanges();
-		if (formChanged) formElement?.requestSubmit();
-	}
 </script>
 
 <div class="card-body bg-base-100 dark:bg-base-200 rounded-box max-sm:px-3">
@@ -514,17 +445,6 @@
 		</fieldset>
 	</Form>
 
-	<!-- The e-mail switches wait for the save button; their texts and footer save in their editors. -->
-	{#if canManageEmails}
-		<div class="flex flex-col gap-4" class:hidden={currentTab !== 'emails'}>
-			<p class="text-base-content/70 text-sm">
-				<i aria-hidden="true" class="ph-duotone ph-clock mr-1"></i>
-				{m.emailSettingsJobHint()}
-			</p>
-			<EmailSettings {conferenceId} changes={emailChanges} />
-		</div>
-	{/if}
-
 	<!-- Resolutions save through their own mutations, so they live outside the settings form. -->
 	<fieldset class="contents" disabled={!canEditContent}>
 		<div class="mt-6" class:hidden={currentTab !== 'documents'}>
@@ -532,32 +452,13 @@
 		</div>
 	</fieldset>
 
-	<button
-		type="button"
-		onclick={() => (confirmSaveModalOpen = true)}
-		class="btn btn-primary mt-6 w-full"
-		disabled={!canEditContent || pendingChanges.length === 0}
-	>
-		<i aria-hidden="true" class="ph-fill ph-floppy-disk mr-2"></i>
-		{saveLabel}
-	</button>
+	<ConfigSave
+		bind:open={confirmSaveModalOpen}
+		changes={pendingChanges}
+		label={saveLabel}
+		mayEdit={canEditContent}
+		onconfirm={() => formElement?.requestSubmit()}
+	/>
 </div>
-
-<Modal bind:open={confirmSaveModalOpen} title={m.confirmSave()}>
-	<ConfigChangePreview changes={pendingChanges} />
-	{#snippet action()}
-		<button class="btn" onclick={() => (confirmSaveModalOpen = false)}>
-			{m.cancel()}
-		</button>
-		<button
-			class="btn btn-primary"
-			disabled={pendingChanges.length === 0}
-			onclick={handleConfirmSave}
-		>
-			<i aria-hidden="true" class="ph-fill ph-floppy-disk mr-2"></i>
-			{m.save()}
-		</button>
-	{/snippet}
-</Modal>
 
 <EmailPrompt prompt={emailPrompt} />

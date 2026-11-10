@@ -85,7 +85,7 @@
 					class="toggle toggle-success toggle-sm"
 					checked={enabled}
 					onchange={(event) => {
-						// The switch shows what the tab holds: a question left unanswered leaves it as it was.
+						// The switch shows what the page holds: a question left unanswered leaves it as it was.
 						const on = event.currentTarget.checked;
 						event.currentTarget.checked = enabled;
 						ontoggle(on);

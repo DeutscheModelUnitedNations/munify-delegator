@@ -24,7 +24,7 @@ Welche Seite du siehst, hängt nur von deinen Rollen in **dieser** Konferenz ab.
 | **Status & Funktionen**, **Links & Inhalte**, Postadresse, Vorlagen, Anordnung auf den Vorlagen, Resolutionen | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt** |
 | Gremien anlegen und löschen                                                                                   | **Projektleitung**                                                 |
 | Gremien und Themen bearbeiten                                                                                 | **Projektleitung**, **Leitung Inhalt**                             |
-| Reiter **E-Mails**                                                                                            | **Projektleitung**, **Teilnehmendenbetreuung**                     |
+| Seite **E-Mails**                                                                                             | **Projektleitung**, **Teilnehmendenbetreuung**                     |
 | **Sitzplanung**                                                                                               | **Projektleitung**, **Leitung Inhalt**                             |
 
 Wer die Einstellungen öffnen, aber einen Reiter nicht ändern darf, sieht ihn gesperrt und oben einen Hinweis, was er ändern kann. Die Teilnehmendenbetreuung sieht die Gremien nur zur Ansicht.
@@ -41,7 +41,7 @@ Die Datei beschreibt die Eckdaten, die Gremien mit ihren Staaten, die nichtstaat
 
 ## Die Einstellungen {#general-settings}
 
-Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines**, **Gremien und Themen**, **Status & Funktionen**, **Links & Inhalte**, **Überweisungsinformationen**, **Dokumente & Vorlagen** und, für die Teilnehmendenbetreuung und die Projektleitung, **E-Mails**. Jeder Reiter erklärt oben kurz, wofür er da ist.
+Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines**, **Gremien und Themen**, **Status & Funktionen**, **Links & Inhalte**, **Überweisungsinformationen**, **Dokumente & Vorlagen**. Jeder Reiter erklärt oben kurz, wofür er da ist.
 
 ![Die Konferenzeinstellungen mit ihren Reitern und dem Speichern-Knopf](shot:team/configuration)
 
@@ -54,10 +54,10 @@ Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines
 - Bankdaten und Beitrag: Sie stehen auf Zahlungsaufforderungen, die schon verschickt sind.
 - Eine neue Vorlage ersetzt die bisher hinterlegte Datei.
 
-Erst **Speichern** schreibt alles. Macht die Änderung E-Mails fällig (Zahlungen oder postalische Anmeldung freigeschaltet, Konferenz beendet, neue Zertifikatsvorlage), fragt die Seite danach **E-Mails jetzt verschicken?**. Mit **Später** findest du sie im Reiter **E-Mails** wieder.
+Erst **Speichern** schreibt alles. Macht die Änderung E-Mails fällig (Zahlungen oder postalische Anmeldung freigeschaltet, Konferenz beendet, neue Zertifikatsvorlage), fragt die Seite danach **E-Mails jetzt verschicken?**. Mit **Später** findest du sie auf der Seite [E-Mails](#emails) wieder.
 
 :::note Außerhalb des Formulars
-Gremien, Resolutionen, die Anordnung auf den Vorlagen und die E-Mail-Texte speichern in ihren eigenen Fenstern sofort. Der Speichern-Knopf gilt für die Formularfelder, die Schalter im Reiter **E-Mails** und die **Versandgeschwindigkeit**.
+Gremien, Resolutionen, die Anordnung auf den Vorlagen und die E-Mail-Texte speichern in ihren eigenen Fenstern sofort. Der Speichern-Knopf gilt für die Formularfelder.
 :::
 
 ### Allgemeines
@@ -135,11 +135,11 @@ Unter den Vorlagen lädst du im Abschnitt **Verabschiedete Resolutionen** die Re
 
 ## E-Mails {#emails}
 
-DELEGATOR schreibt Teilnehmenden, Betreuenden und dem Team zu wichtigen Schritten. Der Reiter **E-Mails** zeigt jede Art von E-Mail als Karte, gruppiert etwa nach **Ergebnis der Zuteilung**, **Warteliste**, **Erinnerungen** oder **Nach der Konferenz**. Jede Karte erklärt unter **Wann**, **An wen** und **Inhalt**, was sie tut, und zählt, wie viele gesendet, fehlgeschlagen oder übersprungen sind. Jede E-Mail geht an jede Person höchstens einmal.
+DELEGATOR schreibt Teilnehmenden, Betreuenden und dem Team zu wichtigen Schritten. Die Seite **E-Mails** im Team-Bereich unter **Kommunikation** (für die Teilnehmendenbetreuung und die Projektleitung) zeigt jede Art von E-Mail als Karte, gruppiert etwa nach **Ergebnis der Zuteilung**, **Warteliste**, **Erinnerungen** oder **Nach der Konferenz**. Jede Karte erklärt unter **Wann**, **An wen** und **Inhalt**, was sie tut, und zählt, wie viele gesendet, fehlgeschlagen oder übersprungen sind. Jede E-Mail geht an jede Person höchstens einmal.
 
 - Steht auf einer Karte etwa **3 offen**, müssten drei Personen die E-Mail gerade bekommen. **Jetzt verschicken** schickt sie im Hintergrund ab, **Überspringen** markiert sie als übersprungen, und das lässt sich nicht rückgängig machen. Wer später dazukommt, bekommt sie weiterhin.
 - **Automatisch verschicken** lässt eine Art regelmäßig von selbst rausgehen. Eine neue Konferenz verschickt nichts automatisch, bis du es einschaltest. Erfüllen schon Personen die Bedingung, fragt DELEGATOR, ob sie die E-Mail mit dem nächsten Lauf bekommen (**Automatisch an alle 3 verschicken**) oder nur künftige Fälle (**Nur künftige Fälle**).
-- Die Schalter wirken erst mit dem Speichern-Knopf der Einstellungen und stehen in dessen Vorschau.
+- Die Schalter und die **Versandgeschwindigkeit** wirken erst mit dem Speichern-Knopf der Seite und stehen in dessen Vorschau, wie bei den Einstellungen.
 - Karten mit **Wird von Hand verschickt** (die Team-Einladung, der gefundene Badge) haben keinen Schalter: Sie gehen raus, wenn jemand die Aktion auslöst.
 
 ### Texte und Fußzeile

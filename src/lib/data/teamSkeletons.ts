@@ -956,6 +956,40 @@ const survey = {
 	]
 };
 
+/** One mail on the e-mail page: its title and edit button, its switch, what it does */
+const emailKindCard: SkeletonNode = {
+	class: 'border-base-300 bg-base-100 rounded-box flex flex-col gap-3 border p-4',
+	children: [
+		{
+			class: 'flex items-center gap-3',
+			children: [block('h-4 w-48 rounded-full'), block('ml-auto h-8 w-28')]
+		},
+		toggle('w-40'),
+		paragraph({ lines: 2, height: 'h-3' })
+	]
+};
+
+const emails = {
+	name: 'emails',
+	nodes: [
+		{
+			class: 'bg-base-100 dark:bg-base-200 rounded-box flex w-full flex-col gap-4 p-4 sm:p-8',
+			children: [
+				{
+					class: 'mb-2 flex items-center gap-4',
+					children: [block('h-4 max-w-md flex-1 rounded-full'), block('ml-auto h-8 w-8')]
+				},
+				block('h-3 w-80 max-w-full rounded-full'),
+				block('h-20 w-full'),
+				block('h-24 w-full'),
+				block('mt-2 h-6 w-48 rounded-full'),
+				...times(3, emailKindCard),
+				block('mt-6 h-10 w-full')
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
 const chartCard = ({ chart, span = '' }: { chart: string; span?: string }): SkeletonNode => ({
 	class: `border-base-200 rounded-box flex flex-col gap-4 border p-6 ${span}`,
 	children: [block('h-5 w-32 rounded-full'), block(`w-full ${chart}`)]
@@ -1331,6 +1365,7 @@ export const TEAM_SKELETONS = {
 	announcement,
 	calendar,
 	survey,
+	emails,
 	plausibility,
 	cleanup,
 	helper,

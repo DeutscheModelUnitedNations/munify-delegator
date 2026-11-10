@@ -8,7 +8,7 @@ import {
 	teamRoutes,
 	teamRoutesFor
 } from './teamRoutes';
-import { NO_TEAM_ACCESS, type TeamAccess } from '#lib/helpers/teamAccess';
+import { canManageEmails, NO_TEAM_ACCESS, type TeamAccess } from '#lib/helpers/teamAccess';
 
 const as = (...roles: TeamAccess['roles']): TeamAccess => ({ isAdmin: false, roles });
 const ids = (access: TeamAccess & { canSeePaperHub?: boolean }) =>
@@ -56,6 +56,19 @@ describe('who sees what', () => {
 		for (const role of ['REVIEWER', 'MEMBER', 'TEAM_COORDINATOR'] as const) {
 			expect(ids(as(role))).not.toContain('settings');
 		}
+	});
+
+	test('the e-mail page is for whoever manages the mails, under communication', () => {
+		for (const role of ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] as const) {
+			expect(ids(as(role))).toContain('emails');
+			expect(canManageEmails(as(role))).toBe(true);
+		}
+		for (const role of ['CONTENT_LEAD', 'REVIEWER', 'MEMBER', 'TEAM_COORDINATOR'] as const) {
+			expect(ids(as(role))).not.toContain('emails');
+			expect(canManageEmails(as(role))).toBe(false);
+		}
+		expect(route('emails').group).toBe('info');
+		expect(teamRouteForPath('team/emails')?.id).toBe('emails');
 	});
 
 	test('the content lead plans seats but sees none of the care pages', () => {

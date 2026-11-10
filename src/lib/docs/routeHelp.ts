@@ -69,6 +69,9 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	'/(authenticated)/dashboard/[conferenceId]/team/seat-planning': {
 		docs: 'user-manual/team/configuration#seat-planning'
 	},
+	'/(authenticated)/dashboard/[conferenceId]/team/emails': {
+		docs: 'user-manual/team/configuration#emails'
+	},
 
 	// Team: assignment
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/introduction': {

@@ -1061,9 +1061,10 @@ bun run preview
   remind of still holds. A mail sent by hand counts as sent for the sweep (`stillOpen`), except a
   reminder: sending one early leaves the automatic one due.
 - **Automatic per conference and kind, off by default** (`conferenceEmailSetting`, the "send
-  automatically" switch), on the "E-Mails" tab of the conference settings
-  (`team/configuration/emails/`, participant care: `canManageEmails`). The switches wait for the settings' save button (`emailChanges.svelte.ts`) and show up in its change
-  preview next to the form's fields; confirming saves them through their own mutations. Switching a kind on asks whether
+  automatically" switch), on the team's e-mail page (`team/emails/`, under "Kommunikation",
+  participant care: `canManageEmails`; the settings' old `?tab=emails` links redirect there). The
+  switches and the pace wait for the page's save button (`emailChanges.svelte.ts`) and show up in
+  its change preview (the settings' `ConfigSave`); confirming saves them through their own mutations. Switching a kind on asks whether
   the people it already applies to get it with the next run (`notifyExisting`) or are marked `SKIPPED`.
 - **The texts are the conference's to change** (`conferenceEmailText`, unique per conference, kind
   and locale, since a mail goes out in the recipient's language). A text is a subject, a heading
@@ -1093,7 +1094,7 @@ bun run preview
 - **Two triggers, one path:** the team's `sendOpenEmails` (`sendOpenEmailsInBackground`, one at a
   time per conference, any kinds) and the `send-emails` job, which runs the sweep itself every few
   minutes, for every conference with a kind switched to automatic, reminders included; both go through `sendDueEmails`. It keeps to the conference's
-  `emailsPerSecond` (the "sending speed" on the e-mail tab, `setConferenceEmailsPerSecond`, empty
+  `emailsPerSecond` (the "sending speed" on the e-mail page, `setConferenceEmailsPerSecond`, empty
   for no limit): `emailPacing.ts` spaces the sends, reserving each slot in Redis (a Lua script on
   Redis's clock, `email-pace:<conferenceId>`) so every sweep on every instance shares the pace,
   in memory without Redis or while it is unreachable; a paced round is cut to a minute's worth. The app renders the mails (one template, `NotificationEmail.svelte` on

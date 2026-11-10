@@ -24,7 +24,7 @@ Which pages you see depends only on your roles in **this** conference. A page yo
 | **Status & Features**, **Links & Content**, postal address, templates, layout on the templates, resolutions | **Project Management**, **Participant Care**, **Content Lead** |
 | Creating and deleting committees                                                                            | **Project Management**                                         |
 | Editing committees and agenda items                                                                         | **Project Management**, **Content Lead**                       |
-| The **Emails** tab                                                                                          | **Project Management**, **Participant Care**                   |
+| The **Emails** page                                                                                         | **Project Management**, **Participant Care**                   |
 | **Seat planning**                                                                                           | **Project Management**, **Content Lead**                       |
 
 If you may open the settings but not change a tab, it is locked, and a note at the top tells you what you can change. Participant Care sees the committees read-only.
@@ -41,7 +41,7 @@ The file describes the basic details, the committees with their nations, the non
 
 ## The settings {#general-settings}
 
-The **Settings** page splits the configuration into tabs: **General**, **Committees and Agenda Items**, **Status & Features**, **Links & Content**, **Banking Information**, **Documents & Templates** and, for Participant Care and Project Management, **Emails**. Each tab briefly explains at the top what it is for.
+The **Settings** page splits the configuration into tabs: **General**, **Committees and Agenda Items**, **Status & Features**, **Links & Content**, **Banking Information**, **Documents & Templates**. Each tab briefly explains at the top what it is for.
 
 ![The conference settings with their tabs and the save button](shot:team/configuration)
 
@@ -54,10 +54,10 @@ Changes in the tabs are not saved right away. A tab with unsaved changes carries
 - bank details and the fee, which appear on payment requests already sent,
 - a new template, which replaces the file stored so far.
 
-Only **Save** writes it all. If the change makes emails due (payments or postal registration unlocked, the conference ended, a new certificate template), the page then asks **Send emails now?**. With **Later** you find them again in the **Emails** tab.
+Only **Save** writes it all. If the change makes emails due (payments or postal registration unlocked, the conference ended, a new certificate template), the page then asks **Send emails now?**. With **Later** you find them again on the [Emails](#emails) page.
 
 :::note Outside the form
-Committees, resolutions, the layout on the templates and the email texts save right away in their own windows. The save button covers the form fields, the switches in the **Emails** tab and the **Sending speed**.
+Committees, resolutions, the layout on the templates and the email texts save right away in their own windows. The save button covers the form fields.
 :::
 
 ### General
@@ -135,11 +135,11 @@ Below the templates, under **Adopted resolutions**, you upload the resolutions a
 
 ## Emails {#emails}
 
-DELEGATOR writes to participants, supervisors and the team at important steps. The **Emails** tab shows each kind of email as a card, grouped by topics such as **Assignment result**, **Waiting list**, **Reminders** or **After the conference**. Each card explains under **When**, **To whom** and **Content** what it does, and counts how many were sent, failed or skipped. Each email reaches each person at most once.
+DELEGATOR writes to participants, supervisors and the team at important steps. The **Emails** page of the team area, under **Communication** (for Participant Care and Project Management), shows each kind of email as a card, grouped by topics such as **Assignment result**, **Waiting list**, **Reminders** or **After the conference**. Each card explains under **When**, **To whom** and **Content** what it does, and counts how many were sent, failed or skipped. Each email reaches each person at most once.
 
 - When a card shows, say, **3 open**, three people should get the email right now. **Send now** sends it in the background. **Skip** marks it as skipped, which cannot be undone. People who qualify later still get it.
 - **Send automatically** lets a kind go out on its own regularly. A new conference sends nothing automatically until you switch it on. If people already meet the condition, DELEGATOR asks whether they get the email with the next run (**Send to all 3 automatically**) or only future cases do (**Only future cases**).
-- The switches take effect with the settings' save button and appear in its preview.
+- The switches and the **Sending speed** take effect with the page's save button and appear in its preview, as in the settings.
 - Cards marked **Sent by hand** (the team invitation, the found badge) have no switch: they go out when someone triggers the action.
 
 ### Texts and footer
