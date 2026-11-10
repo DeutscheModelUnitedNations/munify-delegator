@@ -42,7 +42,7 @@
 		"@inlang/paraglide-js": "^2.29.3",
 		"@lingual/i18n-check": "^0.9.5",
 		"@m1212e/rumble": "~0.30.1",
-		"@m1212e/sveltekit-oidc": "^0.3.2",
+		"@m1212e/sveltekit-oidc": "^0.3.3",
 		"@magidoc/plugin-svelte-marked": "^8.0.3",
 		"@modelcontextprotocol/server": "2.4.0",
 		"@opentelemetry/semantic-conventions": "^1.45.0",
