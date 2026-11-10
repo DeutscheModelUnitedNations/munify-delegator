@@ -52,7 +52,6 @@ export const yoga = createYoga({
 		WritableStream,
 		TransformStream,
 		Blob,
-		crypto,
 		btoa,
 		TextEncoder,
 		TextDecoder,

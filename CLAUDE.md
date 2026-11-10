@@ -1651,6 +1651,20 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   `onError` hears the updates a live result skips (the CHASE link reports them). Keep rumble at
   ≥ 0.30.0.
 
+- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.1.1 logs the adapter's steps with the
+  colour `grey`, which Node 25's `styleText` refuses, failing `vite build` after the build itself.
+  The patch says `gray`. Drop it once a release does.
+- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 8): until
+  mount it replaces `console.warn` and assumes a string, which broke on Svelte's own warnings.
+- **Paraglide stays on 2.** Paraglide 3 compiles messages into virtual modules only its Vite plugin
+  provides, and the jobs bundle, the seed and the Bun scripts import messages outside Vite; the unit
+  tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
+  such code.
+- **graphql-yoga is on 6, a peer of rumble** (since 0.31, listed here for that), with the yoga 6
+  lines of its plugins (`@graphql-yoga/plugin-graphql-sse` 4, `@graphql-yoga/redis-event-target` 4).
+  Yoga 6's `fetchAPI` takes no `crypto` (`src/api/yoga.ts`).
+- **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
+
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
 
