@@ -450,18 +450,28 @@ export const impersonationHandle: Handle = async ({ event, resolve }) => {
 };
 
 /**
- * Whether the caller may see how many conferences the user `id` took part in: they themselves, and
- * whoever has them in their care (`isCaredForUser`: participant care and project management of a
- * conference they take part or wait in, system admins). Others who read the user, such as
- * co-delegates or paper reviewers, would learn something about the person they have no need for.
+ * Which of the users `ids` the caller may see the conference count of (how many conferences they
+ * took part in): themselves, and whoever has them in their care (`isCaredForUser`: participant
+ * care and project management of a conference they take part or wait in, system admins). Others
+ * who read the user, such as co-delegates or paper reviewers, would learn something about the
+ * person they have no need for. One query for all of them.
  */
-export async function canReadParticipationCount({ ctx, id }: { ctx: Context; id: string }) {
-	if (callerUserId(ctx) === id) return true;
-	const caredFor = await caredForUser(ctx);
-	if (!caredFor) return false;
-	const user = await db.query.user.findFirst({
-		where: { id, ...caredFor },
+export async function participationCountReadable({
+	ctx,
+	ids
+}: {
+	ctx: Context;
+	ids: readonly string[];
+}): Promise<Set<string>> {
+	const own = callerUserId(ctx);
+	const readable = new Set(ids.filter((id) => id === own));
+	const others = ids.filter((id) => id !== own);
+	const caredFor = others.length > 0 ? await caredForUser(ctx) : undefined;
+	if (!caredFor) return readable;
+	const users = await db.query.user.findMany({
+		where: { id: { in: others }, ...caredFor },
 		columns: { id: true }
 	});
-	return !!user;
+	for (const user of users) readable.add(user.id);
+	return readable;
 }

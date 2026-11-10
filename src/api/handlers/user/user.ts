@@ -18,14 +18,28 @@ import {
 	assertCanUpdateNewsletterPreferences,
 	assertCanUpdateUser,
 	canImpersonate,
-	canReadParticipationCount,
+	participationCountReadable,
 	deletableParticipation,
 	registerUserAbilities
 } from './userPermissions';
 import { impersonationConfigured, startImpersonation, stopImpersonation } from './impersonation';
 import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import { requestBatch } from '#api/services/requestBatch';
 
 registerUserAbilities();
+
+/**
+ * The conference count of every user a request asks for in one turn (a board of applications, a
+ * participants list): two count queries and one permission query for all of them, the count only
+ * where the caller may read it (`participationCountReadable`), else null.
+ */
+const participationCountOf = requestBatch<ApiContext, number | null>(async ({ ctx, keys }) => {
+	const [readable, counts] = await Promise.all([
+		participationCountReadable({ ctx, ids: keys }),
+		countConferenceParticipations(keys)
+	]);
+	return new Map(keys.map((id) => [id, readable.has(id) ? (counts.get(id) ?? 0) : null]));
+});
 
 const genderEnum = enum_({ tsName: 'gender' });
 const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
@@ -42,9 +56,7 @@ export const UserRef = object({
 			type: 'Int',
 			nullable: true,
 			resolve: async (user, _args, ctx) =>
-				(await canReadParticipationCount({ ctx, id: user.id }))
-					? countConferenceParticipations(user.id)
-					: null
+				(await participationCountOf({ ctx, key: user.id })) ?? null
 		})
 	})
 });

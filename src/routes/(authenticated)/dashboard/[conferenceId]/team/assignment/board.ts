@@ -35,7 +35,8 @@ const delegationCard = {
 	members: {
 		id: true,
 		isHeadDelegate: true,
-		user: { givenName: true, familyName: true },
+		// with the conferences the person took part in, which the card adds up
+		user: { givenName: true, familyName: true, conferenceParticipationsCount: true },
 		// the person's own school, which the seats per school count; the delegation keeps none
 		school: { id: true, name: true }
 	},
@@ -52,7 +53,7 @@ const singleCard = {
 	applied: true,
 	school: { id: true, name: true },
 	assignedRoleId: true,
-	user: { givenName: true, familyName: true },
+	user: { givenName: true, familyName: true, conferenceParticipationsCount: true },
 	appliedForRoles: { id: true, name: true }
 } as const;
 

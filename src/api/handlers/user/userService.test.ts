@@ -70,29 +70,49 @@ describe('profileArgsSchema', () => {
 
 describe('countConferenceParticipations', () => {
 	/** Answers the count queries with `results`, in the order they are asked. */
-	function fakeCounts(results: { value: number }[][]) {
+	function fakeCounts(results: { userId: string; value: number }[][]) {
 		const answers = [...results];
 		Object.assign(db, {
 			select: () => {
 				const chain = {
 					from: () => chain,
 					innerJoin: () => chain,
-					where: async () => answers.shift()
+					where: () => chain,
+					groupBy: async () => answers.shift()
 				};
 				return chain;
 			}
 		});
 	}
 
-	it('adds the seated delegation memberships and single participations', async () => {
-		fakeCounts([[{ value: 2 }], [{ value: 1 }]]);
-		expect(await countConferenceParticipations('u')).toBe(3);
+	it('adds the seated delegation memberships and single participations per user', async () => {
+		fakeCounts([
+			[
+				{ userId: 'u', value: 2 },
+				{ userId: 'v', value: 1 }
+			],
+			[{ userId: 'u', value: 1 }]
+		]);
+		expect(await countConferenceParticipations(['u', 'v'])).toEqual(
+			new Map([
+				['u', 3],
+				['v', 1]
+			])
+		);
 	});
 
-	it('counts a query without a row as none', async () => {
-		fakeCounts([[], [{ value: 4 }]]);
-		expect(await countConferenceParticipations('u')).toBe(4);
-		fakeCounts([[{ value: 1 }], []]);
-		expect(await countConferenceParticipations('u')).toBe(1);
+	it('counts a user without a seat as none', async () => {
+		fakeCounts([[], [{ userId: 'u', value: 4 }]]);
+		expect(await countConferenceParticipations(['u', 'w'])).toEqual(
+			new Map([
+				['u', 4],
+				['w', 0]
+			])
+		);
+	});
+
+	it('asks nothing for no users', async () => {
+		fakeCounts([]);
+		expect(await countConferenceParticipations([])).toEqual(new Map());
 	});
 });
