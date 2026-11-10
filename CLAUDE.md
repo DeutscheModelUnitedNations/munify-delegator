@@ -1453,7 +1453,7 @@ Required variables (see `.env.example`):
 ## Git Hooks (Lefthook)
 
 **Pre-commit**: Auto-format staged files with Prettier, then run `fallow audit` on the working tree
-**Pre-push**: Run tests, lint and format-check pushed files, and run `fallow audit` against the branch base
+**Pre-push**: The same checks as CI, over the whole repo rather than the pushed files (so a commit made with `--no-verify` is caught by the next push): tests, lint (`eslint .`, cached), format check, type check and the i18n check, plus `fallow audit` against the branch base
 
 The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
 

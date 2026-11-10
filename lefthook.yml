@@ -21,6 +21,8 @@ pre-commit:
       skip:
         - merge
         - rebase
+# The same checks as the CI jobs, over the whole repo rather than the pushed files: a commit made
+# with --no-verify is caught by the next push instead of by CI.
 pre-push:
   parallel: true
   commands:
@@ -28,9 +30,13 @@ pre-push:
       # vitest, like CI — bun's own runner cannot resolve SvelteKit's aliases and virtual modules
       run: bun run test
     lint:
-      run: bunx eslint "{push_files}" --cache --cache-strategy content
+      run: bunx eslint . --cache --cache-strategy content
     format:
-      run: bunx prettier --check --ignore-unknown "{push_files}"
+      run: bun run format:check
+    typecheck:
+      run: bun run check
+    i18n:
+      run: bun run i18n:check
     fallow:
       # Same analysis as the fallow CI job, scoped to the whole branch: with no
       # `--base`, fallow audits against the merge-base with the upstream (or
