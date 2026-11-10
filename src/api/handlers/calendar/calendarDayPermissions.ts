@@ -1,38 +1,38 @@
 import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
-import type { Context } from '#api/context';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
-	hasPartIn,
+	hasPartInConference,
 	isTeamMemberOfConference,
 	systemAdmin,
-	teamConference
+	teamConference,
+	type RuleArgs
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 /**
- * Filter on the conferences whose schedule (days, tracks, entries, places, site plans) the caller
- * reads: as team member always, as participant once `showCalendar` is on. Undefined when none.
+ * Matches the rows (by their own `conferenceId`) of the conferences whose schedule (days, tracks,
+ * entries, places, site plans) the caller reads: as team member always, as participant once
+ * `showCalendar` is on. Undefined for an anonymous caller.
  */
-export function calendarConference(ctx: Context) {
-	return hasPartIn({ ctx, asParticipant: { showCalendar: true } });
+export function calendarConference(args: RuleArgs) {
+	return hasPartInConference({ ...args, asParticipant: (conference) => conference.showCalendar });
 }
 
 export function registerCalendarDayAbilities() {
-	abilityBuilder.calendarDay.allow('read').when((ctx) => {
-		const conference = calendarConference(ctx);
-		return conference ? { where: { conference } } : undefined;
-	});
+	abilityBuilder.calendarDay.allow('read').when(liveWhere(calendarConference));
 	abilityBuilder.calendarDay.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Participant care (project management and participant care) updates and deletes its
 	// conference's days; the mutations check the same through `assertCanManageCalendarDay`.
 	abilityBuilder.calendarDay
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**
@@ -64,7 +64,7 @@ export async function assertCanManageCalendarDay({
 	const day = await db.query.calendarDay.findFirst({
 		where: {
 			id: calendarDayId,
-			conference: teamConference({ ctx, permission: 'manageParticipants' })
+			conference: await teamConference({ ctx, permission: 'manageParticipants' })
 		},
 		columns: { conferenceId: true }
 	});

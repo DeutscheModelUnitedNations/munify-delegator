@@ -3,11 +3,14 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	hasTeamPermission,
+	idIn,
 	isTeamMemberOfConference,
+	ownParticipantIds,
 	participantIdsOf,
-	systemAdmin
+	systemAdmin,
+	hop
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -17,17 +20,22 @@ export function registerPaymentTransactionAbilities() {
 	abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Participant care (project management and participant care) reads and updates the payments of
-	// its conference.
-	abilityBuilder.paymentTransaction
-		.allow(['read', 'update'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+	// its conference (through the payer's part in it, which holds the conference).
+	abilityBuilder.paymentTransaction.allow(['read', 'update']).when(
+		liveWhere((args) => {
+			const payer = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+			return hop(payer, (payer) => ({ payer }));
+		})
+	);
 
 	// The payer reads their own payments: `createPaymentTransaction` hands the new row back to them,
 	// and its transfer reference is the whole point of the payment pages.
-	abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { payer: { userId: id } } } : undefined;
-	});
+	abilityBuilder.paymentTransaction.allow('read').when(
+		liveWhere((args) => {
+			const ids = ownParticipantIds(args);
+			return ids && { payerParticipantId: idIn(ids) };
+		})
+	);
 }
 
 /**

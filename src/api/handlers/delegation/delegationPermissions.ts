@@ -2,31 +2,48 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	hasTeamPermission,
+	idIn,
 	isTeamMemberOfConference,
+	ledDelegationIds,
 	linkedChase,
 	maskedUntilRelease,
-	onceReleased,
+	ownDelegations,
 	PARTICIPANT_CARE_ROLES,
 	RELEASED_MIRRORED_CONFERENCE,
-	systemAdmin
+	releasedIds,
+	supervisedDelegations,
+	systemAdmin,
+	type DelegationInConference,
+	type RuleArgs
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
-import type { Context } from '#api/context';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 /** The column masked from participants until release: the delegation's assigned role. */
 const DELEGATION_ASSIGNMENT = { assignedRoleId: false } as const;
 
-/** Matches the delegations the caller is a member of. */
-function ownDelegation(ctx: Context) {
-	const id = callerUserId(ctx);
-	return id ? { members: { user: { id } } } : undefined;
-}
-
-/** Matches the delegations the caller supervises (any of their members). */
-function supervisedDelegation(ctx: Context) {
-	const id = callerUserId(ctx);
-	return id ? { members: { supervisors: { user: { id } } } } : undefined;
+/**
+ * The two read rules of a participant's way to some delegations (`maskedUntilRelease`): all of them
+ * without the assigned role, those of released conferences with it.
+ */
+function registerParticipantReads(
+	delegations: (args: RuleArgs) => DelegationInConference[] | undefined
+) {
+	abilityBuilder.delegation.allow('read').when(
+		liveRule((args) => {
+			const rows = delegations(args);
+			return maskedUntilRelease({
+				filter: rows && { id: idIn(rows.map((row) => row.id)) },
+				assignmentColumns: DELEGATION_ASSIGNMENT
+			});
+		})
+	);
+	abilityBuilder.delegation.allow('read').when(
+		liveWhere((args) => {
+			const rows = delegations(args);
+			return rows && { id: idIn(releasedIds({ facts: args.facts, rows })) };
+		})
+	);
 }
 
 export function registerDelegationAbilities() {
@@ -43,40 +60,33 @@ export function registerDelegationAbilities() {
 
 	// Delegates read their own delegation, supervisors the ones they supervise; `assignedRoleId`
 	// stays masked until the assignment is released.
-	abilityBuilder.delegation
-		.allow('read')
-		.when((ctx) =>
-			maskedUntilRelease({ filter: ownDelegation(ctx), assignmentColumns: DELEGATION_ASSIGNMENT })
-		);
-	abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(ownDelegation(ctx)));
-	abilityBuilder.delegation.allow('read').when((ctx) =>
-		maskedUntilRelease({
-			filter: supervisedDelegation(ctx),
-			assignmentColumns: DELEGATION_ASSIGNMENT
-		})
-	);
-	abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(supervisedDelegation(ctx)));
+	registerParticipantReads(ownDelegations);
+	registerParticipantReads(supervisedDelegations);
 
 	// The head delegate may update and delete their delegation until it has applied.
-	abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? { where: { applied: false, members: { user: { id }, isHeadDelegate: true } } }
-			: undefined;
-	});
+	abilityBuilder.delegation.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const led = ledDelegationIds(args);
+			return led && { id: idIn(led), applied: false };
+		})
+	);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
 	// delegations of its conference, applied or not.
 	abilityBuilder.delegation
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 
 	// Every team member reads the delegations of their conference, without `entryCode`: only the
 	// members, their supervisors and participant care hand out the join code.
-	abilityBuilder.delegation.allow('read').when((ctx) => {
-		const team = isTeamMemberOfConference({ ctx });
-		return team ? { where: team, columns: { entryCode: false } } : undefined;
-	});
+	abilityBuilder.delegation.allow('read').when(
+		liveRule((args) => {
+			const team = isTeamMemberOfConference(args);
+			return team ? { where: team, columns: { entryCode: false } } : undefined;
+		})
+	);
 }
 
 /**

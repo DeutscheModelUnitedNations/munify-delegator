@@ -8,7 +8,7 @@ import {
 	systemAdmin,
 	teamConference
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
@@ -18,16 +18,20 @@ export function registerSurveyQuestionAbilities() {
 
 	// Participants read the published questions of their conferences - not drafts, and not the
 	// ones the team hid.
-	abilityBuilder.surveyQuestion.allow('read').when((ctx) => {
-		const participant = isParticipantOfConference(ctx);
-		return participant ? { where: { ...participant, draft: false, hidden: false } } : undefined;
-	});
+	abilityBuilder.surveyQuestion.allow('read').when(
+		liveWhere((args) => {
+			const participant = isParticipantOfConference(args);
+			return participant && { ...participant, draft: false, hidden: false };
+		})
+	);
 
 	// Participant care (project management and participant care) reads, updates and deletes its
 	// conference's questions; creating one is `assertCanCreateSurveyQuestion`.
 	abilityBuilder.surveyQuestion
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**
@@ -59,7 +63,7 @@ export async function assertCanManageSurveyQuestion({
 	const question = await db.query.surveyQuestion.findFirst({
 		where: {
 			id: questionId,
-			conference: teamConference({ ctx, permission: 'manageParticipants' })
+			conference: await teamConference({ ctx, permission: 'manageParticipants' })
 		},
 		columns: { conferenceId: true }
 	});

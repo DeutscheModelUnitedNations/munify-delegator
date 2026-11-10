@@ -22,6 +22,7 @@ import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertAllowed } from '#api/services/authHelper/utils';
 import { supervisorSignupOpen } from '#api/services/registration/applicationReadiness';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerConferenceSupervisorAbilities();
 
@@ -38,9 +39,15 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
-/** The supervisor `id` as far as the caller may read it, for a `drizzleField` to answer with. */
-const readableSupervisor = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
-	(await ctx.abilities.conferenceSupervisor.filter('read')).merge({ where: { id } }).query.single;
+/**
+ * The supervisor `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
+async function readableSupervisor({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
+	return (await ctx.abilities.conferenceSupervisor.filter('read')).merge({ where: { id } }).query
+		.single;
+}
 
 schemaBuilder.mutationFields((t) => ({
 	createConferenceSupervisor: t.drizzleField({

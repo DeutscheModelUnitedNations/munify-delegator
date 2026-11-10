@@ -20,21 +20,27 @@ import {
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { mcpTool } from '#api/mcp/mcpTool';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerDelegationMemberAbilities();
 
 const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
 
-/** The delegation members `ids` as far as the caller may read them. */
+/** The delegation members `ids` as far as the caller may read them once the mutation has written. */
 async function readableMembers({ ctx, ids }: { ctx: ApiContext; ids: string[] }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.delegationMember.filter('read')).merge({
 		where: { id: { in: ids } }
 	}).query.many;
 }
 
-/** The delegation member `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The delegation member `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableMember({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.delegationMember.filter('read')).merge({ where: { id } }).query
 		.single;
 }

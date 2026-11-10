@@ -1,14 +1,19 @@
 import { abilityBuilder } from '#api/rumble';
 import {
 	PAPER_ROLES,
-	isInOwnDelegation,
-	isTeamMemberOf,
+	idIn,
 	linkedChase,
 	RELEASED_MIRRORED_CONFERENCE,
-	systemAdmin
+	systemAdmin,
+	hop
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
-import { supervisedDelegationOf } from '../paper/paperPermissions';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
+import {
+	paperOfTeamConference,
+	submittedPaperOfOwnDelegation,
+	submittedPaperOfSupervisedDelegation
+} from '../paper/paperPermissions';
 
 /**
  * The abilities of paper versions, which follow what the reader may read of the paper. Versions
@@ -32,36 +37,37 @@ export function registerPaperVersionAbilities() {
 	);
 
 	// Authors read every version of their own papers, drafts included.
-	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { paper: { authorParticipant: { userId: id } } } } : undefined;
-	});
+	abilityBuilder.paperVersion
+		.allow('read')
+		.when(
+			liveWhere(({ ctx, facts }) =>
+				callerUserId(ctx)
+					? { paperId: idIn(facts.authoredPapers.map((paper) => paper.id)) }
+					: undefined
+			)
+		);
 
 	// The paper team (`reviewPapers`: reviewer, project management, participant care, team
 	// coordinator, content lead) reads every version of the conference's papers.
-	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx, roles: PAPER_ROLES });
-		return conference ? { where: { paper: { conference } } } : undefined;
-	});
+	abilityBuilder.paperVersion.allow('read').when(
+		liveWhere((args) => {
+			const paper = paperOfTeamConference({ ...args, roles: PAPER_ROLES });
+			return hop(paper, (paper) => ({ paper }));
+		})
+	);
 
 	// Supervisors of the delegation, and its delegates (the second rule), read the submitted
 	// versions of its submitted papers, never a draft - what they may read of the paper itself.
-	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						status: { ne: 'DRAFT' },
-						paper: { ...supervisedDelegationOf(id), status: { ne: 'DRAFT' } }
-					}
-				}
-			: undefined;
-	});
-
-	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const delegation = isInOwnDelegation(ctx);
-		return delegation
-			? { where: { status: { ne: 'DRAFT' }, paper: { ...delegation, status: { ne: 'DRAFT' } } } }
-			: undefined;
-	});
+	abilityBuilder.paperVersion.allow('read').when(
+		liveWhere((args) => {
+			const paper = submittedPaperOfSupervisedDelegation(args);
+			return hop(paper, (paper) => ({ status: { ne: 'DRAFT' as const }, paper }));
+		})
+	);
+	abilityBuilder.paperVersion.allow('read').when(
+		liveWhere((args) => {
+			const paper = submittedPaperOfOwnDelegation(args);
+			return hop(paper, (paper) => ({ status: { ne: 'DRAFT' as const }, paper }));
+		})
+	);
 }

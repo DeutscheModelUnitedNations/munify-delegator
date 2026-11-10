@@ -3,9 +3,10 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
 	isSystemAdmin,
-	isTeamMemberOf,
+	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
 import { rolesWithTeamPermission } from '#lib/helpers/teamRoles';
@@ -38,20 +39,24 @@ export function registerTableViewAbilities() {
 		const id = callerUserId(ctx);
 		return grantWhere(id ? { shared: false, ownerUserId: id } : undefined);
 	});
-	abilityBuilder.tableView.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx });
-		return grantWhere(conference ? { shared: true, conference } : undefined);
-	});
+	abilityBuilder.tableView.allow('read').when(
+		liveWhere((args) => {
+			const conference = isTeamMemberOfConference(args);
+			return conference && { shared: true, ...conference };
+		})
+	);
 	abilityBuilder.tableView
 		.allow('read')
 		.when((ctx) => grantWhere(callerUserId(ctx) ? GLOBAL_SHARED : undefined));
-	abilityBuilder.tableView.allow(['update', 'delete']).when((ctx) => {
-		const conference = isTeamMemberOf({
-			ctx,
-			roles: rolesWithTeamPermission('manageTableViews')
-		});
-		return grantWhere(conference ? { shared: true, conference } : undefined);
-	});
+	abilityBuilder.tableView.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const conference = isTeamMemberOfConference({
+				...args,
+				roles: rolesWithTeamPermission('manageTableViews')
+			});
+			return conference && { shared: true, ...conference };
+		})
+	);
 
 	abilityBuilder.tableViewDefault.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.tableViewDefault.allow('read').when((ctx) => {

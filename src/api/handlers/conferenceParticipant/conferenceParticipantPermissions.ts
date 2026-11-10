@@ -5,6 +5,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
 	isOwnUser,
+	idIn,
 	isTeamMemberOfConference,
 	linkedChase,
 	PARTICIPANT_CARE_ROLES,
@@ -13,6 +14,7 @@ import {
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
 
@@ -35,24 +37,34 @@ export function registerConferenceParticipantAbilities() {
 
 	// Supervisors read those of their students. Supervision links this very row, so only the
 	// conference they supervise them in.
-	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { supervisors: { user: { id } } } } : undefined;
-	});
+	abilityBuilder.conferenceParticipant
+		.allow('read')
+		.when(
+			liveWhere(({ ctx, facts }) =>
+				callerUserId(ctx)
+					? { id: idIn(facts.supervised.map((person) => person.participantId)) }
+					: undefined
+			)
+		);
 
 	// Every delegate reads those of their co-delegates.
-	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? { where: { delegationMember: { delegation: { members: { user: { id } } } } } }
-			: undefined;
-	});
+	abilityBuilder.conferenceParticipant
+		.allow('read')
+		.when(
+			liveWhere(({ ctx, facts }) =>
+				callerUserId(ctx)
+					? { id: idIn(facts.delegationMates.map((mate) => mate.participantId)) }
+					: undefined
+			)
+		);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
 	// participant rows of its conference.
 	abilityBuilder.conferenceParticipant
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**

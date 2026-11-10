@@ -2,12 +2,14 @@ import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	assertTeamPermission,
+	isOwnParticipation,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
-	teamConference
+	teamConference,
+	hop
 } from '#api/services/authHelper/rules';
-import { callerUserId } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 import { scanSubjectProblem } from './scanSubject';
@@ -17,31 +19,32 @@ export function registerAttendanceEntryAbilities() {
 	abilityBuilder.attendanceEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Everyone reads their own attendance entries.
-	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { conferenceParticipant: { user: { id } } } } : undefined;
-	});
+	abilityBuilder.attendanceEntry.allow('read').when(liveWhere(isOwnParticipation));
 
 	// Every team member reads those of their conference.
-	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
-		const conferenceParticipant = isTeamMemberOfConference({ ctx });
-		return conferenceParticipant ? { where: { conferenceParticipant } } : undefined;
-	});
+	abilityBuilder.attendanceEntry.allow('read').when(
+		liveWhere((args) => {
+			const conferenceParticipant = isTeamMemberOfConference(args);
+			return hop(conferenceParticipant, (conferenceParticipant) => ({ conferenceParticipant }));
+		})
+	);
 
 	// Participant care (project management and participant care) updates and deletes them.
-	abilityBuilder.attendanceEntry.allow(['update', 'delete']).when((ctx) => {
-		const conferenceParticipant = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
-		return conferenceParticipant ? { where: { conferenceParticipant } } : undefined;
-	});
+	abilityBuilder.attendanceEntry.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const conferenceParticipant = isTeamMemberOfConference({
+				...args,
+				roles: PARTICIPANT_CARE_ROLES
+			});
+			return hop(conferenceParticipant, (conferenceParticipant) => ({ conferenceParticipant }));
+		})
+	);
 
 	// Every team member reads their conference's sessions. Nobody but a system admin updates or
 	// deletes them through the ability: starting, renaming and ending go through
 	// `assertCanStartAttendanceSession` / `assertCanManageAttendanceSession`.
 	abilityBuilder.attendanceSession.allow(['read', 'update', 'delete']).when(systemAdmin);
-	abilityBuilder.attendanceSession.allow('read').when((ctx) => {
-		const inTeamConference = isTeamMemberOfConference({ ctx });
-		return inTeamConference ? { where: inTeamConference } : undefined;
-	});
+	abilityBuilder.attendanceSession.allow('read').when(liveWhere(isTeamMemberOfConference));
 }
 
 /**
@@ -71,7 +74,10 @@ export async function assertCanManageAttendanceSession({
 	sessionId: string;
 }) {
 	const session = await db.query.attendanceSession.findFirst({
-		where: { id: sessionId, conference: teamConference({ ctx, permission: 'manageParticipants' }) },
+		where: {
+			id: sessionId,
+			conference: await teamConference({ ctx, permission: 'manageParticipants' })
+		},
 		columns: { conferenceId: true }
 	});
 	if (!session) {

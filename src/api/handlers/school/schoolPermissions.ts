@@ -2,13 +2,15 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	conferenceParticipantWithRegistration,
+	hop,
+	NOTHING,
 	isSystemAdmin,
-	isTeamMemberOf,
-	registeredParticipantIn,
-	systemAdmin
+	isTeamMemberOfConference,
+	systemAdmin,
+	type RuleArgs
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
-import type { Context } from '#api/context';
+import { callerFacts, liveWhere, teamConferenceIdsIn } from '#api/services/authHelper/callerFacts';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
@@ -33,28 +35,30 @@ const PUBLIC_COLUMNS = {
  * entrant of a conference where the caller is participant care (project management and participant
  * care) names as their own - the same people `isCaredForUser` reaches.
  */
-function schoolOfCaredFor(ctx: Context) {
-	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
-	if (!conference) return undefined;
-	return {
-		OR: [
-			{ waitingListEntries: { conference } },
-			{ participants: registeredParticipantIn(conference) }
-		]
-	};
+function schoolOfCaredFor(args: RuleArgs) {
+	return hop(
+		isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }),
+		(ofConference) => ({
+			OR: [
+				{ waitingListEntries: ofConference },
+				{ participants: { ...ofConference, ...conferenceParticipantWithRegistration } }
+			]
+		})
+	);
 }
 
 /**
  * `schoolOfCaredFor`, as long as nobody outside the caller's conferences names the school: a
  * school is shared by every conference, and deleting it takes it from everybody naming it.
  */
-function deletableSchoolOfCaredFor(ctx: Context) {
+function deletableSchoolOfCaredFor(args: RuleArgs) {
 	// a system admin deletes every school anyway
-	if (isSystemAdmin(ctx)) return undefined;
-	const caredFor = schoolOfCaredFor(ctx);
-	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
-	if (!caredFor || !conference) return undefined;
-	const elsewhere = { conference: { NOT: conference } };
+	if (isSystemAdmin(args.ctx)) return undefined;
+	const caredFor = schoolOfCaredFor(args);
+	const ofConference = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+	if (!caredFor || !ofConference) return undefined;
+	if (caredFor === NOTHING) return NOTHING;
+	const elsewhere = { NOT: ofConference };
 	return {
 		AND: [
 			caredFor,
@@ -70,9 +74,9 @@ export function registerSchoolAbilities() {
 	// Everybody, signed in or not, reads every school's `PUBLIC_COLUMNS`.
 	abilityBuilder.school.allow('read').when(() => ({ columns: PUBLIC_COLUMNS }));
 	// Participant care reads in full and updates the schools of the people of its conferences.
-	abilityBuilder.school.allow(['read', 'update']).when((ctx) => grantWhere(schoolOfCaredFor(ctx)));
+	abilityBuilder.school.allow(['read', 'update']).when(liveWhere(schoolOfCaredFor));
 	// It deletes those of them nobody outside its conferences names (`deletableSchoolOfCaredFor`).
-	abilityBuilder.school.allow('delete').when((ctx) => grantWhere(deletableSchoolOfCaredFor(ctx)));
+	abilityBuilder.school.allow('delete').when(liveWhere(deletableSchoolOfCaredFor));
 }
 
 /**
@@ -113,9 +117,6 @@ export async function assertCanReadSchoolMetrics({
 }) {
 	await assertCanUpdateSchools({ ctx, ids: [schoolId] });
 	if (isSystemAdmin(ctx)) return { conferenceIds: undefined };
-	const caredFor = await db.query.conference.findMany({
-		where: isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES }),
-		columns: { id: true }
-	});
-	return { conferenceIds: caredFor.map((conference) => conference.id) };
+	const facts = await callerFacts(ctx);
+	return { conferenceIds: teamConferenceIdsIn({ facts, roles: PARTICIPANT_CARE_ROLES }) };
 }

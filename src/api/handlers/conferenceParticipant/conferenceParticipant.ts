@@ -17,11 +17,16 @@ import {
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
 import { mcpTool } from '#api/mcp/mcpTool';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerConferenceParticipantAbilities();
 
-/** The participant row `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The participant row `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableParticipant({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.conferenceParticipant.filter('read')).merge({ where: { id } }).query
 		.single;
 }

@@ -5,7 +5,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertCanUpdateParticipantStatus } from '#api/handlers/conferenceParticipant/conferenceParticipantPermissions';
 
 /**
@@ -16,26 +16,22 @@ import { assertCanUpdateParticipantStatus } from '#api/handlers/conferencePartic
 export function registerEmailAbilities() {
 	// Every team member reads which mails the conference sends, and their texts and footers.
 	abilityBuilder.conferenceEmailSetting.allow(['read', 'update', 'delete']).when(systemAdmin);
-	abilityBuilder.conferenceEmailSetting
-		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
+	abilityBuilder.conferenceEmailSetting.allow('read').when(liveWhere(isTeamMemberOfConference));
 
 	abilityBuilder.conferenceEmailText.allow(['read', 'update', 'delete']).when(systemAdmin);
-	abilityBuilder.conferenceEmailText
-		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
+	abilityBuilder.conferenceEmailText.allow('read').when(liveWhere(isTeamMemberOfConference));
 
 	abilityBuilder.conferenceEmailFooter.allow(['read', 'update', 'delete']).when(systemAdmin);
-	abilityBuilder.conferenceEmailFooter
-		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
+	abilityBuilder.conferenceEmailFooter.allow('read').when(liveWhere(isTeamMemberOfConference));
 
 	// Participant care (project management and participant care) reads the log; nobody else does,
 	// since it names whom the conference wrote to.
 	abilityBuilder.emailLog.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.emailLog
 		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**

@@ -39,7 +39,7 @@ export async function assertCanCreateReviewerSnippet(ctx: ApiContext) {
 	const callerId = ctx.mustBeLoggedIn().sub;
 	if (isSystemAdmin(ctx)) return { callerId };
 	const reviewsSomewhere = await db.query.conference.findFirst({
-		where: teamConference({ ctx, permission: 'reviewPapers' }),
+		where: await teamConference({ ctx, permission: 'reviewPapers' }),
 		columns: { id: true }
 	});
 	if (!reviewsSomewhere) {

@@ -4,17 +4,23 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
 	hasTeamPermission,
+	idIn,
 	isInOwnDelegation,
+	isParticipantIn,
 	isSystemAdmin,
 	isTeamMemberOfConference,
+	ownParticipantIds,
+	supervisedDelegationIds,
 	linkedChase,
 	PAPER_ROLES,
-	participatesIn,
 	PROJECT_MANAGEMENT_ROLES,
 	RELEASED_MIRRORED_CONFERENCE,
-	systemAdmin
+	systemAdmin,
+	type RuleArgs,
+	type TeamRole,
+	hop
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
+import { callerFacts, liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { apiError } from '#api/services/errors';
@@ -43,14 +49,13 @@ export function registerPaperAbilities() {
 	);
 
 	// Authors read and update their own papers, and delete one while it is still a draft.
-	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { authorParticipant: { userId: id } } } : undefined;
-	});
-	abilityBuilder.paper.allow('delete').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { authorParticipant: { userId: id }, status: 'DRAFT' } } : undefined;
-	});
+	abilityBuilder.paper.allow(['read', 'update']).when(liveWhere(authoredPaper));
+	abilityBuilder.paper.allow('delete').when(
+		liveWhere((args) => {
+			const own = authoredPaper(args);
+			return own && { ...own, status: 'DRAFT' as const };
+		})
+	);
 
 	// The paper team (`reviewPapers`: reviewer, project management, participant care, team
 	// coordinator, content lead) reads and updates the conference's papers, drafts included - the
@@ -58,29 +63,51 @@ export function registerPaperAbilities() {
 	// verdicts go through reviews.
 	abilityBuilder.paper
 		.allow(['read', 'update'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PAPER_ROLES })));
+		.when(liveWhere((args) => paperOfTeamConference({ ...args, roles: PAPER_ROLES })));
 
 	// Project management deletes any paper of its conference, drafts or not.
 	abilityBuilder.paper
 		.allow('delete')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
+		.when(liveWhere((args) => paperOfTeamConference({ ...args, roles: PROJECT_MANAGEMENT_ROLES })));
 
 	// Supervisors read the submitted (non-draft) papers of the delegations they supervise.
-	abilityBuilder.paper.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { ...supervisedDelegationOf(id), status: { ne: 'DRAFT' } } } : undefined;
-	});
+	abilityBuilder.paper.allow('read').when(liveWhere(submittedPaperOfSupervisedDelegation));
 
 	// Delegates read the submitted (non-draft) papers of their own delegation - nobody else's.
-	abilityBuilder.paper.allow('read').when((ctx) => {
-		const delegation = isInOwnDelegation(ctx);
-		return delegation ? { where: { ...delegation, status: { ne: 'DRAFT' } } } : undefined;
-	});
+	abilityBuilder.paper.allow('read').when(liveWhere(submittedPaperOfOwnDelegation));
 }
 
-/** Matches a Paper row of a delegation with a member the user `id` supervises. */
-export function supervisedDelegationOf(id: string) {
-	return { delegation: { members: { supervisors: { participant: { userId: id } } } } };
+/** Matches the caller's own papers; undefined for an anonymous caller. */
+function authoredPaper(args: RuleArgs) {
+	const ids = ownParticipantIds(args);
+	return ids && { authorParticipantId: idIn(ids) };
+}
+
+/**
+ * Matches the papers of the conferences where the caller holds one of `roles`. A paper has no
+ * conference of its own: its delegation's.
+ */
+export function paperOfTeamConference(args: RuleArgs & { roles: readonly TeamRole[] }) {
+	const delegation = isTeamMemberOfConference(args);
+	return hop(delegation, (delegation) => ({ delegation }));
+}
+
+/** Matches the submitted (non-draft) papers of the delegations the caller supervises. */
+export function submittedPaperOfSupervisedDelegation(args: RuleArgs) {
+	const ids = supervisedDelegationIds(args);
+	return ids && { delegationId: idIn(ids), status: { ne: 'DRAFT' as const } };
+}
+
+/** Matches the papers of the delegations the caller supervises (one of their members). */
+export async function paperOfSupervisedDelegation(ctx: ApiContext) {
+	const ids = supervisedDelegationIds({ ctx, facts: await callerFacts(ctx) });
+	return { delegationId: idIn(ids ?? []) };
+}
+
+/** Matches the submitted (non-draft) papers of the caller's own delegations. */
+export function submittedPaperOfOwnDelegation(args: RuleArgs) {
+	const delegation = isInOwnDelegation(args);
+	return delegation && { ...delegation, status: { ne: 'DRAFT' as const } };
 }
 
 /**
@@ -151,13 +178,9 @@ async function assertParticipantOfConference({
 	ctx: ApiContext;
 	conferenceId: string;
 }) {
-	const caller = ctx.mustBeLoggedIn().sub;
+	ctx.mustBeLoggedIn();
 	if (isSystemAdmin(ctx)) return;
-	const participant = await db.query.user.findFirst({
-		where: { id: caller, ...participatesIn({ id: conferenceId }) },
-		columns: { id: true }
-	});
-	if (!participant) {
+	if (!(await isParticipantIn({ ctx, conferenceId }))) {
 		throw apiError({ code: 'FORBIDDEN', message: m.accessDeniedParticipant() });
 	}
 }

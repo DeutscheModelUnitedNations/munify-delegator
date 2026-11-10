@@ -20,8 +20,8 @@ import {
 	assertCanReviewPapers,
 	assertCanUpdatePaper,
 	canReviewPapers,
-	registerPaperAbilities,
-	supervisedDelegationOf
+	paperOfSupervisedDelegation,
+	registerPaperAbilities
 } from './paperPermissions';
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
@@ -182,14 +182,14 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = ctx.mustBeLoggedIn().sub;
+			ctx.mustBeLoggedIn();
 
 			return db.query.paper.findMany(
 				query(
 					await readableSubmittedPapers({
 						ctx,
 						conferenceId: args.conferenceId,
-						where: supervisedDelegationOf(callerId)
+						where: await paperOfSupervisedDelegation(ctx)
 					})
 				)
 			);

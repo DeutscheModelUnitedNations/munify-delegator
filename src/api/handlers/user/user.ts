@@ -23,6 +23,7 @@ import {
 	registerUserAbilities
 } from './userPermissions';
 import { impersonationConfigured, startImpersonation, stopImpersonation } from './impersonation';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerUserAbilities();
 
@@ -49,8 +50,12 @@ export const UserRef = object({
 });
 query({ table: 'user' });
 
-/** The user as the caller may read them, for re-reading the row a mutation wrote. */
+/**
+ * The user as the caller may read them, for re-reading the row a mutation wrote, as of after the
+ * write (`refreshCallerAbilities`).
+ */
 async function allowedUser({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.user.filter('read')).merge({ where: { id } }).query.single;
 }
 

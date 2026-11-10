@@ -1,13 +1,14 @@
 import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
+	caredForVia,
+	hop,
 	hasTeamPermission,
-	isTeamMemberOfConference,
+	isOwnParticipation,
 	participantIdsOf,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerUserId } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertCanManageSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -18,28 +19,21 @@ export function registerSurveyAnswerAbilities() {
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Everybody reads their own answers, and changes or withdraws them until the question's deadline.
-	abilityBuilder.surveyAnswer.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { participant: { userId: id } } } : undefined;
-	});
-	abilityBuilder.surveyAnswer.allow(['update', 'delete']).when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						participant: { userId: id },
-						question: { deadline: { gt: new Date() } }
-					}
-				}
-			: undefined;
-	});
+	abilityBuilder.surveyAnswer.allow('read').when(liveWhere(isOwnParticipation));
+	abilityBuilder.surveyAnswer.allow(['update', 'delete']).when(
+		liveWhere((args) =>
+			hop(isOwnParticipation(args), (own) => ({
+				...own,
+				question: { deadline: { gt: new Date() } }
+			}))
+		)
+	);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
 	// answers to its conference's questions.
-	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
-		const question = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
-		return question ? { where: { question } } : undefined;
-	});
+	abilityBuilder.surveyAnswer
+		.allow(['read', 'update', 'delete'])
+		.when(liveWhere((args) => caredForVia(args, 'question')));
 }
 
 /**

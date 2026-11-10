@@ -16,14 +16,19 @@ import {
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { singleParticipantPubsub } from '#api/pubsub';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerSingleParticipantAbilities();
 
 const SingleParticipantRef = object({ table: 'singleParticipant' });
 query({ table: 'singleParticipant' });
 
-/** The single participant `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The single participant `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableSingleParticipant({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.singleParticipant.filter('read')).merge({ where: { id } }).query
 		.single;
 }

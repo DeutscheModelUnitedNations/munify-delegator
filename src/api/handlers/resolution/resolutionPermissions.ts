@@ -7,7 +7,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { linkConfig } from '#api/handlers/chaseLink/linkAuth';
@@ -32,20 +32,22 @@ export function registerResolutionAbilities() {
 
 	// Everybody with a part in the conference reads (downloads) its adopted resolutions: its
 	// participants (delegates, single participants, supervisors) and its whole team.
-	abilityBuilder.resolution.allow('read').when((ctx) => grantWhere(isParticipantOfConference(ctx)));
-	abilityBuilder.resolution
-		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
+	abilityBuilder.resolution.allow('read').when(liveWhere(isParticipantOfConference));
+	abilityBuilder.resolution.allow('read').when(liveWhere(isTeamMemberOfConference));
 
 	// The content roles (project management, participant care, content lead) update and delete
 	// them; creating is `assertCanCreateResolution`.
 	abilityBuilder.resolution
 		.allow('update')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: CONFERENCE_CONTENT_ROLES })));
-	abilityBuilder.resolution.allow('delete').when((ctx) => {
-		const team = isTeamMemberOfConference({ ctx, roles: CONFERENCE_CONTENT_ROLES });
-		return team && { where: { ...team, ...deletableResolutions() } };
-	});
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: CONFERENCE_CONTENT_ROLES }))
+		);
+	abilityBuilder.resolution.allow('delete').when(
+		liveWhere((args) => {
+			const team = isTeamMemberOfConference({ ...args, roles: CONFERENCE_CONTENT_ROLES });
+			return team && { ...team, ...deletableResolutions() };
+		})
+	);
 }
 
 /**

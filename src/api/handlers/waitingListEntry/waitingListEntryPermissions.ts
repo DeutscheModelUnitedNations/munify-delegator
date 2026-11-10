@@ -9,6 +9,7 @@ import {
 	systemAdmin,
 	teamConference
 } from '#api/services/authHelper/rules';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerWaitingListEntryAbilities() {
@@ -27,7 +28,9 @@ export function registerWaitingListEntryAbilities() {
 	// entries of its conference.
 	abilityBuilder.waitingListEntry
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**
@@ -53,7 +56,10 @@ export async function assertCanUpdateWaitingListEntry({
 					columns: { id: true }
 				})
 			: await db.query.waitingListEntry.findFirst({
-					where: { id, conference: teamConference({ ctx, permission: 'manageParticipants' }) },
+					where: {
+						id,
+						conference: await teamConference({ ctx, permission: 'manageParticipants' })
+					},
 					columns: { id: true }
 				});
 	if (!entry) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });

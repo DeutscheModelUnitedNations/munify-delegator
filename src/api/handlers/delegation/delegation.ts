@@ -16,6 +16,7 @@ import {
 } from './delegationPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerDelegationAbilities();
 
@@ -23,8 +24,12 @@ const DelegationRef = object({ table: 'delegation' });
 query({ table: 'delegation' });
 countQuery({ table: 'delegation' });
 
-/** The delegation `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The delegation `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.delegation.filter('read')).merge({ where: { id } }).query.single;
 }
 

@@ -1,6 +1,12 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import { assertTeamPermission, isCaredForUser, systemAdmin } from '#api/services/authHelper/rules';
+import {
+	assertTeamPermission,
+	hop,
+	isCaredForUser,
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
@@ -11,10 +17,13 @@ export function registerPossibleDuplicateAbilities() {
 	// Participant care (project management and participant care) reads and decides a pair when
 	// either account is in its care (`isCaredForUser`). How much of the *other* account it reads
 	// is a rule on the user table.
-	abilityBuilder.possibleDuplicate.allow(['read', 'update']).when((ctx) => {
-		const caredFor = isCaredForUser(ctx);
-		return caredFor ? { where: { OR: [{ user: caredFor }, { candidate: caredFor }] } } : undefined;
-	});
+	abilityBuilder.possibleDuplicate.allow(['read', 'update']).when(
+		liveWhere((args) => {
+			return hop(isCaredForUser(args), (caredFor) => ({
+				OR: [{ user: caredFor }, { candidate: caredFor }]
+			}));
+		})
+	);
 }
 
 /**

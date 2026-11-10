@@ -3,17 +3,20 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
 	hasTeamPermission,
-	isInOwnDelegation,
-	isTeamMemberOfConference,
+	caredForVia,
+	idIn,
 	linkedChase,
 	maskedUntilRelease,
-	onceReleased,
-	PARTICIPANT_CARE_ROLES,
+	ownDelegations,
 	RELEASED_MIRRORED_CONFERENCE,
-	systemAdmin
+	releasedIds,
+	supervisedDelegations,
+	systemAdmin,
+	type DelegationInConference,
+	type RuleArgs
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
-import type { Context } from '#api/context';
+import { callerUserId, assertAllowed } from '#api/services/authHelper/utils';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -21,10 +24,34 @@ import { apiError } from '#api/services/errors';
 /** The column masked from participants until release: the committee a delegate was seated in. */
 const DELEGATION_MEMBER_ASSIGNMENT = { assignedCommitteeId: false } as const;
 
-/** Matches the members of delegations the caller supervises (any of their members). */
-function supervisedMember(ctx: Context) {
-	const id = callerUserId(ctx);
-	return id ? { delegation: { members: { supervisors: { user: { id } } } } } : undefined;
+/**
+ * The two read rules of a participant's way to the members of some delegations
+ * (`maskedUntilRelease`): all of them without their committee, those of released conferences with it.
+ */
+function registerParticipantReads(
+	delegations: (args: RuleArgs) => DelegationInConference[] | undefined
+) {
+	abilityBuilder.delegationMember.allow('read').when(
+		liveRule((args) => {
+			const rows = delegations(args);
+			return maskedUntilRelease({
+				filter: rows && { delegationId: idIn(rows.map((row) => row.id)) },
+				assignmentColumns: DELEGATION_MEMBER_ASSIGNMENT
+			});
+		})
+	);
+	abilityBuilder.delegationMember.allow('read').when(
+		liveWhere((args) => {
+			const rows = delegations(args);
+			return rows && { delegationId: idIn(releasedIds({ facts: args.facts, rows })) };
+		})
+	);
+}
+
+/** The caller's memberships as head delegate; undefined for an anonymous caller. */
+function ledMemberships({ ctx, facts }: RuleArgs) {
+	if (!callerUserId(ctx)) return undefined;
+	return facts.delegationMemberships.filter((membership) => membership.isHeadDelegate);
 }
 
 export function registerDelegationMemberAbilities() {
@@ -46,60 +73,50 @@ export function registerDelegationMemberAbilities() {
 
 	// Delegates read the members of their own delegation, supervisors those of the delegations they
 	// supervise; `assignedCommitteeId` stays masked until the assignment is released.
-	abilityBuilder.delegationMember.allow('read').when((ctx) =>
-		maskedUntilRelease({
-			filter: isInOwnDelegation(ctx),
-			assignmentColumns: DELEGATION_MEMBER_ASSIGNMENT
-		})
-	);
-	abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(isInOwnDelegation(ctx)));
-	abilityBuilder.delegationMember.allow('read').when((ctx) =>
-		maskedUntilRelease({
-			filter: supervisedMember(ctx),
-			assignmentColumns: DELEGATION_MEMBER_ASSIGNMENT
-		})
-	);
-	abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(supervisedMember(ctx)));
+	registerParticipantReads(ownDelegations);
+	registerParticipantReads(supervisedDelegations);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
-	// delegation members of its conference.
+	// delegation members of its conference (through the member's part in it, which holds the
+	// conference).
 	abilityBuilder.delegationMember
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(liveWhere((args) => caredForVia(args, 'participant')));
 
 	// The head delegate may remove members of their delegation until it has applied.
-	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						delegation: { applied: false, members: { isHeadDelegate: true, user: { id } } }
-					}
-				}
-			: undefined;
-	});
+	abilityBuilder.delegationMember.allow('delete').when(
+		liveWhere((args) => {
+			const led = ledMemberships(args)?.filter((membership) => !membership.applied);
+			return led && { delegationId: idIn(led.map((membership) => membership.delegationId)) };
+		})
+	);
 
 	// A delegate may delete their own membership (leave) until the delegation has applied.
-	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { user: { id }, delegation: { applied: false } } } : undefined;
-	});
+	abilityBuilder.delegationMember.allow('delete').when(
+		liveWhere(({ ctx, facts }) => {
+			if (!callerUserId(ctx)) return undefined;
+			const open = facts.delegationMemberships.filter((membership) => !membership.applied);
+			return { id: idIn(open.map((membership) => membership.id)) };
+		})
+	);
 
 	// The head delegate may seat the members of their delegation who have no committee yet, once the
 	// assignment is released: the committee checks test against the delegation's role, which would
 	// reveal it before then.
-	abilityBuilder.delegationMember.allow('update').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						assignedCommitteeId: { isNull: true },
-						conference: { assignmentReleased: true },
-						delegation: { members: { isHeadDelegate: true, user: { id } } }
-					}
-				}
-			: undefined;
-	});
+	abilityBuilder.delegationMember.allow('update').when(
+		liveWhere((args) => {
+			const led = ledMemberships(args);
+			if (!led) return undefined;
+			const rows = led.map(({ delegationId, conferenceId }) => ({
+				id: delegationId,
+				conferenceId
+			}));
+			return {
+				assignedCommitteeId: { isNull: true as const },
+				delegationId: idIn(releasedIds({ facts: args.facts, rows }))
+			};
+		})
+	);
 }
 
 /**

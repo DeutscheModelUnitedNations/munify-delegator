@@ -2,51 +2,52 @@ import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	assertTeamPermission,
-	isTeamMemberOf,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
-	teamConference
+	teamConference,
+	type RuleArgs,
+	hop
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { apiError } from '#api/services/errors';
 import type { ReviewedApplication } from './assignmentService';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
-/** The context an ability rule gets, which has no `abilities` yet. */
-type RuleContext = Parameters<typeof isTeamMemberOf>[0]['ctx'];
-
 /**
  * Matches draft rows of a conference where the caller is participant care (project management and
- * participant care).
+ * participant care), by the row's own `conferenceId`.
  */
-const participantCareDraft = (ctx: RuleContext) =>
-	grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES }));
-
-/**
- * Matches planned single roles in a conference where the caller is participant care. The table has
- * no `conference` relation, so the filter goes through the single participant.
- */
-const participantCareSingleRoleDraft = (ctx: RuleContext) => {
-	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
-	return conference === undefined ? undefined : { where: { singleParticipant: { conference } } };
-};
+const participantCareDraft = (args: RuleArgs) =>
+	isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
 
 export function registerAssignmentAbilities() {
 	// The assignment draft (reviews, units, planned single roles, weights) is participant care's
 	// alone: they read, update and delete it in their conference.
 	const all = ['read', 'update', 'delete'] as const;
 	abilityBuilder.assignmentReview.allow([...all]).when(systemAdmin);
-	abilityBuilder.assignmentReview.allow([...all]).when(participantCareDraft);
+	abilityBuilder.assignmentReview.allow([...all]).when(liveWhere(participantCareDraft));
 	abilityBuilder.assignmentUnit.allow([...all]).when(systemAdmin);
-	abilityBuilder.assignmentUnit.allow([...all]).when(participantCareDraft);
+	abilityBuilder.assignmentUnit.allow([...all]).when(liveWhere(participantCareDraft));
 	abilityBuilder.assignmentUnitMember.allow([...all]).when(systemAdmin);
-	abilityBuilder.assignmentUnitMember.allow([...all]).when(participantCareDraft);
+	// a unit member has no conference of its own: its unit's
+	abilityBuilder.assignmentUnitMember.allow([...all]).when(
+		liveWhere((args) => {
+			const unit = participantCareDraft(args);
+			return hop(unit, (unit) => ({ unit }));
+		})
+	);
 	abilityBuilder.assignmentSingleRole.allow([...all]).when(systemAdmin);
-	abilityBuilder.assignmentSingleRole.allow([...all]).when(participantCareSingleRoleDraft);
+	// nor has a planned single role: the single participant's part in the conference holds it
+	abilityBuilder.assignmentSingleRole.allow([...all]).when(
+		liveWhere((args) => {
+			const participant = participantCareDraft(args);
+			return hop(participant, (participant) => ({ singleParticipant: { participant } }));
+		})
+	);
 	abilityBuilder.assignmentWeights.allow([...all]).when(systemAdmin);
-	abilityBuilder.assignmentWeights.allow([...all]).when(participantCareDraft);
+	abilityBuilder.assignmentWeights.allow([...all]).when(liveWhere(participantCareDraft));
 }
 
 /** Refuses unless the caller holds `manageParticipants` (participant care) in the conference. */
@@ -70,7 +71,7 @@ export async function assertCanAssignDelegation({ ctx, id }: { ctx: ApiContext; 
 			where: {
 				id,
 				applied: true,
-				conference: teamConference({ ctx, permission: 'manageParticipants' })
+				conference: await teamConference({ ctx, permission: 'manageParticipants' })
 			},
 			columns: { id: true, conferenceId: true, assignedRoleId: true },
 			with: { members: { columns: { id: true } } }
@@ -94,7 +95,7 @@ export async function assertCanAssignSingleParticipant({
 			where: {
 				id,
 				applied: true,
-				participant: { conference: teamConference({ ctx, permission: 'manageParticipants' }) }
+				participant: { conference: await teamConference({ ctx, permission: 'manageParticipants' }) }
 			},
 			columns: { id: true, assignedRoleId: true },
 			with: { participant: { columns: { conferenceId: true } } }

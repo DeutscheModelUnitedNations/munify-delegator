@@ -11,6 +11,7 @@
 		"@opentelemetry/instrumentation-pg": "^0.78.0",
 		"@opentelemetry/resources": "^3.1.1",
 		"@opentelemetry/sdk-trace": "^3.1.1",
+		"@pothos/core": "4.17.0",
 		"@urql/core": "^6.0.3",
 		"diff-match-patch": "^1.0.5",
 		"drizzle-kit": "1.0.0-rc.5",

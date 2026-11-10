@@ -1,12 +1,16 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
+	hop,
+	idIn,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
+	ledDelegationIds,
 	PARTICIPANT_CARE_ROLES,
+	supervisedDelegationIds,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -15,35 +19,33 @@ export function registerRoleApplicationAbilities() {
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Every delegate reads their own delegation's role applications.
-	abilityBuilder.roleApplication.allow('read').when((ctx) => grantWhere(isInOwnDelegation(ctx)));
+	abilityBuilder.roleApplication.allow('read').when(liveWhere(isInOwnDelegation));
 
 	// The head delegate may update and delete their delegation's role applications until it has
 	// applied - the same line the delegation's own update ability draws.
-	abilityBuilder.roleApplication.allow(['update', 'delete']).when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						delegation: { applied: false, members: { user: { id }, isHeadDelegate: true } }
-					}
-				}
-			: undefined;
-	});
+	abilityBuilder.roleApplication.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const led = ledDelegationIds(args, { notApplied: true });
+			return led && { delegationId: idIn(led) };
+		})
+	);
 
 	// Participant care (project management and participant care) reads, updates and deletes the role
 	// applications of its conference, also after the delegation applied, as it may the delegation.
-	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when((ctx) => {
-		const delegation = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
-		return delegation ? { where: { delegation } } : undefined;
-	});
+	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(
+		liveWhere((args) => {
+			const delegation = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+			return hop(delegation, (delegation) => ({ delegation }));
+		})
+	);
 
 	// Supervisors read those of the delegations they supervise.
-	abilityBuilder.roleApplication.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? { where: { delegation: { members: { supervisors: { user: { id } } } } } }
-			: undefined;
-	});
+	abilityBuilder.roleApplication.allow('read').when(
+		liveWhere((args) => {
+			const ids = supervisedDelegationIds(args);
+			return ids && { delegationId: idIn(ids) };
+		})
+	);
 }
 
 /**

@@ -2,9 +2,10 @@ import { m } from '#lib/paraglide/messages';
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
+	caredForUser,
+	idIn,
 	isCaredForUser,
 	isSystemAdmin,
-	isTeamMemberOf,
 	linkedChase,
 	MIRRORED_CONFERENCE,
 	PAPER_ROLES,
@@ -12,9 +13,13 @@ import {
 	participatesIn,
 	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin,
-	TEAM_ADMIN_ROLES
+	TEAM_ADMIN_ROLES,
+	teamConferenceIds,
+	type RuleArgs,
+	type TeamRole
 } from '#api/services/authHelper/rules';
-import { assertAllowed, callerUserId, grantWhere } from '#api/services/authHelper/utils';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
+import { assertAllowed, callerUserId } from '#api/services/authHelper/utils';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
@@ -62,31 +67,43 @@ const IDENTITY = {
 const WITHOUT_CARE_NOTES = { globalNotes: false };
 
 /**
- * Matches a User row paired, in a possible duplicate of one of `status`, with an account in the
- * caller's care (`isCaredForUser`): the other account of the pair.
+ * Matches the User rows paired, in a possible duplicate of one of `status`, with an account in the
+ * caller's care (`isCaredForUser`): the other account of each pair (`careDuplicates`).
  */
 function duplicateOfCaredForUser({
 	ctx,
+	facts,
 	status
-}: {
-	ctx: Context;
-	status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[];
-}) {
-	const caredFor = isCaredForUser(ctx);
-	if (!caredFor) return undefined;
-	const standing = { status: { in: status } };
-	return {
-		OR: [
-			{ duplicatesAsUser: { ...standing, candidate: caredFor } },
-			{ duplicatesAsCandidate: { ...standing, user: caredFor } }
-		]
-	};
+}: RuleArgs & { status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[] }) {
+	if (!isCaredForUser({ ctx, facts })) return undefined;
+	const pairs = facts.careDuplicates.filter((pair) => status.includes(pair.status));
+	return { id: idIn(pairs.map((pair) => pair.userId)) };
 }
 
-/** Matches a delegation membership or single participation the caller supervises. */
-function supervisedByCaller(ctx: Context) {
-	const id = callerUserId(ctx);
-	return id ? { supervisors: { user: { id } } } : undefined;
+/**
+ * Matches the User rows of `userIds` for a caller signed in as themselves; undefined (nobody) for
+ * an anonymous caller and an AI assistant (`callerUserId`), whose own part counts nowhere.
+ */
+function callersPeople({ ctx, userIds }: { ctx: Context; userIds: readonly string[] }) {
+	return callerUserId(ctx) ? { id: idIn(userIds) } : undefined;
+}
+
+/**
+ * Matches the User rows on the team of a conference where the caller holds one of `roles` (any
+ * role without): `teammates`. A system admin's way matches everybody on any team.
+ */
+function teammatesOf({ ctx, facts, roles }: RuleArgs & { roles?: readonly TeamRole[] }) {
+	const ids = teamConferenceIds({ ctx, facts, roles });
+	if (!ids) return undefined;
+	if (ids === 'all') return { teamMember: true };
+	const conferences = new Set(ids);
+	return {
+		id: idIn(
+			facts.teammates
+				.filter((mate) => conferences.has(mate.conferenceId))
+				.map((mate) => mate.userId)
+		)
+	};
 }
 
 export function registerUserAbilities() {
@@ -118,116 +135,102 @@ export function registerUserAbilities() {
 
 	// Participant care (project management and participant care) reads the participants and waiting
 	// list entrants of its conferences in full; not the team (`isCaredForUser`).
-	abilityBuilder.user.allow('read').when((ctx) => grantWhere(isCaredForUser(ctx)));
+	abilityBuilder.user.allow('read').when(liveWhere(isCaredForUser));
 
 	// Participant care reads the other account of a possible duplicate of someone in its care: while
 	// the pair is open or confirmed its identity and care notes (the reason the pair is shown), no
 	// contact details; once dismissed only the identity, so the dismissal can still be undone.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const filter = duplicateOfCaredForUser({ ctx, status: ['OPEN', 'CONFIRMED'] });
-		return filter ? { where: filter, columns: { ...IDENTITY, globalNotes: true } } : undefined;
-	});
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const filter = duplicateOfCaredForUser({ ctx, status: ['DISMISSED'] });
-		return filter ? { where: filter, columns: IDENTITY } : undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const where = duplicateOfCaredForUser({ ctx, facts, status: ['OPEN', 'CONFIRMED'] });
+			return where ? { where, columns: { ...IDENTITY, globalNotes: true } } : undefined;
+		})
+	);
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const where = duplicateOfCaredForUser({ ctx, facts, status: ['DISMISSED'] });
+			return where ? { where, columns: IDENTITY } : undefined;
+		})
+	);
 
 	// Supervisors read the delegates and single participants they supervise, all but the care notes.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const supervised = supervisedByCaller(ctx);
-		return supervised
-			? {
-					where: { OR: [{ delegationMemberships: supervised }, { singleParticipant: supervised }] },
-					columns: WITHOUT_CARE_NOTES
-				}
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const registered = facts.supervised.filter(
+				(person) => person.delegationMemberId || person.singleParticipantId
+			);
+			const where = callersPeople({ ctx, userIds: registered.map((person) => person.userId) });
+			return where ? { where, columns: WITHOUT_CARE_NOTES } : undefined;
+		})
+	);
 
 	// Team admins (project management and team coordinators) read their conference's team, all but
 	// the care notes: the team members page lists address, gender and food preference for planning.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx, roles: TEAM_ADMIN_ROLES });
-		return conference
-			? { where: { teamMember: { conference } }, columns: WITHOUT_CARE_NOTES }
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const where = teammatesOf({ ctx, facts, roles: TEAM_ADMIN_ROLES });
+			return where ? { where, columns: WITHOUT_CARE_NOTES } : undefined;
+		})
+	);
 
 	// Team members read the identity and phone number of everybody on a team they share.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx });
-		return conference
-			? { where: { teamMember: { conference } }, columns: { ...IDENTITY, phone: true } }
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const where = teammatesOf({ ctx, facts });
+			return where ? { where, columns: { ...IDENTITY, phone: true } } : undefined;
+		})
+	);
 
 	// Delegates read their co-delegates' names and email addresses, to get in touch.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: { delegationMemberships: { delegation: { members: { user: { id } } } } },
-					columns: NAME_AND_EMAIL
-				}
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const userIds = facts.delegationMates.map((mate) => mate.userId);
+			const where = callersPeople({ ctx, userIds });
+			return where ? { where, columns: NAME_AND_EMAIL } : undefined;
+		})
+	);
 
 	// Delegates and single participants read the names and email addresses of their supervisors.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						conferenceSupervisor: {
-							OR: [
-								{ supervisedDelegationMembers: { user: { id } } },
-								{ supervisedSingleParticipants: { user: { id } } }
-							]
-						}
-					},
-					columns: NAME_AND_EMAIL
-				}
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const userIds = facts.ownSupervisors.map((supervisor) => supervisor.userId);
+			const where = callersPeople({ ctx, userIds });
+			return where ? { where, columns: NAME_AND_EMAIL } : undefined;
+		})
+	);
 
 	// Supervisors read the names and email addresses of the co-supervisors of their students.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const supervised = supervisedByCaller(ctx);
-		return supervised
-			? {
-					where: {
-						conferenceSupervisor: {
-							OR: [
-								{ supervisedDelegationMembers: supervised },
-								{ supervisedSingleParticipants: supervised }
-							]
-						}
-					},
-					columns: NAME_AND_EMAIL
-				}
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const userIds = facts.coSupervisors.map((supervisor) => supervisor.userId);
+			const where = callersPeople({ ctx, userIds });
+			return where ? { where, columns: NAME_AND_EMAIL } : undefined;
+		})
+	);
 
 	// The paper roles (everybody on the team but plain members) read the names of the authors of
 	// their conference's papers. A paper's `author` is non-nullable, so without this one paper by
 	// someone they may not otherwise read fails the whole review page.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx, roles: PAPER_ROLES });
-		return conference ? { where: { papers: { conference } }, columns: NAME } : undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const ids = teamConferenceIds({ ctx, facts, roles: PAPER_ROLES });
+			if (!ids) return undefined;
+			const where = ids === 'all' ? { papers: true } : { id: idIn(facts.paperTeamAuthorUserIds) };
+			return { where, columns: NAME };
+		})
+	);
 
 	// Authors read the names of whoever reviewed their papers. A review's `reviewer` is non-nullable,
 	// so without this the paper's history fails for an author who may not otherwise read the reviewer.
-	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						paperReviews: { paperVersion: { paper: { authorParticipant: { userId: id } } } }
-					},
-					columns: { id: true, givenName: true, familyName: true }
-				}
-			: undefined;
-	});
+	abilityBuilder.user.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			const userIds = facts.authoredPapers.flatMap((paper) => paper.reviewerIds);
+			const where = callersPeople({ ctx, userIds });
+			return where
+				? { where, columns: { id: true, givenName: true, familyName: true } }
+				: undefined;
+		})
+	);
 }
 
 /**
@@ -246,7 +249,7 @@ export async function assertCanUpdateUser({ ctx, id }: { ctx: ApiContext; id: st
  */
 export async function assertCanManageUser({ ctx, id }: { ctx: Context; id: string }) {
 	ctx.mustBeLoggedIn();
-	const managed = isCaredForUser(ctx);
+	const managed = await caredForUser(ctx);
 	const found = managed
 		? await db.query.user.findFirst({ where: { id, ...managed }, columns: { id: true } })
 		: undefined;
@@ -454,7 +457,7 @@ export const impersonationHandle: Handle = async ({ event, resolve }) => {
  */
 export async function canReadParticipationCount({ ctx, id }: { ctx: Context; id: string }) {
 	if (callerUserId(ctx) === id) return true;
-	const caredFor = isCaredForUser(ctx);
+	const caredFor = await caredForUser(ctx);
 	if (!caredFor) return false;
 	const user = await db.query.user.findFirst({
 		where: { id, ...caredFor },

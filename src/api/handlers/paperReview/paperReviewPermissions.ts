@@ -1,12 +1,15 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	isTeamMemberOf,
+	idIn,
 	PAPER_ROLES,
 	systemAdmin,
-	teamConference
+	teamConference,
+	hop
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { paperOfTeamConference } from '../paper/paperPermissions';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
@@ -15,19 +18,24 @@ export function registerPaperReviewAbilities() {
 	abilityBuilder.paperReview.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Authors read the reviews of their own papers.
-	abilityBuilder.paperReview.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? { where: { paperVersion: { paper: { authorParticipant: { userId: id } } } } }
-			: undefined;
-	});
+	abilityBuilder.paperReview
+		.allow('read')
+		.when(
+			liveWhere(({ ctx, facts }) =>
+				callerUserId(ctx)
+					? { paperVersionId: idIn(facts.authoredPapers.flatMap((paper) => paper.versionIds)) }
+					: undefined
+			)
+		);
 
 	// The paper team (`reviewPapers`: reviewer, project management, participant care, team
 	// coordinator, content lead) reads the reviews of the conference's papers.
-	abilityBuilder.paperReview.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx, roles: PAPER_ROLES });
-		return conference ? { where: { paperVersion: { paper: { conference } } } } : undefined;
-	});
+	abilityBuilder.paperReview.allow('read').when(
+		liveWhere((args) => {
+			const paper = paperOfTeamConference({ ...args, roles: PAPER_ROLES });
+			return hop(paper, (paper) => ({ paperVersion: { paper } }));
+		})
+	);
 }
 
 /**
@@ -39,7 +47,7 @@ export async function assertCanReviewPaper({ ctx, paperId }: { ctx: ApiContext; 
 	const paper = await db.query.paper.findFirst({
 		where: {
 			id: paperId,
-			delegation: { conference: teamConference({ ctx, permission: 'reviewPapers' }) }
+			delegation: { conference: await teamConference({ ctx, permission: 'reviewPapers' }) }
 		},
 		columns: { id: true }
 	});

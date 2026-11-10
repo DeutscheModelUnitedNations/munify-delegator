@@ -252,9 +252,11 @@ bun run preview
   plain arguments. Checks about _what_ (a stage, a size limit, uniqueness) stay in the service;
   checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
   query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
-  check. `authHelper/` holds only building blocks that are not about one entity, in two modules:
-  `rules.ts` says who may do what (`systemAdmin`, the team and participant filters,
-  `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
+  check. `authHelper/` holds only building blocks that are not about one entity, in three modules:
+  `callerFacts.ts` loads what the rules know about the caller (team roles, own registrations, the
+  people around them) once per root field and turns rules built from it into `.when()` rules
+  (`liveRule` / `liveWhere`), `rules.ts` says who may do what (`systemAdmin`, the team and
+  participant filters, `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
   `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
   row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
   reach - `assertAllowed` (check only) and `updateIfAllowed` / `deleteIfAllowed` (one statement). A row is re-read after a write with
@@ -323,10 +325,19 @@ bun run preview
 
   `services/authHelper/` is the one place authorization is built from. Rules of thumb, all of them enforced by `e2e/authorization/`:
 
-  - **Rules compose from the helpers** (`isTeamMemberOfConference({ ctx, roles })`, `isOwnUser`,
-    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `grantWhere(...)`. A helper returns
-    `undefined` for "grants nothing" and never throws. Every table also gets
+  - **Rules compose from the helpers** (`isTeamMemberOfConference({ ...args, roles })`, `isOwnUser`,
+    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `liveWhere(...)` (`liveRule` for
+    one with `columns`), which hands them the request and the caller's facts (`callerFacts`). A
+    helper returns `undefined` for "grants nothing" - decided by the context alone (anonymous, an
+    assistant), never by the facts - and never throws. Every table also gets
     `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
+  - **Rules filter on the table's own columns** - `{ id: { in: ids } }`, `{ conferenceId: { in: ids } }` -
+    with the ids from the caller's facts, not on chains of relations: rumble looks every
+    relational rule of a table up in one statement per root field, as nested `exists`, and
+    planning the user table's (101 of them) killed Postgres. A row without the column nests one
+    hop with `hop(filter, (participant) => ({ participant }))`, which is `NOTHING` (no hop) for an
+    empty list. An empty id list matches no row (`1 = 0`), never every row.
+    `relationalRules.test.ts` keeps the user and delegation rules free of relations.
   - **Updates and deletes go through the row's own ability** (`updateIfAllowed`, `deleteIfAllowed`,
     or `filter('update').merge({ where:
 { id } })`). Load the row through it first when the resolver needs the row anyway.
@@ -334,10 +345,10 @@ bun run preview
     shared with the team pages: `manageParticipants`, `planSeats`, `reviewPapers`, …, each
     granted to the roles `rolesWithTeamPermission` names). `teamConference({ ctx, permission })` is the
     filter on the conference: put it into the query that loads the row anyway
-    (`{ id, conference: teamConference({ ctx, permission: 'manageParticipants' }) }`), so a caller who may not
+    (`{ id, conference: await teamConference({ ctx, permission: 'manageParticipants' }) }`), so a caller who may not
     finds nothing. A create with no row to load checks the parent conference with
     `assertTeamPermission({ ctx, conferenceId, permission })` (`hasTeamPermission` is the
-    non-throwing form; both take a `tx`). A system admin always passes. Never compare a
+    non-throwing form; both answer from the caller's facts). A system admin always passes. Never compare a
     caller's roles by hand: a new kind of check is a new team permission.
   - **Every id an argument names has to belong where the row goes**: a track to its day, a
     place, role, committee or nation to the conference, a `userId` to the caller unless the
@@ -888,7 +899,7 @@ bun run preview
   assignment. Until then their read rules mask the delegation's and the single
   participant's `assignedRoleId` and the member's `assignedCommitteeId`
   (`src/api/services/authHelper/rules.ts`, two rules per participant-side ability:
-  `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
+  `maskedUntilRelease` for every row, and one for the rows of released conferences, `releasedIds`). Nothing but those rules is needed: rumble ≥ 0.26
   follows the masks. A relation backed by a masked key (`assignedRole`, `assignedCommittee`, …)
   resolves to nothing, the relations pointing back (`conferenceRole.assignedDelegations`,
   `committee.delegationMembers`, …) list only rows exposing their key, and `where` / `orderBy`
@@ -1228,8 +1239,9 @@ bun run preview
   inserts them, the dev seed again after its reset; `presetViews.test.ts` fails when no migration
   inserts a preset as the list has it. A new preset is an entry there and a migration of its own.
 - **A resolver that reads through an ability, writes, then reads again calls
-  `refreshAbilities(ctx.abilities)`** before the second read: rumble resolves relational rules
-  once per request, and the written row is not in that snapshot (the view mutations do).
+  `await refreshCallerAbilities(ctx)`** before the second read: rumble resolves relational rules,
+  and the rules read the caller's facts, once per root field, and the written row is not in that
+  snapshot (the view mutations and every registration mutation answering with its row do).
 
 #### 14. The CHASE link
 
@@ -1459,6 +1471,11 @@ The pre-commit fallow step is a gate: it fails the commit when the commit introd
 
 ## Performance Notes
 
+- **Permission rules are id lists, not relation chains** (`authHelper/callerFacts.ts`). The
+  caller's facts take a handful of small queries per root field (`RefreshCallerFactsPlugin` loads
+  them again, `refreshCallerAbilities` after a write); rumble evaluates a rule once per request, so
+  a `liveRule` answers with a filter rumble reads again whenever it prepares one
+  (`liveRule.test.ts` pins that down).
 - **Postgres JIT is off** for the app's connections (`-c jit=off` in `src/api/db/db.ts`). rumble's
   ability and mask SQL is costed far above `jit_above_cost`, and compiling it took seconds per
   statement (a delegation card: 6.3 s of 6.7 s).

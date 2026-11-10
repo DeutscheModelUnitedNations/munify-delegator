@@ -6,20 +6,20 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { assertAllowed } from '#api/services/authHelper/utils';
 import { calendarConference } from './calendarDayPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCalendarTrackAbilities() {
-	abilityBuilder.calendarTrack.allow('read').when((ctx) => {
-		const conference = calendarConference(ctx);
-		return conference ? { where: { conference } } : undefined;
-	});
+	abilityBuilder.calendarTrack.allow('read').when(liveWhere(calendarConference));
 	abilityBuilder.calendarTrack.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.calendarTrack
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**

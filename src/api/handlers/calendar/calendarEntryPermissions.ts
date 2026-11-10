@@ -2,10 +2,12 @@ import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	isOwnParticipation,
 	isTeamMemberOfConference,
-	systemAdmin
+	systemAdmin,
+	hop
 } from '#api/services/authHelper/rules';
-import { callerUserId } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertCanManageCalendarDay, calendarConference } from './calendarDayPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -14,35 +16,36 @@ export function registerCalendarEntryAbilities() {
 
 	// Readers of the schedule see an entry when it has no survey options, or when they picked one
 	// of them; the team sees every entry.
-	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
-		const conference = calendarConference(ctx);
-		return conference
-			? { where: { NOT: { surveyOptions: true }, calendarDay: { conference } } }
-			: undefined;
-	});
+	abilityBuilder.calendarEntry.allow('read').when(
+		liveWhere((args) => {
+			const calendarDay = calendarConference(args);
+			return hop(calendarDay, (calendarDay) => ({ NOT: { surveyOptions: true }, calendarDay }));
+		})
+	);
 
-	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		const conference = calendarConference(ctx);
-		return id && conference
-			? {
-					where: {
-						surveyOptions: { surveyAnswers: { participant: { userId: id } } },
-						calendarDay: { conference }
-					}
-				}
-			: undefined;
-	});
+	abilityBuilder.calendarEntry.allow('read').when(
+		liveWhere((args) => {
+			const own = isOwnParticipation(args);
+			const calendarDay = calendarConference(args);
+			return own && calendarDay
+				? { surveyOptions: { surveyAnswers: own }, calendarDay }
+				: undefined;
+		})
+	);
 
-	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
-		const calendarDay = isTeamMemberOfConference({ ctx });
-		return calendarDay ? { where: { calendarDay } } : undefined;
-	});
+	abilityBuilder.calendarEntry.allow('read').when(
+		liveWhere((args) => {
+			const calendarDay = isTeamMemberOfConference(args);
+			return hop(calendarDay, (calendarDay) => ({ calendarDay }));
+		})
+	);
 
-	abilityBuilder.calendarEntry.allow(['update', 'delete']).when((ctx) => {
-		const calendarDay = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
-		return calendarDay ? { where: { calendarDay } } : undefined;
-	});
+	abilityBuilder.calendarEntry.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const calendarDay = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+			return hop(calendarDay, (calendarDay) => ({ calendarDay }));
+		})
+	);
 }
 
 /**

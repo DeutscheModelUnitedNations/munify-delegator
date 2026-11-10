@@ -11,6 +11,7 @@ import { graphqlLogger } from '#lib/logger';
 import { apiError } from './services/errors';
 import { db, schema } from './db/db';
 import { context } from './context';
+import { refreshCallerFactsPluginName } from './services/authHelper/refreshCallerFactsPlugin';
 
 const publishClient = redisClient();
 const subscribeClient = redisClient();
@@ -57,7 +58,7 @@ export const {
 			})
 	},
 	pothosConfig: {
-		plugins: [SimpleObjectsPlugin]
+		plugins: [SimpleObjectsPlugin, refreshCallerFactsPluginName]
 	}
 });
 

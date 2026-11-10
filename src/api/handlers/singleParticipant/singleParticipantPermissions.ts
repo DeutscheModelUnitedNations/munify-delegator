@@ -2,26 +2,57 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
-	isOwnUser,
-	isTeamMemberOfConference,
+	caredForVia,
+	idIn,
 	linkedChase,
 	maskedUntilRelease,
-	onceReleased,
-	PARTICIPANT_CARE_ROLES,
 	RELEASED_MIRRORED_CONFERENCE,
+	releasedIds,
+	type RuleArgs,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
-import type { Context } from '#api/context';
+import { callerUserId } from '#api/services/authHelper/utils';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 /** The column masked from participants until release: the single participant's assigned role. */
 const SINGLE_PARTICIPANT_ASSIGNMENT = { assignedRoleId: false } as const;
 
-/** Matches the single participants the caller supervises. */
-function supervisedParticipant(ctx: Context) {
-	const id = callerUserId(ctx);
-	return id ? { supervisors: { user: { id } } } : undefined;
+/** The caller's own single participant registrations; undefined for an anonymous caller. */
+function ownRegistrations({ ctx, facts }: RuleArgs) {
+	return callerUserId(ctx) ? facts.singleParticipations : undefined;
+}
+
+/** The single participants the caller supervises; undefined for an anonymous caller. */
+function supervisedRegistrations({ ctx, facts }: RuleArgs) {
+	if (!callerUserId(ctx)) return undefined;
+	return facts.supervised.flatMap(({ singleParticipantId, conferenceId }) =>
+		singleParticipantId ? [{ id: singleParticipantId, conferenceId }] : []
+	);
+}
+
+/**
+ * The two read rules of a participant's way to some single participants (`maskedUntilRelease`): all
+ * of them without the assigned role, those of released conferences with it.
+ */
+function registerParticipantReads(
+	registrations: (args: RuleArgs) => readonly { id: string; conferenceId: string }[] | undefined
+) {
+	abilityBuilder.singleParticipant.allow('read').when(
+		liveRule((args) => {
+			const rows = registrations(args);
+			return maskedUntilRelease({
+				filter: rows && { id: idIn(rows.map((row) => row.id)) },
+				assignmentColumns: SINGLE_PARTICIPANT_ASSIGNMENT
+			});
+		})
+	);
+	abilityBuilder.singleParticipant.allow('read').when(
+		liveWhere((args) => {
+			const rows = registrations(args);
+			return rows && { id: idIn(releasedIds({ facts: args.facts, rows })) };
+		})
+	);
 }
 
 export function registerSingleParticipantAbilities() {
@@ -36,39 +67,25 @@ export function registerSingleParticipantAbilities() {
 
 	abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Everyone reads their own registration; `assignedRoleId` stays masked until the assignment is
-	// released.
-	abilityBuilder.singleParticipant.allow('read').when((ctx) =>
-		maskedUntilRelease({
-			filter: isOwnUser(ctx),
-			assignmentColumns: SINGLE_PARTICIPANT_ASSIGNMENT
-		})
-	);
-	abilityBuilder.singleParticipant.allow('read').when((ctx) => onceReleased(isOwnUser(ctx)));
+	// Everyone reads their own registration, supervisors those they supervise; `assignedRoleId` stays
+	// masked until the assignment is released.
+	registerParticipantReads(ownRegistrations);
+	registerParticipantReads(supervisedRegistrations);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
-	// single participants of its conference.
+	// single participants of its conference (through the person's part in it, which holds the
+	// conference).
 	abilityBuilder.singleParticipant
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(liveWhere((args) => caredForVia(args, 'participant')));
 
 	// Everyone updates and withdraws their own registration until it is sent in.
-	abilityBuilder.singleParticipant.allow(['update', 'delete']).when((ctx) => {
-		const id = callerUserId(ctx);
-		return id ? { where: { user: { id }, applied: false } } : undefined;
-	});
-
-	// Supervisors read the single participants they supervise; `assignedRoleId` stays masked until
-	// the assignment is released.
-	abilityBuilder.singleParticipant.allow('read').when((ctx) =>
-		maskedUntilRelease({
-			filter: supervisedParticipant(ctx),
-			assignmentColumns: SINGLE_PARTICIPANT_ASSIGNMENT
+	abilityBuilder.singleParticipant.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const rows = ownRegistrations(args);
+			return rows && { id: idIn(rows.map((row) => row.id)), applied: false };
 		})
 	);
-	abilityBuilder.singleParticipant
-		.allow('read')
-		.when((ctx) => onceReleased(supervisedParticipant(ctx)));
 }
 
 /**

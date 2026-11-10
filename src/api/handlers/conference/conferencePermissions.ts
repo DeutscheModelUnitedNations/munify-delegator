@@ -11,7 +11,8 @@ import {
 	publicConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
+import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import type { FileField } from '#api/handlers/storedFile/fileSources';
 import { m } from '#lib/paraglide/messages';
@@ -69,19 +70,21 @@ export function registerConferenceAbilities() {
 
 	// Its registered participants (delegates, single participants, supervisors) read their
 	// conference with the members-only columns, without the team-only ones.
-	abilityBuilder.conference.allow('read').when((ctx) => {
-		const participant = isParticipantOf(ctx);
-		return participant ? { where: participant, columns: TEAM_ONLY } : undefined;
-	});
+	abilityBuilder.conference.allow('read').when(
+		liveRule((args) => {
+			const participant = isParticipantOf(args);
+			return participant ? { where: participant, columns: TEAM_ONLY } : undefined;
+		})
+	);
 
 	// Every team member reads their conference in full.
-	abilityBuilder.conference.allow('read').when((ctx) => grantWhere(isTeamMemberOf({ ctx })));
+	abilityBuilder.conference.allow('read').when(liveWhere(isTeamMemberOf));
 
 	// Project management updates and deletes its conference. `updateConference` checks the team
 	// permissions instead (`assertCanUpdateConference`), since content roles edit a part of it.
 	abilityBuilder.conference
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOf({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
+		.when(liveWhere((args) => isTeamMemberOf({ ...args, roles: PROJECT_MANAGEMENT_ROLES })));
 }
 
 /**
