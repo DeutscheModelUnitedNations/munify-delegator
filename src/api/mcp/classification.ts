@@ -69,6 +69,12 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: ['participantMinAge', 'participantMaxAge', 'supervisorMinAge'],
 		redacted: ['age', 'issue']
 	},
+	// What holds a person's application back: their age verdict and which of their profile fields
+	// fail are about them, like the age notice.
+	ApplicationBlocker: {
+		visible: ['userId'],
+		redacted: ['ageIssue', 'invalidFields']
+	},
 	Address: {
 		visible: ['locality', 'region', 'countryCode'],
 		redacted: ['streetAddress', 'postalCode']

@@ -53,6 +53,12 @@
 					: undefined
 	);
 
+	// A participant's application not sent yet cannot be sent with an age outside the range.
+	const applicationPending = $derived(
+		ageRole === 'participant' &&
+			!(delegationMember?.delegation.applied ?? singleParticipant?.applied ?? true)
+	);
+
 	const hasAssignedRole = $derived(
 		!!singleParticipant?.assignedRole || !!delegationMember?.delegation.assignedRole
 	);
@@ -96,7 +102,12 @@
 				<!-- Spaced like the page around it; the dashboard's tour points at it as a whole -->
 				<div class="flex flex-col gap-10" data-tour="dashboard.stages">
 					{#if ageRole}
-						<AgeNotice {conferenceId} role={ageRole} entered />
+						<AgeNotice
+							{conferenceId}
+							role={ageRole}
+							entered
+							blocksApplication={applicationPending}
+						/>
 					{/if}
 					<ParticipationStages
 						{conferenceId}

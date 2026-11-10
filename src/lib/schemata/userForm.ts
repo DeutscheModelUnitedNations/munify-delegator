@@ -105,3 +105,44 @@ export const userUpdateSchema = userFormFields.partial().superRefine((user, ctx)
 export const adminUserFormSchema = userFormFields
 	.omit({ wantsToReceiveGeneralInformation: true, wantsJoinTeamInformation: true })
 	.superRefine(checkAddress);
+
+/** A field of the profile `userFormSchema` judges, named the way the form names it. */
+export type ProfileField = keyof typeof userFormFields.shape;
+
+/** Every profile field, in the order the form asks for them. */
+export const PROFILE_FIELDS = userFormSchema.keyof().options;
+
+function isProfileField(key: PropertyKey | undefined): key is ProfileField {
+	return PROFILE_FIELDS.some((field) => field === key);
+}
+
+/**
+ * A stored user row in the shape the form's schema reads: the form still names the two name
+ * fields the way the OIDC claims do.
+ */
+function toFormShape<T extends { givenName: unknown; familyName: unknown }>(user: T) {
+	const { givenName, familyName, ...rest } = user;
+	return { ...rest, given_name: givenName, family_name: familyName };
+}
+
+/** A stored user row, as far as judging its profile goes. */
+export type StoredProfile = Parameters<typeof addressIssues>[0] & {
+	givenName: unknown;
+	familyName: unknown;
+};
+
+/**
+ * The fields of a stored user row the account form would refuse, in the form's order; empty for a
+ * complete profile. What the login sends people to `/my-account` for, the plausibility page lists
+ * and an application is held back by.
+ */
+export function invalidProfileFields(user: StoredProfile): ProfileField[] {
+	const result = userFormSchema.safeParse(toFormShape(user));
+	if (result.success) return [];
+	// zod skips the address check while another field fails, so it is asked on its own
+	const failing = new Set([
+		...result.error.issues.map((issue) => issue.path[0]).filter(isProfileField),
+		...addressIssues(user).map((issue) => issue.path)
+	]);
+	return PROFILE_FIELDS.filter((field) => failing.has(field));
+}

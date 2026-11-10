@@ -17,10 +17,27 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { singleParticipantPubsub } from '#api/pubsub';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
 import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import {
+	APPLICATION_BLOCKERS_DESCRIPTION,
+	ApplicationBlockerRef,
+	resolveApplicationBlockers
+} from '#api/handlers/plausibility/plausibility';
+import { singleParticipantApplicationPeople } from '#api/services/registration/applicationReadiness';
 
 registerSingleParticipantAbilities();
 
-const SingleParticipantRef = object({ table: 'singleParticipant' });
+const SingleParticipantRef = object({
+	table: 'singleParticipant',
+	adjust: (t) => ({
+		applicationBlockers: t.field({
+			type: [ApplicationBlockerRef],
+			description: APPLICATION_BLOCKERS_DESCRIPTION,
+			resolve: resolveApplicationBlockers((singleParticipantId) =>
+				singleParticipantApplicationPeople({ singleParticipantId })
+			)
+		})
+	})
+});
 query({ table: 'singleParticipant' });
 
 /**
@@ -58,7 +75,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateSingleParticipant: t.drizzleField({
 		description:
-			"Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window.",
+			"Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window, and the plausibility checks find nothing about the person (`applicationBlockers`).",
 		type: SingleParticipantRef,
 		args: {
 			id: t.arg.id({ required: true }),

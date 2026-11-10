@@ -182,7 +182,9 @@ async function completeMandatoryProfile(page: Page, claims: TestUserClaims): Pro
 	await page
 		.locator('textarea[name="emergencyContacts"]')
 		.fill('Emergency contact: +49 176 12345678');
-	await page.locator('input[name="birthday"]').fill('2005-05-05');
+	// Seventeen this year: inside every conference's default age range, which an application
+	// has to fit to be sent (`applicationBlockers`), whenever the suite runs.
+	await page.locator('input[name="birthday"]').fill(`${new Date().getFullYear() - 17}-05-05`);
 	await page.locator('select[name="foodPreference"]').selectOption('VEGAN');
 	// formsnap generates a random `id` per field (`useId()`), so fields are selected by `name`.
 	await page.locator('select[name="gender"]').selectOption('NO_STATEMENT');

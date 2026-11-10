@@ -80,6 +80,7 @@
 	<AgeNotice
 		{conferenceId}
 		role={path === 'supervisor' ? 'supervisor' : 'participant'}
+		blocksApplication={path !== 'supervisor'}
 		onApplyAsSupervisor={() => (path = 'supervisor')}
 		class="mt-3"
 	/>

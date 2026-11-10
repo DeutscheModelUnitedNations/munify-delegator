@@ -13,7 +13,9 @@ import {
 import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
 import {
 	assertApplicationReady,
-	assertRegistrationOpen
+	assertNoApplicationBlockers,
+	assertRegistrationOpen,
+	delegationApplicationPeople
 } from '#api/services/registration/applicationReadiness';
 import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
@@ -122,6 +124,19 @@ export async function createDelegationWithHead({
 	return created.id;
 }
 
+/**
+ * What applying, withdrawing and handing over the head delegate read of a delegation the caller
+ * may update (`UpdatableDelegation`).
+ */
+type DelegationToUpdate = Pick<UpdatableDelegation, 'id' | 'experience' | 'motivation'> & {
+	appliedForRoles: unknown[];
+	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[];
+	conference: Pick<
+		UpdatableDelegation['conference'],
+		'state' | 'applicationDeadline' | 'registrationDeadlineGracePeriodMinutes'
+	>;
+};
+
 type DelegationDetailArgs = {
 	id: string;
 	applied?: boolean | null;
@@ -131,7 +146,10 @@ type DelegationDetailArgs = {
 	motivation?: string | null;
 };
 
-/** Applies or withdraws the delegation's application; applying needs a complete one. */
+/**
+ * Applies or withdraws the delegation's application; applying needs a complete one, and members
+ * the plausibility checks find nothing about (`assertNoApplicationBlockers`), whoever sends it.
+ */
 async function setApplied({
 	tx,
 	delegation,
@@ -140,7 +158,7 @@ async function setApplied({
 	withdrawAnyTime
 }: {
 	tx: Transaction;
-	delegation: UpdatableDelegation;
+	delegation: DelegationToUpdate;
 	args: DelegationDetailArgs;
 	applied: boolean;
 	withdrawAnyTime: boolean;
@@ -164,6 +182,9 @@ async function setApplied({
 			edits: args,
 			minRoleApplications: MIN_ROLE_APPLICATIONS.delegation
 		});
+		assertNoApplicationBlockers(
+			await delegationApplicationPeople({ delegationId: delegation.id, reader: tx })
+		);
 	}
 
 	await tx
@@ -183,7 +204,7 @@ export async function updateDelegationDetails({
 	args,
 	withdrawAnyTime
 }: {
-	delegation: UpdatableDelegation;
+	delegation: DelegationToUpdate;
 	args: DelegationDetailArgs;
 	withdrawAnyTime: boolean;
 }) {

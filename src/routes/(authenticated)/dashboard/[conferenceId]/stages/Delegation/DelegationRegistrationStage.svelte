@@ -40,7 +40,13 @@
 				motivation: true,
 				applied: true,
 				members: { id: true },
-				appliedForRoles: { id: true }
+				appliedForRoles: { id: true },
+				applicationBlockers: {
+					userId: true,
+					ageIssue: true,
+					invalidFields: true,
+					user: { givenName: true, familyName: true }
+				}
 			}
 		})
 	);
@@ -50,6 +56,7 @@
 	// not on every live update of the membership.
 	const delegationId = $derived(delegationMember.delegation.id);
 	const applied = $derived(delegationMember.delegation.applied);
+	const blockers = $derived(delegationMember.delegation.applicationBlockers);
 
 	// Creating the delegation is done by being here; the button completing the application is the
 	// last step, so neither is listed.
@@ -71,6 +78,12 @@
 			done: applicationTextsComplete(delegationMember.delegation),
 			hint: m.todoAnswerQuestionnaireHelp(),
 			href: '#application-texts'
+		},
+		{
+			task: m.todoResolveApplicationBlockers(),
+			done: blockers.length === 0,
+			hint: m.todoResolveApplicationBlockersHelp(),
+			href: '#application-blockers'
 		}
 	]);
 
@@ -134,6 +147,7 @@
 	{applied}
 	pendingText={m.completeSignupWarningText()}
 	{steps}
+	{blockers}
 	onComplete={userIsHeadDelegate ? completeRegistration : undefined}
 />
 

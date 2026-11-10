@@ -1,4 +1,3 @@
-import { refreshTokenGrant } from 'openid-client';
 import { makeCookieNames } from '@m1212e/sveltekit-oidc';
 import type { RequestEvent } from '@sveltejs/kit';
 import { OIDC_RESOURCE } from '$app/env/private';
@@ -13,9 +12,10 @@ export function actorAccessTokenOf(event: RequestEvent): Promise<string> {
 		tokens,
 		resourceConfigured: !!OIDC_RESOURCE,
 		// The core's own refresh would ask for OIDC_RESOURCE again, so this one goes to the
-		// provider directly, with the client authentication the core set up
+		// provider directly, with the client authentication the core set up. Through the core's own
+		// openid-client: any other copy rejects its configuration as not a `Configuration`
 		refreshWithoutResource: (refreshToken) =>
-			refreshTokenGrant(OIDC.core.configuration, refreshToken),
+			OIDC.core.client.refreshTokenGrant(OIDC.core.configuration, refreshToken),
 		storeRefreshToken: (refreshToken) =>
 			event.cookies.set(makeCookieNames().refreshToken, refreshToken, sessionCookieOptions())
 	});

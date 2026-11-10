@@ -17,10 +17,27 @@ import {
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import {
+	APPLICATION_BLOCKERS_DESCRIPTION,
+	ApplicationBlockerRef,
+	resolveApplicationBlockers
+} from '#api/handlers/plausibility/plausibility';
+import { delegationApplicationPeople } from '#api/services/registration/applicationReadiness';
 
 registerDelegationAbilities();
 
-const DelegationRef = object({ table: 'delegation' });
+const DelegationRef = object({
+	table: 'delegation',
+	adjust: (t) => ({
+		applicationBlockers: t.field({
+			type: [ApplicationBlockerRef],
+			description: APPLICATION_BLOCKERS_DESCRIPTION,
+			resolve: resolveApplicationBlockers((delegationId) =>
+				delegationApplicationPeople({ delegationId })
+			)
+		})
+	})
+});
 query({ table: 'delegation' });
 countQuery({ table: 'delegation' });
 
@@ -53,7 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateDelegation: t.drizzleField({
 		description:
-			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications and both texts (CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.',
+			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications, both texts and members the plausibility checks find nothing about (`applicationBlockers`; CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.',
 		type: DelegationRef,
 		args: {
 			id: t.arg.id({ required: true }),

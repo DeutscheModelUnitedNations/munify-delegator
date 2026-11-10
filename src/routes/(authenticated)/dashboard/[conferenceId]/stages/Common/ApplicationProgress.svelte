@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ComponentProps } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -6,6 +7,7 @@
 	import StatusChecklist, {
 		type ChecklistStatus
 	} from '#lib/components/dashboard/StatusChecklist.svelte';
+	import ApplicationBlockers from './ApplicationBlockers.svelte';
 
 	/**
 	 * Where an application stands: done, or what is still open before the deadline - each open
@@ -20,9 +22,11 @@
 		steps: { task: string; done: boolean; hint?: string; href?: string }[];
 		/** Unset when someone else completes the application (a delegation's ordinary members). */
 		onComplete?: () => void;
+		/** Who the plausibility checks find something about, which keeps the application from being sent. */
+		blockers: ComponentProps<typeof ApplicationBlockers>['blockers'];
 	}
 
-	let { conferenceId, applied, pendingText, steps, onComplete }: Props = $props();
+	let { conferenceId, applied, pendingText, steps, onComplete, blockers }: Props = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
@@ -74,6 +78,10 @@
 			</div>
 
 			<StatusChecklist steps={checklist} legend={false} />
+
+			{#if blockers.length > 0}
+				<ApplicationBlockers {conferenceId} {blockers} />
+			{/if}
 
 			<div class="flex flex-col gap-2">
 				{#if onComplete}

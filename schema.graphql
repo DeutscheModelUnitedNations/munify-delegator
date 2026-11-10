@@ -72,6 +72,23 @@ type AgendaItemPaperGroup {
   papers: [Paper!]!
 }
 
+"""
+A person of an application the plausibility checks find something about, which keeps the application from being sent. Says what is wrong, never the values.
+"""
+type ApplicationBlocker {
+  """
+  Their age on the first conference day misses the participants' range (never `shouldNotBeSupervisor`).
+  """
+  ageIssue: AgeIssue
+
+  """The profile fields the account form refuses, in its order."""
+  invalidFields: [ProfileField!]!
+
+  """The person as far as the caller may read them; null when not at all."""
+  user: User
+  userId: ID!
+}
+
 input AssignmentSplitPartInput {
   memberIds: [ID!]!
 }
@@ -1723,6 +1740,10 @@ input DateWhereInputArgument {
 }
 
 type Delegation {
+  """
+  The people of the application the plausibility checks find something about (a profile the account form refuses, an age outside the conference's range for participants). Sending the application is refused while there are any; empty once it was sent.
+  """
+  applicationBlockers: [ApplicationBlocker!]!
   applied: Boolean!
 
   """Get the roleApplications related to this delegation"""
@@ -3442,7 +3463,7 @@ type Mutation {
   ): Conferencerole!
 
   """
-  Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications and both texts (CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.
+  Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications, both texts and members the plausibility checks find nothing about (`applicationBlockers`; CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.
   """
   updateDelegation(
     """Sends the application (true) or takes it back (false)."""
@@ -3577,7 +3598,7 @@ type Mutation {
   ): School!
 
   """
-  Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window.
+  Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window, and the plausibility checks find nothing about the person (`applicationBlockers`).
   """
   updateSingleParticipant(
     """Sends the application (true) or takes it back (false)."""
@@ -4277,6 +4298,28 @@ type PreviewConferenceSupervisor {
   school_name: String
 }
 
+"""
+A field of the account form (`userFormSchema`), named as the form names it.
+"""
+enum ProfileField {
+  apartment
+  birthday
+  city
+  country
+  emergencyContacts
+  family_name
+  foodPreference
+  gender
+  given_name
+  phone
+  pronouns
+  region
+  street
+  wantsJoinTeamInformation
+  wantsToReceiveGeneralInformation
+  zip
+}
+
 type Query {
   """Get a single assignmentReview by ID"""
   assignmentReview(id: ID!): Assignmentreview!
@@ -4395,7 +4438,7 @@ type Query {
   conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """
-  Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. Purely advisory - nothing here blocks a registration, it only gives the organizers a list to look at.
+  Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. The same findings keep a delegation or single participant from sending their application (`applicationBlockers`); supervisors are only listed.
   """
   conferencePlausibility(conferenceId: ID!): PlausibilityResult!
 
@@ -4598,7 +4641,7 @@ type Query {
   mcpServerUrl: String
 
   """
-  Whether the caller's age on the first conference day fits the conference's range for taking part as `role`; null when it does or no birthday is known. Only a warning: nothing refuses a registration by age.
+  Whether the caller's age on the first conference day fits the conference's range for taking part as `role`; null when it does or no birthday is known. Registering is not refused by age, but a participant's application cannot be sent with an age outside the range (`applicationBlockers`).
   """
   myAgeNotice(conferenceId: ID!, role: AgeRole!): AgeNotice
 
@@ -5595,6 +5638,10 @@ type SignedCodeKey {
 }
 
 type Singleparticipant {
+  """
+  The people of the application the plausibility checks find something about (a profile the account form refuses, an age outside the conference's range for participants). Sending the application is refused while there are any; empty once it was sent.
+  """
+  applicationBlockers: [ApplicationBlocker!]!
   applied: Boolean!
 
   """Get the conferenceRoles related to this singleParticipant"""

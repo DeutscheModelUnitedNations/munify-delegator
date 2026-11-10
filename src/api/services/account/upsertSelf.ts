@@ -3,7 +3,7 @@ import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '#api/db/db';
 import { userPubsub } from '#api/pubsub';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
-import { userFormSchema } from '#lib/schemata/userForm';
+import { invalidProfileFields } from '#lib/schemata/userForm';
 import { isUniqueViolationOn } from '#api/services/errors';
 import { reportEmailConflict } from './emailConflict';
 import { claimPendingInvitation } from '#api/handlers/teamMemberInvitation/pendingInvitation';
@@ -90,13 +90,7 @@ export async function upsertSelfFromClaims({
 
 	await claimPendingInvitation(user.id);
 
-	const needsMoreInfo = !userFormSchema.safeParse({
-		...user,
-		given_name: user.givenName,
-		family_name: user.familyName
-	}).success;
-
-	if (needsMoreInfo) {
+	if (invalidProfileFields(user).length > 0) {
 		redirect(302, `/my-account?redirect=${encodeURIComponent(returnTo)}`);
 	}
 }

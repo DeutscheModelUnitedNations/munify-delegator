@@ -34,11 +34,18 @@
 			motivation: true,
 			experience: true,
 			applied: true,
-			appliedForRoles: { id: true, name: true, description: true, icon: true }
+			appliedForRoles: { id: true, name: true, description: true, icon: true },
+			applicationBlockers: {
+				userId: true,
+				ageIssue: true,
+				invalidFields: true,
+				user: { givenName: true, familyName: true }
+			}
 		})
 	);
 
 	const applied = $derived(singleParticipant.applied);
+	const blockers = $derived(singleParticipant.applicationBlockers);
 
 	const saveApplication = (answers: ApplicationTexts) =>
 		client.mutate.updateSingleParticipant({
@@ -92,6 +99,12 @@
 			done: applicationTextsComplete(singleParticipant),
 			hint: m.todoAnswerQuestionnaireHelp(),
 			href: '#application-texts'
+		},
+		{
+			task: m.todoResolveApplicationBlockers(),
+			done: blockers.length === 0,
+			hint: m.todoResolveApplicationBlockersHelp(),
+			href: '#application-blockers'
 		}
 	]);
 </script>
@@ -101,6 +114,7 @@
 	{applied}
 	pendingText={m.completeSignupWarningTextSingleParticipant()}
 	{steps}
+	{blockers}
 	onComplete={completeRegistration}
 />
 

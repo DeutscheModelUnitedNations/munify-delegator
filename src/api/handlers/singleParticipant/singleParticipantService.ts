@@ -10,7 +10,9 @@ import {
 } from '#api/services/registration/participation';
 import {
 	assertApplicationReady,
-	assertRegistrationOpen
+	assertNoApplicationBlockers,
+	assertRegistrationOpen,
+	singleParticipantApplicationPeople
 } from '#api/services/registration/applicationReadiness';
 import { nullToUndefined } from '#api/services/args';
 import type { ApplicationArgs } from '#api/services/registration/applicationArgs';
@@ -158,7 +160,8 @@ export type SingleParticipantUpdate = {
 
 /**
  * Refuses (CONFLICT) sending in the application unless it is ready, judged as it stands inside the
- * transaction, after this update's role changes and with its texts.
+ * transaction, after this update's role changes and with its texts, and unless the plausibility
+ * checks find nothing about the person (`assertNoApplicationBlockers`).
  */
 async function assertReadyToApply({
 	tx,
@@ -188,6 +191,9 @@ async function assertReadyToApply({
 		edits: update,
 		minRoleApplications: MIN_ROLE_APPLICATIONS.singleParticipant
 	});
+	assertNoApplicationBlockers(
+		await singleParticipantApplicationPeople({ singleParticipantId: update.id, reader: tx })
+	);
 }
 
 /**

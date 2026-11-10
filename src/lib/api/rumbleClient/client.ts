@@ -46,6 +46,13 @@ export type AgendaItemPaperGroup = {
   papers: () => Paper[]    
 };
 		
+export type ApplicationBlocker = {
+  ageIssue: AgeIssue | null,
+  invalidFields: ProfileField[],
+  user: () => User | null,
+  userId: ID    
+};
+		
 export type AssignmentSplitPartInput = {
   memberIds?: ID[] | undefined    
 };
@@ -1733,6 +1740,7 @@ export type DateWhereInputArgument = {
 };
 		
 export type Delegation = {
+  applicationBlockers: () => ApplicationBlocker[],
   applied: Boolean,
   appliedForRoles: (p?: {
     limit?: Int | null | undefined,
@@ -3543,6 +3551,8 @@ export type PreviewConferenceSupervisor = {
   school_name: String | null    
 };
 		
+export type ProfileField = "apartment" | "birthday" | "city" | "country" | "emergencyContacts" | "family_name" | "foodPreference" | "gender" | "given_name" | "phone" | "pronouns" | "region" | "street" | "wantsJoinTeamInformation" | "wantsToReceiveGeneralInformation" | "zip";
+		
 export type Query = {
   assignmentReview: (p: {
     id: ID
@@ -4630,6 +4640,7 @@ export type SignedCodeKey = {
 };
 		
 export type Singleparticipant = {
+  applicationBlockers: () => ApplicationBlocker[],
   applied: Boolean,
   appliedForRoles: (p?: {
     limit?: Int | null | undefined,
