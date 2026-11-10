@@ -6,7 +6,8 @@ vi.mock('$app/env/private', () => ({
 }));
 vi.mock('$app/env/public', () => ({ PUBLIC_OIDC_AUTHORITY: 'https://idp.example' }));
 
-const { isMachineToken, isSafeRemoteUrl, linkConfigOf, rolesOfToken } = await import('./linkAuth');
+const { isMachineToken, isSafeRemoteUrl, linkConfigOf, linkTokenVerdict, rolesOfToken } =
+	await import('./linkAuth');
 
 describe('rolesOfToken', () => {
 	test('grants the link role through the role claim, as OIDC_ROLE_MAP names it', () => {
@@ -75,6 +76,42 @@ describe('isMachineToken', () => {
 	test("never takes a person's token, whatever it grants", () => {
 		expect(isMachineToken({ sub: 'user-1', client_id: 'web-app', scope: 'chase' })).toBe(false);
 		expect(isMachineToken({ sub: 'user-1', scope: 'chase' })).toBe(false);
+	});
+});
+
+describe('linkTokenVerdict', () => {
+	const machine = { sub: 'm2m-app', client_id: 'm2m-app' };
+
+	test('accepts a machine token granting the link role', () => {
+		expect(linkTokenVerdict({ ...machine, scope: 'read munify-chase' })).toEqual({
+			accepted: true
+		});
+	});
+
+	test('says a machine token lacks the link role, naming the scopes it has', () => {
+		expect(linkTokenVerdict({ ...machine, scope: 'read other' })).toMatchObject({
+			accepted: false,
+			reason: 'it grants no link role',
+			scope: 'read other',
+			roles: [],
+			subjectIsClient: true
+		});
+	});
+
+	test("says a person's token is no machine token, whatever it grants", () => {
+		expect(
+			linkTokenVerdict({ sub: 'user-1', client_id: 'web-app', scope: 'munify-chase' })
+		).toMatchObject({
+			accepted: false,
+			reason: 'it is not a machine token',
+			hasClientId: true,
+			subjectIsClient: false
+		});
+		expect(linkTokenVerdict({ sub: 'user-1', scope: 'munify-chase' })).toMatchObject({
+			accepted: false,
+			hasClientId: false,
+			scope: 'munify-chase'
+		});
 	});
 });
 
