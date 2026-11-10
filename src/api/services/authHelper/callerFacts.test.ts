@@ -312,6 +312,25 @@ describe('the facts of a request', () => {
 	test('currentCallerFacts refuses before any load', () => {
 		expect(() => currentCallerFacts(contextFor('u1'))).toThrow();
 	});
+
+	test('an earlier load finishing first fills the empty cache until the later one lands', async () => {
+		emptyDatabase();
+		const ctx = contextFor(undefined);
+		const earlier = callerFacts(ctx);
+		let finishLater: (rows: { id: string }[]) => void = () => {};
+		query.conference.findMany.mockReturnValueOnce(
+			new Promise((resolve) => {
+				finishLater = resolve;
+			})
+		);
+		const later = refreshCallerFacts(ctx);
+		await earlier;
+		// a rule that awaited the earlier load reads facts, not an error, while the later one runs
+		expect(currentCallerFacts(ctx).publicConferenceIds).toEqual(['pub']);
+		finishLater([{ id: 'later' }]);
+		await later;
+		expect(currentCallerFacts(ctx).publicConferenceIds).toEqual(['later']);
+	});
 });
 
 describe('liveRule', () => {

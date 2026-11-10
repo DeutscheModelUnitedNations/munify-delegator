@@ -66,3 +66,30 @@ test('rumble reads a live rule’s filter again after a refresh', async () => {
 	expect(await where()).toContain('d2');
 	expect(await where()).not.toContain('d1');
 });
+
+test('a live rule answers with the facts it was built from while a newer load is on its way', async () => {
+	const db = drizzle.mock({ relations });
+	const { abilityBuilder } = rumble({
+		db,
+		schema,
+		context,
+		resolveRelationalRules: { enabled: true }
+	});
+	abilityBuilder.delegation.allow('read').when(
+		liveRule(({ facts }) => ({
+			where: { id: { in: facts.delegationMemberships.map((m) => m.delegationId) } }
+		}))
+	);
+
+	const cache = createCallerFactsCache();
+	// the rule's load finished, but a later one started meanwhile, so nothing is current yet
+	cache.loading = Promise.resolve(factsOf(['d1']));
+	cache.current = undefined;
+	// TYPE-SAFETY-EXCEPTION: the rule reads only the facts; a real request context would test
+	// SvelteKit, not rumble.
+	const ctx = { callerFactsCache: cache } as Context;
+	const abilities = abilityBuilder._.build()(ctx);
+
+	const filter = await abilities.delegation.filter('read');
+	expect(JSON.stringify(filter.query.many.where)).toContain('d1');
+});

@@ -479,7 +479,9 @@ function startLoad(ctx: Context) {
 	const load = ++cache.loads;
 	const loading = loadCallerFacts(factsSubject(ctx)).then(
 		(facts) => {
-			if (load === cache.loads) cache.current = facts;
+			// the latest load wins; an earlier one that finishes first still fills an empty cache,
+			// so a rule that awaited it never finds no facts while the later one is on its way
+			if (load === cache.loads || !cache.current) cache.current = facts;
 			return facts;
 		},
 		(error: unknown) => {
@@ -555,7 +557,8 @@ export function liveRule<W extends object, C extends object>(
 		return {
 			// a getter, read by rumble whenever it prepares the filter
 			get where() {
-				const now = currentCallerFacts(ctx);
+				// the facts of the last finished load; the ones built from until one has finished
+				const now = ctx.callerFactsCache.current ?? derivedFrom;
 				if (now !== derivedFrom) {
 					derivedFrom = now;
 					where = derive({ ctx, facts: now })?.where ?? NO_ROW;
