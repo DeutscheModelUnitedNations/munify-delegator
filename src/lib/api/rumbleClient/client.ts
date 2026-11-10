@@ -2636,6 +2636,8 @@ export type Mutation = {
     mimeType: String,
     size: Int
   }) => Storedfile,
+  requestLinkSync: Boolean,
+  requestRemoteLinkSync: Boolean,
   resetAssignmentSize: (p: {
     conferenceId: ID,
     seats: Int

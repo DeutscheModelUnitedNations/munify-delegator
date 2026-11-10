@@ -6,11 +6,13 @@
 	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
 	import { keptBackPapers } from '#lib/helpers/chaseTransfer';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import ChaseSyncButton from '#lib/components/ChaseSyncButton.svelte';
 
 	/**
 	 * The conference in the linked MUNify CHASE, for the team: a way in, when the link last read
 	 * back from CHASE, what waits for the release, and the accepted working papers that do not reach
-	 * CHASE, with the reason (only for those who read the papers). Nothing while unlinked.
+	 * CHASE, with the reason (only for those who read the papers), and for system admins "sync now".
+	 * Nothing while unlinked.
 	 */
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -59,6 +61,7 @@
 							})
 						: m.chaseStatusNotReadYet()}
 				</span>
+				<ChaseSyncButton small />
 			</div>
 			{#if !conference.assignmentReleased}
 				<p class="text-base-content/70 text-sm">{m.chaseStatusWaitingForRelease()}</p>

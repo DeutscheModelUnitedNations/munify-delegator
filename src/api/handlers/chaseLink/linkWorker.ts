@@ -1,6 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { eq } from 'drizzle-orm';
 import { instanceLinkPubsub } from '#api/pubsub';
+import { instanceSignals } from '#api/rumble';
 import { logger } from '#lib/logger';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { watchChaseTables, type ChaseTables } from './chaseTables';
@@ -8,6 +9,7 @@ import { linkAccessToken, linkConfig, type LinkConfig } from './linkAuth';
 import { syncLinkRow } from './chaseLinkService';
 import { createGate, handled, reconcileWatches } from './liveTable';
 import { syncResolutions } from './resolutionSync';
+import { followSyncRequests } from './linkSync';
 
 /**
  * The link worker (`docs/plans/chase-link.md`): reads back what the linked CHASE records about this
@@ -17,7 +19,8 @@ import { syncResolutions } from './resolutionSync';
  * answers with the rows of the table it touched, and the adopted resolutions (`resolution`,
  * `resolutionSync.ts`) are worked out from memory. The WebSocket's (re)connect asks every table
  * again, since updates may have been missed while it was down. There is no timer: a dead socket is
- * noticed by graphql-ws's keep-alive, and the reconnect catches up.
+ * noticed by graphql-ws's keep-alive, and the reconnect catches up. "Sync now" (`requestLinkSync`,
+ * on any instance) does the same on request.
  */
 
 /** pg advisory lock key for the worker, any constant no other lock uses. */
@@ -162,12 +165,22 @@ function watchLink({
 		});
 	};
 	// A socket that broke may have taken its subscriptions along, so every table is asked again
-	reconnected = () => {
+	const readAll = () => {
 		for (const tables of watches.values()) tables.refresh();
 		watchConferences();
 	};
+	reconnected = readAll;
 	watchConferences();
 	cleanups.push(() => unwatchConferences?.());
+	// "Sync now", asked on whichever instance (`requestLinkSync`), reaches this one as a signal
+	cleanups.push(
+		followSyncRequests({
+			requests: instanceSignals.subscribe('linkSyncRequested'),
+			sync: () => {
+				if (!isStopped()) readAll();
+			}
+		})
+	);
 }
 
 /** Notes a failure on the link, for the link page. */

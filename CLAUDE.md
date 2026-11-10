@@ -1280,6 +1280,13 @@ bun run preview
   the `init` hook; chase's worker works the same way the other way round. **Presence is not
   copied**: the attendance import page's `chasePresence` query asks chase's own queries when it
   is called (`fetchChasePresence`, `chaseLink/presenceMirror.ts`).
+- **"Sync now"** (`chaseLink/linkSync.ts`): `requestLinkSync` (system admins and the linked
+  CHASE; false while unlinked; CHASE has the same mutation) sends the `linkSyncRequested`
+  instance signal (`instanceSignals` in `rumble.ts`, over the subscriptions' Redis), and the
+  instance holding the worker reads everything again as on a reconnect, at most once per
+  `SYNC_SPACING_MS`. `requestRemoteLinkSync` (system admins only, so nothing bounces) calls CHASE's
+  `requestLinkSync` with the link token; CHASE away is a CONFLICT that leaves the sync here alone.
+  `ChaseSyncButton` asks both, on the link page and, for system admins, on the team's CHASE card.
 - **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
   the API: the dashboard's CHASE card, the
   `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".

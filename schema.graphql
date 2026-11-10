@@ -3048,6 +3048,16 @@ type Mutation {
     size: Int!
   ): Storedfile!
 
+  """
+  Makes the link worker read everything of the linked CHASE again now, as on a reconnect (system admins and the linked CHASE). False while no CHASE is linked.
+  """
+  requestLinkSync: Boolean!
+
+  """
+  Asks the linked CHASE to read everything of this instance again now, through CHASE's own requestLinkSync (system admins). False while no CHASE is linked; CONFLICT when CHASE cannot be reached.
+  """
+  requestRemoteLinkSync: Boolean!
+
   """Unplans every role with `seats` seats, so they can be assigned anew."""
   resetAssignmentSize(conferenceId: ID!, seats: Int!): Boolean!
 

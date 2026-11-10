@@ -2,6 +2,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
+	import ChaseSyncButton from '#lib/components/ChaseSyncButton.svelte';
 
 	/** How the link fares. The link itself is configuration (`LINK_REMOTE_URL` and the rest). */
 	const links = $derived(
@@ -37,8 +38,11 @@
 			<span>{m.chaseLinkLastError({ error: link.lastError })}</span>
 		</div>
 	{/if}
-	<a class="btn btn-primary self-start" href={link.remoteUrl} target="_blank" rel="noopener">
-		<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
-		{m.chaseLinkOpen()}
-	</a>
+	<div class="flex flex-wrap gap-2">
+		<ChaseSyncButton />
+		<a class="btn btn-primary" href={link.remoteUrl} target="_blank" rel="noopener">
+			<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
+			{m.chaseLinkOpen()}
+		</a>
+	</div>
 {/if}

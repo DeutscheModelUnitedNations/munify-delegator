@@ -37,7 +37,7 @@ export function systemAdmin(ctx: Context) {
 }
 
 /** The linked CHASE instance calling, with a token granting the `chase` role (`linkAuth`). */
-function isLinkedChase(ctx: Context) {
+export function isLinkedChase(ctx: Context) {
 	return ctx.hasRole('chase');
 }
 

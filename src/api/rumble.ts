@@ -5,6 +5,7 @@ import type {} from '@pothos/plugin-smart-subscriptions';
 import type {} from '@pothos/plugin-validation';
 import { trace } from '@opentelemetry/api';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
+import { createPubSub } from 'graphql-yoga';
 import { OTEL_ENDPOINT_URL, OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION } from '$app/env/private';
 import { redisClient } from './services/redisClient';
 import { graphqlLogger } from '#lib/logger';
@@ -19,6 +20,15 @@ const eventTarget =
 	publishClient && subscribeClient
 		? createRedisEventTarget({ publishClient, subscribeClient })
 		: undefined;
+
+/**
+ * Signals from one app instance to all of them that are not about a table, over the subscriptions'
+ * Redis channel (within this process without Redis). `linkSyncRequested` asks whichever instance
+ * runs the CHASE link worker to read everything again (`requestLinkSync`).
+ */
+export const instanceSignals = createPubSub<{ linkSyncRequested: [request: { at: string }] }>(
+	eventTarget ? { eventTarget } : {}
+);
 
 export const {
 	abilityBuilder,
