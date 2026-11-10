@@ -1697,6 +1697,20 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 
 - Never use the git commit command after a task is finished.
 
+### Releasing
+
+A release is a version tag, made with `npm version` (as in CHASE) on a clean `main`:
+
+```bash
+npm version patch            # or minor / major: bumps package.json, commits "x.y.z", tags vx.y.z
+git push --follow-tags       # the commit and its tag together
+```
+
+The tag push runs the whole CI, publishes the images as `x.y.z`, `x.y` and `x` (ghcr.io and
+DockerHub, app and jobs), uploads the sourcemaps to Bugsink, triggers the Dokploy deploy and
+creates the GitHub release (`.github/actions/release-notes` renders its body). `package.json`'s
+`version` is the current release; never tag by hand.
+
 ### PR Labels
 
 When creating pull requests, always apply the appropriate `PR: *` label based on the conventional commit type in the PR title:
