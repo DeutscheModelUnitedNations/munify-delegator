@@ -35,8 +35,20 @@ export const LINK_TOKEN_HEADER = 'x-munify-link-token';
 const RENEW_BEFORE_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 10_000;
 
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/** https, or http on this machine (development): the link's tokens never travel unencrypted. */
+export function isSafeRemoteUrl(value: string) {
+	try {
+		const url = new URL(value);
+		return url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK.has(url.hostname));
+	} catch {
+		return false;
+	}
+}
+
 const linkSettingsSchema = z.object({
-	LINK_REMOTE_URL: z.string().min(1),
+	LINK_REMOTE_URL: z.string().refine(isSafeRemoteUrl),
 	LINK_REMOTE_RESOURCE: z.string().min(1),
 	'LINK_RESOURCE or OIDC_RESOURCE': z.string().min(1),
 	OIDC_M2M_CLIENT_ID: z.string().min(1),
@@ -80,7 +92,7 @@ export function linkConfig() {
 		OIDC_M2M_CLIENT_SECRET
 	});
 	if (missing.length > 0)
-		logger.warn('The link is only partly configured, so it is off', { missing });
+		logger.warn('The link is only partly or wrongly configured, so it is off', { missing });
 	return config;
 }
 
@@ -164,8 +176,19 @@ export function rolesOfToken(payload: Record<string, unknown>) {
 }
 
 /**
+ * Whether a token is a machine's own (the client credentials grant), not a person's: Logto then
+ * names the client as the subject. A person's token for this API (the sign-in asks for
+ * `OIDC_RESOURCE`, which the link's resource defaults to) must never pass for the other instance,
+ * whatever role or permission that person was given.
+ */
+export function isMachineToken(payload: Record<string, unknown>) {
+	return typeof payload.client_id === 'string' && payload.sub === payload.client_id;
+}
+
+/**
  * Whether `token` is the other instance calling: signed by the provider, unexpired, for this
- * instance's API, and granting the link role. Never throws: a token that does not pass is nobody.
+ * instance's API, a machine's token, and granting the link role. Never throws: a token that does
+ * not pass is nobody.
  */
 export async function isRemoteInstanceToken({
 	token,
@@ -177,7 +200,7 @@ export async function isRemoteInstanceToken({
 	try {
 		const { issuer, keys } = await oidcProvider();
 		const { payload } = await jwtVerify(token, keys, { issuer, audience: config.resource });
-		return rolesOfToken(payload).includes(LINK_ROLE);
+		return isMachineToken(payload) && rolesOfToken(payload).includes(LINK_ROLE);
 	} catch (error) {
 		logger.info('A link token was refused', { reason: String(error) });
 		return false;

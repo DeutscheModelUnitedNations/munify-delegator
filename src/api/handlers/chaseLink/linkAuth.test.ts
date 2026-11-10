@@ -6,7 +6,7 @@ vi.mock('$app/env/private', () => ({
 }));
 vi.mock('$app/env/public', () => ({ PUBLIC_OIDC_AUTHORITY: 'https://idp.example' }));
 
-const { linkConfigOf, rolesOfToken } = await import('./linkAuth');
+const { isMachineToken, isSafeRemoteUrl, linkConfigOf, rolesOfToken } = await import('./linkAuth');
 
 describe('rolesOfToken', () => {
 	test('grants the link role through the role claim, as OIDC_ROLE_MAP names it', () => {
@@ -64,5 +64,26 @@ describe('linkConfigOf', () => {
 				clientSecret: 'secret'
 			}
 		});
+	});
+});
+
+describe('isMachineToken', () => {
+	test('takes a client credentials token, whose subject is the client', () => {
+		expect(isMachineToken({ sub: 'm2m-app', client_id: 'm2m-app', scope: 'chase' })).toBe(true);
+	});
+
+	test("never takes a person's token, whatever it grants", () => {
+		expect(isMachineToken({ sub: 'user-1', client_id: 'web-app', scope: 'chase' })).toBe(false);
+		expect(isMachineToken({ sub: 'user-1', scope: 'chase' })).toBe(false);
+	});
+});
+
+describe('isSafeRemoteUrl', () => {
+	test('takes https, and http only on this machine', () => {
+		expect(isSafeRemoteUrl('https://delegator.example.org')).toBe(true);
+		expect(isSafeRemoteUrl('http://localhost:5173')).toBe(true);
+		expect(isSafeRemoteUrl('http://127.0.0.1:5174')).toBe(true);
+		expect(isSafeRemoteUrl('http://delegator.example.org')).toBe(false);
+		expect(isSafeRemoteUrl('not a url')).toBe(false);
 	});
 });
