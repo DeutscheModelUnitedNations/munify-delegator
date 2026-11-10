@@ -1,3 +1,4 @@
+import { owesOwnFormalities } from '#lib/helpers/owesOwnFormalities';
 import type { AdministrativeStatus, ParticipantRow } from './types';
 import { getAgeAtConference, ofAgeAtConference } from '#lib/helpers/ageChecker';
 import type { ConferenceParticipants } from './conferenceParticipants';
@@ -151,7 +152,10 @@ function statusFields({
 	} satisfies Partial<ParticipantRow>;
 }
 
-/** An accepted participant (not a team member) whose payment or paperwork is not complete. */
+/**
+ * An accepted participant (not a team member) whose payment or paperwork is not complete; a
+ * supervisor only while they attend in person (`owesOwnFormalities`).
+ */
 function hasOpenIssue({
 	roleFields,
 	status
@@ -160,6 +164,11 @@ function hasOpenIssue({
 	status: ReturnType<typeof statusFields>;
 }): boolean {
 	if (!roleFields.accepted || roleFields.role === 'TEAM_MEMBER') return false;
+	const supervisor =
+		roleFields.role === 'SUPERVISOR'
+			? { plansOwnAttendenceAtConference: roleFields.plansOwnAttendance === true }
+			: null;
+	if (!owesOwnFormalities(supervisor)) return false;
 	return status.paymentStatus !== 'DONE' || status.postalRegistrationStatus !== 'DONE';
 }
 

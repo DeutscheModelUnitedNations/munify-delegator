@@ -26,6 +26,8 @@ export interface DashboardLinkContext {
 	membersLackCommittees?: boolean;
 	paymentStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
 	postalRegistrationStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
+	/** Whether the caller owes paperwork of their own (`owesOwnFormalities`); left out, they do. */
+	owesOwnFormalities?: boolean;
 	user?: { sub: string; email: string };
 }
 
@@ -107,7 +109,7 @@ const dashboardLinks: DashboardLink[] = [
 				conferenceId: ctx.conferenceId
 			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => ctx.postalRegistrationStatus !== 'DONE',
+		isVisible: (ctx) => ctx.owesOwnFormalities !== false && ctx.postalRegistrationStatus !== 'DONE',
 		isDisabled: (ctx) => !ctx.unlockPostals,
 		getBadge: (ctx) => (!ctx.unlockPostals ? undefined : { value: '!', type: 'warning' }),
 		isImportant: () => true

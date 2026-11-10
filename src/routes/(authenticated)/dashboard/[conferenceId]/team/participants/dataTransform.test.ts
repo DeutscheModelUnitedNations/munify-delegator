@@ -333,6 +333,31 @@ describe('transformParticipants', () => {
 		});
 	});
 
+	test('an accepted supervisor has open issues only while attending in person', () => {
+		const supervisor = (plansOwnAttendenceAtConference: boolean) =>
+			transformParticipants({
+				queryData: {
+					...empty,
+					conferenceSupervisors: [
+						{
+							id: 'supervisor-2',
+							plansOwnAttendenceAtConference,
+							school: null,
+							supervisedDelegationMembers: [],
+							supervisedSingleParticipants: [{ id: 'single-5', assignedRole: { id: 'r' } }],
+							user: user('remote')
+						}
+					],
+					participantStatuses: [status('remote')]
+				},
+				startConference: start,
+				endConference: end
+			})[0];
+
+		expect(supervisor(true).hasOpenIssue).toBe(true);
+		expect(supervisor(false).hasOpenIssue).toBe(false);
+	});
+
 	test('joins the status row and derives the postal registration status', () => {
 		const adult = user('adult', { birthday: new Date('1990-01-01') });
 		const minor = user('minor', { birthday: new Date('2015-01-01') });

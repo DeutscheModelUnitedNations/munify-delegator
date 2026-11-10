@@ -1,3 +1,5 @@
+import { owesOwnFormalities } from '#lib/helpers/owesOwnFormalities';
+
 interface Student {
 	supervisors: { id: string }[];
 }
@@ -5,7 +7,8 @@ interface Student {
 /**
  * The other supervisors of the caller's students, in the order they are first met (delegation
  * members first), so a group payment can name the ones it covers. Only the supervisors in
- * `candidates` are known by user; the caller is left out.
+ * `candidates` are known by user; the caller is left out, and so is a supervisor who does not
+ * attend in person, who owes no fee (`owesOwnFormalities`).
  */
 export function findOtherSupervisors<U extends { id: string }>({
 	me,
@@ -18,7 +21,7 @@ export function findOtherSupervisors<U extends { id: string }>({
 				supervisedSingleParticipants: Student[];
 		  }
 		| undefined;
-	candidates: { id: string; user: U }[];
+	candidates: { id: string; plansOwnAttendenceAtConference: boolean; user: U }[];
 }): U[] {
 	if (!me) return [];
 	const students = [...me.supervisedDelegationMembers, ...me.supervisedSingleParticipants];
@@ -26,6 +29,6 @@ export function findOtherSupervisors<U extends { id: string }>({
 		students.flatMap((student) => student.supervisors.map((sup) => sup.id))
 	);
 	return [...presentSupervisorIds]
-		.map((id) => candidates.find((sup) => sup.id === id)?.user)
+		.map((id) => candidates.find((sup) => sup.id === id && owesOwnFormalities(sup))?.user)
 		.filter((user): user is U => !!user && user.id !== me.user.id);
 }
