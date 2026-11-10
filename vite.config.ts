@@ -6,6 +6,7 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import { oidcMock } from 'oidc-mock/vite';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath } from 'node:url';
 import type { EnvironmentModuleNode, Plugin } from 'vite';
 
@@ -94,6 +95,12 @@ export default defineConfig({
 			buildTimeInstrumentation: false
 		}),
 		tailwindcss(),
+		// HTTPS for `vite dev` and `vite preview` (the e2e server), so the browser talks HTTP/2 to
+		// them as it does to production. Every live query holds its own server-sent event response,
+		// and over plain HTTP/1.1 a browser opens only six connections per host: a page with six of
+		// them would queue everything else. The certificate is self-signed, so a browser warns once.
+		// `DEV_HTTP=1` serves plain HTTP for tools that refuse it (an MCP client, a linked local CHASE).
+		...(process.env.VITEST || process.env.DEV_HTTP ? [] : [basicSsl()]),
 		// The local OIDC provider (oidc-mock.yaml). Only runs under `vite dev` and `vite preview`;
 		// it has to come before SvelteKit so it can answer the login page itself.
 		// a second dev server (another checkout) runs its own mock on another port

@@ -79,4 +79,6 @@ claude mcp add --transport http delegator http://localhost:5173/mcp --header "Au
 ```
 
 Set `MCP_RESOURCE=http://localhost:5173/mcp` in `.env`, and switch a conference on
-(`team/ai-access` as `dev-team-pm`). Tokens last an hour.
+(`team/ai-access` as `dev-team-pm`). Tokens last an hour. Start the dev server with `DEV_HTTP=1`
+(`DEV_HTTP=1 bun run dev`): it serves HTTPS with a self-signed certificate otherwise
+(`vite.config.ts`), which MCP clients refuse.

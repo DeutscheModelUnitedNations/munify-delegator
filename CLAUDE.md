@@ -38,6 +38,12 @@ bun run dev:server    # Start Vite dev server only
 bunx lefthook install
 ```
 
+The dev server and `vite preview` (the e2e server) serve **HTTPS** on https://localhost:5173 /
+:4173 with a self-signed certificate (`@vitejs/plugin-basic-ssl`), so the browser talks HTTP/2 as
+to production (see "Subscriptions" below); accept the browser's warning once. `DEV_HTTP=1` serves
+plain HTTP instead, for clients that refuse the certificate: an MCP client (`docs/mcp.md`) or a
+linked local chase (`docs/plans/chase-link.md`). The e2e suite follows it.
+
 ### Database Operations
 
 ```bash
@@ -370,16 +376,15 @@ bun run preview
     such a column where the reader may see it.
 
 - The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
-  instance it, `/api/graphql/stream` and the SSR remote function all share. Adding fields needs a
-  **dev server restart**: the schema builder is populated at module init.
-- **Subscriptions share one stream per tab** (graphql-sse's single connection mode, wired up in
-  `src/lib/api/client.ts`). The browser reserves a stream with `PUT /api/graphql/stream`, holds it
-  open with a `GET`, and starts each subscription with a short `POST` whose results arrive on that
-  stream. Never go back to one response per subscription (urql's `fetchSubscriptions`): over
-  HTTP/1.1 a browser allows six connections per host, and a page with six live queries would hold
-  them all, queueing every later mutation, subscription and lazily imported chunk forever. The
-  reservation lives in the process's memory, so several app instances need sticky sessions for
-  `/api/graphql/stream`; the events themselves still fan out through Redis.
+  instance it and the SSR remote function share. Adding fields needs a **dev server restart**: the
+  schema builder is populated at module init.
+- **Subscriptions use yoga's built-in server-sent events** on `/api/graphql` (urql's
+  `fetchSubscriptions` in `src/lib/api/client.ts`): one streaming response per subscription, no
+  plugin, no extra route, no sticky sessions; the events fan out through Redis. Each subscription
+  holds a connection, and over HTTP/1.1 a browser allows six per host, so a page with six live
+  queries would queue every later request there. Production is served over HTTP/2, which
+  multiplexes them; keep it that way. Dev and e2e get HTTP/2 from the HTTPS dev server (above);
+  under `DEV_HTTP=1` mind the six.
 
 #### 2. Frontend Data Fetching (generated rumble client)
 
@@ -1678,22 +1683,15 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
   such code.
 - **rumble stays on 0.30, graphql-yoga on 5.** rumble 0.31 needs yoga 6, and on yoga 6 the live
-  updates over the SSE stream (`/api/graphql/stream`) stop arriving: the dashboard never noticed a
-  new registration, and the e2e flows waiting on it timed out. CHASE subscribes over WebSocket and
-  runs 0.31 fine. The yoga plugins stay on their yoga 5 lines (`@graphql-yoga/plugin-graphql-sse` 3,
-  `@graphql-yoga/redis-event-target` 3). Move only with the e2e suite green.
+  updates over the former single-connection SSE stream (`@graphql-yoga/plugin-graphql-sse`) stopped
+  arriving: the dashboard never noticed a new registration, and the e2e flows waiting on it timed
+  out. Subscriptions now use yoga's built-in SSE instead, so retry the move on that; the redis event
+  target stays on its yoga 5 line (`@graphql-yoga/redis-event-target` 3) until then. CHASE
+  subscribes over WebSocket and runs 0.31 fine. Move only with the e2e suite green.
 - **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
-
-- **graphql-sse is patched** (`lib/handler.*`, `lib/client.*`, the compiled files both bundles
-  inline) for two leaks upstream has not released fixes for. The handler disposes a stream
-  reserved with `PUT` that no `GET` connects to within `reservationTimeout` (30 s; issue #123):
-  it kept its subscriptions and their queued results forever, ~330 KB each. The client aborts its
-  event stream when an operation's request fails instead of opening a second one beside it (issue
-  #135, PR #136 ported). `src/api/sseReservations.test.ts` and `src/lib/api/sseClient.test.ts`
-  fail without the patch; drop it once a release carries both fixes.
 
 ## Development Workflow
 

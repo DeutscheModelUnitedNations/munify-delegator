@@ -17,8 +17,9 @@ const DATABASE_URL =
 	process.env.DOCS_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/delegator_docs';
 const BASE_URL = 'http://localhost:5173';
 const filter = process.argv[2];
-// Everything below must hit the docs database, never the dev database from .env
-const env = { ...process.env, DATABASE_URL };
+// Everything below must hit the docs database, never the dev database from .env. Plain HTTP
+// (`DEV_HTTP`, vite.config.ts): the capture kit's requests would refuse the dev certificate.
+const env = { ...process.env, DATABASE_URL, DEV_HTTP: '1' };
 const { capture } = await import('./capture');
 
 async function ensureDatabase() {

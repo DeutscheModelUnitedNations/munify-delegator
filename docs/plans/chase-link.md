@@ -63,8 +63,8 @@ stored about the link but its state: it is configuration, the same variables on 
   through the role claim (`OIDC_ROLE_CLAIM`, delegator's `OIDC_ROLE_MAP`) or as a scope. The
   context then holds the role like any other: `ctx.hasRole('chase')` in delegator,
   `ctx.hasRole('delegator')` in chase, the way `admin` is checked. A session never holds it. This
-  works on `/api/graphql`, delegator's `/api/graphql/stream`, and chase's WebSocket, which checks
-  the token from its connection parameters once, when it connects.
+  works on `/api/graphql` (subscriptions included, over yoga's built-in SSE), and on chase's
+  WebSocket, which checks the token from its connection parameters once, when it connects.
 - Abilities: one read rule per table the other side mirrors (`linkedChase(...)` in delegator's
   `authHelper/rules.ts`, `linkedDelegator(...)` in chase), each with only the columns mirrored. It
   never matches a user rule, so masks and participant rules are unaffected.
@@ -93,8 +93,8 @@ stored about the link but its state: it is configuration, the same variables on 
   drops the connection, and the reconnect catches up.
 - It reconnects with backoff. The state (`lastEventAt`, `lastReconcileAt`, `lastError`) is
   written to `instanceLink` and shown on both status cards.
-- Clients: delegator → chase over `graphql-ws`; chase → delegator over `graphql-sse` (distinct
-  connections mode, since the server is not a browser tab).
+- Clients: delegator → chase over `graphql-ws`; chase → delegator over `graphql-sse` in distinct
+  connections mode on `/api/graphql`, which yoga serves natively.
 
 ### Sync, delegator → chase (chase's worker pulls)
 
@@ -345,7 +345,8 @@ Chase runs next to delegator's dev setup on its own ports, signing in at delegat
 (8090), so both share one provider and people's ids: `bun run dev:linked` in chase starts its
 Postgres on 15433 (`linked.docker-compose.yml`) and the app on http://localhost:5174, with the
 `LINK_*` variables pointing at delegator; `bun run db:migrate:linked` migrates that database.
-Delegator runs as usual (`bun run dev`, port 5173) with these in its `.env`:
+Delegator runs on plain HTTP (`DEV_HTTP=1 bun run dev`, port 5173; chase's link worker would refuse
+the self-signed certificate of its default HTTPS dev server) with these in its `.env`:
 
 ```
 LINK_REMOTE_URL=http://localhost:5174
