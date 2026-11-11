@@ -52,6 +52,10 @@ export const canPlanSeats = (access: TeamAccess) =>
 export const canManageTableViews = (access: TeamAccess) =>
 	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });
 
+/** Changing who takes part in what way (`manageParticipants`) */
+export const canManageParticipants = (access: TeamAccess) =>
+	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });
+
 /** Switching the automatic mails and writing their texts */
 export const canManageEmails = (access: TeamAccess) =>
 	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });

@@ -105,7 +105,7 @@ type Leave = { delegationId: string; delegationRemoved: boolean; successorId?: s
  * hands the role to another member, and a delegation nobody is left in is deleted. The role
  * applications the smaller delegation can no longer seat are dropped.
  */
-async function leaveDelegation({ tx, memberId }: { tx: Transaction; memberId: string }) {
+export async function leaveDelegation({ tx, memberId }: { tx: Transaction; memberId: string }) {
 	const [deleted] = await tx
 		.delete(schema.delegationMember)
 		.where(whereRows({ table: schema.delegationMember, filter: { id: memberId } }))
@@ -141,7 +141,7 @@ async function leaveDelegation({ tx, memberId }: { tx: Transaction; memberId: st
 }
 
 /** Announces a committed `leaveDelegation`. */
-function announceLeave(leave: Leave) {
+export function announceLeave(leave: Leave) {
 	delegationMemberPubsub.removed();
 	if (leave.delegationRemoved) {
 		delegationPubsub.removed();

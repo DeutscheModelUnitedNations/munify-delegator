@@ -37,6 +37,7 @@ import { seedAttendance } from './attendance';
 import { seedEmailPace } from './emailPace';
 import { seedMcp } from './mcp';
 import { seedLateSupervisor } from './lateSupervisor';
+import { seedMakeSupervisor } from './makeSupervisor';
 import { seedSchools } from './schools';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
@@ -1017,6 +1018,7 @@ export default async function seed() {
 	await seedAttendance(db);
 	await seedEmailPace(db);
 	await seedLateSupervisor(db);
+	await seedMakeSupervisor(db);
 	await seedMcp(db);
 	await seedSchools(db, { otherConferenceId: E2E_PREP_CONFERENCE_ID });
 

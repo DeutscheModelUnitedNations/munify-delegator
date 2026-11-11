@@ -2972,6 +2972,11 @@ type Mutation {
   issueNsaCards(conferenceId: ID!, conferenceParticipantIds: [ID!]): [NsaCard!]!
 
   """
+  Participant care turning a delegate into a supervisor, for someone too old to be a delegate: they leave their delegation (a new head delegate, an empty delegation deleted), keep their part in the conference, are no longer supervised, and supervise everyone left in the delegation. Attending in person.
+  """
+  makeDelegationMemberSupervisor(delegationMemberId: ID!): Conferencesupervisor!
+
+  """
   Folds duplicates into one school: everything naming one of `sourceIds` names `targetId` afterwards, across every conference, and the sources are deleted. NOT_FOUND unless the caller may update every one of them.
   """
   mergeSchools(
@@ -4336,6 +4341,11 @@ enum ProfileField {
 }
 
 type Query {
+  """
+  Whether a person's age on the first conference day fits the conference's range for taking part as `role`, for participant care (`myAgeNotice` for one's own); null when it does or no birthday is known.
+  """
+  ageNotice(conferenceId: ID!, role: AgeRole!, userId: ID!): AgeNotice
+
   """Get a single assignmentReview by ID"""
   assignmentReview(id: ID!): Assignmentreview!
 

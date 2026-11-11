@@ -5,6 +5,7 @@ import {
 	connectParticipantToSupervisor,
 	disconnectParticipantFromSupervisor,
 	findSupervisorByConnectionCode,
+	makeDelegationMemberSupervisor,
 	previewSupervisorByCode,
 	registerSupervisor,
 	updateConferenceSupervisor
@@ -14,6 +15,7 @@ import {
 	assertCanConnectToConferenceSupervisor,
 	assertCanCreateConferenceSupervisor,
 	assertCanDisconnectFromConferenceSupervisor,
+	assertCanMakeDelegationMemberSupervisor,
 	assertCanPreviewConferenceSupervisor,
 	assertCanRotateSupervisorConnectionCode,
 	registerConferenceSupervisorAbilities
@@ -105,6 +107,23 @@ schemaBuilder.mutationFields((t) => ({
 				schoolName: args.schoolName
 			});
 
+			return db.query.conferenceSupervisor
+				.findFirst(query(await readableSupervisor({ ctx, id: createdId })))
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	makeDelegationMemberSupervisor: t.drizzleField({
+		description:
+			'Participant care turning a delegate into a supervisor, for someone too old to be a delegate: they leave their delegation (a new head delegate, an empty delegation deleted), keep their part in the conference, are no longer supervised, and supervise everyone left in the delegation. Attending in person.',
+		type: ConferenceSupervisorRef,
+		args: { delegationMemberId: t.arg.id({ required: true }) },
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanMakeDelegationMemberSupervisor({
+				ctx,
+				delegationMemberId: args.delegationMemberId
+			});
+			const createdId = await makeDelegationMemberSupervisor(args.delegationMemberId);
 			return db.query.conferenceSupervisor
 				.findFirst(query(await readableSupervisor({ ctx, id: createdId })))
 				.then(assertFindFirstExists);

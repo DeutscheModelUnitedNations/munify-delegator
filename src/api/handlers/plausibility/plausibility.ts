@@ -165,6 +165,26 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
+	ageNotice: t.field({
+		description:
+			"Whether a person's age on the first conference day fits the conference's range for taking part as `role`, for participant care (`myAgeNotice` for one's own); null when it does or no birthday is known.",
+		type: AgeNotice,
+		nullable: true,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			userId: t.arg.id({ required: true }),
+			role: t.arg({ type: AgeRoleEnum, required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanReadPlausibility({ ctx, conferenceId: args.conferenceId });
+			return ageNoticeFor({
+				userId: args.userId,
+				conferenceId: args.conferenceId,
+				role: args.role
+			});
+		}
+	}),
+
 	myAgeNotice: t.field({
 		description:
 			"Whether the caller's age on the first conference day fits the conference's range for taking part as `role`; null when it does or no birthday is known. Registering is not refused by age, but a participant's application cannot be sent with an age outside the range (`applicationBlockers`).",

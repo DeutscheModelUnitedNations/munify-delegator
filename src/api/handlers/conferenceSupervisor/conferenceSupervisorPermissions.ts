@@ -6,7 +6,8 @@ import {
 	idIn,
 	linkedChase,
 	RELEASED_MIRRORED_CONFERENCE,
-	systemAdmin
+	systemAdmin,
+	teamConference
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
@@ -218,4 +219,28 @@ export async function assertCanPreviewConferenceSupervisor({
 		throw apiError({ code: 'FORBIDDEN', message: m.notRegisteredForConference() });
 	}
 	return { callerId };
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the delegation member is in a conference where the caller holds
+ * `manageParticipants` (project management and participant care), who turn a delegate into a
+ * supervisor of their delegation.
+ */
+export async function assertCanMakeDelegationMemberSupervisor({
+	ctx,
+	delegationMemberId
+}: {
+	ctx: ApiContext;
+	delegationMemberId: string;
+}) {
+	const member = await db.query.delegationMember.findFirst({
+		where: {
+			id: delegationMemberId,
+			conference: await teamConference({ ctx, permission: 'manageParticipants' })
+		},
+		columns: { id: true }
+	});
+	if (!member) {
+		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
+	}
 }

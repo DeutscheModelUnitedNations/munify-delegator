@@ -7,9 +7,9 @@
 	import Flag from '#lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from '#lib/components/registrationAdmin/CommitteeAssignmentModal.svelte';
 	import HeadDelegateModal from '#lib/components/registrationAdmin/HeadDelegateModal.svelte';
-	import PersonName from '../PersonName.svelte';
-	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import NoAssignmentNotice from '../NoAssignmentNotice.svelte';
+	import MakeSupervisorNotice from './MakeSupervisorNotice.svelte';
+	import DelegationMembersTable from './DelegationMembersTable.svelte';
 
 	/** The delegation's role, the person's committee in it, and who else is in it. */
 	interface Props {
@@ -58,6 +58,10 @@
 
 <section class="flex flex-col gap-4">
 	<h3 class="text-lg font-bold">{m.delegation()} {codenmz(delegationId)}</h3>
+
+	{#if currentMember}
+		<MakeSupervisorNotice {conferenceId} member={currentMember} />
+	{/if}
 
 	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-center gap-3">
@@ -108,35 +112,7 @@
 		</button>
 	</div>
 
-	<div>
-		<h3 class="mb-2 text-lg font-bold">{m.delegationMembers()}</h3>
-		<div class="overflow-x-auto">
-			<table class="table-sm table">
-				<thead>
-					<tr>
-						<th>{m.name()}</th>
-						<th>{m.committee()}</th>
-						<th><span class="sr-only">{m.actions()}</span></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each members as member (member.id)}
-						<tr class={member.user.id === userId ? 'bg-base-300/50 font-bold' : ''}>
-							<td>
-								<PersonName
-									givenName={member.user.givenName}
-									familyName={member.user.familyName}
-									isHeadDelegate={member.isHeadDelegate}
-								/>
-							</td>
-							<td>{member.assignedCommittee?.abbreviation ?? 'N/A'}</td>
-							<td><OpenUserCardButton user={member.user} /></td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	</div>
+	<DelegationMembersTable {members} {userId} />
 </section>
 
 <HeadDelegateModal bind:open={headDelegateModalOpen} {delegationId} {members} />

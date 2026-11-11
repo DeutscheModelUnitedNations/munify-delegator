@@ -24,6 +24,11 @@ import { m } from '#lib/paraglide/messages';
 import { apiError, codeNotFound } from '#api/services/errors';
 import { whereRows } from '#api/db/whereRows';
 import { supervisorPreview } from './supervisorPreview';
+import {
+	announceLeave,
+	leaveDelegation
+} from '#api/handlers/delegationMember/delegationMemberService';
+import { assertFindFirstExists } from '@m1212e/rumble';
 
 /**
  * A connection code no supervisor holds yet, in any conference: the codes are unique across
@@ -278,4 +283,64 @@ export async function updateConferenceSupervisor({
 		});
 	}
 	conferenceSupervisorPubsub.updated(id);
+}
+
+/**
+ * Turns a delegate into a supervisor of the delegation they leave, in one transaction: they leave
+ * it as `leaveDelegation` does, keep their participant row (school, payment, documents), are no
+ * longer anybody's student, and supervise everyone left in it. For someone too old to be a delegate.
+ * Returns the new supervisor's id.
+ */
+export async function makeDelegationMemberSupervisor(delegationMemberId: string) {
+	const connectionCode = await unusedConnectionCode();
+	const result = await db.transaction(async (tx) => {
+		const member = await tx.query.delegationMember
+			.findFirst({
+				where: { id: delegationMemberId },
+				columns: { conferenceParticipantId: true, delegationId: true }
+			})
+			.then(assertFindFirstExists);
+		const coMembers = await tx.query.delegationMember.findMany({
+			where: { delegationId: member.delegationId, id: { ne: delegationMemberId } },
+			columns: { id: true, conferenceParticipantId: true }
+		});
+		const leave = await leaveDelegation({ tx, memberId: delegationMemberId });
+		// a supervisor is nobody's student
+		const formerSupervisors = await tx
+			.delete(schema.supervision)
+			.where(
+				whereRows({ table: schema.supervision, filter: { b: member.conferenceParticipantId } })
+			)
+			.returning({ id: schema.supervision.a });
+		const supervisor = await tx
+			.insert(schema.conferenceSupervisor)
+			.values({
+				conferenceParticipantId: member.conferenceParticipantId,
+				plansOwnAttendenceAtConference: true,
+				connectionCode
+			})
+			.returning({ id: schema.conferenceSupervisor.id })
+			.then(assertFirstEntryExists);
+		if (coMembers.length > 0) {
+			await tx
+				.insert(schema.supervision)
+				.values(coMembers.map((co) => ({ a: supervisor.id, b: co.conferenceParticipantId })))
+				.onConflictDoNothing();
+		}
+		return { leave, member, coMembers, formerSupervisors, supervisorId: supervisor.id };
+	});
+
+	announceLeave(result.leave);
+	conferenceSupervisorPubsub.created();
+	if (result.formerSupervisors.length > 0) {
+		conferenceSupervisorPubsub.updated(result.formerSupervisors.map((row) => row.id));
+	}
+	conferenceParticipantPubsub.updated([
+		result.member.conferenceParticipantId,
+		...result.coMembers.map((co) => co.conferenceParticipantId)
+	]);
+	if (result.coMembers.length > 0) {
+		delegationMemberPubsub.updated(result.coMembers.map((co) => co.id));
+	}
+	return result.supervisorId;
 }

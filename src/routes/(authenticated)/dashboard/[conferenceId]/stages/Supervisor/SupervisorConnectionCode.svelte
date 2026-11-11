@@ -98,7 +98,6 @@
 
 	<EntryCode
 		entryCode={supervisor.connectionCode}
-		referralLink={connectionLink}
 		userHasRotationPermission={true}
 		rotationFn={rotate}
 	/>

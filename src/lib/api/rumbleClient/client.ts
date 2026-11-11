@@ -2600,6 +2600,9 @@ export type Mutation = {
     conferenceId: ID,
     conferenceParticipantIds?: ID[] | null | undefined
   }) => NsaCard[],
+  makeDelegationMemberSupervisor: (p: {
+    delegationMemberId: ID
+  }) => Conferencesupervisor,
   mergeSchools: (p: {
     name?: String | null | undefined,
     sourceIds: ID[],
@@ -3557,6 +3560,11 @@ export type PreviewConferenceSupervisor = {
 export type ProfileField = "apartment" | "birthday" | "city" | "country" | "emergencyContacts" | "family_name" | "foodPreference" | "gender" | "given_name" | "phone" | "pronouns" | "region" | "street" | "wantsJoinTeamInformation" | "wantsToReceiveGeneralInformation" | "zip";
 		
 export type Query = {
+  ageNotice: (p: {
+    conferenceId: ID,
+    role: AgeRole,
+    userId: ID
+  }) => AgeNotice | null,
   assignmentReview: (p: {
     id: ID
   }) => Assignmentreview,
