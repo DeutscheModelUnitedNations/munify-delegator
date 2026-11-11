@@ -39,6 +39,11 @@
 		notes: true
 	});
 
+	// participant care reads every school, but changes only those of its own conferences' people
+	const editable = Boolean(
+		await client.query.canUpdateSchool({ __args: { id: untrack(() => schoolId) } })
+	);
+
 	// Field by field: the generated client hands back a subscribeable proxy.
 	const initialValues: SchoolFormValues = {
 		name: stored.name,
@@ -77,21 +82,26 @@
 	const address = $derived(addressRules($formData.country));
 </script>
 
-<Form {form}>
-	<FormSection title={m.school()} icon="graduation-cap">
-		<FormTextInput {form} name="name" label={m.name()} />
-		<FormCheckbox {form} name="isForeignSchool" label={m.schoolIsForeign()} />
-		<p class="text-base-content/60 text-sm">{m.schoolIsForeignHint()}</p>
-	</FormSection>
-	<AddressSection {form} fields={ADDRESS_FIELDS} rules={address} />
-	<FormSection title={m.schoolContact()} icon="address-book" description={m.schoolContactHint()}>
-		<FormTextInput {form} name="contactName" label={m.name()} />
-		<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-			<FormTextInput {form} name="contactEmail" type="email" label={m.email()} />
-			<FormTextInput {form} name="contactPhone" type="tel" label={m.phone()} />
-		</div>
-	</FormSection>
-	<FormSection title={m.schoolNotes()} icon="note" description={m.schoolNotesHint()}>
-		<FormTextArea {form} name="notes" label={m.schoolNotes()} />
-	</FormSection>
+<Form {form} showSubmitButton={editable}>
+	{#if !editable}
+		<p class="alert alert-info text-sm">{m.schoolReadOnlyHint()}</p>
+	{/if}
+	<fieldset class="contents" disabled={!editable}>
+		<FormSection title={m.school()} icon="graduation-cap">
+			<FormTextInput {form} name="name" label={m.name()} />
+			<FormCheckbox {form} name="isForeignSchool" label={m.schoolIsForeign()} />
+			<p class="text-base-content/60 text-sm">{m.schoolIsForeignHint()}</p>
+		</FormSection>
+		<AddressSection {form} fields={ADDRESS_FIELDS} rules={address} />
+		<FormSection title={m.schoolContact()} icon="address-book" description={m.schoolContactHint()}>
+			<FormTextInput {form} name="contactName" label={m.name()} />
+			<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+				<FormTextInput {form} name="contactEmail" type="email" label={m.email()} />
+				<FormTextInput {form} name="contactPhone" type="tel" label={m.phone()} />
+			</div>
+		</FormSection>
+		<FormSection title={m.schoolNotes()} icon="note" description={m.schoolNotesHint()}>
+			<FormTextArea {form} name="notes" label={m.schoolNotes()} />
+		</FormSection>
+	</fieldset>
 </Form>

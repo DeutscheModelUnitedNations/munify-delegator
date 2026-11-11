@@ -305,7 +305,7 @@ describe('searchConference', () => {
 			expect(schools).toEqual([]);
 		});
 
-		test("are searched by rumble among the conference's people and waiting list", async () => {
+		test('are searched by rumble among every school, not only those of the conference', async () => {
 			mocks.schools.mockResolvedValueOnce([
 				{ id: 's1', name: 'Goethe-Gymnasium', city: 'Berlin' },
 				{ id: 's2', name: 'Gymnasium Nord', city: null }
@@ -319,7 +319,6 @@ describe('searchConference', () => {
 
 			expect(argsOf(mocks.schools)).toEqual({
 				search: 'gym',
-				where: { OR: [{ participants: inConference }, { waitingListEntries: inConference }] },
 				limit: 10
 			});
 			expect(schools).toEqual([

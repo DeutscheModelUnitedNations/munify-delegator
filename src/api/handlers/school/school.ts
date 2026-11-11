@@ -7,6 +7,7 @@ import { m } from '#lib/paraglide/messages';
 import {
 	assertCanReadSchoolMetrics,
 	assertCanUpdateSchools,
+	canUpdateSchool,
 	registerSchoolAbilities
 } from './schoolPermissions';
 import {
@@ -71,14 +72,22 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
+	canUpdateSchool: t.field({
+		description:
+			'Whether the caller may change the school: participant care of a conference where someone names it as their own reads every school, but changes only those.',
+		type: 'Boolean',
+		args: { id: t.arg.id({ required: true }) },
+		resolve: (_root, { id }, ctx) => canUpdateSchool({ ctx, id })
+	}),
+
 	schoolMetrics: t.field({
 		description:
-			'Per conference, how many people from the school registered, applied, got a seat and came: in the conferences where the caller is participant care (every one for a system admin). NOT_FOUND unless the caller may update the school.',
+			'Per conference, how many people from the school registered, applied, got a seat and came, in every conference. NOT_FOUND unless the caller is participant care of any conference.',
 		type: [SchoolMetrics],
 		args: { schoolId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const { conferenceIds } = await assertCanReadSchoolMetrics({ ctx, schoolId: args.schoolId });
-			return schoolMetrics({ schoolId: args.schoolId, conferenceIds });
+			await assertCanReadSchoolMetrics(ctx);
+			return schoolMetrics(args.schoolId);
 		}
 	})
 }));

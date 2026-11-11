@@ -5,6 +5,8 @@ import {
 	guaranteedSeatsAbroad,
 	guaranteesAround,
 	guaranteesOverLimit,
+	guaranteeShare,
+	guaranteeShareAround,
 	schoolRuleBreaches,
 	seatedPeople,
 	type CollectiveGroup
@@ -187,6 +189,38 @@ describe('guaranteed seats abroad', () => {
 			})
 		).toEqual([{ school: rom, seats: 0 }]);
 	});
+
+	test('sums the Auslandsschulen against their share of all seats, rounded down', () => {
+		const counts = guaranteedSeatsAbroad(required);
+		expect(guaranteeShare({ counts, capacity: 22, percent: 20 })).toEqual({
+			seats: 4,
+			allowed: 4,
+			capacity: 22,
+			percent: 20
+		});
+		// no limit, or no seats planned yet: nothing to measure against
+		expect(guaranteeShare({ counts, capacity: 22, percent: null })).toBeNull();
+		expect(guaranteeShare({ counts, capacity: 0, percent: 20 })).toBeNull();
+	});
+
+	test('shows the share around an application with people of an Auslandsschule only', () => {
+		const share = { capacity: 20, percent: 20 };
+		const d3 = delegation('d3', [madrid, kiel]);
+		expect(
+			guaranteeShareAround({ applications: required, application: d3, required: true, ...share })
+		).toMatchObject({ seats: 5, allowed: 4 });
+		expect(
+			guaranteeShareAround({ applications: required, application: d3, required: false, ...share })
+		).toMatchObject({ seats: 4 });
+		expect(
+			guaranteeShareAround({
+				applications: required,
+				application: singleApplication('s3', kiel),
+				required: true,
+				...share
+			})
+		).toBeNull();
+	});
 });
 
 test('schoolRuleBreaches checks both rules against the plan and the sighting', () => {
@@ -204,14 +238,27 @@ test('schoolRuleBreaches checks both rules against the plan and the sighting', (
 		groups: [{ memberIds: ['m1'], singleParticipantId: null, target: { roleId: 'deu' } }],
 		singles: []
 	};
-	const breaches = schoolRuleBreaches({ groups, reviews, guaranteeLimit: 1, plan });
+	const limits = { sharePercent: 10, capacity: 10 };
+	const breaches = schoolRuleBreaches({ groups, reviews, guaranteeLimit: 1, ...limits, plan });
 	expect(breaches.splitGroups.map((problem) => [problem.seated, problem.disqualified])).toEqual([
 		[1, 1]
 	]);
 	expect(breaches.overGuarantee).toEqual([{ school: madrid, seats: 2 }]);
-	// switched off (the API then answers no groups), neither rule warns
-	expect(schoolRuleBreaches({ groups: [], reviews, guaranteeLimit: null, plan })).toEqual({
-		splitGroups: [],
-		overGuarantee: []
-	});
+	expect(breaches.overShare).toEqual({ seats: 2, allowed: 1, capacity: 10, percent: 10 });
+	// within the share: no warning about it
+	expect(
+		schoolRuleBreaches({ groups, reviews, guaranteeLimit: 1, sharePercent: 20, capacity: 10, plan })
+			.overShare
+	).toBeNull();
+	// switched off (the API then answers no groups), no rule warns
+	expect(
+		schoolRuleBreaches({
+			groups: [],
+			reviews,
+			guaranteeLimit: null,
+			sharePercent: null,
+			capacity: 10,
+			plan
+		})
+	).toEqual({ splitGroups: [], overGuarantee: [], overShare: null });
 });

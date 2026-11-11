@@ -9,7 +9,9 @@ import { targetKey, type AssignmentGroup } from '#lib/assignment/state';
  *   none do; a bigger group is treated like everyone else.
  * - **Guaranteed seats abroad.** Of one Auslandsschule (`school.isForeignSchool`), at most
  *   `conference.maxGuaranteedSeatsPerForeignSchool` people may be in applications marked required
- *   (`assignmentReview.required`); beyond that they are regular applicants.
+ *   (`assignmentReview.required`); beyond that they are regular applicants. All Auslandsschulen
+ *   together may be given at most `conference.maxForeignGuaranteedSeatsPercent` percent of the
+ *   conference's seats that way.
  *
  * Pure: the board, the sighting and the summary all check through these.
  */
@@ -192,6 +194,78 @@ export function guaranteesOverLimit({
 	return limit === null ? [] : counts.filter((count) => count.seats > limit);
 }
 
+/** The guaranteed seats of all Auslandsschulen together, against their share of the seats. */
+export interface GuaranteeShare {
+	seats: number;
+	/** How many the share allows: `percent` of `capacity`, rounded down */
+	allowed: number;
+	capacity: number;
+	percent: number;
+}
+
+/**
+ * The guaranteed seats all Auslandsschulen take together, against `percent` of the conference's
+ * `capacity` (every seat of every role); none without a limit or while the conference has no seats.
+ */
+export function guaranteeShare({
+	counts,
+	capacity,
+	percent
+}: {
+	counts: readonly GuaranteedSeatCount[];
+	capacity: number;
+	percent: number | null;
+}): GuaranteeShare | null {
+	if (percent === null || capacity <= 0) return null;
+	return {
+		seats: counts.reduce((total, count) => total + count.seats, 0),
+		allowed: Math.floor((capacity * percent) / 100),
+		capacity,
+		percent
+	};
+}
+
+/** The applications marked required, with `application` in or out of them as `required` says. */
+function requiredAround({
+	applications,
+	application,
+	required
+}: {
+	applications: readonly GuaranteedApplication[];
+	application: GuaranteedApplication;
+	required: boolean;
+}) {
+	const id = applicationId(application);
+	const others = applications.filter((other) => applicationId(other) !== id);
+	return required ? [...others, application] : others;
+}
+
+/**
+ * The guaranteed seats of all Auslandsschulen together around an application (see
+ * `guaranteesAround`), for its card in the sighting; none for an application without people of
+ * an Auslandsschule, or without a limit.
+ */
+export function guaranteeShareAround({
+	applications,
+	application,
+	required,
+	capacity,
+	percent
+}: {
+	applications: readonly GuaranteedApplication[];
+	application: GuaranteedApplication;
+	required: boolean;
+	capacity: number;
+	percent: number | null;
+}) {
+	if (!schoolsOfApplication(application).some((school) => school.isForeignSchool)) return null;
+	return guaranteeShare({
+		counts: guaranteedSeatsAbroad(requiredAround({ applications, application, required })),
+		capacity,
+		percent
+	});
+}
+
 /**
  * The guaranteed seats of the Auslandsschulen an application's people come from, as they stand
  * with the application required or not (`required`), whatever the stored reviews still say about
@@ -206,9 +280,7 @@ export function guaranteesAround({
 	application: GuaranteedApplication;
 	required: boolean;
 }): GuaranteedSeatCount[] {
-	const id = applicationId(application);
-	const others = applications.filter((other) => applicationId(other) !== id);
-	const counts = guaranteedSeatsAbroad(required ? [...others, application] : others);
+	const counts = guaranteedSeatsAbroad(requiredAround({ applications, application, required }));
 	const own = new Map(
 		schoolsOfApplication(application)
 			.filter((school) => school.isForeignSchool)
@@ -227,19 +299,26 @@ export interface RuleReview extends GuaranteedApplication {
 
 /**
  * Where the plan breaks the school rules: the groups decided together it splits (counting the
- * sighting's exclusions), and the Auslandsschulen past the limit of guaranteed seats.
+ * sighting's exclusions), the Auslandsschulen past the limit of guaranteed seats, and all of them
+ * together past their share of the seats (`overShare`, null while within it).
  */
 export function schoolRuleBreaches({
 	groups,
 	reviews,
 	guaranteeLimit,
+	sharePercent,
+	capacity,
 	plan
 }: {
 	groups: readonly CollectiveGroup[];
 	reviews: readonly RuleReview[];
 	guaranteeLimit: number | null;
+	sharePercent: number | null;
+	capacity: number;
 	plan: PlannedSeats;
 }) {
+	const counts = guaranteedSeatsAbroad(reviews.filter((review) => review.required));
+	const share = guaranteeShare({ counts, capacity, percent: sharePercent });
 	const excluded = reviews.filter((review) => review.disqualified);
 	const disqualified = {
 		delegationIds: new Set(excluded.flatMap((review) => review.delegationId ?? [])),
@@ -251,9 +330,7 @@ export function schoolRuleBreaches({
 			state: plan,
 			disqualified
 		}),
-		overGuarantee: guaranteesOverLimit({
-			counts: guaranteedSeatsAbroad(reviews.filter((review) => review.required)),
-			limit: guaranteeLimit
-		})
+		overGuarantee: guaranteesOverLimit({ counts, limit: guaranteeLimit }),
+		overShare: share && share.seats > share.allowed ? share : null
 	};
 }

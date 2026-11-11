@@ -56,6 +56,8 @@ export const conferenceSettingsFormSchema = z
 		maxCollectiveGroupSize: z.number().int().min(1).nullish(),
 		/** Guaranteed seats per Auslandsschule before the assignment warns; empty for no limit. */
 		maxGuaranteedSeatsPerForeignSchool: z.number().int().min(0).nullish(),
+		/** Which share of all seats the Auslandsschulen together may be guaranteed; empty for no limit. */
+		maxForeignGuaranteedSeatsPercent: z.number().int().min(0).max(100).nullish(),
 		/** The age range on the first conference day; empty switches a limit off. */
 		participantMinAge: ageLimitSchema(),
 		participantMaxAge: ageLimitSchema(),
@@ -171,6 +173,7 @@ export type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;
 export function limitArgs({
 	maxCollectiveGroupSize,
 	maxGuaranteedSeatsPerForeignSchool,
+	maxForeignGuaranteedSeatsPercent,
 	participantMinAge,
 	participantMaxAge,
 	supervisorMinAge
@@ -178,6 +181,7 @@ export function limitArgs({
 	ConferenceSettings,
 	| 'maxCollectiveGroupSize'
 	| 'maxGuaranteedSeatsPerForeignSchool'
+	| 'maxForeignGuaranteedSeatsPercent'
 	| 'participantMinAge'
 	| 'participantMaxAge'
 	| 'supervisorMinAge'
@@ -185,6 +189,7 @@ export function limitArgs({
 	return {
 		maxCollectiveGroupSize: maxCollectiveGroupSize ?? null,
 		maxGuaranteedSeatsPerForeignSchool: maxGuaranteedSeatsPerForeignSchool ?? null,
+		maxForeignGuaranteedSeatsPercent: maxForeignGuaranteedSeatsPercent ?? null,
 		participantMinAge: participantMinAge ?? null,
 		participantMaxAge: participantMaxAge ?? null,
 		supervisorMinAge: supervisorMinAge ?? null

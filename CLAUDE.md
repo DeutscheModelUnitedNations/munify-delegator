@@ -985,12 +985,14 @@ bun run preview
   `distinctSchoolNames` (`#lib/helpers/delegationSchools.ts`), most common first.
 - **Visibility:** everybody reads a school's name and place (applicants pick from
   `searchSchools`); address, contact and the team's `notes` are masked except for participant
-  care and project management of a conference where someone has it as their own (or waits with
-  it), who also edit it (`updateSchool`) and merge duplicates (`mergeSchools`, which repoints the
-  participant rows and waiting list entries of all conferences and deletes the sources).
-  The team's schools page (the `schools` table of the table engine, see "Data tables") and
+  care and project management of any conference, who read every school in full, and
   `schoolMetrics` (per conference: registered, applied, seated, attended, from the waiting list)
-  are participant care's.
+  across every conference: how long a school has been with us is the point. Only those of a
+  conference where someone has it as their own (or waits with it) edit it (`updateSchool`,
+  `canUpdateSchool` for the page) and merge duplicates (`mergeSchools`, which repoints the
+  participant rows and waiting list entries of all conferences and deletes the sources).
+  The team's schools page (the `schools` table of the table engine, see "Data tables") and the
+  command palette list every school; only the people list on a school's page is the conference's.
 - **School rules** (`team/assignment/schoolRules.ts`, pure; they only warn, never block):
   - **Decided together:** the applied students of one supervisor from one school are a group
     (the `collectiveGroups` query, `#api/handlers/collectiveGroup/`, worked out on the server so
@@ -1006,7 +1008,9 @@ bun run preview
     page) marks an Auslandsschule. Its people in applications marked required count against
     `conference.maxGuaranteedSeatsPerForeignSchool` (default 12, null for none), each for their
     own school (`guaranteedSeatsAbroad`); the sighting card shows the count as it marks, the board
-    and summary warn past it.
+    and summary warn past it. All Auslandsschulen together count against
+    `conference.maxForeignGuaranteedSeatsPercent` (default 20, null for none) of the conference's
+    seats (`conferenceCapacity`, every role's; `guaranteeShare`), warned about the same way.
   - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
     and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
     statistics (`statistics_schools`, delegation members and single participants per school) count

@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import type { CollectiveGroupProblem, GuaranteedSeatCount } from './schoolRules';
-	import {
-		guaranteeText,
-		splitGroupText,
-		withoutSeatText,
-		type SupervisorNames
-	} from './schoolRuleTexts';
+	import GuaranteeItems from './GuaranteeItems.svelte';
+	import type { CollectiveGroupProblem, GuaranteedSeatCount, GuaranteeShare } from './schoolRules';
+	import { splitGroupText, withoutSeatText, type SupervisorNames } from './schoolRuleTexts';
 
 	/** The broken school rules as a small card beside the board's pool (see `SchoolRuleWarnings`). */
 	interface Props {
 		splitGroups: readonly CollectiveGroupProblem[];
 		names: SupervisorNames;
 		overGuarantee: readonly GuaranteedSeatCount[];
+		/** All Auslandsschulen together past their share of the seats */
+		overShare: GuaranteeShare | null;
 		guaranteeLimit: number;
 		class?: string;
 	}
@@ -21,6 +19,7 @@
 		splitGroups,
 		names,
 		overGuarantee,
+		overShare,
 		guaranteeLimit,
 		class: className = ''
 	}: Props = $props();
@@ -50,9 +49,7 @@
 					{/if}
 				</li>
 			{/each}
-			{#each overGuarantee as count (count.school.id)}
-				<li>{guaranteeText({ count, limit: guaranteeLimit })}</li>
-			{/each}
+			<GuaranteeItems {overGuarantee} {overShare} {guaranteeLimit} />
 		</ul>
 		{#if splitGroups.length > SHOWN}
 			<button class="btn btn-ghost btn-xs self-start" onclick={() => (expanded = !expanded)}>

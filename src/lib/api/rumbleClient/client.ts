@@ -995,6 +995,7 @@ export type Conference = {
   logoFileId: ID | null,
   longTitle: String | null,
   maxCollectiveGroupSize: Int | null,
+  maxForeignGuaranteedSeatsPercent: Int | null,
   maxGuaranteedSeatsPerForeignSchool: Int | null,
   mcpEnabled: Boolean,
   mediaConsentFile: (p?: {
@@ -1130,6 +1131,7 @@ export type ConferenceOrderInputArgument = {
   logoFileId?: SortingParameter | null | undefined,
   longTitle?: SortingParameter | null | undefined,
   maxCollectiveGroupSize?: SortingParameter | null | undefined,
+  maxForeignGuaranteedSeatsPercent?: SortingParameter | null | undefined,
   maxGuaranteedSeatsPerForeignSchool?: SortingParameter | null | undefined,
   mcpEnabled?: SortingParameter | null | undefined,
   mediaConsentFileId?: SortingParameter | null | undefined,
@@ -1214,6 +1216,7 @@ export type ConferenceWhereInputArgument = {
   logoFileId?: IDWhereInputArgument | null | undefined,
   longTitle?: StringWhereInputArgument | null | undefined,
   maxCollectiveGroupSize?: IntWhereInputArgument | null | undefined,
+  maxForeignGuaranteedSeatsPercent?: IntWhereInputArgument | null | undefined,
   maxGuaranteedSeatsPerForeignSchool?: IntWhereInputArgument | null | undefined,
   mcpEnabled?: BooleanWhereInputArgument | null | undefined,
   mediaConsentFile?: StoredfileWhereInputArgument | null | undefined,
@@ -2843,6 +2846,7 @@ export type Mutation = {
     logoFileId?: ID | null | undefined,
     longTitle?: String | null | undefined,
     maxCollectiveGroupSize?: Int | null | undefined,
+    maxForeignGuaranteedSeatsPercent?: Int | null | undefined,
     maxGuaranteedSeatsPerForeignSchool?: Int | null | undefined,
     mediaConsentFileId?: ID | null | undefined,
     nametagBinCount?: Int | null | undefined,
@@ -3660,6 +3664,9 @@ export type Query = {
   }) => Calendartrack[],
   canImpersonateUser: (p: {
     targetUserId: ID
+  }) => Boolean,
+  canUpdateSchool: (p: {
+    id: ID
   }) => Boolean,
   chasePresence: (p: {
     conferenceId: ID

@@ -175,24 +175,10 @@ async function searchCommittees({
 	];
 }
 
-/**
- * Schools someone in the conference has as their own, or waits with. A school is shared by every
- * conference, so the filter keeps out those only other conferences know.
- */
-async function searchSchools({
-	conferenceId,
-	term
-}: {
-	conferenceId: string;
-	term: string;
-}): Promise<SearchSchool[]> {
-	const inConference = { conferenceId: { eq: conferenceId } };
+/** Every school, whichever conference knows it: they are shared, and so is their history. */
+async function searchSchools(term: string): Promise<SearchSchool[]> {
 	const schools = await client.query.schools({
-		__args: {
-			search: term,
-			where: { OR: [{ participants: inConference }, { waitingListEntries: inConference }] },
-			limit: RESULT_LIMIT
-		},
+		__args: { search: term, limit: RESULT_LIMIT },
 		id: true,
 		name: true,
 		city: true
@@ -338,9 +324,7 @@ export async function searchConference({
 			}),
 			orNone({ group: 'seats', results: searchSeats({ conferenceId, term }) }),
 			orNone({ group: 'committees', results: searchCommittees({ conferenceId, term }) }),
-			withSchools
-				? orNone({ group: 'schools', results: searchSchools({ conferenceId, term }) })
-				: []
+			withSchools ? orNone({ group: 'schools', results: searchSchools(term) }) : []
 		]);
 
 	return {

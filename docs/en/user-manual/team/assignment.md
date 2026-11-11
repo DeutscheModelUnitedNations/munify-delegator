@@ -125,7 +125,7 @@ The result lands in the draft just like an assignment by hand, so you can check 
 
 ### School rules
 
-Below the pool, **School rules** shows where the draft breaks the conference's rules about schools. The applicants of one supervisor from the same school all get a seat or none do, up to a group size of 16. They include every member from that school of a delegation in which the supervisor is linked to at least one person. People of a school abroad get at most 12 guaranteed seats per school, and every person counts for their own school. The board warns about groups of which only some would get a seat or are disqualified, and about schools abroad with too many guaranteed seats. It does not stop the assignment. You set the limits in the [conference settings](./configuration), leaving one empty switches its rule off.
+Below the pool, **School rules** shows where the draft breaks the conference's rules about schools. The applicants of one supervisor from the same school all get a seat or none do, up to a group size of 16. They include every member from that school of a delegation in which the supervisor is linked to at least one person. People of a school abroad get at most 12 guaranteed seats per school, and every person counts for their own school. All schools abroad together get at most 20 % of the conference's seats as guaranteed seats. The board warns about groups of which only some would get a seat or are disqualified, and about schools abroad with too many guaranteed seats, alone or together. It does not stop the assignment. You set the limits in the [conference settings](./configuration), leaving one empty switches its rule off.
 
 ## Finish and release {#finish-and-release}
 

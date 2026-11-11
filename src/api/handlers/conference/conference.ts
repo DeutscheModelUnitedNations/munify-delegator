@@ -149,6 +149,12 @@ schemaBuilder.mutationFields((t) => ({
 						'How many people of one Auslandsschule may be given a guaranteed seat before the assignment warns; `null` for no limit.'
 				})
 				.validate(conferenceSettingSchemas.maxGuaranteedSeatsPerForeignSchool),
+			maxForeignGuaranteedSeatsPercent: t.arg
+				.int({
+					description:
+						'Which share (0 to 100 percent) of all seats the Auslandsschulen together may be given as guaranteed seats before the assignment warns; `null` for no limit.'
+				})
+				.validate(conferenceSettingSchemas.maxForeignGuaranteedSeatsPercent),
 			participantMinAge: t.arg
 				.int({
 					description:

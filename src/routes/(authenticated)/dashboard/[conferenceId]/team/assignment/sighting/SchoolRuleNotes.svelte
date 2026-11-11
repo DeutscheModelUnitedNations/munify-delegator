@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { fetchSchoolRules, fetchSupervisorNames, schoolRulesSnapshot } from '../board';
-	import { collectiveGroupsOf, guaranteesAround, type GuaranteedApplication } from '../schoolRules';
+	import {
+		collectiveGroupsOf,
+		guaranteesAround,
+		guaranteeShareAround,
+		type GuaranteedApplication
+	} from '../schoolRules';
 
 	/**
 	 * What the school rules (`schoolRules.ts`) say about one application in the sighting: the
 	 * groups decided together it belongs to, and the guaranteed seats of its people's
-	 * Auslandsschulen, counted as if it were marked required or not as the card shows it.
+	 * Auslandsschulen, alone and all together, counted as if it were marked required or not as the card shows it.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -26,14 +31,28 @@
 	const groups = $derived(collectiveGroupsOf({ groups: checked.groups, application }));
 	const supervisorKey = $derived(groups.map((group) => group.supervisorId).join(','));
 	const names = $derived(await fetchSupervisorNames(supervisorKey ? supervisorKey.split(',') : []));
+	const requiredReviews = $derived(checked.reviews.filter((review) => review.required));
 	const guarantees = $derived(
-		guaranteesAround({
-			applications: checked.reviews.filter((review) => review.required),
+		guaranteesAround({ applications: requiredReviews, application, required })
+	);
+	const share = $derived(
+		guaranteeShareAround({
+			applications: requiredReviews,
 			application,
-			required
+			required,
+			capacity: checked.capacity,
+			percent: checked.sharePercent
 		})
 	);
-	const over = (seats: number) => guaranteeLimit !== null && seats > guaranteeLimit;
+	const warnIf = (over: boolean) => (over ? 'alert-warning' : '');
+	const guaranteeClass = (seats: number) =>
+		warnIf(guaranteeLimit !== null && seats > guaranteeLimit);
+
+	function guaranteeMessage({ school, seats }: { school: { name: string }; seats: number }) {
+		return guaranteeLimit === null
+			? m.schoolRuleSightingGuaranteesNoLimit({ school: school.name, seats })
+			: m.schoolRuleSightingGuarantees({ school: school.name, seats, limit: guaranteeLimit });
+	}
 </script>
 
 {#if groups.length > 0 || guarantees.length > 0}
@@ -52,23 +71,21 @@
 		{/each}
 		{#each guarantees as count (count.school.id)}
 			<div
-				class="alert alert-soft py-2 text-sm {over(count.seats) ? 'alert-warning' : ''}"
+				class="alert alert-soft py-2 text-sm {guaranteeClass(count.seats)}"
 				data-testid="foreign-guarantees"
 			>
 				<i aria-hidden="true" class="ph-duotone ph-globe-hemisphere-east"></i>
-				<span>
-					{guaranteeLimit === null
-						? m.schoolRuleSightingGuaranteesNoLimit({
-								school: count.school.name,
-								seats: count.seats
-							})
-						: m.schoolRuleSightingGuarantees({
-								school: count.school.name,
-								seats: count.seats,
-								limit: guaranteeLimit
-							})}
-				</span>
+				<span>{guaranteeMessage(count)}</span>
 			</div>
 		{/each}
+		{#if share}
+			<div
+				class="alert alert-soft py-2 text-sm {warnIf(share.seats > share.allowed)}"
+				data-testid="foreign-guarantee-share"
+			>
+				<i aria-hidden="true" class="ph-duotone ph-globe"></i>
+				<span>{m.schoolRuleSightingGuaranteeShare({ ...share })}</span>
+			</div>
+		{/if}
 	</div>
 {/if}

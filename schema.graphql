@@ -994,6 +994,7 @@ type Conference {
   logoFileId: ID
   longTitle: String
   maxCollectiveGroupSize: Int
+  maxForeignGuaranteedSeatsPercent: Int
   maxGuaranteedSeatsPerForeignSchool: Int
   mcpEnabled: Boolean!
 
@@ -1115,6 +1116,7 @@ input ConferenceOrderInputArgument {
   logoFileId: SortingParameter
   longTitle: SortingParameter
   maxCollectiveGroupSize: SortingParameter
+  maxForeignGuaranteedSeatsPercent: SortingParameter
   maxGuaranteedSeatsPerForeignSchool: SortingParameter
   mcpEnabled: SortingParameter
   mediaConsentFileId: SortingParameter
@@ -1201,6 +1203,7 @@ input ConferenceWhereInputArgument {
   logoFileId: IDWhereInputArgument
   longTitle: StringWhereInputArgument
   maxCollectiveGroupSize: IntWhereInputArgument
+  maxForeignGuaranteedSeatsPercent: IntWhereInputArgument
   maxGuaranteedSeatsPerForeignSchool: IntWhereInputArgument
   mcpEnabled: BooleanWhereInputArgument
   mediaConsentFile: StoredfileWhereInputArgument
@@ -3409,6 +3412,11 @@ type Mutation {
     maxCollectiveGroupSize: Int
 
     """
+    Which share (0 to 100 percent) of all seats the Auslandsschulen together may be given as guaranteed seats before the assignment warns; `null` for no limit.
+    """
+    maxForeignGuaranteedSeatsPercent: Int
+
+    """
     How many people of one Auslandsschule may be given a guaranteed seat before the assignment warns; `null` for no limit.
     """
     maxGuaranteedSeatsPerForeignSchool: Int
@@ -4409,6 +4417,11 @@ type Query {
   canImpersonateUser(targetUserId: ID!): Boolean!
 
   """
+  Whether the caller may change the school: participant care of a conference where someone names it as their own reads every school, but changes only those.
+  """
+  canUpdateSchool(id: ID!): Boolean!
+
+  """
   The linked CHASE's presence records of the conference, asked of CHASE now (participant care); null while no CHASE is linked.
   """
   chasePresence(conferenceId: ID!): ChasePresence
@@ -4832,7 +4845,7 @@ type Query {
   school(id: ID!): School!
 
   """
-  Per conference, how many people from the school registered, applied, got a seat and came: in the conferences where the caller is participant care (every one for a system admin). NOT_FOUND unless the caller may update the school.
+  Per conference, how many people from the school registered, applied, got a seat and came, in every conference. NOT_FOUND unless the caller is participant care of any conference.
   """
   schoolMetrics(schoolId: ID!): [SchoolConferenceMetrics!]!
 

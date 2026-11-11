@@ -4,6 +4,7 @@ import {
 	type DelegationWhereInputArgument,
 	type SingleparticipantWhereInputArgument
 } from '#lib/api/rumbleClient/client';
+import { conferenceCapacity } from '#lib/assignment/capacity';
 import { liveSnapshot } from '#lib/api/liveSnapshot';
 import formatNames from '#lib/helpers/formatNames';
 import type { BoardReviewRow } from './boardState';
@@ -607,18 +608,20 @@ export async function fetchAssignmentRoles(conferenceId: string) {
 const ruleSchool = { id: true, name: true, isForeignSchool: true } as const;
 
 /**
- * What the school rules are checked against (`schoolRules.ts`): the conference's limits and the
- * applications marked required or excluded, with their people's schools, live; and the groups
+ * What the school rules are checked against (`schoolRules.ts`): the conference's limits and roles
+ * (for its seats), the applications marked required or excluded, with their people's schools, live; and the groups
  * decided together, which the backend works out and which are not live (a new supervision shows
  * once the page asks again).
  */
 export async function fetchSchoolRules(conferenceId: string) {
-	const [limits, groups, reviews] = await Promise.all([
+	const [limits, roles, groups, reviews] = await Promise.all([
 		client.liveQuery.conference({
 			__args: { id: conferenceId },
 			maxCollectiveGroupSize: true,
-			maxGuaranteedSeatsPerForeignSchool: true
+			maxGuaranteedSeatsPerForeignSchool: true,
+			maxForeignGuaranteedSeatsPercent: true
 		}),
+		fetchAssignmentRoles(conferenceId),
 		client.query.collectiveGroups({
 			__args: { conferenceId },
 			key: true,
@@ -643,7 +646,7 @@ export async function fetchSchoolRules(conferenceId: string) {
 			singleParticipant: { school: ruleSchool }
 		})
 	]);
-	return { limits, groups, reviews };
+	return { limits, roles, groups, reviews };
 }
 
 type SchoolRules = Awaited<ReturnType<typeof fetchSchoolRules>>;
@@ -658,7 +661,9 @@ export function schoolRulesSnapshot() {
 		groups: rules.groups,
 		reviews: reviews(rules.reviews),
 		groupLimit: rules.limits.maxCollectiveGroupSize ?? null,
-		guaranteeLimit: rules.limits.maxGuaranteedSeatsPerForeignSchool ?? null
+		guaranteeLimit: rules.limits.maxGuaranteedSeatsPerForeignSchool ?? null,
+		sharePercent: rules.limits.maxForeignGuaranteedSeatsPercent ?? null,
+		capacity: conferenceCapacity(rules.roles)
 	});
 }
 

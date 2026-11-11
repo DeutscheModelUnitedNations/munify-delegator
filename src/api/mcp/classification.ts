@@ -258,6 +258,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'logoFileId',
 			'longTitle',
 			'maxCollectiveGroupSize',
+			'maxForeignGuaranteedSeatsPercent',
 			'maxGuaranteedSeatsPerForeignSchool',
 			'mcpEnabled',
 			'mediaConsentFileId',
@@ -806,6 +807,7 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [
 			'assignmentReviewsCount',
 			'canImpersonateUser',
+			'canUpdateSchool',
 			'delegationsCount',
 			'logoutUrl',
 			'mcpServerUrl',

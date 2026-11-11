@@ -180,6 +180,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				// null switches the rule off, or lifts the limit
 				maxCollectiveGroupSize: args.maxCollectiveGroupSize,
 				maxGuaranteedSeatsPerForeignSchool: args.maxGuaranteedSeatsPerForeignSchool,
+				maxForeignGuaranteedSeatsPercent: args.maxForeignGuaranteedSeatsPercent,
 				// null switches the limit off
 				participantMinAge: args.participantMinAge,
 				participantMaxAge: args.participantMaxAge,

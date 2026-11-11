@@ -99,6 +99,7 @@ The same tab holds the limits of the school rules, which only Project Management
 
 - **Decide groups together up to** (16 to begin with): up to this many applicants of one supervisor from the same school, all of them get a seat or none do. When one person of a delegation is linked to the supervisor, every member of that delegation from the same school counts too.
 - **Guaranteed seats per school abroad** (12 to begin with): at most this many people of one school abroad can get a guaranteed seat.
+- **Guaranteed seats of all schools abroad (%)** (20 to begin with): at most this share of all the conference's seats can go to schools abroad as guaranteed seats, all together.
 
 The assignment warns when a draft breaks a rule and never blocks anything. Leaving a limit empty switches its rule off.
 

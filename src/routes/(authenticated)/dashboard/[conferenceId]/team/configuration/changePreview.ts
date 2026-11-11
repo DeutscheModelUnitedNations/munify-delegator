@@ -155,6 +155,11 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 		label: () => m.conferenceMaxGuaranteedSeats(),
 		format: (value) => (typeof value === 'number' ? String(value) : m.conferenceSchoolRuleOff())
 	},
+	maxForeignGuaranteedSeatsPercent: {
+		group: 'general',
+		label: () => m.conferenceMaxForeignGuaranteedSeatsPercent(),
+		format: (value) => (typeof value === 'number' ? `${value} %` : m.conferenceSchoolRuleOff())
+	},
 	participantMinAge: {
 		group: 'general',
 		label: () => m.conferenceParticipantMinAge(),

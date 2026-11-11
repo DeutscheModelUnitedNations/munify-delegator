@@ -103,6 +103,11 @@ export const conference = snakeCase.table('conference', {
 	 */
 	maxGuaranteedSeatsPerForeignSchool: integer().default(12),
 	/**
+	 * Which share (in percent) of all the conference's seats the Auslandsschulen together may be
+	 * given as guaranteed seats; the assignment warns beyond it. Empty means no limit.
+	 */
+	maxForeignGuaranteedSeatsPercent: integer().default(20),
+	/**
 	 * The age range on the first conference day (`#lib/helpers/plausibilityRules`): participants
 	 * from `participantMinAge` to `participantMaxAge`, supervisors from `supervisorMinAge`. Outside it the entry flows warn and the plausibility page lists people;
 	 * nothing is refused. Empty switches that limit off.

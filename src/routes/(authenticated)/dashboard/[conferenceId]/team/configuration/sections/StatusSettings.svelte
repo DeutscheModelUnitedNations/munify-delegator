@@ -81,20 +81,30 @@
 			<span>{m.showCalendar()}</span>
 		</label>
 	</div>
-	<FormTextInput
-		{form}
-		name="maxCollectiveGroupSize"
-		type="number"
-		label={m.conferenceMaxCollectiveGroupSize()}
-		description={m.conferenceMaxCollectiveGroupSizeDescription()}
-	/>
-	<FormTextInput
-		{form}
-		name="maxGuaranteedSeatsPerForeignSchool"
-		type="number"
-		label={m.conferenceMaxGuaranteedSeats()}
-		description={m.conferenceMaxGuaranteedSeatsDescription()}
-	/>
+	<!-- the inputs line up at the bottom, whatever their descriptions wrap to -->
+	<div class="grid grid-cols-1 items-end gap-x-4 lg:grid-cols-3">
+		<FormTextInput
+			{form}
+			name="maxCollectiveGroupSize"
+			type="number"
+			label={m.conferenceMaxCollectiveGroupSize()}
+			description={m.conferenceMaxCollectiveGroupSizeDescription()}
+		/>
+		<FormTextInput
+			{form}
+			name="maxGuaranteedSeatsPerForeignSchool"
+			type="number"
+			label={m.conferenceMaxGuaranteedSeats()}
+			description={m.conferenceMaxGuaranteedSeatsDescription()}
+		/>
+		<FormTextInput
+			{form}
+			name="maxForeignGuaranteedSeatsPercent"
+			type="number"
+			label={m.conferenceMaxForeignGuaranteedSeatsPercent()}
+			description={m.conferenceMaxForeignGuaranteedSeatsPercentDescription()}
+		/>
+	</div>
 </FormSection>
 
 <FormSection title={m.conferenceStatus()} icon="cell-signal-high">
