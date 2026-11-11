@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { qr } from '@svelte-put/qr/svg';
+	import QrCode from './QrCode.svelte';
 	import { onMount } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { signedCodeLink } from '#lib/signedCode/signedCode';
@@ -53,27 +53,14 @@
 
 <div class="{calm ? '' : 'animate-registration-pulse'} rounded-box p-1">
 	<div class="{calm ? 'bg-base-300' : 'animate-registration-border'} rounded-box p-1">
-		<!-- always dark on white, whatever the theme: a scanner needs the contrast -->
-		<div class="flex aspect-square w-full items-center justify-center rounded-field bg-white p-2">
-			{#if code}
-				<svg
-					use:qr={{
-						data: code,
-						shape: 'circle',
-						// a logo needs the highest correction; without one a lower level keeps the code coarser
-						errorCorrectionLevel: emblemUrl ? 'H' : 'M',
-						moduleFill: '#01548F',
-						anchorOuterFill: '#1B1837',
-						anchorInnerFill: '#01548F',
-						logo: emblemUrl ?? undefined
-					}}
-					class="w-full"
-				></svg>
-			{:else if failed}
-				<i aria-hidden="true" class="ph-duotone ph-warning text-error text-4xl"></i>
-			{:else}
-				<span class="loading loading-spinner text-primary"></span>
-			{/if}
-		</div>
+		<QrCode data={code} logoUrl={emblemUrl ?? undefined}>
+			{#snippet fallback()}
+				{#if failed}
+					<i aria-hidden="true" class="ph-duotone ph-warning text-error text-4xl"></i>
+				{:else}
+					<span class="loading loading-spinner text-primary"></span>
+				{/if}
+			{/snippet}
+		</QrCode>
 	</div>
 </div>

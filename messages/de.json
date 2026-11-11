@@ -1244,6 +1244,7 @@
 	"downloadParticipantData": "Daten für Gruppe \"{group}\" herunterladen",
 	"downloadParticipantStatuses": "Teilnehmendenstatus herunterladen",
 	"downloadPostalDocuments": "Dokumente für postalische Anmeldung herunterladen",
+	"downloadQrCode": "QR-Code herunterladen",
 	"downloadResults": "Alle Ergebnisse herunterladen",
 	"downloads": "Downloads",
 	"downloadsPageDescription": "Exportiere Konferenzdaten in verschiedenen Formaten für externe Tools und Berichte.",

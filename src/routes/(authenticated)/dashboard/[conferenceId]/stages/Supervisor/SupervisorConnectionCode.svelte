@@ -5,7 +5,8 @@
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { page } from '$app/state';
-	import { qr } from '@svelte-put/qr/svg';
+	import QrCode from '#lib/components/QrCode.svelte';
+	import { downloadQrPng } from '#lib/helpers/qrStyle';
 	import { supervisorConnectionLink } from '#lib/helpers/supervisorLink';
 	import EntryCode from '../Common/EntryCode.svelte';
 
@@ -16,12 +17,16 @@
 
 	let { conferenceId, supervisorId }: Props = $props();
 
-	const supervisor = $derived(
-		await client.liveQuery.conferenceSupervisor({
-			__args: { id: supervisorId },
-			connectionCode: true
-		})
+	const [supervisor, conference] = $derived(
+		await Promise.all([
+			client.liveQuery.conferenceSupervisor({
+				__args: { id: supervisorId },
+				connectionCode: true
+			}),
+			client.liveQuery.conference({ __args: { id: conferenceId }, emblemFile: { url: true } })
+		])
 	);
+	const emblemUrl = $derived(conference.emblemFile?.url ?? undefined);
 
 	const connectionLink = $derived(
 		supervisorConnectionLink({
@@ -34,6 +39,15 @@
 	const copyLink = async () => {
 		await navigator.clipboard.writeText(connectionLink);
 		toast.success(m.linkCopied());
+	};
+
+	const downloadQr = () => {
+		const promise = downloadQrPng({
+			data: connectionLink,
+			logoUrl: emblemUrl,
+			filename: `qr-${supervisor.connectionCode}.png`
+		});
+		toast.promise(promise, genericPromiseToastMessages);
 	};
 
 	const rotate = async () => {
@@ -55,14 +69,8 @@
 	<div
 		class="bg-base-200 border-base-300 flex flex-col items-center gap-4 rounded-box border p-4 sm:flex-row sm:items-start"
 	>
-		<!-- White behind the code in either theme, or phone cameras struggle to read it -->
-		<div class="shrink-0 rounded-box bg-white p-2">
-			<svg
-				use:qr={{ data: connectionLink, shape: 'circle' }}
-				class="size-40"
-				role="img"
-				aria-label={m.supervisorLinkQrLabel()}
-			/>
+		<div class="w-40 shrink-0 rounded-box bg-base-300 p-1">
+			<QrCode data={connectionLink} logoUrl={emblemUrl} label={m.supervisorLinkQrLabel()} />
 		</div>
 		<div class="flex min-w-0 flex-1 flex-col gap-2">
 			<h3 class="font-bold">{m.supervisorLinkTitle()}</h3>
@@ -81,6 +89,10 @@
 					{m.copyLink()}
 				</button>
 			</div>
+			<button class="btn btn-ghost btn-sm self-start" type="button" onclick={downloadQr}>
+				<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
+				{m.downloadQrCode()}
+			</button>
 		</div>
 	</div>
 

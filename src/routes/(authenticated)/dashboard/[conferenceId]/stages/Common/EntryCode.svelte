@@ -1,7 +1,9 @@
 <script lang="ts">
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages';
-	import { qr } from '@svelte-put/qr/svg';
+	import QrCode from '#lib/components/QrCode.svelte';
+	import { downloadQrPng } from '#lib/helpers/qrStyle';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {
@@ -79,7 +81,21 @@
 </div>
 
 <Modal bind:open={qrModalOpen}>
-	<div class="flex w-full items-center justify-center">
-		<svg use:qr={{ data: referralLink, shape: 'circle' }} class="w-full max-w-sm" />
+	<div class="flex w-full flex-col items-center gap-4">
+		<div class="w-full max-w-sm rounded-box bg-base-300 p-1">
+			<QrCode data={referralLink} label={m.showQrCode()} />
+		</div>
+		<button
+			class="btn btn-ghost btn-sm"
+			type="button"
+			onclick={() =>
+				toast.promise(
+					downloadQrPng({ data: referralLink, filename: `qr-${entryCode}.png` }),
+					genericPromiseToastMessages
+				)}
+		>
+			<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
+			{m.downloadQrCode()}
+		</button>
 	</div>
 </Modal>
