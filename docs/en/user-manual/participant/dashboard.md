@@ -66,7 +66,7 @@ Here you answer why your delegation is applying and how much experience you have
 
 ### Supervisors
 
-If you take part with supervisors, such as a teacher, you see them under **Supervisors**. With **Connect Supervisor** you enter their invitation code, check the data shown and click **Connect**. Only participant care can undo the connection. If you opened a link from your supervisor, the code is already filled in.
+If you take part with supervisors, such as a teacher, you see them under **Supervisors**. With **Connect Supervisor** you enter their invitation code, check the data shown and click **Connect**. Only participant care can undo the connection. If you opened a link from your supervisor, the dashboard scrolls to this section and highlights it. The code is already filled in, so you only check the data and click **Connect**.
 
 ### Danger Zone
 
@@ -176,7 +176,7 @@ Once the conference is over, the dashboard shows your role and the **Certificate
 
 As a supervisor you follow how your students are doing. For privacy reasons you cannot add them yourself: they connect with you. How to register is described in [Registering as a supervisor](./registration#registering-as-a-supervisor).
 
-- **Connect with students:** your invitation code. Pass it on, copy the link with **Copy join link** or show the QR code. **Rotate Code** gives you a new code.
+- **Connect with students:** your link with its QR code, and your invitation code. Copy the link with **Copy Link** or let students scan the QR code. Whoever opens it lands right at **Supervisors** on their own dashboard with the code filled in, and only confirms with **Connect**. **Rotate Code** gives you a new code, and the old link stops working.
 - **Your details:** your **Own presence at the conference** and your school. Whether you attend yourself can only be changed during registration. If you attend, you pay the participation fee too.
 - **Delegations** and **Single Participants:** every application of your students. During registration you also see the delegations' entry codes. Anyone who has not added you shows up as **Hidden Member**.
 

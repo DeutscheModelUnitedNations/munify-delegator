@@ -66,7 +66,7 @@ Hier beantwortet ihr, warum sich eure Delegation bewirbt und wie viel Erfahrung 
 
 ### Betreuer*innen
 
-Nehmt ihr mit Betreuenden teil, etwa einer Lehrkraft, seht ihr sie unter **Betreuer\*innen**. Mit **Betreuer\*in verbinden** gibst du ihren Einladecode ein, prüfst die angezeigten Daten und klickst **Verbinden**. Aufheben lassen kannst du die Verbindung nur über die Teilnehmendenbetreuung. Hast du einen Link deiner*s Betreuer*in geöffnet, ist der Code schon eingetragen.
+Nehmt ihr mit Betreuenden teil, etwa einer Lehrkraft, seht ihr sie unter **Betreuer\*innen**. Mit **Betreuer\*in verbinden** gibst du ihren Einladecode ein, prüfst die angezeigten Daten und klickst **Verbinden**. Aufheben lassen kannst du die Verbindung nur über die Teilnehmendenbetreuung. Hast du einen Link deiner*s Betreuer*in geöffnet, springt das Dashboard zu diesem Abschnitt und hebt ihn hervor. Der Code ist schon eingetragen, du prüfst nur noch die Daten und klickst **Verbinden**.
 
 ### Danger Zone
 
@@ -176,7 +176,7 @@ Ist die Konferenz vorbei, findest du auf dem Dashboard deine Rolle und das **Tei
 
 Als Betreuende*r siehst du den Stand deiner Schüler*innen. Hinzufügen kannst du sie aus Datenschutzgründen nicht selbst: Sie verbinden sich mit dir. Wie du dich anmeldest, steht unter [Als Betreuer*in anmelden](./registration#registering-as-a-supervisor).
 
-- **Mit Schüler\*innen verbinden:** dein Einladecode. Gib ihn weiter, kopiere mit **Beitrittslink kopieren** den Link oder zeig den QR-Code. Mit **Code erneuern** bekommst du einen neuen Code.
+- **Mit Schüler\*innen verbinden:** dein Link mit QR-Code und dein Einladecode. Kopiere den Link mit **Link kopieren** oder lass den QR-Code scannen. Wer ihn öffnet, landet direkt beim Abschnitt **Betreuer\*innen** auf dem eigenen Dashboard, der Code ist eingetragen und muss nur noch mit **Verbinden** bestätigt werden. Mit **Code erneuern** bekommst du einen neuen Code, der alte Link gilt dann nicht mehr.
 - **Deine Angaben:** deine **Eigene Anwesenheit** und deine Schule. Ob du selbst teilnimmst, kannst du nur in der Bewerbungsphase ändern. Nimmst du teil, zahlst du auch den Teilnahmebeitrag.
 - **Delegationen** und **Einzelteilnehmer\*innen:** alle Bewerbungen deiner Schüler*innen. In der Bewerbungsphase siehst du auch den Eintrittscode der Delegationen. Wer dich nicht hinzugefügt hat, erscheint als **Verstecktes Mitglied**.
 

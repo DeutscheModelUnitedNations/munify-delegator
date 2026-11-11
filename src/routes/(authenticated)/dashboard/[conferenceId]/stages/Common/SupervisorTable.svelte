@@ -10,6 +10,8 @@
 	import { toast } from 'svelte-sonner';
 	import { ENTRY_CODE_LENGTH } from '#lib/helpers/entryCode';
 	import { createEntryCodeInput } from '#lib/helpers/entryCodeInput.svelte.js';
+	import { linkedSupervisorCode, SUPERVISOR_SECTION_ID } from '#lib/helpers/supervisorLink';
+	import { onMount } from 'svelte';
 
 	/** The supervisors of one registration: a delegation membership or a single participant. */
 	type Props = { conferenceId: string } & (
@@ -41,8 +43,20 @@
 	);
 	const supervisors = $derived(registration?.supervisors ?? []);
 
-	// A supervisor's shared link lands here with `?supervisorCode=`; it only seeds the field.
-	const code = createEntryCodeInput(page.url.searchParams.get('supervisorCode') ?? '');
+	// A supervisor's shared link lands here with `?supervisorCode=`; it only seeds the field, the
+	// participant still confirms with the button.
+	const linkedCode = linkedSupervisorCode(page.url);
+	const code = createEntryCodeInput(linkedCode);
+	// Points the participant at this section until they connected.
+	let arrivedByLink = $state(linkedCode !== '');
+
+	onMount(() => {
+		if (!arrivedByLink) return;
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		document
+			.getElementById(SUPERVISOR_SECTION_ID)
+			?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+	});
 	// The code to look up, as a primitive the awaited derived below is keyed by.
 	const readyCode = $derived(code.ready);
 
@@ -78,6 +92,7 @@
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
 			code.value = '';
+			arrivedByLink = false;
 		} finally {
 			connecting = false;
 		}
@@ -123,9 +138,11 @@
 {/snippet}
 
 <DashboardSection
+	id={SUPERVISOR_SECTION_ID}
 	icon="chalkboard-teacher"
 	title={m.supervisors()}
 	description={m.supervisorsDescription()}
+	class={arrivedByLink ? 'ring-4 ring-primary ring-offset-2 ring-offset-base-100' : ''}
 >
 	{#if supervisors.length > 0}
 		<DelegationStatusTableWrapper withEmail>
@@ -144,7 +161,14 @@
 
 	<form class="mt-4 flex w-full max-w-lg flex-col gap-2" onsubmit={connect}>
 		<label class="text-sm font-bold" for="supervisor-code">{m.connectSupervisor()}</label>
-		<p class="text-sm">{m.connectSupervisorDescription()}</p>
+		{#if arrivedByLink}
+			<div class="alert alert-info alert-soft text-sm">
+				<i aria-hidden="true" class="ph-duotone ph-hand-pointing text-xl"></i>
+				<span>{m.supervisorLinkPrefilled()}</span>
+			</div>
+		{:else}
+			<p class="text-sm">{m.connectSupervisorDescription()}</p>
+		{/if}
 		<div class="join w-full">
 			<input
 				id="supervisor-code"
