@@ -9,29 +9,21 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { conflictMessageOf } from '#lib/api/errorCodes';
 	import {
 		fetchChatContacts,
 		fetchChatInboxes,
+		fetchReachingInboxes,
 		type ChatContactRow,
 		type ChatInboxRow
 	} from '#lib/api/chats';
 	import { m } from '#lib/paraglide/messages';
-	import ChatAvatar from './ChatAvatar.svelte';
 	import CommitteeChips from './CommitteeChips.svelte';
-	import InboxChoices from './InboxChoices.svelte';
-	import PickerOption from './PickerOption.svelte';
-	import {
-		contactAvatar,
-		contactDetail,
-		contactName,
-		contactSearchText,
-		inboxDescription,
-		inboxName,
-		INBOX_ICON,
-		matchesSearch
-	} from './chatLabels';
-	import { groupContacts, OTHER_GROUP } from './contactGroups';
+	import PickedContactInboxes from './PickedContactInboxes.svelte';
+	import PickerContactGroups from './PickerContactGroups.svelte';
+	import PickerTeamOptions from './PickerTeamOptions.svelte';
+	import { contactSearchText, inboxName, matchesSearch } from './chatLabels';
+	import { groupContacts } from './contactGroups';
+	import { chatOpenError, inboxChoice } from './inboxChoice';
 
 	interface Props {
 		conferenceId: string;
@@ -95,6 +87,7 @@
 	const nothingFound = $derived(
 		shownGroups.length === 0 && shownInboxes.length === 0 && !showDelegation
 	);
+	const nobody = $derived(contacts.length === 0 && inboxes.length === 0);
 
 	async function open(start: () => Promise<{ id: string }>) {
 		if (opening) return;
@@ -102,7 +95,7 @@
 		try {
 			onOpened((await start()).id);
 		} catch (error) {
-			toast.error(conflictMessageOf(error) ?? m.chatCouldNotBeOpened());
+			toast.error(chatOpenError(error));
 		} finally {
 			opening = false;
 		}
@@ -122,32 +115,18 @@
 		);
 
 	async function pick(contact: ChatContactRow) {
+		const { participantId } = contact;
 		if (mode === 'participant') {
 			await open(() =>
-				client.mutate.openDirectChat({
-					__args: { conferenceId, participantId: contact.participantId },
-					id: true
-				})
+				client.mutate.openDirectChat({ __args: { conferenceId, participantId }, id: true })
 			);
 			return;
 		}
 		// the inboxes the caller answers that reach this person
-		const reaching = await client.query.chatInboxes({
-			__args: { conferenceId, participantId: contact.participantId },
-			inbox: true,
-			committeeId: true,
-			committeeAbbreviation: true,
-			committeeName: true,
-			chatId: true
-		});
-		const [only] = reaching;
-		if (reaching.length === 1 && only) {
-			await openInbox({ option: only, participantId: contact.participantId });
-		} else if (reaching.length === 0) {
-			toast.error(m.chatNoInboxReaches());
-		} else {
-			picked = { contact, inboxes: [...reaching] };
-		}
+		const choice = inboxChoice(await fetchReachingInboxes({ conferenceId, participantId }));
+		if (choice.kind === 'one') await openInbox({ option: choice.option, participantId });
+		else if (choice.kind === 'none') toast.error(m.chatNoInboxReaches());
+		else picked = { contact, inboxes: choice.options };
 	}
 
 	function focusOnMount(node: HTMLInputElement) {
@@ -156,30 +135,13 @@
 </script>
 
 {#if picked}
-	{@const chosen = picked}
-	<div class="flex flex-col gap-3">
-		<button
-			type="button"
-			class="btn btn-ghost btn-sm gap-2 self-start"
-			onclick={() => (picked = undefined)}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
-			{m.chatPickAnotherPerson()}
-		</button>
-		<div class="flex items-center gap-3">
-			<ChatAvatar avatar={contactAvatar(chosen.contact)} />
-			<div class="flex flex-col">
-				<span class="font-semibold">{contactName(chosen.contact)}</span>
-				<span class="text-base-content/60 text-sm">{contactDetail(chosen.contact)}</span>
-			</div>
-		</div>
-		<p class="text-base-content/70 text-sm">{m.chatChooseInbox()}</p>
-		<InboxChoices
-			options={chosen.inboxes}
-			disabled={opening}
-			onChoose={(option) => openInbox({ option, participantId: chosen.contact.participantId })}
-		/>
-	</div>
+	<PickedContactInboxes
+		contact={picked.contact}
+		inboxes={picked.inboxes}
+		disabled={opening}
+		onBack={() => (picked = undefined)}
+		onChoose={(option) => openInbox({ option, participantId: picked?.contact.participantId })}
+	/>
 {:else}
 	<div class="flex flex-col gap-3">
 		<label class="input input-bordered flex w-full items-center gap-2">
@@ -200,75 +162,23 @@
 		{/if}
 
 		<div
-			class="-mx-2 flex max-h-[50vh] flex-col gap-3 overflow-y-auto px-2"
+			class="-mx-2 flex max-h-96 flex-col gap-3 overflow-y-auto px-2"
 			data-testid="chat-contact-results"
 		>
-			{#if shownInboxes.length > 0 || showDelegation}
-				<section>
-					<h3 class="text-base-content/60 mb-1 px-1 text-xs font-semibold tracking-wide uppercase">
-						{m.chatGroupTeamAndDelegation()}
-					</h3>
-					<ul class="flex flex-col">
-						{#if showDelegation}
-							<li>
-								<PickerOption
-									avatar={{ icon: 'users-three' }}
-									title={m.chatMyDelegation()}
-									detail={m.chatDelegationHint()}
-									disabled={opening}
-									onclick={() =>
-										open(() =>
-											client.mutate.openDelegationChat({ __args: { conferenceId }, id: true })
-										)}
-								/>
-							</li>
-						{/if}
-						{#each shownInboxes as option (`${option.inbox}/${option.committeeId}`)}
-							<li>
-								<PickerOption
-									avatar={{ icon: INBOX_ICON[option.inbox] }}
-									title={inboxName(option)}
-									detail={inboxDescription(option.inbox)}
-									disabled={opening}
-									onclick={() => openInbox({ option })}
-									testId="chat-inbox-option"
-								/>
-							</li>
-						{/each}
-					</ul>
-				</section>
-			{/if}
-
-			{#each shownGroups as group (group.key)}
-				<section>
-					<h3 class="text-base-content/60 mb-1 px-1 text-xs font-semibold tracking-wide uppercase">
-						{group.key === OTHER_GROUP ? m.chatGroupWithoutCommittee() : group.name}
-					</h3>
-					<ul class="grid grid-cols-1 sm:grid-cols-2">
-						{#each group.contacts as contact (contact.participantId)}
-							<li>
-								<PickerOption
-									avatar={contactAvatar(contact)}
-									title={contactName(contact)}
-									detail={contactDetail(contact)}
-									disabled={opening}
-									onclick={() => pick(contact)}
-									testId="chat-contact"
-								/>
-							</li>
-						{/each}
-					</ul>
-				</section>
-			{/each}
+			<PickerTeamOptions
+				inboxes={shownInboxes}
+				delegation={showDelegation}
+				disabled={opening}
+				onInbox={(option) => openInbox({ option })}
+				onDelegation={() =>
+					open(() => client.mutate.openDelegationChat({ __args: { conferenceId }, id: true }))}
+			/>
+			<PickerContactGroups groups={shownGroups} disabled={opening} onPick={pick} />
 
 			{#if nothingFound}
 				<div class="text-base-content/60 flex flex-col items-center gap-2 py-8 text-center">
 					<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-3xl"></i>
-					<p>
-						{contacts.length === 0 && inboxes.length === 0
-							? m.chatNobodyToWrite()
-							: m.chatNothingFound()}
-					</p>
+					<p>{nobody ? m.chatNobodyToWrite() : m.chatNothingFound()}</p>
 				</div>
 			{/if}
 		</div>

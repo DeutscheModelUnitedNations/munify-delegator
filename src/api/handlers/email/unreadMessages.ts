@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from '#api/db/db';
-import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
+import { oldestUnreadPerMember } from './unreadInboxes';
 import type { SnapshotUnreadMessage } from './dueEmails';
 
 /**
@@ -101,21 +101,13 @@ export async function loadUnreadOfTeam({
 		})
 	]);
 
-	const careRoles: readonly string[] = PARTICIPANT_CARE_ROLES;
-	const oldest = new Map<string, { messageId: string; writtenAt: Date }>();
-	for (const inbox of inboxes) {
-		const unread = { messageId: inbox.message_id, writtenAt: written(inbox.written) };
-		const answering = members.filter((member) =>
-			inbox.inbox === 'PARTICIPANT_CARE'
-				? careRoles.includes(member.role)
-				: member.functions.some(
-						(held) => held.kind === inbox.inbox && held.committeeId === inbox.committee_id
-					)
-		);
-		for (const member of answering) {
-			const known = oldest.get(member.id);
-			if (!known || unread.writtenAt < known.writtenAt) oldest.set(member.id, unread);
-		}
-	}
-	return [...oldest].map(([teamMemberId, unread]) => ({ ...unread, reader: { teamMemberId } }));
+	return oldestUnreadPerMember({
+		inboxes: inboxes.map((inbox) => ({
+			inbox: inbox.inbox,
+			committeeId: inbox.committee_id,
+			messageId: inbox.message_id,
+			writtenAt: written(inbox.written)
+		})),
+		members
+	});
 }

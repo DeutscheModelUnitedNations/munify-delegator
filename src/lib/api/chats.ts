@@ -36,6 +36,14 @@ const CHAT_SUMMARY = {
 	people: { participantId: true, userId: true, name: true }
 } as const;
 
+const INBOX = {
+	inbox: true,
+	committeeId: true,
+	committeeAbbreviation: true,
+	committeeName: true,
+	chatId: true
+} as const;
+
 /** What narrows a chat list down: one inbox of the team, or everything the caller takes part in. */
 export interface ChatListFilter {
 	inbox?: 'PARTICIPANT_CARE' | 'CHAIR' | 'CONSULTANT';
@@ -117,17 +125,21 @@ export function fetchChatInboxes({
 	conferenceId: string;
 	participantId?: string;
 }) {
-	return client.liveQuery.chatInboxes({
-		__args: { conferenceId, participantId },
-		inbox: true,
-		committeeId: true,
-		committeeAbbreviation: true,
-		committeeName: true,
-		chatId: true
-	});
+	return client.liveQuery.chatInboxes({ __args: { conferenceId, participantId }, ...INBOX });
 }
 
 export type ChatInboxRow = Awaited<ReturnType<typeof fetchChatInboxes>>[number];
+
+/** The inboxes the caller answers that reach one person, asked once (on a click). */
+export function fetchReachingInboxes({
+	conferenceId,
+	participantId
+}: {
+	conferenceId: string;
+	participantId: string;
+}) {
+	return client.query.chatInboxes({ __args: { conferenceId, participantId }, ...INBOX });
+}
 
 /**
  * Whether the caller answers a team inbox of the conference while its messaging is on: participant

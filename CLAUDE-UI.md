@@ -874,6 +874,14 @@ list header.
   first and then the inbox to write from.
 - **`WriteToDelegateButton`**: `conferenceId`, the person's `participantId`, optionally a
   `paperId` and `compact` (icon only, for table rows). Asks for the inboxes on the click.
+- **`FilterChips`**: a row of chips narrowing a list to one group ("all" first, a pressed chip
+  lifts the filter): `options` with a `key`, `selected`, `onSelect`, a `label` and a `chip`
+  snippet for an option's content. `CommitteeChips` and the team page's `InboxChips` are built on it.
+- **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
+  `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
+  `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
+  in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
+  (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
 - **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
 - **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
   `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a

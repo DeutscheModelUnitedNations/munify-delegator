@@ -99,3 +99,20 @@ export function bubblesOf<M extends ThreadMessage>({
 		return { message, own, author: shown, continues };
 	});
 }
+
+/**
+ * What there is to mark as read in an open chat, as a key that changes with each new message, or
+ * nothing: no chat, a chat only reviewed (which never counts as read), or nothing unread.
+ */
+export function unreadStateOf({
+	chat,
+	side,
+	newestId
+}: {
+	chat: { id: string; unreadCount: number } | null;
+	side: ChatSide;
+	newestId: string;
+}) {
+	if (!chat || side === 'REVIEW' || chat.unreadCount === 0) return null;
+	return `${chat.id}:${newestId}`;
+}

@@ -196,6 +196,12 @@ export function chatSide({
 	return 'REVIEW';
 }
 
+/** The caller's participant row in a conference, if they have one. */
+function participantIdIn({ facts, conferenceId }: { facts: CallerFacts; conferenceId: string }) {
+	const own = facts.participants.find((participant) => participant.conferenceId === conferenceId);
+	return own ? own.id : null;
+}
+
 /** The chat as far as the caller reads it (NOT_FOUND otherwise), with their side of it. */
 export async function readableChat({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const userId = ctx.mustBeLoggedIn().sub;
@@ -211,10 +217,7 @@ export async function readableChat({ ctx, id }: { ctx: ApiContext; id: string })
 		userId,
 		/** The caller's participant row in the chat's conference, when they are a party. */
 		participantId:
-			side === 'PARTICIPANT'
-				? (facts.participants.find((participant) => participant.conferenceId === chat.conferenceId)
-						?.id ?? null)
-				: null
+			side === 'PARTICIPANT' ? participantIdIn({ facts, conferenceId: chat.conferenceId }) : null
 	};
 }
 

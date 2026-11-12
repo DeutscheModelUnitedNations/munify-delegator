@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { bubblesOf, messageAuthor, standsOnOwnSide, type ThreadChat } from './threadMessages';
+import {
+	bubblesOf,
+	messageAuthor,
+	standsOnOwnSide,
+	unreadStateOf,
+	type ThreadChat
+} from './threadMessages';
 
 const germany = {
 	participantId: 'p-deu',
@@ -108,5 +114,22 @@ describe('bubblesOf', () => {
 	test('on the team side, colleagues’ answers are named too', () => {
 		const [bubble] = bubblesOf({ messages: [fromTeam('a')], side: 'TEAM', chat: teamChat });
 		expect(bubble).toMatchObject({ own: true, author: 'Vorsitz · GV · Chris Chair' });
+	});
+});
+
+describe('unreadStateOf', () => {
+	const chat = { id: 'chat', unreadCount: 2 };
+
+	test('names the chat and its newest message while something is unread', () => {
+		expect(unreadStateOf({ chat, side: 'PARTICIPANT', newestId: 'm7' })).toBe('chat:m7');
+		expect(unreadStateOf({ chat, side: 'TEAM', newestId: 'm8' })).toBe('chat:m8');
+	});
+
+	test('has nothing to mark without a chat, when all is read, or while only reviewing', () => {
+		expect(unreadStateOf({ chat: null, side: 'PARTICIPANT', newestId: 'm7' })).toBeNull();
+		expect(
+			unreadStateOf({ chat: { id: 'chat', unreadCount: 0 }, side: 'TEAM', newestId: 'm7' })
+		).toBeNull();
+		expect(unreadStateOf({ chat, side: 'REVIEW', newestId: 'm7' })).toBeNull();
 	});
 });

@@ -84,6 +84,29 @@ export function sideOf(chat: { side: string }): ChatSide {
 	return isSide(chat.side) ? chat.side : 'REVIEW';
 }
 
+/** What a kind of chat is, in a line, for a chat that has no subtitle of its own. */
+export function kindHint(kind: ChatKind) {
+	if (kind === 'DIRECT') return m.chatDirectHint();
+	return kind === 'DELEGATION' ? m.chatDelegationHint() : m.chatTeamHint();
+}
+
+/**
+ * The badge a chat carries in a list: "reported" for participant care reading it under a report,
+ * its inbox for the team in a list mixing several inboxes, none otherwise.
+ */
+export function listBadge({
+	chat,
+	showInbox
+}: {
+	chat: { side: string; underReview: boolean; inbox?: ChatInbox | null };
+	showInbox: boolean;
+}): 'reported' | { inbox: ChatInbox } | null {
+	const side = sideOf(chat);
+	if (chat.underReview && side === 'REVIEW') return 'reported';
+	if (showInbox && chat.inbox && side === 'TEAM') return { inbox: chat.inbox };
+	return null;
+}
+
 /** What a chat is called for the caller: the other party, their delegation, or the team inbox. */
 export function chatTitle(chat: ChatLabelSource) {
 	const side = sideOf(chat);

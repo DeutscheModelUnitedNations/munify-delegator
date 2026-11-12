@@ -8,6 +8,7 @@ import {
 	contactSearchText,
 	inboxName,
 	matchesSearch,
+	listBadge,
 	sideOf
 } from './chatLabels';
 import { groupContacts, OTHER_GROUP } from './contactGroups';
@@ -173,5 +174,33 @@ describe('groupContacts', () => {
 			'p-nsa',
 			'p-press'
 		]);
+	});
+});
+
+describe('listBadge', () => {
+	const team = { side: 'TEAM', underReview: false, inbox: 'CHAIR' as const };
+
+	test('marks a chat participant care reads under a report', () => {
+		expect(
+			listBadge({ chat: { side: 'REVIEW', underReview: true, inbox: null }, showInbox: true })
+		).toBe('reported');
+	});
+
+	test('does not tell the parties or the inbox about a report', () => {
+		expect(listBadge({ chat: { ...team, underReview: true }, showInbox: false })).toBeNull();
+		expect(
+			listBadge({ chat: { side: 'PARTICIPANT', underReview: true }, showInbox: true })
+		).toBeNull();
+	});
+
+	test('names the inbox of a team chat only in a list mixing several', () => {
+		expect(listBadge({ chat: team, showInbox: true })).toEqual({ inbox: 'CHAIR' });
+		expect(listBadge({ chat: team, showInbox: false })).toBeNull();
+		expect(
+			listBadge({
+				chat: { side: 'PARTICIPANT', underReview: false, inbox: 'CHAIR' },
+				showInbox: true
+			})
+		).toBeNull();
 	});
 });

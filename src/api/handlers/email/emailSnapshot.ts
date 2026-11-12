@@ -350,6 +350,20 @@ async function loadSurveys({
 	}));
 }
 
+/** The unread chat messages of a page's participants, when the asked-for kinds read them. */
+async function peopleUnread({
+	conference,
+	kinds,
+	participantIds
+}: {
+	conference: EmailConference;
+	kinds: ReadonlySet<EmailKind>;
+	participantIds: string[];
+}) {
+	if (!needsUnread({ conference, kinds })) return [];
+	return loadUnreadOfParticipants({ conferenceId: conference.id, participantIds });
+}
+
 /** A snapshot of `participants` and the people, reviews and answers their rules read. */
 async function peopleSnapshot({
 	conference,
@@ -373,9 +387,7 @@ async function peopleSnapshot({
 		needsSurveys(kinds) && participantIds.length > 0
 			? loadSurveys({ conferenceId, participantIds })
 			: [],
-		needsUnread({ conference, kinds })
-			? loadUnreadOfParticipants({ conferenceId, participantIds })
-			: []
+		peopleUnread({ conference, kinds, participantIds })
 	]);
 	const [people, neighbours] = await Promise.all([
 		toPeople({ conferenceId, participants }),
