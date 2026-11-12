@@ -122,6 +122,7 @@
 		chaseLink: m.emailPlaceholderChaseLink,
 		manualLink: m.emailPlaceholderManualLink,
 		entryCode: m.emailPlaceholderEntryCode,
+		joinLink: m.emailPlaceholderJoinLink,
 		member: m.emailPlaceholderMember,
 		supervisor: m.emailPlaceholderSupervisor
 	};

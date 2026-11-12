@@ -9,6 +9,7 @@ import { whereRows } from '#api/db/whereRows';
 import { emailFooterParagraphs } from './emailText';
 import type { DueEmail, EmailKind, EmailSnapshot } from './dueEmails';
 import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
+import type { EmailBundle } from './emailBundles';
 
 /**
  * How every mail goes out, whether the sweep sends it or the team does by hand: in the recipient's
@@ -58,14 +59,19 @@ export interface RenderedEmail {
 	replyTo?: string;
 }
 
-/** Renders one automatic mail in the recipient's language, in the conference's own words. */
+/**
+ * Renders one automatic mail in the recipient's language, in the conference's own words. A `bundle`
+ * (`email` first) is rendered as one mail naming everything in it.
+ */
 export function renderAutomaticEmail({
 	email,
+	bundle,
 	conference,
 	origin,
 	wording
 }: {
 	email: DueEmail;
+	bundle?: EmailBundle;
 	conference: EmailSnapshot['conference'];
 	origin: string;
 	wording: ConferenceWording;
@@ -73,7 +79,7 @@ export function renderAutomaticEmail({
 	return runWithLocale({
 		locale: localeOfUser(email.recipient.locale),
 		fn: async () => {
-			const content = emailContent({ email, conference, origin, texts: wording.texts });
+			const content = emailContent({ email, bundle, conference, origin, texts: wording.texts });
 			const { footer } = wordingIn({ wording, kind: email.kind, locale: getLocale() });
 			const { html, text } = await renderEmail({
 				component: NotificationEmail,
@@ -104,7 +110,7 @@ export function errorText(error: unknown) {
 }
 
 /** Records how sending went: sent, or failed with why. */
-async function settle({ logId, error }: { logId: string; error: string | undefined }) {
+async function settle({ logIds, error }: { logIds: string[]; error: string | undefined }) {
 	await db
 		.update(schema.emailLog)
 		.set(
@@ -112,29 +118,30 @@ async function settle({ logId, error }: { logId: string; error: string | undefin
 				? { status: 'SENT', sentAt: new Date(), error: null }
 				: { status: 'FAILED', error }
 		)
-		.where(whereRows({ table: schema.emailLog, filter: { id: logId } }));
+		.where(whereRows({ table: schema.emailLog, filter: { id: { in: logIds } } }));
 	return error;
 }
 
 /**
- * Renders and sends one mail whose log row is written, and settles the row. Whatever goes wrong is
- * written there, never thrown: answers why it failed, `undefined` when it went out.
+ * Renders and sends one mail whose log rows are written (several for a bundle), and settles them.
+ * Whatever goes wrong is written there, never thrown: answers why it failed, `undefined` when it
+ * went out.
  */
 export async function deliver({
-	logId,
+	logIds,
 	to,
 	render
 }: {
-	logId: string;
+	logIds: string[];
 	to: string;
 	render: () => Promise<RenderedEmail>;
 }) {
 	try {
 		const { subject, html, text, replyTo } = await render();
 		const result = await mailTransport.sendEmail({ to, subject, html, text, replyTo });
-		return await settle({ logId, error: sendingError(result) });
+		return await settle({ logIds, error: sendingError(result) });
 	} catch (error) {
-		return settle({ logId, error: errorText(error) });
+		return settle({ logIds, error: errorText(error) });
 	}
 }
 
@@ -176,7 +183,7 @@ export async function sendByHand({
 		.returning({ id: schema.emailLog.id })
 		.then(assertFirstEntryExists);
 	emailLogPubsub.created();
-	const error = await deliver({ logId: row.id, to, render });
+	const error = await deliver({ logIds: [row.id], to, render });
 	emailLogPubsub.updated(row.id);
 	return error;
 }
