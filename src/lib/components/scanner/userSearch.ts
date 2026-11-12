@@ -21,7 +21,7 @@ async function searchNames({
 	const registeredIn = registrationIn(conferenceId);
 	const users = await client.query.users({
 		__args: {
-			search: term,
+			search: { term },
 			where: {
 				OR: [
 					{ delegationMemberships: registeredIn },

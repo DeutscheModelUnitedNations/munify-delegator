@@ -144,14 +144,18 @@ async function searchCommittees({
 }): Promise<SearchCommittee[]> {
 	const [committees, agendaItems] = await Promise.all([
 		client.query.committees({
-			__args: { search: term, where: { conferenceId: { eq: conferenceId } }, limit: RESULT_LIMIT },
+			__args: {
+				search: { term },
+				where: { conferenceId: { eq: conferenceId } },
+				limit: RESULT_LIMIT
+			},
 			id: true,
 			name: true,
 			abbreviation: true
 		}),
 		client.query.committeeAgendaItems({
 			__args: {
-				search: term,
+				search: { term },
 				where: { committee: { conferenceId: { eq: conferenceId } } },
 				limit: RESULT_LIMIT
 			},
@@ -178,7 +182,7 @@ async function searchCommittees({
 /** Every school, whichever conference knows it: they are shared, and so is their history. */
 async function searchSchools(term: string): Promise<SearchSchool[]> {
 	const schools = await client.query.schools({
-		__args: { search: term, limit: RESULT_LIMIT },
+		__args: { search: { term }, limit: RESULT_LIMIT },
 		id: true,
 		name: true,
 		city: true
@@ -254,7 +258,7 @@ export async function searchConference({
 			orNone({
 				group: 'users',
 				results: client.query.users({
-					__args: { search: term, where: participatesIn(conferenceId), limit: RESULT_LIMIT },
+					__args: { search: { term }, where: participatesIn(conferenceId), limit: RESULT_LIMIT },
 					id: true,
 					givenName: true,
 					familyName: true,
@@ -284,7 +288,7 @@ export async function searchConference({
 				group: 'foreignUsers',
 				results: client.query.users({
 					__args: {
-						search: term,
+						search: { term },
 						where: { NOT: participatesIn(conferenceId) },
 						limit: RESULT_LIMIT
 					},
@@ -315,7 +319,7 @@ export async function searchConference({
 			orNone({
 				group: 'transactions',
 				results: client.query.paymentTransactions({
-					__args: { search: term, where: registrationIn(conferenceId), limit: RESULT_LIMIT },
+					__args: { search: { term }, where: registrationIn(conferenceId), limit: RESULT_LIMIT },
 					id: true,
 					amount: true,
 					recievedAt: true,

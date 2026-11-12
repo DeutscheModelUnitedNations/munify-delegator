@@ -1682,24 +1682,22 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Since 0.30.0 `subscribe`
   answers the unsubscribe function (it answered `{ unsubscribe }` while typed as one), result
   types carry the auto included `id`, a live query started before its first answer asks once, and
-  `onError` hears the updates a live result skips (the CHASE link reports them). Keep rumble at
-  ≥ 0.30.0.
+  `onError` hears the updates a live result skips (the CHASE link reports them). Since 0.33.0 a
+  list's `search` is an input object per table, `{ term, fields? }` (`<Table>SearchInputArgument`,
+  `fields` from `<Table>SearchFieldEnum`), never a bare string. Keep rumble at ≥ 0.33.0, on
+  graphql-yoga 6 and `@graphql-yoga/redis-event-target` 4.
 
-- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.1.1 logs the adapter's steps with the
+- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.2.0 still logs the adapter's steps with the
   colour `grey`, which Node 25's `styleText` refuses, failing `vite build` after the build itself.
   The patch says `gray`. Drop it once a release does.
-- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 8): until
+- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 9): until
   mount it replaces `console.warn` and assumes a string, which broke on Svelte's own warnings.
 - **Paraglide stays on 2.** Paraglide 3 compiles messages into virtual modules only its Vite plugin
   provides, and the jobs bundle, the seed and the Bun scripts import messages outside Vite; the unit
   tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
   such code.
-- **rumble stays on 0.30, graphql-yoga on 5.** rumble 0.31 needs yoga 6, and on yoga 6 the live
-  updates over the former single-connection SSE stream (`@graphql-yoga/plugin-graphql-sse`) stopped
-  arriving: the dashboard never noticed a new registration, and the e2e flows waiting on it timed
-  out. Subscriptions now use yoga's built-in SSE instead, so retry the move on that; the redis event
-  target stays on its yoga 5 line (`@graphql-yoga/redis-event-target` 3) until then. CHASE
-  subscribes over WebSocket and runs 0.31 fine. Move only with the e2e suite green.
+- **devalue is not overridden.** SvelteKit and superforms need devalue 5, rumble 6; one override
+  for both breaks one of them, so each resolves its own.
 - **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route

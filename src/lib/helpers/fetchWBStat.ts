@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { logger } from '#lib/logger';
+
+/** How long a figure may take before it shows as unknown; the API sometimes never answers. */
+export const WB_TIMEOUT_MS = 8_000;
+
 export default async function fetchWBStat({
 	country,
 	indicator
@@ -17,7 +21,12 @@ export default async function fetchWBStat({
 		);
 		url.searchParams.set('format', 'json');
 
-		const response = await fetch(url.toString());
+		// A timer of our own rather than `AbortSignal.timeout`, so tests can move it with fake timers
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), WB_TIMEOUT_MS);
+		const response = await fetch(url.toString(), { signal: controller.signal }).finally(() =>
+			clearTimeout(timer)
+		);
 		if (!response.ok) {
 			logger.warn(`World Bank API returned ${response.status} for ${country}/${indicator}`);
 			return null;
