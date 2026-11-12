@@ -247,7 +247,7 @@
 		"test:e2e:coverage": "bun scripts/e2eCoverage.ts"
 	},
 	"type": "module",
-	"version": "2.1.18",
+	"version": "2.1.19",
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@8.0.3": "patches/@magidoc%2Fplugin-svelte-marked@8.0.3.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
