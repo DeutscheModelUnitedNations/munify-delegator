@@ -18,6 +18,9 @@ test('a single participant can manage role applications and complete their signu
 	await loginAs(page, participant);
 	const conferenceId = await openFirstConferenceForRegistration(page);
 
+	// Before anyone applies they are told the language the conference is held in.
+	await expect(page.getByTestId('conference-language-notice')).toContainText('Deutsch');
+
 	await chooseApplyPath(page, /Einzelbewerbung/);
 	// By exact name: the second role is added from the dashboard below.
 	await page

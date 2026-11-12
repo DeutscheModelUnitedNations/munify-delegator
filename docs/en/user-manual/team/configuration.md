@@ -62,7 +62,7 @@ Committees, resolutions, the layout on the templates and the email texts save ri
 
 ### General
 
-- **Basics**: **Conference Name**, **Full Name**, **Location**, **Website** and the **Conference Language**. The nations are filed and printed in this language on the nametag tables, whatever language each person's interface uses.
+- **Basics**: **Conference Name**, **Full Name**, **Location**, **Website** and the **Conference Language**. It shows on the conference's card in the overview and as a notice above the application, so only people who speak it apply. The nations are also filed and printed in it on the nametag tables, whatever language each person's interface uses.
 - **Images & logos**: the **Conference Image**, the **Conference Emblem** (an SVG file for resolutions, otherwise the UN emblem) and the **Conference Logo** for the dashboard header (otherwise the emblem).
 - **Schedule**: **End of the application period**, **Grace Period (in minutes)**, **Conference start date**, **Conference end date** and the **Conference Timezone**, which places the "now" marker in the calendar.
 

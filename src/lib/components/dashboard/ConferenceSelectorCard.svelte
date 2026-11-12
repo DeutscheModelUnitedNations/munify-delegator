@@ -12,6 +12,10 @@
 		conferenceStateLabel
 	} from '../../../routes/(authenticated)/dashboard/conferenceGroups';
 	import { participationOf, roleText } from './myConferenceCardParticipation';
+	import {
+		conferenceLanguageName,
+		normalizeConferenceLanguage
+	} from '#lib/helpers/conferenceLanguage';
 
 	interface Props {
 		conferenceId: string;
@@ -30,6 +34,7 @@
 				title: true,
 				longTitle: true,
 				location: true,
+				language: true,
 				imageFile: { url: true },
 				state: true,
 				startConference: true,
@@ -71,6 +76,13 @@
 
 	const href = $derived(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
 
+	const language = $derived(
+		conferenceLanguageName({
+			language: normalizeConferenceLanguage(conference.language),
+			inLocale: getLocale()
+		})
+	);
+
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
 		month: 'short',
@@ -106,9 +118,19 @@
 			{:else}
 				<div></div>
 			{/if}
-			<div class="badge badge-primary badge-sm shrink-0 gap-1.5 font-medium">
-				<i aria-hidden="true" class="{conferenceStateIcon(conference.state)} text-xs"></i>
-				{conferenceStateLabel(conference.state)}
+			<div class="flex shrink-0 flex-wrap justify-end gap-2">
+				<div
+					class="badge badge-sm gap-1.5 border-white/30 bg-white/90 font-medium text-black"
+					title={m.conferenceLanguage()}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-translate text-xs"></i>
+					<span class="sr-only">{m.conferenceLanguage()}:</span>
+					{language}
+				</div>
+				<div class="badge badge-primary badge-sm gap-1.5 font-medium">
+					<i aria-hidden="true" class="{conferenceStateIcon(conference.state)} text-xs"></i>
+					{conferenceStateLabel(conference.state)}
+				</div>
 			</div>
 		</div>
 

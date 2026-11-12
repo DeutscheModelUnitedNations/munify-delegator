@@ -175,9 +175,18 @@
 			const changedFields = pendingChanges.map((change) => change.key);
 
 			// The form carries uploads as `File`; each picked one goes to the storage first and the
-			// mutation takes its id. A field left untouched yields `undefined` and keeps what is stored.
-			const upload = ({ field, file }: { field: ConferenceFileField; file: File | undefined }) =>
-				uploadFile({ file, target: { kind: 'conference', field, conferenceId } });
+			// mutation takes its id. A field left untouched yields `undefined` and keeps what is stored,
+			// a removed image `null`, which deletes it.
+			const upload = async ({
+				field,
+				file
+			}: {
+				field: ConferenceFileField;
+				file: File | null | undefined;
+			}) =>
+				file === null
+					? null
+					: uploadFile({ file, target: { kind: 'conference', field, conferenceId } });
 			const {
 				image,
 				emblem,
