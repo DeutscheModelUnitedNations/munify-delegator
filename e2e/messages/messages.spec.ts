@@ -16,7 +16,7 @@ const DASHBOARD = `/dashboard/${fixture.conferenceId}`;
 const MESSAGES = `${DASHBOARD}/messages`;
 const TEAM_MESSAGES = `${DASHBOARD}/team/messages`;
 const { anna, carla } = fixture.delegates;
-const { care, reviewer, management, member } = fixture.team;
+const { care, reviewer, management, member, tessa, theo } = fixture.team;
 
 async function signedIn(
 	browser: import('@playwright/test').Browser,
@@ -33,6 +33,10 @@ async function write(page: Page, text: string) {
 	await expect(page.getByTestId('chat-message').filter({ hasText: text })).toBeVisible();
 	await expect(page.getByTestId('chat-input')).toHaveValue('');
 }
+
+/** A chip narrowing the team's chat list to one of the inboxes the caller answers. */
+const inboxChip = (page: Page, name: string) =>
+	page.getByRole('group', { name: 'Postfächer' }).getByRole('button', { name });
 
 const openChat = (page: Page, title: string | RegExp) =>
 	page.getByTestId('chat-list').getByRole('button', { name: title }).click();
@@ -226,6 +230,67 @@ test('project management hands out a committee function, which opens an inbox', 
 	).toBeVisible();
 
 	await functions.getByRole('checkbox', { name: 'Vorsitz · MSSR' }).uncheck();
+	await expect(memberPage.getByText('Du betreust noch kein Postfach.')).toBeVisible();
+});
+
+test('a participant writes to one trusted person in confidence', async ({ browser }) => {
+	const carlaPage = await signedIn(browser, { id: carla.id, startUrl: MESSAGES });
+	await carlaPage.getByTestId('chat-new').click();
+	const options = carlaPage.getByTestId('chat-inbox-option');
+	// all of them together, and each by name
+	await expect(options.filter({ hasText: 'Vertrauenspersonen' })).toHaveCount(1);
+	await expect(
+		options.filter({ hasText: `Vertrauensperson · ${theo.given} ${theo.family}` })
+	).toHaveCount(1);
+	const tessaName = `${tessa.given} ${tessa.family}`;
+	await options.filter({ hasText: `Vertrauensperson · ${tessaName}` }).click();
+	await expect(carlaPage.getByTestId('chat-title')).toHaveText(`Vertrauensperson · ${tessaName}`);
+	await expect(carlaPage.getByTestId('chat-thread')).toContainText(
+		`Vertraulich: Nur ${tessaName} liest diesen Chat`
+	);
+	await write(carlaPage, 'Ich brauche jemanden zum Reden.');
+
+	// Tessa finds it under "to me personally", Theo does not
+	const tessaPage = await signedIn(browser, { id: tessa.id, startUrl: TEAM_MESSAGES });
+	await inboxChip(tessaPage, 'An mich persönlich').click();
+	await openChat(tessaPage, /Frankreich · MSGV/);
+	await expect(tessaPage.getByTestId('chat-message')).toContainText([
+		'Ich brauche jemanden zum Reden.'
+	]);
+	await write(tessaPage, 'Ich bin da. Wann passt es dir?');
+	const answer = carlaPage.getByTestId('chat-message').filter({ hasText: 'Ich bin da.' });
+	await expect(answer).toContainText(`Vertrauensperson · ${tessaName}`);
+
+	const theoPage = await signedIn(browser, { id: theo.id, startUrl: TEAM_MESSAGES });
+	await expect(theoPage.getByTestId('chat-workspace')).toBeVisible();
+	await expect(theoPage.getByText('In diesem Postfach ist noch nichts angekommen.')).toBeVisible();
+});
+
+test('project management makes a team member a trusted person', async ({ browser }) => {
+	const memberPage = await signedIn(browser, { id: member.id, startUrl: TEAM_MESSAGES });
+	await expect(memberPage.getByText('Du betreust noch kein Postfach.')).toBeVisible();
+
+	const managementPage = await signedIn(browser, {
+		id: management.id,
+		startUrl: `${DASHBOARD}/team/members`
+	});
+	await managementPage
+		.getByRole('row')
+		.filter({ hasText: `${member.id}@e2e.test` })
+		.getByTestId('team-functions-open')
+		.click();
+	const trusted = managementPage
+		.getByTestId('team-function-trusted')
+		.getByRole('checkbox', { name: 'Vertrauensperson' });
+	await expect(trusted).not.toBeChecked();
+	await trusted.check();
+
+	// the member answers the shared inbox and their own now
+	await expect(memberPage.getByTestId('chat-workspace')).toBeVisible();
+	await expect(inboxChip(memberPage, 'Vertrauenspersonen')).toBeVisible();
+	await expect(inboxChip(memberPage, 'An mich persönlich')).toBeVisible();
+
+	await trusted.uncheck();
 	await expect(memberPage.getByText('Du betreust noch kein Postfach.')).toBeVisible();
 });
 

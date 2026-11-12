@@ -4,6 +4,7 @@ import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumbl
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { callerFacts, refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 import { isSystemAdmin } from '#api/services/authHelper/rules';
+import { callerUserId } from '#api/services/authHelper/utils';
 import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
 import { messagePreview, type ChatInbox } from '#lib/helpers/chat';
 import { conferenceContacts, type Contact } from './chatContacts';
@@ -15,9 +16,9 @@ import {
 	assertPartyOfChat,
 	assertTakesPartInChat,
 	assertWritingParticipant,
-	caresFor,
 	chatSide,
 	holdsInbox,
+	knowsPeopleOf,
 	readableChat,
 	registerChatAbilities,
 	writingParticipantId
@@ -32,12 +33,14 @@ import {
 	openDelegationChat,
 	openDirectChat,
 	openTeamChat,
+	sameInbox,
 	sendMessage,
 	setChatBlocked,
 	setMessageNotificationEmails,
 	setMessagingSuspended,
 	unreadCount,
 	personOfParticipant,
+	trustedUserIdOf,
 	userNameOf,
 	type ChatRow,
 	type InboxOption
@@ -109,6 +112,17 @@ ChatInboxOption.implement({
 			resolve: (option) => option.committee?.abbreviation
 		}),
 		committeeName: t.string({ nullable: true, resolve: (option) => option.committee?.name }),
+		trustedPersonId: t.id({
+			nullable: true,
+			description:
+				'The one trusted person this inbox is, to pass to `openTeamChat`; null for the trusted persons together and for every other inbox.',
+			resolve: (option) => option.person?.id
+		}),
+		personName: t.string({
+			nullable: true,
+			description: 'The full name of that trusted person.',
+			resolve: (option) => option.person?.name
+		}),
 		chatId: t.id({
 			nullable: true,
 			description: 'The chat with this inbox, once one was opened.',
@@ -135,7 +149,7 @@ async function contactsOfChat({ ctx, chat }: { ctx: ApiContext; chat: ChatRow })
 	const facts = await callerFacts(ctx);
 	const own = new Set(facts.participants.map((participant) => participant.id));
 	const contacts = await conferenceContacts(chat.conferenceId);
-	const exposeAccount = caresFor({ ctx, facts, conferenceId: chat.conferenceId });
+	const exposeAccount = knowsPeopleOf({ ctx, facts, chat });
 	return [chat.participantId, chat.otherParticipantId].flatMap((participantId) => {
 		if (!participantId || own.has(participantId)) return [];
 		const contact = contacts.get(participantId);
@@ -160,16 +174,33 @@ const ChatRef = object({
 		people: t.field({
 			type: [ChatPerson],
 			description:
-				'Who the participants of the chat are, by name and account: for participant care only (of a team chat, and of a chat it reviews); empty for everybody else, who know the people by role.',
+				'Who the participants of the chat are, by name and account: for participant care only (of a team chat, and of a chat it reviews); empty for everybody else, who know the people by role, and always in a chat with the trusted persons.',
 			resolve: async (chat, _args, ctx) => {
 				const facts = await callerFacts(ctx);
-				if (!caresFor({ ctx, facts, conferenceId: chat.conferenceId })) return [];
+				if (!knowsPeopleOf({ ctx, facts, chat })) return [];
 				const participantIds = [chat.participantId, chat.otherParticipantId].flatMap((id) =>
 					id ? [id] : []
 				);
 				const people = await Promise.all(participantIds.map(personOfParticipant));
 				return people.flatMap((person) => (person?.name ? [{ ...person, name: person.name }] : []));
 			}
+		}),
+		// the account of a trusted person is theirs alone; everybody else gets the name
+		trustedUserId: t.id({
+			nullable: true,
+			description:
+				'A chat with one trusted person: their account, for themselves only (null for everybody else, and for every other chat).',
+			resolve: (chat, _args, ctx) =>
+				chat.trustedUserId !== null && chat.trustedUserId === callerUserId(ctx)
+					? chat.trustedUserId
+					: null
+		}),
+		trustedPersonName: t.string({
+			nullable: true,
+			description:
+				'The full name of the one trusted person the chat is with; null for a chat with all of them and for every other chat.',
+			resolve: async (chat) =>
+				chat.trustedUserId ? ((await userNameOf(chat.trustedUserId)) ?? null) : null
 		}),
 		unreadCount: t.int({
 			description: 'How many messages the caller (or, for a team chat, their inbox) has not read.',
@@ -217,16 +248,17 @@ async function teamAuthorName(userId: string | null) {
 
 /**
  * Whether the caller may know the names of the participants writing in the chat: in a delegation
- * group (its members know each other) and as participant care.
+ * group (its members know each other) and as participant care, though never in a chat with the
+ * trusted persons.
  */
 async function knowsParticipantNames({ ctx, chatId }: { ctx: ApiContext; chatId: string }) {
 	const chat = await db.query.chat.findFirst({
 		where: { id: chatId },
-		columns: { kind: true, conferenceId: true }
+		columns: { kind: true, conferenceId: true, inbox: true }
 	});
 	if (!chat) return false;
 	if (chat.kind === 'DELEGATION') return true;
-	return caresFor({ ctx, facts: await callerFacts(ctx), conferenceId: chat.conferenceId });
+	return knowsPeopleOf({ ctx, facts: await callerFacts(ctx), chat });
 }
 
 /** `chatMessage.authorName`: the author's name where the reader may know it. */
@@ -308,7 +340,7 @@ schemaBuilder.queryFields((t) => ({
 
 	chatInboxes: t.field({
 		description:
-			'The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.',
+			'The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.',
 		type: [ChatInboxOption],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -332,27 +364,24 @@ schemaBuilder.queryFields((t) => ({
 				participantId
 			});
 			const options = args.participantId
-				? reaching.filter(({ inbox, committee }) =>
+				? reaching.filter(({ inbox, committee, person }) =>
 						holdsInbox({
 							ctx,
 							facts,
 							conferenceId: args.conferenceId,
 							inbox,
-							committeeId: committee?.id ?? null
+							committeeId: committee?.id ?? null,
+							trustedUserId: person?.userId ?? null
 						})
 					)
 				: reaching;
 			const chats = await db.query.chat.findMany({
 				where: { kind: 'TEAM', participantId, conferenceId: args.conferenceId },
-				columns: { id: true, inbox: true, committeeId: true }
+				columns: { id: true, inbox: true, committeeId: true, trustedUserId: true }
 			});
 			return options.map((option) => ({
 				...option,
-				chatId:
-					chats.find(
-						(chat) =>
-							chat.inbox === option.inbox && chat.committeeId === (option.committee?.id ?? null)
-					)?.id ?? null
+				chatId: chats.find((chat) => sameInbox({ option, wanted: chat }))?.id ?? null
 			}));
 		}
 	})
@@ -407,20 +436,35 @@ schemaBuilder.mutationFields((t) => ({
 
 	openTeamChat: t.drizzleField({
 		description:
-			"The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.",
+			"The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.",
 		type: ChatRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			inbox: t.arg({ type: chatInboxEnum, required: true }),
 			committeeId: t.arg.id({ description: "The committee of a chairs' or consultants' inbox." }),
+			trustedPersonId: t.arg.id({
+				description: 'One trusted person, instead of all of them together.'
+			}),
 			participantId: t.arg.id()
 		},
 		resolve: async (select, _root, args, ctx) => {
 			const inbox: ChatInbox = args.inbox;
 			const committeeId = args.committeeId ?? null;
+			const trustedUserId = args.trustedPersonId
+				? await trustedUserIdOf({
+						conferenceId: args.conferenceId,
+						trustedPersonId: args.trustedPersonId
+					})
+				: null;
 			let participantId: string;
 			if (args.participantId) {
-				await assertHoldsInbox({ ctx, conferenceId: args.conferenceId, inbox, committeeId });
+				await assertHoldsInbox({
+					ctx,
+					conferenceId: args.conferenceId,
+					inbox,
+					committeeId,
+					trustedUserId
+				});
 				participantId = args.participantId;
 			} else {
 				participantId = await assertWritingParticipant({ ctx, conferenceId: args.conferenceId });
@@ -429,7 +473,8 @@ schemaBuilder.mutationFields((t) => ({
 				conferenceId: args.conferenceId,
 				participantId,
 				inbox,
-				committeeId
+				committeeId,
+				trustedUserId
 			});
 			await refreshCallerAbilities(ctx);
 			return db.query.chat

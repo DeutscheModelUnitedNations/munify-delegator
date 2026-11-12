@@ -842,6 +842,8 @@ export type Chat = {
   search_distance: Float | null,
   side: String,
   teamReadAt: DateTime | null,
+  trustedPersonName: String | null,
+  trustedUserId: ID | null,
   underReview: Boolean,
   unreadCount: Int,
   updatedAt: DateTime,
@@ -870,7 +872,9 @@ export type ChatInboxOption = {
   committeeAbbreviation: String | null,
   committeeId: ID | null,
   committeeName: String | null,
-  inbox: ChatinboxEnum    
+  inbox: ChatinboxEnum,
+  personName: String | null,
+  trustedPersonId: ID | null    
 };
 		
 export type ChatOrderInputArgument = {
@@ -886,6 +890,7 @@ export type ChatOrderInputArgument = {
   otherParticipantId?: SortingParameter | null | undefined,
   participantId?: SortingParameter | null | undefined,
   teamReadAt?: SortingParameter | null | undefined,
+  trustedUserId?: SortingParameter | null | undefined,
   underReview?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
@@ -896,7 +901,7 @@ export type ChatPerson = {
   userId: ID    
 };
 		
-export type ChatSearchFieldEnum = "committeeId" | "conferenceId" | "delegationId" | "id" | "otherParticipantId" | "participantId";
+export type ChatSearchFieldEnum = "committeeId" | "conferenceId" | "delegationId" | "id" | "otherParticipantId" | "participantId" | "trustedUserId";
 		
 export type ChatSearchInputArgument = {
   fields?: ChatSearchFieldEnum[] | undefined,
@@ -926,11 +931,12 @@ export type ChatWhereInputArgument = {
   participantId?: IDWhereInputArgument | null | undefined,
   reports?: ChatreportWhereInputArgument | null | undefined,
   teamReadAt?: DateTimeWhereInputArgument | null | undefined,
+  trustedUserId?: IDWhereInputArgument | null | undefined,
   underReview?: BooleanWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type ChatinboxEnum = "CHAIR" | "CONSULTANT" | "PARTICIPANT_CARE";
+export type ChatinboxEnum = "CHAIR" | "CONSULTANT" | "PARTICIPANT_CARE" | "TRUSTED_PERSON";
 		
 export type ChatkindEnum = "DELEGATION" | "DIRECT" | "TEAM";
 		
@@ -3031,7 +3037,7 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   giveTeamFunction: (p: {
-    committeeId: ID,
+    committeeId?: ID | null | undefined,
     kind: TeamfunctionkindEnum,
     teamMemberId: ID
   }) => Teamfunction,
@@ -3071,7 +3077,8 @@ export type Mutation = {
     committeeId?: ID | null | undefined,
     conferenceId: ID,
     inbox: ChatinboxEnum,
-    participantId?: ID | null | undefined
+    participantId?: ID | null | undefined,
+    trustedPersonId?: ID | null | undefined
   }) => Chat,
   recordSearch: (p: {
     conferenceId: ID,
@@ -6607,8 +6614,8 @@ export type Teamfunction = {
   committee: (p?: {
     orderBy?: CommitteeOrderInputArgument | null | undefined,
     where?: CommitteeWhereInputArgument | null | undefined
-  }) => Committee,
-  committeeId: ID,
+  }) => Committee | null,
+  committeeId: ID | null,
   createdAt: DateTime,
   id: ID,
   kind: TeamfunctionkindEnum,
@@ -6651,7 +6658,7 @@ export type TeamfunctionWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type TeamfunctionkindEnum = "CHAIR" | "CONSULTANT";
+export type TeamfunctionkindEnum = "CHAIR" | "CONSULTANT" | "TRUSTED_PERSON";
 		
 export type Teammember = {
   conference: (p?: {

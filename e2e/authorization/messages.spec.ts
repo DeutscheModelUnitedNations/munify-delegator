@@ -41,12 +41,14 @@ const CONFERENCE = fixture.conferenceId;
 const GV = fixture.gvId;
 const SR = fixture.srId;
 const { anna, bert, carla, dora } = fixture.delegates;
-const { care, chair, reviewer, management, member } = fixture.team;
+const { care, chair, reviewer, management, member, tessa, theo } = fixture.team;
 const participant = (person: { id: string }) => fixture.participantId(person.id);
 
 const OPEN_DIRECT = `mutation ($c: ID!, $p: ID!) { openDirectChat(conferenceId: $c, participantId: $p) { id } }`;
-const OPEN_TEAM = `mutation ($c: ID!, $inbox: ChatinboxEnum!, $committee: ID, $p: ID) {
-	openTeamChat(conferenceId: $c, inbox: $inbox, committeeId: $committee, participantId: $p) { id }
+const OPEN_TEAM = `mutation ($c: ID!, $inbox: ChatinboxEnum!, $committee: ID, $p: ID, $trusted: ID) {
+	openTeamChat(
+		conferenceId: $c, inbox: $inbox, committeeId: $committee, participantId: $p, trustedPersonId: $trusted
+	) { id }
 }`;
 const SEND = `mutation ($chat: ID!, $body: String!) { sendChatMessage(chatId: $chat, body: $body) { id } }`;
 const CHATS = `query ($c: ID!) {
@@ -98,7 +100,10 @@ async function openDirect(page: Page, to: { id: string }) {
 	return { id: result.data?.openDirectChat?.id ?? '', result };
 }
 
-async function openTeam(page: Page, args: { inbox: string; committee?: string; p?: string }) {
+async function openTeam(
+	page: Page,
+	args: { inbox: string; committee?: string; p?: string; trusted?: string }
+) {
 	const result = await gql<{ openTeamChat: { id: string } }>(page, OPEN_TEAM, {
 		c: CONFERENCE,
 		...args
@@ -206,7 +211,8 @@ test('a team inbox is read by whoever answers it, and answers carry a name', asy
 	const reviewerPage = await signedIn(browser, reviewer.id);
 	const carePage = await signedIn(browser, care.id);
 
-	// Anna sits in GV: its chairs and consultants are hers to write to, participant care anybody's
+	// Anna sits in GV: its chairs and consultants are hers to write to, participant care and the
+	// trusted persons anybody's
 	const inboxes = await gql<{ chatInboxes: { inbox: string; committeeId: string | null }[] }>(
 		annaPage,
 		`query ($c: ID!) { chatInboxes(conferenceId: $c) { inbox committeeId } }`,
@@ -214,6 +220,10 @@ test('a team inbox is read by whoever answers it, and answers carry a name', asy
 	);
 	expect(inboxes.data?.chatInboxes).toEqual([
 		{ inbox: 'PARTICIPANT_CARE', committeeId: null },
+		// the trusted persons together, and each of the two
+		{ inbox: 'TRUSTED_PERSON', committeeId: null },
+		{ inbox: 'TRUSTED_PERSON', committeeId: null },
+		{ inbox: 'TRUSTED_PERSON', committeeId: null },
 		{ inbox: 'CHAIR', committeeId: GV },
 		{ inbox: 'CONSULTANT', committeeId: GV }
 	]);
@@ -398,6 +408,97 @@ test('committee functions are handed out by whoever manages the team', async ({ 
 	expect((await gql(managementPage, REMOVE, { id: functionId })).errors).toBeUndefined();
 	// without the function the inbox is nobody's any more
 	expect(await chatsOf(memberPage)).toEqual([]);
+});
+
+test('what is written to the trusted persons stays with them', async ({ browser }) => {
+	const doraPage = await signedIn(browser, dora.id);
+	const tessaPage = await signedIn(browser, tessa.id);
+	const theoPage = await signedIn(browser, theo.id);
+	const carePage = await signedIn(browser, care.id);
+	const managementPage = await signedIn(browser, management.id);
+	const adminPage = await (await browser.newContext()).newPage();
+	await loginAs(adminPage, fixedTestUser('e2e-msa-admin', { roles: ['admin'] }));
+
+	// Dora finds the trusted persons together, and each of them by name (never by account)
+	const INBOXES = `query ($c: ID!) { chatInboxes(conferenceId: $c) { inbox trustedPersonId personName } }`;
+	type Inbox = { inbox: string; trustedPersonId: string | null; personName: string | null };
+	const listed = await gql<{ chatInboxes: Inbox[] }>(doraPage, INBOXES, { c: CONFERENCE });
+	const trusted = (listed.data?.chatInboxes ?? []).filter((row) => row.inbox === 'TRUSTED_PERSON');
+	expect(trusted.map((row) => row.personName)).toEqual([
+		null,
+		`${tessa.given} ${tessa.family}`,
+		`${theo.given} ${theo.family}`
+	]);
+	const toTessa = trusted[1]?.trustedPersonId ?? '';
+	expect(toTessa).not.toBe('');
+	expect(JSON.stringify(trusted)).not.toContain(tessa.id);
+
+	const shared = (await openTeam(doraPage, { inbox: 'TRUSTED_PERSON' })).id;
+	const personal = (await openTeam(doraPage, { inbox: 'TRUSTED_PERSON', trusted: toTessa })).id;
+	expect(shared).not.toBe('');
+	expect(personal).not.toBe('');
+	expect(personal).not.toBe(shared);
+	// asking again finds the same chats
+	expect((await openTeam(doraPage, { inbox: 'TRUSTED_PERSON', trusted: toTessa })).id).toBe(
+		personal
+	);
+	await send(doraPage, shared, 'An alle Vertrauenspersonen');
+	await send(doraPage, personal, 'Nur für Tessa');
+
+	// both read what was written to all of them; only Tessa what was written to her
+	const idsOf = async (page: Page) => (await chatsOf(page)).map((row) => row.id).sort();
+	expect(await idsOf(tessaPage)).toEqual([shared, personal].sort());
+	expect(await idsOf(theoPage)).toEqual([shared]);
+	expect(await messagesOf(theoPage, personal)).toEqual([]);
+	expect(codeOf(await send(theoPage, personal, 'mitlesen?'))).toBe('NOT_FOUND');
+
+	// nobody else: not participant care, not project management, not a system admin
+	for (const page of [carePage, managementPage, adminPage]) {
+		const ids = await idsOf(page);
+		expect(ids).not.toContain(shared);
+		expect(ids).not.toContain(personal);
+		expect(await messagesOf(page, shared)).toEqual([]);
+		expect(await messagesOf(page, personal)).toEqual([]);
+		expect(codeOf(await send(page, shared, 'mitlesen?'))).toBe('NOT_FOUND');
+	}
+
+	// Dora stays a role to them, and their answer carries their name
+	const tessasChats = await chatsOf(tessaPage);
+	for (const row of tessasChats) {
+		expect(row.side).toBe('TEAM');
+		expect(row.contacts[0]).toMatchObject({ nationAlpha3Code: 'fra', userId: null });
+		expect(row.people).toEqual([]);
+	}
+	const [question] = await messagesOf(tessaPage, personal);
+	expect(question).toMatchObject({ body: 'Nur für Tessa', authorName: null });
+	expect((await send(tessaPage, personal, 'Ich bin für dich da')).errors).toBeUndefined();
+	const [, answer] = await messagesOf(doraPage, personal);
+	expect(answer).toMatchObject({
+		fromTeam: true,
+		authorName: `${tessa.given} ${tessa.family}`,
+		teamAuthorUserId: null
+	});
+
+	// such a chat cannot be reported to participant care
+	const REPORT = `mutation ($chat: ID!) { reportChat(chatId: $chat, reason: "x") }`;
+	expect(codeOf(await gql(doraPage, REPORT, { chat: personal }))).toBe('INVALID_INPUT');
+
+	// a trusted person is one for the whole conference: no committee, and no committee function without one
+	const GIVE = `mutation ($member: ID!, $committee: ID, $kind: TeamfunctionkindEnum!) {
+		giveTeamFunction(teamMemberId: $member, committeeId: $committee, kind: $kind) { id }
+	}`;
+	const memberRow = `e2e-team-${member.id}`;
+	expect(
+		codeOf(
+			await gql(managementPage, GIVE, { member: memberRow, committee: GV, kind: 'TRUSTED_PERSON' })
+		)
+	).toBe('INVALID_INPUT');
+	expect(codeOf(await gql(managementPage, GIVE, { member: memberRow, kind: 'CHAIR' }))).toBe(
+		'INVALID_INPUT'
+	);
+	expect(codeOf(await gql(tessaPage, GIVE, { member: memberRow, kind: 'TRUSTED_PERSON' }))).toBe(
+		'FORBIDDEN'
+	);
 });
 
 test('switching messaging off closes every chat for writing but keeps it readable', async ({

@@ -108,6 +108,7 @@
 					conferenceId,
 					inbox: option.inbox,
 					committeeId: option.committeeId,
+					trustedPersonId: option.trustedPersonId,
 					participantId
 				},
 				id: true

@@ -105,28 +105,58 @@ export async function chatWriteRefusal({
 	});
 }
 
-/** A team inbox, with the committee of a chairs' or consultants' one. */
+/**
+ * A team inbox, with the committee of a chairs' or consultants' one, or the one trusted person it
+ * is (`id` is their function's, which names them without their account).
+ */
 export interface InboxOption {
 	inbox: ChatInbox;
 	committee: { id: string; abbreviation: string; name: string } | null;
+	person: { id: string; userId: string; name: string } | null;
 }
 
-/** The team inboxes of the conference that somebody answers: participant care, and each function a team member holds. */
+const byText = (a: string | undefined, b: string | undefined) => (a ?? '').localeCompare(b ?? '');
+
+/**
+ * The team inboxes of the conference that somebody answers: participant care, the trusted persons
+ * together and each of them alone, and each committee function a team member holds.
+ */
 async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 	const functions = await db.query.teamFunction.findMany({
-		where: { committee: { conferenceId } },
-		columns: { kind: true },
-		with: { committee: { columns: { id: true, abbreviation: true, name: true } } }
+		where: { teamMember: { conferenceId } },
+		columns: { id: true, kind: true },
+		with: {
+			committee: { columns: { id: true, abbreviation: true, name: true } },
+			teamMember: {
+				columns: { userId: true },
+				with: { user: { columns: { givenName: true, familyName: true } } }
+			}
+		}
 	});
 	const committeeInboxes = new Map<string, InboxOption>();
-	for (const { kind, committee } of functions) {
-		committeeInboxes.set(`${committee.id}/${kind}`, { inbox: kind, committee });
+	const trusted: InboxOption[] = [];
+	for (const { id, kind, committee, teamMember } of functions) {
+		if (committee) {
+			committeeInboxes.set(`${committee.id}/${kind}`, { inbox: kind, committee, person: null });
+		} else if (kind === 'TRUSTED_PERSON' && teamMember.user) {
+			const name = `${teamMember.user.givenName} ${teamMember.user.familyName}`;
+			trusted.push({
+				inbox: kind,
+				committee: null,
+				person: { id, userId: teamMember.userId, name }
+			});
+		}
 	}
 	return [
-		{ inbox: 'PARTICIPANT_CARE', committee: null },
+		{ inbox: 'PARTICIPANT_CARE', committee: null, person: null },
+		// all trusted persons together first, then each of them
+		...(trusted.length > 0
+			? [{ inbox: 'TRUSTED_PERSON' as const, committee: null, person: null }]
+			: []),
+		...trusted.sort((a, b) => byText(a.person?.name, b.person?.name)),
 		...[...committeeInboxes.values()].sort(
 			(a, b) =>
-				(a.committee?.abbreviation ?? '').localeCompare(b.committee?.abbreviation ?? '') ||
+				byText(a.committee?.abbreviation, b.committee?.abbreviation) ||
 				a.inbox.localeCompare(b.inbox)
 		)
 	];
@@ -162,17 +192,12 @@ async function assertMessagingOn(conferenceId: string) {
 	return flags;
 }
 
-/** The chat matching `values`, created when there is none yet. */
-async function findOrCreateChat(values: typeof schema.chat.$inferInsert) {
-	const key = {
-		kind: values.kind,
-		...(values.participantId ? { participantId: values.participantId } : {}),
-		...(values.otherParticipantId ? { otherParticipantId: values.otherParticipantId } : {}),
-		...(values.delegationId ? { delegationId: values.delegationId } : {}),
-		...(values.inbox ? { inbox: values.inbox } : {}),
-		...(values.committeeId ? { committeeId: values.committeeId } : {})
-	};
-	const found = await db.query.chat.findFirst({ where: key });
+type ChatValues = typeof schema.chat.$inferInsert;
+type ChatKey = NonNullable<Parameters<typeof db.query.chat.findFirst>[0]>['where'];
+
+/** The chat `where` finds, created from `values` when there is none yet. */
+async function findOrCreateChat({ where, values }: { where: ChatKey; values: ChatValues }) {
+	const found = await db.query.chat.findFirst({ where });
 	if (found) return found;
 	// two people opening the same chat at once: the unique index lets one insert through
 	const [created] = await db.insert(schema.chat).values(values).onConflictDoNothing().returning();
@@ -180,7 +205,7 @@ async function findOrCreateChat(values: typeof schema.chat.$inferInsert) {
 		chatPubsub.created();
 		return created;
 	}
-	const raced = await db.query.chat.findFirst({ where: key });
+	const raced = await db.query.chat.findFirst({ where });
 	if (!raced) throw apiError({ code: 'CONFLICT', message: m.chatCouldNotBeOpened() });
 	return raced;
 }
@@ -205,7 +230,8 @@ export async function openDirectChat({
 		throw apiError({ code: 'NOT_FOUND', message: m.chatContactNotFound() });
 	}
 	const [participantId, otherParticipantId] = [fromParticipantId, toParticipantId].sort();
-	return findOrCreateChat({ conferenceId, kind: 'DIRECT', participantId, otherParticipantId });
+	const key = { kind: 'DIRECT' as const, participantId, otherParticipantId };
+	return findOrCreateChat({ where: key, values: { conferenceId, ...key } });
 }
 
 /** The group chat of a delegation that holds a role, opened when it has none yet. */
@@ -223,7 +249,8 @@ export async function openDelegationChat({
 		columns: { id: true }
 	});
 	if (!delegation) throw refused('NOT_SEATED');
-	return findOrCreateChat({ conferenceId, kind: 'DELEGATION', delegationId });
+	const key = { kind: 'DELEGATION' as const, delegationId };
+	return findOrCreateChat({ where: key, values: { conferenceId, ...key } });
 }
 
 /** The chat of a participant with a team inbox that reaches them, opened when there is none yet. */
@@ -231,28 +258,73 @@ export async function openTeamChat({
 	conferenceId,
 	participantId,
 	inbox,
-	committeeId
+	committeeId,
+	trustedUserId = null
 }: {
 	conferenceId: string;
 	participantId: string;
 	inbox: ChatInbox;
 	committeeId: string | null;
+	/** The one trusted person to write to; null for their shared inbox and every other one */
+	trustedUserId?: string | null;
 }) {
 	await assertMessagingOn(conferenceId);
 	const reaching = await inboxesReaching({ conferenceId, participantId });
-	const wanted = inbox === 'PARTICIPANT_CARE' ? null : committeeId;
-	if (
-		!reaching.some((option) => option.inbox === inbox && (option.committee?.id ?? null) === wanted)
-	) {
+	const wanted = {
+		inbox,
+		committeeId: inbox === 'CHAIR' || inbox === 'CONSULTANT' ? committeeId : null,
+		trustedUserId: inbox === 'TRUSTED_PERSON' ? trustedUserId : null
+	};
+	if (!reaching.some((option) => sameInbox({ option, wanted }))) {
 		throw apiError({ code: 'CONFLICT', message: m.chatInboxNotAvailable() });
 	}
+	const orNone = (id: string | null) => id ?? { isNull: true as const };
 	return findOrCreateChat({
-		conferenceId,
-		kind: 'TEAM',
-		participantId,
-		inbox,
-		committeeId: wanted
+		where: {
+			kind: 'TEAM',
+			participantId,
+			inbox,
+			committeeId: orNone(wanted.committeeId),
+			// the trusted persons' shared chat is the one naming none of them
+			trustedUserId: orNone(wanted.trustedUserId)
+		},
+		values: { conferenceId, kind: 'TEAM', participantId, ...wanted }
 	});
+}
+
+/** Whether an inbox is the one a chat names: by its kind, its committee and its trusted person. */
+export function sameInbox({
+	option,
+	wanted
+}: {
+	option: InboxOption;
+	wanted: { inbox: ChatInbox | null; committeeId: string | null; trustedUserId: string | null };
+}) {
+	return (
+		option.inbox === wanted.inbox &&
+		(option.committee?.id ?? null) === wanted.committeeId &&
+		(option.person?.userId ?? null) === wanted.trustedUserId
+	);
+}
+
+/**
+ * The account behind a trusted person as `chatInboxes` names them (their function's id); CONFLICT
+ * when nobody of the conference is that trusted person (any more).
+ */
+export async function trustedUserIdOf({
+	conferenceId,
+	trustedPersonId
+}: {
+	conferenceId: string;
+	trustedPersonId: string;
+}) {
+	const held = await db.query.teamFunction.findFirst({
+		where: { id: trustedPersonId, kind: 'TRUSTED_PERSON', teamMember: { conferenceId } },
+		columns: { id: true },
+		with: { teamMember: { columns: { userId: true } } }
+	});
+	if (!held) throw apiError({ code: 'CONFLICT', message: m.chatInboxNotAvailable() });
+	return held.teamMember.userId;
 }
 
 /** Who writes a message: a participant as their part in the conference, or a team member from the inbox. */

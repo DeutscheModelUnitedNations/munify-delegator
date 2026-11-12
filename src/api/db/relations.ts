@@ -817,8 +817,7 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		committee: r.one.committee({
 			from: r.teamFunction.committeeId,
-			to: r.committee.id,
-			optional: false
+			to: r.committee.id
 		})
 	},
 	chat: {

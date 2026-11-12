@@ -4,7 +4,7 @@
  */
 
 export type ChatKind = 'DIRECT' | 'DELEGATION' | 'TEAM';
-export type ChatInbox = 'PARTICIPANT_CARE' | 'CHAIR' | 'CONSULTANT';
+export type ChatInbox = 'PARTICIPANT_CARE' | 'CHAIR' | 'CONSULTANT' | 'TRUSTED_PERSON';
 /** How the caller relates to a chat: a party, somebody answering its inbox, or participant care reviewing a report. */
 export type ChatSide = 'PARTICIPANT' | 'TEAM' | 'REVIEW';
 
@@ -14,8 +14,8 @@ export const CHAT_REPORT_REASON_MAX_LENGTH = 1000;
 export const UNREAD_MESSAGE_MAIL_MINUTES = 15;
 
 /**
- * Whether a team inbox and a person write each other. Participant care reaches everybody with a
- * registration. A committee's chairs and consultants reach the people seated in their committee,
+ * Whether a team inbox and a person write each other. Participant care and the trusted persons
+ * reach everybody with a registration. A committee's chairs and consultants reach the people seated in their committee,
  * and those seated without one (non-state actors, single participants), who move between all.
  */
 export function inboxReaches({
@@ -28,9 +28,20 @@ export function inboxReaches({
 	/** The person's seat; null while they hold none (or it is not released to them yet). */
 	person: { committeeId: string | null } | null;
 }) {
-	if (inbox === 'PARTICIPANT_CARE') return true;
+	if (inbox === 'PARTICIPANT_CARE' || inbox === 'TRUSTED_PERSON') return true;
 	if (!person || !committeeId) return false;
 	return person.committeeId === null || person.committeeId === committeeId;
+}
+
+/** A trusted person is one for the whole conference; chairs and consultants are a committee's. */
+export function functionFitsCommittee({
+	kind,
+	committeeId
+}: {
+	kind: 'CHAIR' | 'CONSULTANT' | 'TRUSTED_PERSON';
+	committeeId: string | null;
+}) {
+	return (kind === 'TRUSTED_PERSON') === (committeeId === null);
 }
 
 export type WriteRefusal =

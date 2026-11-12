@@ -41,30 +41,61 @@ export function contactLabel(contact: ContactLabelSource) {
 	return [contactName(contact), contactDetail(contact)].filter(Boolean).join(' · ');
 }
 
-/** A team inbox: participant care, or a committee's chairs or consultants. */
-export function inboxName({
-	inbox,
-	committeeAbbreviation
-}: {
+/** A team inbox as the labels read it: its kind, a committee's abbreviation, one trusted person's name. */
+export interface InboxLabelSource {
 	inbox: ChatInbox;
 	committeeAbbreviation?: string | null;
-}) {
+	/** The one trusted person the inbox is; empty for all of them together */
+	personName?: string | null;
+}
+
+const joined = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' · ');
+
+/**
+ * A team inbox: participant care, a committee's chairs or consultants, the trusted persons
+ * together or one of them by name.
+ */
+export function inboxName({ inbox, committeeAbbreviation, personName }: InboxLabelSource) {
 	if (inbox === 'PARTICIPANT_CARE') return m.chatInboxParticipantCare();
+	if (inbox === 'TRUSTED_PERSON') {
+		return personName
+			? joined(m.chatInboxTrustedPerson(), personName)
+			: m.chatInboxTrustedPersons();
+	}
 	const name = inbox === 'CHAIR' ? m.chatInboxChairs() : m.chatInboxConsultants();
-	return committeeAbbreviation ? `${name} · ${committeeAbbreviation}` : name;
+	return joined(name, committeeAbbreviation);
 }
 
 /** What the inbox is there for, under its name in the picker. */
-export function inboxDescription(inbox: ChatInbox) {
+export function inboxDescription({ inbox, personName }: InboxLabelSource) {
 	if (inbox === 'PARTICIPANT_CARE') return m.chatInboxParticipantCareDescription();
+	if (inbox === 'TRUSTED_PERSON') {
+		return personName
+			? m.chatInboxTrustedPersonDescription()
+			: m.chatInboxTrustedPersonsDescription();
+	}
 	return inbox === 'CHAIR' ? m.chatInboxChairsDescription() : m.chatInboxConsultantsDescription();
 }
 
 export const INBOX_ICON: Record<ChatInbox, string> = {
 	PARTICIPANT_CARE: 'lifebuoy',
 	CHAIR: 'gavel',
-	CONSULTANT: 'chalkboard-teacher'
+	CONSULTANT: 'chalkboard-teacher',
+	TRUSTED_PERSON: 'hand-heart'
 };
+
+/** The inbox of a team chat as the labels read it. */
+function inboxOfChat(chat: {
+	inbox: ChatInbox;
+	committee?: { abbreviation: string } | null;
+	trustedPersonName?: string | null;
+}): InboxLabelSource {
+	return {
+		inbox: chat.inbox,
+		committeeAbbreviation: chat.committee?.abbreviation,
+		personName: chat.trustedPersonName
+	};
+}
 
 /** A chat as the lists and the thread header read it. */
 export interface ChatLabelSource {
@@ -72,6 +103,8 @@ export interface ChatLabelSource {
 	side: string;
 	inbox?: ChatInbox | null;
 	committee?: { abbreviation: string } | null;
+	/** A chat with one trusted person: their name */
+	trustedPersonName?: string | null;
 	contacts: readonly ContactLabelSource[];
 	people?: readonly { name: string }[];
 }
@@ -84,10 +117,16 @@ export function sideOf(chat: { side: string }): ChatSide {
 	return isSide(chat.side) ? chat.side : 'REVIEW';
 }
 
-/** What a kind of chat is, in a line, for a chat that has no subtitle of its own. */
-export function kindHint(kind: ChatKind) {
-	if (kind === 'DIRECT') return m.chatDirectHint();
-	return kind === 'DELEGATION' ? m.chatDelegationHint() : m.chatTeamHint();
+/** Who reads a chat with the trusted persons: all of them, or the one it is written to. */
+function trustedHint(personName: string | null | undefined) {
+	return personName ? m.chatTrustedPersonalHint({ name: personName }) : m.chatTrustedSharedHint();
+}
+
+/** What a chat is, in a line, for a chat that has no subtitle of its own. */
+export function kindHint(chat: Pick<ChatLabelSource, 'kind' | 'inbox' | 'trustedPersonName'>) {
+	if (chat.kind === 'DIRECT') return m.chatDirectHint();
+	if (chat.kind === 'DELEGATION') return m.chatDelegationHint();
+	return chat.inbox === 'TRUSTED_PERSON' ? trustedHint(chat.trustedPersonName) : m.chatTeamHint();
 }
 
 /**
@@ -98,12 +137,20 @@ export function listBadge({
 	chat,
 	showInbox
 }: {
-	chat: { side: string; underReview: boolean; inbox?: ChatInbox | null };
+	chat: {
+		side: string;
+		underReview: boolean;
+		inbox?: ChatInbox | null;
+		trustedPersonName?: string | null;
+	};
 	showInbox: boolean;
-}): 'reported' | { inbox: ChatInbox } | null {
+}): 'reported' | { inbox: ChatInbox; own: boolean } | null {
 	const side = sideOf(chat);
 	if (chat.underReview && side === 'REVIEW') return 'reported';
-	if (showInbox && chat.inbox && side === 'TEAM') return { inbox: chat.inbox };
+	// a chat with one trusted person is only read by them: "to me personally"
+	if (showInbox && chat.inbox && side === 'TEAM') {
+		return { inbox: chat.inbox, own: !!chat.trustedPersonName };
+	}
 	return null;
 }
 
@@ -114,7 +161,7 @@ export function chatTitle(chat: ChatLabelSource) {
 		return side === 'PARTICIPANT' ? m.chatMyDelegation() : m.chatDelegationGroup();
 	}
 	if (chat.kind === 'TEAM' && side === 'PARTICIPANT' && chat.inbox) {
-		return inboxName({ inbox: chat.inbox, committeeAbbreviation: chat.committee?.abbreviation });
+		return inboxName(inboxOfChat({ ...chat, inbox: chat.inbox }));
 	}
 	const [first, second] = chat.contacts;
 	if (!first) return chat.people?.[0]?.name ?? m.chatFormerParticipant();

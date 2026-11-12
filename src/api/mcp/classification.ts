@@ -146,9 +146,10 @@ const FIELDS: Record<string, TypeClassification> = {
 			'unreadCount',
 			'side',
 			'blockedByMe',
-			'writeRefusal'
+			'writeRefusal',
+			'trustedUserId'
 		],
-		redacted: ['lastMessagePreview']
+		redacted: ['lastMessagePreview', 'trustedPersonName']
 	},
 	ChatContact: {
 		visible: [
@@ -171,7 +172,15 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	ChatPerson: { visible: ['participantId', 'userId'], redacted: ['name'] },
 	ChatInboxOption: {
-		visible: ['inbox', 'committeeId', 'committeeAbbreviation', 'committeeName', 'chatId']
+		visible: [
+			'inbox',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'trustedPersonId',
+			'chatId'
+		],
+		redacted: ['personName']
 	},
 	Chatmessage: {
 		visible: [

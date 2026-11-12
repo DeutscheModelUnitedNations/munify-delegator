@@ -39,7 +39,7 @@
 	<ChatAvatar avatar={chatAvatar(chat)} />
 	<div class="flex min-w-0 flex-1 flex-col">
 		<h2 class="truncate font-semibold" data-testid="chat-title">{chatTitle(chat)}</h2>
-		<p class="text-base-content/60 truncate text-xs">{chatSubtitle(chat) ?? kindHint(chat.kind)}</p>
+		<p class="text-base-content/60 truncate text-xs">{chatSubtitle(chat) ?? kindHint(chat)}</p>
 	</div>
 
 	{#if !asParticipant}

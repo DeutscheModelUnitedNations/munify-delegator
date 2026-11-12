@@ -31,12 +31,13 @@
 	let choices = $state<ChatInboxRow[]>([]);
 	let choosing = $state(false);
 
-	async function openWith(option: Pick<ChatInboxRow, 'inbox' | 'committeeId'>) {
+	async function openWith(option: Pick<ChatInboxRow, 'inbox' | 'committeeId' | 'trustedPersonId'>) {
 		const chat = await client.mutate.openTeamChat({
 			__args: {
 				conferenceId,
 				inbox: option.inbox,
 				committeeId: option.committeeId,
+				trustedPersonId: option.trustedPersonId,
 				participantId
 			},
 			id: true

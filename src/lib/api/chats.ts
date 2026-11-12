@@ -1,3 +1,4 @@
+import type { ChatInbox } from '#lib/helpers/chat';
 import { client } from './rumbleClient/client';
 
 /**
@@ -31,6 +32,7 @@ const CHAT_SUMMARY = {
 	lastMessagePreview: true,
 	unreadCount: true,
 	underReview: true,
+	trustedPersonName: true,
 	committee: { abbreviation: true, name: true },
 	contacts: CONTACT,
 	people: { participantId: true, userId: true, name: true }
@@ -41,12 +43,14 @@ const INBOX = {
 	committeeId: true,
 	committeeAbbreviation: true,
 	committeeName: true,
+	trustedPersonId: true,
+	personName: true,
 	chatId: true
 } as const;
 
 /** What narrows a chat list down: one inbox of the team, or everything the caller takes part in. */
 export interface ChatListFilter {
-	inbox?: 'PARTICIPANT_CARE' | 'CHAIR' | 'CONSULTANT';
+	inbox?: ChatInbox;
 	committeeId?: string | null;
 }
 

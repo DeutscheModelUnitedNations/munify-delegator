@@ -162,7 +162,8 @@ The switch "Messages between participants and team" under "Status" opens the cha
 The team answers from **inboxes** it shares:
 
 - **Participant care.** One inbox for the whole conference. It belongs to everybody with the role participant care or project management.
-- **Chairs and committee consultants.** One inbox each per committee. You decide who answers it under "Team members". The gavel icon in a row opens that person's committee functions.
+- **Chairs and committee consultants.** One inbox each per committee. You decide who answers it under "Team members". The gavel icon in a row opens that person's functions.
+- **Trusted persons.** In the same dialog you make a team member a trusted person of the conference. Participants write to all trusted persons together or to one of them by name. All trusted persons read the shared inbox. Only the person addressed reads a personal chat. Nobody else reads along, not participant care, not project management and not system administrators. Trusted persons see participants by their role only. These chats cannot be reported.
 
 You find all inboxes under "Messages" in the communication section. Participants see an answer with the function and the name. You see participants there by their role. Only participant care also sees the name.
 

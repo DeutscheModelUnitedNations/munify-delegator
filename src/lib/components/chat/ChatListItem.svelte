@@ -67,7 +67,12 @@
 				<span class="badge badge-warning badge-sm shrink-0">{m.chatReported()}</span>
 			{:else if badge}
 				<span class="badge badge-ghost badge-sm shrink-0">
-					{inboxName({ inbox: badge.inbox, committeeAbbreviation: chat.committee?.abbreviation })}
+					{badge.own
+						? m.chatInboxTrustedOwn()
+						: inboxName({
+								inbox: badge.inbox,
+								committeeAbbreviation: chat.committee?.abbreviation
+							})}
 				</span>
 			{/if}
 			{#if unread}

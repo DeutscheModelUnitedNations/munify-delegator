@@ -162,7 +162,8 @@ Mit dem Schalter „Nachrichten zwischen Teilnehmenden und Team“ unter „Stat
 Das Team antwortet aus **Postfächern**, die es gemeinsam betreut:
 
 - **Teilnehmendenbetreuung.** Ein Postfach für die ganze Konferenz. Es gehört allen mit der Rolle Teilnehmendenbetreuung oder Projektleitung.
-- **Vorsitz und Gremienberatung.** Je ein Postfach pro Gremium. Wer es betreut, legst du unter „Teammitglieder“ fest. Das Hammer-Symbol in einer Zeile öffnet die Gremienfunktionen der Person.
+- **Vorsitz und Gremienberatung.** Je ein Postfach pro Gremium. Wer es betreut, legst du unter „Teammitglieder“ fest. Das Hammer-Symbol in einer Zeile öffnet die Funktionen der Person.
+- **Vertrauenspersonen.** Im selben Dialog machst du ein Teammitglied zur Vertrauensperson der Konferenz. Teilnehmende schreiben allen Vertrauenspersonen gemeinsam oder einer einzelnen mit Namen. Das gemeinsame Postfach lesen alle Vertrauenspersonen, einen persönlichen Chat nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Systemadministration. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle. Diese Chats lassen sich nicht melden.
 
 Alle Postfächer findest du unter „Nachrichten“ im Bereich Kommunikation. Eine Antwort kommt bei Teilnehmenden mit Funktion und Namen an. Teilnehmende siehst du dort nach ihrer Rolle. Nur die Teilnehmendenbetreuung sieht auch den Namen.
 

@@ -995,7 +995,7 @@ type Chat {
   participantId: ID
 
   """
-  Who the participants of the chat are, by name and account: for participant care only (of a team chat, and of a chat it reviews); empty for everybody else, who know the people by role.
+  Who the participants of the chat are, by name and account: for participant care only (of a team chat, and of a chat it reviews); empty for everybody else, who know the people by role, and always in a chat with the trusted persons.
   """
   people: [ChatPerson!]!
 
@@ -1012,6 +1012,16 @@ type Chat {
   """
   side: String!
   teamReadAt: DateTime
+
+  """
+  The full name of the one trusted person the chat is with; null for a chat with all of them and for every other chat.
+  """
+  trustedPersonName: String
+
+  """
+  A chat with one trusted person: their account, for themselves only (null for everybody else, and for every other chat).
+  """
+  trustedUserId: ID
   underReview: Boolean!
 
   """
@@ -1064,6 +1074,14 @@ type ChatInboxOption {
   committeeId: ID
   committeeName: String
   inbox: ChatinboxEnum!
+
+  """The full name of that trusted person."""
+  personName: String
+
+  """
+  The one trusted person this inbox is, to pass to `openTeamChat`; null for the trusted persons together and for every other inbox.
+  """
+  trustedPersonId: ID
 }
 
 input ChatOrderInputArgument {
@@ -1079,6 +1097,7 @@ input ChatOrderInputArgument {
   otherParticipantId: SortingParameter
   participantId: SortingParameter
   teamReadAt: SortingParameter
+  trustedUserId: SortingParameter
   underReview: SortingParameter
   updatedAt: SortingParameter
 }
@@ -1098,6 +1117,7 @@ enum ChatSearchFieldEnum {
   id
   otherParticipantId
   participantId
+  trustedUserId
 }
 
 """Fuzzy search on chat, ranked by how close the columns are to the term"""
@@ -1132,6 +1152,7 @@ input ChatWhereInputArgument {
   participantId: IDWhereInputArgument
   reports: ChatreportWhereInputArgument
   teamReadAt: DateTimeWhereInputArgument
+  trustedUserId: IDWhereInputArgument
   underReview: BooleanWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
 }
@@ -1140,6 +1161,7 @@ enum ChatinboxEnum {
   CHAIR
   CONSULTANT
   PARTICIPANT_CARE
+  TRUSTED_PERSON
 }
 
 enum ChatkindEnum {
@@ -3816,9 +3838,9 @@ type Mutation {
   endAttendanceSession(id: ID!): Boolean!
 
   """
-  Gives a team member a function in a committee of their conference: `CHAIR` or `CONSULTANT`. Whoever holds a function answers that committee's inbox of it in the chats. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference.
+  Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, or `TRUSTED_PERSON` for the whole conference (without a committee). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, the trusted persons their shared one and each their own. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference, a committee function without a committee and a trusted person with one.
   """
-  giveTeamFunction(committeeId: ID!, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
+  giveTeamFunction(committeeId: ID, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
 
   """
   The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.
@@ -3884,7 +3906,7 @@ type Mutation {
   ): Chat!
 
   """
-  The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.
+  The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.
   """
   openTeamChat(
     """The committee of a chairs' or consultants' inbox."""
@@ -3892,6 +3914,9 @@ type Mutation {
     conferenceId: ID!
     inbox: ChatinboxEnum!
     participantId: ID
+
+    """One trusted person, instead of all of them together."""
+    trustedPersonId: ID
   ): Chat!
 
   """
@@ -3923,7 +3948,7 @@ type Mutation {
   ): RegeneratedInvitation!
 
   """
-  Takes a committee function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).
+  Takes a function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).
   """
   removeTeamFunction(id: ID!): Boolean!
 
@@ -5498,7 +5523,7 @@ type Query {
   chatContacts(conferenceId: ID!): [ChatContact!]!
 
   """
-  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
+  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
   """
   chatInboxes(conferenceId: ID!, participantId: ID): [ChatInboxOption!]!
 
@@ -8474,8 +8499,8 @@ enum TeamInvitationEmailStatus {
 
 type Teamfunction {
   """Get the committees related to this teamFunction"""
-  committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee!
-  committeeId: ID!
+  committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee
+  committeeId: ID
   createdAt: DateTime!
   id: ID!
   kind: TeamfunctionkindEnum!
@@ -8535,6 +8560,7 @@ input TeamfunctionWhereInputArgument {
 enum TeamfunctionkindEnum {
   CHAIR
   CONSULTANT
+  TRUSTED_PERSON
 }
 
 type Teammember {

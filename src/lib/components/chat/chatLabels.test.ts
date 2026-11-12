@@ -6,7 +6,9 @@ import {
 	contactDetail,
 	contactLabel,
 	contactSearchText,
+	inboxDescription,
 	inboxName,
+	kindHint,
 	matchesSearch,
 	listBadge,
 	sideOf
@@ -194,7 +196,18 @@ describe('listBadge', () => {
 	});
 
 	test('names the inbox of a team chat only in a list mixing several', () => {
-		expect(listBadge({ chat: team, showInbox: true })).toEqual({ inbox: 'CHAIR' });
+		expect(listBadge({ chat: team, showInbox: true })).toEqual({ inbox: 'CHAIR', own: false });
+		expect(
+			listBadge({
+				chat: {
+					side: 'TEAM',
+					underReview: false,
+					inbox: 'TRUSTED_PERSON',
+					trustedPersonName: 'A B'
+				},
+				showInbox: true
+			})
+		).toEqual({ inbox: 'TRUSTED_PERSON', own: true });
 		expect(listBadge({ chat: team, showInbox: false })).toBeNull();
 		expect(
 			listBadge({
@@ -202,5 +215,37 @@ describe('listBadge', () => {
 				showInbox: true
 			})
 		).toBeNull();
+	});
+});
+
+describe('trusted persons', () => {
+	const shared = { kind: 'TEAM' as const, inbox: 'TRUSTED_PERSON' as const, contacts: [] };
+	const personal = { ...shared, trustedPersonName: 'Tessa Trost' };
+
+	test('the inbox is all of them together, or one of them by name', () => {
+		expect(inboxName({ inbox: 'TRUSTED_PERSON' })).toBe('Vertrauenspersonen');
+		expect(inboxName({ inbox: 'TRUSTED_PERSON', personName: 'Tessa Trost' })).toBe(
+			'Vertrauensperson · Tessa Trost'
+		);
+	});
+
+	test('the picker says who reads along', () => {
+		expect(inboxDescription({ inbox: 'TRUSTED_PERSON' })).toContain('Alle Vertrauenspersonen');
+		expect(inboxDescription({ inbox: 'TRUSTED_PERSON', personName: 'Tessa Trost' })).toContain(
+			'Nur diese Person'
+		);
+	});
+
+	test('a participant sees whom they write to as the title', () => {
+		expect(chatTitle({ ...shared, side: 'PARTICIPANT' })).toBe('Vertrauenspersonen');
+		expect(chatTitle({ ...personal, side: 'PARTICIPANT' })).toBe('Vertrauensperson · Tessa Trost');
+	});
+
+	test('the thread says that the chat is confidential, and to whom', () => {
+		expect(kindHint(shared)).toContain('Nur die Vertrauenspersonen');
+		expect(kindHint(personal)).toContain('Nur Tessa Trost');
+		expect(kindHint({ kind: 'TEAM', inbox: 'CHAIR' })).not.toContain('Vertraulich');
+		expect(kindHint({ kind: 'DIRECT' })).not.toContain('Vertraulich');
+		expect(kindHint({ kind: 'DELEGATION' })).not.toContain('Vertraulich');
 	});
 });

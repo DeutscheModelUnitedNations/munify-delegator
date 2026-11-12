@@ -161,6 +161,7 @@ Under **Surveys / Polls** you register for events, for example, or the team asks
 
 Once the team has switched messages on you find the card "Messages" on your dashboard. It shows which chats hold something unread.
 
+- **Trusted persons.** When you want to talk about something in confidence you write to the trusted persons. You reach them at any time, all of them together or one person by name. Only the trusted persons read these messages. When you write to one of them only that person reads it. Nobody else on the team reads along. The trusted persons see your role. You give your name yourself if you want to.
 - **Team.** You reach participant care at any time. Once the roles are released the chairs and the committee consultants of your committee join them. Everyone answering an inbox reads along. An answer carries the function and the name of whoever writes it.
 - **Other delegates.** With "New message" you search by country, committee or role, for example "fran ga". You only see each other's role, never the name.
 - **Your delegation.** Every delegation has a group for all its members.

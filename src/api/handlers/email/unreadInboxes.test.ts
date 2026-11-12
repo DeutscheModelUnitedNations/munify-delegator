@@ -6,20 +6,28 @@ const at = (minute: number) => new Date(Date.UTC(2026, 0, 1, 12, minute));
 const care: UnreadInbox = {
 	inbox: 'PARTICIPANT_CARE',
 	committeeId: null,
+	trustedUserId: null,
 	messageId: 'care-message',
 	writtenAt: at(10)
 };
 const chairs: UnreadInbox = {
 	inbox: 'CHAIR',
 	committeeId: 'ga',
+	trustedUserId: null,
 	messageId: 'chair-message',
 	writtenAt: at(5)
 };
 
-const carer = { id: 'carer', role: 'PARTICIPANT_CARE', functions: [] };
-const chair = { id: 'chair', role: 'MEMBER', functions: [{ committeeId: 'ga', kind: 'CHAIR' }] };
+const carer = { id: 'carer', userId: 'u-carer', role: 'PARTICIPANT_CARE', functions: [] };
+const chair = {
+	id: 'chair',
+	userId: 'u-chair',
+	role: 'MEMBER',
+	functions: [{ committeeId: 'ga', kind: 'CHAIR' }]
+};
 const consultant = {
 	id: 'consultant',
+	userId: 'u-consultant',
 	role: 'MEMBER',
 	functions: [{ committeeId: 'ga', kind: 'CONSULTANT' }]
 };
@@ -35,6 +43,40 @@ describe('answersInbox', () => {
 		expect(answersInbox({ member: consultant, inbox: chairs })).toBe(false);
 		expect(answersInbox({ member: chair, inbox: { ...chairs, committeeId: 'sc' } })).toBe(false);
 		expect(answersInbox({ member: carer, inbox: chairs })).toBe(false);
+	});
+});
+
+describe('trusted persons', () => {
+	const shared: UnreadInbox = {
+		inbox: 'TRUSTED_PERSON',
+		committeeId: null,
+		trustedUserId: null,
+		messageId: 'shared-message',
+		writtenAt: at(20)
+	};
+	const anna = {
+		id: 'anna',
+		userId: 'u-anna',
+		role: 'MEMBER',
+		functions: [{ committeeId: null, kind: 'TRUSTED_PERSON' }]
+	};
+	const ben = { ...anna, id: 'ben', userId: 'u-ben' };
+	const toAnna: UnreadInbox = { ...shared, trustedUserId: 'u-anna', messageId: 'anna-message' };
+
+	it('share the inbox written to all of them', () => {
+		expect(answersInbox({ member: anna, inbox: shared })).toBe(true);
+		expect(answersInbox({ member: ben, inbox: shared })).toBe(true);
+	});
+
+	it('read a chat written to one of them alone', () => {
+		expect(answersInbox({ member: anna, inbox: toAnna })).toBe(true);
+		expect(answersInbox({ member: ben, inbox: toAnna })).toBe(false);
+	});
+
+	it('are not participant care, nor is participant care one of them', () => {
+		expect(answersInbox({ member: carer, inbox: shared })).toBe(false);
+		expect(answersInbox({ member: carer, inbox: toAnna })).toBe(false);
+		expect(answersInbox({ member: anna, inbox: care })).toBe(false);
 	});
 });
 

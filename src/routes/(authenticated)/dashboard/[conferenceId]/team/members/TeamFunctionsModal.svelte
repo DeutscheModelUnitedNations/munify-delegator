@@ -1,14 +1,14 @@
 <!--
 	@component
-	Which committees a team member chairs or advises. Whoever holds a function answers that
-	committee's inbox of it in the chats, next to their team role. One row per committee, a switch
-	per function; each switch saves on its own.
+	The functions of a team member, next to their team role: being a trusted person of the
+	conference, and which committees they chair or advise. Whoever holds a function answers its
+	inbox in the chats. A switch per function; each saves on its own.
 -->
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
+	import FunctionToggle from './FunctionToggle.svelte';
 
 	interface Props {
 		open: boolean;
@@ -48,6 +48,27 @@
 			committeeId: true
 		})
 	])}
+	{@const heldId = ({ kind, committeeId }: { kind: string; committeeId: string | null }) =>
+		functions.find(
+			(candidate) => candidate.kind === kind && (candidate.committeeId ?? null) === committeeId
+		)?.id}
+	<label
+		class="bg-base-200 mb-4 flex cursor-pointer items-start gap-3 rounded-lg p-3"
+		data-testid="team-function-trusted"
+	>
+		<FunctionToggle
+			teamMemberId={memberId}
+			kind="TRUSTED_PERSON"
+			heldId={heldId({ kind: 'TRUSTED_PERSON', committeeId: null })}
+			label={m.chatInboxTrustedPerson()}
+		/>
+		<span class="flex flex-col gap-0.5">
+			<span class="font-semibold">{m.chatInboxTrustedPerson()}</span>
+			<span class="text-base-content/70 text-sm">{m.teamFunctionTrustedPersonExplanation()}</span>
+		</span>
+	</label>
+
+	<h3 class="mb-1 font-semibold">{m.teamFunctionsCommittees()}</h3>
 	{#if committees.length === 0}
 		<p class="text-base-content/60">{m.teamFunctionsNoCommittees()}</p>
 	{:else}
@@ -67,31 +88,13 @@
 							<span class="text-base-content/60 ml-1 text-xs">{committee.name}</span>
 						</th>
 						{#each ['CHAIR', 'CONSULTANT'] as const as kind (kind)}
-							{@const held = functions.find(
-								(candidate) => candidate.committeeId === committee.id && candidate.kind === kind
-							)}
 							<td class="text-center">
-								<input
-									type="checkbox"
-									class="toggle toggle-primary toggle-sm"
-									checked={!!held}
-									aria-label={`${kind === 'CHAIR' ? m.chatInboxChairs() : m.chatInboxConsultants()} · ${committee.abbreviation}`}
-									onchange={async (event) => {
-										const input = event.currentTarget;
-										try {
-											if (held) {
-												await client.mutate.removeTeamFunction({ __args: { id: held.id } });
-											} else {
-												await client.mutate.giveTeamFunction({
-													__args: { teamMemberId: memberId, committeeId: committee.id, kind },
-													id: true
-												});
-											}
-										} catch {
-											input.checked = !!held;
-											toast.error(m.chatSaveFailed());
-										}
-									}}
+								<FunctionToggle
+									teamMemberId={memberId}
+									{kind}
+									committeeId={committee.id}
+									heldId={heldId({ kind, committeeId: committee.id })}
+									label={`${kind === 'CHAIR' ? m.chatInboxChairs() : m.chatInboxConsultants()} · ${committee.abbreviation}`}
 								/>
 							</td>
 						{/each}

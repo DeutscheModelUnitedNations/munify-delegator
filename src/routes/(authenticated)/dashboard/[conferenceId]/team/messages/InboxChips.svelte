@@ -23,7 +23,7 @@
 <FilterChips options={inboxes} {selected} {onSelect} label={m.chatInboxes()}>
 	{#snippet chip(inbox)}
 		{@const unread = unreadOf(inbox.key)}
-		{inboxName(inbox)}
+		{inbox.own ? m.chatInboxTrustedOwn() : inboxName(inbox)}
 		{#if unread > 0}<span class="badge badge-xs badge-primary">{unread}</span>{/if}
 	{/snippet}
 </FilterChips>

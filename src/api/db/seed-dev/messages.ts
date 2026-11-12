@@ -49,6 +49,8 @@ function readMarkers({
  * The chats (see "Messages" in CLAUDE.md), in the conferences that switched them on. Team personas
  * hold committee functions, so the chairs' and consultants' inboxes are answered:
  * `dev-team-member` chairs the first committee, `dev-team-reviewer` advises the first two.
+ * `dev-team-member` and `dev-team-content-lead` are trusted persons: `dev-delegate-minor` wrote
+ * to both of them together and to `dev-team-member` alone.
  *
  * Where the roles are released, `dev-head-delegate` has an unread direct chat with another
  * delegate of their committee, one with the single participant, the delegation's group and an
@@ -66,7 +68,10 @@ export function addMessages(cs: ConferenceSeed) {
 	for (const [userId, committeeId, kind] of [
 		['dev-team-member', first.id, 'CHAIR'],
 		['dev-team-reviewer', first.id, 'CONSULTANT'],
-		['dev-team-reviewer', second.id, 'CONSULTANT']
+		['dev-team-reviewer', second.id, 'CONSULTANT'],
+		// trusted persons of the whole conference
+		['dev-team-member', null, 'TRUSTED_PERSON'],
+		['dev-team-content-lead', null, 'TRUSTED_PERSON']
 	] as const) {
 		cs.batch.teamFunction.push({ teamMemberId: teamMemberId({ cs, userId }), committeeId, kind });
 	}
@@ -119,6 +124,38 @@ export function addMessages(cs: ConferenceSeed) {
 		participantId: participantId(userId),
 		inbox,
 		committeeId
+	});
+
+	// the trusted persons are reached at any time, before the roles are released too
+	addChat({
+		id: 'trusted-shared',
+		chat: teamChat('dev-delegate-minor', 'TRUSTED_PERSON'),
+		messages: [
+			{
+				from: { participant: 'dev-delegate-minor' },
+				minutesAgo: 70,
+				body: 'Hallo, ich fühle mich in meiner Delegation nicht wohl und weiß nicht, mit wem ich darüber reden kann.'
+			}
+		],
+		readBy: ['dev-delegate-minor'],
+		teamRead: false
+	});
+	addChat({
+		id: 'trusted-personal',
+		chat: { ...teamChat('dev-delegate-minor', 'TRUSTED_PERSON'), trustedUserId: 'dev-team-member' },
+		messages: [
+			{
+				from: { participant: 'dev-delegate-minor' },
+				minutesAgo: 2 * 24 * 60,
+				body: 'Hallo, kann ich dich am ersten Konferenztag kurz allein sprechen?'
+			},
+			{
+				from: { team: 'dev-team-member' },
+				minutesAgo: 2 * 24 * 60 - 20,
+				body: 'Na klar. Komm in der ersten Pause einfach zum Infopoint, ich nehme mir Zeit für dich.'
+			}
+		],
+		readBy: ['dev-delegate-minor']
 	});
 
 	if (!cs.conference.assignmentReleased) {

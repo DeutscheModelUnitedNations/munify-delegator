@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { db } from '#api/db/db';
 import { oldestUnreadPerMember } from './unreadInboxes';
+import type { ChatInbox } from '#lib/helpers/chat';
 import type { SnapshotUnreadMessage } from './dueEmails';
 
 /**
@@ -75,19 +76,20 @@ export async function loadUnreadOfTeam({
 	if (teamMemberIds.length === 0) return [];
 	const [inboxes, members] = await Promise.all([
 		db.execute<{
-			inbox: 'PARTICIPANT_CARE' | 'CHAIR' | 'CONSULTANT';
+			inbox: ChatInbox;
 			committee_id: string | null;
+			trusted_user_id: string | null;
 			message_id: string;
 			written: string;
 		}>(
 			sql`
-				select distinct on (c.inbox, c.committee_id)
-					c.inbox, c.committee_id, m.id as message_id, extract(epoch from m.created_at) as written
+				select distinct on (c.inbox, c.committee_id, c.trusted_user_id)
+					c.inbox, c.committee_id, c.trusted_user_id, m.id as message_id, extract(epoch from m.created_at) as written
 				from chat c
 					join chat_message m on m.chat_id = c.id and not m.from_team
 						and (c.team_read_at is null or m.created_at > c.team_read_at)
 				where c.conference_id = ${conferenceId} and c.kind = 'TEAM'
-				order by c.inbox, c.committee_id, m.created_at`,
+				order by c.inbox, c.committee_id, c.trusted_user_id, m.created_at`,
 			'objects'
 		),
 		db.query.teamMember.findMany({
@@ -96,7 +98,7 @@ export async function loadUnreadOfTeam({
 				id: { in: teamMemberIds },
 				user: { messageNotificationEmails: true }
 			},
-			columns: { id: true, role: true },
+			columns: { id: true, userId: true, role: true },
 			with: { functions: { columns: { committeeId: true, kind: true } } }
 		})
 	]);
@@ -105,6 +107,7 @@ export async function loadUnreadOfTeam({
 		inboxes: inboxes.map((inbox) => ({
 			inbox: inbox.inbox,
 			committeeId: inbox.committee_id,
+			trustedUserId: inbox.trusted_user_id,
 			messageId: inbox.message_id,
 			writtenAt: written(inbox.written)
 		})),

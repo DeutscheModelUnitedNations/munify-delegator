@@ -38,12 +38,12 @@
 					/>
 				</li>
 			{/if}
-			{#each inboxes as option (`${option.inbox}/${option.committeeId}`)}
+			{#each inboxes as option (`${option.inbox}/${option.committeeId}/${option.trustedPersonId}`)}
 				<li>
 					<PickerOption
 						avatar={{ icon: INBOX_ICON[option.inbox] }}
 						title={inboxName(option)}
-						detail={inboxDescription(option.inbox)}
+						detail={inboxDescription(option)}
 						{disabled}
 						onclick={() => onInbox(option)}
 						testId="chat-inbox-option"
