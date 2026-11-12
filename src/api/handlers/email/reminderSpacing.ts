@@ -1,11 +1,12 @@
-import { REMINDER_GAP_DAYS, REMINDER_KINDS } from '#lib/helpers/emailKinds';
+import { isBundled, REMINDER_GAP_DAYS, REMINDER_KINDS } from '#lib/helpers/emailKinds';
 import type { DueEmail } from './dueEmails';
 
 /**
  * Keeps the reminders to one person apart (`docs/plans/chase-link.md`): a reminder waits while the
  * person got another automatic one within the last `REMINDER_GAP_DAYS`, and of several due at once
  * only the first goes out. A reminder whose window closes before the gap is over goes out on its
- * last day anyway, so none is lost. Mails that report something are never held back.
+ * last day anyway, so none is lost. Mails that report something are never held back. Reminders of
+ * the same kind and date go out together as one mail (`emailBundles.ts`), so they pass together.
  */
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -22,14 +23,19 @@ export function spaceReminders({
 	now: Date;
 }): DueEmail[] {
 	const last = new Map(lastReminderAt);
+	const passed = new Set<string>();
+	const bundleKey = (email: DueEmail) =>
+		`${email.recipient.id}:${email.kind}:${email.remindsOf?.getTime()}`;
 	return due.filter((email) => {
 		if (!email.remindsOf) return true;
+		if (isBundled(email.kind) && passed.has(bundleKey(email))) return true;
 		const previous = last.get(email.recipient.id);
 		const lastDay = email.remindsOf.getTime() - now.getTime() <= DAY;
 		if (previous && now.getTime() - previous.getTime() < REMINDER_GAP_DAYS * DAY && !lastDay) {
 			return false;
 		}
 		last.set(email.recipient.id, now);
+		passed.add(bundleKey(email));
 		return true;
 	});
 }

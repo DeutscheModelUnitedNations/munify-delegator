@@ -1067,6 +1067,12 @@ bun run preview
   rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
   and instances never double-send; failures are retried three times, a claim left by a dead
   process frees up after 15 minutes. Every row (sent, failed, skipped, by hand) is shown in the log.
+- **One mail per recipient and kind and sweep** for the kinds a person can owe several of
+  (`BUNDLED_KINDS` in `#lib/helpers/emailKinds.ts`: students, members, supervisors linked,
+  paperwork problems, surveys of one deadline). `bundleEmails` (`emailBundles.ts`) groups them;
+  each keeps its own log row, all settled by the one delivery, and the text names them all
+  (`Intl.ListFormat` into the kind's placeholder), so those texts are worded to read right for one
+  name or several.
 - **Every mail goes out one way** (`emailDelivery.ts`): rendered in the recipient's language and
   the conference's words (`loadWording`, `wordingIn`), its log row written first and settled by
   `deliver`. A mail the team sends by hand (`sendByHand`) is a `MANUAL` row of its own with

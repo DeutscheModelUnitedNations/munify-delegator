@@ -28,6 +28,7 @@ import { roundLimit } from './emailPacing';
 import { emailPacer } from './emailPacer';
 import { MAX_ATTEMPTS } from './emailCandidates';
 import { logger } from '#lib/logger';
+import { bundleEmails, type EmailBundle } from './emailBundles';
 
 /**
  * Sends what `dueEmails` says a conference owes and nobody sent yet: the kinds switched to automatic
@@ -37,7 +38,8 @@ import { logger } from '#lib/logger';
  * two instances' - never send one mail twice. A failed mail is tried
  * again by later sweeps, up to `MAX_ATTEMPTS`; a claim left behind by a process that died is free
  * again after `STALE_CLAIM_MINUTES`. A mail the team sent by hand counts as sent, unless it was a
- * reminder: that still leaves the automatic one due.
+ * reminder: that still leaves the automatic one due. Mails of a bundled kind due together go out as
+ * one (`emailBundles.ts`), each keeping its own log row.
  */
 
 const STALE_CLAIM_MINUTES = 15;
@@ -180,29 +182,34 @@ async function claim({ conferenceId, email }: { conferenceId: string; email: Due
 	return claimed?.id;
 }
 
-/** Sends one claimed mail; whatever goes wrong is written to its log row, never thrown. */
+/** Sends one claimed mail; whatever goes wrong is written to its log rows, never thrown. */
 async function send({
-	email,
+	bundle,
 	snapshot,
 	origin,
 	wording,
-	logId
+	logIds
 }: {
-	email: DueEmail;
+	bundle: EmailBundle;
 	snapshot: EmailSnapshot;
 	origin: string;
 	wording: ConferenceWording;
-	logId: string;
+	logIds: string[];
 }) {
+	const [email] = bundle;
 	const error = await deliver({
-		logId,
+		logIds,
 		to: email.recipient.email,
-		render: () => renderAutomaticEmail({ email, conference: snapshot.conference, origin, wording })
+		render: () =>
+			renderAutomaticEmail({ email, bundle, conference: snapshot.conference, origin, wording })
 	});
 	return error === undefined;
 }
 
-/** Claims and sends each mail in turn, counting what went out and what failed. */
+/**
+ * Claims each mail of a bundle and sends what it got hold of as one, bundle by bundle, counting
+ * the mails that went out and failed.
+ */
 async function sendEach({
 	conferenceId,
 	batch,
@@ -210,19 +217,27 @@ async function sendEach({
 	send
 }: {
 	conferenceId: string;
-	batch: DueEmail[];
+	batch: EmailBundle[];
 	perSecond: number | null;
-	send: (email: DueEmail, logId: string) => Promise<boolean>;
+	send: (bundle: EmailBundle, logIds: string[]) => Promise<boolean>;
 }) {
 	let sent = 0;
 	let failed = 0;
 	const logIds: string[] = [];
-	for (const email of batch) {
-		const logId = await claim({ conferenceId, email });
-		if (!logId) continue;
-		logIds.push(logId);
+	for (const bundle of batch) {
+		const claimed: DueEmail[] = [];
+		const claimedIds: string[] = [];
+		for (const email of bundle) {
+			const logId = await claim({ conferenceId, email });
+			if (!logId) continue;
+			claimed.push(email);
+			claimedIds.push(logId);
+		}
+		const [first, ...rest] = claimed;
+		if (!first) continue;
+		logIds.push(...claimedIds);
 		await emailPacer.wait({ key: conferenceId, perSecond });
-		if (await send(email, logId)) sent++;
+		if (await send([first, ...rest], claimedIds)) sent++;
 		else failed++;
 	}
 	return { sent, failed, logIds };
@@ -261,13 +276,15 @@ export async function sendDueEmails({
 	const logIds: string[] = [];
 	let next: EmailCursor | null = null;
 	for await (const page of emailPages({ conference, kinds, now, from })) {
-		const open = await openEmails({ snapshot: page.snapshot, kinds, now, spaced: true });
+		const open = bundleEmails(
+			await openEmails({ snapshot: page.snapshot, kinds, now, spaced: true })
+		);
 		const batch = open.slice(0, room);
 		const result = await sendEach({
 			conferenceId,
 			batch,
 			perSecond,
-			send: (email, logId) => send({ email, snapshot: page.snapshot, origin, wording, logId })
+			send: (bundle, logIds) => send({ bundle, snapshot: page.snapshot, origin, wording, logIds })
 		});
 		sent += result.sent;
 		failed += result.failed;

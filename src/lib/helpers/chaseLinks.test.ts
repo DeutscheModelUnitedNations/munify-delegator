@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chaseLinks, chasePlaceOf, chaseRoleOf } from './chaseLinks';
+import { chaseIntroOpen, chaseLinks, chasePlaceOf, chaseRoleOf } from './chaseLinks';
 
 describe('chaseRoleOf', () => {
 	it('makes a seated nation a delegate, a non-state actor an NSA', () => {
@@ -84,5 +84,17 @@ describe('chasePlaceOf', () => {
 				member: { assignedCommittee: null, delegation: { assignedRole: { kind: 'NATION' } } }
 			})
 		).toBeUndefined();
+	});
+});
+
+describe('chaseIntroOpen', () => {
+	const startConference = new Date('2026-12-20T00:00:00Z');
+	it('stays locked until the intro mail goes out, then stays open', () => {
+		expect(chaseIntroOpen({ startConference, now: new Date('2026-12-09T23:00:00Z') })).toBe(false);
+		expect(chaseIntroOpen({ startConference, now: new Date('2026-12-10T00:00:00Z') })).toBe(true);
+		expect(chaseIntroOpen({ startConference, now: new Date('2026-12-21T00:00:00Z') })).toBe(true);
+	});
+	it('is locked without a start date', () => {
+		expect(chaseIntroOpen({ startConference: null })).toBe(false);
 	});
 });
