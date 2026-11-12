@@ -252,7 +252,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 		group: 'info',
 		category: 'communication',
 		keywords: ['ankündigungen', 'announcements', 'nachrichten', 'messages', 'mitteilungen'],
-		roles: PARTICIPANT_CARE_ROLES
+		roles: CONFERENCE_CONTENT_ROLES
 	},
 	{
 		id: 'messages',

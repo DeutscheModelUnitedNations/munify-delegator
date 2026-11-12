@@ -9,6 +9,7 @@ import type {
 	SnapshotTeamMember
 } from './dueEmails';
 import { loadUnreadMessages } from './unreadMessages';
+import { loadAnnouncementMails } from './announcementEmails';
 
 const ROLE = {
 	columns: { id: true, kind: true, name: true, nationAlpha3Code: true }
@@ -52,7 +53,8 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 		surveys,
 		teamMembers,
 		acceptedInvitations,
-		unreadMessages
+		unreadMessages,
+		announcementMails
 	] = await Promise.all([
 		db.query.conferenceParticipant.findMany({
 			where: { conferenceId },
@@ -129,7 +131,8 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			with: { invitedBy: { columns: { givenName: true, familyName: true } } },
 			orderBy: { createdAt: 'asc' }
 		}),
-		conference.messagingEnabled ? loadUnreadMessages(conferenceId) : []
+		conference.messagingEnabled ? loadUnreadMessages(conferenceId) : [],
+		loadAnnouncementMails({ conferenceId })
 	]);
 
 	const seatedFrom = new Map(seatedEntries.map((entry) => [entry.userId, entry.id]));
@@ -197,7 +200,8 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			deadline: survey.deadline,
 			answeredBy: survey.surveyAnswers.map((answer) => answer.conferenceParticipantId)
 		})),
-		unreadMessages
+		unreadMessages,
+		announcementMails
 	};
 }
 

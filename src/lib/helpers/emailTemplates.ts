@@ -32,7 +32,8 @@ export type EmailPlaceholder =
 	| 'survey'
 	| 'committee'
 	| 'chaseLink'
-	| 'manualLink';
+	| 'manualLink'
+	| 'title';
 
 interface KindTemplate {
 	/** What this kind's text can use, besides `name` and `conference`, which every kind has. */
@@ -56,7 +57,8 @@ const P = {
 	inviter: '{inviter}',
 	survey: '{survey}',
 	chaseLink: '{chaseLink}',
-	manualLink: '{manualLink}'
+	manualLink: '{manualLink}',
+	title: '{title}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
@@ -282,6 +284,17 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 				m.emailAutoUnreadMessagesBody({ conference: P.conference }, { locale }),
 				m.emailAutoUnreadMessagesClosing({}, { locale })
 			)
+		})
+	},
+	ANNOUNCEMENT: {
+		placeholders: ['title'],
+		text: (locale) => ({
+			subject: m.emailAutoAnnouncementSubject(
+				{ title: P.title, conference: P.conference },
+				{ locale }
+			),
+			heading: P.title,
+			body: m.emailAutoAnnouncementBody({ conference: P.conference }, { locale })
 		})
 	},
 	BADGE_FOUND: {

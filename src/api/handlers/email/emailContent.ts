@@ -25,6 +25,7 @@ import {
 	type EmailTextOverride
 } from './emailText';
 import { chaseLinks, chaseRoleOf } from '#lib/helpers/chaseLinks';
+import { announcementBlocks, type MailBlock } from './announcementBlocks';
 
 /**
  * What an automatic mail says, in the locale it is rendered in (`runWithLocale`). Every kind is the
@@ -37,6 +38,8 @@ export interface EmailContent {
 	paragraphs: string[];
 	items?: string[];
 	closing?: string[];
+	/** An announcement's own text, drawn between the paragraphs and what closes the mail. */
+	blocks?: MailBlock[];
 	button?: { label: string; url: string };
 	/** Where an answer goes, when not to the conference's own address. */
 	replyTo?: string;
@@ -99,6 +102,7 @@ interface ContentContext {
 interface KindContent {
 	values?: EmailPlaceholderValues;
 	items?: string[];
+	blocks?: MailBlock[];
 	button?: { label: string; url: string };
 	replyTo?: string;
 }
@@ -228,6 +232,28 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			: {},
 		button: dashboard
 	}),
+	ANNOUNCEMENT: ({ email, conference, origin }) => {
+		const announcement = email.announcement;
+		return {
+			values: { title: announcement?.title ?? '' },
+			blocks: [
+				...announcementBlocks(announcement?.body ?? ''),
+				...(announcement?.signature
+					? [{ type: 'paragraph' as const, text: announcement.signature }]
+					: []),
+				...(announcement && announcement.attachmentNames.length > 0
+					? [
+							{ type: 'paragraph' as const, text: m.emailAutoAnnouncementAttachments() },
+							{ type: 'list' as const, ordered: false, items: announcement.attachmentNames }
+						]
+					: [])
+			],
+			button: {
+				label: m.emailAutoAnnouncementButton(),
+				url: `${origin}/dashboard/${conference.id}/announcements`
+			}
+		};
+	},
 	UNREAD_MESSAGES: ({ email, conference, origin }) => ({
 		button: {
 			label: m.emailAutoUnreadMessagesButton(),
@@ -268,6 +294,7 @@ export function emailContent({
 	});
 	return {
 		...filled,
+		...(kind.blocks ? { blocks: kind.blocks } : {}),
 		...(kind.button ? { button: kind.button } : {}),
 		...(kind.replyTo ? { replyTo: kind.replyTo } : {})
 	};
@@ -290,6 +317,7 @@ export function emailDetail(email: DueEmail): string | undefined {
 	if (email.survey) return email.survey.title;
 	if (email.review) return reviewValues(email.review).paper;
 	if (email.student) return fullName(email.student.user);
+	if (email.announcement) return email.announcement.title;
 	if (email.teamMember) return translateTeamRole(email.teamMember.role);
 	return undefined;
 }

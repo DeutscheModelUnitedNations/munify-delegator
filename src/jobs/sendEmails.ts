@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { sendDueEmails } from '#api/handlers/email/emailSweep';
 import { conferencesSendingEmails } from '#api/handlers/email/emailSettings';
+import { announceReleasedAnnouncements } from '#api/handlers/announcement/announcementRelease';
 import { overwriteServerAsyncLocalStorage } from '#lib/paraglide/runtime';
 import { sendEmailsConfig } from './config';
 import { logger } from '#lib/logger';
@@ -20,6 +21,9 @@ export async function runSendEmails() {
 	// the app's requests get one from Paraglide's middleware; without it every mail would be in the
 	// base locale, whatever `runWithLocale` asks for
 	overwriteServerAsyncLocalStorage(new AsyncLocalStorage());
+	// scheduled announcements whose time has come reach open pages from here
+	const released = await announceReleasedAnnouncements();
+	if (released > 0) logger.info('Released scheduled announcements', { released });
 	for (const conferenceId of await conferencesSendingEmails()) {
 		for (let round = 1; round <= MAX_ROUNDS; round++) {
 			const { sent, failed, remaining } = await sendDueEmails({ conferenceId, origin });

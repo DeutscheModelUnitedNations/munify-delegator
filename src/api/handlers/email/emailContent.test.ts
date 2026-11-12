@@ -71,6 +71,14 @@ function dueEmailOf(kind: AutomaticEmailKind): DueEmail {
 		},
 		students: [person],
 		student: person,
+		announcement: {
+			id: 'a1',
+			title: 'Raumwechsel',
+			body: 'Die **GV** tagt im [Plenarsaal](https://example.org/plan).\n\n- Einlass ab 9 Uhr',
+			signature: 'Eure Orga',
+			mailRevision: 0,
+			attachmentNames: ['Lageplan.pdf']
+		},
 		field: 'mediaConsent',
 		review: {
 			id: 'review-1',
@@ -183,5 +191,43 @@ describe.each(['de', 'en'] as const)('the CHASE introduction in %s', (locale) =>
 		);
 		expect(html).not.toContain('](');
 		expect(text).toContain(manual);
+	});
+});
+
+describe('the announcement mail', () => {
+	test('carries the announcement itself: title, text, signature and the names of its files', async () => {
+		overwriteGetLocale(() => 'de');
+		const content = emailContent({
+			email: dueEmailOf('ANNOUNCEMENT'),
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(content.subject).toBe('Raumwechsel | MUN-SH 2027');
+		expect(content.heading).toBe('Raumwechsel');
+		expect(content.blocks).toEqual([
+			{ type: 'paragraph', text: 'Die GV tagt im [Plenarsaal](https://example.org/plan).' },
+			{ type: 'list', ordered: false, items: ['Einlass ab 9 Uhr'] },
+			{ type: 'paragraph', text: 'Eure Orga' },
+			{ type: 'paragraph', text: expect.stringContaining('Anhänge') },
+			{ type: 'list', ordered: false, items: ['Lageplan.pdf'] }
+		]);
+		expect(content.button?.url).toBe('https://delegator.example.org/dashboard/c1/announcements');
+
+		const { html, text } = await renderEmail({
+			component: NotificationEmail,
+			props: {
+				heading: content.heading,
+				recipientName: recipientName(person.user),
+				paragraphs: content.paragraphs,
+				blocks: content.blocks,
+				button: content.button,
+				conferenceTitle: conference.title
+			}
+		});
+		expect(html).toContain('href="https://example.org/plan"');
+		expect(text).toContain('Einlass ab 9 Uhr');
+		expect(text).toContain('Lageplan.pdf');
+		// the Markdown's emphasis is dropped, not shown as asterisks
+		expect(text).not.toContain('**');
 	});
 });

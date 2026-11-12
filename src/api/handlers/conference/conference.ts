@@ -87,7 +87,6 @@ schemaBuilder.mutationFields((t) => ({
 				'location',
 				'language',
 				'website',
-				'info',
 				'linkToPreparationGuide',
 				'linkToTeamWiki',
 				'linkToServicesPage',
@@ -103,8 +102,6 @@ schemaBuilder.mutationFields((t) => ({
 			],
 			outwardArguments: [
 				'state',
-				'info',
-				'showInfoExpanded',
 				'showCalendar',
 				'messagingEnabled',
 				'unlockPayments',
@@ -124,8 +121,6 @@ schemaBuilder.mutationFields((t) => ({
 				.string({ description: 'A conference language (`de`, `en`, …).' })
 				.validate(conferenceSettingSchemas.language),
 			website: t.arg.string(),
-			info: t.arg.string(),
-			showInfoExpanded: t.arg.boolean(),
 			linkToPreparationGuide: t.arg.string(),
 			linkToTeamWiki: t.arg.string(),
 			linkToServicesPage: t.arg.string(),

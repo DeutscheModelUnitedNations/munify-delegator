@@ -9,6 +9,7 @@ import {
 	type EmailGroupId
 } from '#lib/helpers/emailKinds';
 import { UNREAD_MESSAGE_MAIL_MINUTES } from '#lib/helpers/chat';
+import { ANNOUNCEMENT_MAIL_HOURS } from '#lib/helpers/announcements';
 
 /** What the e-mail page says about each automatic mail: when it goes, to whom, with what. */
 export interface EmailKindTexts {
@@ -139,6 +140,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		recipients: m.emailKindUnreadMessagesRecipients(),
 		content: m.emailKindUnreadMessagesContent()
 	}),
+	ANNOUNCEMENT: () => ({
+		title: m.emailKindAnnouncementTitle(),
+		trigger: m.emailKindAnnouncementTrigger({ hours: ANNOUNCEMENT_MAIL_HOURS }),
+		recipients: m.emailKindAnnouncementRecipients(),
+		content: m.emailKindAnnouncementContent()
+	}),
 	BADGE_FOUND: () => ({
 		title: m.emailKindBadgeFoundTitle(),
 		trigger: m.emailKindBadgeFoundTrigger(),
@@ -158,6 +165,7 @@ export const emailGroupTitle: Record<EmailGroupId, () => string> = {
 	papers: () => m.emailGroupPapers(),
 	onSite: () => m.emailGroupOnSite(),
 	messages: () => m.emailGroupMessages(),
+	announcements: () => m.emailGroupAnnouncements(),
 	certificate: () => m.emailGroupCertificate(),
 	supervisors: () => m.emailGroupSupervisors(),
 	team: () => m.emailGroupTeam()

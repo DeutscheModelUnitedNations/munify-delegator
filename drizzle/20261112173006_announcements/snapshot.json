@@ -1,0 +1,1664 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "04318cd7-be63-4c67-b936-4711761ce872",
+  "prevIds": [
+    "69c5b914-5573-4372-8028-e9f8eeff4d45"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "announcement_audience_kind"
+      ],
+      "writes": [
+        "s|enum|public.announcement_audience_kind",
+        "n|enum|public.announcement_audience_kind",
+        "e|enum|public.announcement_audience_kind",
+        "n|type|public.announcement_audience_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "announcement_importance"
+      ],
+      "writes": [
+        "s|enum|public.announcement_importance",
+        "n|enum|public.announcement_importance",
+        "e|enum|public.announcement_importance",
+        "n|type|public.announcement_importance"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "announcement_status"
+      ],
+      "writes": [
+        "s|enum|public.announcement_status",
+        "n|enum|public.announcement_status",
+        "e|enum|public.announcement_status",
+        "n|type|public.announcement_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "email_kind"
+      ],
+      "writes": [
+        "s|enum|public.email_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement"
+      ],
+      "writes": [
+        "s|tbl|public.announcement",
+        "n|tbl|public.announcement",
+        "e|tbl|public.announcement",
+        "n|rel|public.announcement",
+        "n|type|public.announcement",
+        "n|rel|public.announcement_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.announcement_importance",
+        "n|enum|public.announcement_status"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_attachment"
+      ],
+      "writes": [
+        "s|tbl|public.announcement_attachment",
+        "n|tbl|public.announcement_attachment",
+        "e|tbl|public.announcement_attachment",
+        "n|rel|public.announcement_attachment",
+        "n|type|public.announcement_attachment",
+        "n|rel|public.announcement_attachment_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_audience"
+      ],
+      "writes": [
+        "s|tbl|public.announcement_audience",
+        "n|tbl|public.announcement_audience",
+        "e|tbl|public.announcement_audience",
+        "n|rel|public.announcement_audience",
+        "n|type|public.announcement_audience",
+        "n|rel|public.announcement_audience_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.announcement_audience_kind",
+        "n|enum|public.team_role"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_read"
+      ],
+      "writes": [
+        "s|tbl|public.announcement_read",
+        "n|tbl|public.announcement_read",
+        "e|tbl|public.announcement_read",
+        "n|rel|public.announcement_read",
+        "n|type|public.announcement_read",
+        "n|rel|public.announcement_read_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "info"
+      ],
+      "writes": [
+        "s|col|public.conference.info",
+        "n|col|public.conference.info",
+        "e|col|public.conference.info"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "show_info_expanded"
+      ],
+      "writes": [
+        "s|col|public.conference.show_info_expanded",
+        "n|col|public.conference.show_info_expanded",
+        "e|col|public.conference.show_info_expanded"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "announcement",
+        "announcement_conference_id_status_publish_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.announcement_conference_id_status_publish_at_idx",
+        "n|idx|public.announcement_conference_id_status_publish_at_idx",
+        "e|idx|public.announcement_conference_id_status_publish_at_idx",
+        "n|rel|public.announcement_conference_id_status_publish_at_idx"
+      ],
+      "reads": [
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|col|public.announcement.conference_id",
+        "n|col|public.announcement.status",
+        "n|col|public.announcement.publish_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "announcement_attachment",
+        "announcement_attachment_announcement_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.announcement_attachment_announcement_id_idx",
+        "n|idx|public.announcement_attachment_announcement_id_idx",
+        "e|idx|public.announcement_attachment_announcement_id_idx",
+        "n|rel|public.announcement_attachment_announcement_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_attachment",
+        "n|sch|public",
+        "n|col|public.announcement_attachment.announcement_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "announcement_audience",
+        "announcement_audience_announcement_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.announcement_audience_announcement_id_idx",
+        "n|idx|public.announcement_audience_announcement_id_idx",
+        "e|idx|public.announcement_audience_announcement_id_idx",
+        "n|rel|public.announcement_audience_announcement_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_audience",
+        "n|sch|public",
+        "n|col|public.announcement_audience.announcement_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "announcement_read",
+        "announcement_read_announcement_id_user_id_key"
+      ],
+      "writes": [
+        "s|idx|public.announcement_read_announcement_id_user_id_key",
+        "n|idx|public.announcement_read_announcement_id_user_id_key",
+        "e|idx|public.announcement_read_announcement_id_user_id_key",
+        "n|rel|public.announcement_read_announcement_id_user_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_read",
+        "n|sch|public",
+        "n|col|public.announcement_read.announcement_id",
+        "n|col|public.announcement_read.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "announcement_read",
+        "announcement_read_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.announcement_read_user_id_idx",
+        "n|idx|public.announcement_read_user_id_idx",
+        "e|idx|public.announcement_read_user_id_idx",
+        "n|rel|public.announcement_read_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_read",
+        "n|sch|public",
+        "n|col|public.announcement_read.user_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement"
+      ],
+      "writes": [
+        "s|fk|public.announcement.announcement_conference_id_conference_id_fkey",
+        "n|fk|public.announcement.announcement_conference_id_conference_id_fkey",
+        "e|fk|public.announcement.announcement_conference_id_conference_id_fkey",
+        "n|con|public.announcement.announcement_conference_id_conference_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|tbl|public.conference",
+        "n|sch|public",
+        "n|col|public.announcement.conference_id",
+        "n|col|public.conference.id",
+        "e|uniqueness|public.conference.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement"
+      ],
+      "writes": [
+        "s|fk|public.announcement.announcement_author_id_user_id_fkey",
+        "n|fk|public.announcement.announcement_author_id_user_id_fkey",
+        "e|fk|public.announcement.announcement_author_id_user_id_fkey",
+        "n|con|public.announcement.announcement_author_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.announcement.author_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement"
+      ],
+      "writes": [
+        "s|fk|public.announcement.announcement_published_by_id_user_id_fkey",
+        "n|fk|public.announcement.announcement_published_by_id_user_id_fkey",
+        "e|fk|public.announcement.announcement_published_by_id_user_id_fkey",
+        "n|con|public.announcement.announcement_published_by_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.announcement.published_by_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_attachment"
+      ],
+      "writes": [
+        "s|fk|public.announcement_attachment.announcement_attachment_announcement_id_announcement_id_fkey",
+        "n|fk|public.announcement_attachment.announcement_attachment_announcement_id_announcement_id_fkey",
+        "e|fk|public.announcement_attachment.announcement_attachment_announcement_id_announcement_id_fkey",
+        "n|con|public.announcement_attachment.announcement_attachment_announcement_id_announcement_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_attachment",
+        "n|sch|public",
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|col|public.announcement_attachment.announcement_id",
+        "n|col|public.announcement.id",
+        "e|uniqueness|public.announcement.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_attachment"
+      ],
+      "writes": [
+        "s|fk|public.announcement_attachment.announcement_attachment_file_id_stored_file_id_fkey",
+        "n|fk|public.announcement_attachment.announcement_attachment_file_id_stored_file_id_fkey",
+        "e|fk|public.announcement_attachment.announcement_attachment_file_id_stored_file_id_fkey",
+        "n|con|public.announcement_attachment.announcement_attachment_file_id_stored_file_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_attachment",
+        "n|sch|public",
+        "n|tbl|public.stored_file",
+        "n|sch|public",
+        "n|col|public.announcement_attachment.file_id",
+        "n|col|public.stored_file.id",
+        "e|uniqueness|public.stored_file.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_audience"
+      ],
+      "writes": [
+        "s|fk|public.announcement_audience.announcement_audience_announcement_id_announcement_id_fkey",
+        "n|fk|public.announcement_audience.announcement_audience_announcement_id_announcement_id_fkey",
+        "e|fk|public.announcement_audience.announcement_audience_announcement_id_announcement_id_fkey",
+        "n|con|public.announcement_audience.announcement_audience_announcement_id_announcement_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_audience",
+        "n|sch|public",
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|col|public.announcement_audience.announcement_id",
+        "n|col|public.announcement.id",
+        "e|uniqueness|public.announcement.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_audience"
+      ],
+      "writes": [
+        "s|fk|public.announcement_audience.announcement_audience_committee_id_committee_id_fkey",
+        "n|fk|public.announcement_audience.announcement_audience_committee_id_committee_id_fkey",
+        "e|fk|public.announcement_audience.announcement_audience_committee_id_committee_id_fkey",
+        "n|con|public.announcement_audience.announcement_audience_committee_id_committee_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_audience",
+        "n|sch|public",
+        "n|tbl|public.committee",
+        "n|sch|public",
+        "n|col|public.announcement_audience.committee_id",
+        "n|col|public.committee.id",
+        "e|uniqueness|public.committee.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_audience"
+      ],
+      "writes": [
+        "s|fk|public.announcement_audience.announcement_audience_role_id_conference_role_id_fkey",
+        "n|fk|public.announcement_audience.announcement_audience_role_id_conference_role_id_fkey",
+        "e|fk|public.announcement_audience.announcement_audience_role_id_conference_role_id_fkey",
+        "n|con|public.announcement_audience.announcement_audience_role_id_conference_role_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_audience",
+        "n|sch|public",
+        "n|tbl|public.conference_role",
+        "n|sch|public",
+        "n|col|public.announcement_audience.role_id",
+        "n|col|public.conference_role.id",
+        "e|uniqueness|public.conference_role.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_audience"
+      ],
+      "writes": [
+        "s|fk|public.announcement_audience.announcement_audience_survey_option_id_survey_option_id_fkey",
+        "n|fk|public.announcement_audience.announcement_audience_survey_option_id_survey_option_id_fkey",
+        "e|fk|public.announcement_audience.announcement_audience_survey_option_id_survey_option_id_fkey",
+        "n|con|public.announcement_audience.announcement_audience_survey_option_id_survey_option_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_audience",
+        "n|sch|public",
+        "n|tbl|public.survey_option",
+        "n|sch|public",
+        "n|col|public.announcement_audience.survey_option_id",
+        "n|col|public.survey_option.id",
+        "e|uniqueness|public.survey_option.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_read"
+      ],
+      "writes": [
+        "s|fk|public.announcement_read.announcement_read_announcement_id_announcement_id_fkey",
+        "n|fk|public.announcement_read.announcement_read_announcement_id_announcement_id_fkey",
+        "e|fk|public.announcement_read.announcement_read_announcement_id_announcement_id_fkey",
+        "n|con|public.announcement_read.announcement_read_announcement_id_announcement_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_read",
+        "n|sch|public",
+        "n|tbl|public.announcement",
+        "n|sch|public",
+        "n|col|public.announcement_read.announcement_id",
+        "n|col|public.announcement.id",
+        "e|uniqueness|public.announcement.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "announcement_read"
+      ],
+      "writes": [
+        "s|fk|public.announcement_read.announcement_read_user_id_user_id_fkey",
+        "n|fk|public.announcement_read.announcement_read_user_id_user_id_fkey",
+        "e|fk|public.announcement_read.announcement_read_user_id_user_id_fkey",
+        "n|con|public.announcement_read.announcement_read_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.announcement_read",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.announcement_read.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement_attachment",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement_audience",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement_read",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement_audience_kind",
+        "values": [
+          "EVERYONE",
+          "DELEGATES",
+          "SINGLE_PARTICIPANTS",
+          "SUPERVISORS",
+          "APPLICANTS",
+          "SEATED",
+          "WAITING_LIST",
+          "TEAM",
+          "COMMITTEE",
+          "ROLE",
+          "SURVEY_OPTION",
+          "PAYMENT_OPEN",
+          "PAPERWORK_OPEN",
+          "MINORS",
+          "ADULTS"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement_importance",
+        "values": [
+          "NORMAL",
+          "IMPORTANT",
+          "URGENT"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "announcement_status",
+        "values": [
+          "DRAFT",
+          "PUBLISHED",
+          "ARCHIVED"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "conference_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "title",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "body",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "importance",
+        "type": "announcement_importance",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'NORMAL'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "pinned",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "signature",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "status",
+        "type": "announcement_status",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'DRAFT'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "publish_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "visible_until",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "edited_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "notify_by_mail",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "mail_since",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "mail_revision",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "release_announced",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "author_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "published_by_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "announcement_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "file_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "position",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "kind",
+        "type": "announcement_audience_kind",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "committee_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "role_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "survey_option_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "team_role",
+        "type": "team_role",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "announcement_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "announcement_conference_id_status_publish_at_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "status",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "publish_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "announcement_attachment_announcement_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "announcement_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_audience_announcement_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "announcement_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "announcement_read_announcement_id_user_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "announcement_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "announcement_read_user_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "announcement_conference_id_conference_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "announcement_author_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "author_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "announcement_published_by_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "published_by_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "announcement_attachment_announcement_id_announcement_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "announcement_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "announcement",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "announcement_attachment_file_id_stored_file_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "file_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "stored_file",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_audience_announcement_id_announcement_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "announcement_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "announcement",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_audience_committee_id_committee_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "committee_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "committee",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_audience_role_id_conference_role_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "role_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference_role",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_audience_survey_option_id_survey_option_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "survey_option_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "survey_option",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "announcement_read_announcement_id_announcement_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "announcement_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "announcement",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "announcement_read_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "announcement_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_attachment",
+        "name": "announcement_attachment_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_audience",
+        "name": "announcement_audience_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement_read",
+        "name": "announcement_read_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conference\",\"info\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conference\",\"show_info_expanded\"]"
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"email_kind\"]",
+      "set": {
+        "values": [
+          "ASSIGNMENT_ACCEPTED",
+          "ASSIGNMENT_REJECTED",
+          "SUPERVISOR_ASSIGNMENT_SUMMARY",
+          "WAITING_LIST_SEATED",
+          "POSTAL_UNLOCKED",
+          "PAYMENT_UNLOCKED",
+          "POSTAL_RECEIVED",
+          "PAYMENT_RECEIVED",
+          "PAPERWORK_PROBLEM",
+          "APPLICATION_DEADLINE_REMINDER",
+          "OPEN_ISSUES_REMINDER",
+          "PHONE_READY_REMINDER",
+          "SURVEY_REMINDER",
+          "CHASE_INTRO_REMINDER",
+          "CERTIFICATE_AVAILABLE",
+          "SUPERVISOR_STUDENT_LINKED",
+          "PAPER_REVIEWED",
+          "TEAM_INVITATION",
+          "TEAM_WELCOME",
+          "BADGE_FOUND",
+          "UNREAD_MESSAGES",
+          "ANNOUNCEMENT"
+        ]
+      }
+    }
+  ]
+}

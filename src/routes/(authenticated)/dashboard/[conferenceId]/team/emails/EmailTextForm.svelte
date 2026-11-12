@@ -120,7 +120,8 @@
 		survey: m.emailPlaceholderSurvey,
 		committee: m.emailPlaceholderCommittee,
 		chaseLink: m.emailPlaceholderChaseLink,
-		manualLink: m.emailPlaceholderManualLink
+		manualLink: m.emailPlaceholderManualLink,
+		title: m.emailPlaceholderTitle
 	};
 </script>
 

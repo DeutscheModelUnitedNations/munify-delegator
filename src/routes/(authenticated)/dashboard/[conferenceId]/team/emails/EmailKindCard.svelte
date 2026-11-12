@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
-	import { isAlwaysSent } from '#lib/helpers/emailKinds';
+	import { hasNoSwitch, isAlwaysAutomatic } from '#lib/helpers/emailKinds';
 	import { emailKindTexts } from '#lib/helpers/emailKindTexts';
 
 	/**
@@ -56,8 +56,10 @@
 >
 	<div class="flex flex-wrap items-center gap-3">
 		<span class="font-semibold">{texts.title}</span>
-		{#if isAlwaysSent(kind)}
-			<span class="badge badge-neutral badge-soft badge-sm">{m.emailKindAlwaysSentBadge()}</span>
+		{#if hasNoSwitch(kind)}
+			<span class="badge badge-neutral badge-soft badge-sm">
+				{isAlwaysAutomatic(kind) ? m.emailKindAlwaysAutomaticBadge() : m.emailKindAlwaysSentBadge()}
+			</span>
 		{/if}
 		{#if customized}
 			<span class="badge badge-primary badge-soft badge-sm">{m.emailTextCustomized()}</span>
@@ -77,7 +79,7 @@
 			{m.emailTextEdit()}
 		</button>
 	</div>
-	{#if !isAlwaysSent(kind)}
+	{#if !hasNoSwitch(kind)}
 		<div class="flex flex-wrap items-center gap-3">
 			<label class="flex cursor-pointer items-center gap-2 text-sm">
 				<input

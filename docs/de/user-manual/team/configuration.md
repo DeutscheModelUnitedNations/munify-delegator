@@ -155,6 +155,32 @@ Viele Mail-Dienste nehmen nur eine begrenzte Zahl an E-Mails pro Sekunde an. Unt
 
 Ganz unten zeigt das **Protokoll** die letzten 200 E-Mails der Konferenz, automatische und von Hand verschickte.
 
+## Ankündigungen {#announcements}
+
+Unter **Kommunikation → Ankündigungen** schreibst du, was Teilnehmende und Team wissen sollen. Projektleitung, Teilnehmendenbetreuung und Leitung Inhalt dürfen das.
+
+Eine Ankündigung hat einen Titel, einen Text in Markdown und auf Wunsch eine Unterschrift. Rechts siehst du sie so, wie sie bei den Lesenden erscheint.
+
+- **Zielgruppe:** Wähle eine oder mehrere Gruppen. Wer zu mindestens einer gehört, sieht die Ankündigung. Zur Auswahl stehen alle Teilnehmenden, Delegierte, Einzelteilnehmende, Betreuende, Bewerber*innen ohne Platz, Teilnehmende mit Platz, die Warteliste, einzelne Gremien und Rollen, Antworten einer Umfrage, offene Zahlung oder Postanmeldung, Minderjährige und Volljährige sowie das Team oder eine Teamrolle. Unter der Auswahl steht, wie viele Personen das gerade sind.
+- **Wichtigkeit:** Normal, wichtig oder dringend. Dringende Ankündigungen erscheinen ungelesen als Leiste auf jeder Seite der Konferenz.
+- **Anheften:** Angeheftete Ankündigungen stehen bei allen oben.
+- **Sichtbar bis:** Danach verschwindet die Ankündigung von selbst.
+- **Anhänge:** Bis zu fünf PDF oder Bilder.
+- **Per E-Mail benachrichtigen:** Die Zielgruppe bekommt bei der Veröffentlichung eine E-Mail mit dem ganzen Text.
+
+:::info Gremien und Rollen
+Gremien, Rollen, „mit Platz“ und offene Formalitäten gelten für Teilnehmende erst, wenn die Zuteilung veröffentlicht ist. So verrät eine Ankündigung niemandem vorab den Platz.
+:::
+
+Eine neue Ankündigung ist zuerst ein **Entwurf**. Mit **Veröffentlichen** schaltest du sie sofort frei oder planst einen Zeitpunkt. Vorher siehst du, wie viele Personen sie erreicht und ob eine E-Mail verschickt wird.
+
+In der Liste steht bei jeder Ankündigung ihr Stand, wer sie verfasst hat und wie viele sie gelesen haben. Dort kannst du sie außerdem
+
+- **bearbeiten:** Änderungen an Titel oder Text einer veröffentlichten Ankündigung sehen die Lesenden als „aktualisiert am“.
+- **zurückziehen:** Sie wird wieder zum Entwurf.
+- **erneut benachrichtigen:** Die E-Mail geht in der aktuellen Fassung noch einmal an die Zielgruppe.
+- **als Test an dich schicken**, **duplizieren**, **archivieren** oder **löschen**.
+
 ## Nachrichten {#messages}
 
 Mit dem Schalter „Nachrichten zwischen Teilnehmenden und Team“ unter „Status“ gibst du die Chats frei. Teilnehmende schreiben dann der Teilnehmendenbetreuung und, sobald die Rollen veröffentlicht sind, einander, ihrer Delegation und dem Team ihres Gremiums.

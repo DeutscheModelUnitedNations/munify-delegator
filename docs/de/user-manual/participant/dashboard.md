@@ -142,7 +142,15 @@ Die anderen Mitglieder sehen die Seite nur, bis dahin steht bei ihnen **Noch off
 
 ## Informationen zur Konferenz {#conference-information}
 
-Was das Team allen mitteilen will, steht unter **Ankündigungen** direkt unter dem Kopf der Konferenz. Lange Ankündigungen klappst du mit **Mehr anzeigen** auf.
+Was das Team dir mitteilen will, steht unter **Ankündigungen** direkt unter dem Kopf der Konferenz. Du siehst nur, was für dich bestimmt ist, zum Beispiel für dein Gremium oder für Betreuende.
+
+- **Neu** markiert, was du noch nicht gelesen hast. Mit **Als gelesen markieren** verschwindet die Markierung.
+- Angeheftete Ankündigungen stehen immer oben.
+- Lange Ankündigungen klappst du mit **Mehr anzeigen** auf.
+- Anhänge öffnest du über die Schaltflächen unter dem Text.
+- Das Dashboard zeigt die neuesten. Über **Alle Ankündigungen anzeigen** kommst du zur ganzen Liste.
+
+Eine **dringende** Ankündigung erscheint zusätzlich als rote Leiste auf jeder Seite der Konferenz, bis du sie gelesen hast. Zu manchen Ankündigungen bekommst du auch eine E-Mail mit dem ganzen Text.
 
 Im Schnellzugriff findest du außerdem:
 

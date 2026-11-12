@@ -825,30 +825,22 @@ const announcement = {
 		{
 			class: 'flex w-full flex-col gap-4',
 			children: [
-				paragraph({ lines: 2 }),
-				alert('mb-6 h-12'),
 				{
-					class: 'border-base-300 bg-base-200 rounded-box flex flex-col gap-4 border p-4',
-					children: [
-						block('h-4 w-12 rounded-full'),
-						{
-							class: 'grid grid-cols-1 gap-4 lg:grid-cols-2',
-							children: [
-								{
-									class: 'flex flex-col gap-2',
-									children: [block('h-3 w-24 rounded-full'), block('h-64 w-full lg:h-96')]
-								},
-								{
-									class: 'flex flex-col gap-2',
-									children: [block('h-3 w-20 rounded-full'), block('h-64 w-full lg:h-96')]
-								}
-							]
-						},
-						toggle('w-40'),
-						block('h-3 w-64 max-w-full rounded-full')
-					]
+					class: 'flex flex-wrap items-center gap-3',
+					children: [block('h-4 min-w-0 flex-1 rounded-full'), block('h-10 w-44')]
 				},
-				block('mt-6 h-10 w-24')
+				...[0, 1, 2].map(() => ({
+					class: 'border-base-300 rounded-box flex flex-col gap-3 border p-4',
+					children: [
+						{
+							class: 'flex items-center gap-2',
+							children: [block('h-5 w-64 max-w-full rounded-full'), block('h-5 w-20 rounded-full')]
+						},
+						block('h-4 w-48 rounded-full'),
+						block('h-3 w-80 max-w-full rounded-full'),
+						block('h-8 w-72 max-w-full')
+					]
+				}))
 			]
 		}
 	]

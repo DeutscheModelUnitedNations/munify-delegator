@@ -127,6 +127,66 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	Teammember: { visible: [...ROW, 'conferenceId', 'userId', 'role'] },
 	Teamfunction: { visible: [...ROW, 'teamMemberId', 'committeeId', 'kind'] },
+	// --- Announcements --------------------------------------------------------------------------
+	// What the team tells an audience is about the conference, not about a person. How many it
+	// reaches and how many read it are counts by attributes an assistant does not see.
+	Announcement: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'title',
+			'body',
+			'signature',
+			'importance',
+			'pinned',
+			'status',
+			'state',
+			'publishAt',
+			'visibleUntil',
+			'editedAt',
+			'notifyByMail',
+			'mailSince',
+			'mailRevision',
+			'releaseAnnounced',
+			'authorId',
+			'publishedById'
+		],
+		aggregate: ['recipientCount', 'readCount']
+	},
+	Announcementaudience: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'announcementId',
+			'kind',
+			'committeeId',
+			'roleId',
+			'surveyOptionId',
+			'teamRole'
+		]
+	},
+	Announcementattachment: {
+		visible: ['id', 'createdAt', 'search_distance', 'announcementId', 'fileId', 'position']
+	},
+	AnnouncementAudienceCounts: {
+		aggregate: ['total', 'delegates', 'singleParticipants', 'supervisors', 'waitingList', 'team']
+	},
+	// an assistant takes no part in a conference, so its feed is empty; classified all the same
+	AnnouncementFeedItem: {
+		visible: [
+			'id',
+			'title',
+			'body',
+			'signature',
+			'importance',
+			'pinned',
+			'publishAt',
+			'editedAt',
+			'read'
+		]
+	},
+	AnnouncementFeedAttachment: { visible: ['id', 'fileName', 'mimeType', 'size', 'url'] },
 	// --- Chats ----------------------------------------------------------------------------------
 	// What people write each other is theirs: an assistant sees that chats exist, never a word.
 	Chat: {
@@ -321,7 +381,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'feeAmount',
 			'guardianConsentFileId',
 			'imageFileId',
-			'info',
 			'isOpenPaperSubmission',
 			'language',
 			'linkToPaperInbox',
@@ -348,7 +407,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'postalZip',
 			'registrationDeadlineGracePeriodMinutes',
 			'showCalendar',
-			'showInfoExpanded',
 			'startConference',
 			'state',
 			'supervisorMinAge',

@@ -62,6 +62,15 @@ const FILE_SOURCES = {
 			permission: 'manageParticipants'
 		}
 	},
+	announcement: {
+		// what an announcement comes with: a programme, a map, a form
+		attachment: {
+			column: 'fileId',
+			mimeTypes: [...PDF, 'image/png', 'image/jpeg', 'image/webp'],
+			maxBytes: 10_000_000,
+			permission: 'editConferenceContent'
+		}
+	},
 	resolution: {
 		content: {
 			column: 'fileId',

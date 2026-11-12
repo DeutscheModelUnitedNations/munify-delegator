@@ -83,6 +83,7 @@ export function renderAutomaticEmail({
 					paragraphs: content.paragraphs,
 					items: content.items,
 					closing: content.closing,
+					blocks: content.blocks,
 					button: content.button,
 					conferenceTitle: conference.title,
 					conferenceFooter: emailFooterParagraphs({ footer, conferenceTitle: conference.title })
