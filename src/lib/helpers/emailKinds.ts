@@ -90,15 +90,25 @@ export const kindApplies = ({ kind, chaseLinked }: { kind: string; chaseLinked: 
 
 /** How the e-mail page groups the mails, in this order. */
 export const EMAIL_GROUPS = [
+	{
+		id: 'registration',
+		kinds: [
+			'DELEGATION_CREATED',
+			'DELEGATION_JOINED',
+			'DELEGATION_MEMBER_JOINED',
+			'APPLICATION_SENT'
+		]
+	},
 	{ id: 'assignment', kinds: ASSIGNMENT_RESULT_KINDS },
-	{ id: 'waitingList', kinds: ['WAITING_LIST_SEATED'] },
+	{ id: 'waitingList', kinds: ['WAITING_LIST_REGISTERED', 'WAITING_LIST_SEATED'] },
 	{ id: 'unlocked', kinds: ['POSTAL_UNLOCKED', 'PAYMENT_UNLOCKED'] },
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },
+	{ id: 'surveys', kinds: ['SURVEY_PUBLISHED'] },
 	{ id: 'reminders', kinds: REMINDER_KINDS },
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
 	{ id: 'onSite', kinds: ['BADGE_FOUND'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
-	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED'] },
+	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED', 'SUPERVISOR_CONNECTED'] },
 	{ id: 'team', kinds: ['TEAM_WELCOME', 'TEAM_INVITATION'] }
 ] as const satisfies readonly { id: string; kinds: readonly EmailkindEnum[] }[];
 

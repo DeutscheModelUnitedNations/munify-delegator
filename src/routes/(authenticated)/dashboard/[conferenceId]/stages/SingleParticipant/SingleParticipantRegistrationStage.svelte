@@ -146,6 +146,7 @@
 		disabled={applied}
 		showSubmitButton={!applied}
 		motivationLabel={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
+		motivationHint={m.applicationMotivationHintSingle()}
 		experienceLabel={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
 	/>
 </DashboardSection>

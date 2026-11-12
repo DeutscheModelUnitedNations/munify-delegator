@@ -9,7 +9,12 @@ import {
 	type EmailKind,
 	type EmailSnapshot
 } from './dueEmails';
-import { loadEmailSnapshot } from './emailSnapshot';
+import {
+	emailPages,
+	FIRST_EMAIL_PAGE,
+	loadEmailConference,
+	type EmailCursor
+} from './emailSnapshot';
 import { REMINDER_KINDS } from '#lib/helpers/emailKinds';
 import { lastReminders, spaceReminders } from './reminderSpacing';
 import {
@@ -21,6 +26,7 @@ import {
 import { emailsPerSecondOf, enabledKinds } from './emailSettings';
 import { roundLimit } from './emailPacing';
 import { emailPacer } from './emailPacer';
+import { MAX_ATTEMPTS } from './emailCandidates';
 import { logger } from '#lib/logger';
 
 /**
@@ -34,7 +40,6 @@ import { logger } from '#lib/logger';
  * reminder: that still leaves the automatic one due.
  */
 
-const MAX_ATTEMPTS = 3;
 const STALE_CLAIM_MINUTES = 15;
 
 type LogState = {
@@ -68,8 +73,12 @@ async function openEmails({
 	now: Date;
 	spaced?: boolean;
 }) {
+	const due = dueEmails({ snapshot, now }).filter((email) => kinds.has(email.kind));
+	const userIds = [...new Set(due.map((email) => email.recipient.id))];
+	if (userIds.length === 0) return [];
+	// only the log of the page's recipients: every kind, since reminders space after all of theirs
 	const logs = await db.query.emailLog.findMany({
-		where: { conferenceId: snapshot.conference.id },
+		where: { conferenceId: snapshot.conference.id, userId: { in: userIds } },
 		columns: {
 			kind: true,
 			userId: true,
@@ -80,7 +89,7 @@ async function openEmails({
 			updatedAt: true
 		}
 	});
-	const open = stillOpen({ due: dueEmails({ snapshot, now }), logs, kinds, now });
+	const open = stillOpen({ due, logs, kinds, now });
 	return spaced ? spaceReminders({ due: open, lastReminderAt: lastReminders(logs), now }) : open;
 }
 
@@ -222,59 +231,86 @@ async function sendEach({
 /**
  * Sends up to `limit` of the mails the conference owes, of `kinds` (by hand), else of the kinds
  * switched to automatic, no faster than the conference's `emailsPerSecond` (and then no more than
- * a minute's worth). Answers how many went out, failed, and are left for the next round.
+ * a minute's worth). Reads the conference a page at a time from `from`, and answers how many went
+ * out and failed, and where the next round goes on (`null` once nothing is left).
  */
 export async function sendDueEmails({
 	conferenceId,
 	origin,
 	kinds: chosen,
+	from = FIRST_EMAIL_PAGE,
 	limit = 200,
 	now = new Date()
 }: {
 	conferenceId: string;
 	origin: string;
 	kinds?: ReadonlySet<EmailKind>;
+	from?: EmailCursor;
 	limit?: number;
 	now?: Date;
-}) {
+}): Promise<{ sent: number; failed: number; next: EmailCursor | null }> {
 	const kinds = chosen ?? (await enabledKinds(conferenceId));
-	const snapshot = kinds.size > 0 ? await loadEmailSnapshot(conferenceId) : undefined;
-	if (!snapshot) return { sent: 0, failed: 0, remaining: 0 };
+	const conference = kinds.size > 0 ? await loadEmailConference(conferenceId) : undefined;
+	if (!conference) return { sent: 0, failed: 0, next: null };
 
-	const open = await openEmails({ snapshot, kinds, now, spaced: true });
 	const perSecond = await emailsPerSecondOf(conferenceId);
-	const batch = open.slice(0, roundLimit({ limit, perSecond }));
 	const wording = await loadWording(conferenceId);
-	const { logIds, ...counts } = await sendEach({
-		conferenceId,
-		batch,
-		perSecond,
-		send: (email, logId) => send({ email, snapshot, origin, wording, logId })
-	});
+	let room = roundLimit({ limit, perSecond });
+	let sent = 0;
+	let failed = 0;
+	const logIds: string[] = [];
+	let next: EmailCursor | null = null;
+	for await (const page of emailPages({ conference, kinds, now, from })) {
+		const open = await openEmails({ snapshot: page.snapshot, kinds, now, spaced: true });
+		const batch = open.slice(0, room);
+		const result = await sendEach({
+			conferenceId,
+			batch,
+			perSecond,
+			send: (email, logId) => send({ email, snapshot: page.snapshot, origin, wording, logId })
+		});
+		sent += result.sent;
+		failed += result.failed;
+		logIds.push(...result.logIds);
+		room -= batch.length;
+		// the rest of this page, or the pages after it, are the next round's
+		if (open.length > batch.length) {
+			next = page.cursor;
+			break;
+		}
+		if (room <= 0) {
+			next = page.next;
+			break;
+		}
+	}
 	// a claim either inserts the row or retries an existing one
 	if (logIds.length > 0) {
 		emailLogPubsub.created();
 		emailLogPubsub.updated(logIds);
 	}
-	return { ...counts, remaining: open.length - batch.length };
+	return { sent, failed, next };
 }
 
 /** How many mails of each of `kinds` the conference owes right now and has not sent. */
 export async function countOpenEmails({
 	conferenceId,
-	kinds
+	kinds,
+	now = new Date()
 }: {
 	conferenceId: string;
 	kinds: readonly EmailKind[];
+	now?: Date;
 }) {
-	const snapshot = await loadEmailSnapshot(conferenceId);
-	const open = snapshot
-		? await openEmails({ snapshot, kinds: new Set(kinds), now: new Date() })
-		: [];
-	return kinds.map((kind) => ({
-		kind,
-		open: open.filter((email) => email.kind === kind).length
-	}));
+	const counts = new Map(kinds.map((kind) => [kind, 0]));
+	const conference = kinds.length > 0 ? await loadEmailConference(conferenceId) : undefined;
+	if (conference) {
+		const wanted = new Set(kinds);
+		for await (const { snapshot } of emailPages({ conference, kinds: wanted, now })) {
+			for (const email of await openEmails({ snapshot, kinds: wanted, now }))
+				counts.set(email.kind, (counts.get(email.kind) ?? 0) + 1);
+		}
+	}
+	return kinds.map((kind) => ({ kind, open: counts.get(kind) ?? 0 }));
 }
 
 /**
@@ -288,26 +324,32 @@ export async function skipOpenEmails({
 	conferenceId: string;
 	kinds: readonly EmailKind[];
 }) {
-	const snapshot = await loadEmailSnapshot(conferenceId);
-	if (!snapshot || kinds.length === 0) return 0;
-	const open = await openEmails({ snapshot, kinds: new Set(kinds), now: new Date() });
-	for (let start = 0; start < open.length; start += 500) {
-		await db
-			.insert(schema.emailLog)
-			.values(
-				open.slice(start, start + 500).map((email) => ({
-					conferenceId,
-					kind: email.kind,
-					userId: email.recipient.id,
-					subjectKey: email.subjectKey,
-					status: 'SKIPPED' as const,
-					email: email.recipient.email
-				}))
-			)
-			.onConflictDoNothing();
+	const conference = kinds.length > 0 ? await loadEmailConference(conferenceId) : undefined;
+	if (!conference) return 0;
+	const wanted = new Set(kinds);
+	const now = new Date();
+	let skipped = 0;
+	for await (const { snapshot } of emailPages({ conference, kinds: wanted, now })) {
+		const open = await openEmails({ snapshot, kinds: wanted, now });
+		for (let start = 0; start < open.length; start += 500) {
+			await db
+				.insert(schema.emailLog)
+				.values(
+					open.slice(start, start + 500).map((email) => ({
+						conferenceId,
+						kind: email.kind,
+						userId: email.recipient.id,
+						subjectKey: email.subjectKey,
+						status: 'SKIPPED' as const,
+						email: email.recipient.email
+					}))
+				)
+				.onConflictDoNothing();
+		}
+		skipped += open.length;
 	}
-	if (open.length > 0) emailLogPubsub.created();
-	return open.length;
+	if (skipped > 0) emailLogPubsub.created();
+	return skipped;
 }
 
 // The sweeps the team started by hand, one per conference at a time; kinds asked for while one runs
@@ -340,8 +382,8 @@ export function sendOpenEmailsInBackground({
 				const batch = new Set(state.kinds);
 				state.kinds.clear();
 				let result = await sendDueEmails({ conferenceId, origin, kinds: batch });
-				while (result.remaining > 0 && result.sent + result.failed > 0)
-					result = await sendDueEmails({ conferenceId, origin, kinds: batch });
+				while (result.next && result.sent + result.failed > 0)
+					result = await sendDueEmails({ conferenceId, origin, kinds: batch, from: result.next });
 			}
 		} catch (error) {
 			logger.error('Sending emails failed', { conferenceId, err: error });

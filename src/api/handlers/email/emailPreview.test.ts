@@ -23,7 +23,9 @@ vi.mock('#api/services/requestLocale', () => ({
 	localeOfUser: (locale: string | null) => locale ?? 'de',
 	runWithLocale: ({ fn }: { locale: string; fn: () => unknown }) => fn()
 }));
-vi.mock('./emailSnapshot', () => ({ loadEmailSnapshot: async () => stored.snapshot }));
+vi.mock('./emailSnapshot', () => ({
+	loadEmailConference: async () => stored.snapshot?.conference
+}));
 vi.mock('./teamInvitationEmail', () => ({
 	renderTeamInvitationEmail: (...args: unknown[]) => ({ team: 'invitation', args })
 }));

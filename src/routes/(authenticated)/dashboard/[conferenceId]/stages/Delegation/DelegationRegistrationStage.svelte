@@ -185,6 +185,7 @@
 		disabled={applied || !userIsHeadDelegate}
 		showSubmitButton={!applied && userIsHeadDelegate}
 		motivationLabel={m.whyDoYouWantToJoinTheConference()}
+		motivationHint={m.applicationMotivationHintDelegation()}
 		experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
 	/>
 </DashboardSection>

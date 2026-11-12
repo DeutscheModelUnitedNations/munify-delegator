@@ -1028,11 +1028,15 @@ bun run preview
   person's mails, the mails sent where they happen, and rendering one mail.
 - **Every mail follows from state, not from an event.** `dueEmails` (`#api/handlers/email/`) is
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
-  conference owes - acceptances and rejections once the assignment is released, seats from the
+  conference owes - during registration the head delegate's entry code, a welcome to whoever joins
+  a delegation, word to its earlier members of each newcomer (all only while the delegation has not
+  applied), a confirmation of the application (until the release) and of the waiting list entry,
+  then acceptances and rejections once the assignment is released, seats from the
   waiting list, postal/payment unlocked, received or with a problem, the reminders before the
   application deadline and the conference, a reminder to everyone seated who has not answered a
   published survey before its deadline (`SURVEY_REMINDER`, keyed by survey and deadline, so a
-  moved deadline reminds again), certificates, students linked to a supervisor, and
+  moved deadline reminds again), certificates, students linked to a supervisor (and the student told of the supervisor), a new
+  survey to everyone seated who has not answered it, and
   each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
   reviewer), and a welcome to everyone who joins the team (`TEAM_WELCOME`, keyed by the membership,
   to a `team` member rather than a participant: a `DueEmail` is addressed to its `recipient`, and
@@ -1048,6 +1052,16 @@ bun run preview
   it owes with "send now" and "skip" (`skipOpenEmails`, marks them `SKIPPED`). Changes to one
   person (a status, a review, a supervisor link) prompt nothing: their mails wait on the e-mail
   page, in the user card, or for the job.
+- **A conference is read a page at a time** (`emailSnapshot.ts`): participants, then the waiting
+  list, then the team, 500 rows a page by `(conference_id, id)`, each page with only the people
+  around it the asked-for kinds read (`neighbours`: students always, co-members and supervisors
+  only for the kinds about them) and only its own reviews and survey answers. `dueEmails` works
+  out mails for a page's `people` alone, never its neighbours. `sendDueEmails` answers a cursor
+  to go on from; the user card reads one person (`loadUserSnapshot`). A page holds only rows that
+  may be owed a mail: `emailCandidates.ts` has a SQL predicate per kind (a superset of its rule,
+  never a subset, minus what the log closed), and what depends on the conference alone gates a
+  kind in TypeScript. **A change to a rule in `dueEmails` needs the same change there**, or the
+  sweep stops reading the people it now owes.
 - **`emailLog` makes each automatic mail happen once.** The sweep (`emailSweep.ts`) claims a mail
   by writing its row, unique per conference, kind, person and `subjectKey` among the `AUTOMATIC`
   rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps

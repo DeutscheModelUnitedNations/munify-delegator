@@ -5,7 +5,8 @@ import {
 	type SnapshotPerson,
 	type SnapshotReview,
 	type SnapshotSurvey,
-	type SnapshotTeamMember
+	type SnapshotTeamMember,
+	type SnapshotWaitingEntry
 } from './dueEmails';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -18,6 +19,23 @@ const france = {
 };
 
 let counter = 0;
+/** A membership of a delegation of its own, unless `id` names a shared one. */
+function membership(
+	overrides: Partial<NonNullable<SnapshotPerson['delegation']>> & { applied: boolean }
+): NonNullable<SnapshotPerson['delegation']> {
+	counter++;
+	return {
+		id: `d${counter}`,
+		entryCode: `CODE${counter}`,
+		isHeadDelegate: true,
+		joinedAt: new Date(now.getTime() - 10 * DAY),
+		role: null,
+		committee: null,
+		committeeId: null,
+		...overrides
+	};
+}
+
 function person(overrides: Partial<SnapshotPerson> = {}): SnapshotPerson {
 	counter++;
 	return {
@@ -39,6 +57,7 @@ function person(overrides: Partial<SnapshotPerson> = {}): SnapshotPerson {
 		single: null,
 		supervisor: null,
 		seatedFromWaitingList: null,
+		supervisorIds: [],
 		...overrides
 	};
 }
@@ -48,7 +67,9 @@ function snapshot(
 	conference: Partial<EmailSnapshot['conference']> = {},
 	reviews: SnapshotReview[] = [],
 	surveys: SnapshotSurvey[] = [],
-	team: SnapshotTeamMember[] = []
+	team: SnapshotTeamMember[] = [],
+	waitingList: SnapshotWaitingEntry[] = [],
+	neighbours: SnapshotPerson[] = []
 ): EmailSnapshot {
 	return {
 		conference: {
@@ -66,9 +87,11 @@ function snapshot(
 			...conference
 		},
 		people,
+		neighbours,
 		team,
 		reviews,
-		surveys
+		surveys,
+		waitingList
 	};
 }
 
@@ -76,13 +99,29 @@ const kindsOf = (snap: EmailSnapshot, at = now) =>
 	dueEmails({ snapshot: snap, now: at }).map(
 		(email) => `${email.kind}:${email.recipient.id}:${email.subjectKey}`
 	);
+/** Only the mails of `kinds`. */
+const onlyKinds = ({
+	snap,
+	kinds,
+	at = now
+}: {
+	snap: EmailSnapshot;
+	kinds: readonly string[];
+	at?: Date;
+}) => kindsOf(snap, at).filter((key) => kinds.some((kind) => key.startsWith(`${kind}:`)));
 
 const seated = () =>
-	person({ delegation: { applied: true, role: france, committee: 'GV', committeeId: 'c-gv' } });
+	person({
+		delegation: membership({ applied: true, role: france, committee: 'GV', committeeId: 'c-gv' })
+	});
 const rejected = () =>
-	person({ delegation: { applied: true, role: null, committee: null, committeeId: null } });
+	person({
+		delegation: membership({ applied: true, role: null, committee: null, committeeId: null })
+	});
 const unsent = () =>
-	person({ delegation: { applied: false, role: null, committee: null, committeeId: null } });
+	person({
+		delegation: membership({ applied: false, role: null, committee: null, committeeId: null })
+	});
 
 describe('the assignment result', () => {
 	test('accepts the seated and rejects who applied without a seat, once released', () => {
@@ -96,7 +135,8 @@ describe('the assignment result', () => {
 	});
 
 	test('says nothing before the release', () => {
-		expect(kindsOf(snapshot([seated(), rejected()], { assignmentReleased: false }))).toEqual([]);
+		const snap = snapshot([seated(), rejected()], { assignmentReleased: false });
+		expect(onlyKinds({ snap, kinds: ['ASSIGNMENT_ACCEPTED', 'ASSIGNMENT_REJECTED'] })).toEqual([]);
 	});
 
 	test('tells someone seated from the waiting list that, instead of a plain acceptance', () => {
@@ -177,7 +217,7 @@ describe('reminders', () => {
 	test('reminds unsent applications in the last days of the application phase', () => {
 		const a = unsent();
 		const sent = person({
-			delegation: { applied: true, role: null, committee: null, committeeId: null }
+			delegation: membership({ applied: true, role: null, committee: null, committeeId: null })
 		});
 		const deadline = new Date(now.getTime() + 2 * DAY);
 		const snap = snapshot([a, sent], {
@@ -185,10 +225,11 @@ describe('reminders', () => {
 			assignmentReleased: false,
 			applicationDeadline: deadline
 		});
-		expect(kindsOf(snap)).toEqual([
+		const kinds = ['APPLICATION_DEADLINE_REMINDER'];
+		expect(onlyKinds({ snap, kinds })).toEqual([
 			`APPLICATION_DEADLINE_REMINDER:${a.user.id}:${deadline.toISOString().slice(0, 10)}`
 		]);
-		expect(kindsOf(snap, new Date(now.getTime() - 5 * DAY))).toEqual([]);
+		expect(onlyKinds({ snap, kinds, at: new Date(now.getTime() - 5 * DAY) })).toEqual([]);
 	});
 
 	test('reminds open issues two weeks and the phone one week before the start', () => {
@@ -251,7 +292,7 @@ describe('survey reminders', () => {
 		const answered = seated();
 		const open = seated();
 		const unseated = person({
-			delegation: { applied: true, role: null, committee: null, committeeId: null }
+			delegation: membership({ applied: true, role: null, committee: null, committeeId: null })
 		});
 		const deadline = new Date(now.getTime() + 2 * DAY);
 		const snap = snapshot([answered, open, unseated], {}, [], [survey(deadline, [answered])]);
@@ -326,10 +367,10 @@ describe('paper reviews', () => {
 
 	test('carry the review along', () => {
 		const author = seated();
-		const [due] = dueEmails({
+		const due = dueEmails({
 			snapshot: snapshot([author], { assignmentReleased: false }, [review('r1', author)]),
 			now
-		});
+		}).find((email) => email.kind === 'PAPER_REVIEWED');
 		expect(due?.review?.id).toBe('r1');
 	});
 });
@@ -374,12 +415,12 @@ describe('the CHASE introduction', () => {
 	test('invites delegates with a committee, NSAs and singles, ten days before', () => {
 		const delegate = seated();
 		const nsa = person({
-			delegation: {
+			delegation: membership({
 				applied: true,
 				role: { ...france, id: 'nsa', kind: 'NON_STATE_ACTOR', nationAlpha3Code: null },
 				committee: null,
 				committeeId: null
-			}
+			})
 		});
 		const press = person({
 			single: { applied: true, role: { ...france, id: 'press', kind: 'CUSTOM' } }
@@ -400,5 +441,147 @@ describe('the CHASE introduction', () => {
 	test('owes nothing while no CHASE instance is linked', () => {
 		const kinds = kindsOf(snapshot([seated()], { ...linked, chaseUrl: null }));
 		expect(kinds.some((k) => k.startsWith('CHASE_INTRO_REMINDER'))).toBe(false);
+	});
+});
+
+describe('while a delegation is put together', () => {
+	const registration = { state: 'PARTICIPANT_REGISTRATION' as const, assignmentReleased: false };
+	const kinds = ['DELEGATION_CREATED', 'DELEGATION_JOINED', 'DELEGATION_MEMBER_JOINED'];
+	const member = ({ joinedDaysAgo, head = false }: { joinedDaysAgo: number; head?: boolean }) =>
+		person({
+			delegation: membership({
+				id: 'd-shared',
+				applied: false,
+				isHeadDelegate: head,
+				joinedAt: new Date(now.getTime() - joinedDaysAgo * DAY)
+			})
+		});
+
+	test('gives the head the code, welcomes the others, and tells earlier members of later ones', () => {
+		const head = member({ joinedDaysAgo: 3, head: true });
+		const second = member({ joinedDaysAgo: 2 });
+		const third = member({ joinedDaysAgo: 1 });
+		const snap = snapshot([third, head, second], registration);
+		expect(onlyKinds({ snap, kinds }).toSorted()).toEqual(
+			[
+				`DELEGATION_CREATED:${head.user.id}:d-shared`,
+				`DELEGATION_JOINED:${second.user.id}:d-shared`,
+				`DELEGATION_JOINED:${third.user.id}:d-shared`,
+				`DELEGATION_MEMBER_JOINED:${head.user.id}:d-shared:${second.participantId}`,
+				`DELEGATION_MEMBER_JOINED:${head.user.id}:d-shared:${third.participantId}`,
+				`DELEGATION_MEMBER_JOINED:${second.user.id}:d-shared:${third.participantId}`
+			].toSorted()
+		);
+	});
+
+	test('names the newcomer in the mail', () => {
+		const head = member({ joinedDaysAgo: 2, head: true });
+		const newcomer = member({ joinedDaysAgo: 1 });
+		const due = dueEmails({ snapshot: snapshot([head, newcomer], registration), now }).find(
+			(email) => email.kind === 'DELEGATION_MEMBER_JOINED'
+		);
+		expect(due?.recipient.id).toBe(head.user.id);
+		expect(due?.member).toBe(newcomer);
+	});
+
+	test('stops once the delegation applied or registration closed', () => {
+		const applied = person({ delegation: membership({ applied: true }) });
+		expect(onlyKinds({ snap: snapshot([applied], registration), kinds })).toEqual([]);
+		const open = member({ joinedDaysAgo: 1, head: true });
+		const closed = snapshot([open], { state: 'PREPARATION', assignmentReleased: false });
+		expect(onlyKinds({ snap: closed, kinds })).toEqual([]);
+	});
+});
+
+describe('the application sent', () => {
+	test('confirms to every applicant once, until the release', () => {
+		const delegate = person({ delegation: membership({ applied: true }) });
+		const single = person({ single: { applied: true, role: null } });
+		const notYet = unsent();
+		const snap = snapshot([delegate, single, notYet], { assignmentReleased: false });
+		expect(onlyKinds({ snap, kinds: ['APPLICATION_SENT'] })).toEqual([
+			`APPLICATION_SENT:${delegate.user.id}:applied`,
+			`APPLICATION_SENT:${single.user.id}:applied`
+		]);
+		const released = snapshot([delegate, single]);
+		expect(onlyKinds({ snap: released, kinds: ['APPLICATION_SENT'] })).toEqual([]);
+	});
+});
+
+describe('the waiting list', () => {
+	test('confirms each entry to the person waiting', () => {
+		const { user } = person();
+		const snap = snapshot([], {}, [], [], [], [{ id: 'w1', user }]);
+		expect(kindsOf(snap)).toEqual([`WAITING_LIST_REGISTERED:${user.id}:w1`]);
+	});
+});
+
+describe('a supervisor connected', () => {
+	test('tells the student about each supervisor', () => {
+		const student = person();
+		const supervisor = person({
+			supervisor: { plansOwnAttendance: false, studentIds: [student.participantId] }
+		});
+		student.supervisorIds.push(supervisor.participantId);
+		const due = dueEmails({ snapshot: snapshot([student, supervisor]), now }).filter(
+			(email) => email.kind === 'SUPERVISOR_CONNECTED'
+		);
+		expect(due.map((email) => [email.recipient.id, email.subjectKey])).toEqual([
+			[student.user.id, supervisor.participantId]
+		]);
+		expect(due[0]?.supervisor).toBe(supervisor);
+	});
+});
+
+describe('a survey published', () => {
+	const published = (deadline: Date, answeredBy: SnapshotPerson[] = []): SnapshotSurvey => ({
+		id: 's1',
+		title: 'Workshops',
+		deadline,
+		answeredBy: answeredBy.map((p) => p.participantId)
+	});
+
+	test('tells everybody seated who has not answered, while it is open', () => {
+		const answered = seated();
+		const open = seated();
+		const unseated = rejected();
+		const deadline = new Date(now.getTime() + 20 * DAY);
+		const snap = snapshot([answered, open, unseated], {}, [], [published(deadline, [answered])]);
+		expect(onlyKinds({ snap, kinds: ['SURVEY_PUBLISHED'] })).toEqual([
+			`SURVEY_PUBLISHED:${open.user.id}:s1`
+		]);
+		const over = snapshot([open], {}, [], [published(new Date(now.getTime() - DAY))]);
+		expect(onlyKinds({ snap: over, kinds: ['SURVEY_PUBLISHED'] })).toEqual([]);
+	});
+});
+
+describe('a page of people', () => {
+	test('reads about neighbours but owes them nothing', () => {
+		const student = seated();
+		const supervisor = person({
+			supervisor: { plansOwnAttendance: false, studentIds: [student.participantId] }
+		});
+		const kinds = kindsOf(snapshot([supervisor], {}, [], [], [], [], [student]));
+		expect(kinds).toContain(
+			`SUPERVISOR_STUDENT_LINKED:${supervisor.user.id}:${student.participantId}`
+		);
+		expect(kinds.some((key) => key.includes(`:${student.user.id}:`))).toBe(false);
+	});
+
+	test('tells a member of a newcomer outside the page', () => {
+		const registration = { state: 'PARTICIPANT_REGISTRATION' as const, assignmentReleased: false };
+		const shared = (daysAgo: number, head: boolean) =>
+			membership({
+				id: 'd-page',
+				applied: false,
+				isHeadDelegate: head,
+				joinedAt: new Date(now.getTime() - daysAgo * DAY)
+			});
+		const head = person({ delegation: shared(2, true) });
+		const newcomer = person({ delegation: shared(1, false) });
+		const snap = snapshot([head], registration, [], [], [], [], [newcomer]);
+		expect(onlyKinds({ snap, kinds: ['DELEGATION_MEMBER_JOINED'] })).toEqual([
+			`DELEGATION_MEMBER_JOINED:${head.user.id}:d-page:${newcomer.participantId}`
+		]);
 	});
 });

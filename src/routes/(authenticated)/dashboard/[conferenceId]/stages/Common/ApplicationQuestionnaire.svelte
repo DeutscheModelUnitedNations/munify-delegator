@@ -19,11 +19,20 @@
 		disabled: boolean;
 		showSubmitButton: boolean;
 		motivationLabel: string;
+		/** What the motivation should cover beyond wanting to take part. */
+		motivationHint: string;
 		experienceLabel: string;
 	}
 
-	let { initial, save, disabled, showSubmitButton, motivationLabel, experienceLabel }: Props =
-		$props();
+	let {
+		initial,
+		save,
+		disabled,
+		showSubmitButton,
+		motivationLabel,
+		motivationHint,
+		experienceLabel
+	}: Props = $props();
 
 	const form = mutationForm({
 		initial: makeApplicationForm(untrack(() => initial)),
@@ -39,7 +48,7 @@
 			label={motivationLabel}
 			{form}
 			placeholder={m.answerHere()}
-			description={disabled ? undefined : m.applicationQualityHint()}
+			description={disabled ? undefined : `${motivationHint} ${m.applicationQualityHint()}`}
 			{disabled}
 		/>
 		<FormTextArea
