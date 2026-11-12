@@ -3,6 +3,7 @@ import {
 	pgEnum,
 	text,
 	timestamp,
+	integer,
 	doublePrecision,
 	date,
 	boolean,
@@ -105,6 +106,9 @@ export const user = snakeCase.table(
 		wantsJoinTeamInformation: boolean().default(false).notNull(),
 		/** Whether a mail tells them about chat messages they have not read for a while. */
 		messageNotificationEmails: boolean().default(true).notNull(),
+		/** The version of the message service's terms they accepted (`MESSAGING_TERMS_VERSION`), and when. */
+		messagingTermsVersion: integer(),
+		messagingTermsAcceptedAt: timestamp({ precision: 3 }),
 		gender: gender(),
 		emergencyContacts: text(),
 		// care notes for the team, not the public, survive conferences

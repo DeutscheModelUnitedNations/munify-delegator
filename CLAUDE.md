@@ -1356,6 +1356,14 @@ bun run preview
   delegation only once the roles are released, while both hold a seat, neither blocked the other
   (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
   participant care). The team is always reached.
+- **A participant agrees to the terms before their first message.** The terms of the message
+  service are the app's, in both languages (`messagingTermsSections`, `#lib/helpers/messagingTerms.ts`,
+  `chatTerms…` messages): conduct, who reads along (reports, the team inboxes, the trusted persons
+  as the exception), blocking, consequences. `sendChatMessage` refuses a party who has not accepted
+  `MESSAGING_TERMS_VERSION` with `TERMS_NOT_ACCEPTED` (`assertAcceptedTerms`); the composer then
+  shows `MessagingTermsModal`, `acceptMessagingTerms` stores the version on the account
+  (`user.messagingTermsVersion`, once for every conference) and the message goes out. The team
+  writes without. **Raise the version when the terms change in meaning**, and everybody is asked again.
 - **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
   "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by

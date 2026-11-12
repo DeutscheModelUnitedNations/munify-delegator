@@ -19,7 +19,7 @@ import { callerUserId } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import type { ChatInbox, ChatSide } from '#lib/helpers/chat';
-import type { ChatRow } from './chatService';
+import { hasAcceptedTerms, type ChatRow } from './chatService';
 
 /**
  * Who reads which chat. A chat is read by its parties: the two people of a direct chat, the
@@ -310,6 +310,15 @@ export async function assertTakesPartInChat({ ctx, id }: { ctx: ApiContext; id: 
 		throw apiError({ code: 'FORBIDDEN', message: m.chatRefusedReview() });
 	}
 	return { ...found, side: found.side };
+}
+
+/**
+ * Refuses (TERMS_NOT_ACCEPTED) a participant who has not accepted the message service's terms as
+ * they stand. The team writes without.
+ */
+export async function assertAcceptedTerms(userId: string) {
+	if (await hasAcceptedTerms(userId)) return;
+	throw apiError({ code: 'TERMS_NOT_ACCEPTED', message: m.chatTermsNotAccepted() });
 }
 
 /** `readableChat` for a party of the chat with their own participant row: who blocks and reports. */

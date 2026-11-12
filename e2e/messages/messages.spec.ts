@@ -27,6 +27,7 @@ async function signedIn(
 	return page;
 }
 
+/** Writes a message as somebody who has agreed to the terms: it just goes. */
 async function write(page: Page, text: string) {
 	await page.getByTestId('chat-input').fill(text);
 	await page.getByTestId('chat-send').click();
@@ -64,7 +65,33 @@ test('a delegate finds another by country and committee and writes to them', asy
 
 	await expect(page.getByTestId('chat-title')).toHaveText('Frankreich · MSGV');
 	await expect(page).toHaveURL(/chat=/);
-	await write(page, 'Hallo aus Deutschland');
+
+	// her first message ever: the terms of the message service come first
+	await page.getByTestId('chat-input').fill('Hallo aus Deutschland');
+	await page.getByTestId('chat-send').click();
+	const terms = page.getByRole('dialog', { name: 'Nutzungsbedingungen der Nachrichten' });
+	await expect(terms).toContainText('Wer deine Nachrichten lesen kann');
+	await expect(terms).toContainText('Vertrauenspersonen');
+	await expect(page.getByTestId('chat-message')).toHaveCount(0);
+	// nothing goes out without her agreement, and her text is kept
+	await expect(page.getByTestId('chat-terms-accept')).toBeDisabled();
+	await terms.getByRole('button', { name: 'Abbruch' }).click();
+	await expect(page.getByTestId('chat-input')).toHaveValue('Hallo aus Deutschland');
+	await expect(page.getByTestId('chat-message')).toHaveCount(0);
+
+	await page.getByTestId('chat-send').click();
+	await page.getByTestId('chat-terms-agree').check();
+	await page.getByTestId('chat-terms-accept').click();
+	await expect(
+		page.getByTestId('chat-message').filter({ hasText: 'Hallo aus Deutschland' })
+	).toBeVisible();
+	await expect(terms).toBeHidden();
+
+	// and they stay there to read
+	await page.getByTestId('chat-terms-read').click();
+	await expect(terms).toContainText('Respektvoller Umgang');
+	await expect(page.getByTestId('chat-terms-agree')).toHaveCount(0);
+	await terms.getByRole('button', { name: 'Schließen' }).first().click();
 	await expect(page.getByTestId('chat-list')).toContainText('Frankreich · MSGV');
 });
 

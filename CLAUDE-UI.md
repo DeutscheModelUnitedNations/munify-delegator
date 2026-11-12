@@ -882,6 +882,9 @@ list header.
   `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
   in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
   (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
+- **`MessagingTermsModal`**: the terms of the message service (`messagingTermsSections`). The
+  composer opens it with `onAccepted` when the API asks a participant to agree before their first
+  message; `MessagingTermsLink` under the participant's chat list shows them to read.
 - **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
 - **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
   `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a
