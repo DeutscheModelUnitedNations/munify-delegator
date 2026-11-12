@@ -169,6 +169,7 @@ Unter **Umfragen** meldest du dich zum Beispiel für Veranstaltungen an, oder da
 
 Hat das Team die Nachrichten eingeschaltet, findest du auf dem Dashboard die Karte „Nachrichten“. Sie zeigt dir, in welchen Chats etwas Ungelesenes wartet.
 
+- **Vertrauenspersonen.** Wenn du etwas vertraulich besprechen möchtest, schreibst du den Vertrauenspersonen. Du erreichst sie jederzeit, alle gemeinsam oder eine einzelne Person mit Namen. Diese Nachrichten lesen nur die Vertrauenspersonen. Schreibst du einer einzelnen, liest nur sie. Sonst liest niemand aus dem Team mit. Die Vertrauenspersonen sehen deine Rolle. Deinen Namen nennst du selbst, wenn du möchtest.
 - **Team.** Die Teilnehmendenbetreuung erreichst du jederzeit. Sobald die Rollen veröffentlicht sind, kommen der Vorsitz und die Gremienberatung deines Gremiums dazu. Alle, die ein Postfach betreuen, lesen mit. Die Antwort trägt die Funktion und den Namen der Person, die sie schreibt.
 - **Andere Delegierte.** Über „Neue Nachricht“ suchst du nach Land, Gremium oder Rolle, zum Beispiel „frank gv“. Ihr seht voneinander nur die Rolle, nie den Namen.
 - **Deine Delegation.** Jede Delegation hat eine Gruppe für alle ihre Mitglieder.

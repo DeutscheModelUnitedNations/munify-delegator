@@ -6,7 +6,8 @@ import type { CallerFacts } from '#api/services/authHelper/callerFacts';
 vi.mock('#api/db/db', () => ({ db: {} }));
 vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
 
-const { caresFor, chatSide, holdsInbox, writingParticipantId } = await import('./chatPermissions');
+const { caresFor, chatSide, holdsInbox, knowsPeopleOf, writingParticipantId } =
+	await import('./chatPermissions');
 const { NO_CALLER_FACTS } = await import('#api/services/authHelper/callerFacts');
 
 /** Just enough of a request context for the checks, which read only these parts. */
@@ -41,7 +42,8 @@ const chat = {
 	otherParticipantId: 'p-b',
 	delegationId: null,
 	inbox: null,
-	committeeId: null
+	committeeId: null,
+	trustedUserId: null
 };
 const teamChat = {
 	...chat,
@@ -165,5 +167,86 @@ describe('writingParticipantId', () => {
 		expect(
 			writingParticipantId({ ctx: assistant, facts: delegate, conferenceId: 'c1' })
 		).toBeUndefined();
+	});
+});
+
+describe('trusted persons', () => {
+	const trustedInbox = {
+		conferenceId: 'c1',
+		inbox: 'TRUSTED_PERSON' as const,
+		committeeId: null
+	};
+	const trusted = facts({
+		team: [{ conferenceId: 'c1', roles: ['MEMBER'] }],
+		teamFunctions: [{ conferenceId: 'c1', committeeId: null, kind: 'TRUSTED_PERSON' }]
+	});
+	const anna = contextFor({ sub: 'anna' });
+
+	test('answer the inbox written to all of them, in their conference', () => {
+		expect(holdsInbox({ ctx: anna, facts: trusted, ...trustedInbox })).toBe(true);
+		expect(holdsInbox({ ctx: anna, facts: trusted, ...trustedInbox, conferenceId: 'c2' })).toBe(
+			false
+		);
+	});
+
+	test('answer a chat written to them alone, not one written to another', () => {
+		expect(holdsInbox({ ctx: anna, facts: trusted, ...trustedInbox, trustedUserId: 'anna' })).toBe(
+			true
+		);
+		expect(holdsInbox({ ctx: anna, facts: trusted, ...trustedInbox, trustedUserId: 'ben' })).toBe(
+			false
+		);
+	});
+
+	test('are the only ones: not participant care, not a system admin, not an assistant', () => {
+		expect(holdsInbox({ ctx: contextFor({ sub: 'u' }), facts: care, ...trustedInbox })).toBe(false);
+		expect(
+			holdsInbox({ ctx: contextFor({ sub: 'root', admin: true }), facts: facts(), ...trustedInbox })
+		).toBe(false);
+		const assistant = contextFor({ sub: 'anna', mcp: { conferenceId: 'c1', isAdmin: false } });
+		expect(holdsInbox({ ctx: assistant, facts: trusted, ...trustedInbox })).toBe(false);
+	});
+
+	test('answer nothing else by being trusted', () => {
+		expect(
+			holdsInbox({
+				ctx: anna,
+				facts: trusted,
+				conferenceId: 'c1',
+				inbox: 'PARTICIPANT_CARE',
+				committeeId: null
+			})
+		).toBe(false);
+		expect(
+			holdsInbox({
+				ctx: anna,
+				facts: trusted,
+				conferenceId: 'c1',
+				inbox: 'CHAIR',
+				committeeId: 'ga'
+			})
+		).toBe(false);
+	});
+
+	test('take the team side of their chats', () => {
+		const shared = { ...teamChat, inbox: 'TRUSTED_PERSON' as const, committeeId: null };
+		expect(chatSide({ ctx: anna, facts: trusted, chat: shared })).toBe('TEAM');
+		expect(
+			chatSide({ ctx: anna, facts: trusted, chat: { ...shared, trustedUserId: 'anna' } })
+		).toBe('TEAM');
+	});
+
+	test('nobody learns who the participant is there, not even participant care', () => {
+		const ctx = contextFor({ sub: 'u' });
+		const both = facts({ ...care, teamFunctions: trusted.teamFunctions });
+		expect(
+			knowsPeopleOf({ ctx, facts: both, chat: { conferenceId: 'c1', inbox: 'TRUSTED_PERSON' } })
+		).toBe(false);
+		expect(
+			knowsPeopleOf({ ctx, facts: both, chat: { conferenceId: 'c1', inbox: 'PARTICIPANT_CARE' } })
+		).toBe(true);
+		expect(
+			knowsPeopleOf({ ctx, facts: trusted, chat: { conferenceId: 'c1', inbox: 'CHAIR' } })
+		).toBe(false);
 	});
 });

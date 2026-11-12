@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import FilterChips from '#lib/components/chat/FilterChips.svelte';
 	import { inboxName } from '#lib/components/chat/chatLabels';
 	import type { TeamInbox } from './teamInboxes';
 
@@ -19,25 +20,10 @@
 	let { inboxes, selected, unreadOf, onSelect }: Props = $props();
 </script>
 
-<div class="flex flex-wrap gap-1.5" role="group" aria-label={m.chatInboxes()}>
-	<button
-		type="button"
-		class={['btn btn-xs', selected === null ? 'btn-primary' : 'btn-ghost']}
-		aria-pressed={selected === null}
-		onclick={() => onSelect(null)}
-	>
-		{m.all()}
-	</button>
-	{#each inboxes as inbox (inbox.key)}
+<FilterChips options={inboxes} {selected} {onSelect} label={m.chatInboxes()}>
+	{#snippet chip(inbox)}
 		{@const unread = unreadOf(inbox.key)}
-		<button
-			type="button"
-			class={['btn btn-xs', selected === inbox.key ? 'btn-primary' : 'btn-ghost']}
-			aria-pressed={selected === inbox.key}
-			onclick={() => onSelect(selected === inbox.key ? null : inbox.key)}
-		>
-			{inboxName(inbox)}
-			{#if unread > 0}<span class="badge badge-xs badge-primary">{unread}</span>{/if}
-		</button>
-	{/each}
-</div>
+		{inbox.own ? m.chatInboxTrustedOwn() : inboxName(inbox)}
+		{#if unread > 0}<span class="badge badge-xs badge-primary">{unread}</span>{/if}
+	{/snippet}
+</FilterChips>

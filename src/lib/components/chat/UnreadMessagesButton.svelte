@@ -28,7 +28,7 @@
 	>
 		<i aria-hidden="true" class="ph-duotone ph-chats-circle text-lg"></i>
 		<span
-			class="badge badge-primary badge-xs absolute -top-0.5 -right-1 px-1 text-[0.625rem] leading-none"
+			class="badge badge-primary badge-xs absolute -top-0.5 -right-1 px-1 leading-none"
 			aria-hidden="true"
 		>
 			{total > 99 ? '99+' : total}

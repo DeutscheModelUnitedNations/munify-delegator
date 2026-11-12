@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import FilterChips from './FilterChips.svelte';
 	import { OTHER_GROUP } from './contactGroups';
 
 	interface Props {
@@ -17,24 +18,14 @@
 	let { groups, selected, onSelect }: Props = $props();
 </script>
 
-<div class="flex flex-wrap gap-1.5" role="group" aria-label={m.chatFilterByCommittee()}>
-	<button
-		type="button"
-		class={['btn btn-xs', selected === null ? 'btn-primary' : 'btn-ghost']}
-		aria-pressed={selected === null}
-		onclick={() => onSelect(null)}
-	>
-		{m.all()}
-	</button>
-	{#each groups as group (group.key)}
-		<button
-			type="button"
-			class={['btn btn-xs', selected === group.key ? 'btn-primary' : 'btn-ghost']}
-			aria-pressed={selected === group.key}
-			title={group.name}
-			onclick={() => onSelect(selected === group.key ? null : group.key)}
-		>
-			{group.key === OTHER_GROUP ? m.chatGroupWithoutCommittee() : group.label}
-		</button>
-	{/each}
-</div>
+<FilterChips
+	options={groups}
+	{selected}
+	{onSelect}
+	label={m.chatFilterByCommittee()}
+	titleOf={(group) => group.name}
+>
+	{#snippet chip(group)}
+		{group.key === OTHER_GROUP ? m.chatGroupWithoutCommittee() : group.label}
+	{/snippet}
+</FilterChips>

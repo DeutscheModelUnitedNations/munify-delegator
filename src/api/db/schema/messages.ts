@@ -20,10 +20,16 @@ import { paper } from './papers';
 /** The messages people of a conference write each other inside the app. */
 
 /**
- * What a team member does in a committee, next to their team role: chairing it, or advising its
- * delegates on the content. Each function of a committee shares one inbox (`chat.inbox`).
+ * What a team member does next to their team role. In a committee: chairing it, or advising its
+ * delegates on the content; each function of a committee shares one inbox (`chat.inbox`). For the
+ * whole conference, without a committee: being a trusted person, whom participants turn to in
+ * confidence, together or one of them alone.
  */
-export const teamFunctionKind = pgEnum('team_function_kind', ['CHAIR', 'CONSULTANT']);
+export const teamFunctionKind = pgEnum('team_function_kind', [
+	'CHAIR',
+	'CONSULTANT',
+	'TRUSTED_PERSON'
+]);
 
 export const teamFunction = snakeCase.table(
 	'team_function',
@@ -32,12 +38,18 @@ export const teamFunction = snakeCase.table(
 		teamMemberId: text()
 			.notNull()
 			.references(() => teamMember.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		committeeId: text()
-			.notNull()
-			.references(() => committee.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		/** The committee of a chair or consultant; empty for a trusted person. */
+		committeeId: text().references(() => committee.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
 		kind: teamFunctionKind().notNull()
 	},
 	(table) => [
+		// a function without a committee is held once
+		uniqueIndex('team_function_team_member_id_kind_key')
+			.on(table.teamMemberId, table.kind)
+			.where(sql`${table.committeeId} is null`),
 		uniqueIndex('team_function_team_member_id_committee_id_kind_key').on(
 			table.teamMemberId,
 			table.committeeId,
@@ -53,8 +65,16 @@ export const teamFunction = snakeCase.table(
  */
 export const chatKind = pgEnum('chat_kind', ['DIRECT', 'DELEGATION', 'TEAM']);
 
-/** The team inboxes: participant care (one per conference), and a committee's chairs or consultants. */
-export const chatInbox = pgEnum('chat_inbox', ['PARTICIPANT_CARE', 'CHAIR', 'CONSULTANT']);
+/**
+ * The team inboxes: participant care (one per conference), a committee's chairs or consultants,
+ * and the trusted persons: all of them together, or one of them alone (`chat.trustedUserId`).
+ */
+export const chatInbox = pgEnum('chat_inbox', [
+	'PARTICIPANT_CARE',
+	'CHAIR',
+	'CONSULTANT',
+	'TRUSTED_PERSON'
+]);
 
 function participantOfChat() {
 	return text().references(() => conferenceParticipant.id, {
@@ -84,6 +104,11 @@ export const chat = snakeCase.table(
 			onDelete: 'cascade',
 			onUpdate: 'cascade'
 		}),
+		/**
+		 * `TEAM`, the trusted persons' inbox: the one trusted person the participant writes to;
+		 * empty for all of them together. Deliberately no relation: a chat never leads to a user row.
+		 */
+		trustedUserId: text().references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		lastMessageAt: timestamp({ precision: 3 }),
 		/** `TEAM`: when the participant last wrote, which the inbox's unread state follows. */
 		lastParticipantMessageAt: timestamp({ precision: 3 }),
@@ -105,6 +130,15 @@ export const chat = snakeCase.table(
 		uniqueIndex('chat_team_committee_key')
 			.on(table.participantId, table.inbox, table.committeeId)
 			.where(sql`${table.kind} = 'TEAM' and ${table.inbox} <> 'PARTICIPANT_CARE'`),
+		// the trusted persons' inboxes name no committee: one chat with all of them, one with each
+		uniqueIndex('chat_team_trusted_key')
+			.on(table.participantId)
+			.where(
+				sql`${table.kind} = 'TEAM' and ${table.inbox} <> 'PARTICIPANT_CARE' and ${table.committeeId} is null and ${table.trustedUserId} is null`
+			),
+		uniqueIndex('chat_team_trusted_person_key')
+			.on(table.participantId, table.trustedUserId)
+			.where(sql`${table.trustedUserId} is not null`),
 		index('chat_conference_id_last_message_at_idx').on(table.conferenceId, table.lastMessageAt),
 		index('chat_other_participant_id_idx').on(table.otherParticipantId)
 	]

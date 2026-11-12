@@ -68,7 +68,7 @@
 		const timeout = setTimeout(() => {
 			client.query
 				.users({
-					__args: { search: term, limit: 8 },
+					__args: { search: { term }, limit: 8 },
 					id: true,
 					givenName: true,
 					familyName: true,

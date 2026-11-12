@@ -7,7 +7,8 @@
  * - France: Carla Gamma (head delegate, GV) and Dora Delta (SR)
  * - a supervisor, who takes no part in the chats
  * - the team: participant care, a chair of GV (team role MEMBER), a reviewer advising GV
- *   (CONSULTANT), project management, and a plain member without any function
+ *   (CONSULTANT), project management, a plain member without any function, and two trusted
+ *   persons (Tessa Trost and Theo Treu, team role MEMBER)
  *
  * Every run starts without chats, blocks, reports and suspensions. There are two such conferences
  * with people of their own (`messagesFixture`): the flows and the authorization rules run side by
@@ -36,7 +37,9 @@ export function messagesFixture(tag: 'ui' | 'auth') {
 		chair: { id: user('chair'), given: 'Chris', family: 'Chair', role: 'MEMBER' },
 		reviewer: { id: user('reviewer'), given: 'Rita', family: 'Reviewer', role: 'REVIEWER' },
 		management: { id: user('pm'), given: 'Petra', family: 'Projekt', role: 'PROJECT_MANAGEMENT' },
-		member: { id: user('member'), given: 'Milan', family: 'Mitglied', role: 'MEMBER' }
+		member: { id: user('member'), given: 'Milan', family: 'Mitglied', role: 'MEMBER' },
+		tessa: { id: user('tessa'), given: 'Tessa', family: 'Trost', role: 'MEMBER' },
+		theo: { id: user('theo'), given: 'Theo', family: 'Treu', role: 'MEMBER' }
 	} as const;
 	const delegates = {
 		anna: {
@@ -158,7 +161,9 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 			teamMemberId: `e2e-team-${fixture.team.reviewer.id}`,
 			committeeId: fixture.gvId,
 			kind: 'CONSULTANT'
-		}
+		},
+		{ teamMemberId: `e2e-team-${fixture.team.tessa.id}`, kind: 'TRUSTED_PERSON' },
+		{ teamMemberId: `e2e-team-${fixture.team.theo.id}`, kind: 'TRUSTED_PERSON' }
 	]);
 
 	await seedDelegations(db, fixture);

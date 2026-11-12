@@ -28,11 +28,17 @@ import type { ChatRow } from './chatService';
  * holders of a committee function (`teamFunction`) the chairs' or consultants' inbox of that
  * committee. Participant care reads a chat between participants only while a report is open
  * (`underReview`). A system admin reads what the team reads, never the private chats.
+ *
+ * What is written to the trusted persons stays with them: their inbox is read by the trusted
+ * persons of the conference (`teamFunction` `TRUSTED_PERSON`), a chat with one of them by that
+ * person alone. Not by participant care, not by a system admin, not by an assistant, and nobody
+ * learns the participant's name there.
  */
 export function registerChatAbilities() {
 	abilityBuilder.chat.allow('read').when(adminChats);
 	abilityBuilder.chat.allow('read').when(liveWhere(partyOfChat));
 	abilityBuilder.chat.allow('read').when(liveWhere(inboxOfChat));
+	abilityBuilder.chat.allow('read').when(liveWhere(trustedChats));
 
 	// A message is read with its chat.
 	abilityBuilder.chatMessage.allow('read').when((ctx) => {
@@ -45,6 +51,9 @@ export function registerChatAbilities() {
 	abilityBuilder.chatMessage
 		.allow('read')
 		.when(liveWhere((args) => hop(inboxOfChat(args), (chat) => ({ chat }))));
+	abilityBuilder.chatMessage
+		.allow('read')
+		.when(liveWhere((args) => hop(trustedChats(args), (chat) => ({ chat }))));
 
 	// Reports are participant care's.
 	abilityBuilder.chatReport.allow(['read', 'update']).when(systemAdmin);
@@ -57,7 +66,14 @@ export function registerChatAbilities() {
 
 function adminChats(ctx: Context) {
 	return isSystemAdmin(ctx)
-		? { where: { OR: [{ kind: 'TEAM' as const }, { underReview: true }] } }
+		? {
+				where: {
+					OR: [
+						{ kind: 'TEAM' as const, inbox: { ne: 'TRUSTED_PERSON' as const } },
+						{ underReview: true }
+					]
+				}
+			}
 		: undefined;
 }
 
@@ -84,7 +100,44 @@ function functionCommitteeIds({
 	facts: CallerFacts;
 	kind: 'CHAIR' | 'CONSULTANT';
 }) {
-	return facts.teamFunctions.filter((held) => held.kind === kind).map((held) => held.committeeId);
+	return facts.teamFunctions.flatMap((held) =>
+		held.kind === kind && held.committeeId ? [held.committeeId] : []
+	);
+}
+
+/** The conferences the caller is a trusted person of. */
+function trustedConferenceIds(facts: CallerFacts) {
+	return facts.teamFunctions
+		.filter((held) => held.kind === 'TRUSTED_PERSON')
+		.map((held) => held.conferenceId);
+}
+
+/**
+ * Matches the chats with the trusted persons the caller answers: the ones written to all trusted
+ * persons of a conference they are one of, and the ones written to them alone. Undefined for an
+ * anonymous caller and an assistant.
+ */
+function trustedChats({ ctx, facts }: RuleArgs) {
+	const userId = callerUserId(ctx);
+	if (!userId) return undefined;
+	return {
+		kind: 'TEAM' as const,
+		inbox: 'TRUSTED_PERSON' as const,
+		conferenceId: idIn(trustedConferenceIds(facts)),
+		OR: [{ trustedUserId: { isNull: true as const } }, { trustedUserId: userId }]
+	};
+}
+
+/** Whether the caller answers the trusted persons' inbox: all of them the shared one, each their own. */
+function holdsTrustedInbox({
+	ctx,
+	facts,
+	conferenceId,
+	trustedUserId
+}: RuleArgs & { conferenceId: string; trustedUserId: string | null }) {
+	const userId = callerUserId(ctx);
+	if (!userId || !trustedConferenceIds(facts).includes(conferenceId)) return false;
+	return trustedUserId === null || trustedUserId === userId;
 }
 
 /** Matches the team chats whose inbox the caller holds, and the reported chats of the conferences they care for. */
@@ -111,19 +164,46 @@ function inboxOfChat({ ctx, facts }: RuleArgs) {
 	};
 }
 
-/** Whether the caller answers the inbox: participant care its own, a function's holders theirs, a system admin any. */
+/**
+ * Whether the caller answers the inbox: participant care its own, a function's holders theirs, a
+ * system admin any but the trusted persons', which only they answer.
+ */
 export function holdsInbox({
 	ctx,
 	facts,
 	conferenceId,
 	inbox,
-	committeeId
-}: RuleArgs & { conferenceId: string; inbox: ChatInbox; committeeId: string | null }) {
+	committeeId,
+	trustedUserId = null
+}: RuleArgs & {
+	conferenceId: string;
+	inbox: ChatInbox;
+	committeeId: string | null;
+	/** The one trusted person a chat is with; null for their shared inbox and every other one */
+	trustedUserId?: string | null;
+}) {
+	if (inbox === 'TRUSTED_PERSON') {
+		return holdsTrustedInbox({ ctx, facts, conferenceId, trustedUserId });
+	}
 	const care = teamConferenceIds({ ctx, facts, roles: PARTICIPANT_CARE_ROLES });
 	if (care === 'all') return true;
 	if (inbox === 'PARTICIPANT_CARE') return care?.includes(conferenceId) ?? false;
 	return facts.teamFunctions.some(
 		(held) => held.kind === inbox && held.committeeId === committeeId
+	);
+}
+
+/**
+ * Whether the caller learns who the participants of a chat are: participant care of its
+ * conference, except in a chat with the trusted persons, where a participant stays a role.
+ */
+export function knowsPeopleOf({
+	ctx,
+	facts,
+	chat
+}: RuleArgs & { chat: Pick<ChatRow, 'conferenceId' | 'inbox'> }) {
+	return (
+		chat.inbox !== 'TRUSTED_PERSON' && caresFor({ ctx, facts, conferenceId: chat.conferenceId })
 	);
 }
 
@@ -168,6 +248,7 @@ export function chatSide({
 		| 'delegationId'
 		| 'inbox'
 		| 'committeeId'
+		| 'trustedUserId'
 	>;
 }): ChatSide {
 	const own = ownParticipantIds({ ctx, facts }) ?? [];
@@ -188,12 +269,19 @@ export function chatSide({
 			facts,
 			conferenceId: chat.conferenceId,
 			inbox: chat.inbox,
-			committeeId: chat.committeeId
+			committeeId: chat.committeeId,
+			trustedUserId: chat.trustedUserId
 		})
 	) {
 		return 'TEAM';
 	}
 	return 'REVIEW';
+}
+
+/** The caller's participant row in a conference, if they have one. */
+function participantIdIn({ facts, conferenceId }: { facts: CallerFacts; conferenceId: string }) {
+	const own = facts.participants.find((participant) => participant.conferenceId === conferenceId);
+	return own ? own.id : null;
 }
 
 /** The chat as far as the caller reads it (NOT_FOUND otherwise), with their side of it. */
@@ -211,10 +299,7 @@ export async function readableChat({ ctx, id }: { ctx: ApiContext; id: string })
 		userId,
 		/** The caller's participant row in the chat's conference, when they are a party. */
 		participantId:
-			side === 'PARTICIPANT'
-				? (facts.participants.find((participant) => participant.conferenceId === chat.conferenceId)
-						?.id ?? null)
-				: null
+			side === 'PARTICIPANT' ? participantIdIn({ facts, conferenceId: chat.conferenceId }) : null
 	};
 }
 
@@ -303,16 +388,18 @@ export async function assertHoldsInbox({
 	ctx,
 	conferenceId,
 	inbox,
-	committeeId
+	committeeId,
+	trustedUserId = null
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
 	inbox: ChatInbox;
 	committeeId: string | null;
+	trustedUserId?: string | null;
 }) {
 	ctx.mustBeLoggedIn();
 	const facts = await callerFacts(ctx);
-	if (!holdsInbox({ ctx, facts, conferenceId, inbox, committeeId })) {
+	if (!holdsInbox({ ctx, facts, conferenceId, inbox, committeeId, trustedUserId })) {
 		throw apiError({ code: 'FORBIDDEN', message: m.chatInboxNotYours() });
 	}
 }

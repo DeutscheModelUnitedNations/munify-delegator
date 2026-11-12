@@ -20,6 +20,48 @@ export interface EmailKindTexts {
 }
 
 const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
+	DELEGATION_CREATED: () => ({
+		title: m.emailKindDelegationCreatedTitle(),
+		trigger: m.emailKindDelegationCreatedTrigger(),
+		recipients: m.emailKindDelegationCreatedRecipients(),
+		content: m.emailKindDelegationCreatedContent()
+	}),
+	DELEGATION_JOINED: () => ({
+		title: m.emailKindDelegationJoinedTitle(),
+		trigger: m.emailKindDelegationJoinedTrigger(),
+		recipients: m.emailKindDelegationJoinedRecipients(),
+		content: m.emailKindDelegationJoinedContent()
+	}),
+	DELEGATION_MEMBER_JOINED: () => ({
+		title: m.emailKindMemberJoinedTitle(),
+		trigger: m.emailKindMemberJoinedTrigger(),
+		recipients: m.emailKindMemberJoinedRecipients(),
+		content: m.emailKindMemberJoinedContent()
+	}),
+	APPLICATION_SENT: () => ({
+		title: m.emailKindApplicationSentTitle(),
+		trigger: m.emailKindApplicationSentTrigger(),
+		recipients: m.emailKindApplicationSentRecipients(),
+		content: m.emailKindApplicationSentContent()
+	}),
+	WAITING_LIST_REGISTERED: () => ({
+		title: m.emailKindWaitingListRegisteredTitle(),
+		trigger: m.emailKindWaitingListRegisteredTrigger(),
+		recipients: m.emailKindWaitingListRegisteredRecipients(),
+		content: m.emailKindWaitingListRegisteredContent()
+	}),
+	SUPERVISOR_CONNECTED: () => ({
+		title: m.emailKindSupervisorConnectedTitle(),
+		trigger: m.emailKindSupervisorConnectedTrigger(),
+		recipients: m.emailKindSupervisorConnectedRecipients(),
+		content: m.emailKindSupervisorConnectedContent()
+	}),
+	SURVEY_PUBLISHED: () => ({
+		title: m.emailKindSurveyPublishedTitle(),
+		trigger: m.emailKindSurveyPublishedTrigger(),
+		recipients: m.emailKindSurveyPublishedRecipients(),
+		content: m.emailKindSurveyPublishedContent()
+	}),
 	ASSIGNMENT_ACCEPTED: () => ({
 		title: m.emailKindAcceptedTitle(),
 		trigger: m.emailKindAcceptedTrigger(),
@@ -157,6 +199,8 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 export const emailKindTexts = (kind: EmailkindEnum): EmailKindTexts => TEXTS[kind]();
 
 export const emailGroupTitle: Record<EmailGroupId, () => string> = {
+	registration: () => m.emailGroupRegistration(),
+	surveys: () => m.emailGroupSurveys(),
 	assignment: () => m.emailGroupAssignment(),
 	waitingList: () => m.emailGroupWaitingList(),
 	unlocked: () => m.emailGroupUnlocked(),

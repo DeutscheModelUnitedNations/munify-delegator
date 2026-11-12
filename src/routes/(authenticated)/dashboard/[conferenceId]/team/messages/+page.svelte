@@ -82,6 +82,22 @@
 
 	let pickerOpen = $state(false);
 
+	const reporting = $derived(view === 'reports');
+	const selectedId = $derived(params.chat ?? null);
+	const selectedInbox = $derived(params.inbox ?? null);
+	const paperId = $derived(params.paper ?? null);
+	const reportsTitle = $derived(
+		openReports.length > 0 ? m.chatReportsWithCount({ count: openReports.length }) : m.chatReports()
+	);
+	const hasWorkspace = $derived(reporting ? reviewChats.length > 0 : inboxes.length > 0);
+	const severalInboxes = $derived(!reporting && inboxes.length > 1);
+	// the team starts a chat with a participant once the roles are released
+	const onNew = $derived(
+		!reporting && conference.messagingEnabled && conference.assignmentReleased
+			? () => (pickerOpen = true)
+			: undefined
+	);
+
 	function show(next: 'inboxes' | 'reports') {
 		params.chat = null;
 		params.view = next === 'reports' ? 'reports' : null;
@@ -94,7 +110,7 @@
 </script>
 
 <div class="flex flex-col gap-4 py-4 sm:p-6">
-	<header class={['flex flex-col gap-1', params.chat && 'max-md:hidden']}>
+	<header class={['flex flex-col gap-1', selectedId && 'max-md:hidden']}>
 		<h1 class="text-2xl font-bold tracking-tight">{m.chatMessages()}</h1>
 		<p class="text-base-content/70 max-w-3xl">{m.chatTeamPageDescription()}</p>
 	</header>
@@ -111,21 +127,14 @@
 			<Tab
 				title={m.chatInboxes()}
 				icon="tray"
-				active={view === 'inboxes'}
+				active={!reporting}
 				onclick={() => show('inboxes')}
 			/>
-			<Tab
-				title={openReports.length > 0
-					? m.chatReportsWithCount({ count: openReports.length })
-					: m.chatReports()}
-				icon="flag"
-				active={view === 'reports'}
-				onclick={() => show('reports')}
-			/>
+			<Tab title={reportsTitle} icon="flag" active={reporting} onclick={() => show('reports')} />
 		</Tabs>
 	{/if}
 
-	{#if view === 'reports'}
+	{#if reporting}
 		<ChatReports
 			reports={openReports}
 			titleOf={titleOfChat}
@@ -138,26 +147,21 @@
 		</div>
 	{/if}
 
-	{#if view === 'reports' ? reviewChats.length > 0 : inboxes.length > 0}
+	{#if hasWorkspace}
 		<ChatWorkspace
 			chats={shownChats}
-			selectedId={params.chat ?? null}
+			{selectedId}
 			onSelect={(id) => (params.chat = id)}
-			showInbox={view === 'inboxes' && !params.inbox && inboxes.length > 1}
-			paperId={params.paper ?? null}
+			showInbox={severalInboxes && !selectedInbox}
+			{paperId}
 			onPaperSent={() => (params.paper = null)}
 		>
 			{#snippet listHeader()}
-				<ChatListHeader
-					title={view === 'reports' ? m.chatReportedChats() : m.chatChats()}
-					onNew={view === 'inboxes' && conference.messagingEnabled && conference.assignmentReleased
-						? () => (pickerOpen = true)
-						: undefined}
-				>
-					{#if view === 'inboxes' && inboxes.length > 1}
+				<ChatListHeader title={reporting ? m.chatReportedChats() : m.chatChats()} {onNew}>
+					{#if severalInboxes}
 						<InboxChips
 							{inboxes}
-							selected={params.inbox ?? null}
+							selected={selectedInbox}
 							{unreadOf}
 							onSelect={(key) => (params.inbox = key)}
 						/>
@@ -173,7 +177,7 @@
 		</ChatWorkspace>
 	{/if}
 
-	{#if view === 'reports'}
+	{#if reporting}
 		<SettledReports reports={settledReports} />
 	{/if}
 </div>

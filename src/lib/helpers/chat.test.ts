@@ -1,9 +1,16 @@
 import { describe, expect, test } from 'vitest';
-import { inboxReaches, messagePreview, writeRefusal } from './chat';
+import { functionFitsCommittee, inboxReaches, messagePreview, writeRefusal } from './chat';
 
 describe('inboxReaches', () => {
 	test('participant care reaches everybody, seated or not', () => {
 		expect(inboxReaches({ inbox: 'PARTICIPANT_CARE', committeeId: null, person: null })).toBe(true);
+	});
+
+	test('the trusted persons reach everybody, seated or not, before the release too', () => {
+		expect(inboxReaches({ inbox: 'TRUSTED_PERSON', committeeId: null, person: null })).toBe(true);
+		expect(
+			inboxReaches({ inbox: 'TRUSTED_PERSON', committeeId: null, person: { committeeId: 'ga' } })
+		).toBe(true);
 	});
 
 	test("a committee's chairs and consultants reach the people seated there", () => {
@@ -81,5 +88,17 @@ describe('messagePreview', () => {
 		const long = messagePreview('x'.repeat(200), 20);
 		expect(long).toHaveLength(20);
 		expect(long.endsWith('…')).toBe(true);
+	});
+});
+
+describe('functionFitsCommittee', () => {
+	test('a trusted person belongs to the whole conference', () => {
+		expect(functionFitsCommittee({ kind: 'TRUSTED_PERSON', committeeId: null })).toBe(true);
+		expect(functionFitsCommittee({ kind: 'TRUSTED_PERSON', committeeId: 'ga' })).toBe(false);
+	});
+
+	test("chairs and consultants are a committee's", () => {
+		expect(functionFitsCommittee({ kind: 'CHAIR', committeeId: 'ga' })).toBe(true);
+		expect(functionFitsCommittee({ kind: 'CONSULTANT', committeeId: null })).toBe(false);
 	});
 });

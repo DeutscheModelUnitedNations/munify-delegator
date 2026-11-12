@@ -41,6 +41,13 @@ export function standsOnOwnSide({
 	return message.authorParticipantId !== chat.participantId;
 }
 
+/** The function a team member writes under: their inbox, a trusted person as just that. */
+function authorInbox(chat: { inbox: ChatInbox; committee?: { abbreviation: string } | null }) {
+	return chat.inbox === 'TRUSTED_PERSON'
+		? m.chatInboxTrustedPerson()
+		: inboxName({ inbox: chat.inbox, committeeAbbreviation: chat.committee?.abbreviation });
+}
+
 /**
  * Who wrote a message, where the thread has more than one voice per side: the inbox and the name
  * of a team member; in a delegation group and for participant care the role and the name.
@@ -56,9 +63,7 @@ export function messageAuthor({
 	chat: ThreadChat;
 }) {
 	if (message.fromTeam) {
-		const inbox = chat.inbox
-			? inboxName({ inbox: chat.inbox, committeeAbbreviation: chat.committee?.abbreviation })
-			: m.team();
+		const inbox = chat.inbox ? authorInbox({ ...chat, inbox: chat.inbox }) : m.team();
 		return [inbox, message.authorName].filter(Boolean).join(' · ');
 	}
 	if (chat.kind !== 'DELEGATION' && side !== 'REVIEW') return undefined;
@@ -98,4 +103,21 @@ export function bubblesOf<M extends ThreadMessage>({
 		const shown = continues || (own && side === 'PARTICIPANT') ? undefined : author;
 		return { message, own, author: shown, continues };
 	});
+}
+
+/**
+ * What there is to mark as read in an open chat, as a key that changes with each new message, or
+ * nothing: no chat, a chat only reviewed (which never counts as read), or nothing unread.
+ */
+export function unreadStateOf({
+	chat,
+	side,
+	newestId
+}: {
+	chat: { id: string; unreadCount: number } | null;
+	side: ChatSide;
+	newestId: string;
+}) {
+	if (!chat || side === 'REVIEW' || chat.unreadCount === 0) return null;
+	return `${chat.id}:${newestId}`;
 }

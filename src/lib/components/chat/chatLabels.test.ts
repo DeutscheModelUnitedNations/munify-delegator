@@ -6,8 +6,11 @@ import {
 	contactDetail,
 	contactLabel,
 	contactSearchText,
+	inboxDescription,
 	inboxName,
+	kindHint,
 	matchesSearch,
+	listBadge,
 	sideOf
 } from './chatLabels';
 import { groupContacts, OTHER_GROUP } from './contactGroups';
@@ -173,5 +176,76 @@ describe('groupContacts', () => {
 			'p-nsa',
 			'p-press'
 		]);
+	});
+});
+
+describe('listBadge', () => {
+	const team = { side: 'TEAM', underReview: false, inbox: 'CHAIR' as const };
+
+	test('marks a chat participant care reads under a report', () => {
+		expect(
+			listBadge({ chat: { side: 'REVIEW', underReview: true, inbox: null }, showInbox: true })
+		).toBe('reported');
+	});
+
+	test('does not tell the parties or the inbox about a report', () => {
+		expect(listBadge({ chat: { ...team, underReview: true }, showInbox: false })).toBeNull();
+		expect(
+			listBadge({ chat: { side: 'PARTICIPANT', underReview: true }, showInbox: true })
+		).toBeNull();
+	});
+
+	test('names the inbox of a team chat only in a list mixing several', () => {
+		expect(listBadge({ chat: team, showInbox: true })).toEqual({ inbox: 'CHAIR', own: false });
+		expect(
+			listBadge({
+				chat: {
+					side: 'TEAM',
+					underReview: false,
+					inbox: 'TRUSTED_PERSON',
+					trustedPersonName: 'A B'
+				},
+				showInbox: true
+			})
+		).toEqual({ inbox: 'TRUSTED_PERSON', own: true });
+		expect(listBadge({ chat: team, showInbox: false })).toBeNull();
+		expect(
+			listBadge({
+				chat: { side: 'PARTICIPANT', underReview: false, inbox: 'CHAIR' },
+				showInbox: true
+			})
+		).toBeNull();
+	});
+});
+
+describe('trusted persons', () => {
+	const shared = { kind: 'TEAM' as const, inbox: 'TRUSTED_PERSON' as const, contacts: [] };
+	const personal = { ...shared, trustedPersonName: 'Tessa Trost' };
+
+	test('the inbox is all of them together, or one of them by name', () => {
+		expect(inboxName({ inbox: 'TRUSTED_PERSON' })).toBe('Vertrauenspersonen');
+		expect(inboxName({ inbox: 'TRUSTED_PERSON', personName: 'Tessa Trost' })).toBe(
+			'Vertrauensperson · Tessa Trost'
+		);
+	});
+
+	test('the picker says who reads along', () => {
+		expect(inboxDescription({ inbox: 'TRUSTED_PERSON' })).toContain('Alle Vertrauenspersonen');
+		expect(inboxDescription({ inbox: 'TRUSTED_PERSON', personName: 'Tessa Trost' })).toContain(
+			'Nur diese Person'
+		);
+	});
+
+	test('a participant sees whom they write to as the title', () => {
+		expect(chatTitle({ ...shared, side: 'PARTICIPANT' })).toBe('Vertrauenspersonen');
+		expect(chatTitle({ ...personal, side: 'PARTICIPANT' })).toBe('Vertrauensperson · Tessa Trost');
+	});
+
+	test('the thread says that the chat is confidential, and to whom', () => {
+		expect(kindHint(shared)).toContain('Nur die Vertrauenspersonen');
+		expect(kindHint(personal)).toContain('Nur Tessa Trost');
+		expect(kindHint({ kind: 'TEAM', inbox: 'CHAIR' })).not.toContain('Vertraulich');
+		expect(kindHint({ kind: 'DIRECT' })).not.toContain('Vertraulich');
+		expect(kindHint({ kind: 'DELEGATION' })).not.toContain('Vertraulich');
 	});
 });

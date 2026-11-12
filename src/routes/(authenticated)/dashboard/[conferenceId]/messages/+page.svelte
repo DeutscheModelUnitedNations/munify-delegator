@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { dev } from '$app/env';
-	import { toast } from 'svelte-sonner';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchChats } from '#lib/api/chats';
@@ -12,6 +11,8 @@
 	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
 	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
 	import NewChatDialog from '#lib/components/chat/NewChatDialog.svelte';
+	import NotificationEmailsToggle from './NotificationEmailsToggle.svelte';
+	import { messagesPageState } from './messagesPageState';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -33,32 +34,21 @@
 		])
 	);
 	const userId = $derived(me.sub);
-	const settings = $derived(
-		await client.liveQuery.user({ __args: { id: userId }, messageNotificationEmails: true })
-	);
 
-	// Delegates and single participants write; supervisors and the team do not take part here.
-	const takesPart = $derived(
-		!!participation?.delegationMember || !!participation?.singleParticipant
-	);
 	const delegationGroup = $derived(
 		conference.assignmentReleased && !!participation?.delegationMember?.delegation.assignedRole
 	);
-	const canStart = $derived(conference.messagingEnabled && takesPart);
+	const view = $derived(
+		messagesPageState({
+			messagingEnabled: conference.messagingEnabled,
+			assignmentReleased: conference.assignmentReleased,
+			takesPart: !!participation?.delegationMember || !!participation?.singleParticipant,
+			hasChats: chats.length > 0
+		})
+	);
+	const onNew = $derived(view.canStart ? () => (pickerOpen = true) : undefined);
 
 	let pickerOpen = $state(false);
-
-	async function setNotificationEmails(enabled: boolean) {
-		const promise = Promise.resolve(
-			client.mutate.setMessageNotificationEmails({ __args: { enabled } })
-		);
-		toast.promise(promise, {
-			loading: m.chatSaving(),
-			success: enabled ? m.chatNotificationsOn() : m.chatNotificationsOff(),
-			error: m.chatSaveFailed()
-		});
-		await promise;
-	}
 </script>
 
 <svelte:head>
@@ -76,18 +66,13 @@
 		<p class="text-base-content/70 max-w-3xl">{m.chatPageDescription()}</p>
 	</header>
 
-	{#if !conference.messagingEnabled && chats.length === 0}
+	{#if view.closed}
 		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-xl p-5">
 			<i aria-hidden="true" class="ph-duotone ph-chat-slash text-2xl"></i>
-			<p>{m.chatRefusedDisabled()}</p>
-		</div>
-	{:else if !takesPart && chats.length === 0}
-		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-xl p-5">
-			<i aria-hidden="true" class="ph-duotone ph-chat-slash text-2xl"></i>
-			<p>{m.chatOnlyParticipants()}</p>
+			<p>{view.closed === 'disabled' ? m.chatRefusedDisabled() : m.chatOnlyParticipants()}</p>
 		</div>
 	{:else}
-		{#if conference.messagingEnabled && takesPart && !conference.assignmentReleased}
+		{#if view.beforeRelease}
 			<p
 				class="text-base-content/70 flex items-start gap-2 text-sm"
 				data-testid="chat-before-release"
@@ -99,39 +84,21 @@
 
 		<ChatWorkspace {chats} selectedId={params.chat ?? null} onSelect={(id) => (params.chat = id)}>
 			{#snippet listHeader()}
-				<ChatListHeader
-					title={m.chatChats()}
-					onNew={canStart ? () => (pickerOpen = true) : undefined}
-				/>
+				<ChatListHeader title={m.chatChats()} {onNew} />
 			{/snippet}
 			{#snippet emptyList()}
 				<div class="text-base-content/60 flex flex-col items-center gap-3 px-4 py-10 text-center">
 					<i aria-hidden="true" class="ph-duotone ph-chats text-4xl"></i>
 					<p>{m.chatNoChatsYet()}</p>
-					{#if canStart}
-						<button
-							type="button"
-							class="btn btn-primary btn-sm"
-							onclick={() => (pickerOpen = true)}
-						>
+					{#if onNew}
+						<button type="button" class="btn btn-primary btn-sm" onclick={onNew}>
 							{m.chatWriteFirstMessage()}
 						</button>
 					{/if}
 				</div>
 			{/snippet}
 			{#snippet listFooter()}
-				<label
-					class="border-base-300 flex cursor-pointer items-center gap-3 border-t px-4 py-3 text-sm"
-				>
-					<input
-						type="checkbox"
-						class="toggle toggle-primary toggle-sm"
-						checked={settings.messageNotificationEmails}
-						onchange={(event) => setNotificationEmails(event.currentTarget.checked)}
-						data-testid="chat-notification-emails"
-					/>
-					<span class="text-base-content/80">{m.chatNotificationEmails()}</span>
-				</label>
+				<NotificationEmailsToggle {userId} />
 			{/snippet}
 		</ChatWorkspace>
 	{/if}

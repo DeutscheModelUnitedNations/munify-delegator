@@ -136,7 +136,7 @@ Below the templates, under **Adopted resolutions**, you upload the resolutions a
 
 ## Emails {#emails}
 
-DELEGATOR writes to participants, supervisors and the team at important steps. The **Emails** page of the team area, under **Communication** (for Participant Care and Project Management), shows each kind of email as a card, grouped by topics such as **Assignment result**, **Waiting list**, **Reminders** or **After the conference**. Each card explains under **When**, **To whom** and **Content** what it does, and counts how many were sent, failed or skipped. Each email reaches each person at most once.
+DELEGATOR writes to participants, supervisors and the team at important steps. The **Emails** page of the team area, under **Communication** (for Participant Care and Project Management), shows each kind of email as a card, grouped by topics such as **Application**, **Assignment result**, **Waiting list**, **Reminders** or **After the conference**. Each card explains under **When**, **To whom** and **Content** what it does, and counts how many were sent, failed or skipped. Each email reaches each person at most once.
 
 - When a card shows, say, **3 open**, three people should get the email right now. **Send now** sends it in the background. **Skip** marks it as skipped, which cannot be undone. People who qualify later still get it.
 - **Send automatically** lets a kind go out on its own regularly. A new conference sends nothing automatically until you switch it on. If people already meet the condition, DELEGATOR asks whether they get the email with the next run (**Send to all 3 automatically**) or only future cases do (**Only future cases**).
@@ -188,7 +188,8 @@ The switch "Messages between participants and team" under "Status" opens the cha
 The team answers from **inboxes** it shares:
 
 - **Participant care.** One inbox for the whole conference. It belongs to everybody with the role participant care or project management.
-- **Chairs and committee consultants.** One inbox each per committee. You decide who answers it under "Team members". The gavel icon in a row opens that person's committee functions.
+- **Chairs and committee consultants.** One inbox each per committee. You decide who answers it under "Team members". The gavel icon in a row opens that person's functions.
+- **Trusted persons.** In the same dialog you make a team member a trusted person of the conference. Participants write to all trusted persons together or to one of them by name. All trusted persons read the shared inbox. Only the person addressed reads a personal chat. Nobody else reads along, not participant care, not project management and not system administrators. Trusted persons see participants by their role only. These chats cannot be reported.
 
 You find all inboxes under "Messages" in the communication section. Participants see an answer with the function and the name. You see participants there by their role. Only participant care also sees the name.
 

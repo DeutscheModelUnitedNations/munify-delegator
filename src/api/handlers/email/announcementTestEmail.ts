@@ -2,7 +2,7 @@ import { db } from '#api/db/db';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { announcementMail } from './dueEmails';
-import { loadEmailSnapshot } from './emailSnapshot';
+import { loadEmailConference } from './emailSnapshot';
 import { loadWording, renderAutomaticEmail, sendByHand } from './emailDelivery';
 import { MAIL_USER, mailedAnnouncement, WITH_ATTACHMENTS } from './announcementEmails';
 
@@ -23,8 +23,8 @@ export async function sendAnnouncementTestMail({
 		db.query.announcement.findFirst({ where: { id: announcementId }, with: WITH_ATTACHMENTS }),
 		db.query.user.findFirst({ where: { id: userId }, ...MAIL_USER })
 	]);
-	const snapshot = row && (await loadEmailSnapshot(row.conferenceId));
-	if (!row || !recipient || !snapshot)
+	const conference = row && (await loadEmailConference(row.conferenceId));
+	if (!row || !recipient || !conference)
 		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	const wording = await loadWording(row.conferenceId);
 	const email = announcementMail({ announcement: mailedAnnouncement(row), recipient });
@@ -35,7 +35,7 @@ export async function sendAnnouncementTestMail({
 		subjectKey: `test:${row.id}:${new Date().toISOString()}`,
 		to: recipient.email,
 		sentById: userId,
-		render: () => renderAutomaticEmail({ email, conference: snapshot.conference, origin, wording })
+		render: () => renderAutomaticEmail({ email, conference, origin, wording })
 	});
 	if (error !== undefined)
 		throw apiError({ code: 'CONFLICT', message: m.announcementTestMailFailed() });

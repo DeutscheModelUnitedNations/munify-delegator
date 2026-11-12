@@ -1028,11 +1028,15 @@ bun run preview
   person's mails, the mails sent where they happen, and rendering one mail.
 - **Every mail follows from state, not from an event.** `dueEmails` (`#api/handlers/email/`) is
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
-  conference owes - acceptances and rejections once the assignment is released, seats from the
+  conference owes - during registration the head delegate's entry code, a welcome to whoever joins
+  a delegation, word to its earlier members of each newcomer (all only while the delegation has not
+  applied), a confirmation of the application (until the release) and of the waiting list entry,
+  then acceptances and rejections once the assignment is released, seats from the
   waiting list, postal/payment unlocked, received or with a problem, the reminders before the
   application deadline and the conference, a reminder to everyone seated who has not answered a
   published survey before its deadline (`SURVEY_REMINDER`, keyed by survey and deadline, so a
-  moved deadline reminds again), certificates, students linked to a supervisor, and
+  moved deadline reminds again), certificates, students linked to a supervisor (and the student told of the supervisor), a new
+  survey to everyone seated who has not answered it, and
   each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
   reviewer), and a welcome to everyone who joins the team (`TEAM_WELCOME`, keyed by the membership,
   to a `team` member rather than a participant: a `DueEmail` is addressed to its `recipient`, and
@@ -1048,6 +1052,16 @@ bun run preview
   it owes with "send now" and "skip" (`skipOpenEmails`, marks them `SKIPPED`). Changes to one
   person (a status, a review, a supervisor link) prompt nothing: their mails wait on the e-mail
   page, in the user card, or for the job.
+- **A conference is read a page at a time** (`emailSnapshot.ts`): participants, then the waiting
+  list, then the team, 500 rows a page by `(conference_id, id)`, each page with only the people
+  around it the asked-for kinds read (`neighbours`: students always, co-members and supervisors
+  only for the kinds about them) and only its own reviews and survey answers. `dueEmails` works
+  out mails for a page's `people` alone, never its neighbours. `sendDueEmails` answers a cursor
+  to go on from; the user card reads one person (`loadUserSnapshot`). A page holds only rows that
+  may be owed a mail: `emailCandidates.ts` has a SQL predicate per kind (a superset of its rule,
+  never a subset, minus what the log closed), and what depends on the conference alone gates a
+  kind in TypeScript. **A change to a rule in `dueEmails` needs the same change there**, or the
+  sweep stops reading the people it now owes.
 - **`emailLog` makes each automatic mail happen once.** The sweep (`emailSweep.ts`) claims a mail
   by writing its row, unique per conference, kind, person and `subjectKey` among the `AUTOMATIC`
   rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
@@ -1315,11 +1329,23 @@ bun run preview
 - **Team inboxes are shared** (`chat.inbox`): `PARTICIPANT_CARE`, one per conference, answered by
   the participant care roles; `CHAIR` and `CONSULTANT`, one per committee, answered by whoever holds
   that **committee function** (`teamFunction`, `#api/handlers/teamFunction/`, handed out by
-  `manageTeam` on the team members page; in the caller's facts as `teamFunctions`). An inbox reads
+  `manageTeam` on the team members page; in the caller's facts as `teamFunctions`); and
+  `TRUSTED_PERSON`, answered by the conference's trusted persons (see below). An inbox reads
   as one (`chat.teamReadAt`); a person's reading is `chatRead`. `inboxReaches`
   (`#lib/helpers/chat.ts`) says which inbox and person write each other: participant care anybody
   with a registration, a committee's inboxes the people seated there and those seated without a
   committee.
+- **What is written to the trusted persons stays with them.** A trusted person is a team function
+  without a committee (`teamFunction.kind = 'TRUSTED_PERSON'`, the switch on top of the functions
+  dialog). Participants reach them at any time while messaging is on: all of them together (a
+  `TRUSTED_PERSON` chat without `trustedUserId`) or one of them by full name (`trustedUserId`;
+  `chatInboxes` names each by their function's id, `trustedPersonId`, never by account, and
+  `chat.trustedPersonName` is the label). The shared chat is read by every trusted person of the
+  conference, a personal one by that person alone (`trustedChats`, `holdsTrustedInbox`): not by
+  participant care, not by a system admin (`adminChats` leaves the inbox out), not by an assistant
+  (`callerUserId`). Nobody learns the participant's name there, participant care included
+  (`knowsPeopleOf`), and a team chat cannot be reported. `chat.trustedUserId` has no relation on
+  purpose and answers only its own person. Anything new that reads chats has to keep this.
 - **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
   inbox; participant care a chat between participants only while a report is open
   (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved). A system
@@ -1331,7 +1357,7 @@ bun run preview
   (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
   participant care). The team is always reached.
 - **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
-  "Automatic emails"): `loadUnreadMessages` finds per reader the oldest message they have not
+  "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
   that message, without the text. A person turns it off for themselves
   (`user.messageNotificationEmails`).
@@ -1778,24 +1804,22 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Since 0.30.0 `subscribe`
   answers the unsubscribe function (it answered `{ unsubscribe }` while typed as one), result
   types carry the auto included `id`, a live query started before its first answer asks once, and
-  `onError` hears the updates a live result skips (the CHASE link reports them). Keep rumble at
-  ≥ 0.30.0.
+  `onError` hears the updates a live result skips (the CHASE link reports them). Since 0.33.0 a
+  list's `search` is an input object per table, `{ term, fields? }` (`<Table>SearchInputArgument`,
+  `fields` from `<Table>SearchFieldEnum`), never a bare string. Keep rumble at ≥ 0.33.0, on
+  graphql-yoga 6 and `@graphql-yoga/redis-event-target` 4.
 
-- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.1.1 logs the adapter's steps with the
+- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.2.0 still logs the adapter's steps with the
   colour `grey`, which Node 25's `styleText` refuses, failing `vite build` after the build itself.
   The patch says `gray`. Drop it once a release does.
-- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 8): until
+- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 9): until
   mount it replaces `console.warn` and assumes a string, which broke on Svelte's own warnings.
 - **Paraglide stays on 2.** Paraglide 3 compiles messages into virtual modules only its Vite plugin
   provides, and the jobs bundle, the seed and the Bun scripts import messages outside Vite; the unit
   tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
   such code.
-- **rumble stays on 0.30, graphql-yoga on 5.** rumble 0.31 needs yoga 6, and on yoga 6 the live
-  updates over the former single-connection SSE stream (`@graphql-yoga/plugin-graphql-sse`) stopped
-  arriving: the dashboard never noticed a new registration, and the e2e flows waiting on it timed
-  out. Subscriptions now use yoga's built-in SSE instead, so retry the move on that; the redis event
-  target stays on its yoga 5 line (`@graphql-yoga/redis-event-target` 3) until then. CHASE
-  subscribes over WebSocket and runs 0.31 fine. Move only with the e2e suite green.
+- **devalue is not overridden.** SvelteKit and superforms need devalue 5, rumble 6; one override
+  for both breaks one of them, so each resolves its own.
 - **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route

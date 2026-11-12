@@ -132,7 +132,39 @@ const reviewValues = (review: SnapshotReview) => ({
 	status: review.statusAfter ? translatePaperStatus(review.statusAfter) : ''
 });
 
+/** A survey's title and its deadline, in the conference's time zone. */
+const surveyContent: ContentBuilder = ({ email, conference, dashboard }) => ({
+	values: email.survey
+		? {
+				survey: email.survey.title,
+				date: dateTime({ date: email.survey.deadline, timeZone: conference.timezone })
+			}
+		: {},
+	button: dashboard
+});
+
 const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
+	DELEGATION_CREATED: ({ email, dashboard }) => ({
+		values: { entryCode: email.person?.delegation?.entryCode ?? '' },
+		button: dashboard
+	}),
+	DELEGATION_JOINED: withDashboard,
+	DELEGATION_MEMBER_JOINED: ({ email, dashboard }) => ({
+		values: { member: email.member ? fullName(email.member.user) : '' },
+		button: dashboard
+	}),
+	APPLICATION_SENT: withDashboard,
+	WAITING_LIST_REGISTERED: ({ conference, origin }) => ({
+		button: {
+			label: m.emailAutoToWaitingList(),
+			url: `${origin}/registration/${conference.id}/waiting-list`
+		}
+	}),
+	SUPERVISOR_CONNECTED: ({ email, dashboard }) => ({
+		values: { supervisor: email.supervisor ? fullName(email.supervisor.user) : '' },
+		button: dashboard
+	}),
+	SURVEY_PUBLISHED: surveyContent,
 	ASSIGNMENT_ACCEPTED: seated,
 	WAITING_LIST_SEATED: seated,
 	ASSIGNMENT_REJECTED: ({ conference, origin }) => ({
@@ -199,15 +231,7 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			url: `${origin}/dashboard/${conference.id}/registration-mode`
 		}
 	}),
-	SURVEY_REMINDER: ({ email, conference, dashboard }) => ({
-		values: email.survey
-			? {
-					survey: email.survey.title,
-					date: dateTime({ date: email.survey.deadline, timeZone: conference.timezone })
-				}
-			: {},
-		button: dashboard
-	}),
+	SURVEY_REMINDER: surveyContent,
 	SUPERVISOR_STUDENT_LINKED: ({ email, dashboard }) => ({
 		values: { student: email.student ? fullName(email.student.user) : '' },
 		button: dashboard
@@ -318,6 +342,8 @@ export function emailDetail(email: DueEmail): string | undefined {
 	if (email.review) return reviewValues(email.review).paper;
 	if (email.student) return fullName(email.student.user);
 	if (email.announcement) return email.announcement.title;
+	if (email.supervisor) return fullName(email.supervisor.user);
+	if (email.member) return fullName(email.member.user);
 	if (email.teamMember) return translateTeamRole(email.teamMember.role);
 	return undefined;
 }

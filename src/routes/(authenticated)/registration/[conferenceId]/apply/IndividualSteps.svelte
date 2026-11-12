@@ -49,6 +49,7 @@
 		firstNumber={3}
 		schoolLabel={m.whichSchoolAreYouFrom()}
 		motivationLabel={m.singleApplicationMotivation()}
+		motivationHint={m.applicationMotivationHintSingle()}
 		experienceLabel={m.singleApplicationExperience()}
 		submitLabel={m.individualApplication()}
 		submit={(answers) =>

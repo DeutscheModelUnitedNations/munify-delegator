@@ -39,7 +39,12 @@ export type CallerFacts = {
 	 * The committee functions the caller holds on those teams (`teamFunction`): the chairs' and the
 	 * consultants' inboxes they answer.
 	 */
-	teamFunctions: readonly { conferenceId: string; committeeId: string; kind: TeamFunctionKind }[];
+	teamFunctions: readonly {
+		conferenceId: string;
+		/** Empty for a function of the whole conference (a trusted person). */
+		committeeId: string | null;
+		kind: TeamFunctionKind;
+	}[];
 	/** Who is on the team of each of those conferences, the caller included. */
 	teammates: readonly { conferenceId: string; userId: string }[];
 	/**
@@ -144,7 +149,7 @@ function factsSubject(ctx: Context): FactsSubject {
 
 const CONFERENCE_FLAGS = { assignmentReleased: true, showCalendar: true } as const;
 
-const noFunctions: { committeeId: string; kind: TeamFunctionKind }[] = [];
+const noFunctions: { committeeId: string | null; kind: TeamFunctionKind }[] = [];
 
 /** The caller's team memberships, with the flags and the teams of those conferences. */
 async function loadTeam({ teamUserId, mcp }: FactsSubject) {

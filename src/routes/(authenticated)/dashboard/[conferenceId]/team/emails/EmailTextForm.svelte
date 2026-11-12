@@ -121,6 +121,9 @@
 		committee: m.emailPlaceholderCommittee,
 		chaseLink: m.emailPlaceholderChaseLink,
 		manualLink: m.emailPlaceholderManualLink,
+		entryCode: m.emailPlaceholderEntryCode,
+		member: m.emailPlaceholderMember,
+		supervisor: m.emailPlaceholderSupervisor,
 		title: m.emailPlaceholderTitle
 	};
 </script>

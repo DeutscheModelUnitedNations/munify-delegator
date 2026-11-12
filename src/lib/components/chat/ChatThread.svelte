@@ -10,13 +10,12 @@
 	import { fetchChat, fetchChatMessages, type OpenChat } from '#lib/api/chats';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { m } from '#lib/paraglide/messages';
-	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import ChatAvatar from './ChatAvatar.svelte';
 	import ChatComposer from './ChatComposer.svelte';
 	import ChatMessages from './ChatMessages.svelte';
 	import ChatReviewBanner from './ChatReviewBanner.svelte';
-	import ChatThreadMenu from './ChatThreadMenu.svelte';
-	import { chatAvatar, chatSubtitle, chatTitle, sideOf } from './chatLabels';
+	import ChatThreadHeader from './ChatThreadHeader.svelte';
+	import { chatTitle, sideOf } from './chatLabels';
+	import { unreadStateOf } from './threadMessages';
 
 	interface Props {
 		chatId: string;
@@ -48,14 +47,6 @@
 	const newestId = $derived(messages.at(-1)?.id ?? '');
 
 	const side = $derived(chat ? sideOf(chat) : 'REVIEW');
-	const hint = $derived(
-		chat?.kind === 'DIRECT'
-			? m.chatDirectHint()
-			: chat?.kind === 'DELEGATION'
-				? m.chatDelegationHint()
-				: m.chatTeamHint()
-	);
-
 	let scroller = $state<HTMLDivElement>();
 
 	// Follows the conversation: down to the newest message whenever one arrives or the chat changes.
@@ -72,11 +63,10 @@
 	// Reading is marked once per unread state, while the page is in front.
 	let markedFor = '';
 	$effect(() => {
-		if (!chat || side === 'REVIEW' || chat.unreadCount === 0) return;
-		const state = `${chat.id}:${newestId}`;
-		if (state === markedFor || document.visibilityState !== 'visible') return;
+		const state = unreadStateOf({ chat, side, newestId });
+		if (!state || state === markedFor || document.visibilityState !== 'visible') return;
 		markedFor = state;
-		void Promise.resolve(client.mutate.markChatRead({ __args: { chatId: chat.id } })).catch(
+		void Promise.resolve(client.mutate.markChatRead({ __args: { chatId } })).catch(
 			() => (markedFor = '')
 		);
 	});
@@ -93,45 +83,7 @@
 		aria-label={chatTitle(chat)}
 		data-testid="chat-thread"
 	>
-		<header class="border-base-300 flex items-center gap-3 border-b px-3 py-2.5 sm:px-4">
-			{#if onBack}
-				<button
-					type="button"
-					class="btn btn-ghost btn-sm btn-square md:hidden"
-					aria-label={m.chatBackToList()}
-					onclick={onBack}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
-				</button>
-			{/if}
-			<ChatAvatar avatar={chatAvatar(chat)} />
-			<div class="flex min-w-0 flex-1 flex-col">
-				<h2 class="truncate font-semibold" data-testid="chat-title">{chatTitle(chat)}</h2>
-				<p class="text-base-content/60 truncate text-xs">{chatSubtitle(chat) ?? hint}</p>
-			</div>
-
-			{#if side === 'PARTICIPANT' && chat.kind !== 'TEAM'}
-				<ChatThreadMenu
-					chatId={chat.id}
-					direct={chat.kind === 'DIRECT'}
-					blockedByMe={chat.blockedByMe}
-				/>
-			{:else if side !== 'PARTICIPANT'}
-				<div class="flex shrink-0 gap-1">
-					{#each chat.people as person (person.participantId)}
-						<button
-							type="button"
-							class="btn btn-ghost btn-sm btn-square"
-							title={m.chatOpenUserCard({ name: person.name })}
-							aria-label={m.chatOpenUserCard({ name: person.name })}
-							onclick={() => openUserCard(person.userId)}
-						>
-							<i aria-hidden="true" class="ph-duotone ph-identification-card text-lg"></i>
-						</button>
-					{/each}
-				</div>
-			{/if}
-		</header>
+		<ChatThreadHeader {chat} {side} {onBack} />
 
 		{#if side === 'REVIEW'}
 			<ChatReviewBanner contacts={chat.contacts} people={chat.people} />

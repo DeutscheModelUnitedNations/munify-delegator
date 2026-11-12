@@ -74,10 +74,10 @@ type AgendaItemPaperGroup {
 
 type Announcement {
   """Get the announcementAttachments related to this announcement"""
-  attachments(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: String, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
+  attachments(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: AnnouncementattachmentSearchInputArgument, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
 
   """Get the announcementAudiences related to this announcement"""
-  audiences(limit: Int, offset: Int, orderBy: AnnouncementaudienceOrderInputArgument, search: String, where: AnnouncementaudienceWhereInputArgument): [Announcementaudience!]!
+  audiences(limit: Int, offset: Int, orderBy: AnnouncementaudienceOrderInputArgument, search: AnnouncementaudienceSearchInputArgument, where: AnnouncementaudienceWhereInputArgument): [Announcementaudience!]!
 
   """Get the users related to this announcement"""
   author(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
@@ -199,6 +199,28 @@ input AnnouncementOrderInputArgument {
   visibleUntil: SortingParameter
 }
 
+"""A column of announcement the search can look at"""
+enum AnnouncementSearchFieldEnum {
+  authorId
+  body
+  conferenceId
+  id
+  publishedById
+  signature
+  title
+}
+
+"""
+Fuzzy search on announcement, ranked by how close the columns are to the term
+"""
+input AnnouncementSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AnnouncementSearchFieldEnum!]
+  term: String!
+}
+
 input AnnouncementWhereInputArgument {
   AND: [AnnouncementWhereInputArgument!]
   NOT: AnnouncementWhereInputArgument
@@ -255,6 +277,24 @@ input AnnouncementattachmentOrderInputArgument {
   position: SortingParameter
 }
 
+"""A column of announcementAttachment the search can look at"""
+enum AnnouncementattachmentSearchFieldEnum {
+  announcementId
+  fileId
+  id
+}
+
+"""
+Fuzzy search on announcementAttachment, ranked by how close the columns are to the term
+"""
+input AnnouncementattachmentSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AnnouncementattachmentSearchFieldEnum!]
+  term: String!
+}
+
 input AnnouncementattachmentWhereInputArgument {
   AND: [AnnouncementattachmentWhereInputArgument!]
   NOT: AnnouncementattachmentWhereInputArgument
@@ -304,6 +344,26 @@ input AnnouncementaudienceOrderInputArgument {
   roleId: SortingParameter
   surveyOptionId: SortingParameter
   teamRole: SortingParameter
+}
+
+"""A column of announcementAudience the search can look at"""
+enum AnnouncementaudienceSearchFieldEnum {
+  announcementId
+  committeeId
+  id
+  roleId
+  surveyOptionId
+}
+
+"""
+Fuzzy search on announcementAudience, ranked by how close the columns are to the term
+"""
+input AnnouncementaudienceSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AnnouncementaudienceSearchFieldEnum!]
+  term: String!
 }
 
 input AnnouncementaudienceWhereInputArgument {
@@ -431,6 +491,27 @@ input AssignmentreviewOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of assignmentReview the search can look at"""
+enum AssignmentreviewSearchFieldEnum {
+  conferenceId
+  delegationId
+  id
+  note
+  prioritizedRoleId
+  singleParticipantId
+}
+
+"""
+Fuzzy search on assignmentReview, ranked by how close the columns are to the term
+"""
+input AssignmentreviewSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AssignmentreviewSearchFieldEnum!]
+  term: String!
+}
+
 input AssignmentreviewWhereInputArgument {
   AND: [AssignmentreviewWhereInputArgument!]
   NOT: AssignmentreviewWhereInputArgument
@@ -480,6 +561,24 @@ input AssignmentsingleroleOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of assignmentSingleRole the search can look at"""
+enum AssignmentsingleroleSearchFieldEnum {
+  id
+  roleId
+  singleParticipantId
+}
+
+"""
+Fuzzy search on assignmentSingleRole, ranked by how close the columns are to the term
+"""
+input AssignmentsingleroleSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AssignmentsingleroleSearchFieldEnum!]
+  term: String!
+}
+
 input AssignmentsingleroleWhereInputArgument {
   AND: [AssignmentsingleroleWhereInputArgument!]
   NOT: AssignmentsingleroleWhereInputArgument
@@ -501,7 +600,7 @@ type Assignmentunit {
   id: ID!
 
   """Get the assignmentUnitMembers related to this assignmentUnit"""
-  members(limit: Int, offset: Int, orderBy: AssignmentunitmemberOrderInputArgument, search: String, where: AssignmentunitmemberWhereInputArgument): [Assignmentunitmember!]!
+  members(limit: Int, offset: Int, orderBy: AssignmentunitmemberOrderInputArgument, search: AssignmentunitmemberSearchInputArgument, where: AssignmentunitmemberWhereInputArgument): [Assignmentunitmember!]!
 
   """Get the conferenceRoles related to this assignmentUnit"""
   role(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
@@ -530,6 +629,26 @@ input AssignmentunitOrderInputArgument {
   sourceDelegationId: SortingParameter
   sourceSingleParticipantId: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of assignmentUnit the search can look at"""
+enum AssignmentunitSearchFieldEnum {
+  conferenceId
+  id
+  roleId
+  sourceDelegationId
+  sourceSingleParticipantId
+}
+
+"""
+Fuzzy search on assignmentUnit, ranked by how close the columns are to the term
+"""
+input AssignmentunitSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AssignmentunitSearchFieldEnum!]
+  term: String!
 }
 
 input AssignmentunitWhereInputArgument {
@@ -579,6 +698,24 @@ input AssignmentunitmemberOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of assignmentUnitMember the search can look at"""
+enum AssignmentunitmemberSearchFieldEnum {
+  delegationMemberId
+  id
+  unitId
+}
+
+"""
+Fuzzy search on assignmentUnitMember, ranked by how close the columns are to the term
+"""
+input AssignmentunitmemberSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AssignmentunitmemberSearchFieldEnum!]
+  term: String!
+}
+
 input AssignmentunitmemberWhereInputArgument {
   AND: [AssignmentunitmemberWhereInputArgument!]
   NOT: AssignmentunitmemberWhereInputArgument
@@ -624,6 +761,23 @@ input AssignmentweightsOrderInputArgument {
   nullRating: SortingParameter
   ratingFactor: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of assignmentWeights the search can look at"""
+enum AssignmentweightsSearchFieldEnum {
+  conferenceId
+  id
+}
+
+"""
+Fuzzy search on assignmentWeights, ranked by how close the columns are to the term
+"""
+input AssignmentweightsSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AssignmentweightsSearchFieldEnum!]
+  term: String!
 }
 
 input AssignmentweightsWhereInputArgument {
@@ -679,6 +833,25 @@ input AttendanceentryOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of attendanceEntry the search can look at"""
+enum AttendanceentrySearchFieldEnum {
+  conferenceParticipantId
+  id
+  recordedById
+  sessionId
+}
+
+"""
+Fuzzy search on attendanceEntry, ranked by how close the columns are to the term
+"""
+input AttendanceentrySearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AttendanceentrySearchFieldEnum!]
+  term: String!
+}
+
 input AttendanceentryWhereInputArgument {
   AND: [AttendanceentryWhereInputArgument!]
   NOT: AttendanceentryWhereInputArgument
@@ -708,7 +881,7 @@ type Attendancesession {
   endedAt: DateTime
 
   """Get the attendanceEntries related to this attendanceSession"""
-  entries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: String, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
+  entries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: AttendanceentrySearchInputArgument, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
 
   """How many people were scanned in the session."""
   entryCount: Int!
@@ -724,7 +897,7 @@ type Attendancesession {
   startedAt: DateTime!
 
   """Get the surveyOptions related to this attendanceSession"""
-  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: String, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
+  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: SurveyoptionSearchInputArgument, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
   updatedAt: DateTime!
 }
 
@@ -739,6 +912,25 @@ input AttendancesessionOrderInputArgument {
   showOnCertificate: SortingParameter
   startedAt: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of attendanceSession the search can look at"""
+enum AttendancesessionSearchFieldEnum {
+  conferenceId
+  createdById
+  id
+  occasion
+}
+
+"""
+Fuzzy search on attendanceSession, ranked by how close the columns are to the term
+"""
+input AttendancesessionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AttendancesessionSearchFieldEnum!]
+  term: String!
 }
 
 input AttendancesessionWhereInputArgument {
@@ -813,7 +1005,7 @@ type Calendarday {
   date: Date!
 
   """Get the calendarEntries related to this calendarDay"""
-  entries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: String, where: CalendarentryWhereInputArgument): [Calendarentry!]!
+  entries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: CalendarentrySearchInputArgument, where: CalendarentryWhereInputArgument): [Calendarentry!]!
   id: ID!
   name: String!
 
@@ -823,7 +1015,7 @@ type Calendarday {
   search_distance: Float
 
   """Get the calendarTracks related to this calendarDay"""
-  tracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  tracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
   updatedAt: DateTime!
 }
 
@@ -834,6 +1026,24 @@ input CalendardayOrderInputArgument {
   id: SortingParameter
   name: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of calendarDay the search can look at"""
+enum CalendardaySearchFieldEnum {
+  conferenceId
+  id
+  name
+}
+
+"""
+Fuzzy search on calendarDay, ranked by how close the columns are to the term
+"""
+input CalendardaySearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [CalendardaySearchFieldEnum!]
+  term: String!
 }
 
 input CalendardayWhereInputArgument {
@@ -875,10 +1085,10 @@ type Calendarentry {
   startTime: DateTime!
 
   """Get the surveyOptions related to this calendarEntry"""
-  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: String, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
+  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: SurveyoptionSearchInputArgument, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
 
   """Get the calendarTracks related to this calendarEntry"""
-  tracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  tracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
   updatedAt: DateTime!
 }
 
@@ -895,6 +1105,28 @@ input CalendarentryOrderInputArgument {
   room: SortingParameter
   startTime: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of calendarEntry the search can look at"""
+enum CalendarentrySearchFieldEnum {
+  calendarDayId
+  description
+  icon
+  id
+  name
+  placeId
+  room
+}
+
+"""
+Fuzzy search on calendarEntry, ranked by how close the columns are to the term
+"""
+input CalendarentrySearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [CalendarentrySearchFieldEnum!]
+  term: String!
 }
 
 input CalendarentryWhereInputArgument {
@@ -932,22 +1164,22 @@ enum CalendarentrycolorEnum {
 
 type Calendartrack {
   """Get the calendarDays related to this calendarTrack"""
-  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: String, where: CalendardayWhereInputArgument): [Calendarday!]!
+  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: CalendardaySearchInputArgument, where: CalendardayWhereInputArgument): [Calendarday!]!
 
   """Get the committees related to this calendarTrack"""
-  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: String, where: CommitteeWhereInputArgument): [Committee!]!
+  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: CommitteeSearchInputArgument, where: CommitteeWhereInputArgument): [Committee!]!
 
   """Get the conferences related to this calendarTrack"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
   conferenceId: ID!
 
   """Get the conferenceRoles related to this calendarTrack"""
-  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
   createdAt: DateTime!
   description: String
 
   """Get the calendarEntries related to this calendarTrack"""
-  entries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: String, where: CalendarentryWhereInputArgument): [Calendarentry!]!
+  entries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: CalendarentrySearchInputArgument, where: CalendarentryWhereInputArgument): [Calendarentry!]!
   id: ID!
   name: String!
 
@@ -967,6 +1199,25 @@ input CalendartrackOrderInputArgument {
   name: SortingParameter
   sortOrder: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of calendarTrack the search can look at"""
+enum CalendartrackSearchFieldEnum {
+  conferenceId
+  description
+  id
+  name
+}
+
+"""
+Fuzzy search on calendarTrack, ranked by how close the columns are to the term
+"""
+input CalendartrackSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [CalendartrackSearchFieldEnum!]
+  term: String!
 }
 
 input CalendartrackWhereInputArgument {
@@ -1075,7 +1326,7 @@ type Chat {
   lastParticipantMessageAt: DateTime
 
   """Get the chatMessages related to this chat"""
-  messages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: String, where: ChatmessageWhereInputArgument): [Chatmessage!]!
+  messages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: ChatmessageSearchInputArgument, where: ChatmessageWhereInputArgument): [Chatmessage!]!
 
   """Get the conferenceParticipants related to this chat"""
   otherParticipant(orderBy: ConferenceparticipantOrderInputArgument, where: ConferenceparticipantWhereInputArgument): Conferenceparticipant
@@ -1086,12 +1337,12 @@ type Chat {
   participantId: ID
 
   """
-  Who the participants of the chat are, by name and account: for participant care only (of a team chat, and of a chat it reviews); empty for everybody else, who know the people by role.
+  Who the participants of the chat are, by name and account: for participant care only (of a team chat, and of a chat it reviews); empty for everybody else, who know the people by role, and always in a chat with the trusted persons.
   """
   people: [ChatPerson!]!
 
   """Get the chatReports related to this chat"""
-  reports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: String, where: ChatreportWhereInputArgument): [Chatreport!]!
+  reports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: ChatreportSearchInputArgument, where: ChatreportWhereInputArgument): [Chatreport!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -1103,6 +1354,16 @@ type Chat {
   """
   side: String!
   teamReadAt: DateTime
+
+  """
+  The full name of the one trusted person the chat is with; null for a chat with all of them and for every other chat.
+  """
+  trustedPersonName: String
+
+  """
+  A chat with one trusted person: their account, for themselves only (null for everybody else, and for every other chat).
+  """
+  trustedUserId: ID
   underReview: Boolean!
 
   """
@@ -1155,6 +1416,14 @@ type ChatInboxOption {
   committeeId: ID
   committeeName: String
   inbox: ChatinboxEnum!
+
+  """The full name of that trusted person."""
+  personName: String
+
+  """
+  The one trusted person this inbox is, to pass to `openTeamChat`; null for the trusted persons together and for every other inbox.
+  """
+  trustedPersonId: ID
 }
 
 input ChatOrderInputArgument {
@@ -1170,6 +1439,7 @@ input ChatOrderInputArgument {
   otherParticipantId: SortingParameter
   participantId: SortingParameter
   teamReadAt: SortingParameter
+  trustedUserId: SortingParameter
   underReview: SortingParameter
   updatedAt: SortingParameter
 }
@@ -1179,6 +1449,26 @@ type ChatPerson {
   name: String!
   participantId: ID!
   userId: ID!
+}
+
+"""A column of chat the search can look at"""
+enum ChatSearchFieldEnum {
+  committeeId
+  conferenceId
+  delegationId
+  id
+  otherParticipantId
+  participantId
+  trustedUserId
+}
+
+"""Fuzzy search on chat, ranked by how close the columns are to the term"""
+input ChatSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ChatSearchFieldEnum!]
+  term: String!
 }
 
 input ChatWhereInputArgument {
@@ -1204,6 +1494,7 @@ input ChatWhereInputArgument {
   participantId: IDWhereInputArgument
   reports: ChatreportWhereInputArgument
   teamReadAt: DateTimeWhereInputArgument
+  trustedUserId: IDWhereInputArgument
   underReview: BooleanWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
 }
@@ -1212,6 +1503,7 @@ enum ChatinboxEnum {
   CHAIR
   CONSULTANT
   PARTICIPANT_CARE
+  TRUSTED_PERSON
 }
 
 enum ChatkindEnum {
@@ -1260,6 +1552,27 @@ input ChatmessageOrderInputArgument {
   id: SortingParameter
   paperId: SortingParameter
   teamAuthorUserId: SortingParameter
+}
+
+"""A column of chatMessage the search can look at"""
+enum ChatmessageSearchFieldEnum {
+  authorParticipantId
+  body
+  chatId
+  id
+  paperId
+  teamAuthorUserId
+}
+
+"""
+Fuzzy search on chatMessage, ranked by how close the columns are to the term
+"""
+input ChatmessageSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ChatmessageSearchFieldEnum!]
+  term: String!
 }
 
 input ChatmessageWhereInputArgument {
@@ -1315,6 +1628,27 @@ input ChatreportOrderInputArgument {
   resolvedById: SortingParameter
   status: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of chatReport the search can look at"""
+enum ChatreportSearchFieldEnum {
+  chatId
+  conferenceId
+  id
+  reason
+  reporterUserId
+  resolvedById
+}
+
+"""
+Fuzzy search on chatReport, ranked by how close the columns are to the term
+"""
+input ChatreportSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ChatreportSearchFieldEnum!]
+  term: String!
 }
 
 input ChatreportWhereInputArgument {
@@ -1377,10 +1711,10 @@ type Committee {
   abbreviation: String!
 
   """Get the committeeAgendaItems related to this committee"""
-  agendaItems(limit: Int, offset: Int, orderBy: CommitteeagendaitemOrderInputArgument, search: String, where: CommitteeagendaitemWhereInputArgument): [Committeeagendaitem!]!
+  agendaItems(limit: Int, offset: Int, orderBy: CommitteeagendaitemOrderInputArgument, search: CommitteeagendaitemSearchInputArgument, where: CommitteeagendaitemWhereInputArgument): [Committeeagendaitem!]!
 
   """Get the calendarTracks related to this committee"""
-  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
 
   """Get the conferences related to this committee"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
@@ -1388,7 +1722,7 @@ type Committee {
   createdAt: DateTime!
 
   """Get the delegationMembers related to this committee"""
-  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
   id: ID!
   name: String!
   numOfSeatsPerDelegation: Int!
@@ -1397,10 +1731,10 @@ type Committee {
   resolutionHeadline: String
 
   """Get the resolutions related to this committee"""
-  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: String, where: ResolutionWhereInputArgument): [Resolution!]!
+  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: ResolutionSearchInputArgument, where: ResolutionWhereInputArgument): [Resolution!]!
 
   """Get the conferenceRoles related to this committee"""
-  roles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  roles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -1433,6 +1767,24 @@ type CommitteePaperGroup {
   committee: Committee!
 }
 
+"""A column of committee the search can look at"""
+enum CommitteeSearchFieldEnum {
+  abbreviation
+  id
+  name
+}
+
+"""
+Fuzzy search on committee, ranked by how close the columns are to the term
+"""
+input CommitteeSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [CommitteeSearchFieldEnum!]
+  term: String!
+}
+
 input CommitteeWhereInputArgument {
   AND: [CommitteeWhereInputArgument!]
   NOT: CommitteeWhereInputArgument
@@ -1463,7 +1815,7 @@ type Committeeagendaitem {
   id: ID!
 
   """Get the papers related to this committeeAgendaItem"""
-  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
   reviewHelpStatus: ReviewhelpstatusEnum!
 
   """
@@ -1485,6 +1837,23 @@ input CommitteeagendaitemOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of committeeAgendaItem the search can look at"""
+enum CommitteeagendaitemSearchFieldEnum {
+  id
+  title
+}
+
+"""
+Fuzzy search on committeeAgendaItem, ranked by how close the columns are to the term
+"""
+input CommitteeagendaitemSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [CommitteeagendaitemSearchFieldEnum!]
+  term: String!
+}
+
 input CommitteeagendaitemWhereInputArgument {
   AND: [CommitteeagendaitemWhereInputArgument!]
   NOT: CommitteeagendaitemWhereInputArgument
@@ -1502,7 +1871,7 @@ input CommitteeagendaitemWhereInputArgument {
 
 type Conference {
   """Get the waitingListEntries related to this conference"""
-  WaitingListEntry(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: String, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
+  WaitingListEntry(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
   applicationDeadline: DateTime!
   assignmentReleased: Boolean!
   assignmentReleasedAt: DateTime
@@ -1511,23 +1880,23 @@ type Conference {
   bic: String
 
   """Get the calendarDays related to this conference"""
-  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: String, where: CalendardayWhereInputArgument): [Calendarday!]!
+  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: CalendardaySearchInputArgument, where: CalendardayWhereInputArgument): [Calendarday!]!
 
   """Get the calendarTracks related to this conference"""
-  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
 
   """Get the storedFiles related to this conference"""
   certificateFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
   certificateFileId: ID
 
   """Get the committees related to this conference"""
-  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: String, where: CommitteeWhereInputArgument): [Committee!]!
+  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: CommitteeSearchInputArgument, where: CommitteeWhereInputArgument): [Committee!]!
 
   """Get the conferenceParticipants related to this conference"""
-  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
+  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """Get the conferenceSupervisors related to this conference"""
-  conferenceSupervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  conferenceSupervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
 
   """Get the storedFiles related to this conference"""
   contractFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
@@ -1536,10 +1905,10 @@ type Conference {
   currency: String
 
   """Get the delegationMembers related to this conference"""
-  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
 
   """Get the delegations related to this conference"""
-  delegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: String, where: DelegationWhereInputArgument): [Delegation!]!
+  delegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: DelegationSearchInputArgument, where: DelegationWhereInputArgument): [Delegation!]!
   documentLayouts: JSON
   emailsPerSecond: Int
 
@@ -1587,15 +1956,15 @@ type Conference {
   nextDocumentNumber: Int!
 
   """Get the papers related to this conference"""
-  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
   participantMaxAge: Int
   participantMinAge: Int
 
   """Get the paymentTransactions related to this conference"""
-  paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: String, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
+  paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
 
   """Get the places related to this conference"""
-  places(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: String, where: PlaceWhereInputArgument): [Place!]!
+  places(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: PlaceSearchInputArgument, where: PlaceWhereInputArgument): [Place!]!
   postalApartment: String
   postalCity: String
   postalCountry: String
@@ -1605,10 +1974,10 @@ type Conference {
   registrationDeadlineGracePeriodMinutes: Int!
 
   """Get the resolutions related to this conference"""
-  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: String, where: ResolutionWhereInputArgument): [Resolution!]!
+  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: ResolutionSearchInputArgument, where: ResolutionWhereInputArgument): [Resolution!]!
 
   """Get the conferenceRoles related to this conference"""
-  roles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  roles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
   """
   The people of applied registrations grouped by their own school, which is how the organizers see which schools are sending how many people.
@@ -1622,19 +1991,19 @@ type Conference {
   showCalendar: Boolean!
 
   """Get the singleParticipants related to this conference"""
-  singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
   startConference: DateTime!
   state: ConferencestateEnum!
   supervisorMinAge: Int
 
   """Get the surveyQuestions related to this conference"""
-  surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: String, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
+  surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: SurveyquestionSearchInputArgument, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
 
   """Get the teamMemberInvitations related to this conference"""
-  teamMemberInvitations(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: String, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
+  teamMemberInvitations(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
 
   """Get the teamMembers related to this conference"""
-  teamMembers(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: String, where: TeammemberWhereInputArgument): [Teammember!]!
+  teamMembers(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: TeammemberSearchInputArgument, where: TeammemberWhereInputArgument): [Teammember!]!
 
   """Get the storedFiles related to this conference"""
   termsAndConditionsFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
@@ -1729,6 +2098,51 @@ type ConferenceSchools {
   schoolId: ID!
   singleParticipants: Int!
   sumParticipants: Int!
+}
+
+"""A column of conference the search can look at"""
+enum ConferenceSearchFieldEnum {
+  bankAccountHolder
+  bankName
+  bic
+  certificateFileId
+  contractFileId
+  currency
+  emblemFileId
+  guardianConsentFileId
+  iban
+  id
+  imageFileId
+  language
+  linkToPaperInbox
+  linkToPreparationGuide
+  linkToServicesPage
+  linkToTeamWiki
+  location
+  logoFileId
+  longTitle
+  mediaConsentFileId
+  postalApartment
+  postalCity
+  postalCountry
+  postalName
+  postalStreet
+  postalZip
+  termsAndConditionsFileId
+  timezone
+  title
+  website
+}
+
+"""
+Fuzzy search on conference, ranked by how close the columns are to the term
+"""
+input ConferenceSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferenceSearchFieldEnum!]
+  term: String!
 }
 
 input ConferenceWhereInputArgument {
@@ -1842,6 +2256,25 @@ input ConferenceemailfooterOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of conferenceEmailFooter the search can look at"""
+enum ConferenceemailfooterSearchFieldEnum {
+  conferenceId
+  id
+  locale
+  text
+}
+
+"""
+Fuzzy search on conferenceEmailFooter, ranked by how close the columns are to the term
+"""
+input ConferenceemailfooterSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferenceemailfooterSearchFieldEnum!]
+  term: String!
+}
+
 input ConferenceemailfooterWhereInputArgument {
   AND: [ConferenceemailfooterWhereInputArgument!]
   NOT: ConferenceemailfooterWhereInputArgument
@@ -1878,6 +2311,23 @@ input ConferenceemailsettingOrderInputArgument {
   id: SortingParameter
   kind: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of conferenceEmailSetting the search can look at"""
+enum ConferenceemailsettingSearchFieldEnum {
+  conferenceId
+  id
+}
+
+"""
+Fuzzy search on conferenceEmailSetting, ranked by how close the columns are to the term
+"""
+input ConferenceemailsettingSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferenceemailsettingSearchFieldEnum!]
+  term: String!
 }
 
 input ConferenceemailsettingWhereInputArgument {
@@ -1925,6 +2375,27 @@ input ConferenceemailtextOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of conferenceEmailText the search can look at"""
+enum ConferenceemailtextSearchFieldEnum {
+  body
+  conferenceId
+  heading
+  id
+  locale
+  subject
+}
+
+"""
+Fuzzy search on conferenceEmailText, ranked by how close the columns are to the term
+"""
+input ConferenceemailtextSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferenceemailtextSearchFieldEnum!]
+  term: String!
+}
+
 input ConferenceemailtextWhereInputArgument {
   AND: [ConferenceemailtextWhereInputArgument!]
   NOT: ConferenceemailtextWhereInputArgument
@@ -1946,7 +2417,7 @@ type Conferenceparticipant {
   assignedDocumentNumber: Int
 
   """Get the attendanceEntries related to this conferenceParticipant"""
-  attendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: String, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
+  attendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: AttendanceentrySearchInputArgument, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
 
   """
   What the entrance check finds open for the person, without any scanner session: what their check-in page shows.
@@ -1990,7 +2461,7 @@ type Conferenceparticipant {
   singleParticipant(orderBy: SingleparticipantOrderInputArgument, where: SingleparticipantWhereInputArgument): Singleparticipant
 
   """Get the conferenceSupervisors related to this conferenceParticipant"""
-  supervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  supervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
   termsAndConditions: AdministrativestatusEnum!
   updatedAt: DateTime!
 
@@ -2016,6 +2487,26 @@ input ConferenceparticipantOrderInputArgument {
   termsAndConditions: SortingParameter
   updatedAt: SortingParameter
   userId: SortingParameter
+}
+
+"""A column of conferenceParticipant the search can look at"""
+enum ConferenceparticipantSearchFieldEnum {
+  accessCardId
+  conferenceId
+  id
+  schoolId
+  userId
+}
+
+"""
+Fuzzy search on conferenceParticipant, ranked by how close the columns are to the term
+"""
+input ConferenceparticipantSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferenceparticipantSearchFieldEnum!]
+  term: String!
 }
 
 input ConferenceparticipantWhereInputArgument {
@@ -2052,19 +2543,19 @@ type Conferencerole {
   abbreviation: String
 
   """Get the singleParticipants related to this conferenceRole"""
-  appliedSingleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  appliedSingleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
 
   """Get the delegations related to this conferenceRole"""
-  assignedDelegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: String, where: DelegationWhereInputArgument): [Delegation!]!
+  assignedDelegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: DelegationSearchInputArgument, where: DelegationWhereInputArgument): [Delegation!]!
 
   """Get the singleParticipants related to this conferenceRole"""
-  assignedSingleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  assignedSingleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
 
   """Get the calendarTracks related to this conferenceRole"""
-  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
 
   """Get the committees related to this conferenceRole"""
-  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: String, where: CommitteeWhereInputArgument): [Committee!]!
+  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: CommitteeSearchInputArgument, where: CommitteeWhereInputArgument): [Committee!]!
 
   """Get the conferences related to this conferenceRole"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
@@ -2081,7 +2572,7 @@ type Conferencerole {
   nationAlpha3Code: String
 
   """Get the roleApplications related to this conferenceRole"""
-  roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: String, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
+  roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: RoleapplicationSearchInputArgument, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -2103,6 +2594,28 @@ input ConferenceroleOrderInputArgument {
   nationAlpha3Code: SortingParameter
   seatAmount: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of conferenceRole the search can look at"""
+enum ConferenceroleSearchFieldEnum {
+  abbreviation
+  conferenceId
+  description
+  icon
+  id
+  name
+  nationAlpha3Code
+}
+
+"""
+Fuzzy search on conferenceRole, ranked by how close the columns are to the term
+"""
+input ConferenceroleSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferenceroleSearchFieldEnum!]
+  term: String!
 }
 
 input ConferenceroleWhereInputArgument {
@@ -2170,13 +2683,13 @@ type Conferencesupervisor {
   search_distance: Float
 
   """Get the conferenceParticipants related to this conferenceSupervisor"""
-  supervised(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
+  supervised(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """Get the delegationMembers related to this conferenceSupervisor"""
-  supervisedDelegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  supervisedDelegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
 
   """Get the singleParticipants related to this conferenceSupervisor"""
-  supervisedSingleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  supervisedSingleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
   updatedAt: DateTime!
 
   """Get the users related to this conferenceSupervisor"""
@@ -2190,6 +2703,24 @@ input ConferencesupervisorOrderInputArgument {
   id: SortingParameter
   plansOwnAttendenceAtConference: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of conferenceSupervisor the search can look at"""
+enum ConferencesupervisorSearchFieldEnum {
+  conferenceParticipantId
+  connectionCode
+  id
+}
+
+"""
+Fuzzy search on conferenceSupervisor, ranked by how close the columns are to the term
+"""
+input ConferencesupervisorSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ConferencesupervisorSearchFieldEnum!]
+  term: String!
 }
 
 input ConferencesupervisorWhereInputArgument {
@@ -2333,7 +2864,7 @@ type Delegation {
   applied: Boolean!
 
   """Get the roleApplications related to this delegation"""
-  appliedForRoles(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: String, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
+  appliedForRoles(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: RoleapplicationSearchInputArgument, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
 
   """Get the conferenceRoles related to this delegation"""
   assignedRole(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
@@ -2352,11 +2883,11 @@ type Delegation {
   memberCount: Int!
 
   """Get the delegationMembers related to this delegation"""
-  members(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  members(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
   motivation: String
 
   """Get the papers related to this delegation"""
-  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -2397,6 +2928,27 @@ type DelegationPreview {
 
   """The members' own schools, most common first."""
   schools: [String!]!
+}
+
+"""A column of delegation the search can look at"""
+enum DelegationSearchFieldEnum {
+  assignedRoleId
+  conferenceId
+  entryCode
+  experience
+  id
+  motivation
+}
+
+"""
+Fuzzy search on delegation, ranked by how close the columns are to the term
+"""
+input DelegationSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [DelegationSearchFieldEnum!]
+  term: String!
 }
 
 input DelegationWhereInputArgument {
@@ -2449,7 +3001,7 @@ type Delegationmember {
   search_distance: Float
 
   """Get the conferenceSupervisors related to this delegationMember"""
-  supervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  supervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
   updatedAt: DateTime!
 
   """Get the users related to this delegationMember"""
@@ -2464,6 +3016,25 @@ input DelegationmemberOrderInputArgument {
   id: SortingParameter
   isHeadDelegate: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of delegationMember the search can look at"""
+enum DelegationmemberSearchFieldEnum {
+  assignedCommitteeId
+  conferenceParticipantId
+  delegationId
+  id
+}
+
+"""
+Fuzzy search on delegationMember, ranked by how close the columns are to the term
+"""
+input DelegationmemberSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [DelegationmemberSearchFieldEnum!]
+  term: String!
 }
 
 input DelegationmemberWhereInputArgument {
@@ -2513,11 +3084,15 @@ type EmailStatusResult {
 enum EmailkindEnum {
   ANNOUNCEMENT
   APPLICATION_DEADLINE_REMINDER
+  APPLICATION_SENT
   ASSIGNMENT_ACCEPTED
   ASSIGNMENT_REJECTED
   BADGE_FOUND
   CERTIFICATE_AVAILABLE
   CHASE_INTRO_REMINDER
+  DELEGATION_CREATED
+  DELEGATION_JOINED
+  DELEGATION_MEMBER_JOINED
   OPEN_ISSUES_REMINDER
   PAPERWORK_PROBLEM
   PAPER_REVIEWED
@@ -2527,11 +3102,14 @@ enum EmailkindEnum {
   POSTAL_RECEIVED
   POSTAL_UNLOCKED
   SUPERVISOR_ASSIGNMENT_SUMMARY
+  SUPERVISOR_CONNECTED
   SUPERVISOR_STUDENT_LINKED
+  SURVEY_PUBLISHED
   SURVEY_REMINDER
   TEAM_INVITATION
   TEAM_WELCOME
   UNREAD_MESSAGES
+  WAITING_LIST_REGISTERED
   WAITING_LIST_SEATED
 }
 
@@ -2581,6 +3159,28 @@ input EmaillogOrderInputArgument {
   trigger: SortingParameter
   updatedAt: SortingParameter
   userId: SortingParameter
+}
+
+"""A column of emailLog the search can look at"""
+enum EmaillogSearchFieldEnum {
+  conferenceId
+  email
+  error
+  id
+  sentById
+  subjectKey
+  userId
+}
+
+"""
+Fuzzy search on emailLog, ranked by how close the columns are to the term
+"""
+input EmaillogSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [EmaillogSearchFieldEnum!]
+  term: String!
 }
 
 input EmaillogWhereInputArgument {
@@ -2772,6 +3372,24 @@ input InstancelinkOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of instanceLink the search can look at"""
+enum InstancelinkSearchFieldEnum {
+  id
+  lastError
+  remoteUrl
+}
+
+"""
+Fuzzy search on instanceLink, ranked by how close the columns are to the term
+"""
+input InstancelinkSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [InstancelinkSearchFieldEnum!]
+  term: String!
+}
+
 input InstancelinkWhereInputArgument {
   AND: [InstancelinkWhereInputArgument!]
   NOT: InstancelinkWhereInputArgument
@@ -2913,6 +3531,27 @@ input McpauditentryOrderInputArgument {
   outcome: SortingParameter
   tool: SortingParameter
   userId: SortingParameter
+}
+
+"""A column of mcpAuditEntry the search can look at"""
+enum McpauditentrySearchFieldEnum {
+  clientId
+  conferenceId
+  id
+  message
+  tool
+  userId
+}
+
+"""
+Fuzzy search on mcpAuditEntry, ranked by how close the columns are to the term
+"""
+input McpauditentrySearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [McpauditentrySearchFieldEnum!]
+  term: String!
 }
 
 input McpauditentryWhereInputArgument {
@@ -3567,9 +4206,9 @@ type Mutation {
   endAttendanceSession(id: ID!): Boolean!
 
   """
-  Gives a team member a function in a committee of their conference: `CHAIR` or `CONSULTANT`. Whoever holds a function answers that committee's inbox of it in the chats. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference.
+  Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, or `TRUSTED_PERSON` for the whole conference (without a committee). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, the trusted persons their shared one and each their own. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference, a committee function without a committee and a trusted person with one.
   """
-  giveTeamFunction(committeeId: ID!, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
+  giveTeamFunction(committeeId: ID, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
 
   """
   The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.
@@ -3640,7 +4279,7 @@ type Mutation {
   ): Chat!
 
   """
-  The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.
+  The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.
   """
   openTeamChat(
     """The committee of a chairs' or consultants' inbox."""
@@ -3648,6 +4287,9 @@ type Mutation {
     conferenceId: ID!
     inbox: ChatinboxEnum!
     participantId: ID
+
+    """One trusted person, instead of all of them together."""
+    trustedPersonId: ID
   ): Chat!
 
   """
@@ -3689,7 +4331,7 @@ type Mutation {
   ): RegeneratedInvitation!
 
   """
-  Takes a committee function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).
+  Takes a function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).
   """
   removeTeamFunction(id: ID!): Boolean!
 
@@ -4532,7 +5174,7 @@ type Nation {
   alpha3Code: String!
 
   """Get the conferenceRoles related to this nation"""
-  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
   createdAt: DateTime!
 
   """
@@ -4547,6 +5189,23 @@ input NationOrderInputArgument {
   alpha3Code: SortingParameter
   createdAt: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of nation the search can look at"""
+enum NationSearchFieldEnum {
+  alpha2Code
+  alpha3Code
+}
+
+"""
+Fuzzy search on nation, ranked by how close the columns are to the term
+"""
+input NationSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [NationSearchFieldEnum!]
+  term: String!
 }
 
 input NationWhereInputArgument {
@@ -4653,7 +5312,7 @@ type Paper {
   updatedAt: DateTime!
 
   """Get the paperVersions related to this paper"""
-  versions(limit: Int, offset: Int, orderBy: PaperversionOrderInputArgument, search: String, where: PaperversionWhereInputArgument): [Paperversion!]!
+  versions(limit: Int, offset: Int, orderBy: PaperversionOrderInputArgument, search: PaperversionSearchInputArgument, where: PaperversionWhereInputArgument): [Paperversion!]!
 }
 
 input PaperOrderInputArgument {
@@ -4666,6 +5325,23 @@ input PaperOrderInputArgument {
   status: SortingParameter
   type: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of paper the search can look at"""
+enum PaperSearchFieldEnum {
+  agendaItemId
+  authorParticipantId
+  delegationId
+  id
+}
+
+"""Fuzzy search on paper, ranked by how close the columns are to the term"""
+input PaperSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PaperSearchFieldEnum!]
+  term: String!
 }
 
 input PaperWhereInputArgument {
@@ -4720,6 +5396,24 @@ input PaperreviewOrderInputArgument {
   statusBefore: SortingParameter
 }
 
+"""A column of paperReview the search can look at"""
+enum PaperreviewSearchFieldEnum {
+  id
+  paperVersionId
+  reviewerId
+}
+
+"""
+Fuzzy search on paperReview, ranked by how close the columns are to the term
+"""
+input PaperreviewSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PaperreviewSearchFieldEnum!]
+  term: String!
+}
+
 input PaperreviewWhereInputArgument {
   AND: [PaperreviewWhereInputArgument!]
   NOT: PaperreviewWhereInputArgument
@@ -4764,7 +5458,7 @@ type Paperversion {
   paperId: ID!
 
   """Get the paperReviews related to this paperVersion"""
-  reviews(limit: Int, offset: Int, orderBy: PaperreviewOrderInputArgument, search: String, where: PaperreviewWhereInputArgument): [Paperreview!]!
+  reviews(limit: Int, offset: Int, orderBy: PaperreviewOrderInputArgument, search: PaperreviewSearchInputArgument, where: PaperreviewWhereInputArgument): [Paperreview!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -4781,6 +5475,23 @@ input PaperversionOrderInputArgument {
   paperId: SortingParameter
   status: SortingParameter
   version: SortingParameter
+}
+
+"""A column of paperVersion the search can look at"""
+enum PaperversionSearchFieldEnum {
+  id
+  paperId
+}
+
+"""
+Fuzzy search on paperVersion, ranked by how close the columns are to the term
+"""
+input PaperversionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PaperversionSearchFieldEnum!]
+  term: String!
 }
 
 input PaperversionWhereInputArgument {
@@ -4812,7 +5523,7 @@ type Paymenttransaction {
   """
   Get the userReferenceInPaymentTransactions related to this paymentTransaction
   """
-  paymentFor(limit: Int, offset: Int, orderBy: UserreferenceinpaymenttransactionOrderInputArgument, search: String, where: UserreferenceinpaymenttransactionWhereInputArgument): [Userreferenceinpaymenttransaction!]!
+  paymentFor(limit: Int, offset: Int, orderBy: UserreferenceinpaymenttransactionOrderInputArgument, search: UserreferenceinpaymenttransactionSearchInputArgument, where: UserreferenceinpaymenttransactionWhereInputArgument): [Userreferenceinpaymenttransaction!]!
   recievedAt: DateTime
 
   """
@@ -4832,6 +5543,22 @@ input PaymenttransactionOrderInputArgument {
   payerParticipantId: SortingParameter
   recievedAt: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of paymentTransaction the search can look at"""
+enum PaymenttransactionSearchFieldEnum {
+  id
+}
+
+"""
+Fuzzy search on paymentTransaction, ranked by how close the columns are to the term
+"""
+input PaymenttransactionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PaymenttransactionSearchFieldEnum!]
+  term: String!
 }
 
 input PaymenttransactionWhereInputArgument {
@@ -4883,7 +5610,7 @@ type Place {
   address: String
 
   """Get the calendarEntries related to this place"""
-  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: String, where: CalendarentryWhereInputArgument): [Calendarentry!]!
+  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: CalendarentrySearchInputArgument, where: CalendarentryWhereInputArgument): [Calendarentry!]!
 
   """Get the conferences related to this place"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
@@ -4921,6 +5648,27 @@ input PlaceOrderInputArgument {
   sitePlanFileId: SortingParameter
   updatedAt: SortingParameter
   websiteUrl: SortingParameter
+}
+
+"""A column of place the search can look at"""
+enum PlaceSearchFieldEnum {
+  address
+  conferenceId
+  directions
+  id
+  info
+  name
+  sitePlanFileId
+  websiteUrl
+}
+
+"""Fuzzy search on place, ranked by how close the columns are to the term"""
+input PlaceSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PlaceSearchFieldEnum!]
+  term: String!
 }
 
 input PlaceWhereInputArgument {
@@ -5022,6 +5770,26 @@ input PossibleduplicateOrderInputArgument {
   userId: SortingParameter
 }
 
+"""A column of possibleDuplicate the search can look at"""
+enum PossibleduplicateSearchFieldEnum {
+  candidateId
+  decidedById
+  id
+  reasons
+  userId
+}
+
+"""
+Fuzzy search on possibleDuplicate, ranked by how close the columns are to the term
+"""
+input PossibleduplicateSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PossibleduplicateSearchFieldEnum!]
+  term: String!
+}
+
 input PossibleduplicateWhereInputArgument {
   AND: [PossibleduplicateWhereInputArgument!]
   NOT: PossibleduplicateWhereInputArgument
@@ -5106,13 +5874,13 @@ type Query {
   announcementFeed(conferenceId: ID!): [AnnouncementFeedItem!]!
 
   """List all announcements"""
-  announcements(limit: Int, offset: Int, orderBy: AnnouncementOrderInputArgument, search: String, where: AnnouncementWhereInputArgument): [Announcement!]!
+  announcements(limit: Int, offset: Int, orderBy: AnnouncementOrderInputArgument, search: AnnouncementSearchInputArgument, where: AnnouncementWhereInputArgument): [Announcement!]!
 
   """Get a single assignmentReview by ID"""
   assignmentReview(id: ID!): Assignmentreview!
 
   """List all assignmentReviews"""
-  assignmentReviews(limit: Int, offset: Int, orderBy: AssignmentreviewOrderInputArgument, search: String, where: AssignmentreviewWhereInputArgument): [Assignmentreview!]!
+  assignmentReviews(limit: Int, offset: Int, orderBy: AssignmentreviewOrderInputArgument, search: AssignmentreviewSearchInputArgument, where: AssignmentreviewWhereInputArgument): [Assignmentreview!]!
 
   """Count all assignmentReviews"""
   assignmentReviewsCount(where: AssignmentreviewWhereInputArgument): Int!
@@ -5121,22 +5889,22 @@ type Query {
   assignmentSingleRole(id: ID!): Assignmentsinglerole!
 
   """List all assignmentSingleRoles"""
-  assignmentSingleRoles(limit: Int, offset: Int, orderBy: AssignmentsingleroleOrderInputArgument, search: String, where: AssignmentsingleroleWhereInputArgument): [Assignmentsinglerole!]!
+  assignmentSingleRoles(limit: Int, offset: Int, orderBy: AssignmentsingleroleOrderInputArgument, search: AssignmentsingleroleSearchInputArgument, where: AssignmentsingleroleWhereInputArgument): [Assignmentsinglerole!]!
 
   """Get a single assignmentUnit by ID"""
   assignmentUnit(id: ID!): Assignmentunit!
 
   """List all assignmentUnits"""
-  assignmentUnits(limit: Int, offset: Int, orderBy: AssignmentunitOrderInputArgument, search: String, where: AssignmentunitWhereInputArgument): [Assignmentunit!]!
+  assignmentUnits(limit: Int, offset: Int, orderBy: AssignmentunitOrderInputArgument, search: AssignmentunitSearchInputArgument, where: AssignmentunitWhereInputArgument): [Assignmentunit!]!
 
   """Get a single assignmentWeight by ID"""
   assignmentWeight(id: ID!): Assignmentweights!
 
   """List all assignmentWeights"""
-  assignmentWeights(limit: Int, offset: Int, orderBy: AssignmentweightsOrderInputArgument, search: String, where: AssignmentweightsWhereInputArgument): [Assignmentweights!]!
+  assignmentWeights(limit: Int, offset: Int, orderBy: AssignmentweightsOrderInputArgument, search: AssignmentweightsSearchInputArgument, where: AssignmentweightsWhereInputArgument): [Assignmentweights!]!
 
   """List all attendanceEntries"""
-  attendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: String, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
+  attendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: AttendanceentrySearchInputArgument, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
 
   """Get a single attendanceEntry by ID"""
   attendanceEntry(id: ID!): Attendanceentry!
@@ -5145,16 +5913,16 @@ type Query {
   attendanceSession(id: ID!): Attendancesession!
 
   """List all attendanceSessions"""
-  attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: String, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
+  attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
 
   """Get a single calendarDay by ID"""
   calendarDay(id: ID!): Calendarday!
 
   """List all calendarDays"""
-  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: String, where: CalendardayWhereInputArgument): [Calendarday!]!
+  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: CalendardaySearchInputArgument, where: CalendardayWhereInputArgument): [Calendarday!]!
 
   """List all calendarEntries"""
-  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: String, where: CalendarentryWhereInputArgument): [Calendarentry!]!
+  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: CalendarentrySearchInputArgument, where: CalendarentryWhereInputArgument): [Calendarentry!]!
 
   """Get a single calendarEntry by ID"""
   calendarEntry(id: ID!): Calendarentry!
@@ -5163,7 +5931,7 @@ type Query {
   calendarTrack(id: ID!): Calendartrack!
 
   """List all calendarTracks"""
-  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
 
   """
   Whether `startImpersonation` would let the caller act as this user, for showing the button.
@@ -5189,7 +5957,7 @@ type Query {
   chatContacts(conferenceId: ID!): [ChatContact!]!
 
   """
-  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
+  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
   """
   chatInboxes(conferenceId: ID!, participantId: ID): [ChatInboxOption!]!
 
@@ -5197,16 +5965,16 @@ type Query {
   chatMessage(id: ID!): Chatmessage!
 
   """List all chatMessages"""
-  chatMessages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: String, where: ChatmessageWhereInputArgument): [Chatmessage!]!
+  chatMessages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: ChatmessageSearchInputArgument, where: ChatmessageWhereInputArgument): [Chatmessage!]!
 
   """Get a single chatReport by ID"""
   chatReport(id: ID!): Chatreport!
 
   """List all chatReports"""
-  chatReports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: String, where: ChatreportWhereInputArgument): [Chatreport!]!
+  chatReports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: ChatreportSearchInputArgument, where: ChatreportWhereInputArgument): [Chatreport!]!
 
   """List all chats"""
-  chats(limit: Int, offset: Int, orderBy: ChatOrderInputArgument, search: String, where: ChatWhereInputArgument): [Chat!]!
+  chats(limit: Int, offset: Int, orderBy: ChatOrderInputArgument, search: ChatSearchInputArgument, where: ChatWhereInputArgument): [Chat!]!
 
   """
   Tells the invite form what will happen to each address before anything is sent: already on the team, already invited, a known account that would be added directly, or a new one. For whoever may invite to the conference (manageTeam).
@@ -5225,10 +5993,10 @@ type Query {
   committeeAgendaItem(id: ID!): Committeeagendaitem!
 
   """List all committeeAgendaItems"""
-  committeeAgendaItems(limit: Int, offset: Int, orderBy: CommitteeagendaitemOrderInputArgument, search: String, where: CommitteeagendaitemWhereInputArgument): [Committeeagendaitem!]!
+  committeeAgendaItems(limit: Int, offset: Int, orderBy: CommitteeagendaitemOrderInputArgument, search: CommitteeagendaitemSearchInputArgument, where: CommitteeagendaitemWhereInputArgument): [Committeeagendaitem!]!
 
   """List all committees"""
-  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: String, where: CommitteeWhereInputArgument): [Committee!]!
+  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: CommitteeSearchInputArgument, where: CommitteeWhereInputArgument): [Committee!]!
 
   """Get a single conference by ID"""
   conference(id: ID!): Conference!
@@ -5237,25 +6005,25 @@ type Query {
   conferenceEmailFooter(id: ID!): Conferenceemailfooter!
 
   """List all conferenceEmailFooters"""
-  conferenceEmailFooters(limit: Int, offset: Int, orderBy: ConferenceemailfooterOrderInputArgument, search: String, where: ConferenceemailfooterWhereInputArgument): [Conferenceemailfooter!]!
+  conferenceEmailFooters(limit: Int, offset: Int, orderBy: ConferenceemailfooterOrderInputArgument, search: ConferenceemailfooterSearchInputArgument, where: ConferenceemailfooterWhereInputArgument): [Conferenceemailfooter!]!
 
   """Get a single conferenceEmailSetting by ID"""
   conferenceEmailSetting(id: ID!): Conferenceemailsetting!
 
   """List all conferenceEmailSettings"""
-  conferenceEmailSettings(limit: Int, offset: Int, orderBy: ConferenceemailsettingOrderInputArgument, search: String, where: ConferenceemailsettingWhereInputArgument): [Conferenceemailsetting!]!
+  conferenceEmailSettings(limit: Int, offset: Int, orderBy: ConferenceemailsettingOrderInputArgument, search: ConferenceemailsettingSearchInputArgument, where: ConferenceemailsettingWhereInputArgument): [Conferenceemailsetting!]!
 
   """Get a single conferenceEmailText by ID"""
   conferenceEmailText(id: ID!): Conferenceemailtext!
 
   """List all conferenceEmailTexts"""
-  conferenceEmailTexts(limit: Int, offset: Int, orderBy: ConferenceemailtextOrderInputArgument, search: String, where: ConferenceemailtextWhereInputArgument): [Conferenceemailtext!]!
+  conferenceEmailTexts(limit: Int, offset: Int, orderBy: ConferenceemailtextOrderInputArgument, search: ConferenceemailtextSearchInputArgument, where: ConferenceemailtextWhereInputArgument): [Conferenceemailtext!]!
 
   """Get a single conferenceParticipant by ID"""
   conferenceParticipant(id: ID!): Conferenceparticipant!
 
   """List all conferenceParticipants"""
-  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
+  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """
   Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. The same findings keep a delegation or single participant from sending their application (`applicationBlockers`); for supervisors they keep them from confirming they attend in person.
@@ -5266,16 +6034,16 @@ type Query {
   conferenceRole(id: ID!): Conferencerole!
 
   """List all conferenceRoles"""
-  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
   """Get a single conferenceSupervisor by ID"""
   conferenceSupervisor(id: ID!): Conferencesupervisor!
 
   """List all conferenceSupervisors"""
-  conferenceSupervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  conferenceSupervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
 
   """List all conferences"""
-  conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
 
   """
   The groups of the level below `query.path` of a grouped team table, with how many rows each holds, at most 1000; empty when the query groups no further. Who may ask is as for `dataTablePage`.
@@ -5340,10 +6108,10 @@ type Query {
   delegationMember(id: ID!): Delegationmember!
 
   """List all delegationMembers"""
-  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
 
   """List all delegations"""
-  delegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: String, where: DelegationWhereInputArgument): [Delegation!]!
+  delegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: DelegationSearchInputArgument, where: DelegationWhereInputArgument): [Delegation!]!
 
   """Count all delegations"""
   delegationsCount(where: DelegationWhereInputArgument): Int!
@@ -5352,7 +6120,7 @@ type Query {
   emailLog(id: ID!): Emaillog!
 
   """List all emailLogs"""
-  emailLogs(limit: Int, offset: Int, orderBy: EmaillogOrderInputArgument, search: String, where: EmaillogWhereInputArgument): [Emaillog!]!
+  emailLogs(limit: Int, offset: Int, orderBy: EmaillogOrderInputArgument, search: EmaillogSearchInputArgument, where: EmaillogWhereInputArgument): [Emaillog!]!
 
   """
   A mail of `kind` as it would look, addressed to the caller with made-up details: in `locale` (else the caller's), with the text being edited when `draft` is set (else what is stored), and with `footer` as the footer when given (else the stored one; empty for none).
@@ -5444,13 +6212,13 @@ type Query {
   instanceLink(id: ID!): Instancelink!
 
   """List all instanceLinks"""
-  instanceLinks(limit: Int, offset: Int, orderBy: InstancelinkOrderInputArgument, search: String, where: InstancelinkWhereInputArgument): [Instancelink!]!
+  instanceLinks(limit: Int, offset: Int, orderBy: InstancelinkOrderInputArgument, search: InstancelinkSearchInputArgument, where: InstancelinkWhereInputArgument): [Instancelink!]!
 
   """Where to send the browser to end the session at the identity provider."""
   logoutUrl: String!
 
   """List all mcpAuditEntries"""
-  mcpAuditEntries(limit: Int, offset: Int, orderBy: McpauditentryOrderInputArgument, search: String, where: McpauditentryWhereInputArgument): [Mcpauditentry!]!
+  mcpAuditEntries(limit: Int, offset: Int, orderBy: McpauditentryOrderInputArgument, search: McpauditentrySearchInputArgument, where: McpauditentryWhereInputArgument): [Mcpauditentry!]!
 
   """Get a single mcpAuditEntry by ID"""
   mcpAuditEntry(id: ID!): Mcpauditentry!
@@ -5510,7 +6278,7 @@ type Query {
   nation(id: ID!): Nation!
 
   """List all nations"""
-  nations(limit: Int, offset: Int, orderBy: NationOrderInputArgument, search: String, where: NationWhereInputArgument): [Nation!]!
+  nations(limit: Int, offset: Int, orderBy: NationOrderInputArgument, search: NationSearchInputArgument, where: NationWhereInputArgument): [Nation!]!
 
   """
   The session as the client should see it, without a round trip to the identity provider; while impersonating, the impersonated person. Claims that vary by provider are narrowed rather than trusted, so a provider that omits or reshapes one yields null instead of a type error at the boundary.
@@ -5537,7 +6305,7 @@ type Query {
   paper(id: ID!): Paper!
 
   """List all papers"""
-  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
 
   """Count all papers"""
   papersCount(where: PaperWhereInputArgument): Int!
@@ -5546,7 +6314,7 @@ type Query {
   paymentTransaction(id: ID!): Paymenttransaction!
 
   """List all paymentTransactions"""
-  paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: String, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
+  paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
 
   """
   The mails a person is owed in the conference right now, switched on or not, with how each went so far. Reminders count any time before their date: they can be sent early by hand. For participant care of the conference; FORBIDDEN otherwise.
@@ -5563,13 +6331,13 @@ type Query {
   place(id: ID!): Place!
 
   """List all places"""
-  places(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: String, where: PlaceWhereInputArgument): [Place!]!
+  places(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: PlaceSearchInputArgument, where: PlaceWhereInputArgument): [Place!]!
 
   """Get a single possibleDuplicate by ID"""
   possibleDuplicate(id: ID!): Possibleduplicate!
 
   """List all possibleDuplicates"""
-  possibleDuplicates(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: String, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+  possibleDuplicates(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
 
   """
   Shows whose supervision a participant is about to accept, before they connect. Like `previewDelegation`, the connection code is the authorisation, but the caller has to take part in the conference already (FORBIDDEN otherwise), so an arbitrary signed-in user cannot probe codes. A wrong code answers NOT_FOUND (ten in ten minutes: TOO_MANY_ATTEMPTS).
@@ -5585,7 +6353,7 @@ type Query {
   resolution(id: ID!): Resolution!
 
   """List all resolutions"""
-  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: String, where: ResolutionWhereInputArgument): [Resolution!]!
+  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: ResolutionSearchInputArgument, where: ResolutionWhereInputArgument): [Resolution!]!
 
   """
   Top ten reviewers of a conference, ranked by how often they got to a paper first, under anonymised names. For the paper team only (FORBIDDEN otherwise).
@@ -5596,13 +6364,13 @@ type Query {
   reviewerSnippet(id: ID!): Reviewersnippet!
 
   """List all reviewerSnippets"""
-  reviewerSnippets(limit: Int, offset: Int, orderBy: ReviewersnippetOrderInputArgument, search: String, where: ReviewersnippetWhereInputArgument): [Reviewersnippet!]!
+  reviewerSnippets(limit: Int, offset: Int, orderBy: ReviewersnippetOrderInputArgument, search: ReviewersnippetSearchInputArgument, where: ReviewersnippetWhereInputArgument): [Reviewersnippet!]!
 
   """Get a single roleApplication by ID"""
   roleApplication(id: ID!): Roleapplication!
 
   """List all roleApplications"""
-  roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: String, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
+  roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: RoleapplicationSearchInputArgument, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
 
   """
   Looks a scanned code up for the entrance scanner: a digital nametag's signed code, which has to be genuine, current and of this conference (INVALID_INPUT otherwise), or a user id - a printed nametag's barcode, or a person picked by hand. Any team member may use it, which the scanner is for (FORBIDDEN for anybody else), so it answers with this fixed set of fields instead of letting the caller read the participant's user and status rows, which only participant care may - and only for people with a part in the conference; anybody else is "not found". With a session it also tells whether the person picked one of the survey options the session expects; the titles come along, since the team members working the scanner may not read the survey itself. The check itself is made here: `issues`, `checkPassed` and `mayRecordAnyway` are what the scanner shows and acts on.
@@ -5635,13 +6403,13 @@ type Query {
   schoolSuggestion(id: ID!): Schoolsuggestion!
 
   """List all schoolSuggestions"""
-  schoolSuggestions(limit: Int, offset: Int, orderBy: SchoolsuggestionOrderInputArgument, search: String, where: SchoolsuggestionWhereInputArgument): [Schoolsuggestion!]!
+  schoolSuggestions(limit: Int, offset: Int, orderBy: SchoolsuggestionOrderInputArgument, search: SchoolsuggestionSearchInputArgument, where: SchoolsuggestionWhereInputArgument): [Schoolsuggestion!]!
 
   """List all schools"""
-  schools(limit: Int, offset: Int, orderBy: SchoolOrderInputArgument, search: String, where: SchoolWhereInputArgument): [School!]!
+  schools(limit: Int, offset: Int, orderBy: SchoolOrderInputArgument, search: SchoolSearchInputArgument, where: SchoolWhereInputArgument): [School!]!
 
   """List all searchHistories"""
-  searchHistories(limit: Int, offset: Int, orderBy: SearchhistoryOrderInputArgument, search: String, where: SearchhistoryWhereInputArgument): [Searchhistory!]!
+  searchHistories(limit: Int, offset: Int, orderBy: SearchhistoryOrderInputArgument, search: SearchhistorySearchInputArgument, where: SearchhistoryWhereInputArgument): [Searchhistory!]!
 
   """Get a single searchHistory by ID"""
   searchHistory(id: ID!): Searchhistory!
@@ -5748,7 +6516,7 @@ type Query {
   singleParticipant(id: ID!): Singleparticipant!
 
   """List all singleParticipants"""
-  singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
 
   """
   Whether supervisors may sign themselves up to the conference right now: in every stage until it is over. Readable by anyone, so the supervisor page can say so to someone who cannot read the conference; it tells nothing else about it. False for an unknown conference.
@@ -5759,19 +6527,19 @@ type Query {
   surveyAnswer(id: ID!): Surveyanswer!
 
   """List all surveyAnswers"""
-  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: String, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
+  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: SurveyanswerSearchInputArgument, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
 
   """Get a single surveyOption by ID"""
   surveyOption(id: ID!): Surveyoption!
 
   """List all surveyOptions"""
-  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: String, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
+  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: SurveyoptionSearchInputArgument, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
 
   """Get a single surveyQuestion by ID"""
   surveyQuestion(id: ID!): Surveyquestion!
 
   """List all surveyQuestions"""
-  surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: String, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
+  surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: SurveyquestionSearchInputArgument, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
 
   """Get a single tableView by ID"""
   tableView(id: ID!): Tableview!
@@ -5780,16 +6548,16 @@ type Query {
   tableViewDefault(id: ID!): Tableviewdefault!
 
   """List all tableViewDefaults"""
-  tableViewDefaults(limit: Int, offset: Int, orderBy: TableviewdefaultOrderInputArgument, search: String, where: TableviewdefaultWhereInputArgument): [Tableviewdefault!]!
+  tableViewDefaults(limit: Int, offset: Int, orderBy: TableviewdefaultOrderInputArgument, search: TableviewdefaultSearchInputArgument, where: TableviewdefaultWhereInputArgument): [Tableviewdefault!]!
 
   """List all tableViews"""
-  tableViews(limit: Int, offset: Int, orderBy: TableviewOrderInputArgument, search: String, where: TableviewWhereInputArgument): [Tableview!]!
+  tableViews(limit: Int, offset: Int, orderBy: TableviewOrderInputArgument, search: TableviewSearchInputArgument, where: TableviewWhereInputArgument): [Tableview!]!
 
   """Get a single teamFunction by ID"""
   teamFunction(id: ID!): Teamfunction!
 
   """List all teamFunctions"""
-  teamFunctions(limit: Int, offset: Int, orderBy: TeamfunctionOrderInputArgument, search: String, where: TeamfunctionWhereInputArgument): [Teamfunction!]!
+  teamFunctions(limit: Int, offset: Int, orderBy: TeamfunctionOrderInputArgument, search: TeamfunctionSearchInputArgument, where: TeamfunctionWhereInputArgument): [Teamfunction!]!
 
   """Get a single teamMember by ID"""
   teamMember(id: ID!): Teammember!
@@ -5798,10 +6566,10 @@ type Query {
   teamMemberInvitation(id: ID!): Teammemberinvitation!
 
   """List all teamMemberInvitations"""
-  teamMemberInvitations(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: String, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
+  teamMemberInvitations(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
 
   """List all teamMembers"""
-  teamMembers(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: String, where: TeammemberWhereInputArgument): [Teammember!]!
+  teamMembers(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: TeammemberSearchInputArgument, where: TeammemberWhereInputArgument): [Teammember!]!
 
   """Count all teamMembers"""
   teamMembersCount(where: TeammemberWhereInputArgument): Int!
@@ -5810,10 +6578,10 @@ type Query {
   user(id: ID!): User!
 
   """List all users"""
-  users(limit: Int, offset: Int, orderBy: UserOrderInputArgument, search: String, where: UserWhereInputArgument): [User!]!
+  users(limit: Int, offset: Int, orderBy: UserOrderInputArgument, search: UserSearchInputArgument, where: UserWhereInputArgument): [User!]!
 
   """List all waitingListEntries"""
-  waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: String, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
+  waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
 
   """Count all waitingListEntries"""
   waitingListEntriesCount(where: WaitinglistentryWhereInputArgument): Int!
@@ -5875,6 +6643,28 @@ input ResolutionOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of resolution the search can look at"""
+enum ResolutionSearchFieldEnum {
+  chasePaperId
+  chaseSnapshotId
+  committeeId
+  conferenceId
+  fileId
+  id
+  title
+}
+
+"""
+Fuzzy search on resolution, ranked by how close the columns are to the term
+"""
+input ResolutionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ResolutionSearchFieldEnum!]
+  term: String!
+}
+
 input ResolutionWhereInputArgument {
   AND: [ResolutionWhereInputArgument!]
   NOT: ResolutionWhereInputArgument
@@ -5926,6 +6716,24 @@ input ReviewersnippetOrderInputArgument {
   userId: SortingParameter
 }
 
+"""A column of reviewerSnippet the search can look at"""
+enum ReviewersnippetSearchFieldEnum {
+  id
+  name
+  userId
+}
+
+"""
+Fuzzy search on reviewerSnippet, ranked by how close the columns are to the term
+"""
+input ReviewersnippetSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [ReviewersnippetSearchFieldEnum!]
+  term: String!
+}
+
 input ReviewersnippetWhereInputArgument {
   AND: [ReviewersnippetWhereInputArgument!]
   NOT: ReviewersnippetWhereInputArgument
@@ -5972,6 +6780,24 @@ input RoleapplicationOrderInputArgument {
   rank: SortingParameter
   roleId: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of roleApplication the search can look at"""
+enum RoleapplicationSearchFieldEnum {
+  delegationId
+  id
+  roleId
+}
+
+"""
+Fuzzy search on roleApplication, ranked by how close the columns are to the term
+"""
+input RoleapplicationSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [RoleapplicationSearchFieldEnum!]
+  term: String!
 }
 
 input RoleapplicationWhereInputArgument {
@@ -6111,7 +6937,7 @@ type School {
   notes: String
 
   """Get the conferenceParticipants related to this school"""
-  participants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
+  participants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
   region: String
 
   """
@@ -6122,7 +6948,7 @@ type School {
   updatedAt: DateTime!
 
   """Get the waitingListEntries related to this school"""
-  waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: String, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
+  waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
   website: String
   zip: String
 }
@@ -6169,6 +6995,24 @@ input SchoolOrderInputArgument {
   zip: SortingParameter
 }
 
+"""A column of school the search can look at"""
+enum SchoolSearchFieldEnum {
+  city
+  id
+  name
+}
+
+"""
+Fuzzy search on school, ranked by how close the columns are to the term
+"""
+input SchoolSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SchoolSearchFieldEnum!]
+  term: String!
+}
+
 input SchoolWhereInputArgument {
   AND: [SchoolWhereInputArgument!]
   NOT: SchoolWhereInputArgument
@@ -6210,7 +7054,7 @@ type Schoolsuggestion {
   updatedAt: DateTime!
 
   """Get the schoolSuggestionVariants related to this schoolSuggestion"""
-  variants(limit: Int, offset: Int, orderBy: SchoolsuggestionvariantOrderInputArgument, search: String, where: SchoolsuggestionvariantWhereInputArgument): [Schoolsuggestionvariant!]!
+  variants(limit: Int, offset: Int, orderBy: SchoolsuggestionvariantOrderInputArgument, search: SchoolsuggestionvariantSearchInputArgument, where: SchoolsuggestionvariantWhereInputArgument): [Schoolsuggestionvariant!]!
 }
 
 input SchoolsuggestionOrderInputArgument {
@@ -6221,6 +7065,24 @@ input SchoolsuggestionOrderInputArgument {
   key: SortingParameter
   similarity: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of schoolSuggestion the search can look at"""
+enum SchoolsuggestionSearchFieldEnum {
+  conferenceId
+  id
+  key
+}
+
+"""
+Fuzzy search on schoolSuggestion, ranked by how close the columns are to the term
+"""
+input SchoolsuggestionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SchoolsuggestionSearchFieldEnum!]
+  term: String!
 }
 
 input SchoolsuggestionWhereInputArgument {
@@ -6267,6 +7129,24 @@ input SchoolsuggestionvariantOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of schoolSuggestionVariant the search can look at"""
+enum SchoolsuggestionvariantSearchFieldEnum {
+  id
+  schoolId
+  suggestionId
+}
+
+"""
+Fuzzy search on schoolSuggestionVariant, ranked by how close the columns are to the term
+"""
+input SchoolsuggestionvariantSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SchoolsuggestionvariantSearchFieldEnum!]
+  term: String!
+}
+
 input SchoolsuggestionvariantWhereInputArgument {
   AND: [SchoolsuggestionvariantWhereInputArgument!]
   NOT: SchoolsuggestionvariantWhereInputArgument
@@ -6306,6 +7186,27 @@ input SearchhistoryOrderInputArgument {
   resultId: SortingParameter
   updatedAt: SortingParameter
   userId: SortingParameter
+}
+
+"""A column of searchHistory the search can look at"""
+enum SearchhistorySearchFieldEnum {
+  conferenceId
+  id
+  label
+  originId
+  resultId
+  userId
+}
+
+"""
+Fuzzy search on searchHistory, ranked by how close the columns are to the term
+"""
+input SearchhistorySearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SearchhistorySearchFieldEnum!]
+  term: String!
 }
 
 input SearchhistoryWhereInputArgument {
@@ -6476,7 +7377,7 @@ type Singleparticipant {
   applied: Boolean!
 
   """Get the conferenceRoles related to this singleParticipant"""
-  appliedForRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  appliedForRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
   """Get the conferenceRoles related to this singleParticipant"""
   assignedRole(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
@@ -6505,7 +7406,7 @@ type Singleparticipant {
   search_distance: Float
 
   """Get the conferenceSupervisors related to this singleParticipant"""
-  supervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  supervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
   updatedAt: DateTime!
 
   """Get the users related to this singleParticipant"""
@@ -6521,6 +7422,26 @@ input SingleparticipantOrderInputArgument {
   id: SortingParameter
   motivation: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of singleParticipant the search can look at"""
+enum SingleparticipantSearchFieldEnum {
+  assignedRoleId
+  conferenceParticipantId
+  experience
+  id
+  motivation
+}
+
+"""
+Fuzzy search on singleParticipant, ranked by how close the columns are to the term
+"""
+input SingleparticipantSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SingleparticipantSearchFieldEnum!]
+  term: String!
 }
 
 input SingleparticipantWhereInputArgument {
@@ -7202,37 +8123,37 @@ enum StatsFilter {
 
 type Storedfile {
   """Get the announcementAttachments related to this storedFile"""
-  announcementAttachmentOf(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: String, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
+  announcementAttachmentOf(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: AnnouncementattachmentSearchInputArgument, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
 
   """Get the conferences related to this storedFile"""
-  certificateOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  certificateOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
 
   """Get the conferences related to this storedFile"""
-  contractOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  contractOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   createdAt: DateTime!
 
   """Get the conferences related to this storedFile"""
-  emblemOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  emblemOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   fileName: String
 
   """Get the conferences related to this storedFile"""
-  guardianConsentOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  guardianConsentOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   id: ID!
 
   """Get the conferences related to this storedFile"""
-  imageOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  imageOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   key: String!
 
   """Get the conferences related to this storedFile"""
-  logoOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  logoOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
 
   """Get the conferences related to this storedFile"""
-  mediaConsentOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  mediaConsentOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   mimeType: String!
   purpose: String!
 
   """Get the resolutions related to this storedFile"""
-  resolutionOf(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: String, where: ResolutionWhereInputArgument): [Resolution!]!
+  resolutionOf(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: ResolutionSearchInputArgument, where: ResolutionWhereInputArgument): [Resolution!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -7240,11 +8161,11 @@ type Storedfile {
   search_distance: Float
 
   """Get the places related to this storedFile"""
-  sitePlanOf(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: String, where: PlaceWhereInputArgument): [Place!]!
+  sitePlanOf(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: PlaceSearchInputArgument, where: PlaceWhereInputArgument): [Place!]!
   size: Int!
 
   """Get the conferences related to this storedFile"""
-  termsAndConditionsOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  termsAndConditionsOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   updatedAt: DateTime!
 
   """
@@ -7345,13 +8266,13 @@ type Subscription {
   announcementFeed(conferenceId: ID!): [AnnouncementFeedItem!]!
 
   """List all announcements"""
-  announcements(limit: Int, offset: Int, orderBy: AnnouncementOrderInputArgument, search: String, where: AnnouncementWhereInputArgument): [Announcement!]!
+  announcements(limit: Int, offset: Int, orderBy: AnnouncementOrderInputArgument, search: AnnouncementSearchInputArgument, where: AnnouncementWhereInputArgument): [Announcement!]!
 
   """Get a single assignmentReview by ID"""
   assignmentReview(id: ID!): Assignmentreview!
 
   """List all assignmentReviews"""
-  assignmentReviews(limit: Int, offset: Int, orderBy: AssignmentreviewOrderInputArgument, search: String, where: AssignmentreviewWhereInputArgument): [Assignmentreview!]!
+  assignmentReviews(limit: Int, offset: Int, orderBy: AssignmentreviewOrderInputArgument, search: AssignmentreviewSearchInputArgument, where: AssignmentreviewWhereInputArgument): [Assignmentreview!]!
 
   """Count all assignmentReviews"""
   assignmentReviewsCount(where: AssignmentreviewWhereInputArgument): Int!
@@ -7360,22 +8281,22 @@ type Subscription {
   assignmentSingleRole(id: ID!): Assignmentsinglerole!
 
   """List all assignmentSingleRoles"""
-  assignmentSingleRoles(limit: Int, offset: Int, orderBy: AssignmentsingleroleOrderInputArgument, search: String, where: AssignmentsingleroleWhereInputArgument): [Assignmentsinglerole!]!
+  assignmentSingleRoles(limit: Int, offset: Int, orderBy: AssignmentsingleroleOrderInputArgument, search: AssignmentsingleroleSearchInputArgument, where: AssignmentsingleroleWhereInputArgument): [Assignmentsinglerole!]!
 
   """Get a single assignmentUnit by ID"""
   assignmentUnit(id: ID!): Assignmentunit!
 
   """List all assignmentUnits"""
-  assignmentUnits(limit: Int, offset: Int, orderBy: AssignmentunitOrderInputArgument, search: String, where: AssignmentunitWhereInputArgument): [Assignmentunit!]!
+  assignmentUnits(limit: Int, offset: Int, orderBy: AssignmentunitOrderInputArgument, search: AssignmentunitSearchInputArgument, where: AssignmentunitWhereInputArgument): [Assignmentunit!]!
 
   """Get a single assignmentWeight by ID"""
   assignmentWeight(id: ID!): Assignmentweights!
 
   """List all assignmentWeights"""
-  assignmentWeights(limit: Int, offset: Int, orderBy: AssignmentweightsOrderInputArgument, search: String, where: AssignmentweightsWhereInputArgument): [Assignmentweights!]!
+  assignmentWeights(limit: Int, offset: Int, orderBy: AssignmentweightsOrderInputArgument, search: AssignmentweightsSearchInputArgument, where: AssignmentweightsWhereInputArgument): [Assignmentweights!]!
 
   """List all attendanceEntries"""
-  attendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: String, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
+  attendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: AttendanceentrySearchInputArgument, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
 
   """Get a single attendanceEntry by ID"""
   attendanceEntry(id: ID!): Attendanceentry!
@@ -7384,16 +8305,16 @@ type Subscription {
   attendanceSession(id: ID!): Attendancesession!
 
   """List all attendanceSessions"""
-  attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: String, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
+  attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
 
   """Get a single calendarDay by ID"""
   calendarDay(id: ID!): Calendarday!
 
   """List all calendarDays"""
-  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: String, where: CalendardayWhereInputArgument): [Calendarday!]!
+  calendarDays(limit: Int, offset: Int, orderBy: CalendardayOrderInputArgument, search: CalendardaySearchInputArgument, where: CalendardayWhereInputArgument): [Calendarday!]!
 
   """List all calendarEntries"""
-  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: String, where: CalendarentryWhereInputArgument): [Calendarentry!]!
+  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: CalendarentrySearchInputArgument, where: CalendarentryWhereInputArgument): [Calendarentry!]!
 
   """Get a single calendarEntry by ID"""
   calendarEntry(id: ID!): Calendarentry!
@@ -7402,7 +8323,7 @@ type Subscription {
   calendarTrack(id: ID!): Calendartrack!
 
   """List all calendarTracks"""
-  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+  calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: CalendartrackSearchInputArgument, where: CalendartrackWhereInputArgument): [Calendartrack!]!
 
   """Get a single chat by ID"""
   chat(id: ID!): Chat!
@@ -7411,16 +8332,16 @@ type Subscription {
   chatMessage(id: ID!): Chatmessage!
 
   """List all chatMessages"""
-  chatMessages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: String, where: ChatmessageWhereInputArgument): [Chatmessage!]!
+  chatMessages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: ChatmessageSearchInputArgument, where: ChatmessageWhereInputArgument): [Chatmessage!]!
 
   """Get a single chatReport by ID"""
   chatReport(id: ID!): Chatreport!
 
   """List all chatReports"""
-  chatReports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: String, where: ChatreportWhereInputArgument): [Chatreport!]!
+  chatReports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: ChatreportSearchInputArgument, where: ChatreportWhereInputArgument): [Chatreport!]!
 
   """List all chats"""
-  chats(limit: Int, offset: Int, orderBy: ChatOrderInputArgument, search: String, where: ChatWhereInputArgument): [Chat!]!
+  chats(limit: Int, offset: Int, orderBy: ChatOrderInputArgument, search: ChatSearchInputArgument, where: ChatWhereInputArgument): [Chat!]!
 
   """Get a single committee by ID"""
   committee(id: ID!): Committee!
@@ -7429,10 +8350,10 @@ type Subscription {
   committeeAgendaItem(id: ID!): Committeeagendaitem!
 
   """List all committeeAgendaItems"""
-  committeeAgendaItems(limit: Int, offset: Int, orderBy: CommitteeagendaitemOrderInputArgument, search: String, where: CommitteeagendaitemWhereInputArgument): [Committeeagendaitem!]!
+  committeeAgendaItems(limit: Int, offset: Int, orderBy: CommitteeagendaitemOrderInputArgument, search: CommitteeagendaitemSearchInputArgument, where: CommitteeagendaitemWhereInputArgument): [Committeeagendaitem!]!
 
   """List all committees"""
-  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: String, where: CommitteeWhereInputArgument): [Committee!]!
+  committees(limit: Int, offset: Int, orderBy: CommitteeOrderInputArgument, search: CommitteeSearchInputArgument, where: CommitteeWhereInputArgument): [Committee!]!
 
   """Get a single conference by ID"""
   conference(id: ID!): Conference!
@@ -7441,40 +8362,40 @@ type Subscription {
   conferenceEmailFooter(id: ID!): Conferenceemailfooter!
 
   """List all conferenceEmailFooters"""
-  conferenceEmailFooters(limit: Int, offset: Int, orderBy: ConferenceemailfooterOrderInputArgument, search: String, where: ConferenceemailfooterWhereInputArgument): [Conferenceemailfooter!]!
+  conferenceEmailFooters(limit: Int, offset: Int, orderBy: ConferenceemailfooterOrderInputArgument, search: ConferenceemailfooterSearchInputArgument, where: ConferenceemailfooterWhereInputArgument): [Conferenceemailfooter!]!
 
   """Get a single conferenceEmailSetting by ID"""
   conferenceEmailSetting(id: ID!): Conferenceemailsetting!
 
   """List all conferenceEmailSettings"""
-  conferenceEmailSettings(limit: Int, offset: Int, orderBy: ConferenceemailsettingOrderInputArgument, search: String, where: ConferenceemailsettingWhereInputArgument): [Conferenceemailsetting!]!
+  conferenceEmailSettings(limit: Int, offset: Int, orderBy: ConferenceemailsettingOrderInputArgument, search: ConferenceemailsettingSearchInputArgument, where: ConferenceemailsettingWhereInputArgument): [Conferenceemailsetting!]!
 
   """Get a single conferenceEmailText by ID"""
   conferenceEmailText(id: ID!): Conferenceemailtext!
 
   """List all conferenceEmailTexts"""
-  conferenceEmailTexts(limit: Int, offset: Int, orderBy: ConferenceemailtextOrderInputArgument, search: String, where: ConferenceemailtextWhereInputArgument): [Conferenceemailtext!]!
+  conferenceEmailTexts(limit: Int, offset: Int, orderBy: ConferenceemailtextOrderInputArgument, search: ConferenceemailtextSearchInputArgument, where: ConferenceemailtextWhereInputArgument): [Conferenceemailtext!]!
 
   """Get a single conferenceParticipant by ID"""
   conferenceParticipant(id: ID!): Conferenceparticipant!
 
   """List all conferenceParticipants"""
-  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
+  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """Get a single conferenceRole by ID"""
   conferenceRole(id: ID!): Conferencerole!
 
   """List all conferenceRoles"""
-  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: String, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+  conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
   """Get a single conferenceSupervisor by ID"""
   conferenceSupervisor(id: ID!): Conferencesupervisor!
 
   """List all conferenceSupervisors"""
-  conferenceSupervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  conferenceSupervisors(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
 
   """List all conferences"""
-  conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: String, where: ConferenceWhereInputArgument): [Conference!]!
+  conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
 
   """Get a single delegation by ID"""
   delegation(id: ID!): Delegation!
@@ -7483,10 +8404,10 @@ type Subscription {
   delegationMember(id: ID!): Delegationmember!
 
   """List all delegationMembers"""
-  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  delegationMembers(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
 
   """List all delegations"""
-  delegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: String, where: DelegationWhereInputArgument): [Delegation!]!
+  delegations(limit: Int, offset: Int, orderBy: DelegationOrderInputArgument, search: DelegationSearchInputArgument, where: DelegationWhereInputArgument): [Delegation!]!
 
   """Count all delegations"""
   delegationsCount(where: DelegationWhereInputArgument): Int!
@@ -7495,16 +8416,16 @@ type Subscription {
   emailLog(id: ID!): Emaillog!
 
   """List all emailLogs"""
-  emailLogs(limit: Int, offset: Int, orderBy: EmaillogOrderInputArgument, search: String, where: EmaillogWhereInputArgument): [Emaillog!]!
+  emailLogs(limit: Int, offset: Int, orderBy: EmaillogOrderInputArgument, search: EmaillogSearchInputArgument, where: EmaillogWhereInputArgument): [Emaillog!]!
 
   """Get a single instanceLink by ID"""
   instanceLink(id: ID!): Instancelink!
 
   """List all instanceLinks"""
-  instanceLinks(limit: Int, offset: Int, orderBy: InstancelinkOrderInputArgument, search: String, where: InstancelinkWhereInputArgument): [Instancelink!]!
+  instanceLinks(limit: Int, offset: Int, orderBy: InstancelinkOrderInputArgument, search: InstancelinkSearchInputArgument, where: InstancelinkWhereInputArgument): [Instancelink!]!
 
   """List all mcpAuditEntries"""
-  mcpAuditEntries(limit: Int, offset: Int, orderBy: McpauditentryOrderInputArgument, search: String, where: McpauditentryWhereInputArgument): [Mcpauditentry!]!
+  mcpAuditEntries(limit: Int, offset: Int, orderBy: McpauditentryOrderInputArgument, search: McpauditentrySearchInputArgument, where: McpauditentryWhereInputArgument): [Mcpauditentry!]!
 
   """Get a single mcpAuditEntry by ID"""
   mcpAuditEntry(id: ID!): Mcpauditentry!
@@ -7513,13 +8434,13 @@ type Subscription {
   nation(id: ID!): Nation!
 
   """List all nations"""
-  nations(limit: Int, offset: Int, orderBy: NationOrderInputArgument, search: String, where: NationWhereInputArgument): [Nation!]!
+  nations(limit: Int, offset: Int, orderBy: NationOrderInputArgument, search: NationSearchInputArgument, where: NationWhereInputArgument): [Nation!]!
 
   """Get a single paper by ID"""
   paper(id: ID!): Paper!
 
   """List all papers"""
-  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
 
   """Count all papers"""
   papersCount(where: PaperWhereInputArgument): Int!
@@ -7528,37 +8449,37 @@ type Subscription {
   paymentTransaction(id: ID!): Paymenttransaction!
 
   """List all paymentTransactions"""
-  paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: String, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
+  paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
 
   """Get a single place by ID"""
   place(id: ID!): Place!
 
   """List all places"""
-  places(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: String, where: PlaceWhereInputArgument): [Place!]!
+  places(limit: Int, offset: Int, orderBy: PlaceOrderInputArgument, search: PlaceSearchInputArgument, where: PlaceWhereInputArgument): [Place!]!
 
   """Get a single possibleDuplicate by ID"""
   possibleDuplicate(id: ID!): Possibleduplicate!
 
   """List all possibleDuplicates"""
-  possibleDuplicates(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: String, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+  possibleDuplicates(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
 
   """Get a single resolution by ID"""
   resolution(id: ID!): Resolution!
 
   """List all resolutions"""
-  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: String, where: ResolutionWhereInputArgument): [Resolution!]!
+  resolutions(limit: Int, offset: Int, orderBy: ResolutionOrderInputArgument, search: ResolutionSearchInputArgument, where: ResolutionWhereInputArgument): [Resolution!]!
 
   """Get a single reviewerSnippet by ID"""
   reviewerSnippet(id: ID!): Reviewersnippet!
 
   """List all reviewerSnippets"""
-  reviewerSnippets(limit: Int, offset: Int, orderBy: ReviewersnippetOrderInputArgument, search: String, where: ReviewersnippetWhereInputArgument): [Reviewersnippet!]!
+  reviewerSnippets(limit: Int, offset: Int, orderBy: ReviewersnippetOrderInputArgument, search: ReviewersnippetSearchInputArgument, where: ReviewersnippetWhereInputArgument): [Reviewersnippet!]!
 
   """Get a single roleApplication by ID"""
   roleApplication(id: ID!): Roleapplication!
 
   """List all roleApplications"""
-  roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: String, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
+  roleApplications(limit: Int, offset: Int, orderBy: RoleapplicationOrderInputArgument, search: RoleapplicationSearchInputArgument, where: RoleapplicationWhereInputArgument): [Roleapplication!]!
 
   """Get a single school by ID"""
   school(id: ID!): School!
@@ -7567,13 +8488,13 @@ type Subscription {
   schoolSuggestion(id: ID!): Schoolsuggestion!
 
   """List all schoolSuggestions"""
-  schoolSuggestions(limit: Int, offset: Int, orderBy: SchoolsuggestionOrderInputArgument, search: String, where: SchoolsuggestionWhereInputArgument): [Schoolsuggestion!]!
+  schoolSuggestions(limit: Int, offset: Int, orderBy: SchoolsuggestionOrderInputArgument, search: SchoolsuggestionSearchInputArgument, where: SchoolsuggestionWhereInputArgument): [Schoolsuggestion!]!
 
   """List all schools"""
-  schools(limit: Int, offset: Int, orderBy: SchoolOrderInputArgument, search: String, where: SchoolWhereInputArgument): [School!]!
+  schools(limit: Int, offset: Int, orderBy: SchoolOrderInputArgument, search: SchoolSearchInputArgument, where: SchoolWhereInputArgument): [School!]!
 
   """List all searchHistories"""
-  searchHistories(limit: Int, offset: Int, orderBy: SearchhistoryOrderInputArgument, search: String, where: SearchhistoryWhereInputArgument): [Searchhistory!]!
+  searchHistories(limit: Int, offset: Int, orderBy: SearchhistoryOrderInputArgument, search: SearchhistorySearchInputArgument, where: SearchhistoryWhereInputArgument): [Searchhistory!]!
 
   """Get a single searchHistory by ID"""
   searchHistory(id: ID!): Searchhistory!
@@ -7582,25 +8503,25 @@ type Subscription {
   singleParticipant(id: ID!): Singleparticipant!
 
   """List all singleParticipants"""
-  singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
 
   """Get a single surveyAnswer by ID"""
   surveyAnswer(id: ID!): Surveyanswer!
 
   """List all surveyAnswers"""
-  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: String, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
+  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: SurveyanswerSearchInputArgument, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
 
   """Get a single surveyOption by ID"""
   surveyOption(id: ID!): Surveyoption!
 
   """List all surveyOptions"""
-  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: String, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
+  surveyOptions(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: SurveyoptionSearchInputArgument, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
 
   """Get a single surveyQuestion by ID"""
   surveyQuestion(id: ID!): Surveyquestion!
 
   """List all surveyQuestions"""
-  surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: String, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
+  surveyQuestions(limit: Int, offset: Int, orderBy: SurveyquestionOrderInputArgument, search: SurveyquestionSearchInputArgument, where: SurveyquestionWhereInputArgument): [Surveyquestion!]!
 
   """Get a single tableView by ID"""
   tableView(id: ID!): Tableview!
@@ -7609,16 +8530,16 @@ type Subscription {
   tableViewDefault(id: ID!): Tableviewdefault!
 
   """List all tableViewDefaults"""
-  tableViewDefaults(limit: Int, offset: Int, orderBy: TableviewdefaultOrderInputArgument, search: String, where: TableviewdefaultWhereInputArgument): [Tableviewdefault!]!
+  tableViewDefaults(limit: Int, offset: Int, orderBy: TableviewdefaultOrderInputArgument, search: TableviewdefaultSearchInputArgument, where: TableviewdefaultWhereInputArgument): [Tableviewdefault!]!
 
   """List all tableViews"""
-  tableViews(limit: Int, offset: Int, orderBy: TableviewOrderInputArgument, search: String, where: TableviewWhereInputArgument): [Tableview!]!
+  tableViews(limit: Int, offset: Int, orderBy: TableviewOrderInputArgument, search: TableviewSearchInputArgument, where: TableviewWhereInputArgument): [Tableview!]!
 
   """Get a single teamFunction by ID"""
   teamFunction(id: ID!): Teamfunction!
 
   """List all teamFunctions"""
-  teamFunctions(limit: Int, offset: Int, orderBy: TeamfunctionOrderInputArgument, search: String, where: TeamfunctionWhereInputArgument): [Teamfunction!]!
+  teamFunctions(limit: Int, offset: Int, orderBy: TeamfunctionOrderInputArgument, search: TeamfunctionSearchInputArgument, where: TeamfunctionWhereInputArgument): [Teamfunction!]!
 
   """Get a single teamMember by ID"""
   teamMember(id: ID!): Teammember!
@@ -7627,10 +8548,10 @@ type Subscription {
   teamMemberInvitation(id: ID!): Teammemberinvitation!
 
   """List all teamMemberInvitations"""
-  teamMemberInvitations(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: String, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
+  teamMemberInvitations(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
 
   """List all teamMembers"""
-  teamMembers(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: String, where: TeammemberWhereInputArgument): [Teammember!]!
+  teamMembers(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: TeammemberSearchInputArgument, where: TeammemberWhereInputArgument): [Teammember!]!
 
   """Count all teamMembers"""
   teamMembersCount(where: TeammemberWhereInputArgument): Int!
@@ -7639,10 +8560,10 @@ type Subscription {
   user(id: ID!): User!
 
   """List all users"""
-  users(limit: Int, offset: Int, orderBy: UserOrderInputArgument, search: String, where: UserWhereInputArgument): [User!]!
+  users(limit: Int, offset: Int, orderBy: UserOrderInputArgument, search: UserSearchInputArgument, where: UserWhereInputArgument): [User!]!
 
   """List all waitingListEntries"""
-  waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: String, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
+  waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
 
   """Count all waitingListEntries"""
   waitingListEntriesCount(where: WaitinglistentryWhereInputArgument): Int!
@@ -7686,6 +8607,25 @@ input SurveyanswerOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of surveyAnswer the search can look at"""
+enum SurveyanswerSearchFieldEnum {
+  conferenceParticipantId
+  id
+  optionId
+  questionId
+}
+
+"""
+Fuzzy search on surveyAnswer, ranked by how close the columns are to the term
+"""
+input SurveyanswerSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SurveyanswerSearchFieldEnum!]
+  term: String!
+}
+
 input SurveyanswerWhereInputArgument {
   AND: [SurveyanswerWhereInputArgument!]
   NOT: SurveyanswerWhereInputArgument
@@ -7704,10 +8644,10 @@ input SurveyanswerWhereInputArgument {
 
 type Surveyoption {
   """Get the attendanceSessions related to this surveyOption"""
-  attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: String, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
+  attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
 
   """Get the calendarEntries related to this surveyOption"""
-  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: String, where: CalendarentryWhereInputArgument): [Calendarentry!]!
+  calendarEntries(limit: Int, offset: Int, orderBy: CalendarentryOrderInputArgument, search: CalendarentrySearchInputArgument, where: CalendarentryWhereInputArgument): [Calendarentry!]!
 
   """
   How many participants picked this option - the survey result, in effect. Readable wherever the option is, so participants see how full it is.
@@ -7727,7 +8667,7 @@ type Surveyoption {
   search_distance: Float
 
   """Get the surveyAnswers related to this surveyOption"""
-  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: String, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
+  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: SurveyanswerSearchInputArgument, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
   title: String!
   updatedAt: DateTime!
   upperLimit: Int!
@@ -7741,6 +8681,25 @@ input SurveyoptionOrderInputArgument {
   title: SortingParameter
   updatedAt: SortingParameter
   upperLimit: SortingParameter
+}
+
+"""A column of surveyOption the search can look at"""
+enum SurveyoptionSearchFieldEnum {
+  description
+  id
+  questionId
+  title
+}
+
+"""
+Fuzzy search on surveyOption, ranked by how close the columns are to the term
+"""
+input SurveyoptionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SurveyoptionSearchFieldEnum!]
+  term: String!
 }
 
 input SurveyoptionWhereInputArgument {
@@ -7772,7 +8731,7 @@ type Surveyquestion {
   id: ID!
 
   """Get the surveyOptions related to this surveyQuestion"""
-  options(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: String, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
+  options(limit: Int, offset: Int, orderBy: SurveyoptionOrderInputArgument, search: SurveyoptionSearchInputArgument, where: SurveyoptionWhereInputArgument): [Surveyoption!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -7781,7 +8740,7 @@ type Surveyquestion {
   showSelectionOnDashboard: Boolean!
 
   """Get the surveyAnswers related to this surveyQuestion"""
-  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: String, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
+  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: SurveyanswerSearchInputArgument, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
   title: String!
   updatedAt: DateTime!
 }
@@ -7797,6 +8756,25 @@ input SurveyquestionOrderInputArgument {
   showSelectionOnDashboard: SortingParameter
   title: SortingParameter
   updatedAt: SortingParameter
+}
+
+"""A column of surveyQuestion the search can look at"""
+enum SurveyquestionSearchFieldEnum {
+  conferenceId
+  description
+  id
+  title
+}
+
+"""
+Fuzzy search on surveyQuestion, ranked by how close the columns are to the term
+"""
+input SurveyquestionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [SurveyquestionSearchFieldEnum!]
+  term: String!
 }
 
 input SurveyquestionWhereInputArgument {
@@ -7856,6 +8834,27 @@ input TableviewOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of tableView the search can look at"""
+enum TableviewSearchFieldEnum {
+  conferenceId
+  createdById
+  id
+  name
+  ownerUserId
+  tableKey
+}
+
+"""
+Fuzzy search on tableView, ranked by how close the columns are to the term
+"""
+input TableviewSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [TableviewSearchFieldEnum!]
+  term: String!
+}
+
 input TableviewWhereInputArgument {
   AND: [TableviewWhereInputArgument!]
   NOT: TableviewWhereInputArgument
@@ -7905,6 +8904,26 @@ input TableviewdefaultOrderInputArgument {
   viewId: SortingParameter
 }
 
+"""A column of tableViewDefault the search can look at"""
+enum TableviewdefaultSearchFieldEnum {
+  conferenceId
+  id
+  tableKey
+  userId
+  viewId
+}
+
+"""
+Fuzzy search on tableViewDefault, ranked by how close the columns are to the term
+"""
+input TableviewdefaultSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [TableviewdefaultSearchFieldEnum!]
+  term: String!
+}
+
 input TableviewdefaultWhereInputArgument {
   AND: [TableviewdefaultWhereInputArgument!]
   NOT: TableviewdefaultWhereInputArgument
@@ -7929,8 +8948,8 @@ enum TeamInvitationEmailStatus {
 
 type Teamfunction {
   """Get the committees related to this teamFunction"""
-  committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee!
-  committeeId: ID!
+  committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee
+  committeeId: ID
   createdAt: DateTime!
   id: ID!
   kind: TeamfunctionkindEnum!
@@ -7955,6 +8974,24 @@ input TeamfunctionOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of teamFunction the search can look at"""
+enum TeamfunctionSearchFieldEnum {
+  committeeId
+  id
+  teamMemberId
+}
+
+"""
+Fuzzy search on teamFunction, ranked by how close the columns are to the term
+"""
+input TeamfunctionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [TeamfunctionSearchFieldEnum!]
+  term: String!
+}
+
 input TeamfunctionWhereInputArgument {
   AND: [TeamfunctionWhereInputArgument!]
   NOT: TeamfunctionWhereInputArgument
@@ -7972,6 +9009,7 @@ input TeamfunctionWhereInputArgument {
 enum TeamfunctionkindEnum {
   CHAIR
   CONSULTANT
+  TRUSTED_PERSON
 }
 
 type Teammember {
@@ -7981,7 +9019,7 @@ type Teammember {
   createdAt: DateTime!
 
   """Get the teamFunctions related to this teamMember"""
-  functions(limit: Int, offset: Int, orderBy: TeamfunctionOrderInputArgument, search: String, where: TeamfunctionWhereInputArgument): [Teamfunction!]!
+  functions(limit: Int, offset: Int, orderBy: TeamfunctionOrderInputArgument, search: TeamfunctionSearchInputArgument, where: TeamfunctionWhereInputArgument): [Teamfunction!]!
   id: ID!
   role: TeamroleEnum!
 
@@ -8003,6 +9041,24 @@ input TeammemberOrderInputArgument {
   role: SortingParameter
   updatedAt: SortingParameter
   userId: SortingParameter
+}
+
+"""A column of teamMember the search can look at"""
+enum TeammemberSearchFieldEnum {
+  conferenceId
+  id
+  userId
+}
+
+"""
+Fuzzy search on teamMember, ranked by how close the columns are to the term
+"""
+input TeammemberSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [TeammemberSearchFieldEnum!]
+  term: String!
 }
 
 input TeammemberWhereInputArgument {
@@ -8068,6 +9124,27 @@ input TeammemberinvitationOrderInputArgument {
   usedAt: SortingParameter
 }
 
+"""A column of teamMemberInvitation the search can look at"""
+enum TeammemberinvitationSearchFieldEnum {
+  acceptedById
+  conferenceId
+  email
+  id
+  invitedById
+  token
+}
+
+"""
+Fuzzy search on teamMemberInvitation, ranked by how close the columns are to the term
+"""
+input TeammemberinvitationSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [TeammemberinvitationSearchFieldEnum!]
+  term: String!
+}
+
 input TeammemberinvitationWhereInputArgument {
   AND: [TeammemberinvitationWhereInputArgument!]
   NOT: TeammemberinvitationWhereInputArgument
@@ -8122,7 +9199,7 @@ type User {
   city: String
 
   """Get the conferenceParticipants related to this user"""
-  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: String, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
+  conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """
   How many conferences this person actually took part in - registrations that never got a seat do not count, which is what makes this a useful "is this a returning participant" signal in the admin UI. Null unless the caller is the person or has them in their care (participant care and project management of a conference they take part or wait in, system admins).
@@ -8130,21 +9207,21 @@ type User {
   conferenceParticipationsCount: Int
 
   """Get the conferenceSupervisors related to this user"""
-  conferenceSupervisor(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: String, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
+  conferenceSupervisor(limit: Int, offset: Int, orderBy: ConferencesupervisorOrderInputArgument, search: ConferencesupervisorSearchInputArgument, where: ConferencesupervisorWhereInputArgument): [Conferencesupervisor!]!
   country: String
   createdAt: DateTime!
 
   """Get the delegationMembers related to this user"""
-  delegationMemberships(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: String, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
+  delegationMemberships(limit: Int, offset: Int, orderBy: DelegationmemberOrderInputArgument, search: DelegationmemberSearchInputArgument, where: DelegationmemberWhereInputArgument): [Delegationmember!]!
 
   """Get the possibleDuplicates related to this user"""
-  duplicateDecisions(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: String, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+  duplicateDecisions(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
 
   """Get the possibleDuplicates related to this user"""
-  duplicatesAsCandidate(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: String, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+  duplicatesAsCandidate(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
 
   """Get the possibleDuplicates related to this user"""
-  duplicatesAsUser(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: String, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+  duplicatesAsUser(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
   email: String!
   emergencyContacts: String
   familyName: String!
@@ -8155,34 +9232,34 @@ type User {
   id: ID!
 
   """Get the teamMemberInvitations related to this user"""
-  invitationsAccepted(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: String, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
+  invitationsAccepted(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
 
   """Get the teamMemberInvitations related to this user"""
-  invitationsSent(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: String, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
+  invitationsSent(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
   locale: String!
   messageNotificationEmails: Boolean!
 
   """Get the paymentTransactions related to this user"""
-  ownPaymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: String, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
+  ownPaymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
 
   """Get the paperReviews related to this user"""
-  paperReviews(limit: Int, offset: Int, orderBy: PaperreviewOrderInputArgument, search: String, where: PaperreviewWhereInputArgument): [Paperreview!]!
+  paperReviews(limit: Int, offset: Int, orderBy: PaperreviewOrderInputArgument, search: PaperreviewSearchInputArgument, where: PaperreviewWhereInputArgument): [Paperreview!]!
 
   """Get the papers related to this user"""
-  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: String, where: PaperWhereInputArgument): [Paper!]!
+  papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
 
   """Get the userReferenceInPaymentTransactions related to this user"""
-  paymentTransactionsReferences(limit: Int, offset: Int, orderBy: UserreferenceinpaymenttransactionOrderInputArgument, search: String, where: UserreferenceinpaymenttransactionWhereInputArgument): [Userreferenceinpaymenttransaction!]!
+  paymentTransactionsReferences(limit: Int, offset: Int, orderBy: UserreferenceinpaymenttransactionOrderInputArgument, search: UserreferenceinpaymenttransactionSearchInputArgument, where: UserreferenceinpaymenttransactionWhereInputArgument): [Userreferenceinpaymenttransaction!]!
   phone: String
   preferredUsername: String!
   pronouns: String
 
   """Get the attendanceEntries related to this user"""
-  recordedAttendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: String, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
+  recordedAttendanceEntries(limit: Int, offset: Int, orderBy: AttendanceentryOrderInputArgument, search: AttendanceentrySearchInputArgument, where: AttendanceentryWhereInputArgument): [Attendanceentry!]!
   region: String
 
   """Get the reviewerSnippets related to this user"""
-  reviewerSnippets(limit: Int, offset: Int, orderBy: ReviewersnippetOrderInputArgument, search: String, where: ReviewersnippetWhereInputArgument): [Reviewersnippet!]!
+  reviewerSnippets(limit: Int, offset: Int, orderBy: ReviewersnippetOrderInputArgument, search: ReviewersnippetSearchInputArgument, where: ReviewersnippetWhereInputArgument): [Reviewersnippet!]!
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -8190,18 +9267,18 @@ type User {
   search_distance: Float
 
   """Get the singleParticipants related to this user"""
-  singleParticipant(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: String, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+  singleParticipant(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
   street: String
 
   """Get the surveyAnswers related to this user"""
-  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: String, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
+  surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: SurveyanswerSearchInputArgument, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
 
   """Get the teamMembers related to this user"""
-  teamMember(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: String, where: TeammemberWhereInputArgument): [Teammember!]!
+  teamMember(limit: Int, offset: Int, orderBy: TeammemberOrderInputArgument, search: TeammemberSearchInputArgument, where: TeammemberWhereInputArgument): [Teammember!]!
   updatedAt: DateTime!
 
   """Get the waitingListEntries related to this user"""
-  waitingListEntry(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: String, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
+  waitingListEntry(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
   wantsJoinTeamInformation: Boolean!
   wantsToReceiveGeneralInformation: Boolean!
   zip: String
@@ -8232,6 +9309,23 @@ input UserOrderInputArgument {
   wantsJoinTeamInformation: SortingParameter
   wantsToReceiveGeneralInformation: SortingParameter
   zip: SortingParameter
+}
+
+"""A column of user the search can look at"""
+enum UserSearchFieldEnum {
+  email
+  familyName
+  givenName
+  id
+}
+
+"""Fuzzy search on user, ranked by how close the columns are to the term"""
+input UserSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [UserSearchFieldEnum!]
+  term: String!
 }
 
 input UserWhereInputArgument {
@@ -8316,6 +9410,24 @@ input UserreferenceinpaymenttransactionOrderInputArgument {
   updatedAt: SortingParameter
 }
 
+"""A column of userReferenceInPaymentTransaction the search can look at"""
+enum UserreferenceinpaymenttransactionSearchFieldEnum {
+  conferenceParticipantId
+  id
+  paymentTransactionId
+}
+
+"""
+Fuzzy search on userReferenceInPaymentTransaction, ranked by how close the columns are to the term
+"""
+input UserreferenceinpaymenttransactionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [UserreferenceinpaymenttransactionSearchFieldEnum!]
+  term: String!
+}
+
 input UserreferenceinpaymenttransactionWhereInputArgument {
   AND: [UserreferenceinpaymenttransactionWhereInputArgument!]
   NOT: UserreferenceinpaymenttransactionWhereInputArgument
@@ -8370,6 +9482,28 @@ input WaitinglistentryOrderInputArgument {
   schoolId: SortingParameter
   updatedAt: SortingParameter
   userId: SortingParameter
+}
+
+"""A column of waitingListEntry the search can look at"""
+enum WaitinglistentrySearchFieldEnum {
+  conferenceId
+  experience
+  id
+  motivation
+  requests
+  schoolId
+  userId
+}
+
+"""
+Fuzzy search on waitingListEntry, ranked by how close the columns are to the term
+"""
+input WaitinglistentrySearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [WaitinglistentrySearchFieldEnum!]
+  term: String!
 }
 
 input WaitinglistentryWhereInputArgument {

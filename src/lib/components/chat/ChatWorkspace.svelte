@@ -42,12 +42,9 @@
 
 <div
 	class={[
-		'border-base-300 bg-base-100 grid overflow-hidden rounded-xl border shadow-sm md:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]',
-		'md:h-[max(28rem,calc(100dvh-var(--header-height,4rem)-18rem))]',
-		// on a phone an open chat takes the screen: the page around it steps back (`focused`)
-		selectedId
-			? 'max-md:h-[calc(100dvh-var(--header-height,4rem)-2.5rem)]'
-			: 'max-md:h-[max(24rem,calc(100dvh-var(--header-height,4rem)-18rem))]'
+		'chat-workspace border-base-300 bg-base-100 grid overflow-hidden rounded-xl border shadow-sm',
+		// on a phone an open chat takes the screen: the page around it steps back
+		selectedId && 'chat-open'
 	]}
 	data-testid="chat-workspace"
 >
@@ -91,3 +88,24 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	/* Fills the window below the page's header, and never gets too short to read a chat in. */
+	.chat-workspace {
+		--around: 18rem;
+		height: max(24rem, calc(100dvh - var(--header-height, 4rem) - var(--around)));
+	}
+
+	@media (width < 48rem) {
+		.chat-workspace.chat-open {
+			height: calc(100dvh - var(--header-height, 4rem) - 2.5rem);
+		}
+	}
+
+	@media (width >= 48rem) {
+		.chat-workspace {
+			grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+			height: max(28rem, calc(100dvh - var(--header-height, 4rem) - var(--around)));
+		}
+	}
+</style>

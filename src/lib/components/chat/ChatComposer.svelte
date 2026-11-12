@@ -8,10 +8,10 @@
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { conflictMessageOf } from '#lib/api/errorCodes';
 	import { CHAT_MESSAGE_MAX_LENGTH } from '#lib/helpers/chat';
 	import { refusalText } from '#lib/helpers/chatRefusalText';
 	import { m } from '#lib/paraglide/messages';
+	import { chatSendError } from './inboxChoice';
 
 	interface Props {
 		chatId: string;
@@ -20,24 +20,28 @@
 		onPaperSent?: () => void;
 	}
 
-	let { chatId, refusal, paperId = null, onPaperSent }: Props = $props();
+	let { chatId, refusal, paperId = null, onPaperSent = () => {} }: Props = $props();
 
 	let draft = $state('');
 	let sending = $state(false);
 	let field = $state<HTMLTextAreaElement>();
+
+	async function deliver(body: string) {
+		await client.mutate.sendChatMessage({ __args: { chatId, body, paperId }, id: true });
+		draft = '';
+		if (paperId) onPaperSent();
+		await tick();
+		field?.focus();
+	}
 
 	async function send() {
 		const body = draft.trim();
 		if (!body || sending) return;
 		sending = true;
 		try {
-			await client.mutate.sendChatMessage({ __args: { chatId, body, paperId }, id: true });
-			draft = '';
-			if (paperId) onPaperSent?.();
-			await tick();
-			field?.focus();
+			await deliver(body);
 		} catch (error) {
-			toast.error(conflictMessageOf(error) ?? m.chatSendFailed());
+			toast.error(chatSendError(error));
 		} finally {
 			sending = false;
 		}

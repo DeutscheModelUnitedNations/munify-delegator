@@ -136,7 +136,7 @@ Unter den Vorlagen lädst du im Abschnitt **Verabschiedete Resolutionen** die Re
 
 ## E-Mails {#emails}
 
-DELEGATOR schreibt Teilnehmenden, Betreuenden und dem Team zu wichtigen Schritten. Die Seite **E-Mails** im Team-Bereich unter **Kommunikation** (für die Teilnehmendenbetreuung und die Projektleitung) zeigt jede Art von E-Mail als Karte, gruppiert etwa nach **Ergebnis der Zuteilung**, **Warteliste**, **Erinnerungen** oder **Nach der Konferenz**. Jede Karte erklärt unter **Wann**, **An wen** und **Inhalt**, was sie tut, und zählt, wie viele gesendet, fehlgeschlagen oder übersprungen sind. Jede E-Mail geht an jede Person höchstens einmal.
+DELEGATOR schreibt Teilnehmenden, Betreuenden und dem Team zu wichtigen Schritten. Die Seite **E-Mails** im Team-Bereich unter **Kommunikation** (für die Teilnehmendenbetreuung und die Projektleitung) zeigt jede Art von E-Mail als Karte, gruppiert etwa nach **Bewerbung**, **Ergebnis der Zuteilung**, **Warteliste**, **Erinnerungen** oder **Nach der Konferenz**. Jede Karte erklärt unter **Wann**, **An wen** und **Inhalt**, was sie tut, und zählt, wie viele gesendet, fehlgeschlagen oder übersprungen sind. Jede E-Mail geht an jede Person höchstens einmal.
 
 - Steht auf einer Karte etwa **3 offen**, müssten drei Personen die E-Mail gerade bekommen. **Jetzt verschicken** schickt sie im Hintergrund ab, **Überspringen** markiert sie als übersprungen, und das lässt sich nicht rückgängig machen. Wer später dazukommt, bekommt sie weiterhin.
 - **Automatisch verschicken** lässt eine Art regelmäßig von selbst rausgehen. Eine neue Konferenz verschickt nichts automatisch, bis du es einschaltest. Erfüllen schon Personen die Bedingung, fragt DELEGATOR, ob sie die E-Mail mit dem nächsten Lauf bekommen (**Automatisch an alle 3 verschicken**) oder nur künftige Fälle (**Nur künftige Fälle**).
@@ -188,7 +188,8 @@ Mit dem Schalter „Nachrichten zwischen Teilnehmenden und Team“ unter „Stat
 Das Team antwortet aus **Postfächern**, die es gemeinsam betreut:
 
 - **Teilnehmendenbetreuung.** Ein Postfach für die ganze Konferenz. Es gehört allen mit der Rolle Teilnehmendenbetreuung oder Projektleitung.
-- **Vorsitz und Gremienberatung.** Je ein Postfach pro Gremium. Wer es betreut, legst du unter „Teammitglieder“ fest. Das Hammer-Symbol in einer Zeile öffnet die Gremienfunktionen der Person.
+- **Vorsitz und Gremienberatung.** Je ein Postfach pro Gremium. Wer es betreut, legst du unter „Teammitglieder“ fest. Das Hammer-Symbol in einer Zeile öffnet die Funktionen der Person.
+- **Vertrauenspersonen.** Im selben Dialog machst du ein Teammitglied zur Vertrauensperson der Konferenz. Teilnehmende schreiben allen Vertrauenspersonen gemeinsam oder einer einzelnen mit Namen. Das gemeinsame Postfach lesen alle Vertrauenspersonen, einen persönlichen Chat nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Systemadministration. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle. Diese Chats lassen sich nicht melden.
 
 Alle Postfächer findest du unter „Nachrichten“ im Bereich Kommunikation. Eine Antwort kommt bei Teilnehmenden mit Funktion und Namen an. Teilnehmende siehst du dort nach ihrer Rolle. Nur die Teilnehmendenbetreuung sieht auch den Namen.
 

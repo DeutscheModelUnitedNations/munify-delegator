@@ -18,16 +18,20 @@ query({ table: 'teamFunction' });
 schemaBuilder.mutationFields((t) => ({
 	giveTeamFunction: t.drizzleField({
 		description:
-			"Gives a team member a function in a committee of their conference: `CHAIR` or `CONSULTANT`. Whoever holds a function answers that committee's inbox of it in the chats. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference.",
+			"Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, or `TRUSTED_PERSON` for the whole conference (without a committee). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, the trusted persons their shared one and each their own. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference, a committee function without a committee and a trusted person with one.",
 		type: TeamFunctionRef,
 		args: {
 			teamMemberId: t.arg.id({ required: true }),
-			committeeId: t.arg.id({ required: true }),
+			committeeId: t.arg.id(),
 			kind: t.arg({ type: teamFunctionKindEnum, required: true })
 		},
 		resolve: async (select, _root, args, ctx) => {
 			await assertCanGiveTeamFunction({ ctx, teamMemberId: args.teamMemberId });
-			const id = await giveTeamFunction(args);
+			const id = await giveTeamFunction({
+				teamMemberId: args.teamMemberId,
+				committeeId: args.committeeId ?? null,
+				kind: args.kind
+			});
 			return db.query.teamFunction
 				.findFirst(
 					select(
@@ -40,7 +44,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	removeTeamFunction: t.field({
 		description:
-			'Takes a committee function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).',
+			'Takes a function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

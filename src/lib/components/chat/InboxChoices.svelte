@@ -17,7 +17,7 @@
 </script>
 
 <ul class="flex flex-col gap-1">
-	{#each options as option (`${option.inbox}/${option.committeeId}`)}
+	{#each options as option (`${option.inbox}/${option.committeeId}/${option.trustedPersonId}`)}
 		<li>
 			<button
 				type="button"

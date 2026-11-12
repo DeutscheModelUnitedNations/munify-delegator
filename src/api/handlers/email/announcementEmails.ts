@@ -52,9 +52,12 @@ export const WITH_ATTACHMENTS = {
 /** The announcement mails the conference owes right now, one per announcement and person. */
 export async function loadAnnouncementMails({
 	conferenceId,
+	userId,
 	now = new Date()
 }: {
 	conferenceId: string;
+	/** Only this person's mails. */
+	userId?: string;
 	now?: Date;
 }): Promise<SnapshotAnnouncementMail[]> {
 	const candidates = await db.query.announcement.findMany({
@@ -63,7 +66,7 @@ export async function loadAnnouncementMails({
 	});
 	const owing = candidates.filter((announcement) => owesMail({ announcement, now }));
 	if (owing.length === 0) return [];
-	const people = (await loadAudiencePeople({ conferenceId })) ?? [];
+	const people = (await loadAudiencePeople({ conferenceId, userId })) ?? [];
 	const users = await db.query.user.findMany({
 		where: { id: { in: [...new Set(people.map((person) => person.userId))] } },
 		...MAIL_USER

@@ -10,11 +10,11 @@
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { conflictMessageOf } from '#lib/api/errorCodes';
-	import type { ChatInboxRow } from '#lib/api/chats';
+	import { fetchReachingInboxes, type ChatInboxRow } from '#lib/api/chats';
 	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
 	import InboxChoices from './InboxChoices.svelte';
+	import { chatOpenError, inboxChoice, type InboxChoice } from './inboxChoice';
 
 	interface Props {
 		conferenceId: string;
@@ -31,44 +31,38 @@
 	let choices = $state<ChatInboxRow[]>([]);
 	let choosing = $state(false);
 
-	async function openWith(option: Pick<ChatInboxRow, 'inbox' | 'committeeId'>) {
+	async function openWith(option: Pick<ChatInboxRow, 'inbox' | 'committeeId' | 'trustedPersonId'>) {
 		const chat = await client.mutate.openTeamChat({
 			__args: {
 				conferenceId,
 				inbox: option.inbox,
 				committeeId: option.committeeId,
+				trustedPersonId: option.trustedPersonId,
 				participantId
 			},
 			id: true
 		});
 		choosing = false;
-		const target = resolve(`dashboard/${conferenceId}/team/messages`);
 		const query = new URLSearchParams({ chat: chat.id, ...(paperId ? { paper: paperId } : {}) });
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- `target` is resolved above; only the query is added
-		await goto(`${target}?${query.toString()}`);
+		await goto(resolve(`dashboard/${conferenceId}/team/messages?${query.toString()}`));
+	}
+
+	async function offer(choice: InboxChoice<ChatInboxRow>) {
+		if (choice.kind === 'none') toast.error(m.chatNoInboxReaches());
+		else if (choice.kind === 'one') await openWith(choice.option);
+		else {
+			choices = choice.options;
+			choosing = true;
+		}
 	}
 
 	async function start() {
 		if (busy) return;
 		busy = true;
 		try {
-			const reaching = await client.query.chatInboxes({
-				__args: { conferenceId, participantId },
-				inbox: true,
-				committeeId: true,
-				committeeAbbreviation: true,
-				committeeName: true,
-				chatId: true
-			});
-			const [only] = reaching;
-			if (reaching.length === 0) toast.error(m.chatNoInboxReaches());
-			else if (reaching.length === 1 && only) await openWith(only);
-			else {
-				choices = [...reaching];
-				choosing = true;
-			}
+			await offer(inboxChoice(await fetchReachingInboxes({ conferenceId, participantId })));
 		} catch (error) {
-			toast.error(conflictMessageOf(error) ?? m.chatCouldNotBeOpened());
+			toast.error(chatOpenError(error));
 		} finally {
 			busy = false;
 		}
@@ -78,7 +72,7 @@
 		try {
 			await openWith(option);
 		} catch (error) {
-			toast.error(conflictMessageOf(error) ?? m.chatCouldNotBeOpened());
+			toast.error(chatOpenError(error));
 		}
 	}
 </script>

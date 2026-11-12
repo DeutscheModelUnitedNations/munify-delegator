@@ -33,6 +33,9 @@ export type EmailPlaceholder =
 	| 'committee'
 	| 'chaseLink'
 	| 'manualLink'
+	| 'entryCode'
+	| 'member'
+	| 'supervisor'
 	| 'title';
 
 interface KindTemplate {
@@ -58,12 +61,89 @@ const P = {
 	survey: '{survey}',
 	chaseLink: '{chaseLink}',
 	manualLink: '{manualLink}',
+	entryCode: '{entryCode}',
+	member: '{member}',
+	supervisor: '{supervisor}',
 	title: '{title}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
 
 const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
+	DELEGATION_CREATED: {
+		placeholders: ['entryCode'],
+		text: (locale) => ({
+			subject: m.emailAutoDelegationCreatedSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoDelegationCreatedHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoDelegationCreatedBody(
+					{ conference: P.conference, entryCode: P.entryCode },
+					{ locale }
+				),
+				m.emailAutoDelegationCreatedApply({}, { locale })
+			)
+		})
+	},
+	DELEGATION_JOINED: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoDelegationJoinedSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoDelegationJoinedHeading({}, { locale }),
+			body: m.emailAutoDelegationJoinedBody({ conference: P.conference }, { locale })
+		})
+	},
+	DELEGATION_MEMBER_JOINED: {
+		placeholders: ['member'],
+		text: (locale) => ({
+			subject: m.emailAutoMemberJoinedSubject({ member: P.member }, { locale }),
+			heading: m.emailAutoMemberJoinedHeading({}, { locale }),
+			body: m.emailAutoMemberJoinedBody({ member: P.member, conference: P.conference }, { locale })
+		})
+	},
+	APPLICATION_SENT: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoApplicationSentSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoApplicationSentHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoApplicationSentBody({ conference: P.conference }, { locale }),
+				m.emailAutoApplicationSentClosing({}, { locale })
+			)
+		})
+	},
+	WAITING_LIST_REGISTERED: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoWaitingListRegisteredSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoWaitingListRegisteredHeading({}, { locale }),
+			body: m.emailAutoWaitingListRegisteredBody({ conference: P.conference }, { locale })
+		})
+	},
+	SUPERVISOR_CONNECTED: {
+		placeholders: ['supervisor'],
+		text: (locale) => ({
+			subject: m.emailAutoSupervisorConnectedSubject(
+				{ supervisor: P.supervisor, conference: P.conference },
+				{ locale }
+			),
+			heading: m.emailAutoSupervisorConnectedHeading({}, { locale }),
+			body: m.emailAutoSupervisorConnectedBody(
+				{ supervisor: P.supervisor, conference: P.conference },
+				{ locale }
+			)
+		})
+	},
+	SURVEY_PUBLISHED: {
+		placeholders: ['survey', 'date'],
+		text: (locale) => ({
+			subject: m.emailAutoSurveyPublishedSubject({ survey: P.survey }, { locale }),
+			heading: m.emailAutoSurveyPublishedHeading({}, { locale }),
+			body: m.emailAutoSurveyPublishedBody(
+				{ survey: P.survey, conference: P.conference, date: P.date },
+				{ locale }
+			)
+		})
+	},
 	ASSIGNMENT_ACCEPTED: {
 		placeholders: ['seat'],
 		text: (locale) => ({

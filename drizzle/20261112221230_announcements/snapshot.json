@@ -2,9 +2,9 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "04318cd7-be63-4c67-b936-4711761ce872",
+  "id": "c0697976-c866-4ef5-ae99-11e1137972b9",
   "prevIds": [
-    "69c5b914-5573-4372-8028-e9f8eeff4d45"
+    "74924de9-7956-4e3a-a2e9-678eaaab27cd"
   ],
   "footprints": [
     {
@@ -1635,6 +1635,13 @@
       "key": "enums\u0000[\"public\",\"email_kind\"]",
       "set": {
         "values": [
+          "DELEGATION_CREATED",
+          "DELEGATION_JOINED",
+          "DELEGATION_MEMBER_JOINED",
+          "APPLICATION_SENT",
+          "WAITING_LIST_REGISTERED",
+          "SUPERVISOR_CONNECTED",
+          "SURVEY_PUBLISHED",
           "ASSIGNMENT_ACCEPTED",
           "ASSIGNMENT_REJECTED",
           "SUPERVISOR_ASSIGNMENT_SUMMARY",
