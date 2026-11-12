@@ -22,7 +22,8 @@ const conference: EmailSnapshot['conference'] = {
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: true,
-	chaseUrl: null
+	chaseUrl: null,
+	messagingEnabled: true
 };
 
 const person: SnapshotPerson = {
@@ -41,6 +42,10 @@ const person: SnapshotPerson = {
 	mediaConsent: 'PENDING',
 	didAttend: true,
 	delegation: {
+		id: 'd1',
+		entryCode: 'ABCDEFGH',
+		isHeadDelegate: true,
+		joinedAt: new Date('2026-10-01T10:00:00Z'),
 		applied: true,
 		role: {
 			id: 'r1',
@@ -53,7 +58,8 @@ const person: SnapshotPerson = {
 	},
 	single: null,
 	supervisor: null,
-	seatedFromWaitingList: null
+	seatedFromWaitingList: null,
+	supervisorIds: []
 };
 
 /** A due mail of `kind` with everything any kind may need filled in. */

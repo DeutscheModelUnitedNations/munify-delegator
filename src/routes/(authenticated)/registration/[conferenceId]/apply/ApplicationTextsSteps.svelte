@@ -19,13 +19,22 @@
 		firstNumber: number;
 		schoolLabel: string;
 		motivationLabel: string;
+		/** What the motivation should cover beyond wanting to take part. */
+		motivationHint: string;
 		experienceLabel: string;
 		submitLabel: string;
 		submit: (answers: ApplicationAnswers) => Promise<unknown>;
 	}
 
-	let { firstNumber, schoolLabel, motivationLabel, experienceLabel, submitLabel, submit }: Props =
-		$props();
+	let {
+		firstNumber,
+		schoolLabel,
+		motivationLabel,
+		motivationHint,
+		experienceLabel,
+		submitLabel,
+		submit
+	}: Props = $props();
 
 	// One form across the steps; only the last step's button submits it.
 	const form = mutationForm({
@@ -89,7 +98,7 @@
 			name="motivation"
 			placeholder={m.answerHere()}
 			label={motivationLabel}
-			description={m.applicationQualityHint()}
+			description={`${motivationHint} ${m.applicationQualityHint()}`}
 		/>
 		{@render next('motivation')}
 	</FlowStep>

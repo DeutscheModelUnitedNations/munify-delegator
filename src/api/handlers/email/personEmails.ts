@@ -1,6 +1,6 @@
 import { db, schema } from '#api/db/db';
 import { dueEmails, type DueEmail, type EmailKind } from './dueEmails';
-import { loadEmailSnapshot } from './emailSnapshot';
+import { loadEmailConference, loadUserSnapshot } from './emailSnapshot';
 import { emailDetail } from './emailContent';
 import { enabledKinds } from './emailSettings';
 import { loadWording, renderAutomaticEmail, sendByHand } from './emailDelivery';
@@ -67,12 +67,27 @@ export function personEmailsOf({
 		});
 }
 
-/** What the conference owes, counting reminders any time before their date; none if it is gone. */
-async function owedByHand({ conferenceId, now }: { conferenceId: string; now: Date }) {
-	const snapshot = await loadEmailSnapshot(conferenceId);
-	return snapshot
-		? { snapshot, due: dueEmails({ snapshot, now, anyTimeBefore: true }) }
-		: undefined;
+/**
+ * What the conference owes one person, counting reminders any time before their date; none if
+ * the conference is gone. Reads only the person and the people around them.
+ */
+async function owedByHand({
+	conferenceId,
+	userId,
+	now
+}: {
+	conferenceId: string;
+	userId: string;
+	now: Date;
+}) {
+	const conference = await loadEmailConference(conferenceId);
+	if (!conference) return undefined;
+	const snapshot = await loadUserSnapshot({
+		conference,
+		userId,
+		kinds: new Set(schema.emailKind.enumValues)
+	});
+	return { snapshot, due: dueEmails({ snapshot, now, anyTimeBefore: true }) };
 }
 
 export async function personEmails({
@@ -85,7 +100,7 @@ export async function personEmails({
 	now?: Date;
 }) {
 	const [owed, enabled, logs] = await Promise.all([
-		owedByHand({ conferenceId, now }),
+		owedByHand({ conferenceId, userId, now }),
 		enabledKinds(conferenceId),
 		db.query.emailLog.findMany({
 			where: { conferenceId, userId },
@@ -114,7 +129,7 @@ export async function sendPersonEmail({
 	sentById: string;
 	origin: string;
 }) {
-	const owed = await owedByHand({ conferenceId, now: new Date() });
+	const owed = await owedByHand({ conferenceId, userId, now: new Date() });
 	const email = owed?.due.find(
 		(due) => due.recipient.id === userId && due.kind === kind && due.subjectKey === subjectKey
 	);

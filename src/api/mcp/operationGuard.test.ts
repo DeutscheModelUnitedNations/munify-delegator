@@ -51,8 +51,8 @@ describe('argumentProblems', () => {
 	});
 
 	it('refuses rumble search on tables holding personal text, allows it elsewhere', () => {
-		expect(problems(`{ users(search: "Ada") { id } }`)).toHaveLength(1);
-		expect(problems(`{ committees(search: "General") { id } }`)).toEqual([]);
+		expect(problems(`{ users(search: { term: "Ada" }) { id } }`)).toHaveLength(1);
+		expect(problems(`{ committees(search: { term: "General" }) { id } }`)).toEqual([]);
 	});
 
 	it('refuses lookups by code, name or address', () => {

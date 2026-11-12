@@ -17,6 +17,13 @@ import { user } from './users';
 
 /** Every kind of automatic mail; `#lib/helpers/emailKinds.ts` describes them. */
 export const emailKind = pgEnum('email_kind', [
+	'DELEGATION_CREATED',
+	'DELEGATION_JOINED',
+	'DELEGATION_MEMBER_JOINED',
+	'APPLICATION_SENT',
+	'WAITING_LIST_REGISTERED',
+	'SUPERVISOR_CONNECTED',
+	'SURVEY_PUBLISHED',
 	'ASSIGNMENT_ACCEPTED',
 	'ASSIGNMENT_REJECTED',
 	'SUPERVISOR_ASSIGNMENT_SUMMARY',

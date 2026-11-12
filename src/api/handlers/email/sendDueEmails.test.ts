@@ -5,8 +5,12 @@ vi.mock('#api/db/db', () => ({
 	db: { query: { conferenceEmailSetting: { findMany: findSettings } } },
 	schema: {}
 }));
-const loadEmailSnapshot = vi.fn(async () => undefined);
-vi.mock('./emailSnapshot', () => ({ loadEmailSnapshot }));
+const loadEmailConference = vi.fn(async () => undefined);
+vi.mock('./emailSnapshot', () => ({
+	FIRST_EMAIL_PAGE: { part: 'people', after: null },
+	loadEmailConference,
+	emailPages: async function* () {}
+}));
 vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 vi.mock('./emailPacer', () => ({ emailPacer: { wait: async () => {} } }));
 vi.mock('#api/pubsub', () => ({
@@ -27,20 +31,20 @@ describe('sendDueEmails', () => {
 		findSettings.mockClear();
 		await sendDueEmails({ conferenceId: 'c', origin: 'https://example.org' });
 		expect(findSettings).toHaveBeenCalledOnce();
-		expect(loadEmailSnapshot).toHaveBeenCalledWith('c');
+		expect(loadEmailConference).toHaveBeenCalledWith('c');
 	});
 
 	test('sends the kinds the team picked, switched to automatic or not', async () => {
 		findSettings.mockClear();
-		loadEmailSnapshot.mockClear();
+		loadEmailConference.mockClear();
 		const result = await sendDueEmails({
 			conferenceId: 'c',
 			origin: 'https://example.org',
 			kinds: new Set(['ASSIGNMENT_ACCEPTED'])
 		});
 		expect(findSettings).not.toHaveBeenCalled();
-		expect(loadEmailSnapshot).toHaveBeenCalledWith('c');
-		expect(result).toEqual({ sent: 0, failed: 0, remaining: 0 });
+		expect(loadEmailConference).toHaveBeenCalledWith('c');
+		expect(result).toEqual({ sent: 0, failed: 0, next: null });
 	});
 });
 

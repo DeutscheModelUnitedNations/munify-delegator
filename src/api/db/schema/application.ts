@@ -189,6 +189,12 @@ export const waitingListEntry = snakeCase.table(
 			table.userId.asc().nullsLast()
 		),
 		index('waiting_list_entry_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
+		// the mail sweep pages through a conference's waiting list (`emailSnapshot.ts`)
+		index('waiting_list_entry_conference_id_id_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.id.asc().nullsLast()
+		),
 		trigramIndex({ name: 'waiting_list_entry_experience_trgm', column: table.experience }),
 		trigramIndex({ name: 'waiting_list_entry_motivation_trgm', column: table.motivation }),
 		trigramIndex({ name: 'waiting_list_entry_requests_trgm', column: table.requests }),

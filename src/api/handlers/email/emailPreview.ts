@@ -3,7 +3,7 @@ import { m } from '#lib/paraglide/messages';
 import { isAlwaysSent } from '#lib/helpers/emailKinds';
 import { getInvitationExpiryDate } from '#api/handlers/teamMemberInvitation/invitationToken';
 import type { DueEmail, EmailKind, EmailSnapshot, SnapshotPerson, SnapshotUser } from './dueEmails';
-import { loadEmailSnapshot } from './emailSnapshot';
+import { loadEmailConference } from './emailSnapshot';
 import type { EmailTextOverride } from './emailText';
 import { renderBadgeFoundEmail } from './badgeFoundEmail';
 import { renderTeamInvitationEmail } from './teamInvitationEmail';
@@ -30,8 +30,8 @@ export async function previewEmail({
 	draft?: EmailTextOverride;
 	footerDraft?: string;
 }) {
-	const snapshot = await loadEmailSnapshot(conferenceId);
-	if (!snapshot) return undefined;
+	const conference = await loadEmailConference(conferenceId);
+	if (!conference) return undefined;
 	const locale = localeOfUser(user.locale);
 	const stored = await loadWording(conferenceId);
 	const wording: ConferenceWording = {
@@ -41,11 +41,10 @@ export async function previewEmail({
 	if (kind === 'BADGE_FOUND')
 		return renderBadgeFoundEmail({
 			recipient: user,
-			conferenceTitle: snapshot.conference.title,
+			conferenceTitle: conference.title,
 			wording
 		});
-	if (isAlwaysSent(kind))
-		return previewInvitationEmail({ conference: snapshot.conference, user, origin, wording });
+	if (isAlwaysSent(kind)) return previewInvitationEmail({ conference, user, origin, wording });
 	const sample = (person: Partial<SnapshotPerson> & { user: SnapshotUser }): SnapshotPerson => ({
 		participantId: person.user.id,
 		paymentStatus: 'PENDING',
@@ -54,6 +53,10 @@ export async function previewEmail({
 		mediaConsent: 'PENDING',
 		didAttend: true,
 		delegation: {
+			id: 'sample-delegation',
+			entryCode: 'K7MPQ2XA',
+			isHeadDelegate: true,
+			joinedAt: new Date(),
 			applied: true,
 			role: {
 				id: 'sample',
@@ -67,6 +70,7 @@ export async function previewEmail({
 		single: null,
 		supervisor: null,
 		seatedFromWaitingList: null,
+		supervisorIds: [],
 		...person
 	});
 	const student = sample({
@@ -74,7 +78,21 @@ export async function previewEmail({
 	});
 	const rejectedStudent = sample({
 		user: { ...user, id: 'sample-student-2', givenName: 'Kim', familyName: 'Muster' },
-		delegation: { applied: true, role: null, committee: null, committeeId: null }
+		delegation: {
+			id: 'sample-delegation-2',
+			entryCode: 'R4TNW8HB',
+			isHeadDelegate: true,
+			joinedAt: new Date(),
+			applied: true,
+			role: null,
+			committee: null,
+			committeeId: null
+		}
+	});
+	const supervisor = sample({
+		user: { ...user, id: 'sample-supervisor', givenName: 'Robin', familyName: 'Beispiel' },
+		delegation: null,
+		supervisor: { plansOwnAttendance: true, studentIds: [user.id] }
 	});
 	const email: DueEmail = {
 		kind,
@@ -89,6 +107,9 @@ export async function previewEmail({
 		},
 		students: [student, rejectedStudent],
 		student,
+		supervisor,
+		member: student,
+		waitingListEntry: { id: 'preview', user },
 		field: 'termsAndConditions',
 		review: {
 			id: 'preview',
@@ -106,7 +127,7 @@ export async function previewEmail({
 			answeredBy: []
 		}
 	};
-	return renderAutomaticEmail({ email, conference: snapshot.conference, origin, wording });
+	return renderAutomaticEmail({ email, conference, origin, wording });
 }
 
 /** The team invitation as the conference would send it, to `user` from themselves, with a made-up link. */

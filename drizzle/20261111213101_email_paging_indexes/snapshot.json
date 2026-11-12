@@ -1,0 +1,142 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a56f338a-d23a-4709-8515-0efcc990dbd5",
+  "prevIds": [
+    "b90dd200-6454-4328-b0c6-6d19bb2445af"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conference_participant",
+        "conference_participant_conference_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.conference_participant_conference_id_idx",
+        "n|idx|public.conference_participant_conference_id_idx",
+        "e|idx|public.conference_participant_conference_id_idx",
+        "n|rel|public.conference_participant_conference_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conference_participant",
+        "n|sch|public",
+        "e|col|public.conference_participant.conference_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conference_participant",
+        "conference_participant_conference_id_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.conference_participant_conference_id_id_idx",
+        "n|idx|public.conference_participant_conference_id_id_idx",
+        "e|idx|public.conference_participant_conference_id_id_idx",
+        "n|rel|public.conference_participant_conference_id_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conference_participant",
+        "n|sch|public",
+        "n|col|public.conference_participant.conference_id",
+        "n|col|public.conference_participant.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "waiting_list_entry",
+        "waiting_list_entry_conference_id_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.waiting_list_entry_conference_id_id_idx",
+        "n|idx|public.waiting_list_entry_conference_id_id_idx",
+        "e|idx|public.waiting_list_entry_conference_id_id_idx",
+        "n|rel|public.waiting_list_entry_conference_id_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.waiting_list_entry",
+        "n|sch|public",
+        "n|col|public.waiting_list_entry.conference_id",
+        "n|col|public.waiting_list_entry.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_participant",
+        "name": "conference_participant_conference_id_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "waiting_list_entry",
+        "name": "waiting_list_entry_conference_id_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conference_participant_conference_id_idx\"]"
+    }
+  ]
+}
