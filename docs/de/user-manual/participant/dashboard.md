@@ -157,6 +157,22 @@ Sobald das Team den Zeitplan freischaltet, erscheint die Karte **Zeitplan**. Sie
 
 Unter **Umfragen** meldest du dich zum Beispiel für Veranstaltungen an, oder das Team fragt wichtige Informationen ab. Mit **Umfrage beantworten** wählst du eine Antwort, mit **Antwort ändern** änderst du sie bis zur Frist. Ausgebuchte Antworten lassen sich nicht mehr wählen. Offene Umfragen stehen auch im Abschnitt **Persönlicher Status**.
 
+## Nachrichten {#messages}
+
+Hat das Team die Nachrichten eingeschaltet, findest du auf dem Dashboard die Karte „Nachrichten“. Sie zeigt dir, in welchen Chats etwas Ungelesenes wartet.
+
+- **Team.** Die Teilnehmendenbetreuung erreichst du jederzeit. Sobald die Rollen veröffentlicht sind, kommen der Vorsitz und die Gremienberatung deines Gremiums dazu. Alle, die ein Postfach betreuen, lesen mit. Die Antwort trägt die Funktion und den Namen der Person, die sie schreibt.
+- **Andere Delegierte.** Über „Neue Nachricht“ suchst du nach Land, Gremium oder Rolle, zum Beispiel „frank gv“. Ihr seht voneinander nur die Rolle, nie den Namen.
+- **Deine Delegation.** Jede Delegation hat eine Gruppe für alle ihre Mitglieder.
+
+Chats mit anderen Delegierten und die Delegationsgruppe gibt es erst, wenn die Rollen veröffentlicht sind.
+
+Bleibt eine Nachricht eine Viertelstunde ungelesen, bekommst du eine E-Mail mit einem Link zu deinen Chats. Der Text der Nachricht steht nicht in der Mail. Unter der Chatliste schaltest du diese Mails ab.
+
+:::tip Wenn etwas nicht in Ordnung ist
+Über die drei Punkte oben im Chat kannst du eine Person blockieren oder den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht.
+:::
+
 ## Deine Schule {#school}
 
 Jede Person gibt ihre eigene **Schule / Institution** an, auch innerhalb einer Delegation. In der Bewerbungsphase findest du das Feld unter **Informationen und Motivation**, als Betreuende*r unter **Deine Angaben**. Mit **Schule ändern** wählst du eine bestehende Schule oder trägst eine neue ein. Die Angabe ist freiwillig.

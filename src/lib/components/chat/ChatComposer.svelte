@@ -1,0 +1,98 @@
+<!--
+	@component
+	The field a chat is written in: Enter sends, Shift+Enter breaks the line. Shows instead why the
+	caller cannot write right now (`chat.writeRefusal`). A paper passed along goes with the next
+	message.
+-->
+<script lang="ts">
+	import { tick } from 'svelte';
+	import { toast } from 'svelte-sonner';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { conflictMessageOf } from '#lib/api/errorCodes';
+	import { CHAT_MESSAGE_MAX_LENGTH } from '#lib/helpers/chat';
+	import { refusalText } from '#lib/helpers/chatRefusalText';
+	import { m } from '#lib/paraglide/messages';
+
+	interface Props {
+		chatId: string;
+		refusal: string | null;
+		paperId?: string | null;
+		onPaperSent?: () => void;
+	}
+
+	let { chatId, refusal, paperId = null, onPaperSent }: Props = $props();
+
+	let draft = $state('');
+	let sending = $state(false);
+	let field = $state<HTMLTextAreaElement>();
+
+	async function send() {
+		const body = draft.trim();
+		if (!body || sending) return;
+		sending = true;
+		try {
+			await client.mutate.sendChatMessage({ __args: { chatId, body, paperId }, id: true });
+			draft = '';
+			if (paperId) onPaperSent?.();
+			await tick();
+			field?.focus();
+		} catch (error) {
+			toast.error(conflictMessageOf(error) ?? m.chatSendFailed());
+		} finally {
+			sending = false;
+		}
+	}
+
+	function onKeydown(event: KeyboardEvent) {
+		// not while an input method is composing, whose Enter picks a candidate
+		if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+		event.preventDefault();
+		void send();
+	}
+</script>
+
+<footer class="border-base-300 border-t p-3 sm:px-4">
+	{#if refusal}
+		<p
+			class="bg-base-200 text-base-content/70 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm"
+			data-testid="chat-refusal"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-lock-simple mt-0.5"></i>
+			<span>{refusalText(refusal)}</span>
+		</p>
+	{:else}
+		{#if paperId}
+			<p class="text-base-content/70 mb-2 flex items-center gap-2 text-xs">
+				<i aria-hidden="true" class="ph-duotone ph-file-text"></i>
+				{m.chatPaperAttached()}
+			</p>
+		{/if}
+		<form
+			class="flex items-end gap-2"
+			onsubmit={(event) => {
+				event.preventDefault();
+				void send();
+			}}
+		>
+			<textarea
+				bind:this={field}
+				bind:value={draft}
+				class="textarea textarea-bordered field-sizing-content max-h-40 min-h-11 flex-1 resize-none leading-snug"
+				rows="1"
+				maxlength={CHAT_MESSAGE_MAX_LENGTH}
+				placeholder={m.chatWritePlaceholder()}
+				aria-label={m.chatWritePlaceholder()}
+				onkeydown={onKeydown}
+				data-testid="chat-input"></textarea>
+			<button
+				type="submit"
+				class="btn btn-primary btn-square"
+				disabled={!draft.trim() || sending}
+				aria-label={m.chatSend()}
+				data-testid="chat-send"
+			>
+				<i aria-hidden="true" class="ph-fill ph-paper-plane-right text-lg"></i>
+			</button>
+		</form>
+	{/if}
+</footer>

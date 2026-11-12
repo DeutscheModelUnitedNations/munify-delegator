@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../src/api/db/schema';
 import { makeSeedConference } from '../../src/api/db/seed-data/conference';
+import { seatNations } from './conferenceRole';
 
 /** A spec's own conference with the nations it uses, updated in place on reruns. */
 export async function upsertConference(
@@ -54,4 +55,26 @@ export async function upsertCommittee(
 		.values(committee)
 		.onConflictDoUpdate({ target: schema.committee.id, set: committee });
 	return committee;
+}
+
+/**
+ * The committees of a spec's conference, in this order, each seating every one of the nations (as
+ * the seat planning does).
+ */
+export async function upsertSeatedCommittees(
+	db: NodePgDatabase,
+	{
+		conferenceId,
+		committees,
+		nations
+	}: {
+		conferenceId: string;
+		committees: readonly { id: string; name: string; abbreviation: string }[];
+		nations: readonly string[];
+	}
+) {
+	for (const [index, data] of committees.entries()) {
+		const committee = await upsertCommittee(db, conferenceId, data, index);
+		await seatNations(db, committee, nations);
+	}
 }

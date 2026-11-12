@@ -14,6 +14,8 @@
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import HelpButton from '#lib/docs/HelpButton.svelte';
+	import UnreadMessagesButton from '#lib/components/chat/UnreadMessagesButton.svelte';
+	import { page } from '$app/state';
 
 	//TODO
 	// import ExportButtons from '#lib/components/dataTable/ExportButtons.svelte';
@@ -39,6 +41,14 @@
 			impersonationStatus = status;
 		});
 	});
+
+	// The conference whose pages are on screen, for the note about unread chats. Read from the
+	// path, not from `page.params` (see "Route parameters" in CLAUDE.md).
+	const conferenceOnScreen = $derived(
+		page.route.id?.startsWith('/(authenticated)/dashboard/[conferenceId]')
+			? /\/dashboard\/([^/]+)/.exec(page.url.pathname)?.[1]
+			: undefined
+	);
 
 	let titleScroller = $state<HTMLDivElement>();
 
@@ -153,6 +163,13 @@
 				</button>
 			{/if}
 
+			{#if conferenceOnScreen}
+				<!-- fetched on its own, so the header does not wait for it -->
+				<svelte:boundary>
+					<UnreadMessagesButton conferenceId={conferenceOnScreen} />
+					{#snippet failed()}{/snippet}
+				</svelte:boundary>
+			{/if}
 			<HelpButton />
 			<UserMenu />
 		</div>

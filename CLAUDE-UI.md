@@ -854,6 +854,32 @@ the path on the dashboard is step 0) and the content in a `DashboardSection`.
 
 ---
 
+## Chat Components
+
+The chats (see "Messages" in CLAUDE.md) are built from `#lib/components/chat/`. Both messages
+pages (`dashboard/[conferenceId]/messages`, `team/messages`) are a `ChatWorkspace` with their own
+list header.
+
+- **`ChatWorkspace`**: the messenger frame, the chat list beside the open chat; on a phone the two
+  take turns. It takes the `chats` (from `fetchChats`, `#lib/api/chats`), `selectedId` and
+  `onSelect` (keep the open chat in the URL as `?chat=` through `queryParameters`), and snippets
+  for the `listHeader`, the `emptyList` and a `listFooter`.
+- **`ChatThread`**: one chat. Fetches itself by `chatId`, marks it read while on screen, shows the
+  messages by day and the field to write in (Enter sends, Shift+Enter breaks the line), or why the
+  caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
+  reviewing a report it shows who the people are and suspends them.
+- **`NewChatDialog` / `NewChatPicker`**: finding whom to write to. One search field over role,
+  country and committee (`matchesSearch`: every word has to be found, so "ger ga" works), chips
+  per committee, the team inboxes and the delegation group on top. `mode="team"` picks a person
+  first and then the inbox to write from.
+- **`WriteToDelegateButton`**: `conferenceId`, the person's `participantId`, optionally a
+  `paperId` and `compact` (icon only, for table rows). Asks for the inboxes on the click.
+- **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
+- **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
+  `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a
+  participant's name to another participant.
+- **`MessagesLinkInfo`**: the dashboard card's live details (unread chats).
+
 ## Survey Components
 
 Survey components handle displaying and answering surveys on the participant dashboard.

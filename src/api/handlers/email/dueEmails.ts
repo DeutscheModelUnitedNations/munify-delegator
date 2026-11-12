@@ -10,6 +10,7 @@ import {
 	type AlwaysSentKind
 } from '#lib/helpers/emailKinds';
 import { chaseRoleOf } from '#lib/helpers/chaseLinks';
+import { UNREAD_MESSAGE_MAIL_MINUTES } from '#lib/helpers/chat';
 
 /**
  * Which automatic mails a conference owes whom, decided from its current state alone. Every mail
@@ -94,6 +95,14 @@ export interface SnapshotSurvey {
 	answeredBy: string[];
 }
 
+/** The oldest chat message somebody has not read (`#api/handlers/chat`). */
+export interface SnapshotUnreadMessage {
+	messageId: string;
+	writtenAt: Date;
+	/** Who has not read it: a participant, or a team member answering the chat's inbox. */
+	reader: { participantId: string } | { teamMemberId: string };
+}
+
 export interface EmailSnapshot {
 	conference: {
 		id: string;
@@ -115,6 +124,8 @@ export interface EmailSnapshot {
 	team: SnapshotTeamMember[];
 	reviews: SnapshotReview[];
 	surveys: SnapshotSurvey[];
+	/** Per reader who wants the mail, the oldest message they have not read; none while messaging is off. */
+	unreadMessages: SnapshotUnreadMessage[];
 }
 
 export type PaperworkField =
@@ -408,6 +419,31 @@ const paperReviewed: Rule = ({ reviewsOf }, person) =>
 		email({ kind: 'PAPER_REVIEWED', person, subjectKey: review.id, extra: { review } })
 	);
 
+const MINUTE = 60 * 1000;
+
+/**
+ * One mail per reader once their oldest unread chat message has waited `UNREAD_MESSAGE_MAIL_MINUTES`,
+ * keyed by that message: no second mail while they have not read, and a new one when something
+ * else is left unread after they did.
+ */
+function unreadMessages({ snapshot, now }: { snapshot: EmailSnapshot; now: Date }): DueEmail[] {
+	const people = new Map(snapshot.people.map((person) => [person.participantId, person]));
+	const team = new Map(snapshot.team.map((member) => [member.id, member]));
+	return snapshot.unreadMessages
+		.filter(
+			(unread) => now.getTime() - unread.writtenAt.getTime() >= UNREAD_MESSAGE_MAIL_MINUTES * MINUTE
+		)
+		.flatMap((unread): DueEmail[] => {
+			const base = { kind: 'UNREAD_MESSAGES' as const, subjectKey: unread.messageId };
+			if ('participantId' in unread.reader) {
+				const person = people.get(unread.reader.participantId);
+				return person ? [{ ...base, recipient: person.user, person }] : [];
+			}
+			const teamMember = team.get(unread.reader.teamMemberId);
+			return teamMember ? [{ ...base, recipient: teamMember.user, teamMember }] : [];
+		});
+}
+
 /** In the order a person's mails are listed. */
 const RULES: Rule[] = [
 	assignmentResult,
@@ -446,7 +482,8 @@ export function dueEmails({
 	const ctx = ruleContext({ snapshot, now, anyTimeBefore });
 	return [
 		...snapshot.people.flatMap((person) => RULES.flatMap((rule) => rule(ctx, person))),
-		...snapshot.team.map(teamWelcome)
+		...snapshot.team.map(teamWelcome),
+		...unreadMessages({ snapshot, now })
 	];
 }
 

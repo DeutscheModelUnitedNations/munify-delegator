@@ -96,6 +96,7 @@ export const EMAIL_GROUPS = [
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },
 	{ id: 'reminders', kinds: REMINDER_KINDS },
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
+	{ id: 'messages', kinds: ['UNREAD_MESSAGES'] },
 	{ id: 'onSite', kinds: ['BADGE_FOUND'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
 	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED'] },

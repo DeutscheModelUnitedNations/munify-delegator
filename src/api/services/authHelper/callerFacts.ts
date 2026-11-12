@@ -15,13 +15,14 @@
 import { sql } from 'drizzle-orm';
 import { refreshAbilities } from '@m1212e/rumble';
 import { db } from '#api/db/db';
-import { teamRole } from '#api/db/schema/index';
+import { teamFunctionKind, teamRole } from '#api/db/schema/index';
 import type { Context } from '#api/context';
 import type { ApiContext } from '#api/rumble';
 import { PAPER_ROLES, PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
 import { callerUserId } from './utils';
 
 type TeamRole = (typeof teamRole.enumValues)[number];
+type TeamFunctionKind = (typeof teamFunctionKind.enumValues)[number];
 type DuplicateStatus = 'OPEN' | 'CONFIRMED' | 'DISMISSED';
 
 /** What the rules need to know of a conference the caller has a part in. */
@@ -34,6 +35,11 @@ export type CallerFacts = {
 	 * on; a system admin holds every role there.
 	 */
 	team: readonly { conferenceId: string; roles: readonly TeamRole[] }[];
+	/**
+	 * The committee functions the caller holds on those teams (`teamFunction`): the chairs' and the
+	 * consultants' inboxes they answer.
+	 */
+	teamFunctions: readonly { conferenceId: string; committeeId: string; kind: TeamFunctionKind }[];
 	/** Who is on the team of each of those conferences, the caller included. */
 	teammates: readonly { conferenceId: string; userId: string }[];
 	/**
@@ -96,6 +102,7 @@ export type CallerFacts = {
 /** The facts of nobody: an anonymous caller's, and the start of everyone else's. */
 export const NO_CALLER_FACTS: CallerFacts = {
 	team: [],
+	teamFunctions: [],
 	teammates: [],
 	participants: [],
 	delegationMemberships: [],
@@ -137,6 +144,8 @@ function factsSubject(ctx: Context): FactsSubject {
 
 const CONFERENCE_FLAGS = { assignmentReleased: true, showCalendar: true } as const;
 
+const noFunctions: { committeeId: string; kind: TeamFunctionKind }[] = [];
+
 /** The caller's team memberships, with the flags and the teams of those conferences. */
 async function loadTeam({ teamUserId, mcp }: FactsSubject) {
 	if (!teamUserId) return [];
@@ -148,13 +157,21 @@ async function loadTeam({ teamUserId, mcp }: FactsSubject) {
 			with: { teamMembers: { columns: { userId: true } } }
 		});
 		return conference
-			? [{ conferenceId: conference.id, roles: [...teamRole.enumValues], conference }]
+			? [
+					{
+						conferenceId: conference.id,
+						roles: [...teamRole.enumValues],
+						conference,
+						functions: noFunctions
+					}
+				]
 			: [];
 	}
 	const memberships = await db.query.teamMember.findMany({
 		where: mcp ? { userId: teamUserId, conferenceId: mcp.conferenceId } : { userId: teamUserId },
 		columns: { conferenceId: true, role: true },
 		with: {
+			functions: { columns: { committeeId: true, kind: true } },
 			conference: {
 				columns: { mcpEnabled: true, ...CONFERENCE_FLAGS },
 				with: { teamMembers: { columns: { userId: true } } }
@@ -163,7 +180,12 @@ async function loadTeam({ teamUserId, mcp }: FactsSubject) {
 	});
 	return memberships
 		.filter((membership) => !mcp || membership.conference.mcpEnabled)
-		.map(({ conferenceId, role, conference }) => ({ conferenceId, roles: [role], conference }));
+		.map(({ conferenceId, role, conference, functions }) => ({
+			conferenceId,
+			roles: [role],
+			conference,
+			functions
+		}));
 }
 
 /** The caller's parts in conferences, with their registrations and delegation mates. */
@@ -325,6 +347,9 @@ export function teamFacts(memberships: Awaited<ReturnType<typeof loadTeam>>) {
 	}
 	return {
 		team: [...roles].map(([conferenceId, held]) => ({ conferenceId, roles: held })),
+		teamFunctions: memberships.flatMap(({ conferenceId, functions }) =>
+			functions.map(({ committeeId, kind }) => ({ conferenceId, committeeId, kind }))
+		),
 		teammates: [...teammates.values()],
 		conferences
 	};
@@ -457,6 +482,7 @@ export async function loadCallerFacts(subject: FactsSubject): Promise<CallerFact
 	return {
 		...parts,
 		team: team.team,
+		teamFunctions: team.teamFunctions,
 		teammates: team.teammates,
 		// a conference the caller is on the team of and takes part in has the same flags either way
 		conferences: new Map([...parts.conferences, ...team.conferences]),

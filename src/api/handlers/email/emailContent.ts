@@ -227,6 +227,12 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 				}
 			: {},
 		button: dashboard
+	}),
+	UNREAD_MESSAGES: ({ email, conference, origin }) => ({
+		button: {
+			label: m.emailAutoUnreadMessagesButton(),
+			url: `${origin}/dashboard/${conference.id}/${email.teamMember ? 'team/messages' : 'messages'}`
+		}
 	})
 };
 

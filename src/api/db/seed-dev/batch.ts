@@ -30,6 +30,11 @@ export interface SeedBatch {
 	supervision: (typeof schema.supervision.$inferInsert)[];
 	teamMember: (typeof schema.teamMember.$inferInsert)[];
 	teamMemberInvitation: (typeof schema.teamMemberInvitation.$inferInsert)[];
+	teamFunction: (typeof schema.teamFunction.$inferInsert)[];
+	chat: (typeof schema.chat.$inferInsert)[];
+	chatMessage: (typeof schema.chatMessage.$inferInsert)[];
+	chatRead: (typeof schema.chatRead.$inferInsert)[];
+	chatReport: (typeof schema.chatReport.$inferInsert)[];
 	waitingListEntry: (typeof schema.waitingListEntry.$inferInsert)[];
 	conferenceParticipant: (typeof schema.conferenceParticipant.$inferInsert)[];
 	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
@@ -84,6 +89,11 @@ export function emptyBatch(): SeedBatch {
 		supervision: [],
 		teamMember: [],
 		teamMemberInvitation: [],
+		teamFunction: [],
+		chat: [],
+		chatMessage: [],
+		chatRead: [],
+		chatReport: [],
 		waitingListEntry: [],
 		conferenceParticipant: [],
 		attendanceSession: [],
@@ -351,5 +361,22 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.emailLog,
 		insert: (rows) => db.insert(s.emailLog).values(rows)
+	});
+	await insertChunked({
+		rows: batch.teamFunction,
+		insert: (rows) => db.insert(s.teamFunction).values(rows)
+	});
+	await insertChunked({ rows: batch.chat, insert: (rows) => db.insert(s.chat).values(rows) });
+	await insertChunked({
+		rows: batch.chatMessage,
+		insert: (rows) => db.insert(s.chatMessage).values(rows)
+	});
+	await insertChunked({
+		rows: batch.chatRead,
+		insert: (rows) => db.insert(s.chatRead).values(rows)
+	});
+	await insertChunked({
+		rows: batch.chatReport,
+		insert: (rows) => db.insert(s.chatReport).values(rows)
 	});
 }

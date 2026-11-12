@@ -103,6 +103,8 @@ export const user = snakeCase.table(
 		foodPreference: foodPreference(),
 		wantsToReceiveGeneralInformation: boolean().default(false).notNull(),
 		wantsJoinTeamInformation: boolean().default(false).notNull(),
+		/** Whether a mail tells them about chat messages they have not read for a while. */
+		messageNotificationEmails: boolean().default(true).notNull(),
 		gender: gender(),
 		emergencyContacts: text(),
 		// care notes for the team, not the public, survive conferences

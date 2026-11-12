@@ -8,6 +8,7 @@ import {
 	SURVEY_REMINDER_DAYS,
 	type EmailGroupId
 } from '#lib/helpers/emailKinds';
+import { UNREAD_MESSAGE_MAIL_MINUTES } from '#lib/helpers/chat';
 
 /** What the e-mail page says about each automatic mail: when it goes, to whom, with what. */
 export interface EmailKindTexts {
@@ -132,6 +133,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		recipients: m.emailKindTeamWelcomeRecipients(),
 		content: m.emailKindTeamWelcomeContent()
 	}),
+	UNREAD_MESSAGES: () => ({
+		title: m.emailKindUnreadMessagesTitle(),
+		trigger: m.emailKindUnreadMessagesTrigger({ minutes: UNREAD_MESSAGE_MAIL_MINUTES }),
+		recipients: m.emailKindUnreadMessagesRecipients(),
+		content: m.emailKindUnreadMessagesContent()
+	}),
 	BADGE_FOUND: () => ({
 		title: m.emailKindBadgeFoundTitle(),
 		trigger: m.emailKindBadgeFoundTrigger(),
@@ -150,6 +157,7 @@ export const emailGroupTitle: Record<EmailGroupId, () => string> = {
 	reminders: () => m.emailGroupReminders(),
 	papers: () => m.emailGroupPapers(),
 	onSite: () => m.emailGroupOnSite(),
+	messages: () => m.emailGroupMessages(),
 	certificate: () => m.emailGroupCertificate(),
 	supervisors: () => m.emailGroupSupervisors(),
 	team: () => m.emailGroupTeam()

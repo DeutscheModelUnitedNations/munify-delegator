@@ -8,6 +8,7 @@ import type {
 	SnapshotSurvey,
 	SnapshotTeamMember
 } from './dueEmails';
+import { loadUnreadMessages } from './unreadMessages';
 
 const ROLE = {
 	columns: { id: true, kind: true, name: true, nationAlpha3Code: true }
@@ -37,90 +38,99 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			applicationDeadline: true,
 			startConference: true,
 			timezone: true,
-			certificateFileId: true
+			certificateFileId: true,
+			messagingEnabled: true
 		}
 	});
 	if (!conference) return undefined;
 	const chaseLink = linkConfig();
 
-	const [participants, seatedEntries, reviews, surveys, teamMembers, acceptedInvitations] =
-		await Promise.all([
-			db.query.conferenceParticipant.findMany({
-				where: { conferenceId },
-				columns: {
-					id: true,
-					paymentStatus: true,
-					termsAndConditions: true,
-					guardianConsent: true,
-					mediaConsent: true,
-					didAttend: true
-				},
-				with: {
-					user: USER,
-					delegationMember: {
-						columns: { id: true },
-						with: {
-							delegation: {
-								columns: { applied: true },
-								with: { assignedRole: ROLE }
-							},
-							assignedCommittee: { columns: { id: true, abbreviation: true } }
-						}
-					},
-					singleParticipant: {
-						columns: { applied: true },
-						with: { assignedRole: ROLE }
-					},
-					conferenceSupervisor: {
-						columns: { plansOwnAttendenceAtConference: true },
-						with: { supervised: { columns: { id: true } } }
+	const [
+		participants,
+		seatedEntries,
+		reviews,
+		surveys,
+		teamMembers,
+		acceptedInvitations,
+		unreadMessages
+	] = await Promise.all([
+		db.query.conferenceParticipant.findMany({
+			where: { conferenceId },
+			columns: {
+				id: true,
+				paymentStatus: true,
+				termsAndConditions: true,
+				guardianConsent: true,
+				mediaConsent: true,
+				didAttend: true
+			},
+			with: {
+				user: USER,
+				delegationMember: {
+					columns: { id: true },
+					with: {
+						delegation: {
+							columns: { applied: true },
+							with: { assignedRole: ROLE }
+						},
+						assignedCommittee: { columns: { id: true, abbreviation: true } }
 					}
+				},
+				singleParticipant: {
+					columns: { applied: true },
+					with: { assignedRole: ROLE }
+				},
+				conferenceSupervisor: {
+					columns: { plansOwnAttendenceAtConference: true },
+					with: { supervised: { columns: { id: true } } }
 				}
-			}),
-			db.query.waitingListEntry.findMany({
-				where: { conferenceId, assignedAt: { isNotNull: true } },
-				columns: { id: true, userId: true }
-			}),
-			db.query.paperReview.findMany({
-				where: { paperVersion: { paper: { delegation: { conferenceId } } } },
-				columns: { id: true, statusAfter: true },
-				with: {
-					reviewer: { columns: { givenName: true, familyName: true, email: true } },
-					paperVersion: {
-						columns: { id: true },
-						with: {
-							paper: {
-								columns: { id: true, type: true, authorParticipantId: true },
-								with: {
-									agendaItem: {
-										columns: { title: true },
-										with: { committee: { columns: { abbreviation: true } } }
-									}
+			}
+		}),
+		db.query.waitingListEntry.findMany({
+			where: { conferenceId, assignedAt: { isNotNull: true } },
+			columns: { id: true, userId: true }
+		}),
+		db.query.paperReview.findMany({
+			where: { paperVersion: { paper: { delegation: { conferenceId } } } },
+			columns: { id: true, statusAfter: true },
+			with: {
+				reviewer: { columns: { givenName: true, familyName: true, email: true } },
+				paperVersion: {
+					columns: { id: true },
+					with: {
+						paper: {
+							columns: { id: true, type: true, authorParticipantId: true },
+							with: {
+								agendaItem: {
+									columns: { title: true },
+									with: { committee: { columns: { abbreviation: true } } }
 								}
 							}
 						}
 					}
 				}
-			}),
-			// What participants see: neither drafts nor the questions the team hid
-			db.query.surveyQuestion.findMany({
-				where: { conferenceId, draft: false, hidden: false },
-				columns: { id: true, title: true, deadline: true },
-				with: { surveyAnswers: { columns: { conferenceParticipantId: true } } }
-			}),
-			db.query.teamMember.findMany({
-				where: { conferenceId },
-				columns: { id: true, role: true },
-				with: { user: USER }
-			}),
-			// Oldest first, so the latest invitation a member accepted names their inviter
-			db.query.teamMemberInvitation.findMany({
-				where: { conferenceId, acceptedById: { isNotNull: true } },
-				columns: { acceptedById: true },
-				with: { invitedBy: { columns: { givenName: true, familyName: true } } },
-				orderBy: { createdAt: 'asc' }
-			})
-		]);
+			}
+		}),
+		// What participants see: neither drafts nor the questions the team hid
+		db.query.surveyQuestion.findMany({
+			where: { conferenceId, draft: false, hidden: false },
+			columns: { id: true, title: true, deadline: true },
+			with: { surveyAnswers: { columns: { conferenceParticipantId: true } } }
+		}),
+		db.query.teamMember.findMany({
+			where: { conferenceId },
+			columns: { id: true, role: true },
+			with: { user: USER }
+		}),
+		// Oldest first, so the latest invitation a member accepted names their inviter
+		db.query.teamMemberInvitation.findMany({
+			where: { conferenceId, acceptedById: { isNotNull: true } },
+			columns: { acceptedById: true },
+			with: { invitedBy: { columns: { givenName: true, familyName: true } } },
+			orderBy: { createdAt: 'asc' }
+		}),
+		conference.messagingEnabled ? loadUnreadMessages(conferenceId) : []
+	]);
 
 	const seatedFrom = new Map(seatedEntries.map((entry) => [entry.userId, entry.id]));
 	const inviterOf = new Map(
@@ -186,7 +196,8 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			title: survey.title,
 			deadline: survey.deadline,
 			answeredBy: survey.surveyAnswers.map((answer) => answer.conferenceParticipantId)
-		}))
+		})),
+		unreadMessages
 	};
 }
 
