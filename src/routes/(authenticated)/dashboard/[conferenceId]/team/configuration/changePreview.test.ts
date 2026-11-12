@@ -122,6 +122,14 @@ describe('collectConfigChanges', () => {
 		expect(changes).toEqual([]);
 	});
 
+	test('reports a removed image as a change only when one is stored', () => {
+		const changes = collect({ ...saved, logo: null }, { logo: true }, { logo: true });
+		expect(changes).toHaveLength(1);
+		expect(changes[0].isFile).toBe(false);
+		expect(changes[0].group).toBe('general');
+		expect(collect({ ...saved, logo: null }, { logo: true })).toEqual([]);
+	});
+
 	test('reports a picked file as a change and names the existing document', () => {
 		const file = new File(['x'.repeat(2048)], 'certificate.pdf');
 		const changes = collect(

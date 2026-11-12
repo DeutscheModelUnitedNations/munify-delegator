@@ -57,13 +57,7 @@
 			placeholder="New York, USA"
 			label={m.conferenceLocation()}
 		/>
-		<FormSelect
-			{form}
-			name="language"
-			label={m.conferenceLanguage()}
-			description={m.conferenceLanguageHint()}
-			options={languageOptions}
-		/>
+		<FormSelect {form} name="language" label={m.conferenceLanguage()} options={languageOptions} />
 	</div>
 	<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
 </FormSection>
@@ -74,6 +68,7 @@
 		name="image"
 		label={m.conferenceImage()}
 		storedUrl={storedImages.imageFile?.url ?? null}
+		removable
 	/>
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<FormImage
@@ -83,6 +78,7 @@
 			description={m.conferenceEmblemHint()}
 			accept="image/svg+xml"
 			storedUrl={storedImages.emblemFile?.url ?? null}
+			removable
 		/>
 		<FormImage
 			{form}
@@ -90,6 +86,7 @@
 			label={m.conferenceLogo()}
 			description={m.conferenceLogoHint()}
 			storedUrl={storedImages.logoFile?.url ?? null}
+			removable
 		/>
 	</div>
 </FormSection>

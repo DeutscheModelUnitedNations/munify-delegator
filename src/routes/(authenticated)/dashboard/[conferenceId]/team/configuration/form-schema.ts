@@ -36,18 +36,19 @@ export const conferenceSettingsFormSchema = z
 				message: m.pleaseEnterAValidWebsite()
 			})
 			.optional(),
+		/** The images: a picked `File` replaces the stored one, `null` removes it. */
 		image: z
 			.instanceof(File)
 			.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
-			.optional(),
+			.nullish(),
 		emblem: z
 			.instanceof(File)
 			.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
-			.optional(),
+			.nullish(),
 		logo: z
 			.instanceof(File)
 			.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
-			.optional(),
+			.nullish(),
 		applicationDeadline: z.date({
 			message: m.pleaseEnterAValidDate()
 		}),
@@ -118,26 +119,27 @@ export const conferenceSettingsFormSchema = z
 		postalZip: z.string().optional(),
 		postalCity: z.string().optional(),
 		postalCountry: z.string().optional(),
+		/** The templates: a picked `File` replaces the stored one, `null` removes it. */
 		contractBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		guardianConsentBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		mediaConsentBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		termsAndConditionsBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		certificateBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional()
+			.nullish()
 	})
 	// The same order `updateConference` keeps; shown on the date that is out of it.
 	.superRefine((settings, ctx) => {

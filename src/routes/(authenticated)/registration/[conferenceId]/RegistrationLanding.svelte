@@ -11,6 +11,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { getRegistrationStatus } from '#lib/utils/registrationStatus';
 	import NotParticipatingHint from '#lib/components/dashboard/NotParticipatingHint.svelte';
+	import ConferenceLanguageNotice from '#lib/components/registration/ConferenceLanguageNotice.svelte';
 
 	import MermaidWrapper from '#lib/components/MermaidWrapper.svelte';
 	import ApplyFlow from './apply/ApplyFlow.svelte';
@@ -77,6 +78,8 @@
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			{@html m.conferenceSignupIntroduction()}
 		</p>
+
+		<ConferenceLanguageNotice {conferenceId} class="mt-4 max-w-3xl" />
 
 		<div class="bg-base-200 rounded-box mt-6 p-4" data-tour="registration.assistant">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">

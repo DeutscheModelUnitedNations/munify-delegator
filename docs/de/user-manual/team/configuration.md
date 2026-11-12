@@ -62,7 +62,7 @@ Gremien, Resolutionen, die Anordnung auf den Vorlagen und die E-Mail-Texte speic
 
 ### Allgemeines
 
-- **Basisdaten**: **Konferenzname**, **Voller Name**, **Ort**, **Website** und die **Konferenzsprache**. In dieser Sprache werden die Staaten auf den Namensschild-Tischen einsortiert und gedruckt, egal in welcher Sprache die Oberfläche der einzelnen Person läuft.
+- **Basisdaten**: **Konferenzname**, **Voller Name**, **Ort**, **Website** und die **Konferenzsprache**. Sie steht auf der Karte der Konferenz in der Übersicht und als Hinweis über der Bewerbung, damit sich nur bewirbt, wer die Sprache spricht. In ihr werden außerdem die Staaten auf den Namensschild-Tischen einsortiert und gedruckt, egal in welcher Sprache die Oberfläche der einzelnen Person läuft.
 - **Bilder & Logos**: das **Konferenzbild**, das **Konferenz-Emblem** (eine SVG-Datei für Resolutionen, sonst das UN-Emblem) und das **Konferenz-Logo** für den Kopf des Dashboards (sonst das Emblem).
 - **Zeitplan**: **Ende der Bewerbungsphase**, der **Bewerbungsfrist Kulanzzeitraum (in Minuten)**, **Konferenz-Startdatum**, **Konferenz-Enddatum** und die **Zeitzone der Konferenz**, nach der der Kalender die „Jetzt“-Markierung setzt.
 

@@ -11,7 +11,7 @@ export async function matchingUserIds(search: string): Promise<string[] | undefi
 	const term = search.trim();
 	if (!term) return undefined;
 	const users = await client.query.users({
-		__args: { search: term, limit: USER_MATCH_LIMIT },
+		__args: { search: { term }, limit: USER_MATCH_LIMIT },
 		id: true
 	});
 	return users.map((user) => user.id);
