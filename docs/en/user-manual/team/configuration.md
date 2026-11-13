@@ -155,6 +155,34 @@ Many mail services accept only so many emails per second. Under **Sending speed*
 
 At the bottom, the **Log** shows the last 200 emails of the conference, automatic and sent by hand.
 
+## Announcements {#announcements}
+
+Under **Communication → Announcements** you write what participants and the team should know. Project management, participant care and the content lead may do that.
+
+An announcement has a title, a text in Markdown and an optional signature. On the right you see it the way readers get it.
+
+- **Audience:** Pick one or more groups. Whoever is in at least one of them sees the announcement. You can choose all participants, delegates, single participants, supervisors, applicants without a seat, seated participants, the waiting list, single committees and roles, answers of a survey, open payment or paperwork, minors and adults, and the team or one team role. Below the selection you see how many people that is right now.
+- **Importance:** Normal, important or urgent. Urgent announcements show as a bar on every page of the conference until they are read.
+- **Pin:** Pinned announcements stay on top for everyone.
+- **Visible until:** After that the announcement disappears on its own.
+- **Attachments:** Up to five PDFs or images.
+- **Notify by mail:** The audience gets a mail with the full text when the announcement is published.
+
+:::info Committees and roles
+Committees, roles, "seated" and open paperwork apply to participants only once the assignment is released. That way an announcement never tells anybody their seat early.
+
+"All participants" are everybody registered and the waiting list while people register. From the preparation stage on, with the assignment released, they are only those with a seat and their supervisors. Whoever got no seat or is still waiting is then reached through "Applicants without a seat" and "Waiting list".
+:::
+
+A new announcement starts as a **draft**. **Publish** releases it right away or schedules a time. Before that you see how many people it reaches and whether a mail is sent.
+
+The list shows the state of every announcement, who wrote it and how many have read it. There you can also
+
+- **edit** it: readers see a change to the title or text of a published announcement as "updated on".
+- **take it back:** it becomes a draft again.
+- **notify again:** the mail goes to the audience once more as it reads now.
+- **send it to yourself as a test**, **duplicate**, **archive** or **delete** it.
+
 ## Messages {#messages}
 
 The switch "Messages between participants and team" under "Status" opens the chats. Participants then write to participant care and, once the roles are released, to each other, to their delegation and to the team of their committee.

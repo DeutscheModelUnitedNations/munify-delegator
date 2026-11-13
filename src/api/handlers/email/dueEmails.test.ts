@@ -94,7 +94,8 @@ function snapshot(
 		reviews,
 		surveys,
 		waitingList,
-		unreadMessages: []
+		unreadMessages: [],
+		announcementMails: []
 	};
 }
 
@@ -635,5 +636,37 @@ describe('unread chat messages', () => {
 				unreadMessages: [unreadSince(60, { participantId: 'gone' })]
 			})
 		).toEqual([]);
+	});
+});
+
+describe('announcements', () => {
+	const announcement = {
+		id: 'a1',
+		title: 'Room change',
+		body: 'The GA meets in room 2.',
+		signature: null,
+		mailRevision: 0,
+		attachmentNames: []
+	};
+
+	test('each person of the audience is owed the mail, keyed by announcement and revision', () => {
+		const reader = seated();
+		const snap = snapshot([reader]);
+		snap.announcementMails = [
+			{ announcement, recipient: reader.user },
+			// "notify again" raises the revision: a mail of its own
+			{ announcement: { ...announcement, mailRevision: 1 }, recipient: reader.user }
+		];
+		const due = dueEmails({ snapshot: snap, now }).filter((email) => email.kind === 'ANNOUNCEMENT');
+		expect(due.map((email) => email.subjectKey)).toEqual(['a1:0', 'a1:1']);
+		expect(due[0]?.recipient).toBe(reader.user);
+		expect(due[0]?.announcement).toBe(announcement);
+	});
+
+	test('goes to somebody who is no participant too: the team, the waiting list', () => {
+		const recipient = { ...seated().user, id: 'waiting' };
+		const snap = snapshot([]);
+		snap.announcementMails = [{ announcement, recipient }];
+		expect(kindsOf(snap)).toEqual(['ANNOUNCEMENT:waiting:a1:0']);
 	});
 });

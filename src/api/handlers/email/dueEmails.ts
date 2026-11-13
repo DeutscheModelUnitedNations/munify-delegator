@@ -117,6 +117,25 @@ export interface SnapshotUnreadMessage {
 	reader: { participantId: string } | { teamMemberId: string };
 }
 
+/** An announcement as its mail carries it (`#api/handlers/announcement`). */
+export interface SnapshotAnnouncement {
+	id: string;
+	title: string;
+	/** Markdown. */
+	body: string;
+	signature: string | null;
+	/** Counts the "notify again"s, each of which mails once more. */
+	mailRevision: number;
+	/** The files it comes with, which the mail names and the dashboard offers. */
+	attachmentNames: string[];
+}
+
+/** An announcement owed to somebody in its audience by mail. */
+export interface SnapshotAnnouncementMail {
+	announcement: SnapshotAnnouncement;
+	recipient: SnapshotUser;
+}
+
 export interface EmailSnapshot {
 	conference: {
 		id: string;
@@ -151,6 +170,8 @@ export interface EmailSnapshot {
 	unreadMessages: SnapshotUnreadMessage[];
 	/** The waiting list entries not given a seat yet. */
 	waitingList: SnapshotWaitingEntry[];
+	/** The announcements that notify by mail and are fresh, per person of their audience. */
+	announcementMails: SnapshotAnnouncementMail[];
 }
 
 export type PaperworkField =
@@ -181,6 +202,8 @@ export interface DueEmail {
 	review?: SnapshotReview;
 	/** For a survey reminder: the survey. */
 	survey?: SnapshotSurvey;
+	/** For an announcement's mail: the announcement. */
+	announcement?: SnapshotAnnouncement;
 	/** For a reminder: the date it reminds of, which its window closes at (`reminderSpacing.ts`). */
 	remindsOf?: Date;
 }
@@ -553,6 +576,17 @@ function unreadMessages({ snapshot, now }: { snapshot: EmailSnapshot; now: Date 
 		});
 }
 
+/** An announcement's mail, keyed by the announcement and its `mailRevision`. */
+export const announcementMail = ({
+	announcement,
+	recipient
+}: SnapshotAnnouncementMail): DueEmail => ({
+	kind: 'ANNOUNCEMENT',
+	subjectKey: `${announcement.id}:${announcement.mailRevision}`,
+	recipient,
+	announcement
+});
+
 /** In the order a person's mails are listed. */
 const RULES: Rule[] = [
 	delegationRegistration,
@@ -605,7 +639,8 @@ export function dueEmails({
 		...snapshot.people.flatMap((person) => RULES.flatMap((rule) => rule(ctx, person))),
 		...snapshot.waitingList.map(waitingListRegistered),
 		...snapshot.team.map(teamWelcome),
-		...unreadMessages({ snapshot, now })
+		...unreadMessages({ snapshot, now }),
+		...snapshot.announcementMails.map(announcementMail)
 	];
 }
 

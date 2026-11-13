@@ -90,6 +90,15 @@ export {
 	chatReport
 } from './messages';
 export {
+	announcementImportance,
+	announcementStatus,
+	announcement,
+	announcementAudienceKind,
+	announcementAudience,
+	announcementAttachment,
+	announcementRead
+} from './announcements';
+export {
 	statisticsPeople,
 	statisticsDelegations,
 	statisticsSchools,

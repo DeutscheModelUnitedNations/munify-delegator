@@ -2,9 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sendDueEmails = vi.fn();
 const conferencesSendingEmails = vi.fn();
+const announceReleasedAnnouncements = vi.fn();
 
 vi.mock('#api/handlers/email/emailSweep', () => ({ sendDueEmails }));
 vi.mock('#api/handlers/email/emailSettings', () => ({ conferencesSendingEmails }));
+vi.mock('#api/handlers/announcement/announcementRelease', () => ({
+	announceReleasedAnnouncements
+}));
 vi.mock('./config', () => ({
 	sendEmailsConfig: () => ({ APP_URL: 'https://delegator.example.org/some/path' })
 }));
@@ -18,6 +22,7 @@ const round = (sent: number, more: boolean) => ({ sent, failed: 0, next: more ? 
 beforeEach(() => {
 	sendDueEmails.mockReset();
 	conferencesSendingEmails.mockReset();
+	announceReleasedAnnouncements.mockReset().mockResolvedValue(0);
 });
 
 describe('runSendEmails', () => {
@@ -47,5 +52,13 @@ describe('runSendEmails', () => {
 		sendDueEmails.mockResolvedValue(round(1, true));
 		await runSendEmails();
 		expect(sendDueEmails).toHaveBeenCalledTimes(50);
+	});
+
+	it('tells open pages of the scheduled announcements whose time has come, before it sweeps', async () => {
+		conferencesSendingEmails.mockResolvedValue([]);
+		announceReleasedAnnouncements.mockResolvedValue(2);
+		await runSendEmails();
+		expect(announceReleasedAnnouncements).toHaveBeenCalledTimes(1);
+		expect(sendDueEmails).not.toHaveBeenCalled();
 	});
 });

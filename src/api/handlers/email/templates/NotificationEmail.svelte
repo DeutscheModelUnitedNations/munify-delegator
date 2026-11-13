@@ -4,7 +4,9 @@
 	import EmailButton from './EmailButton.svelte';
 	import EmailParagraphs from './EmailParagraphs.svelte';
 	import EmailText from './EmailText.svelte';
+	import EmailBlocks from './EmailBlocks.svelte';
 	import { smallStyle, textStyle } from './brand';
+	import type { MailBlock } from '../announcementBlocks';
 
 	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent`). */
 	interface Props {
@@ -14,6 +16,8 @@
 		items?: string[];
 		/** Paragraphs after the list. */
 		closing?: string[];
+		/** An announcement's own text: headings, paragraphs and lists. */
+		blocks?: MailBlock[];
 		button?: { label: string; url: string };
 		conferenceTitle: string;
 		/** The conference's footer, paragraph by paragraph. */
@@ -26,6 +30,7 @@
 		paragraphs,
 		items = [],
 		closing = [],
+		blocks = [],
 		button,
 		conferenceTitle,
 		conferenceFooter
@@ -46,6 +51,8 @@
 	{#each closing as paragraph, index (index)}
 		<EmailText {paragraph} />
 	{/each}
+
+	<EmailBlocks {blocks} />
 
 	{#if button}
 		<EmailButton href={button.url} label={button.label} />

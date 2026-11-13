@@ -854,6 +854,22 @@ the path on the dashboard is step 0) and the content in a `DashboardSection`.
 
 ---
 
+## Announcement Components
+
+The announcements (see "Announcements" in CLAUDE.md) are built from `#lib/components/announcement/`.
+
+- **`AnnouncementCard`**: one announcement as readers see it. Its edge colour, icon and badge
+  follow `importance` (the badge says it in words too); `read={false}` shows "New" and, with
+  `onread`, a "mark as read" button. A long text is folded until opened (never for an urgent one,
+  or with `expanded`). Without `read` it is a preview, which the editor uses. Its badges and its
+  file links are `AnnouncementBadges` and `AnnouncementAttachments`.
+- **`AnnouncementFeed`**: the caller's feed of a conference. With `limit` (the dashboard) it shows
+  the pinned, the unread and the newest and links to the rest; without, all of them. Renders
+  nothing without announcements unless `showEmpty`.
+- **`UrgentAnnouncementBar`**: the bar in the header while an urgent announcement is unread.
+- Fetch through `fetchAnnouncementFeed` and mark through `markAnnouncementsRead`
+  (`#lib/api/announcements`), so the feed and the bar share one result and one read state.
+
 ## Chat Components
 
 The chats (see "Messages" in CLAUDE.md) are built from `#lib/components/chat/`. Both messages

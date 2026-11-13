@@ -125,6 +125,14 @@ export async function previewEmail({
 			title: m.emailPreviewSurveyTitle({}, { locale }),
 			deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
 			answeredBy: []
+		},
+		announcement: {
+			id: 'preview',
+			title: m.emailPreviewAnnouncementTitle({}, { locale }),
+			body: m.emailPreviewAnnouncementBody({}, { locale }),
+			signature: null,
+			mailRevision: 0,
+			attachmentNames: []
 		}
 	};
 	return renderAutomaticEmail({ email, conference, origin, wording });

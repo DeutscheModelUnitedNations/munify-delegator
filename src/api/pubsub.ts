@@ -1,5 +1,8 @@
 import { pubsub } from '#api/rumble';
 
+export const announcementPubsub = pubsub({ table: 'announcement' });
+export const announcementAudiencePubsub = pubsub({ table: 'announcementAudience' });
+export const announcementAttachmentPubsub = pubsub({ table: 'announcementAttachment' });
 export const assignmentReviewPubsub = pubsub({ table: 'assignmentReview' });
 export const assignmentSingleRolePubsub = pubsub({ table: 'assignmentSingleRole' });
 export const assignmentUnitPubsub = pubsub({ table: 'assignmentUnit' });
