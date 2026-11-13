@@ -40,6 +40,7 @@ describe('paperWriteRefusal', () => {
 
 	test('a non-state actor writes on any agenda item', () => {
 		expect(refusalOf(nsa, { type: 'POSITION_PAPER', agendaItemCommitteeId: 'SC' })).toBe(undefined);
+		expect(refusalOf(nsa, { type: 'WORKING_PAPER', agendaItemCommitteeId: 'GA' })).toBe(undefined);
 	});
 
 	test('only non-state actors write introduction papers, and without an agenda item', () => {

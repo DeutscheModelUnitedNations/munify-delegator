@@ -20,6 +20,7 @@
 	import { createPaper } from '../paperSaving';
 	import { paperEntityName, resolutionHeader } from '../paperDisplay';
 	import NewPaperForm from '../NewPaperForm.svelte';
+	import { agendaItemOptions } from '../newPaper/newPaperOptions';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -78,8 +79,8 @@
 	const context = await fetchNewResolutionContext({ conferenceId, userId: currentUser.sub });
 	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember.delegation);
-	let committee = $derived(delegationMember.assignedCommittee);
 	let conference = $derived(context.conference);
+	let isNSA = $derived(delegation.assignedRole?.kind === 'NON_STATE_ACTOR');
 
 	let form = superForm(context.form, {
 		onSubmit: (input) => {
@@ -89,21 +90,29 @@
 	});
 	let { form: formData } = $derived(form);
 
-	const agendaItems: { value: string; label: string }[] = $derived.by(() => {
-		return (
-			committee?.agendaItems.map((item) => ({
-				value: item.id,
-				label: item.title
-			})) ?? []
-		);
-	});
+	const agendaItems = $derived(
+		agendaItemOptions({
+			isNSA,
+			type: 'WORKING_PAPER',
+			conferenceAgendaItems: context.conferenceAgendaItems,
+			committeeAgendaItems: delegationMember.assignedCommittee?.agendaItems
+		})
+	);
+
+	const selectedAgendaItem = $derived(
+		context.conferenceAgendaItems.find((item) => item.id === $formData.agendaItemId)
+	);
+	// A non-state actor has no committee of its own, so the header names the agenda item's
+	let committee = $derived(
+		isNSA ? selectedAgendaItem?.committee : delegationMember.assignedCommittee
+	);
 
 	// Resolution header data for working papers
 	let resolutionHeaderData = $derived(
 		resolutionHeader({
 			conference,
 			committee,
-			topic: committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)?.title,
+			topic: selectedAgendaItem?.title,
 			authoringDelegation: paperEntityName(delegation),
 			documentNumber: 'WP/DRAFT'
 		})

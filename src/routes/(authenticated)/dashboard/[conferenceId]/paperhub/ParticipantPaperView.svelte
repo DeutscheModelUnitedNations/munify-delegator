@@ -11,7 +11,7 @@
 
 	interface Props {
 		conferenceId: string;
-		/** Non-state actors write introduction papers instead of working papers. */
+		/** Non-state actors also write introduction papers. */
 		isNSA: boolean;
 	}
 
@@ -128,12 +128,10 @@
 			resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=POSITION_PAPER`)
 		)}
 
-		{#if !isNSA}
-			{@render PaperTypeBlock(
-				'WORKING_PAPER',
-				m.paperTypeWorkingPaperDescription(),
-				resolve(`dashboard/${conferenceId}/paperhub/newResolution`)
-			)}
-		{/if}
+		{@render PaperTypeBlock(
+			'WORKING_PAPER',
+			m.paperTypeWorkingPaperDescription(),
+			resolve(`dashboard/${conferenceId}/paperhub/newResolution`)
+		)}
 	</div>
 </div>
