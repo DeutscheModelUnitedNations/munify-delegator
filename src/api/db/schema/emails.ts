@@ -43,7 +43,8 @@ export const emailKind = pgEnum('email_kind', [
 	'PAPER_REVIEWED',
 	'TEAM_INVITATION',
 	'TEAM_WELCOME',
-	'BADGE_FOUND'
+	'BADGE_FOUND',
+	'UNREAD_MESSAGES'
 ]);
 
 /**

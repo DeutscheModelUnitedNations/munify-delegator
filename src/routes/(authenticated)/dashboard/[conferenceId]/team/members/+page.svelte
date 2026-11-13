@@ -10,6 +10,7 @@
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { startImpersonation } from '#lib/api/startImpersonation';
 	import TeamMemberActions from './TeamMemberActions.svelte';
+	import TeamFunctionsModal from './TeamFunctionsModal.svelte';
 	import TeamManagementPage from '../TeamManagementPage.svelte';
 	import { teamMemberColumns } from './columns';
 	import { teamMembersSource } from './teamMembersSource';
@@ -25,6 +26,9 @@
 	const columns = teamMemberColumns();
 	const source = teamMembersSource(conferenceId);
 	const isAdmin = $derived((await getCurrentUser()).isAdmin);
+
+	let functionsOf = $state<{ id: string; name: string }>();
+	let functionsOpen = $state(false);
 
 	const handleDelete = async (id: string) => {
 		if (!(await confirmDialog({ text: m.confirmDeleteTeamMember(), danger: true }))) return;
@@ -50,14 +54,22 @@
 		label={m.teamManagement()}
 		exportName="team"
 		selectable
-		actionsWidth={130}
+		actionsWidth={170}
 	>
 		{#snippet actions(row)}
 			<TeamMemberActions
 				onOpenUserCard={() => openUserCard(row.userId)}
+				onFunctions={() => {
+					functionsOf = { id: row.id, name: `${row.given_name} ${row.family_name}` };
+					functionsOpen = true;
+				}}
 				onImpersonate={isAdmin ? () => startImpersonation(row.userId) : undefined}
 				onDelete={() => handleDelete(row.id)}
 			/>
 		{/snippet}
 	</DataGrid>
 </TeamManagementPage>
+
+{#if functionsOf}
+	<TeamFunctionsModal bind:open={functionsOpen} {conferenceId} member={functionsOf} />
+{/if}

@@ -854,6 +854,46 @@ the path on the dashboard is step 0) and the content in a `DashboardSection`.
 
 ---
 
+## Chat Components
+
+The chats (see "Messages" in CLAUDE.md) are built from `#lib/components/chat/`. Both messages
+pages (`dashboard/[conferenceId]/messages`, `team/messages`) are a `ChatWorkspace` with their own
+list header.
+
+- **`ChatWorkspace`**: the messenger frame, the chat list beside the open chat; on a phone the two
+  take turns. It takes the `chats` (from `fetchChats`, `#lib/api/chats`), `selectedId` and
+  `onSelect` (keep the open chat in the URL as `?chat=` through `queryParameters`), and snippets
+  for the `listHeader`, the `emptyList` and a `listFooter`.
+- **`ChatThread`**: one chat. Fetches itself by `chatId`, marks it read while on screen, shows the
+  messages by day and the field to write in (Enter sends, Shift+Enter breaks the line), or why the
+  caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
+  reviewing a report it shows who the people are and suspends them.
+- **`NewChatDialog` / `NewChatPicker`**: finding whom to write to. One search field over role,
+  country and committee (`matchesSearch`: every word has to be found, so "ger ga" works), chips
+  per committee, the team inboxes and the delegation group on top. `mode="team"` picks a person
+  first and then the inbox to write from.
+- **`WriteToDelegateButton`**: `conferenceId`, the person's `participantId`, optionally a
+  `paperId` and `compact` (icon only, for table rows). Asks for the inboxes on the click.
+- **`FilterChips`**: a row of chips narrowing a list to one group ("all" first, a pressed chip
+  lifts the filter): `options` with a `key`, `selected`, `onSelect`, a `label` and a `chip`
+  snippet for an option's content. `CommitteeChips` and the team page's `InboxChips` are built on it.
+- **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
+  `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
+  `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
+  in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
+  (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
+- **Where the reader left off**: `ChatThread` takes `firstUnreadId` (`threadMessages.ts`) once as
+  it opens, `ChatMessages` draws the "new messages" line above that message, and the thread opens
+  there instead of at the end. The line stays until the chat is opened again.
+- **`MessagingTermsModal`**: the terms of the message service (`messagingTermsSections`). The
+  composer opens it with `onAccepted` when the API asks a participant to agree before their first
+  message; `MessagingTermsLink` under the participant's chat list shows them to read.
+- **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
+- **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
+  `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a
+  participant's name to another participant.
+- **`MessagesLinkInfo`**: the dashboard card's live details (unread chats).
+
 ## Survey Components
 
 Survey components handle displaying and answering surveys on the participant dashboard.

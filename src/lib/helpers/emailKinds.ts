@@ -122,6 +122,7 @@ export const EMAIL_GROUPS = [
 	{ id: 'surveys', kinds: ['SURVEY_PUBLISHED'] },
 	{ id: 'reminders', kinds: REMINDER_KINDS },
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
+	{ id: 'messages', kinds: ['UNREAD_MESSAGES'] },
 	{ id: 'onSite', kinds: ['BADGE_FOUND'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
 	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED', 'SUPERVISOR_CONNECTED'] },

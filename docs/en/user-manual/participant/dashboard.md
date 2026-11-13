@@ -157,6 +157,27 @@ Once the team switches the schedule on, the **Schedule** card appears. Right on 
 
 Under **Surveys / Polls** you register for events, for example, or the team asks for important information. Choose an answer with **Take Survey** and change it with **Change answer** until the deadline. Fully booked answers can no longer be picked. Open surveys also show up under **Personal Status**.
 
+## Messages {#messages}
+
+Once the team has switched messages on you find the card "Messages" on your dashboard. It shows which chats hold something unread.
+
+- **Trusted persons.** When you want to talk about something in confidence you write to the trusted persons. You reach them at any time, all of them together or one person by name. Only the trusted persons read these messages. When you write to one of them only that person reads it. Nobody else on the team reads along. The trusted persons see your role. You give your name yourself if you want to.
+- **Team.** You reach participant care at any time. Once the roles are released the chairs and the committee consultants of your committee join them. Everyone answering an inbox reads along. An answer carries the function and the name of whoever writes it.
+- **Other delegates.** With "New message" you search by country, committee or role, for example "fran ga". You only see each other's role, never the name.
+- **Your delegation.** Every delegation has a group for all its members.
+
+Chats with other delegates and the delegation group exist only once the roles are released.
+
+When a message stays unread for a quarter of an hour you get an email with a link to your chats. The mail does not contain the message. You turn these mails off below the chat list.
+
+:::tip When something is not right
+Before your first message the app shows you the terms of the message service. They set out respectful conduct and explain who can read along. Your message only goes out once you agreed. That holds once for your account. You can read them again at any time with **Read the terms** below your chats.
+
+When you open a chat with unread messages, the line **New messages** shows where you left off.
+
+The three dots at the top of a chat let you block a person or report the chat. After a report participant care reads the chat until the report is resolved. The other person is not told who reported.
+:::
+
 ## Your school {#school}
 
 Everyone gives their own **School / Institution**, within a delegation too. During registration the field is under **Information and Motivation**, for supervisors under **Your details**. With **Change school** you pick an existing school or enter a new one. It is optional.

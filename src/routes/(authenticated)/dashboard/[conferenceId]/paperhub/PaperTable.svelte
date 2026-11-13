@@ -4,6 +4,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import type { ResolvedPathname } from '$app/types';
+	import type { Snippet } from 'svelte';
 	import Flag from '#lib/components/Flag.svelte';
 	import { splitRole } from '#lib/helpers/conferenceRole';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
@@ -20,6 +21,7 @@
 		updatedAt: Date | null;
 		firstSubmittedAt: Date | null;
 		delegation: { assignedRole: PaperDelegationRole | null };
+		authorParticipantId?: string | null;
 	}
 
 	interface Props {
@@ -31,6 +33,8 @@
 		showUpdatedAt?: boolean;
 		/** Where a row leads; already passed through `resolve()`. */
 		paperHref: (paperId: string) => ResolvedPathname;
+		/** Something to do with a paper right from its row, such as writing to its author */
+		rowAction?: Snippet<[Paper]>;
 	}
 
 	let {
@@ -40,7 +44,8 @@
 		onSort,
 		showStatus = true,
 		showUpdatedAt = true,
-		paperHref
+		paperHref,
+		rowAction
 	}: Props = $props();
 
 	// Type colors for icon badges
@@ -168,6 +173,9 @@
 				{#if showUpdatedAt}
 					{@render sortableHeader('updatedAt', { text: m.paperUpdatedAt() })}
 				{/if}
+				{#if rowAction}
+					<th><span class="sr-only">{m.actions()}</span></th>
+				{/if}
 				<th aria-hidden="true"></th>
 			</tr>
 		</thead>
@@ -209,6 +217,9 @@
 						<td class="text-xs text-base-content/70">
 							{formatDate(paper.updatedAt)}
 						</td>
+					{/if}
+					{#if rowAction}
+						<td class="text-right">{@render rowAction(paper)}</td>
 					{/if}
 					<td class="text-right text-base-content/40" aria-hidden="true">
 						<i aria-hidden="true" class="ph-duotone ph-caret-right text-xs"></i>

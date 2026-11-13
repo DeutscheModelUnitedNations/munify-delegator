@@ -209,6 +209,12 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 		highImpact: true,
 		note: featureToggleNote
 	},
+	messagingEnabled: {
+		group: 'status',
+		label: () => m.messagingEnabled(),
+		highImpact: true,
+		note: featureToggleNote
+	},
 	linkToPreparationGuide: { group: 'links', label: () => m.preparationGuide() },
 	linkToTeamWiki: { group: 'links', label: () => m.linkToTeamWiki() },
 	linkToServicesPage: { group: 'links', label: () => m.linkToServicesPage() },
