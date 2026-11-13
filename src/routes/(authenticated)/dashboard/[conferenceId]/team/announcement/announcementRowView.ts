@@ -1,6 +1,7 @@
 import { m } from '#lib/paraglide/messages';
 import formatNames from '#lib/helpers/formatNames';
-import type { AnnouncementState } from '#lib/helpers/announcements';
+import type { AnnouncementState, Audience } from '#lib/helpers/announcements';
+import { audienceLabel, isAnnouncementState, type AudienceLookups } from './announcementLabels';
 
 /** What one row of the team's announcement list shows: its badges, its facts and its buttons. */
 
@@ -161,4 +162,41 @@ export function rowActions({ row, state }: { row: RowFacts; state: AnnouncementS
 		label: ACTION_LOOK[action].label(),
 		look: ACTION_LOOK[action].look ?? ''
 	}));
+}
+
+/** A row as the list reads it: the facts, and what names it and its audience. */
+export interface ListedRow extends RowFacts {
+	id: string;
+	title: string;
+	state: string;
+	audiences: readonly (Audience & { id: string })[];
+}
+
+/**
+ * Everything one row shows, as plain values, worked out by the page from its live rows. The page
+ * draws the rows itself: as a component of their own inside the list's `each`, the list stopped
+ * following live updates in a production build (e2e/announcements pins it down).
+ */
+export function rowView({
+	row,
+	lookups,
+	dateTime
+}: {
+	row: ListedRow;
+	lookups: AudienceLookups;
+	dateTime: (value: Date | string) => string;
+}) {
+	const state: AnnouncementState = isAnnouncementState(row.state) ? row.state : 'DRAFT';
+	return {
+		id: row.id,
+		title: row.title,
+		state,
+		badges: rowBadges(row),
+		audiences: row.audiences.map((audience) => ({
+			id: audience.id,
+			label: audienceLabel({ audience, lookups })
+		})),
+		facts: rowFacts({ row, state, dateTime }),
+		actions: rowActions({ row, state })
+	};
 }

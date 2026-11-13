@@ -8,9 +8,8 @@
 	import AnnouncementEditor from './AnnouncementEditor.svelte';
 	import PublishDialog from './PublishDialog.svelte';
 	import { fetchAnnouncements, type AnnouncementRow as Row } from './announcementRows';
-	import AnnouncementRow from './AnnouncementRow.svelte';
-	import { roleLabel, type AudienceLookups } from './announcementLabels';
-	import type { RowAction } from './announcementRowView';
+	import { roleLabel, STATE_LOOK, type AudienceLookups } from './announcementLabels';
+	import { rowView, type RowAction } from './announcementRowView';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -55,6 +54,14 @@
 	});
 
 	const rows = $derived(announcements.slice());
+	const dateTime = (value: Date | string) =>
+		new Date(value).toLocaleString(getLocale(), {
+			dateStyle: 'medium',
+			timeStyle: 'short',
+			timeZone: conference.timezone
+		});
+	/** What each row shows, worked out in `announcementRowView`. */
+	const views = $derived(rows.map((row) => rowView({ row, lookups, dateTime })));
 
 	let editorOpen = $state(false);
 	let editing = $state<Row>();
@@ -110,6 +117,11 @@
 		archive: (row) => withdraw(row, true),
 		delete: remove
 	};
+
+	function act(action: RowAction, id: string) {
+		const row = rows.find((other) => other.id === id);
+		if (row) ACTIONS[action](row);
+	}
 </script>
 
 <div class="flex flex-col gap-4">
@@ -129,13 +141,50 @@
 	{/if}
 
 	<ul class="flex flex-col gap-3" data-testid="announcement-list">
-		{#each rows as row (row.id)}
-			<AnnouncementRow
-				{row}
-				{lookups}
-				timezone={conference.timezone}
-				onAction={(action) => ACTIONS[action](row)}
-			/>
+		{#each views as view (view.id)}
+			<li
+				class="bg-base-100 border-base-300 rounded-box flex flex-col gap-3 border p-4"
+				data-testid="announcement-row"
+				data-state={view.state}
+			>
+				<div class="flex flex-wrap items-center gap-2">
+					<h2 class="min-w-0 flex-1 text-lg font-semibold break-words">{view.title}</h2>
+					<span class="badge {STATE_LOOK[view.state].badge}" data-testid="announcement-state"
+						>{STATE_LOOK[view.state].label()}</span
+					>
+					{#each view.badges as badge (badge.key)}
+						<span class="badge {badge.look}">
+							{#if badge.icon}<i aria-hidden="true" class={badge.icon}></i>{/if}
+							{badge.label}
+						</span>
+					{/each}
+				</div>
+
+				<ul class="flex flex-wrap gap-1.5" aria-label={m.announcementAudience()}>
+					{#each view.audiences as audience (audience.id)}
+						<li class="badge badge-primary badge-soft badge-sm">{audience.label}</li>
+					{/each}
+				</ul>
+
+				<p class="text-base-content/70 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+					{#each view.facts as fact (fact.key)}
+						<span data-testid="announcement-{fact.key}">{fact.text}</span>
+					{/each}
+				</p>
+
+				<div class="flex flex-wrap gap-2">
+					{#each view.actions as button (button.action)}
+						<button
+							class="btn btn-sm {button.look}"
+							onclick={() => act(button.action, view.id)}
+							data-testid="announcement-{button.action}"
+						>
+							<i aria-hidden="true" class="ph-duotone {button.icon}"></i>
+							{button.label}
+						</button>
+					{/each}
+				</div>
+			</li>
 		{/each}
 	</ul>
 </div>

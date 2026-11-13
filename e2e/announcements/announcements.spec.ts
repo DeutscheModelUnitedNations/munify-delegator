@@ -21,14 +21,25 @@ const titles = fixture.announcements;
 
 const URGENT = 'Der Shuttlebus fällt heute aus';
 
+/** The extra people's browsers of the running test, closed when it ends. */
+const opened: import('@playwright/test').BrowserContext[] = [];
+
 async function signedIn(
 	browser: import('@playwright/test').Browser,
 	{ id, startUrl }: { id: string; startUrl: string }
 ) {
-	const page = await (await browser.newContext()).newPage();
+	const context = await browser.newContext();
+	opened.push(context);
+	const page = await context.newPage();
 	await loginAs(page, fixedTestUser(id, fixture.claims(id)), { startUrl });
 	return page;
 }
+
+// Every open page holds its live queries' connections to the server. Left open, the pages of the
+// earlier tests pile up until a later one no longer gets its answers.
+test.afterEach(async () => {
+	await Promise.all(opened.splice(0).map((context) => context.close()));
+});
 
 const cards = (page: Page) => page.getByTestId('announcement-card');
 const card = (page: Page, title: string) => cards(page).filter({ hasText: title });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { overwriteGetLocale } from '#lib/paraglide/runtime';
-import { rowActions, rowBadges, rowFacts, type RowFacts } from './announcementRowView';
+import { rowActions, rowBadges, rowFacts, rowView, type RowFacts } from './announcementRowView';
 
 const row: RowFacts = {
 	importance: 'NORMAL',
@@ -114,5 +114,36 @@ describe('rowActions', () => {
 			expect(button.label).not.toBe('');
 			expect(button.icon).toMatch(/^ph-/);
 		}
+	});
+});
+
+describe('rowView', () => {
+	const lookups = {
+		committees: new Map([['c1', 'GV']]),
+		roles: new Map(),
+		surveyOptions: new Map()
+	};
+	const listed = {
+		...row,
+		id: 'a1',
+		title: 'Raumwechsel',
+		state: 'PUBLISHED',
+		audiences: [{ id: 'au1', kind: 'COMMITTEE' as const, committeeId: 'c1' }]
+	};
+
+	test('is everything a row shows, as plain values', () => {
+		const view = rowView({ row: listed, lookups, dateTime });
+		expect(view).toMatchObject({ id: 'a1', title: 'Raumwechsel', state: 'PUBLISHED' });
+		expect(view.audiences).toEqual([{ id: 'au1', label: expect.stringContaining('GV') }]);
+		expect(view.actions.map(({ action }) => action)).toContain('withdraw');
+		expect(view.facts.map(({ key }) => key)).toContain('reach');
+		// nothing in it refers back to the row it was read from
+		expect(structuredClone(view)).toEqual(view);
+	});
+
+	test('a state the page does not know shows as a draft', () => {
+		expect(rowView({ row: { ...listed, state: 'NEW_STATE' }, lookups, dateTime }).state).toBe(
+			'DRAFT'
+		);
 	});
 });
