@@ -13,15 +13,26 @@ const entries: DocsNavEntry[] = [
 		slug: 'user-manual/participant',
 		label: () => m.docsParticipantGuide(),
 		description: () => m.docsParticipantGuideDescription(),
-		items: ['user-manual/participant/registration', 'user-manual/participant/dashboard']
+		items: [
+			'user-manual/participant/registration',
+			'user-manual/participant/dashboard',
+			'user-manual/participant/paper-hub',
+			'user-manual/participant/account'
+		]
 	},
 	{
 		slug: 'user-manual/team',
 		label: () => m.docsTeamGuide(),
 		description: () => m.docsTeamGuideDescription(),
 		items: [
+			'user-manual/team/overview',
 			'user-manual/team/configuration',
 			'user-manual/team/assignment',
+			'user-manual/team/participants',
+			'user-manual/team/formalities',
+			'user-manual/team/communication',
+			'user-manual/team/paper-hub',
+			'user-manual/team/maintenance',
 			'user-manual/team/ai-access'
 		]
 	}
