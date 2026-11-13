@@ -91,7 +91,7 @@ Der **Fotostatus** sagt, was die Person auf der Einwilligung zur Bildnutzung ang
 1. Öffne **Postalische Anmeldung**. Du kannst mit der Kamera scannen, mit einem Handscanner, der in das Suchfeld tippt, oder nach Name, E-Mail oder ID suchen.
 2. Scanne den QR-Code auf einer Seite des Briefs. Neben dem Scanner öffnet sich die Person mit Name, Geburtsdatum und allen Status. Vergleiche sie mit dem Brief.
 3. Sind alle nötigen Dokumente unterschrieben da und erlaubt die Person Fotos ohne Einschränkung, klicke **Alle bestätigen** (Alt+A). Das setzt **Verbindliche Anmeldung** und **Einwilligung Bildnutzung** auf **Erledigt**, bei Minderjährigen auch die **Einwilligung der Erziehungsberechtigten**, und den **Fotostatus** auf **Fotos uneingeschränkt erlaubt**.
-4. Hat die Person Fotos eingeschränkt, setze den **Fotostatus** danach einzeln: Alt+1 für keine Fotos, Alt+2 für teilweise, Alt+3 für uneingeschränkt.
+4. Hat die Person Fotos eingeschränkt, setze die Dokumente einzeln auf **Erledigt** und danach den **Fotostatus**: Alt+1 für keine Fotos, Alt+2 für teilweise, Alt+3 für uneingeschränkt.
 5. Hat die Person noch keine **Dokumentennummer**, ist das Feld schon offen. **Nächste Nummer speichern** (Alt+N) vergibt die Zahl nach der höchsten Nummer der Konferenz. Du kannst auch eine eigene eintragen und speichern.
 6. Fehlt ein Dokument oder ist es fehlerhaft, setze nur dieses auf **Problem** und die anderen einzeln auf **Erledigt**.
 7. Esc schließt die Person, der Scanner ist bereit für den nächsten Brief.

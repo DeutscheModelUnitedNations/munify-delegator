@@ -47,7 +47,7 @@ The team decides by when papers should be submitted and tells you. DELEGATOR its
 3. Write the text in the editor. Below the editor, DELEGATOR counts words, characters and paragraphs and estimates the reading time.
 4. Click **Save draft** to continue later, or **Submit paper** to hand it to the team. You then return to the overview.
 
-Without an agenda item or without text, DELEGATOR saves nothing and tells you what is missing.
+Without text DELEGATOR saves nothing, and for position and working papers not without an agenda item either. It tells you what is missing.
 
 :::tip Nothing gets lost
 While you write a new paper, your browser keeps the text every second. If you close the tab by accident, DELEGATOR asks the next time under **Unsaved Draft Found** whether you want to **Restore Draft** or **Start Fresh**. This only works in the same browser and for seven days.
@@ -59,7 +59,7 @@ You write a working paper in the resolution editor. It sets the resolution's hea
 
 ## Draft or submit {#drafts-and-submitting}
 
-A **draft** is yours alone. Nobody else in your delegation sees it, and the team does not review it. The team only reads a paper once it is submitted.
+A **draft** is yours alone. Nobody else in your delegation sees it. The team can read it, but only reviews it once it is submitted.
 
 This is how you continue working on an existing paper:
 

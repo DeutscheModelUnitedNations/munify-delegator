@@ -109,7 +109,7 @@ Das Team antwortet aus Postfächern, die es gemeinsam betreut. Alle, die ein Pos
 Funktionen vergeben **Projektleitung** und **Teamkoordinator\*in** auf der Seite [Teammanagement](./overview#team-management). Das Hammer-Symbol **Funktionen** in der Zeile einer Person öffnet **Funktionen von …**: Dort kreuzt du je Gremium **Vorsitz** und **Gremienberatung** an oder machst die Person zur **Vertrauensperson** der ganzen Konferenz. Wer kein Postfach betreut, sieht auf der Seite **Nachrichten** nur einen Hinweis darauf.
 
 :::note Vertrauenspersonen
-Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
+Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Einzige Ausnahme ist die [Stellvertretung](./overview#impersonation): Wer stellvertretend für eine teilnehmende Person handelt, sieht deren Chats wie sie selbst, auch die mit den Vertrauenspersonen. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
 :::
 
 ### Wer wem schreiben kann

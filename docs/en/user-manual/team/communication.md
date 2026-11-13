@@ -109,7 +109,7 @@ The team answers from inboxes it shares. Everyone answering an inbox reads along
 **Project Management** and **Team Coordinator** hand out functions on the [Team Management](./overview#team-management) page. The gavel icon **Functions** in a person's row opens **Functions of …**: there you tick **Chairs** and **Committee consultants** per committee, or make the person a **Trusted person** of the whole conference. Whoever answers no inbox only sees a hint about this on the **Messages** page.
 
 :::note Trusted persons
-Participants write to the trusted persons all together or to one of them by name. All trusted persons read the shared chat, only the person addressed reads a personal one. Nobody else reads along, not participant care, not project management and not system administrators. Trusted persons see participants by their role only, never by name. These chats cannot be reported.
+Participants write to the trusted persons all together or to one of them by name. All trusted persons read the shared chat, only the person addressed reads a personal one. Nobody else reads along, not participant care, not project management and not system administrators. The one exception is [impersonation](./overview#impersonation): whoever acts as a participant sees that person's chats as they do, those with the trusted persons included. Trusted persons see participants by their role only, never by name. These chats cannot be reported.
 :::
 
 ### Who can write to whom
