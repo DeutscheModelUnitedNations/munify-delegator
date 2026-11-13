@@ -8,7 +8,12 @@
 	// The schema the dev server writes for the linked CHASE's client generator (`link:client`
 	// there); nothing here imports it.
 	"ignorePatterns": ["schema.graphql"],
-	"ignoreFindings": ["src/lib/api/rumbleClient/**", "src/api/handlers/chaseLink/chaseClient/**"],
+	// `kitIcons.css` styles class names only the docs kit's own components write (in node_modules).
+	"ignoreFindings": [
+		"src/lib/api/rumbleClient/**",
+		"src/api/handlers/chaseLink/chaseClient/**",
+		"src/lib/docs/kitIcons.css"
+	],
 	// Paraglide's output is gitignored, so fallow never sees the files behind these imports.
 	"ignoreUnresolvedImports": ["#lib/paraglide/**"],
 	// The generated client exports every GraphQL type under its own name, `Resolution` included,
