@@ -5,8 +5,6 @@
 @import '@deutschemodelunitednations/munify-resolution-editor/tailwind.css';
 /* The manual's screenshots and tour popovers; registers the docs kit as a Tailwind source */
 @import '@deutschemodelunitednations/docs-kit/styles.css';
-/* The kit's icon names, drawn with Phosphor glyphs */
-@import './lib/docs/kitIcons.css';
 
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui';
