@@ -3587,6 +3587,11 @@ enum MediaconsentstatusEnum {
 
 type Mutation {
   """
+  The caller accepts the message service's terms, which a participant has to before they write. `version` is the one they were shown (`MESSAGING_TERMS_VERSION`); INVALID_INPUT for any other, so nobody accepts a text they have not seen.
+  """
+  acceptMessagingTerms(version: Int!): Boolean!
+
+  """
   Looks for groups of similar school names among the people of the conference's applications (participant care) and brings the suggestions in line with them: a group found again keeps its decision, groups no longer found are removed.
   """
   analyzeSchoolSuggestions(conferenceId: ID!): Boolean!
@@ -4425,7 +4430,7 @@ type Mutation {
   sendAnnouncementTestMail(id: ID!): Boolean!
 
   """
-  Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.
+  Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, TERMS_NOT_ACCEPTED for a participant who has not accepted the terms (`acceptMessagingTerms`), CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.
   """
   sendChatMessage(body: String!, chatId: ID!, paperId: ID): Chatmessage!
 
@@ -9238,6 +9243,8 @@ type User {
   invitationsSent(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
   locale: String!
   messageNotificationEmails: Boolean!
+  messagingTermsAcceptedAt: DateTime
+  messagingTermsVersion: Int
 
   """Get the paymentTransactions related to this user"""
   ownPaymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
@@ -9300,6 +9307,8 @@ input UserOrderInputArgument {
   id: SortingParameter
   locale: SortingParameter
   messageNotificationEmails: SortingParameter
+  messagingTermsAcceptedAt: SortingParameter
+  messagingTermsVersion: SortingParameter
   phone: SortingParameter
   preferredUsername: SortingParameter
   pronouns: SortingParameter
@@ -9355,6 +9364,8 @@ input UserWhereInputArgument {
   invitationsSent: TeammemberinvitationWhereInputArgument
   locale: StringWhereInputArgument
   messageNotificationEmails: BooleanWhereInputArgument
+  messagingTermsAcceptedAt: DateTimeWhereInputArgument
+  messagingTermsVersion: IntWhereInputArgument
   ownPaymentTransactions: PaymenttransactionWhereInputArgument
   paperReviews: PaperreviewWhereInputArgument
   papers: PaperWhereInputArgument

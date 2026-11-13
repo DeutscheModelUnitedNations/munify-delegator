@@ -23,6 +23,7 @@ import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
 import { upsertNationRole } from './conferenceRole';
 import { upsertTeamMember } from './teamMember';
+import { MESSAGING_TERMS_VERSION } from '../../src/lib/helpers/messagingTerms';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 import { upsertConference, upsertSeatedCommittees } from './conference';
 
@@ -126,12 +127,22 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 	});
 
 	await upsertUsers(db, [
-		...[...Object.values(fixture.team), ...Object.values(fixture.delegates)].map((person) => ({
+		...Object.values(fixture.team).map((person) => ({
 			...makeSeedUser(),
 			...COMPLETE_PROFILE,
 			id: person.id,
 			givenName: person.given,
 			familyName: person.family
+		})),
+		// everybody but Anna has agreed to the terms of the message service; she does in the specs
+		...Object.values(fixture.delegates).map((person) => ({
+			...makeSeedUser(),
+			...COMPLETE_PROFILE,
+			id: person.id,
+			givenName: person.given,
+			familyName: person.family,
+			messagingTermsVersion: person.given === 'Anna' ? null : MESSAGING_TERMS_VERSION,
+			messagingTermsAcceptedAt: person.given === 'Anna' ? null : new Date()
 		})),
 		{
 			...makeSeedUser(),

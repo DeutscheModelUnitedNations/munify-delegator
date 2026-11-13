@@ -95,6 +95,22 @@ export const REMINDER_KINDS = [
 	'SURVEY_REMINDER'
 ] as const satisfies readonly EmailkindEnum[];
 
+/**
+ * The kinds a person can owe several of at once, one per student, member, supervisor, paperwork
+ * or survey. The sweep sends those due together as one mail naming them all
+ * (`#api/handlers/email/emailBundles`), so linking five students is one mail, not five.
+ */
+const BUNDLED_KINDS = [
+	'DELEGATION_MEMBER_JOINED',
+	'SUPERVISOR_STUDENT_LINKED',
+	'SUPERVISOR_CONNECTED',
+	'PAPERWORK_PROBLEM',
+	'SURVEY_PUBLISHED',
+	'SURVEY_REMINDER'
+] as const satisfies readonly EmailkindEnum[];
+
+export const isBundled = (kind: string) => BUNDLED_KINDS.some((bundled) => bundled === kind);
+
 /** The kinds that exist only while a CHASE instance is linked. */
 const CHASE_KINDS = ['CHASE_INTRO_REMINDER'] as const satisfies readonly EmailkindEnum[];
 

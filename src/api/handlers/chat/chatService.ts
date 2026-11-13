@@ -26,6 +26,7 @@ import {
 	type WriteRefusal
 } from '#lib/helpers/chat';
 import { refusalText } from '#lib/helpers/chatRefusalText';
+import { acceptedMessagingTerms, MESSAGING_TERMS_VERSION } from '#lib/helpers/messagingTerms';
 import { conferenceContacts, forgetContacts } from './chatContacts';
 
 export type ChatRow = typeof schema.chat.$inferSelect;
@@ -580,6 +581,24 @@ export async function setMessageNotificationEmails({
 	await db
 		.update(schema.user)
 		.set({ messageNotificationEmails: enabled })
+		.where(eq(schema.user.id, userId));
+	userPubsub.updated(userId);
+}
+
+/** Whether the user accepted the message service's terms as they stand. */
+export async function hasAcceptedTerms(userId: string) {
+	const user = await db.query.user.findFirst({
+		where: { id: userId },
+		columns: { messagingTermsVersion: true }
+	});
+	return acceptedMessagingTerms(user?.messagingTermsVersion);
+}
+
+/** Records that the user accepted the message service's terms as they stand. */
+export async function acceptMessagingTerms(userId: string) {
+	await db
+		.update(schema.user)
+		.set({ messagingTermsVersion: MESSAGING_TERMS_VERSION, messagingTermsAcceptedAt: new Date() })
 		.where(eq(schema.user.id, userId));
 	userPubsub.updated(userId);
 }

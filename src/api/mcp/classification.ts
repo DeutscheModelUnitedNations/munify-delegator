@@ -62,7 +62,9 @@ const FIELDS: Record<string, TypeClassification> = {
 			'locale',
 			'wantsJoinTeamInformation',
 			'wantsToReceiveGeneralInformation',
-			'messageNotificationEmails'
+			'messageNotificationEmails',
+			'messagingTermsVersion',
+			'messagingTermsAcceptedAt'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.

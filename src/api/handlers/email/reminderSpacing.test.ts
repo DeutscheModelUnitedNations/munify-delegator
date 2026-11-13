@@ -40,6 +40,16 @@ describe('spaceReminders', () => {
 		]);
 	});
 
+	it('lets reminders through together that go out as one mail', () => {
+		const due = [
+			mail({ kind: 'SURVEY_REMINDER', daysLeft: 2 }),
+			mail({ kind: 'SURVEY_REMINDER', daysLeft: 2 }),
+			mail({ kind: 'SURVEY_REMINDER', daysLeft: 3 }),
+			mail({ kind: 'PHONE_READY_REMINDER', daysLeft: 2 })
+		];
+		expect(spaceReminders({ due, lastReminderAt: new Map(), now })).toEqual(due.slice(0, 2));
+	});
+
 	it('holds a reminder within two days of the last one, then lets it go', () => {
 		const due = [mail({ kind: 'PHONE_READY_REMINDER', daysLeft: 6 })];
 		const yesterday = new Map([['anna', new Date(now.getTime() - DAY)]]);

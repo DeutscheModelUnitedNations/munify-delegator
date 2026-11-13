@@ -1067,6 +1067,12 @@ bun run preview
   rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
   and instances never double-send; failures are retried three times, a claim left by a dead
   process frees up after 15 minutes. Every row (sent, failed, skipped, by hand) is shown in the log.
+- **One mail per recipient and kind and sweep** for the kinds a person can owe several of
+  (`BUNDLED_KINDS` in `#lib/helpers/emailKinds.ts`: students, members, supervisors linked,
+  paperwork problems, surveys of one deadline). `bundleEmails` (`emailBundles.ts`) groups them;
+  each keeps its own log row, all settled by the one delivery, and the text names them all
+  (`Intl.ListFormat` into the kind's placeholder), so those texts are worded to read right for one
+  name or several.
 - **Every mail goes out one way** (`emailDelivery.ts`): rendered in the recipient's language and
   the conference's words (`loadWording`, `wordingIn`), its log row written first and settled by
   `deliver`. A mail the team sends by hand (`sendByHand`) is a `MANUAL` row of its own with
@@ -1356,6 +1362,14 @@ bun run preview
   delegation only once the roles are released, while both hold a seat, neither blocked the other
   (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
   participant care). The team is always reached.
+- **A participant agrees to the terms before their first message.** The terms of the message
+  service are the app's, in both languages (`messagingTermsSections`, `#lib/helpers/messagingTerms.ts`,
+  `chatTerms…` messages): conduct, who reads along (reports, the team inboxes, the trusted persons
+  as the exception), blocking, consequences. `sendChatMessage` refuses a party who has not accepted
+  `MESSAGING_TERMS_VERSION` with `TERMS_NOT_ACCEPTED` (`assertAcceptedTerms`); the composer then
+  shows `MessagingTermsModal`, `acceptMessagingTerms` stores the version on the account
+  (`user.messagingTermsVersion`, once for every conference) and the message goes out. The team
+  writes without. **Raise the version when the terms change in meaning**, and everybody is asked again.
 - **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
   "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by

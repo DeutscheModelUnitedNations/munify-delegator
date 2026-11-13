@@ -5,8 +5,10 @@ import type { CallerFacts } from '#api/services/authHelper/callerFacts';
 
 vi.mock('#api/db/db', () => ({ db: {} }));
 vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
+const hasAcceptedTerms = vi.fn<(userId: string) => Promise<boolean>>();
+vi.mock('./chatService', () => ({ hasAcceptedTerms }));
 
-const { caresFor, chatSide, holdsInbox, knowsPeopleOf, writingParticipantId } =
+const { assertAcceptedTerms, caresFor, chatSide, holdsInbox, knowsPeopleOf, writingParticipantId } =
 	await import('./chatPermissions');
 const { NO_CALLER_FACTS } = await import('#api/services/authHelper/callerFacts');
 
@@ -248,5 +250,20 @@ describe('trusted persons', () => {
 		expect(
 			knowsPeopleOf({ ctx, facts: trusted, chat: { conferenceId: 'c1', inbox: 'CHAIR' } })
 		).toBe(false);
+	});
+});
+
+describe('assertAcceptedTerms', () => {
+	test('lets through who accepted the terms as they stand', async () => {
+		hasAcceptedTerms.mockResolvedValueOnce(true);
+		await expect(assertAcceptedTerms('u1')).resolves.toBeUndefined();
+		expect(hasAcceptedTerms).toHaveBeenCalledWith('u1');
+	});
+
+	test('refuses anybody else with a code the composer recognises', async () => {
+		hasAcceptedTerms.mockResolvedValueOnce(false);
+		await expect(assertAcceptedTerms('u1')).rejects.toMatchObject({
+			extensions: { code: 'TERMS_NOT_ACCEPTED' }
+		});
 	});
 });

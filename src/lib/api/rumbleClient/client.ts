@@ -2984,6 +2984,9 @@ export type McpcalloutcomeEnum = "ERROR" | "OK" | "REFUSED";
 export type MediaconsentstatusEnum = "ALLOWED_ALL" | "NOT_ALLOWED" | "NOT_SET" | "PARTIALLY_ALLOWED";
 		
 export type Mutation = {
+  acceptMessagingTerms: (p: {
+    version: Int
+  }) => Boolean,
   analyzeSchoolSuggestions: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -7222,6 +7225,8 @@ export type User = {
   }) => Teammemberinvitation[],
   locale: String,
   messageNotificationEmails: Boolean,
+  messagingTermsAcceptedAt: DateTime | null,
+  messagingTermsVersion: Int | null,
   ownPaymentTransactions: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -7320,6 +7325,8 @@ export type UserOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   locale?: SortingParameter | null | undefined,
   messageNotificationEmails?: SortingParameter | null | undefined,
+  messagingTermsAcceptedAt?: SortingParameter | null | undefined,
+  messagingTermsVersion?: SortingParameter | null | undefined,
   phone?: SortingParameter | null | undefined,
   preferredUsername?: SortingParameter | null | undefined,
   pronouns?: SortingParameter | null | undefined,
@@ -7365,6 +7372,8 @@ export type UserWhereInputArgument = {
   invitationsSent?: TeammemberinvitationWhereInputArgument | null | undefined,
   locale?: StringWhereInputArgument | null | undefined,
   messageNotificationEmails?: BooleanWhereInputArgument | null | undefined,
+  messagingTermsAcceptedAt?: DateTimeWhereInputArgument | null | undefined,
+  messagingTermsVersion?: IntWhereInputArgument | null | undefined,
   ownPaymentTransactions?: PaymenttransactionWhereInputArgument | null | undefined,
   paperReviews?: PaperreviewWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,

@@ -7,12 +7,14 @@ import { isSystemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
 import { messagePreview, type ChatInbox } from '#lib/helpers/chat';
+import { messagingTermsVersionSchema } from '#lib/helpers/messagingTerms';
 import { conferenceContacts, type Contact } from './chatContacts';
 import {
 	assertCanListContacts,
 	assertCanSuspend,
 	assertDelegationMember,
 	assertHoldsInbox,
+	assertAcceptedTerms,
 	assertPartyOfChat,
 	assertTakesPartInChat,
 	assertWritingParticipant,
@@ -25,6 +27,7 @@ import {
 } from './chatPermissions';
 import {
 	chatWriteRefusal,
+	acceptMessagingTerms,
 	hasBlocked,
 	inboxesReaching,
 	lastMessageOf,
@@ -485,7 +488,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	sendChatMessage: t.drizzleField({
 		description:
-			'Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.',
+			'Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, TERMS_NOT_ACCEPTED for a participant who has not accepted the terms (`acceptMessagingTerms`), CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.',
 		type: ChatMessageRef,
 		args: {
 			chatId: t.arg.id({ required: true }),
@@ -497,6 +500,7 @@ schemaBuilder.mutationFields((t) => ({
 				ctx,
 				id: args.chatId
 			});
+			if (side === 'PARTICIPANT') await assertAcceptedTerms(userId);
 			const id = await sendMessage({
 				chat,
 				author:
@@ -558,6 +562,19 @@ schemaBuilder.mutationFields((t) => ({
 				participantId: args.participantId,
 				suspended: args.suspended
 			});
+			return true;
+		}
+	}),
+
+	acceptMessagingTerms: t.field({
+		description:
+			"The caller accepts the message service's terms, which a participant has to before they write. `version` is the one they were shown (`MESSAGING_TERMS_VERSION`); INVALID_INPUT for any other, so nobody accepts a text they have not seen.",
+		type: 'Boolean',
+		args: {
+			version: t.arg.int({ required: true }).validate(messagingTermsVersionSchema)
+		},
+		resolve: async (_root, _args, ctx) => {
+			await acceptMessagingTerms(ctx.mustBeLoggedIn().sub);
 			return true;
 		}
 	}),

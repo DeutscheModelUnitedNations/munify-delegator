@@ -34,6 +34,7 @@ export type EmailPlaceholder =
 	| 'chaseLink'
 	| 'manualLink'
 	| 'entryCode'
+	| 'joinLink'
 	| 'member'
 	| 'supervisor'
 	| 'title';
@@ -62,6 +63,7 @@ const P = {
 	chaseLink: '{chaseLink}',
 	manualLink: '{manualLink}',
 	entryCode: '{entryCode}',
+	joinLink: '{joinLink}',
 	member: '{member}',
 	supervisor: '{supervisor}',
 	title: '{title}'
@@ -71,7 +73,7 @@ const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
 
 const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 	DELEGATION_CREATED: {
-		placeholders: ['entryCode'],
+		placeholders: ['entryCode', 'joinLink'],
 		text: (locale) => ({
 			subject: m.emailAutoDelegationCreatedSubject({ conference: P.conference }, { locale }),
 			heading: m.emailAutoDelegationCreatedHeading({}, { locale }),
@@ -80,6 +82,7 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 					{ conference: P.conference, entryCode: P.entryCode },
 					{ locale }
 				),
+				m.emailAutoDelegationCreatedLink({ joinLink: P.joinLink }, { locale }),
 				m.emailAutoDelegationCreatedApply({}, { locale })
 			)
 		})

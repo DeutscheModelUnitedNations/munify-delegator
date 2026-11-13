@@ -10,6 +10,7 @@
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
 	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
+	import MessagingTermsLink from '#lib/components/chat/MessagingTermsLink.svelte';
 	import NewChatDialog from '#lib/components/chat/NewChatDialog.svelte';
 	import NotificationEmailsToggle from './NotificationEmailsToggle.svelte';
 	import { messagesPageState } from './messagesPageState';
@@ -99,6 +100,7 @@
 			{/snippet}
 			{#snippet listFooter()}
 				<NotificationEmailsToggle {userId} />
+				<MessagingTermsLink />
 			{/snippet}
 		</ChatWorkspace>
 	{/if}

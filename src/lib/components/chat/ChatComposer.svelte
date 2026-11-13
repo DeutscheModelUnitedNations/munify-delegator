@@ -2,7 +2,8 @@
 	@component
 	The field a chat is written in: Enter sends, Shift+Enter breaks the line. Shows instead why the
 	caller cannot write right now (`chat.writeRefusal`). A paper passed along goes with the next
-	message.
+	message. A participant who has not agreed to the terms of the message service is shown them on
+	their first message, which goes out once they agree.
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
@@ -11,6 +12,8 @@
 	import { CHAT_MESSAGE_MAX_LENGTH } from '#lib/helpers/chat';
 	import { refusalText } from '#lib/helpers/chatRefusalText';
 	import { m } from '#lib/paraglide/messages';
+	import { hasErrorCode } from '#lib/api/errorCodes';
+	import MessagingTermsModal from './MessagingTermsModal.svelte';
 	import { chatSendError } from './inboxChoice';
 
 	interface Props {
@@ -25,6 +28,8 @@
 	let draft = $state('');
 	let sending = $state(false);
 	let field = $state<HTMLTextAreaElement>();
+	// a participant agrees to the terms before their first message: the API asks for it
+	let termsOpen = $state(false);
 
 	async function deliver(body: string) {
 		await client.mutate.sendChatMessage({ __args: { chatId, body, paperId }, id: true });
@@ -34,6 +39,11 @@
 		field?.focus();
 	}
 
+	function onSendFailed(error: unknown) {
+		if (hasErrorCode({ err: error, code: 'TERMS_NOT_ACCEPTED' })) termsOpen = true;
+		else toast.error(chatSendError(error));
+	}
+
 	async function send() {
 		const body = draft.trim();
 		if (!body || sending) return;
@@ -41,7 +51,7 @@
 		try {
 			await deliver(body);
 		} catch (error) {
-			toast.error(chatSendError(error));
+			onSendFailed(error);
 		} finally {
 			sending = false;
 		}
@@ -100,3 +110,5 @@
 		</form>
 	{/if}
 </footer>
+
+<MessagingTermsModal bind:open={termsOpen} onAccepted={send} />

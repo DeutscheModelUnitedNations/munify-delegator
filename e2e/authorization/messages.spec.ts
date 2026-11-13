@@ -2,6 +2,7 @@ import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import { messagesFixture } from '../seed/messages';
 import { E2E_SEATS_GV_ID } from '../seed/seats';
+import { MESSAGING_TERMS_VERSION } from '../../src/lib/helpers/messagingTerms';
 
 // The chats (`src/api/handlers/chat/`): a chat is read by its parties and, for a team chat, by
 // whoever answers its inbox; participants know each other by role only; participant care reads a
@@ -87,6 +88,8 @@ type MessageRow = {
 	teamAuthorUserId: string | null;
 };
 
+const ACCEPT_TERMS = `mutation ($version: Int!) { acceptMessagingTerms(version: $version) }`;
+
 const chatsOf = async (page: Page) =>
 	(await gql<{ chats: ChatRow[] }>(page, CHATS, { c: CONFERENCE })).data?.chats ?? [];
 const messagesOf = async (page: Page, chat: string) =>
@@ -140,6 +143,22 @@ test('two delegates write each other and know each other by role only', async ({
 	expect(chat.annaCarla).not.toBe('');
 	// the same two people share one chat, whoever opens it
 	expect((await openDirect(carlaPage, anna)).id).toBe(chat.annaCarla);
+
+	// a participant agrees to the terms of the message service before their first message, and to
+	// the version they were shown
+	expect(codeOf(await send(annaPage, chat.annaCarla, 'Hallo Frankreich!'))).toBe(
+		'TERMS_NOT_ACCEPTED'
+	);
+	expect(await messagesOf(carlaPage, chat.annaCarla)).toEqual([]);
+	expect(codeOf(await gql(annaPage, ACCEPT_TERMS, { version: MESSAGING_TERMS_VERSION + 1 }))).toBe(
+		'INVALID_INPUT'
+	);
+	expect(codeOf(await send(annaPage, chat.annaCarla, 'Hallo Frankreich!'))).toBe(
+		'TERMS_NOT_ACCEPTED'
+	);
+	expect(
+		(await gql(annaPage, ACCEPT_TERMS, { version: MESSAGING_TERMS_VERSION })).errors
+	).toBeUndefined();
 
 	expect((await send(annaPage, chat.annaCarla, 'Hallo Frankreich!')).errors).toBeUndefined();
 	expect((await send(carlaPage, chat.annaCarla, 'Hallo Deutschland!')).errors).toBeUndefined();

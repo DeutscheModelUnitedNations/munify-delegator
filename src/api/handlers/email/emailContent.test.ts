@@ -114,6 +114,12 @@ const kindChecks: Partial<
 		(args: { content: Content; text: string; locale: 'de' | 'en' }) => void
 	>
 > = {
+	DELEGATION_CREATED: ({ content, text }) => {
+		const joinLink = 'https://delegator.example.org/registration/c1/join-delegation?code=ABCDEFGH';
+		expect(bodyOf(content)).toContain('ABCDEFGH');
+		expect(bodyOf(content)).toContain(`[${joinLink}](${joinLink})`);
+		expect(text).toContain(joinLink);
+	},
 	ASSIGNMENT_ACCEPTED: ({ text, locale }) => {
 		expect(text).toContain(locale === 'de' ? 'Frankreich' : 'France');
 	},
@@ -235,5 +241,41 @@ describe('the announcement mail', () => {
 		expect(text).toContain('Lageplan.pdf');
 		// the Markdown's emphasis is dropped, not shown as asterisks
 		expect(text).not.toContain('**');
+	});
+});
+
+describe.each(['de', 'en'] as const)('a bundle of mails in %s', (locale) => {
+	const origin = 'https://delegator.example.org';
+	const withName = (givenName: string): SnapshotPerson => ({
+		...person,
+		participantId: givenName,
+		user: { ...person.user, id: givenName, givenName, familyName: 'Test' }
+	});
+
+	test('names every student linked at once', () => {
+		overwriteGetLocale(() => locale);
+		const [first, ...rest] = ['Ada', 'Ben', 'Cleo'].map((name) => ({
+			...dueEmailOf('SUPERVISOR_STUDENT_LINKED'),
+			student: withName(name)
+		}));
+		const content = emailContent({ email: first, bundle: [first, ...rest], conference, origin });
+		const names =
+			locale === 'de' ? 'Ada Test, Ben Test und Cleo Test' : 'Ada Test, Ben Test, and Cleo Test';
+		expect(content.subject).toContain(names);
+		expect(bodyOf(content)).toContain(names);
+	});
+
+	test('names every survey with their shared deadline', () => {
+		overwriteGetLocale(() => locale);
+		const first = dueEmailOf('SURVEY_PUBLISHED');
+		const deadline = new Date('2027-02-01T17:00:00Z');
+		const second = {
+			...first,
+			survey: { id: 'survey-2', title: 'Essen', deadline, answeredBy: [] }
+		};
+		const content = emailContent({ email: first, bundle: [first, second], conference, origin });
+		expect(content.subject).toContain(
+			locale === 'de' ? '„Workshop-Wahl“ und „Essen“' : '“Workshop-Wahl” and “Essen”'
+		);
 	});
 });
