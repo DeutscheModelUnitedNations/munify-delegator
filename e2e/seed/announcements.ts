@@ -18,14 +18,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
-import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
-import { upsertNationRole } from './conferenceRole';
 import { upsertTeamMember } from './teamMember';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
-import { upsertConference, upsertSeatedCommittees } from './conference';
+import { upsertConference, upsertGvAndSr, upsertSeatedDelegations } from './conference';
 
 const NATIONS = { deu: 'de', fra: 'fr' };
 
@@ -92,14 +90,7 @@ async function seedAnnouncementsConference(db: NodePgDatabase, fixture: Fixture)
 		.set({ assignmentReleased: true })
 		.where(eq(schema.conference.id, conferenceId));
 
-	await upsertSeatedCommittees(db, {
-		conferenceId,
-		committees: [
-			{ id: fixture.gvId, name: 'Generalversammlung', abbreviation: fixture.gv },
-			{ id: fixture.srId, name: 'Sicherheitsrat', abbreviation: fixture.sr }
-		],
-		nations: Object.keys(NATIONS)
-	});
+	await upsertGvAndSr(db, { fixture, nations: Object.keys(NATIONS) });
 
 	const { people } = fixture;
 	await upsertUsers(
@@ -123,21 +114,13 @@ async function seedAnnouncementsConference(db: NodePgDatabase, fixture: Fixture)
 
 async function seedPeople(db: NodePgDatabase, fixture: Fixture) {
 	const { conferenceId, people } = fixture;
-	const delegations = [
-		[fixture.germanyDelegationId, 'deu'],
-		[fixture.franceDelegationId, 'fra']
-	] as const;
-	for (const [id, nation] of delegations) {
-		const delegation = {
-			...makeSeedDelegation({ conferenceId, applied: true }),
-			id,
-			assignedRoleId: await upsertNationRole(db, conferenceId, nation)
-		};
-		await db
-			.insert(schema.delegation)
-			.values(delegation)
-			.onConflictDoUpdate({ target: schema.delegation.id, set: delegation });
-	}
+	await upsertSeatedDelegations(db, {
+		conferenceId,
+		delegations: [
+			[fixture.germanyDelegationId, 'deu'],
+			[fixture.franceDelegationId, 'fra']
+		]
+	});
 
 	const members = [
 		[people.anna, fixture.germanyDelegationId, fixture.gvId, true, 1],

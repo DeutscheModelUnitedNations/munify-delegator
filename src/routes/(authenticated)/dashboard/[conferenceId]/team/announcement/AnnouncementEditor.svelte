@@ -158,8 +158,7 @@
 					{#if touched && bodyError}
 						<span class="text-error text-sm">{bodyError.message}</span>
 					{/if}
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-					<span class="text-base-content/60 text-xs">{@html m.markdownSyntaxHint()}</span>
+					<span class="text-base-content/60 text-xs">{m.announcementMarkdownHint()}</span>
 				</label>
 				<label class="mt-3 flex flex-col gap-1">
 					<span class="label-text">{m.announcementSignatureLabel()}</span>
