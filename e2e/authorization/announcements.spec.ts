@@ -187,13 +187,15 @@ test('the audience count counts each person once and the team apart', async ({ b
 			})
 		).data?.announcementAudiencePreview;
 
+	// with the seats released, "everyone" is the three delegates who hold one
 	expect(await preview([{ kind: 'EVERYONE' }])).toEqual({
-		total: 5,
+		total: 3,
 		delegates: 3,
-		supervisors: 1,
+		supervisors: 0,
 		team: 0,
-		waitingList: 1
+		waitingList: 0
 	});
+	expect((await preview([{ kind: 'EVERYONE' }, { kind: 'WAITING_LIST' }]))?.total).toBe(4);
 	// Anna and Carla sit in GV and are delegates: counted once
 	expect(
 		(await preview([{ kind: 'DELEGATES' }, { kind: 'COMMITTEE', committeeId: fixture.gvId }]))

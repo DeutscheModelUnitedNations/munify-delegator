@@ -95,8 +95,10 @@ test('everybody gets their own feed, and somebody without a part none', async ({
 	const feedOf = async (id: string) => feedTitles(await signedIn(browser, { id, startUrl: FEED }));
 
 	expect(await feedOf(bert.id)).toEqual([titles.welcome.title]);
-	expect(await feedOf(supervisor.id)).toEqual([titles.welcome.title, titles.supervisors.title]);
-	expect(await feedOf(waiting.id)).toEqual([titles.welcome.title]);
+	// the seats are released: "everyone" is whoever holds one. A supervisor without a seated
+	// student and somebody still waiting only get what names them
+	expect(await feedOf(supervisor.id)).toEqual([titles.supervisors.title]);
+	expect(await feedOf(waiting.id)).toEqual([]);
 	// the team is in no participant audience, only in its own
 	expect(await feedOf(member.id)).toEqual([titles.team.title]);
 
@@ -118,9 +120,9 @@ test('the team lists every announcement with its state and how many it reaches',
 	await expect(stateOf(titles.scheduled.title)).toHaveText('Geplant');
 	await expect(stateOf(titles.expired.title)).toHaveText('Abgelaufen');
 
-	// Anna, Bert, Carla, the supervisor and the waiting list; Anna read none of it but the GV one
+	// Anna, Bert and Carla, who hold seats; Anna read none of it but the GV one
 	await expect(row(page, titles.welcome.title).getByTestId('announcement-reach')).toHaveText(
-		'gelesen von 0 von 5'
+		'gelesen von 0 von 3'
 	);
 	await expect(row(page, titles.gv.title).getByTestId('announcement-reach')).toHaveText(
 		'gelesen von 1 von 2'

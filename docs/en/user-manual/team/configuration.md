@@ -170,6 +170,8 @@ An announcement has a title, a text in Markdown and an optional signature. On th
 
 :::info Committees and roles
 Committees, roles, "seated" and open paperwork apply to participants only once the assignment is released. That way an announcement never tells anybody their seat early.
+
+"All participants" are everybody registered and the waiting list while people register. From the preparation stage on, with the assignment released, they are only those with a seat and their supervisors. Whoever got no seat or is still waiting is then reached through "Applicants without a seat" and "Waiting list".
 :::
 
 A new announcement starts as a **draft**. **Publish** releases it right away or schedules a time. Before that you see how many people it reaches and whether a mail is sent.

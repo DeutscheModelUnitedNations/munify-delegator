@@ -170,6 +170,8 @@ Eine Ankündigung hat einen Titel, einen Text in Markdown und auf Wunsch eine Un
 
 :::info Gremien und Rollen
 Gremien, Rollen, „mit Platz“ und offene Formalitäten gelten für Teilnehmende erst, wenn die Zuteilung veröffentlicht ist. So verrät eine Ankündigung niemandem vorab den Platz.
+
+„Alle Teilnehmenden“ sind während der Anmeldung alle Angemeldeten und die Warteliste. Ab der Vorbereitungsphase mit veröffentlichter Zuteilung sind es nur noch alle mit Platz und ihre Betreuenden. Wer keinen Platz bekommen hat oder noch wartet, erreichst du dann über „Bewerber\*innen ohne Platz“ und „Warteliste“.
 :::
 
 Eine neue Ankündigung ist zuerst ein **Entwurf**. Mit **Veröffentlichen** schaltest du sie sofort frei oder planst einen Zeitpunkt. Vorher siehst du, wie viele Personen sie erreicht und ob eine E-Mail verschickt wird.

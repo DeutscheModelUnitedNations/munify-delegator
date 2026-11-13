@@ -5,6 +5,7 @@ vi.mock('#api/db/db', () => ({ db: {} }));
 
 import {
 	countAudience,
+	everyoneIsSeated,
 	participantFacts,
 	participantSubjects,
 	type ParticipantFacts,
@@ -27,11 +28,18 @@ const participant = (overrides: Partial<ParticipantFacts> & { id: string }): Par
 	...overrides
 });
 
-const subjects = (participants: ParticipantFacts[], assignmentReleased = true) =>
+type State = Parameters<typeof everyoneIsSeated>[0]['state'];
+
+const subjects = (
+	participants: ParticipantFacts[],
+	assignmentReleased = true,
+	state: State = 'PREPARATION'
+) =>
 	new Map(
-		participantSubjects({ participants, conference: { assignmentReleased, startConference } }).map(
-			(person) => [person.participantId, person.subject]
-		)
+		participantSubjects({
+			participants,
+			conference: { state, assignmentReleased, startConference }
+		}).map((person) => [person.participantId, person.subject])
 	);
 
 describe('participantSubjects', () => {
@@ -101,9 +109,50 @@ describe('participantSubjects', () => {
 	});
 });
 
+describe('who "everyone" is', () => {
+	const seated = participant({ id: 'seated', delegation: { roleId: 'fra', committeeId: 'ga' } });
+	const rejected = participant({ id: 'rejected', delegation: { roleId: null, committeeId: null } });
+	const single = participant({ id: 'single', single: { roleId: null } });
+	const supervising = participant({
+		id: 'supervising',
+		supervisor: { plansOwnAttendance: false, studentSeated: true }
+	});
+	const alone = participant({
+		id: 'alone',
+		supervisor: { plansOwnAttendance: true, studentSeated: false }
+	});
+	const all = [seated, rejected, single, supervising, alone];
+	const inEveryone = (...args: Parameters<typeof subjects>) =>
+		[...subjects(...args)].filter(([, subject]) => subject.everyone).map(([id]) => id);
+
+	test('every participant while people still register', () => {
+		expect(inEveryone(all, true, 'PARTICIPANT_REGISTRATION')).toHaveLength(all.length);
+		expect(inEveryone(all, false, 'PRE')).toHaveLength(all.length);
+	});
+
+	test('still every participant while the assignment is not released: it would tell the seats', () => {
+		expect(inEveryone(all, false, 'PREPARATION')).toHaveLength(all.length);
+	});
+
+	test.each(['PREPARATION', 'ACTIVE', 'POST'] as const)(
+		'in %s with the seats released, only who holds one or supervises somebody who does',
+		(state) => {
+			expect(inEveryone(all, true, state)).toEqual(['seated', 'supervising']);
+		}
+	);
+
+	test('the rule about the conference alone', () => {
+		expect(everyoneIsSeated({ state: 'PREPARATION', assignmentReleased: true })).toBe(true);
+		expect(everyoneIsSeated({ state: 'PREPARATION', assignmentReleased: false })).toBe(false);
+		expect(everyoneIsSeated({ state: 'PARTICIPANT_REGISTRATION', assignmentReleased: true })).toBe(
+			false
+		);
+	});
+});
+
 describe('countAudience', () => {
 	const people = participantSubjects({
-		conference: { assignmentReleased: true, startConference },
+		conference: { state: 'PREPARATION', assignmentReleased: true, startConference },
 		participants: [
 			participant({ id: 'd1', delegation: { roleId: 'fra', committeeId: 'ga' } }),
 			participant({ id: 'd2', delegation: { roleId: 'usa', committeeId: 'sc' } }),
