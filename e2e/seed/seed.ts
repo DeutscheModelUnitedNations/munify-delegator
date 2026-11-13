@@ -76,6 +76,8 @@ export const E2E_PREP_NATION_ALPHA2 = 'ES';
 export const E2E_PREP_COMMITTEE_ID = 'e2e00000committee00000002';
 export const E2E_PREP_DELEGATION_ID = 'e2e00000delegation00000005';
 export const E2E_PREP_PARTICIPANT_USER_ID = 'e2e-prep-participant';
+// Their co-delegate, whose email address the participant's dashboard lists.
+export const E2E_PREP_CODELEGATE_USER_ID = 'e2e-prep-codelegate';
 
 // A third conference past registration whose assignment is NOT released: its participant holds a
 // nation and a committee the API must not show them yet. Only the release spec flips the flag, and
@@ -693,6 +695,24 @@ export default async function seed() {
 		.insert(schema.delegationMember)
 		.values(prepMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: prepMember });
+	await upsertActorUser(E2E_PREP_CODELEGATE_USER_ID);
+	const prepCodelegate = {
+		...makeSeedDelegationMember({
+			delegationId: prepDelegation.id,
+			conferenceParticipantId: await upsertParticipant(
+				db,
+				prepConference.id,
+				E2E_PREP_CODELEGATE_USER_ID
+			),
+			isHeadDelegate: false,
+			assignedCommitteeId: null
+		}),
+		id: 'e2e00000delegationmember0013'
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(prepCodelegate)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: prepCodelegate });
 
 	const supervisedElsewhere = {
 		...makeSeedSingleParticipant({

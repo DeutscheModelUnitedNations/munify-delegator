@@ -14,7 +14,7 @@
 
 	let { conferenceId, delegationId }: Props = $props();
 
-	// Names only: co-delegates do not read each other's email or birthday, and whether a guardian has
+	// Names and email addresses, so co-delegates can get in touch; no birthday: whether a guardian has
 	// to consent comes as a flag on the person's status.
 	const delegation = $derived(
 		await client.liveQuery.delegation({
@@ -27,6 +27,7 @@
 					givenName: true,
 					familyName: true,
 					pronouns: true,
+					email: true,
 					// Only this conference's row: the caller may read a person's rows elsewhere (their own
 					// left over after a withdrawal) without reading that conference
 					conferenceParticipants: {
@@ -48,7 +49,7 @@
 	title={m.delegationMembers()}
 	description={m.delegationMembersDescription()}
 >
-	<DelegationStatusTableWrapper withCommittee withPostalSatus withPaymentStatus>
+	<DelegationStatusTableWrapper withCommittee withEmail withPostalSatus withPaymentStatus>
 		{#each delegation.members as member (member.id)}
 			{@const participantStatus = member.user.conferenceParticipants.at(0)}
 			<DelegationStatusTableEntry
@@ -56,6 +57,7 @@
 				pronouns={member.user.pronouns ?? ''}
 				headDelegate={member.isHeadDelegate}
 				committee={member.assignedCommittee?.abbreviation ?? ''}
+				email={member.user.email}
 				withPaymentStatus
 				withPostalStatus
 				postalSatus={getSimplifiedPostalStatus({
