@@ -154,7 +154,7 @@ When several groups are on the same role, applying merges them into one delegati
 
 If a delegation does not fit the free roles, split it with the button **Split the delegation across several roles** on its card. This works for whole delegations of at least two people. The dialog **Split …** starts with the first member on their own and the rest together. Drag each member into the part it should end up in, add parts with **Add part**, remove one with **Remove part**, or divide into equal parts with the round buttons at the bottom. You need at least two parts with members, then confirm with **Split**.
 
-Each part then shows up as a group of its own size, without a role, and is assigned on its own. A role planned for the whole delegation is dropped, and splitting again replaces the earlier split. Applying dissolves the original delegation, and every part becomes a delegation of its own, a part without a role too. **Undo the split and merge the delegation back together** on a part drops the split together with the roles planned for its parts.
+Each part then shows up as a group of its own size, without a role, and is assigned on its own. A role planned for the whole delegation is dropped, and splitting again replaces the earlier split. Applying dissolves the original delegation, and every part becomes a delegation of its own, a part without a role too. A part that shares its role with another group is merged with that group instead. **Undo the split and merge the delegation back together** on a part drops the split together with the roles planned for its parts.
 
 If someone joins the delegation after it was split, the board warns on top that members are in no part. As long as that is the case, the draft cannot be applied. Split the delegation again then.
 
@@ -162,7 +162,7 @@ If someone joins the delegation after it was split, the board warns on top that 
 
 **Assign automatically (3)** distributes every open group of the chosen size in one pass, following the [weighting](#weighting), and says how many got a role. It works like this:
 
-- It only uses roles with **exactly** as many free seats as the group has members. A role a group would only partly fill is yours to assign by hand.
+- It only uses roles with **exactly** as many free seats as the group has members. A role a group would only partly fill is not offered at that group size, so the group stays in the pool.
 - Wishes come first: the distribution seats as many groups as possible on one of their wishes. Only what is left over goes to groups without a free wish.
 - Applications marked **Must get a seat** are seated before all others whenever a role fits. Which role still follows their wishes.
 - Disqualified applications, and groups that already hold or are planned for a role, stay as they are.

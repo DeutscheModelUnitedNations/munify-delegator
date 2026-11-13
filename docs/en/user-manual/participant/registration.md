@@ -77,7 +77,7 @@ The deadline is shown right under **Your application**. A delegation that has no
 
 After completing it you cannot change anything: no preferences or texts, no new members, and nobody can leave or delete the delegation any more. Only your own school can still be changed, and you can still connect supervisors.
 
-You will hear the result of the selection process by email. What happens on the dashboard after that is described under [Dashboard](./dashboard#after-applying).
+You see the result of the selection process on the dashboard once the team has published the assignment. Depending on the conference's settings you also get it by email. What happens on the dashboard after that is described under [Dashboard](./dashboard#after-applying).
 
 ## Joining a delegation {#joining-a-delegation}
 

@@ -83,7 +83,7 @@ Dein Papier hat immer einen Status:
 
 | Status                          | Bedeutung                                                                                   |
 | ------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Entwurf**                     | Nur du siehst es.                                                                           |
+| **Entwurf**                     | Nur du und das Team sehen es.                                                               |
 | **Eingereicht**                 | Es wartet auf das erste Feedback des Teams.                                                 |
 | **Überarbeitungen angefordert** | Das Team bittet dich, etwas zu ändern.                                                      |
 | **Überarbeitet**                | Du hast nach einem Feedback eine Aktualisierung eingereicht. Es wartet wieder auf das Team. |
@@ -100,7 +100,7 @@ So überarbeitest du ein Papier nach einem Feedback:
 Auch ein akzeptiertes Papier kannst du noch aktualisieren. Es steht dann wieder auf **Überarbeitet**, bis das Team es erneut begutachtet.
 
 :::note E-Mail zu jedem Feedback
-Zu jedem Feedback gibt es die E-Mail **Neues Feedback zu „…“** mit dem neuen Status und dem Knopf **Feedback ansehen**. Wann sie verschickt wird, entscheidet das Team. Antwortest du auf die Mail, erreicht deine Antwort die Person, die das Feedback geschrieben hat.
+Zu jedem Feedback kann die Konferenz die E-Mail **Neues Feedback zu „…“** mit dem neuen Status und dem Knopf **Feedback ansehen** schicken. Ob und wann sie verschickt wird, entscheidet das Team. Verlass dich deshalb auf den Papier-Hub. Antwortest du auf die Mail, erreicht deine Antwort die Person, die das Feedback geschrieben hat.
 :::
 
 ## Versionen und Verlauf {#history}

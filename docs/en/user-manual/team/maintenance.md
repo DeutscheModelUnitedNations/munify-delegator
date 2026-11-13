@@ -124,7 +124,7 @@ When the page opens, DELEGATOR looks for very similar school names, such as anot
 
 ### What merging does {#merge-consequences}
 
-- The school with the most participants stays and gets the chosen name. The others are deleted.
+- When you merge from the table, the school with the most participants stays and gets the chosen name. For a suggestion, the school you select stays. In both cases the others are deleted.
 - Schools belong to all conferences. Every person and every waiting list entry that named one of the deleted schools names the remaining one afterwards, in **every** conference.
 - What the remaining school lacks (address, website, contact) it takes from the others. The notes of all of them are joined. If one of the schools is marked as a school abroad, the merged one is too.
 - Renaming changes the name for all conferences as well.

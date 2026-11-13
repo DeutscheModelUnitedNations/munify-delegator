@@ -124,7 +124,7 @@ Beim Öffnen der Seite sucht DELEGATOR nach sehr ähnlichen Schulnamen, etwa mit
 
 ### Was das Zusammenführen bewirkt {#merge-consequences}
 
-- Die Schule mit den meisten Teilnehmenden bleibt und bekommt den gewählten Namen. Die anderen werden gelöscht.
+- Führst du aus der Tabelle zusammen, bleibt die Schule mit den meisten Teilnehmenden und bekommt den gewählten Namen. Bei einem Vorschlag bleibt die Schule, die du auswählst. In beiden Fällen werden die anderen gelöscht.
 - Schulen gehören allen Konferenzen. Jede Person und jeder Wartelisteneintrag, die eine der gelöschten Schulen angegeben haben, nennen danach die bleibende, in **allen** Konferenzen.
 - Was der bleibenden Schule fehlt (Adresse, Website, Kontakt), übernimmt sie von den anderen. Die Notizen aller werden aneinandergehängt. Ist eine der Schulen als Auslandsschule markiert, ist es danach die zusammengeführte.
 - Umbenennen ändert den Namen ebenfalls für alle Konferenzen.

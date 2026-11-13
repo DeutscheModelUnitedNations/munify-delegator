@@ -174,7 +174,7 @@ In the **Seat** tab:
 - The delegation's role and the person's committee, or **No assignment yet** with **Registration completed** or **Registration not yet completed**.
 - **Committee Assignment** (only for states): pick a committee the state sits in for every member. If the committee is already full for the delegation, DELEGATOR swaps: the member whose seat went unchanged the longest gets the seat the person leaves. **Reset** takes every member's committee away, **Done** closes the window.
 - **Head Delegate**: pick another member and click **Confirm**.
-- **Delegation Members**: **Remove member** takes a person out of the delegation. If they led it, another member takes over. If nobody is left, the delegation is deleted. Role wishes the delegation is now too small for are dropped.
+- **Delegation Members**: **Remove member** takes a person out of the delegation. If they led it, another member takes over. If nobody is left, the delegation is deleted together with its papers. Role wishes the delegation is now too small for are dropped.
 - **Make supervisor**: if a member is too old for a delegation on the first conference day but old enough to supervise it, the card shows a note with this button. The person leaves the delegation (with a new head delegate, or an empty delegation deleted), is registered as a supervisor who attends in person, and supervises every remaining member. Whoever supervised them so far no longer does.
 
 You change a delegation's role and committees on the [Seats](#seats) page or in the [assignment](./assignment).
@@ -298,7 +298,7 @@ Deleting cannot be undone, and the people lose their school. If it is only a dif
 ### Someone cancels shortly before the conference
 
 1. Open the card of the person cancelling.
-2. If they are a delegation member, click **Remove member** next to them in the **Seat** tab. A new head delegate is appointed, an empty delegation deleted. Otherwise use **Remove Participant** under **More actions**.
+2. If they are a delegation member, click **Remove member** next to them in the **Seat** tab. A new head delegate is appointed, an empty delegation deleted together with its papers. Otherwise use **Remove Participant** under **More actions**.
 3. Open the **Waiting List**. The first row (**Position** 1) has waited longest.
 4. Read their motivation and **Requests** in their card and click **Assign seat**.
 5. Put them in the freed seat as described under [Giving a seat from the waiting list](#seating-from-the-waiting-list).

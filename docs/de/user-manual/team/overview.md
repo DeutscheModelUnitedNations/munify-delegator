@@ -207,7 +207,7 @@ Dabei gilt:
 
 Neben ihrer Rolle kann eine Person im Team Funktionen haben. **Funktionen** in ihrer Zeile öffnet ein Fenster mit einem Schalter je Funktion, jeder Schalter speichert sofort:
 
-- **Vertrauensperson**: Teilnehmende können sich vertraulich an die Vertrauenspersonen wenden, an alle gemeinsam oder an eine einzelne. Diese Nachrichten liest sonst niemand, auch nicht die Teilnehmendenbetreuung oder die Projektleitung.
+- **Vertrauensperson**: Teilnehmende können sich vertraulich an die Vertrauenspersonen wenden, an alle gemeinsam oder an eine einzelne. Diese Nachrichten liest sonst niemand, auch nicht die Teilnehmendenbetreuung oder die Projektleitung. Einzige Ausnahme ist die [Stellvertretung](#impersonation): Wer stellvertretend für eine teilnehmende Person handelt, sieht deren Chats wie sie selbst, auch die mit den Vertrauenspersonen.
 - Unter **In den Gremien** je Gremium **Vorsitz** und **Gremienberatung**.
 
 Wer eine Funktion hat, betreut in den [Nachrichten](./communication#messages) das Postfach dieser Funktion und antwortet Teilnehmenden unter dem eigenen Namen. Funktionen vergeben die **Projektleitung** und die **Teamkoordinator\*innen**.

@@ -174,7 +174,7 @@ Im Reiter **Platz**:
 - Die Rolle der Delegation und das Gremium der Person, oder **Noch keine Zuteilung** mit **Bewerbung abgeschlossen** bzw. **Bewerbung noch nicht abgeschlossen**.
 - **Gremienzuteilung** (nur bei Staaten): Für jedes Mitglied wählst du ein Gremium, in dem der Staat sitzt. Ist das Gremium für die Delegation schon voll, tauscht DELEGATOR: Das Mitglied, dessen Platz am längsten nicht geändert wurde, bekommt den Platz, den die Person verlässt. **Zurücksetzen** nimmt allen Mitgliedern ihr Gremium, **Fertig** schließt das Fenster.
 - **Delegationsleiter\*in**: Wähle ein anderes Mitglied und klicke **Bestätigen**.
-- **Delegationsmitglieder**: Mit **Mitglied entfernen** nimmst du eine Person aus der Delegation. War sie Delegationsleitung, übernimmt ein anderes Mitglied. Ist danach niemand mehr übrig, wird die Delegation gelöscht. Rollenwünsche, für die die Delegation nun zu klein ist, fallen weg.
+- **Delegationsmitglieder**: Mit **Mitglied entfernen** nimmst du eine Person aus der Delegation. War sie Delegationsleitung, übernimmt ein anderes Mitglied. Ist danach niemand mehr übrig, wird die Delegation mitsamt ihren Papieren gelöscht. Rollenwünsche, für die die Delegation nun zu klein ist, fallen weg.
 - **Zur Betreuung machen**: Ist ein Mitglied am ersten Konferenztag zu alt für eine Delegation, aber alt genug, sie zu betreuen, zeigt die Karte einen Hinweis mit diesem Knopf. Die Person verlässt die Delegation (mit neuer Delegationsleitung bzw. Löschen einer leeren Delegation), wird als Betreuer\*in angemeldet, die selbst teilnimmt, und betreut alle übrigen Mitglieder. Wer sie bisher betreut hat, betreut sie danach nicht mehr.
 
 Rolle und Gremium einer Delegation wechselst du auf der Seite [Plätze](#seats) oder in der [Zuteilung](./assignment).
@@ -298,7 +298,7 @@ Löschen lässt sich nicht rückgängig machen, und die Personen verlieren ihre 
 ### Jemand sagt kurz vor der Konferenz ab
 
 1. Öffne die Karte der Person, die absagt.
-2. Ist sie Delegationsmitglied, klicke im Reiter **Platz** bei ihr auf **Mitglied entfernen**. Eine neue Delegationsleitung wird bestimmt, eine leere Delegation gelöscht. Sonst nimm **Teilnehmende\*n entfernen** unter **Weitere Aktionen**.
+2. Ist sie Delegationsmitglied, klicke im Reiter **Platz** bei ihr auf **Mitglied entfernen**. Eine neue Delegationsleitung wird bestimmt, eine leere Delegation mitsamt ihren Papieren gelöscht. Sonst nimm **Teilnehmende\*n entfernen** unter **Weitere Aktionen**.
 3. Öffne die **Warteliste**. Die erste Zeile (**Platz** 1) wartet am längsten.
 4. Lies in ihrer Karte Motivation und **Wünsche** und klicke **Platz zuweisen**.
 5. Setze sie auf den frei gewordenen Platz, wie unter [Einen Platz von der Warteliste vergeben](#seating-from-the-waiting-list) beschrieben.

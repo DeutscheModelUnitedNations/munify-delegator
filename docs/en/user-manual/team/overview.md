@@ -207,7 +207,7 @@ Note that:
 
 Besides their role, a person on the team can hold functions. **Functions** in their row opens a window with a switch per function, and each switch saves right away:
 
-- **Trusted person**: participants can turn to the trusted persons in confidence, to all of them together or to one of them. Nobody else reads these messages, not participant care and not project management either.
+- **Trusted person**: participants can turn to the trusted persons in confidence, to all of them together or to one of them. Nobody else reads these messages, not participant care and not project management either. The one exception is [impersonation](#impersonation): whoever acts as a participant sees that person's chats as they do, those with the trusted persons included.
 - Under **In the committees**, **Chairs** and **Committee consultants** for each committee.
 
 Whoever holds a function answers that function's inbox in the [messages](./communication#messages), under their own name. **Project Management** and **Team Coordinators** give functions.

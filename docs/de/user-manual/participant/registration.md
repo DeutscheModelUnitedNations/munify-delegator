@@ -77,7 +77,7 @@ Die Frist steht direkt unter **Deine Bewerbung**. Eine Delegation, die bis dahin
 
 Nach dem Abschluss könnt ihr nichts mehr ändern: keine Wünsche und Texte, keine neuen Mitglieder, und niemand kann die Delegation mehr verlassen oder löschen. Nur deine eigene Schule änderst du weiterhin, und Betreuende verbindest du auch danach noch.
 
-Das Ergebnis des Auswahlverfahrens bekommst du per E-Mail. Was danach auf dem Dashboard passiert, steht unter [Dashboard](./dashboard#after-applying).
+Das Ergebnis des Auswahlverfahrens siehst du auf dem Dashboard, sobald das Team die Zuteilung veröffentlicht. Je nach Einstellung der Konferenz bekommst du es auch per E-Mail. Was danach auf dem Dashboard passiert, steht unter [Dashboard](./dashboard#after-applying).
 
 ## Einer Delegation beitreten {#joining-a-delegation}
 

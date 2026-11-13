@@ -83,7 +83,7 @@ Your paper always has a status:
 
 | Status                  | Meaning                                                         |
 | ----------------------- | --------------------------------------------------------------- |
-| **Draft**               | Only you see it.                                                |
+| **Draft**               | Only you and the team see it.                                   |
 | **Submitted**           | It waits for the team's first feedback.                         |
 | **Revisions requested** | The team asks you to change something.                          |
 | **Revised**             | You resubmitted it after feedback. It waits for the team again. |
@@ -100,7 +100,7 @@ This is how you revise a paper after feedback:
 You can still resubmit an accepted paper. It is then **Revised** again until the team reviews it once more.
 
 :::note An email for every review
-Every review comes with the email **New feedback on “…”**, showing the new status and a **View feedback** button. The team decides when it is sent. If you reply to the email, your reply reaches the person who wrote the review.
+For every review the conference can send the email **New feedback on “…”**, showing the new status and a **View feedback** button. The team decides whether and when it is sent, so rely on the Paper Hub. If you reply to the email, your reply reaches the person who wrote the review.
 :::
 
 ## Versions and history {#history}

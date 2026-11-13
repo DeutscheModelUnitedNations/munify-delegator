@@ -222,7 +222,7 @@ Nicht angenommen werden der QR-Code der Anmeldeunterlagen und NSA-Karten (**Dies
 
 Beim Prüfen und bei **Info** erscheint neben der Kamera die Person: Name, Geburtsdatum, Rolle und Gremium, die Status **Beitragszahlung**, **Verbindliche Anmeldung** und **Anwesenheit**, dann **Alles in Ordnung** oder **Offene Punkte** mit der Liste.
 
-- **Alles in Ordnung**: Der Scan ist erfasst, der Scanner ist sofort bereit.
+- **Alles in Ordnung** beim Prüfen: Der Scan ist erfasst, der Scanner ist sofort bereit. Im Modus **Info** wird auch dann nichts erfasst.
 - **Offene Punkte** beim Prüfen: **Verwerfen** (Esc) erfasst nichts, **Trotzdem erfassen** (Alt+A) erfasst die Person mit dem Vermerk, dass es offene Punkte gab.
 - Bei einem Teammitglied und bei offenen Punkten im Modus **Info** geht es mit **Verstanden, weiter** (Alt+A) weiter. Erfasst wird dabei nichts.
 

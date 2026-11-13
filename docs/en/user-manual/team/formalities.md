@@ -222,7 +222,7 @@ If someone on the team opens a nametag's code with a phone's camera app, partici
 
 With **Check** and **Info**, the person appears next to the camera: name, birthday, role and committee, the statuses **Fee Payment**, **Binding Registration** and **Attendance**, then **Everything is in order** or **Open points** with the list.
 
-- **Everything is in order**: the scan is recorded, and the scanner is ready right away.
+- **Everything is in order** in a **Check** session: the scan is recorded, and the scanner is ready right away. In **Info** mode nothing is recorded then either.
 - **Open points** during a check: **Dismiss** (Esc) records nothing, **Record anyway** (Alt+A) records the person with the note that there were open points.
 - For a team member, and for open points in **Info** mode, **Understood, continue** (Alt+A) moves on. Nothing is recorded.
 

@@ -154,7 +154,7 @@ Liegen mehrere Gruppen auf derselben Rolle, legt die Übernahme sie zu einer Del
 
 Passt eine Delegation nicht zu den freien Rollen, teile sie mit dem Knopf **Delegation auf mehrere Rollen aufteilen** auf ihrer Karte. Das geht bei ganzen Delegationen mit mindestens zwei Personen. Im Dialog **… aufteilen** steht zunächst das erste Mitglied allein und der Rest zusammen. Ziehe jedes Mitglied in den Teil, in dem es bleiben soll, füge mit **Teil hinzufügen** weitere Teile hinzu, entferne einen mit **Teil entfernen** oder teile mit den runden Knöpfen unten in gleich große Teile. Es braucht mindestens zwei Teile mit Mitgliedern, dann bestätigst du mit **Aufteilen**.
 
-Jeder Teil erscheint danach als eigene Gruppe seiner Größe, ohne Rolle, und wird einzeln zugeteilt. Eine für die ganze Delegation geplante Rolle fällt dabei weg, eine erneute Aufteilung ersetzt die alte. Beim Übernehmen wird die ursprüngliche Delegation aufgelöst, und jeder Teil wird eine eigene Delegation, auch ein Teil ohne Rolle. **Aufteilung zurücknehmen und die Delegation wieder zusammenführen** auf einem Teil verwirft die Aufteilung samt der für die Teile geplanten Rollen.
+Jeder Teil erscheint danach als eigene Gruppe seiner Größe, ohne Rolle, und wird einzeln zugeteilt. Eine für die ganze Delegation geplante Rolle fällt dabei weg, eine erneute Aufteilung ersetzt die alte. Beim Übernehmen wird die ursprüngliche Delegation aufgelöst, und jeder Teil wird eine eigene Delegation, auch ein Teil ohne Rolle. Liegt ein Teil mit einer anderen Gruppe auf derselben Rolle, wird er stattdessen mit ihr zusammengelegt. **Aufteilung zurücknehmen und die Delegation wieder zusammenführen** auf einem Teil verwirft die Aufteilung samt der für die Teile geplanten Rollen.
 
 Tritt nach dem Aufteilen jemand der Delegation bei, warnt das Board oben, dass Mitglieder keinem Teil zugeordnet sind. Solange das so ist, lässt sich der Entwurf nicht übernehmen. Teile die Delegation dann erneut auf.
 
@@ -162,7 +162,7 @@ Tritt nach dem Aufteilen jemand der Delegation bei, warnt das Board oben, dass M
 
 **Automatisch zuteilen (3)** verteilt alle offenen Gruppen der gewählten Größe in einem Durchgang nach der [Gewichtung](#weighting) und meldet, wie viele eine Rolle bekommen haben. Dabei gilt:
 
-- Sie vergibt nur Rollen mit **genau** so vielen freien Plätzen, wie die Gruppe Mitglieder hat. Eine Rolle, die eine Gruppe nur teilweise füllen würde, teilst du von Hand zu.
+- Sie vergibt nur Rollen mit **genau** so vielen freien Plätzen, wie die Gruppe Mitglieder hat. Eine Rolle, die eine Gruppe nur teilweise füllen würde, wird bei dieser Gruppengröße nicht angeboten, die Gruppe bleibt also im Pool.
 - Wünsche gehen vor: Die Verteilung setzt so viele Gruppen wie möglich auf einen ihrer Wünsche. Nur was übrig bleibt, geht an Gruppen ohne freien Wunsch.
 - Bewerbungen mit **Muss einen Platz bekommen** bekommen vor allen anderen einen Platz, sobald eine Rolle passt. Welche, folgt weiter ihren Wünschen.
 - Ausgeschlossene Bewerbungen und Gruppen, die schon eine Rolle haben oder geplant bekommen, bleiben, wie sie sind.
