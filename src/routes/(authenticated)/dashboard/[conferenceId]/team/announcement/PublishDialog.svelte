@@ -43,6 +43,11 @@
 			busy = false;
 		}
 	}
+
+	const close = () => (open = false);
+	const confirmLabel = $derived(
+		when === 'now' ? m.announcementPublishNow() : m.announcementSchedule()
+	);
 </script>
 
 <Modal bind:open title={m.announcementPublishTitle()}>
@@ -84,15 +89,16 @@
 		</fieldset>
 	</div>
 	{#snippet action()}
-		<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
+		<button type="button" class="btn" onclick={close}>{m.cancel()}</button>
 		<button
-			class="btn btn-primary"
-			disabled={!ready || busy}
-			onclick={publish}
+			type="button"
 			data-testid="publish-confirm"
+			class="btn btn-primary"
+			onclick={publish}
+			disabled={!ready || busy}
 		>
 			<i aria-hidden="true" class="ph-duotone ph-megaphone"></i>
-			{when === 'now' ? m.announcementPublishNow() : m.announcementSchedule()}
+			{confirmLabel}
 		</button>
 	{/snippet}
 </Modal>

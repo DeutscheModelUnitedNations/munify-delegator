@@ -9,6 +9,9 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import Markdown from '#lib/components/markdown/Markdown.svelte';
 	import type { AnnouncementImportance } from '#lib/helpers/announcements';
+	import AnnouncementActions from './AnnouncementActions.svelte';
+	import AnnouncementBadges from './AnnouncementBadges.svelte';
+	import AnnouncementAttachments from './AnnouncementAttachments.svelte';
 
 	interface Props {
 		/** Anchors the card, so a link can lead to it. */
@@ -89,22 +92,7 @@
 					{/if}
 				</p>
 			</div>
-			<div class="flex flex-wrap items-center gap-1.5">
-				{#if read === false}
-					<span class="badge badge-primary badge-sm">{m.announcementNew()}</span>
-				{/if}
-				{#if importance === 'URGENT'}
-					<span class="badge badge-error badge-sm">{m.announcementImportanceUrgent()}</span>
-				{:else if importance === 'IMPORTANT'}
-					<span class="badge badge-warning badge-sm">{m.announcementImportanceImportant()}</span>
-				{/if}
-				{#if pinned}
-					<span class="badge badge-ghost badge-sm gap-1">
-						<i aria-hidden="true" class="ph-fill ph-push-pin"></i>
-						{m.announcementPinned()}
-					</span>
-				{/if}
-			</div>
+			<AnnouncementBadges {importance} {pinned} unread={read === false} />
 		</header>
 
 		<div class={folded ? 'relative max-h-28 overflow-hidden' : ''}>
@@ -123,41 +111,10 @@
 			<p class="text-base-content/80 text-sm italic">{signature}</p>
 		{/if}
 
-		{#if attachments.length > 0 && !folded}
-			<ul class="flex flex-wrap gap-2" aria-label={m.announcementAttachments()}>
-				{#each attachments as attachment (attachment.id)}
-					<li>
-						<!-- eslint-disable svelte/no-navigation-without-resolve -- a file in the bucket, not a route -->
-						<a
-							class="btn btn-sm btn-outline"
-							href={attachment.url}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<i aria-hidden="true" class="ph-duotone ph-paperclip"></i>
-							{attachment.fileName ?? m.announcementAttachment()}
-						</a>
-						<!-- eslint-enable svelte/no-navigation-without-resolve -->
-					</li>
-				{/each}
-			</ul>
+		{#if !folded}
+			<AnnouncementAttachments {attachments} />
 		{/if}
 
-		{#if foldable || (read === false && onread)}
-			<div class="flex flex-wrap gap-2">
-				{#if foldable}
-					<button class="btn btn-ghost btn-sm" aria-expanded={opened} onclick={toggle}>
-						<i aria-hidden="true" class="ph-duotone {opened ? 'ph-caret-up' : 'ph-caret-down'}"></i>
-						{opened ? m.showLess() : m.showMore()}
-					</button>
-				{/if}
-				{#if read === false && onread}
-					<button class="btn btn-ghost btn-sm" onclick={() => onread()}>
-						<i aria-hidden="true" class="ph-duotone ph-check"></i>
-						{m.announcementMarkRead()}
-					</button>
-				{/if}
-			</div>
-		{/if}
+		<AnnouncementActions {foldable} {opened} unread={read === false} ontoggle={toggle} {onread} />
 	</div>
 </article>

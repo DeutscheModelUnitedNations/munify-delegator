@@ -214,6 +214,8 @@ Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine 
 :::tip Wenn etwas nicht in Ordnung ist
 Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
 
+Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
+
 Über die drei Punkte oben in einem Einzelchat kannst du mit **Person blockieren** dafür sorgen, dass ihr euch nicht mehr schreiben könnt, oder mit **Chat melden** den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht. Wer gegen die Regeln verstößt, kann von den Chats mit anderen Teilnehmenden gesperrt werden. Das Team erreicht man dann weiterhin. In einem Notfall wähle den Notruf 112 und wende dich vor Ort direkt an das Team, denn die Nachrichten werden nicht rund um die Uhr gelesen.
 :::
 

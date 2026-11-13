@@ -214,6 +214,8 @@ When a message stays unread for a quarter of an hour, the conference can send yo
 :::tip When something is not right
 Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
 
+When you open a chat with unread messages, the line **New messages** shows where you left off.
+
 The three dots at the top of a direct chat let you use **Block person** so you can no longer write each other, or **Report chat** to report it. After a report participant care reads the chat until the report is resolved. The other person is not told who reported. Whoever breaks the rules can be suspended from chats with other participants. They can still reach the team. In an emergency call 112 and turn to the team on site directly, since messages are not read around the clock.
 :::
 

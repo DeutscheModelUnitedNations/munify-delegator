@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	bubblesOf,
+	firstUnreadId,
 	messageAuthor,
 	standsOnOwnSide,
 	unreadStateOf,
@@ -131,5 +132,40 @@ describe('unreadStateOf', () => {
 			unreadStateOf({ chat: { id: 'chat', unreadCount: 0 }, side: 'TEAM', newestId: 'm7' })
 		).toBeNull();
 		expect(unreadStateOf({ chat, side: 'REVIEW', newestId: 'm7' })).toBeNull();
+	});
+});
+
+describe('firstUnreadId', () => {
+	const messages = [
+		fromParticipant('a'),
+		fromParticipant('b', true),
+		fromParticipant('c'),
+		fromTeam('d'),
+		fromParticipant('e')
+	];
+
+	test('is the oldest of the latest unread messages of the other side', () => {
+		const args = { messages, side: 'PARTICIPANT' as const, chat: direct };
+		expect(firstUnreadId({ ...args, unreadCount: 1 })).toBe('e');
+		expect(firstUnreadId({ ...args, unreadCount: 3 })).toBe('c');
+	});
+
+	test('an inbox counts what the participant wrote', () => {
+		expect(firstUnreadId({ messages, side: 'TEAM', chat: teamChat, unreadCount: 2 })).toBe('c');
+	});
+
+	test('is the oldest loaded message when more are unread than loaded', () => {
+		expect(firstUnreadId({ messages, side: 'PARTICIPANT', chat: direct, unreadCount: 40 })).toBe(
+			'a'
+		);
+	});
+
+	test('marks nothing when all is read or while only reviewing', () => {
+		const args = { messages, chat: direct };
+		expect(firstUnreadId({ ...args, side: 'PARTICIPANT', unreadCount: 0 })).toBeUndefined();
+		expect(firstUnreadId({ ...args, side: 'REVIEW', unreadCount: 2 })).toBeUndefined();
+		expect(
+			firstUnreadId({ messages: [], side: 'TEAM', chat: teamChat, unreadCount: 2 })
+		).toBeUndefined();
 	});
 });

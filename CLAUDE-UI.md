@@ -861,7 +861,8 @@ The announcements (see "Announcements" in CLAUDE.md) are built from `#lib/compon
 - **`AnnouncementCard`**: one announcement as readers see it. Its edge colour, icon and badge
   follow `importance` (the badge says it in words too); `read={false}` shows "New" and, with
   `onread`, a "mark as read" button. A long text is folded until opened (never for an urgent one,
-  or with `expanded`). Without `read` it is a preview, which the editor uses.
+  or with `expanded`). Without `read` it is a preview, which the editor uses. Its badges and its
+  file links are `AnnouncementBadges` and `AnnouncementAttachments`.
 - **`AnnouncementFeed`**: the caller's feed of a conference. With `limit` (the dashboard) it shows
   the pinned, the unread and the newest and links to the rest; without, all of them. Renders
   nothing without announcements unless `showEmpty`.
@@ -897,6 +898,9 @@ list header.
   `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
   in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
   (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
+- **Where the reader left off**: `ChatThread` takes `firstUnreadId` (`threadMessages.ts`) once as
+  it opens, `ChatMessages` draws the "new messages" line above that message, and the thread opens
+  there instead of at the end. The line stays until the chat is opened again.
 - **`MessagingTermsModal`**: the terms of the message service (`messagingTermsSections`). The
   composer opens it with `onAccepted` when the API asks a participant to agree before their first
   message; `MessagingTermsLink` under the participant's chat list shows them to read.
