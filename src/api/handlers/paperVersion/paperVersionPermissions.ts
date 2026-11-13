@@ -1,3 +1,6 @@
+import { sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import * as schema from '#api/db/schema/index';
 import { abilityBuilder } from '#api/rumble';
 import {
 	PAPER_ROLES,
@@ -8,10 +11,11 @@ import {
 	hop
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
-import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import {
 	paperOfTeamConference,
 	submittedPaperOfOwnDelegation,
+	submittedPaperOfSeatConference,
 	submittedPaperOfSupervisedDelegation
 } from '../paper/paperPermissions';
 
@@ -70,4 +74,26 @@ export function registerPaperVersionAbilities() {
 			return hop(paper, (paper) => ({ status: { ne: 'DRAFT' as const }, paper }));
 		})
 	);
+
+	// Everybody with a seat in the conference reads its submitted papers as they stand: the latest
+	// submitted version only, without its status (the reviewers' verdict). Earlier versions stay
+	// with the author, the delegation, its supervisors and the paper team.
+	abilityBuilder.paperVersion.allow('read').when(
+		liveRule((args) => {
+			const paper = submittedPaperOfSeatConference(args);
+			const where = hop(paper, (paper) => ({
+				status: { ne: 'DRAFT' as const },
+				paper,
+				RAW: isLatestSubmittedVersion
+			}));
+			return where && { where, columns: { status: false } };
+		})
+	);
+}
+
+const laterVersion = alias(schema.paperVersion, 'later_version');
+
+/** Matches a version no later submitted (non-draft) version of the same paper follows. */
+export function isLatestSubmittedVersion(version: typeof schema.paperVersion) {
+	return sql`not exists (select 1 from ${schema.paperVersion} as ${laterVersion} where ${laterVersion.paperId} = ${version.paperId} and ${laterVersion.status} <> 'DRAFT' and ${laterVersion.version} > ${version.version})`;
 }

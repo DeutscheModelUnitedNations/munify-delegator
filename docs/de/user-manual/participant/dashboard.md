@@ -102,7 +102,25 @@ Mit der Freigabe siehst du, wen du vertrittst. So sieht das Dashboard einer Dele
 
 Als Einzelteilnehmende*r siehst du statt Delegationsstatus und Mitgliedern deine **Rolle**.
 
-Ist die Einreichung von Papieren geöffnet, führt dich die Karte **Papier-Hub** dorthin. Dort reichst du Positions-, Arbeits- und Vorstellungspapiere ein und liest die der anderen.
+Ist die Einreichung von Papieren geöffnet, führt dich die Karte **Papier-Hub** dorthin. Dort reichst du Positions-, Arbeits- und Vorstellungspapiere ein und liest die der anderen. Mehr dazu unter [Papier-Hub](#paper-hub).
+
+## Papier-Hub {#paper-hub}
+
+Im Papier-Hub schreibst du die Papiere deiner Delegation und liest die Papiere der Konferenz.
+
+- **Meine Papiere:** deine eigenen Papiere. Als Delegation eines Landes schreibst du Positions- und Arbeitspapiere zu den Tagesordnungspunkten deines Gremiums. Ein nichtstaatlicher Akteur schreibt zu jedem Tagesordnungspunkt der Konferenz und stellt sich mit einem Vorstellungspapier vor. Ein Papier bleibt ein Entwurf, bis du es einreichst.
+- **Konferenz-Papiere:** alle eingereichten Papiere der Konferenz, nach Gremium und Tagesordnungspunkt. Du öffnest sie im Lesemodus.
+
+Als Einzelteilnehmende*r schreibst du keine Papiere und siehst nur die **Konferenz-Papiere**.
+
+### Wer sieht was {#who-sees-what}
+
+- **Entwürfe** siehst nur du und das Team, das die Papiere prüft.
+- **Rückmeldungen** des Teams zu deinem Papier siehst nur du.
+- **Deine Delegation** und eure Betreuer*innen sehen eure eingereichten Papiere mit ihrem Status und allen eingereichten Fassungen.
+- **Alle mit einem Platz auf der Konferenz** lesen jedes eingereichte Papier in der zuletzt eingereichten Fassung. Das gilt für Delegationsmitglieder, Einzelteilnehmende und die Betreuer*innen von beiden. Frühere Fassungen, den Status und die Rückmeldungen sehen sie nicht. Auch nicht, wer aus der Delegation das Papier geschrieben hat.
+
+Die Papiere der anderen siehst du erst, wenn das Team die Zuteilung freigegeben hat und du einen Platz hast. Wer nicht an der Konferenz teilnimmt, sieht keine Papiere.
 
 ## Zahlung {#payment}
 

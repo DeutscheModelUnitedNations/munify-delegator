@@ -10,6 +10,7 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	RELEASED_MIRRORED_CONFERENCE,
 	releasedIds,
+	seatedConferenceIds,
 	supervisedDelegations,
 	systemAdmin,
 	type DelegationInConference,
@@ -61,6 +62,21 @@ export function registerDelegationAbilities() {
 	// stays masked until the assignment is released.
 	registerParticipantReads(ownDelegations);
 	registerParticipantReads(supervisedDelegations);
+
+	// Everybody with a seat in a conference whose assignment is released (`seatedConferenceIds`)
+	// reads which delegation holds which role there, and nothing else of it: the conference papers
+	// are shown under the role of the delegation that wrote them.
+	abilityBuilder.delegation.allow('read').when(
+		liveRule((args) => {
+			const ids = seatedConferenceIds(args);
+			return (
+				ids && {
+					where: { conferenceId: idIn(ids), assignedRoleId: { isNotNull: true as const } },
+					columns: { id: true, conferenceId: true, assignedRoleId: true }
+				}
+			);
+		})
+	);
 
 	// The head delegate may update and delete their delegation until it has applied.
 	abilityBuilder.delegation.allow(['update', 'delete']).when(

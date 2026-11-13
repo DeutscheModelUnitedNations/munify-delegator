@@ -39,6 +39,7 @@ import { seedMcp } from './mcp';
 import { seedLateSupervisor } from './lateSupervisor';
 import { seedMakeSupervisor } from './makeSupervisor';
 import { seedSchools } from './schools';
+import { seedConferencePapers } from './conferencePapers';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -1020,6 +1021,7 @@ export default async function seed() {
 	await seedLateSupervisor(db);
 	await seedMakeSupervisor(db);
 	await seedMcp(db);
+	await seedConferencePapers(db);
 	await seedSchools(db, { otherConferenceId: E2E_PREP_CONFERENCE_ID });
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);

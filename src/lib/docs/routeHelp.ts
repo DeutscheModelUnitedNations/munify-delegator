@@ -55,6 +55,12 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	'/(authenticated)/dashboard/[conferenceId]/info': {
 		docs: 'user-manual/participant/dashboard#conference-information'
 	},
+	'/(authenticated)/dashboard/[conferenceId]/paperhub': {
+		docs: 'user-manual/participant/dashboard#paper-hub'
+	},
+	'/(authenticated)/dashboard/[conferenceId]/paperhub/view/[paperId]': {
+		docs: 'user-manual/participant/dashboard#who-sees-what'
+	},
 	'/(authenticated)/dashboard/[conferenceId]/calendar': {
 		docs: 'user-manual/participant/dashboard#schedule'
 	},

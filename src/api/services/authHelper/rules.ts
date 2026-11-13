@@ -268,6 +268,17 @@ export function supervisedDelegationIds({ ctx, facts }: RuleArgs) {
 		: undefined;
 }
 
+/**
+ * The ids of the conferences in which the caller has a seat everybody there may know of: the
+ * conference has released its assignment, and the caller's delegation, the caller as single
+ * participant or someone they supervise holds a role. What the seated share among themselves (the
+ * submitted papers) goes by it. Undefined for an anonymous caller and an AI assistant.
+ */
+export function seatedConferenceIds({ ctx, facts }: RuleArgs) {
+	if (!callerUserId(ctx)) return undefined;
+	return facts.seatConferenceIds.filter((id) => facts.conferences.get(id)?.assignmentReleased);
+}
+
 /** A delegation with the conference it belongs to, for the participant-side release masks. */
 export type DelegationInConference = { id: string; conferenceId: string };
 

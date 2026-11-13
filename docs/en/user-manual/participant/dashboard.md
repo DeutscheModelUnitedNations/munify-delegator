@@ -102,7 +102,25 @@ With the release you see whom you represent. This is a head delegate's dashboard
 
 As a single participant you see your **Role** instead of the delegation status and members.
 
-When paper submission is open, the **Paper Hub** card takes you there. That is where you submit position, working and introduction papers and read everyone else's.
+When paper submission is open, the **Paper Hub** card takes you there. That is where you submit position, working and introduction papers and read everyone else's. More in [Paper Hub](#paper-hub).
+
+## Paper Hub {#paper-hub}
+
+The Paper Hub is where you write your delegation's papers and read the papers of the conference.
+
+- **My Papers:** your own papers. As the delegation of a country you write position and working papers on the agenda items of your committee. A non-state actor writes on any agenda item of the conference and introduces itself with an introduction paper. A paper stays a draft until you submit it.
+- **Conference Papers:** every submitted paper of the conference, by committee and agenda item. You open them in read-only mode.
+
+As a single participant you write no papers and only see the **Conference Papers**.
+
+### Who sees what {#who-sees-what}
+
+- **Drafts** are seen only by you and the team that reviews the papers.
+- **Feedback** from the team on your paper is seen only by you.
+- **Your delegation** and your supervisors see your submitted papers with their status and every submitted version.
+- **Everyone with a seat at the conference** reads every submitted paper in its latest submitted version. That covers delegation members, single participants and the supervisors of both. They do not see earlier versions, the status or the feedback. Nor who in the delegation wrote the paper.
+
+You see other people's papers once the team has released the assignment and you have a seat. People who do not take part in the conference see no papers.
 
 ## Payment {#payment}
 
