@@ -1,0 +1,137 @@
+/*
+ * The docs kit (help button, manual pages, admonitions) names its icons after Font Awesome and
+ * only takes the style class from the app. This app draws Phosphor icons, so each name the kit
+ * uses is given the glyphs of its Phosphor counterpart here; without them the kit's icons are
+ * empty. `kitIcons.test.ts` holds the pairs and fails when the kit uses a name missing here or
+ * a glyph differs from Phosphor's.
+ */
+
+/* arrow-left */
+.ph-duotone.fa-arrow-left:before {
+	content: '\e058';
+	opacity: 0.2;
+}
+.ph-duotone.fa-arrow-left:after {
+	content: '\e059';
+	margin-left: -1em;
+}
+
+/* arrow-right */
+.ph-duotone.fa-arrow-right:before {
+	content: '\e06c';
+	opacity: 0.2;
+}
+.ph-duotone.fa-arrow-right:after {
+	content: '\e06d';
+	margin-left: -1em;
+}
+
+/* arrow-up-right */
+.ph-duotone.fa-arrow-up-right:before {
+	content: '\e092';
+	opacity: 0.2;
+}
+.ph-duotone.fa-arrow-up-right:after {
+	content: '\e093';
+	margin-left: -1em;
+}
+
+/* list */
+.ph-duotone.fa-bars:before {
+	content: '\e2f0';
+	opacity: 0.2;
+}
+.ph-duotone.fa-bars:after {
+	content: '\e2f1';
+	margin-left: -1em;
+}
+
+/* book-open */
+.ph-duotone.fa-book:before {
+	content: '\e0e6';
+	opacity: 0.2;
+}
+.ph-duotone.fa-book:after {
+	content: '\e0e7';
+	margin-left: -1em;
+}
+
+/* warning-circle */
+.ph-duotone.fa-circle-exclamation:before {
+	content: '\e4e2';
+	opacity: 0.2;
+}
+.ph-duotone.fa-circle-exclamation:after {
+	content: '\e4e3';
+	margin-left: -1em;
+}
+
+/* info */
+.ph-duotone.fa-circle-info:before {
+	content: '\e2ce';
+	opacity: 0.2;
+}
+.ph-duotone.fa-circle-info:after {
+	content: '\e2cf';
+	margin-left: -1em;
+}
+
+/* question */
+.ph-duotone.fa-circle-question:before {
+	content: '\e3e8';
+	opacity: 0.2;
+}
+.ph-duotone.fa-circle-question:after {
+	content: '\e3eb';
+	margin-left: -1em;
+}
+
+/* translate */
+.ph-duotone.fa-language:before {
+	content: '\e4a2';
+	opacity: 0.2;
+}
+.ph-duotone.fa-language:after {
+	content: '\e4a3';
+	margin-left: -1em;
+}
+
+/* lightbulb */
+.ph-duotone.fa-lightbulb:before {
+	content: '\e2dc';
+	opacity: 0.2;
+}
+.ph-duotone.fa-lightbulb:after {
+	content: '\e2dd';
+	margin-left: -1em;
+}
+
+/* pencil-simple */
+.ph-duotone.fa-pen-to-square:before {
+	content: '\e3b4';
+	opacity: 0.2;
+}
+.ph-duotone.fa-pen-to-square:after {
+	content: '\e3b5';
+	margin-left: -1em;
+}
+
+/* path */
+.ph-duotone.fa-route:before {
+	content: '\e39c';
+	opacity: 0.2;
+}
+.ph-duotone.fa-route:after {
+	content: '\e39d';
+	margin-left: -1em;
+}
+
+/* warning */
+.ph-duotone.fa-triangle-exclamation:before {
+	content: '\e4e0';
+	opacity: 0.2;
+}
+.ph-duotone.fa-triangle-exclamation:after {
+	content: '\e4e1';
+	margin-left: -1em;
+}
