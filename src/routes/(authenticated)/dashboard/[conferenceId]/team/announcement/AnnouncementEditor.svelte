@@ -13,10 +13,9 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import AnnouncementCard from '#lib/components/announcement/AnnouncementCard.svelte';
-	import { dateToDatetimeLocal, datetimeLocalToDate } from '#lib/helpers/conferenceTimezoneDate';
+	import { dateToDatetimeLocal } from '#lib/helpers/conferenceTimezoneDate';
 	import {
 		announcementTextSchema,
-		audienceInput,
 		MAX_ANNOUNCEMENT_ATTACHMENTS,
 		MAX_ANNOUNCEMENT_BODY,
 		MAX_ANNOUNCEMENT_SIGNATURE,
@@ -25,8 +24,10 @@
 		type Audience
 	} from '#lib/helpers/announcements';
 	import AudiencePicker from './AudiencePicker.svelte';
+	import AttachmentPicker from './AttachmentPicker.svelte';
 	import type { AudienceLookups } from './announcementLabels';
 	import type { AnnouncementRow } from './announcementRows';
+	import { announcementValues } from './announcementForm';
 
 	interface Props {
 		open: boolean;
@@ -72,6 +73,7 @@
 	);
 	let added = $state<File[]>([]);
 	let saving = $state(false);
+	const savedMessage = seed ? m.saved() : m.announcementSavedAsDraft();
 
 	const titleError = $derived(announcementTextSchema.title.safeParse(title).error?.issues[0]);
 	const bodyError = $derived(announcementTextSchema.body.safeParse(body).error?.issues[0]);
@@ -80,9 +82,11 @@
 	/** Whether anything was typed yet, so an untouched form shows no errors. */
 	let touched = $state(false);
 
-	function pickFiles(event: Event & { currentTarget: HTMLInputElement }) {
-		added = [...added, ...(event.currentTarget.files ?? [])];
-		event.currentTarget.value = '';
+	/** Creates the announcement as a draft, or changes the one being edited. */
+	function store(values: ReturnType<typeof announcementValues>) {
+		return seed
+			? client.mutate.updateAnnouncement({ __args: { id: seed.id, ...values }, id: true })
+			: client.mutate.createAnnouncement({ __args: { conferenceId, ...values }, id: true });
 	}
 
 	async function save() {
@@ -90,33 +94,31 @@
 		if (!valid) return;
 		saving = true;
 		try {
-			const uploaded = await Promise.all(
+			const uploadedFileIds = await Promise.all(
 				added.map((file) =>
 					uploadFile({ file, target: { kind: 'announcement', field: 'attachment', conferenceId } })
 				)
 			);
-			const values = {
-				title,
-				body,
-				signature: signature.trim() || null,
-				importance,
-				pinned,
-				notifyByMail,
-				visibleUntil: visibleUntil
-					? datetimeLocalToDate({ datetimeLocal: visibleUntil, timezone })
-					: null,
-				audiences: audiences.map(audienceInput),
-				attachmentFileIds: [
-					...kept.map((file) => file.id),
-					...uploaded.flatMap((id) => (id ? [id] : []))
-				]
-			};
-			const promise = seed
-				? client.mutate.updateAnnouncement({ __args: { id: seed.id, ...values }, id: true })
-				: client.mutate.createAnnouncement({ __args: { conferenceId, ...values }, id: true });
+			const promise = store(
+				announcementValues({
+					form: {
+						title,
+						body,
+						signature,
+						importance,
+						pinned,
+						notifyByMail,
+						visibleUntil,
+						audiences
+					},
+					timezone,
+					keptFileIds: kept.map((file) => file.id),
+					uploadedFileIds
+				})
+			);
 			toast.promise(promise, {
 				loading: m.genericToastLoading(),
-				success: seed ? m.saved() : m.announcementSavedAsDraft(),
+				success: savedMessage,
 				error: (error) => (error instanceof Error ? error.message : m.genericToastError())
 			});
 			await promise;
@@ -215,53 +217,7 @@
 			</FormFieldset>
 
 			<FormFieldset title={m.announcementAttachments()}>
-				{#if kept.length + added.length > 0}
-					<ul class="mb-2 flex flex-col gap-1">
-						{#each kept as file (file.id)}
-							<li class="flex items-center gap-2 text-sm">
-								<i aria-hidden="true" class="ph-duotone ph-paperclip"></i>
-								<span class="min-w-0 flex-1 truncate">
-									{file.fileName ?? m.announcementAttachment()}
-								</span>
-								<button
-									type="button"
-									class="btn btn-ghost btn-xs"
-									aria-label={m.announcementAttachmentRemove({
-										file: file.fileName ?? m.announcementAttachment()
-									})}
-									onclick={() => (kept = kept.filter((other) => other.id !== file.id))}
-								>
-									<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-								</button>
-							</li>
-						{/each}
-						{#each added as file, index (index)}
-							<li class="flex items-center gap-2 text-sm">
-								<i aria-hidden="true" class="ph-duotone ph-upload-simple"></i>
-								<span class="min-w-0 flex-1 truncate">{file.name}</span>
-								<button
-									type="button"
-									class="btn btn-ghost btn-xs"
-									aria-label={m.announcementAttachmentRemove({ file: file.name })}
-									onclick={() => (added = added.filter((_, other) => other !== index))}
-								>
-									<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-								</button>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-				<input
-					type="file"
-					class="file-input file-input-sm w-full"
-					multiple
-					accept="application/pdf,image/png,image/jpeg,image/webp"
-					aria-label={m.announcementAttachmentAdd()}
-					onchange={pickFiles}
-				/>
-				<p class="text-xs {tooManyFiles ? 'text-error' : 'text-base-content/60'}">
-					{m.announcementAttachmentHint({ max: MAX_ANNOUNCEMENT_ATTACHMENTS })}
-				</p>
+				<AttachmentPicker bind:kept bind:added />
 			</FormFieldset>
 		</div>
 
