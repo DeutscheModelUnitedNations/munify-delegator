@@ -110,6 +110,9 @@ test('the other delegate sees it on the dashboard by role, and both follow the c
 	await header.click();
 	await openChat(carlaPage, /Deutschland · MSGV/);
 	await expect(carlaPage.getByTestId('chat-message')).toContainText(['Hallo aus Deutschland']);
+	// a line marks where she left off, and stays although opening the chat read it
+	const divider = carlaPage.getByTestId('chat-unread-divider');
+	await expect(divider).toHaveText('Neue Nachrichten');
 	// participants know each other by role: Anna's name is nowhere on the page
 	await expect(carlaPage.locator('body')).not.toContainText(anna.family);
 	// reading clears the unread count
@@ -117,7 +120,15 @@ test('the other delegate sees it on the dashboard by role, and both follow the c
 
 	const annaPage = await signedIn(browser, { id: anna.id, startUrl: MESSAGES });
 	await openChat(annaPage, /Frankreich · MSGV/);
+	// she has read everything in it: no line
+	await expect(annaPage.getByTestId('chat-message')).toHaveCount(1);
+	await expect(annaPage.getByTestId('chat-unread-divider')).toHaveCount(0);
 	await write(carlaPage, 'Hallo aus Frankreich');
+	await expect(divider).toBeVisible();
+	// opened again with nothing new, the line is gone
+	await carlaPage.reload();
+	await expect(carlaPage.getByTestId('chat-message')).toHaveCount(2);
+	await expect(divider).toHaveCount(0);
 	// arrives without a reload
 	await expect(
 		annaPage.getByTestId('chat-message').filter({ hasText: 'Hallo aus Frankreich' })

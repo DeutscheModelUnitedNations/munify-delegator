@@ -1,11 +1,12 @@
 <!--
 	@component
 	One open chat: who it is with, its messages by day, and the field to write in. Fetches the chat
-	and its messages itself and marks them read while it is on screen. Participants see each other
+	and its messages itself and marks them read while it is on screen. A line shows where the
+	reader left off, and the chat opens there. Participants see each other
 	by role; a message from a team inbox carries the name of who wrote it.
 -->
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchChat, fetchChatMessages, type OpenChat } from '#lib/api/chats';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
@@ -15,7 +16,7 @@
 	import ChatReviewBanner from './ChatReviewBanner.svelte';
 	import ChatThreadHeader from './ChatThreadHeader.svelte';
 	import { chatTitle, sideOf } from './chatLabels';
-	import { unreadStateOf } from './threadMessages';
+	import { firstUnreadId, unreadStateOf } from './threadMessages';
 
 	interface Props {
 		chatId: string;
@@ -49,16 +50,34 @@
 	const side = $derived(chat ? sideOf(chat) : 'REVIEW');
 	let scroller = $state<HTMLDivElement>();
 
-	// Follows the conversation: down to the newest message whenever one arrives or the chat changes.
+	// Where the reader left off, taken once as the chat opens (a thread is created per chat): the
+	// line stays while the chat is open, although opening it marks everything read.
+	const unreadFromId = untrack(() =>
+		chat ? firstUnreadId({ messages, side, chat, unreadCount: chat.unreadCount }) : undefined
+	);
+
+	// Opens at the first unread message, or at the end; then follows the conversation down to the
+	// newest message whenever one arrives.
 	let seenNewest = '';
 	$effect(() => {
 		const newest = `${chatId}:${newestId}`;
 		if (newest === seenNewest || !scroller) return;
+		const opening = seenNewest === '';
 		seenNewest = newest;
-		void tick().then(() => {
-			if (scroller) scroller.scrollTop = scroller.scrollHeight;
-		});
+		void tick().then(() => scrollTo(opening));
 	});
+
+	function scrollTo(opening: boolean) {
+		if (!scroller) return;
+		const divider = opening ? scroller.querySelector('[data-unread-divider]') : null;
+		// only the thread scrolls: `scrollIntoView` would move the page along
+		scroller.scrollTop = divider
+			? scroller.scrollTop +
+				divider.getBoundingClientRect().top -
+				scroller.getBoundingClientRect().top -
+				12
+			: scroller.scrollHeight;
+	}
 
 	// Reading is marked once per unread state, while the page is in front.
 	let markedFor = '';
@@ -111,7 +130,7 @@
 					<p>{m.chatEmptyThread()}</p>
 				</div>
 			{/if}
-			<ChatMessages {messages} {chat} {side} conferenceId={chat.conferenceId} />
+			<ChatMessages {messages} {chat} {side} {unreadFromId} conferenceId={chat.conferenceId} />
 		</div>
 
 		<ChatComposer chatId={chat.id} refusal={chat.writeRefusal ?? null} {paperId} {onPaperSent} />

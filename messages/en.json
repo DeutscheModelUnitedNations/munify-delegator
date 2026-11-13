@@ -861,6 +861,7 @@
 	"chatUnblockedDone": "Unblocked.",
 	"chatUnknownRole": "Unknown role",
 	"chatUnreadCount": "{count} unread",
+	"chatUnreadDivider": "New messages",
 	"chatUnreadMessages": "unread messages",
 	"chatUnsuspend": "Lift suspension",
 	"chatUnsuspendedDone": "Suspension lifted.",
