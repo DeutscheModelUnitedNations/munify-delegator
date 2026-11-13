@@ -68,6 +68,9 @@
 	let publishOpen = $state(false);
 	let publishing = $state<Row>();
 
+	/** The announcement the publish dialog is open for. */
+	const toPublish = $derived(publishOpen ? publishing : undefined);
+
 	function edit(row?: Row) {
 		editing = row;
 		editorOpen = true;
@@ -154,7 +157,7 @@
 					>
 					{#each view.badges as badge (badge.key)}
 						<span class="badge {badge.look}">
-							{#if badge.icon}<i aria-hidden="true" class={badge.icon}></i>{/if}
+							<i aria-hidden="true" class={badge.icon}></i>
 							{badge.label}
 						</span>
 					{/each}
@@ -202,6 +205,6 @@
 	{/key}
 {/if}
 
-{#if publishing && publishOpen}
-	<PublishDialog bind:open={publishOpen} announcement={publishing} timezone={conference.timezone} />
+{#if toPublish}
+	<PublishDialog bind:open={publishOpen} announcement={toPublish} timezone={conference.timezone} />
 {/if}

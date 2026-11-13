@@ -33,15 +33,21 @@ const nameOf = (user: Person) =>
 export interface RowBadge {
 	key: string;
 	look: string;
-	icon?: string;
+	icon: string;
 	label: string;
 }
 
 const IMPORTANCE_BADGE: Record<string, () => RowBadge> = {
-	URGENT: () => ({ key: 'urgent', look: 'badge-error', label: m.announcementImportanceUrgent() }),
+	URGENT: () => ({
+		key: 'urgent',
+		look: 'badge-error gap-1',
+		icon: 'ph-fill ph-siren',
+		label: m.announcementImportanceUrgent()
+	}),
 	IMPORTANT: () => ({
 		key: 'important',
-		look: 'badge-warning',
+		look: 'badge-warning gap-1',
+		icon: 'ph-duotone ph-warning-circle',
 		label: m.announcementImportanceImportant()
 	})
 };
