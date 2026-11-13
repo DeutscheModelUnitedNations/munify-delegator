@@ -210,7 +210,7 @@
 		"build:compute": "tsdown --config tsdown.compute.config.ts",
 		"jobs": "tsdown --config tsdown.jobs.config.ts --logLevel warn && bun jobsOut/cli.js",
 		"build:jobs": "tsdown --config tsdown.jobs.config.ts",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --incremental",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"coverage": "vitest run --coverage && bun scripts/mergeCoverage.ts",
 		"db:generate": "drizzle-kit generate",
