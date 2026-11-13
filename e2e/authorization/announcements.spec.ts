@@ -74,9 +74,10 @@ test('a feed holds what is out for the reader, and nothing else of the conferenc
 	const annaPage = await signedIn(browser, anna.id);
 	expect(idsOf(await feedOf(annaPage))).toEqual([seeded.gv.id, seeded.welcome.id].toSorted());
 	expect(idsOf(await feedOf(await signedIn(browser, bert.id)))).toEqual([seeded.welcome.id]);
-	expect(idsOf(await feedOf(await signedIn(browser, supervisor.id)))).toEqual(
-		[seeded.supervisors.id, seeded.welcome.id].toSorted()
-	);
+	// the seats are released, and the supervisor has no student with one: not in "everyone"
+	expect(idsOf(await feedOf(await signedIn(browser, supervisor.id)))).toEqual([
+		seeded.supervisors.id
+	]);
 	expect(idsOf(await feedOf(await signedIn(browser, member.id)))).toEqual([seeded.team.id]);
 	expect(await feedOf(await signedIn(browser, outsider.id))).toEqual([]);
 	// a part in one conference gives nothing in another
