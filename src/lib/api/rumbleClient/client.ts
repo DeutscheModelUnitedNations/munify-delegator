@@ -46,6 +46,270 @@ export type AgendaItemPaperGroup = {
   papers: () => Paper[]    
 };
 		
+export type Announcement = {
+  attachments: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AnnouncementattachmentOrderInputArgument | null | undefined,
+    search?: AnnouncementattachmentSearchInputArgument | null | undefined,
+    where?: AnnouncementattachmentWhereInputArgument | null | undefined
+  }) => Announcementattachment[],
+  audiences: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AnnouncementaudienceOrderInputArgument | null | undefined,
+    search?: AnnouncementaudienceSearchInputArgument | null | undefined,
+    where?: AnnouncementaudienceWhereInputArgument | null | undefined
+  }) => Announcementaudience[],
+  author: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User | null,
+  authorId: ID | null,
+  body: String,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  editedAt: DateTime | null,
+  id: ID,
+  importance: AnnouncementimportanceEnum,
+  mailRevision: Int,
+  mailSince: DateTime | null,
+  notifyByMail: Boolean,
+  pinned: Boolean,
+  publishAt: DateTime | null,
+  publishedBy: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User | null,
+  publishedById: ID | null,
+  readCount: Int,
+  recipientCount: Int,
+  releaseAnnounced: Boolean,
+  search_distance: Float | null,
+  signature: String | null,
+  state: String,
+  status: AnnouncementstatusEnum,
+  title: String,
+  updatedAt: DateTime,
+  visibleUntil: DateTime | null    
+};
+		
+export type AnnouncementAudienceCounts = {
+  delegates: Int,
+  singleParticipants: Int,
+  supervisors: Int,
+  team: Int,
+  total: Int,
+  waitingList: Int    
+};
+		
+export type AnnouncementAudienceInput = {
+  committeeId?: ID | null | undefined,
+  kind: AnnouncementaudiencekindEnum,
+  roleId?: ID | null | undefined,
+  surveyOptionId?: ID | null | undefined,
+  teamRole?: TeamroleEnum | null | undefined    
+};
+		
+export type AnnouncementFeedAttachment = {
+  fileName: String | null,
+  id: ID,
+  mimeType: String,
+  size: Int,
+  url: String    
+};
+		
+export type AnnouncementFeedItem = {
+  attachments: () => AnnouncementFeedAttachment[],
+  body: String,
+  editedAt: DateTime | null,
+  id: ID,
+  importance: AnnouncementimportanceEnum,
+  pinned: Boolean,
+  publishAt: DateTime,
+  read: Boolean,
+  signature: String | null,
+  title: String    
+};
+		
+export type AnnouncementOrderInputArgument = {
+  authorId?: SortingParameter | null | undefined,
+  body?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  editedAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  importance?: SortingParameter | null | undefined,
+  mailRevision?: SortingParameter | null | undefined,
+  mailSince?: SortingParameter | null | undefined,
+  notifyByMail?: SortingParameter | null | undefined,
+  pinned?: SortingParameter | null | undefined,
+  publishAt?: SortingParameter | null | undefined,
+  publishedById?: SortingParameter | null | undefined,
+  releaseAnnounced?: SortingParameter | null | undefined,
+  signature?: SortingParameter | null | undefined,
+  status?: SortingParameter | null | undefined,
+  title?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  visibleUntil?: SortingParameter | null | undefined    
+};
+		
+export type AnnouncementSearchFieldEnum = "authorId" | "body" | "conferenceId" | "id" | "publishedById" | "signature" | "title";
+		
+export type AnnouncementSearchInputArgument = {
+  fields?: AnnouncementSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type AnnouncementWhereInputArgument = {
+  AND?: AnnouncementWhereInputArgument[] | undefined,
+  NOT?: AnnouncementWhereInputArgument | null | undefined,
+  OR?: AnnouncementWhereInputArgument[] | undefined,
+  attachments?: AnnouncementattachmentWhereInputArgument | null | undefined,
+  audiences?: AnnouncementaudienceWhereInputArgument | null | undefined,
+  author?: UserWhereInputArgument | null | undefined,
+  authorId?: IDWhereInputArgument | null | undefined,
+  body?: StringWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  editedAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  importance?: AnnouncementimportanceEnum | null | undefined,
+  mailRevision?: IntWhereInputArgument | null | undefined,
+  mailSince?: DateTimeWhereInputArgument | null | undefined,
+  notifyByMail?: BooleanWhereInputArgument | null | undefined,
+  pinned?: BooleanWhereInputArgument | null | undefined,
+  publishAt?: DateTimeWhereInputArgument | null | undefined,
+  publishedBy?: UserWhereInputArgument | null | undefined,
+  publishedById?: IDWhereInputArgument | null | undefined,
+  releaseAnnounced?: BooleanWhereInputArgument | null | undefined,
+  signature?: StringWhereInputArgument | null | undefined,
+  status?: AnnouncementstatusEnum | null | undefined,
+  title?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  visibleUntil?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type Announcementattachment = {
+  announcement: (p?: {
+    orderBy?: AnnouncementOrderInputArgument | null | undefined,
+    where?: AnnouncementWhereInputArgument | null | undefined
+  }) => Announcement,
+  announcementId: ID,
+  createdAt: DateTime,
+  file: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile,
+  fileId: ID,
+  id: ID,
+  position: Int,
+  search_distance: Float | null    
+};
+		
+export type AnnouncementattachmentOrderInputArgument = {
+  announcementId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  fileId?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  position?: SortingParameter | null | undefined    
+};
+		
+export type AnnouncementattachmentSearchFieldEnum = "announcementId" | "fileId" | "id";
+		
+export type AnnouncementattachmentSearchInputArgument = {
+  fields?: AnnouncementattachmentSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type AnnouncementattachmentWhereInputArgument = {
+  AND?: AnnouncementattachmentWhereInputArgument[] | undefined,
+  NOT?: AnnouncementattachmentWhereInputArgument | null | undefined,
+  OR?: AnnouncementattachmentWhereInputArgument[] | undefined,
+  announcement?: AnnouncementWhereInputArgument | null | undefined,
+  announcementId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  file?: StoredfileWhereInputArgument | null | undefined,
+  fileId?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  position?: IntWhereInputArgument | null | undefined    
+};
+		
+export type Announcementaudience = {
+  announcement: (p?: {
+    orderBy?: AnnouncementOrderInputArgument | null | undefined,
+    where?: AnnouncementWhereInputArgument | null | undefined
+  }) => Announcement,
+  announcementId: ID,
+  committee: (p?: {
+    orderBy?: CommitteeOrderInputArgument | null | undefined,
+    where?: CommitteeWhereInputArgument | null | undefined
+  }) => Committee | null,
+  committeeId: ID | null,
+  createdAt: DateTime,
+  id: ID,
+  kind: AnnouncementaudiencekindEnum,
+  role: (p?: {
+    orderBy?: ConferenceroleOrderInputArgument | null | undefined,
+    where?: ConferenceroleWhereInputArgument | null | undefined
+  }) => Conferencerole | null,
+  roleId: ID | null,
+  search_distance: Float | null,
+  surveyOption: (p?: {
+    orderBy?: SurveyoptionOrderInputArgument | null | undefined,
+    where?: SurveyoptionWhereInputArgument | null | undefined
+  }) => Surveyoption | null,
+  surveyOptionId: ID | null,
+  teamRole: TeamroleEnum | null    
+};
+		
+export type AnnouncementaudienceOrderInputArgument = {
+  announcementId?: SortingParameter | null | undefined,
+  committeeId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  roleId?: SortingParameter | null | undefined,
+  surveyOptionId?: SortingParameter | null | undefined,
+  teamRole?: SortingParameter | null | undefined    
+};
+		
+export type AnnouncementaudienceSearchFieldEnum = "announcementId" | "committeeId" | "id" | "roleId" | "surveyOptionId";
+		
+export type AnnouncementaudienceSearchInputArgument = {
+  fields?: AnnouncementaudienceSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type AnnouncementaudienceWhereInputArgument = {
+  AND?: AnnouncementaudienceWhereInputArgument[] | undefined,
+  NOT?: AnnouncementaudienceWhereInputArgument | null | undefined,
+  OR?: AnnouncementaudienceWhereInputArgument[] | undefined,
+  announcement?: AnnouncementWhereInputArgument | null | undefined,
+  announcementId?: IDWhereInputArgument | null | undefined,
+  committee?: CommitteeWhereInputArgument | null | undefined,
+  committeeId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  kind?: AnnouncementaudiencekindEnum | null | undefined,
+  role?: ConferenceroleWhereInputArgument | null | undefined,
+  roleId?: IDWhereInputArgument | null | undefined,
+  surveyOption?: SurveyoptionWhereInputArgument | null | undefined,
+  surveyOptionId?: IDWhereInputArgument | null | undefined,
+  teamRole?: TeamroleEnum | null | undefined    
+};
+		
+export type AnnouncementaudiencekindEnum = "ADULTS" | "APPLICANTS" | "COMMITTEE" | "DELEGATES" | "EVERYONE" | "MINORS" | "PAPERWORK_OPEN" | "PAYMENT_OPEN" | "ROLE" | "SEATED" | "SINGLE_PARTICIPANTS" | "SUPERVISORS" | "SURVEY_OPTION" | "TEAM" | "WAITING_LIST";
+		
+export type AnnouncementimportanceEnum = "IMPORTANT" | "NORMAL" | "URGENT";
+		
+export type AnnouncementstatusEnum = "ARCHIVED" | "DRAFT" | "PUBLISHED";
+		
 export type ApplicationBlocker = {
   ageIssue: AgeIssue | null,
   invalidFields: ProfileField[],
@@ -789,6 +1053,276 @@ export type ChasePresenceRepresentation = {
   type: String    
 };
 		
+export type Chat = {
+  blockedByMe: Boolean,
+  committee: (p?: {
+    orderBy?: CommitteeOrderInputArgument | null | undefined,
+    where?: CommitteeWhereInputArgument | null | undefined
+  }) => Committee | null,
+  committeeId: ID | null,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  contacts: () => ChatContact[],
+  createdAt: DateTime,
+  delegation: (p?: {
+    orderBy?: DelegationOrderInputArgument | null | undefined,
+    where?: DelegationWhereInputArgument | null | undefined
+  }) => Delegation | null,
+  delegationId: ID | null,
+  id: ID,
+  inbox: ChatinboxEnum | null,
+  kind: ChatkindEnum,
+  lastMessageAt: DateTime | null,
+  lastMessagePreview: String | null,
+  lastParticipantMessageAt: DateTime | null,
+  messages: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatmessageOrderInputArgument | null | undefined,
+    search?: ChatmessageSearchInputArgument | null | undefined,
+    where?: ChatmessageWhereInputArgument | null | undefined
+  }) => Chatmessage[],
+  otherParticipant: (p?: {
+    orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
+    where?: ConferenceparticipantWhereInputArgument | null | undefined
+  }) => Conferenceparticipant | null,
+  otherParticipantId: ID | null,
+  participant: (p?: {
+    orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
+    where?: ConferenceparticipantWhereInputArgument | null | undefined
+  }) => Conferenceparticipant | null,
+  participantId: ID | null,
+  people: () => ChatPerson[],
+  reports: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatreportOrderInputArgument | null | undefined,
+    search?: ChatreportSearchInputArgument | null | undefined,
+    where?: ChatreportWhereInputArgument | null | undefined
+  }) => Chatreport[],
+  search_distance: Float | null,
+  side: String,
+  teamReadAt: DateTime | null,
+  trustedPersonName: String | null,
+  trustedUserId: ID | null,
+  underReview: Boolean,
+  unreadCount: Int,
+  updatedAt: DateTime,
+  writeRefusal: String | null    
+};
+		
+export type ChatContact = {
+  committeeAbbreviation: String | null,
+  committeeId: ID | null,
+  committeeName: String | null,
+  nationAlpha2Code: String | null,
+  nationAlpha3Code: String | null,
+  ordinal: Int | null,
+  participantId: ID,
+  roleAbbreviation: String | null,
+  roleIcon: String | null,
+  roleId: ID,
+  roleKind: String,
+  roleName: String | null,
+  suspended: Boolean | null,
+  userId: ID | null    
+};
+		
+export type ChatInboxOption = {
+  chatId: ID | null,
+  committeeAbbreviation: String | null,
+  committeeId: ID | null,
+  committeeName: String | null,
+  inbox: ChatinboxEnum,
+  personName: String | null,
+  trustedPersonId: ID | null    
+};
+		
+export type ChatOrderInputArgument = {
+  committeeId?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  delegationId?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  inbox?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  lastMessageAt?: SortingParameter | null | undefined,
+  lastParticipantMessageAt?: SortingParameter | null | undefined,
+  otherParticipantId?: SortingParameter | null | undefined,
+  participantId?: SortingParameter | null | undefined,
+  teamReadAt?: SortingParameter | null | undefined,
+  trustedUserId?: SortingParameter | null | undefined,
+  underReview?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ChatPerson = {
+  name: String,
+  participantId: ID,
+  userId: ID    
+};
+		
+export type ChatSearchFieldEnum = "committeeId" | "conferenceId" | "delegationId" | "id" | "otherParticipantId" | "participantId" | "trustedUserId";
+		
+export type ChatSearchInputArgument = {
+  fields?: ChatSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type ChatWhereInputArgument = {
+  AND?: ChatWhereInputArgument[] | undefined,
+  NOT?: ChatWhereInputArgument | null | undefined,
+  OR?: ChatWhereInputArgument[] | undefined,
+  committee?: CommitteeWhereInputArgument | null | undefined,
+  committeeId?: IDWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  delegation?: DelegationWhereInputArgument | null | undefined,
+  delegationId?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  inbox?: ChatinboxEnum | null | undefined,
+  kind?: ChatkindEnum | null | undefined,
+  lastMessageAt?: DateTimeWhereInputArgument | null | undefined,
+  lastParticipantMessageAt?: DateTimeWhereInputArgument | null | undefined,
+  messages?: ChatmessageWhereInputArgument | null | undefined,
+  otherParticipant?: ConferenceparticipantWhereInputArgument | null | undefined,
+  otherParticipantId?: IDWhereInputArgument | null | undefined,
+  participant?: ConferenceparticipantWhereInputArgument | null | undefined,
+  participantId?: IDWhereInputArgument | null | undefined,
+  reports?: ChatreportWhereInputArgument | null | undefined,
+  teamReadAt?: DateTimeWhereInputArgument | null | undefined,
+  trustedUserId?: IDWhereInputArgument | null | undefined,
+  underReview?: BooleanWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type ChatinboxEnum = "CHAIR" | "CONSULTANT" | "PARTICIPANT_CARE" | "TRUSTED_PERSON";
+		
+export type ChatkindEnum = "DELEGATION" | "DIRECT" | "TEAM";
+		
+export type Chatmessage = {
+  authorName: String | null,
+  authorParticipantId: ID | null,
+  body: String,
+  chat: (p?: {
+    orderBy?: ChatOrderInputArgument | null | undefined,
+    where?: ChatWhereInputArgument | null | undefined
+  }) => Chat,
+  chatId: ID,
+  createdAt: DateTime,
+  fromTeam: Boolean,
+  id: ID,
+  mine: Boolean,
+  paper: (p?: {
+    orderBy?: PaperOrderInputArgument | null | undefined,
+    where?: PaperWhereInputArgument | null | undefined
+  }) => Paper | null,
+  paperId: ID | null,
+  search_distance: Float | null,
+  teamAuthorUserId: ID | null    
+};
+		
+export type ChatmessageOrderInputArgument = {
+  authorParticipantId?: SortingParameter | null | undefined,
+  body?: SortingParameter | null | undefined,
+  chatId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  fromTeam?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  paperId?: SortingParameter | null | undefined,
+  teamAuthorUserId?: SortingParameter | null | undefined    
+};
+		
+export type ChatmessageSearchFieldEnum = "authorParticipantId" | "body" | "chatId" | "id" | "paperId" | "teamAuthorUserId";
+		
+export type ChatmessageSearchInputArgument = {
+  fields?: ChatmessageSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type ChatmessageWhereInputArgument = {
+  AND?: ChatmessageWhereInputArgument[] | undefined,
+  NOT?: ChatmessageWhereInputArgument | null | undefined,
+  OR?: ChatmessageWhereInputArgument[] | undefined,
+  authorParticipantId?: IDWhereInputArgument | null | undefined,
+  body?: StringWhereInputArgument | null | undefined,
+  chat?: ChatWhereInputArgument | null | undefined,
+  chatId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  fromTeam?: BooleanWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  paper?: PaperWhereInputArgument | null | undefined,
+  paperId?: IDWhereInputArgument | null | undefined,
+  teamAuthorUserId?: IDWhereInputArgument | null | undefined    
+};
+		
+export type Chatreport = {
+  chat: (p?: {
+    orderBy?: ChatOrderInputArgument | null | undefined,
+    where?: ChatWhereInputArgument | null | undefined
+  }) => Chat,
+  chatId: ID,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  id: ID,
+  reason: String,
+  reporterName: String | null,
+  reporterUserId: ID,
+  resolvedAt: DateTime | null,
+  resolvedById: ID | null,
+  search_distance: Float | null,
+  status: ChatreportstatusEnum,
+  updatedAt: DateTime    
+};
+		
+export type ChatreportOrderInputArgument = {
+  chatId?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  reason?: SortingParameter | null | undefined,
+  reporterUserId?: SortingParameter | null | undefined,
+  resolvedAt?: SortingParameter | null | undefined,
+  resolvedById?: SortingParameter | null | undefined,
+  status?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ChatreportSearchFieldEnum = "chatId" | "conferenceId" | "id" | "reason" | "reporterUserId" | "resolvedById";
+		
+export type ChatreportSearchInputArgument = {
+  fields?: ChatreportSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type ChatreportWhereInputArgument = {
+  AND?: ChatreportWhereInputArgument[] | undefined,
+  NOT?: ChatreportWhereInputArgument | null | undefined,
+  OR?: ChatreportWhereInputArgument[] | undefined,
+  chat?: ChatWhereInputArgument | null | undefined,
+  chatId?: IDWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  reason?: StringWhereInputArgument | null | undefined,
+  reporterUserId?: IDWhereInputArgument | null | undefined,
+  resolvedAt?: DateTimeWhereInputArgument | null | undefined,
+  resolvedById?: IDWhereInputArgument | null | undefined,
+  status?: ChatreportstatusEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type ChatreportstatusEnum = "OPEN" | "RESOLVED";
+		
 export type CollectiveGroup = {
   key: String,
   members: () => CollectiveGroupMember[],
@@ -1064,7 +1598,6 @@ export type Conference = {
     where?: StoredfileWhereInputArgument | null | undefined
   }) => Storedfile | null,
   imageFileId: ID | null,
-  info: String | null,
   isOpenPaperSubmission: Boolean,
   language: String | null,
   linkToPaperInbox: String | null,
@@ -1087,6 +1620,7 @@ export type Conference = {
     where?: StoredfileWhereInputArgument | null | undefined
   }) => Storedfile | null,
   mediaConsentFileId: ID | null,
+  messagingEnabled: Boolean,
   nametagBinCount: Int,
   nextDocumentNumber: Int,
   papers: (p?: {
@@ -1136,7 +1670,6 @@ export type Conference = {
   schools: () => ConferenceSchools[],
   search_distance: Float | null,
   showCalendar: Boolean,
-  showInfoExpanded: Boolean,
   singleParticipants: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1204,7 +1737,6 @@ export type ConferenceOrderInputArgument = {
   iban?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   imageFileId?: SortingParameter | null | undefined,
-  info?: SortingParameter | null | undefined,
   isOpenPaperSubmission?: SortingParameter | null | undefined,
   language?: SortingParameter | null | undefined,
   linkToPaperInbox?: SortingParameter | null | undefined,
@@ -1219,6 +1751,7 @@ export type ConferenceOrderInputArgument = {
   maxGuaranteedSeatsPerForeignSchool?: SortingParameter | null | undefined,
   mcpEnabled?: SortingParameter | null | undefined,
   mediaConsentFileId?: SortingParameter | null | undefined,
+  messagingEnabled?: SortingParameter | null | undefined,
   nametagBinCount?: SortingParameter | null | undefined,
   participantMaxAge?: SortingParameter | null | undefined,
   participantMinAge?: SortingParameter | null | undefined,
@@ -1230,7 +1763,6 @@ export type ConferenceOrderInputArgument = {
   postalZip?: SortingParameter | null | undefined,
   registrationDeadlineGracePeriodMinutes?: SortingParameter | null | undefined,
   showCalendar?: SortingParameter | null | undefined,
-  showInfoExpanded?: SortingParameter | null | undefined,
   startConference?: SortingParameter | null | undefined,
   state?: SortingParameter | null | undefined,
   supervisorMinAge?: SortingParameter | null | undefined,
@@ -1252,7 +1784,7 @@ export type ConferenceSchools = {
   sumParticipants: Int    
 };
 		
-export type ConferenceSearchFieldEnum = "bankAccountHolder" | "bankName" | "bic" | "certificateFileId" | "contractFileId" | "currency" | "emblemFileId" | "guardianConsentFileId" | "iban" | "id" | "imageFileId" | "info" | "language" | "linkToPaperInbox" | "linkToPreparationGuide" | "linkToServicesPage" | "linkToTeamWiki" | "location" | "logoFileId" | "longTitle" | "mediaConsentFileId" | "postalApartment" | "postalCity" | "postalCountry" | "postalName" | "postalStreet" | "postalZip" | "termsAndConditionsFileId" | "timezone" | "title" | "website";
+export type ConferenceSearchFieldEnum = "bankAccountHolder" | "bankName" | "bic" | "certificateFileId" | "contractFileId" | "currency" | "emblemFileId" | "guardianConsentFileId" | "iban" | "id" | "imageFileId" | "language" | "linkToPaperInbox" | "linkToPreparationGuide" | "linkToServicesPage" | "linkToTeamWiki" | "location" | "logoFileId" | "longTitle" | "mediaConsentFileId" | "postalApartment" | "postalCity" | "postalCountry" | "postalName" | "postalStreet" | "postalZip" | "termsAndConditionsFileId" | "timezone" | "title" | "website";
 		
 export type ConferenceSearchInputArgument = {
   fields?: ConferenceSearchFieldEnum[] | undefined,
@@ -1295,7 +1827,6 @@ export type ConferenceWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   imageFile?: StoredfileWhereInputArgument | null | undefined,
   imageFileId?: IDWhereInputArgument | null | undefined,
-  info?: StringWhereInputArgument | null | undefined,
   isOpenPaperSubmission?: BooleanWhereInputArgument | null | undefined,
   language?: StringWhereInputArgument | null | undefined,
   linkToPaperInbox?: StringWhereInputArgument | null | undefined,
@@ -1312,6 +1843,7 @@ export type ConferenceWhereInputArgument = {
   mcpEnabled?: BooleanWhereInputArgument | null | undefined,
   mediaConsentFile?: StoredfileWhereInputArgument | null | undefined,
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
+  messagingEnabled?: BooleanWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
   participantMaxAge?: IntWhereInputArgument | null | undefined,
@@ -1328,7 +1860,6 @@ export type ConferenceWhereInputArgument = {
   resolutions?: ResolutionWhereInputArgument | null | undefined,
   roles?: ConferenceroleWhereInputArgument | null | undefined,
   showCalendar?: BooleanWhereInputArgument | null | undefined,
-  showInfoExpanded?: BooleanWhereInputArgument | null | undefined,
   singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   startConference?: DateTimeWhereInputArgument | null | undefined,
   state?: ConferencestateEnum | null | undefined,
@@ -1514,6 +2045,7 @@ export type Conferenceparticipant = {
   id: ID,
   mediaConsent: AdministrativestatusEnum,
   mediaConsentStatus: MediaconsentstatusEnum,
+  messagingSuspended: Boolean,
   nsaCardNumber: Int,
   ofAgeAtConference: Boolean,
   paymentStatus: AdministrativestatusEnum,
@@ -1553,6 +2085,7 @@ export type ConferenceparticipantOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   mediaConsent?: SortingParameter | null | undefined,
   mediaConsentStatus?: SortingParameter | null | undefined,
+  messagingSuspended?: SortingParameter | null | undefined,
   nsaCardNumber?: SortingParameter | null | undefined,
   paymentStatus?: SortingParameter | null | undefined,
   schoolId?: SortingParameter | null | undefined,
@@ -1585,6 +2118,7 @@ export type ConferenceparticipantWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   mediaConsent?: AdministrativestatusEnum | null | undefined,
   mediaConsentStatus?: MediaconsentstatusEnum | null | undefined,
+  messagingSuspended?: BooleanWhereInputArgument | null | undefined,
   nsaCardNumber?: IntWhereInputArgument | null | undefined,
   paymentStatus?: AdministrativestatusEnum | null | undefined,
   school?: SchoolWhereInputArgument | null | undefined,
@@ -2077,7 +2611,7 @@ export type EmailStatusResult = {
   status: TeamInvitationEmailStatus    
 };
 		
-export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -2450,6 +2984,9 @@ export type McpcalloutcomeEnum = "ERROR" | "OK" | "REFUSED";
 export type MediaconsentstatusEnum = "ALLOWED_ALL" | "NOT_ALLOWED" | "NOT_SET" | "PARTIALLY_ALLOWED";
 		
 export type Mutation = {
+  acceptMessagingTerms: (p: {
+    version: Int
+  }) => Boolean,
   analyzeSchoolSuggestions: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -2500,6 +3037,18 @@ export type Mutation = {
     teaserText?: String | null | undefined,
     title: String
   }) => Committeeagendaitem,
+  createAnnouncement: (p: {
+    attachmentFileIds?: ID[] | null | undefined,
+    audiences: AnnouncementAudienceInput[],
+    body: String,
+    conferenceId: ID,
+    importance?: AnnouncementimportanceEnum | null | undefined,
+    notifyByMail?: Boolean | null | undefined,
+    pinned?: Boolean | null | undefined,
+    signature?: String | null | undefined,
+    title: String,
+    visibleUntil?: DateTime | null | undefined
+  }) => Announcement,
   createAppliedDelegationMember: (p: {
     assignedCommitteeId?: ID | null | undefined,
     assignedRoleId: ID,
@@ -2677,6 +3226,9 @@ export type Mutation = {
   deleteAgendaItem: (p: {
     id: ID
   }) => Boolean,
+  deleteAnnouncement: (p: {
+    id: ID
+  }) => Boolean,
   deleteAttendanceEntry: (p: {
     id: ID
   }) => Boolean,
@@ -2757,9 +3309,17 @@ export type Mutation = {
   distributeUnansweredSurvey: (p: {
     questionId: ID
   }) => Int,
+  duplicateAnnouncement: (p: {
+    id: ID
+  }) => Announcement,
   endAttendanceSession: (p: {
     id: ID
   }) => Boolean,
+  giveTeamFunction: (p: {
+    committeeId?: ID | null | undefined,
+    kind: TeamfunctionkindEnum,
+    teamMemberId: ID
+  }) => Teamfunction,
   issueDocumentCode: (p: {
     conferenceId: ID,
     userId: ID
@@ -2774,6 +3334,13 @@ export type Mutation = {
   makeDelegationMemberSupervisor: (p: {
     delegationMemberId: ID
   }) => Conferencesupervisor,
+  markAnnouncementsRead: (p: {
+    conferenceId: ID,
+    ids?: ID[] | null | undefined
+  }) => AnnouncementFeedItem[],
+  markChatRead: (p: {
+    chatId: ID
+  }) => Boolean,
   mergeSchools: (p: {
     name?: String | null | undefined,
     sourceIds: ID[],
@@ -2782,6 +3349,24 @@ export type Mutation = {
   notifyBadgeFound: (p: {
     id: ID
   }) => SendPersonEmailResult,
+  openDelegationChat: (p: {
+    conferenceId: ID
+  }) => Chat,
+  openDirectChat: (p: {
+    conferenceId: ID,
+    participantId: ID
+  }) => Chat,
+  openTeamChat: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    inbox: ChatinboxEnum,
+    participantId?: ID | null | undefined,
+    trustedPersonId?: ID | null | undefined
+  }) => Chat,
+  publishAnnouncement: (p: {
+    id: ID,
+    publishAt?: DateTime | null | undefined
+  }) => Announcement,
   recordSearch: (p: {
     conferenceId: ID,
     label: String,
@@ -2792,12 +3377,22 @@ export type Mutation = {
     invitationId: ID,
     sendEmail?: Boolean | null | undefined
   }) => RegeneratedInvitation,
+  removeTeamFunction: (p: {
+    id: ID
+  }) => Boolean,
   renameAttendanceSession: (p: {
     id: ID,
     occasion: String
   }) => Boolean,
+  renotifyAnnouncement: (p: {
+    id: ID
+  }) => Boolean,
   reopenAttendanceSession: (p: {
     id: ID
+  }) => Boolean,
+  reportChat: (p: {
+    chatId: ID,
+    reason: String
   }) => Boolean,
   reprintNsaCard: (p: {
     conferenceParticipantId: ID
@@ -2816,6 +3411,9 @@ export type Mutation = {
     conferenceId: ID,
     seats: Int
   }) => Boolean,
+  resolveChatReport: (p: {
+    id: ID
+  }) => Chatreport,
   revertSingleParticipantConversion: (p: {
     singleParticipantId: ID
   }) => Boolean,
@@ -2831,6 +3429,14 @@ export type Mutation = {
   seedNewConference: (p: {
     data: JSON
   }) => Conference,
+  sendAnnouncementTestMail: (p: {
+    id: ID
+  }) => Boolean,
+  sendChatMessage: (p: {
+    body: String,
+    chatId: ID,
+    paperId?: ID | null | undefined
+  }) => Chatmessage,
   sendOpenEmails: (p: {
     conferenceId: ID,
     kinds: EmailkindEnum[]
@@ -2857,6 +3463,10 @@ export type Mutation = {
     calendarDayId: ID,
     id: ID,
     runs: Boolean
+  }) => Boolean,
+  setChatBlocked: (p: {
+    blocked: Boolean,
+    chatId: ID
   }) => Boolean,
   setCommitteeNationSeat: (p: {
     committeeId: ID,
@@ -2892,6 +3502,13 @@ export type Mutation = {
     document: LayoutDocument,
     layout?: JSON | null | undefined
   }) => Conference,
+  setMessageNotificationEmails: (p: {
+    enabled: Boolean
+  }) => Boolean,
+  setMessagingSuspended: (p: {
+    participantId: ID,
+    suspended: Boolean
+  }) => Boolean,
   setMyTableViewDefault: (p: {
     conferenceId: ID,
     tableKey: String,
@@ -2954,6 +3571,18 @@ export type Mutation = {
     conferenceId: ID,
     didAttend?: Boolean | null | undefined
   }) => UpdateAllConferenceParticipantsResponse,
+  updateAnnouncement: (p: {
+    attachmentFileIds?: ID[] | null | undefined,
+    audiences?: AnnouncementAudienceInput[] | null | undefined,
+    body?: String | null | undefined,
+    id: ID,
+    importance?: AnnouncementimportanceEnum | null | undefined,
+    notifyByMail?: Boolean | null | undefined,
+    pinned?: Boolean | null | undefined,
+    signature?: String | null | undefined,
+    title?: String | null | undefined,
+    visibleUntil?: DateTime | null | undefined
+  }) => Announcement,
   updateCalendarDay: (p: {
     date?: Date | null | undefined,
     id: ID,
@@ -3003,7 +3632,6 @@ export type Mutation = {
     iban?: String | null | undefined,
     id: ID,
     imageFileId?: ID | null | undefined,
-    info?: String | null | undefined,
     isOpenPaperSubmission?: Boolean | null | undefined,
     language?: String | null | undefined,
     linkToPaperInbox?: String | null | undefined,
@@ -3017,6 +3645,7 @@ export type Mutation = {
     maxForeignGuaranteedSeatsPercent?: Int | null | undefined,
     maxGuaranteedSeatsPerForeignSchool?: Int | null | undefined,
     mediaConsentFileId?: ID | null | undefined,
+    messagingEnabled?: Boolean | null | undefined,
     nametagBinCount?: Int | null | undefined,
     participantMaxAge?: Int | null | undefined,
     participantMinAge?: Int | null | undefined,
@@ -3028,7 +3657,6 @@ export type Mutation = {
     postalZip?: String | null | undefined,
     registrationDeadlineGracePeriodMinutes?: Int | null | undefined,
     showCalendar?: Boolean | null | undefined,
-    showInfoExpanded?: Boolean | null | undefined,
     startConference?: DateTime | null | undefined,
     state?: ConferencestateEnum | null | undefined,
     supervisorMinAge?: Int | null | undefined,
@@ -3233,7 +3861,11 @@ export type Mutation = {
   upsertSurveyAnswer: (p: {
     optionId: ID,
     userId?: ID | null | undefined
-  }) => Surveyanswer    
+  }) => Surveyanswer,
+  withdrawAnnouncement: (p: {
+    archive?: Boolean | null | undefined,
+    id: ID
+  }) => Announcement    
 };
 		
 export type MyReviewStats = {
@@ -3786,6 +4418,23 @@ export type Query = {
     role: AgeRole,
     userId: ID
   }) => AgeNotice | null,
+  announcement: (p: {
+    id: ID
+  }) => Announcement,
+  announcementAudiencePreview: (p: {
+    audiences: AnnouncementAudienceInput[],
+    conferenceId: ID
+  }) => AnnouncementAudienceCounts,
+  announcementFeed: (p: {
+    conferenceId: ID
+  }) => AnnouncementFeedItem[],
+  announcements: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AnnouncementOrderInputArgument | null | undefined,
+    search?: AnnouncementSearchInputArgument | null | undefined,
+    where?: AnnouncementWhereInputArgument | null | undefined
+  }) => Announcement[],
   assignmentReview: (p: {
     id: ID
   }) => Assignmentreview,
@@ -3888,6 +4537,43 @@ export type Query = {
   chasePresence: (p: {
     conferenceId: ID
   }) => ChasePresence | null,
+  chat: (p: {
+    id: ID
+  }) => Chat,
+  chatContacts: (p: {
+    conferenceId: ID
+  }) => ChatContact[],
+  chatInboxes: (p: {
+    conferenceId: ID,
+    participantId?: ID | null | undefined
+  }) => ChatInboxOption[],
+  chatMessage: (p: {
+    id: ID
+  }) => Chatmessage,
+  chatMessages: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatmessageOrderInputArgument | null | undefined,
+    search?: ChatmessageSearchInputArgument | null | undefined,
+    where?: ChatmessageWhereInputArgument | null | undefined
+  }) => Chatmessage[],
+  chatReport: (p: {
+    id: ID
+  }) => Chatreport,
+  chatReports: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatreportOrderInputArgument | null | undefined,
+    search?: ChatreportSearchInputArgument | null | undefined,
+    where?: ChatreportWhereInputArgument | null | undefined
+  }) => Chatreport[],
+  chats: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatOrderInputArgument | null | undefined,
+    search?: ChatSearchInputArgument | null | undefined,
+    where?: ChatWhereInputArgument | null | undefined
+  }) => Chat[],
   checkTeamInvitationEmails: (p: {
     conferenceId: ID,
     emails: String[]
@@ -4365,6 +5051,16 @@ export type Query = {
     search?: TableviewSearchInputArgument | null | undefined,
     where?: TableviewWhereInputArgument | null | undefined
   }) => Tableview[],
+  teamFunction: (p: {
+    id: ID
+  }) => Teamfunction,
+  teamFunctions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TeamfunctionOrderInputArgument | null | undefined,
+    search?: TeamfunctionSearchInputArgument | null | undefined,
+    where?: TeamfunctionWhereInputArgument | null | undefined
+  }) => Teamfunction[],
   teamMember: (p: {
     id: ID
   }) => Teammember,
@@ -5263,6 +5959,13 @@ export type StatisticsResultWaitingList = {
 export type StatsFilter = "ALL" | "APPLIED" | "APPLIED_WITHOUT_ROLE" | "APPLIED_WITH_ROLE" | "NOT_APPLIED";
 		
 export type Storedfile = {
+  announcementAttachmentOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AnnouncementattachmentOrderInputArgument | null | undefined,
+    search?: AnnouncementattachmentSearchInputArgument | null | undefined,
+    where?: AnnouncementattachmentWhereInputArgument | null | undefined
+  }) => Announcementattachment[],
   certificateOf: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5363,6 +6066,7 @@ export type StoredfileWhereInputArgument = {
   AND?: StoredfileWhereInputArgument[] | undefined,
   NOT?: StoredfileWhereInputArgument | null | undefined,
   OR?: StoredfileWhereInputArgument[] | undefined,
+  announcementAttachmentOf?: AnnouncementattachmentWhereInputArgument | null | undefined,
   certificateOf?: ConferenceWhereInputArgument | null | undefined,
   contractOf?: ConferenceWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
@@ -5425,6 +6129,19 @@ export type StringWhereInputArgument = {
 };
 		
 export type Subscription = {
+  announcement: (p: {
+    id: ID
+  }) => Announcement,
+  announcementFeed: (p: {
+    conferenceId: ID
+  }) => AnnouncementFeedItem[],
+  announcements: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AnnouncementOrderInputArgument | null | undefined,
+    search?: AnnouncementSearchInputArgument | null | undefined,
+    where?: AnnouncementWhereInputArgument | null | undefined
+  }) => Announcement[],
   assignmentReview: (p: {
     id: ID
   }) => Assignmentreview,
@@ -5518,6 +6235,36 @@ export type Subscription = {
     search?: CalendartrackSearchInputArgument | null | undefined,
     where?: CalendartrackWhereInputArgument | null | undefined
   }) => Calendartrack[],
+  chat: (p: {
+    id: ID
+  }) => Chat,
+  chatMessage: (p: {
+    id: ID
+  }) => Chatmessage,
+  chatMessages: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatmessageOrderInputArgument | null | undefined,
+    search?: ChatmessageSearchInputArgument | null | undefined,
+    where?: ChatmessageWhereInputArgument | null | undefined
+  }) => Chatmessage[],
+  chatReport: (p: {
+    id: ID
+  }) => Chatreport,
+  chatReports: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatreportOrderInputArgument | null | undefined,
+    search?: ChatreportSearchInputArgument | null | undefined,
+    where?: ChatreportWhereInputArgument | null | undefined
+  }) => Chatreport[],
+  chats: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ChatOrderInputArgument | null | undefined,
+    search?: ChatSearchInputArgument | null | undefined,
+    where?: ChatWhereInputArgument | null | undefined
+  }) => Chat[],
   committee: (p: {
     id: ID
   }) => Committee,
@@ -5834,6 +6581,16 @@ export type Subscription = {
     search?: TableviewSearchInputArgument | null | undefined,
     where?: TableviewWhereInputArgument | null | undefined
   }) => Tableview[],
+  teamFunction: (p: {
+    id: ID
+  }) => Teamfunction,
+  teamFunctions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TeamfunctionOrderInputArgument | null | undefined,
+    search?: TeamfunctionSearchInputArgument | null | undefined,
+    where?: TeamfunctionWhereInputArgument | null | undefined
+  }) => Teamfunction[],
   teamMember: (p: {
     id: ID
   }) => Teammember,
@@ -6198,6 +6955,56 @@ export type TableviewdefaultWhereInputArgument = {
 		
 export type TeamInvitationEmailStatus = "ALREADY_MEMBER" | "EXISTS" | "NEW_USER" | "PENDING_INVITATION";
 		
+export type Teamfunction = {
+  committee: (p?: {
+    orderBy?: CommitteeOrderInputArgument | null | undefined,
+    where?: CommitteeWhereInputArgument | null | undefined
+  }) => Committee | null,
+  committeeId: ID | null,
+  createdAt: DateTime,
+  id: ID,
+  kind: TeamfunctionkindEnum,
+  search_distance: Float | null,
+  teamMember: (p?: {
+    orderBy?: TeammemberOrderInputArgument | null | undefined,
+    where?: TeammemberWhereInputArgument | null | undefined
+  }) => Teammember,
+  teamMemberId: ID,
+  updatedAt: DateTime    
+};
+		
+export type TeamfunctionOrderInputArgument = {
+  committeeId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  teamMemberId?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type TeamfunctionSearchFieldEnum = "committeeId" | "id" | "teamMemberId";
+		
+export type TeamfunctionSearchInputArgument = {
+  fields?: TeamfunctionSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type TeamfunctionWhereInputArgument = {
+  AND?: TeamfunctionWhereInputArgument[] | undefined,
+  NOT?: TeamfunctionWhereInputArgument | null | undefined,
+  OR?: TeamfunctionWhereInputArgument[] | undefined,
+  committee?: CommitteeWhereInputArgument | null | undefined,
+  committeeId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  kind?: TeamfunctionkindEnum | null | undefined,
+  teamMember?: TeammemberWhereInputArgument | null | undefined,
+  teamMemberId?: IDWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type TeamfunctionkindEnum = "CHAIR" | "CONSULTANT" | "TRUSTED_PERSON";
+		
 export type Teammember = {
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
@@ -6205,6 +7012,13 @@ export type Teammember = {
   }) => Conference,
   conferenceId: ID,
   createdAt: DateTime,
+  functions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: TeamfunctionOrderInputArgument | null | undefined,
+    search?: TeamfunctionSearchInputArgument | null | undefined,
+    where?: TeamfunctionWhereInputArgument | null | undefined
+  }) => Teamfunction[],
   id: ID,
   role: TeamroleEnum,
   search_distance: Float | null,
@@ -6239,6 +7053,7 @@ export type TeammemberWhereInputArgument = {
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
+  functions?: TeamfunctionWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   role?: TeamroleEnum | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
@@ -6409,6 +7224,9 @@ export type User = {
     where?: TeammemberinvitationWhereInputArgument | null | undefined
   }) => Teammemberinvitation[],
   locale: String,
+  messageNotificationEmails: Boolean,
+  messagingTermsAcceptedAt: DateTime | null,
+  messagingTermsVersion: Int | null,
   ownPaymentTransactions: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -6506,6 +7324,9 @@ export type UserOrderInputArgument = {
   globalNotes?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   locale?: SortingParameter | null | undefined,
+  messageNotificationEmails?: SortingParameter | null | undefined,
+  messagingTermsAcceptedAt?: SortingParameter | null | undefined,
+  messagingTermsVersion?: SortingParameter | null | undefined,
   phone?: SortingParameter | null | undefined,
   preferredUsername?: SortingParameter | null | undefined,
   pronouns?: SortingParameter | null | undefined,
@@ -6550,6 +7371,9 @@ export type UserWhereInputArgument = {
   invitationsAccepted?: TeammemberinvitationWhereInputArgument | null | undefined,
   invitationsSent?: TeammemberinvitationWhereInputArgument | null | undefined,
   locale?: StringWhereInputArgument | null | undefined,
+  messageNotificationEmails?: BooleanWhereInputArgument | null | undefined,
+  messagingTermsAcceptedAt?: DateTimeWhereInputArgument | null | undefined,
+  messagingTermsVersion?: IntWhereInputArgument | null | undefined,
   ownPaymentTransactions?: PaymenttransactionWhereInputArgument | null | undefined,
   paperReviews?: PaperreviewWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
@@ -6710,7 +7534,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

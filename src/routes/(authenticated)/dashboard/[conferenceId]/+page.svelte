@@ -70,7 +70,7 @@
 	{:else if !currentUser}
 		<!-- A visitor who is not signed in sees the conference and what taking part would take -->
 		<div class="flex w-full flex-col gap-10">
-			<DashboardConferenceOverview {conferenceId} isTeamMember={false} hasAssignedRole={false}>
+			<DashboardConferenceOverview {conferenceId} hasAssignedRole={false}>
 				{#snippet afterHeader()}
 					<PublicQuickLinks {conferenceId} />
 				{/snippet}
@@ -80,12 +80,7 @@
 	{:else}
 		<div class="flex w-full flex-col gap-10">
 			{#if conference}
-				<DashboardConferenceOverview
-					{conferenceId}
-					userId={currentUser.sub}
-					isTeamMember={!!teamMember}
-					{hasAssignedRole}
-				>
+				<DashboardConferenceOverview {conferenceId} userId={currentUser.sub} {hasAssignedRole}>
 					{#snippet afterHeader()}
 						<ParticipantQuickLinks
 							{conferenceId}

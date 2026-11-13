@@ -25,7 +25,8 @@ const conference: EmailSnapshot['conference'] = {
 	startConference: new Date(now.getTime() + 60 * DAY),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: false,
-	chaseUrl: null
+	chaseUrl: null,
+	messagingEnabled: true
 };
 
 /** Which kinds the filter asks the log about. */
@@ -94,6 +95,17 @@ describe('waiting list and team', () => {
 			userId: conferenceParticipant.userId
 		};
 		expect(render(waitingListCandidates(ids)).params).toContain('WAITING_LIST_REGISTERED');
-		expect(render(teamCandidates(ids)).params).toContain('TEAM_WELCOME');
+		const member = { conference, id: ids.id, userId: ids.userId };
+		const welcome = teamCandidates({ ...member, kinds: new Set(['TEAM_WELCOME']) });
+		expect(render(welcome).params).toContain('TEAM_WELCOME');
+		// while the chats are on, anybody on the team may have an inbox with something unread
+		const unread = teamCandidates({ ...member, kinds: new Set(['UNREAD_MESSAGES']) });
+		expect(render(unread).sql).toBe('true');
+		const off = teamCandidates({
+			...member,
+			conference: { ...conference, messagingEnabled: false },
+			kinds: new Set(['UNREAD_MESSAGES'])
+		});
+		expect(render(off).sql).toBe('false');
 	});
 });

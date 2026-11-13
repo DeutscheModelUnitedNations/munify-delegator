@@ -78,6 +78,27 @@ export { instanceLink } from './chaseLink';
 export { tableView, tableViewDefault } from './tableViews';
 export { mcpCallOutcome, mcpAuditEntry } from './mcp';
 export {
+	teamFunctionKind,
+	teamFunction,
+	chatKind,
+	chatInbox,
+	chat,
+	chatMessage,
+	chatRead,
+	chatBlock,
+	chatReportStatus,
+	chatReport
+} from './messages';
+export {
+	announcementImportance,
+	announcementStatus,
+	announcement,
+	announcementAudienceKind,
+	announcementAudience,
+	announcementAttachment,
+	announcementRead
+} from './announcements';
+export {
 	statisticsPeople,
 	statisticsDelegations,
 	statisticsSchools,

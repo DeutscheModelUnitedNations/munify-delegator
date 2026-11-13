@@ -61,7 +61,10 @@ const FIELDS: Record<string, TypeClassification> = {
 			'globalNotes',
 			'locale',
 			'wantsJoinTeamInformation',
-			'wantsToReceiveGeneralInformation'
+			'wantsToReceiveGeneralInformation',
+			'messageNotificationEmails',
+			'messagingTermsVersion',
+			'messagingTermsAcceptedAt'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
@@ -96,8 +99,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'nsaCardNumber'
 		],
-		// The number printed on the person's badge.
-		redacted: ['accessCardId']
+		// The number printed on the person's badge, and a sanction against the person.
+		redacted: ['accessCardId', 'messagingSuspended']
 	},
 	Conferencesupervisor: {
 		visible: [...ROW, 'conferenceParticipantId', 'plansOwnAttendenceAtConference'],
@@ -125,6 +128,148 @@ const FIELDS: Record<string, TypeClassification> = {
 		redacted: ['experience', 'motivation', 'requests']
 	},
 	Teammember: { visible: [...ROW, 'conferenceId', 'userId', 'role'] },
+	Teamfunction: { visible: [...ROW, 'teamMemberId', 'committeeId', 'kind'] },
+	// --- Announcements --------------------------------------------------------------------------
+	// What the team tells an audience is about the conference, not about a person. How many it
+	// reaches and how many read it are counts by attributes an assistant does not see.
+	Announcement: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'title',
+			'body',
+			'signature',
+			'importance',
+			'pinned',
+			'status',
+			'state',
+			'publishAt',
+			'visibleUntil',
+			'editedAt',
+			'notifyByMail',
+			'mailSince',
+			'mailRevision',
+			'releaseAnnounced',
+			'authorId',
+			'publishedById'
+		],
+		aggregate: ['recipientCount', 'readCount']
+	},
+	Announcementaudience: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'announcementId',
+			'kind',
+			'committeeId',
+			'roleId',
+			'surveyOptionId',
+			'teamRole'
+		]
+	},
+	Announcementattachment: {
+		visible: ['id', 'createdAt', 'search_distance', 'announcementId', 'fileId', 'position']
+	},
+	AnnouncementAudienceCounts: {
+		aggregate: ['total', 'delegates', 'singleParticipants', 'supervisors', 'waitingList', 'team']
+	},
+	// an assistant takes no part in a conference, so its feed is empty; classified all the same
+	AnnouncementFeedItem: {
+		visible: [
+			'id',
+			'title',
+			'body',
+			'signature',
+			'importance',
+			'pinned',
+			'publishAt',
+			'editedAt',
+			'read'
+		]
+	},
+	AnnouncementFeedAttachment: { visible: ['id', 'fileName', 'mimeType', 'size', 'url'] },
+	// --- Chats ----------------------------------------------------------------------------------
+	// What people write each other is theirs: an assistant sees that chats exist, never a word.
+	Chat: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'kind',
+			'inbox',
+			'committeeId',
+			'delegationId',
+			'participantId',
+			'otherParticipantId',
+			'lastMessageAt',
+			'lastParticipantMessageAt',
+			'teamReadAt',
+			'underReview',
+			'unreadCount',
+			'side',
+			'blockedByMe',
+			'writeRefusal',
+			'trustedUserId'
+		],
+		redacted: ['lastMessagePreview', 'trustedPersonName']
+	},
+	ChatContact: {
+		visible: [
+			'participantId',
+			'roleId',
+			'roleKind',
+			'nationAlpha3Code',
+			'nationAlpha2Code',
+			'roleName',
+			'roleAbbreviation',
+			'roleIcon',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'ordinal',
+			'userId'
+		],
+		// A sanction against a person.
+		redacted: ['suspended']
+	},
+	ChatPerson: { visible: ['participantId', 'userId'], redacted: ['name'] },
+	ChatInboxOption: {
+		visible: [
+			'inbox',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'trustedPersonId',
+			'chatId'
+		],
+		redacted: ['personName']
+	},
+	Chatmessage: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'chatId',
+			'fromTeam',
+			'mine',
+			'paperId',
+			'authorParticipantId',
+			'teamAuthorUserId'
+		],
+		redacted: ['body', 'authorName']
+	},
+	Chatreport: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'chatId',
+			'status',
+			'resolvedAt',
+			'resolvedById',
+			'reporterUserId'
+		],
+		redacted: ['reason', 'reporterName']
+	},
 	Teammemberinvitation: {
 		visible: [
 			...ROW,
@@ -247,7 +392,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'feeAmount',
 			'guardianConsentFileId',
 			'imageFileId',
-			'info',
 			'isOpenPaperSubmission',
 			'language',
 			'linkToPaperInbox',
@@ -261,6 +405,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'maxForeignGuaranteedSeatsPercent',
 			'maxGuaranteedSeatsPerForeignSchool',
 			'mcpEnabled',
+			'messagingEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
 			'nextDocumentNumber',
@@ -273,7 +418,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'postalZip',
 			'registrationDeadlineGracePeriodMinutes',
 			'showCalendar',
-			'showInfoExpanded',
 			'startConference',
 			'state',
 			'supervisorMinAge',

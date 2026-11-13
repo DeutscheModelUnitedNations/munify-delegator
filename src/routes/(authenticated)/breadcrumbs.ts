@@ -98,9 +98,9 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.committeeAssignment(),
 		icon: 'arrows-split'
 	},
-	info: {
-		translation: () => m.infos(),
-		icon: 'info'
+	announcements: {
+		translation: () => m.announcementSectionTitle(),
+		icon: 'megaphone'
 	},
 	payment: {
 		translation: () => m.payment(),
@@ -129,6 +129,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	'ai-access': {
 		icon: 'robot',
 		translation: () => m.aiAccess()
+	},
+	messages: {
+		icon: 'chats-circle',
+		translation: () => m.chatMessages()
 	},
 	calendar: {
 		icon: 'calendar-dots',

@@ -59,11 +59,17 @@ describe('teamFacts', () => {
 		const conference = { id: 'c1', ...flags, teamMembers: [{ userId: 'u1' }, { userId: 'u2' }] };
 		expect(
 			teamFacts([
-				{ conferenceId: 'c1', roles: ['REVIEWER'], conference },
-				{ conferenceId: 'c1', roles: ['MEMBER'], conference }
+				{ conferenceId: 'c1', roles: ['REVIEWER'], conference, functions: [] },
+				{
+					conferenceId: 'c1',
+					roles: ['MEMBER'],
+					conference,
+					functions: [{ committeeId: 'k1', kind: 'CHAIR' }]
+				}
 			])
 		).toEqual({
 			team: [{ conferenceId: 'c1', roles: ['REVIEWER', 'MEMBER'] }],
+			teamFunctions: [{ conferenceId: 'c1', committeeId: 'k1', kind: 'CHAIR' }],
 			teammates: [
 				{ conferenceId: 'c1', userId: 'u1' },
 				{ conferenceId: 'c1', userId: 'u2' }
@@ -260,8 +266,8 @@ describe('loadCallerFacts', () => {
 		emptyDatabase();
 		const conference = (mcpEnabled: boolean) => ({ mcpEnabled, ...flags, teamMembers: [] });
 		query.teamMember.findMany.mockResolvedValue([
-			{ conferenceId: 'c1', role: 'PARTICIPANT_CARE', conference: conference(true) },
-			{ conferenceId: 'c1', role: 'MEMBER', conference: conference(false) }
+			{ conferenceId: 'c1', role: 'PARTICIPANT_CARE', conference: conference(true), functions: [] },
+			{ conferenceId: 'c1', role: 'MEMBER', conference: conference(false), functions: [] }
 		]);
 		const facts = await loadCallerFacts({
 			teamUserId: 'u1',
@@ -301,6 +307,7 @@ describe('loadCallerFacts', () => {
 			{
 				conferenceId: 'c1',
 				role: 'PARTICIPANT_CARE',
+				functions: [],
 				conference: { mcpEnabled: false, ...flags, teamMembers: [{ userId: 'u1' }] }
 			}
 		]);

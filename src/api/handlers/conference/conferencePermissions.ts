@@ -109,9 +109,6 @@ export async function assertCanReadNextDocumentNumber({
  */
 const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'id',
-	// the announcement page (`team/announcement`) is participant care's as much as management's
-	'info',
-	'showInfoExpanded',
 	'linkToPreparationGuide',
 	'linkToTeamWiki',
 	'linkToServicesPage',
@@ -130,7 +127,8 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'unlockPayments',
 	'unlockPostals',
 	'isOpenPaperSubmission',
-	'showCalendar'
+	'showCalendar',
+	'messagingEnabled'
 ];
 
 /**

@@ -9,6 +9,8 @@ import {
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import type { EmailKind } from './dueEmails';
 import type { Locale } from '#lib/paraglide/runtime';
+import { ALWAYS_AUTOMATIC_KINDS } from '#lib/helpers/emailKinds';
+import { conferencesOwingAnnouncementMails } from './announcementEmails';
 
 /**
  * What a conference makes of its automatic mails: which kinds go out on their own
@@ -22,7 +24,11 @@ export async function enabledKinds(conferenceId: string) {
 		where: { conferenceId, enabled: true },
 		columns: { kind: true }
 	});
-	return new Set<EmailKind>(settings.map((setting) => setting.kind));
+	// the kinds without a switch always go out
+	return new Set<EmailKind>([
+		...ALWAYS_AUTOMATIC_KINDS,
+		...settings.map((setting) => setting.kind)
+	]);
 }
 
 /** Switches kinds of automatic mail on or off for a conference. */
@@ -73,13 +79,17 @@ export async function setEmailsPerSecond({
 	conferencePubsub.updated(conferenceId);
 }
 
-/** Every conference that sends any automatic mail. */
+/**
+ * Every conference that sends any automatic mail: one with a kind switched on, or with an
+ * announcement whose mail may be owed.
+ */
 export async function conferencesSendingEmails() {
+	const announcing = await conferencesOwingAnnouncementMails();
 	const settings = await db.query.conferenceEmailSetting.findMany({
 		where: { enabled: true },
 		columns: { conferenceId: true }
 	});
-	return [...new Set(settings.map((setting) => setting.conferenceId))];
+	return [...new Set([...settings.map((setting) => setting.conferenceId), ...announcing])];
 }
 
 /** Empty or blank: the default text. */

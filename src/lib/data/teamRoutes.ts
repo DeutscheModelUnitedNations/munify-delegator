@@ -252,7 +252,29 @@ export const teamRoutes: readonly TeamRoute[] = [
 		group: 'info',
 		category: 'communication',
 		keywords: ['ankündigungen', 'announcements', 'nachrichten', 'messages', 'mitteilungen'],
-		roles: PARTICIPANT_CARE_ROLES
+		roles: CONFERENCE_CONTENT_ROLES
+	},
+	{
+		id: 'messages',
+		skeleton: TEAM_SKELETONS.messages,
+		path: teamPath('messages'),
+		title: () => m.chatMessages(),
+		description: () => m.chatTeamPageDescription(),
+		icon: 'ph-chats-circle',
+		group: 'info',
+		category: 'communication',
+		keywords: [
+			'nachrichten',
+			'messages',
+			'chat',
+			'chats',
+			'postfach',
+			'inbox',
+			'meldungen',
+			'reports'
+		]
+		// Any team role: the page shows the inboxes the caller answers, which follow committee
+		// functions as much as team roles.
 	},
 	{
 		id: 'calendar',

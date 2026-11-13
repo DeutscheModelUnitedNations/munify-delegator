@@ -41,7 +41,7 @@ Saved views of the team's tables (`createTableView`, `updateTableView`, `copyTab
 writes filters, sorts and groups only by columns without personal data
 (`src/api/mcp/viewStateGuard.ts`).
 
-Changes that reach people outside the team (the conference's stage, the announcement, unlocking
+Changes that reach people outside the team (the conference's stage, unlocking
 payments, distributing a survey) answer with a preview first and run only when called again with
 `confirm: true`.
 

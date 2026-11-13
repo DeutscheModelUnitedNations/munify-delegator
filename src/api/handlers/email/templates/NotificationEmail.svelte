@@ -5,6 +5,7 @@
 	import EmailParagraphs from './EmailParagraphs.svelte';
 	import EmailText from './EmailText.svelte';
 	import { smallStyle, textStyle } from './brand';
+	import type { MailBlock } from '../announcementBlocks';
 
 	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent`). */
 	interface Props {
@@ -14,6 +15,8 @@
 		items?: string[];
 		/** Paragraphs after the list. */
 		closing?: string[];
+		/** An announcement's own text: headings, paragraphs and lists. */
+		blocks?: MailBlock[];
 		button?: { label: string; url: string };
 		conferenceTitle: string;
 		/** The conference's footer, paragraph by paragraph. */
@@ -26,6 +29,7 @@
 		paragraphs,
 		items = [],
 		closing = [],
+		blocks = [],
 		button,
 		conferenceTitle,
 		conferenceFooter
@@ -45,6 +49,26 @@
 
 	{#each closing as paragraph, index (index)}
 		<EmailText {paragraph} />
+	{/each}
+
+	{#each blocks as block, index (index)}
+		{#if block.type === 'heading'}
+			<p style="{textStyle} font-weight: 700;">{block.text}</p>
+		{:else if block.type === 'paragraph'}
+			<EmailText paragraph={block.text} />
+		{:else if block.ordered}
+			<ol style="{textStyle} padding-left: 20px;">
+				{#each block.items as item, itemIndex (itemIndex)}
+					<li style="margin-bottom: 6px; white-space: pre-line;">{item}</li>
+				{/each}
+			</ol>
+		{:else}
+			<ul style="{textStyle} padding-left: 20px;">
+				{#each block.items as item, itemIndex (itemIndex)}
+					<li style="margin-bottom: 6px; white-space: pre-line;">{item}</li>
+				{/each}
+			</ul>
+		{/if}
 	{/each}
 
 	{#if button}

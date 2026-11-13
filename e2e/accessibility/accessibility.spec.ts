@@ -13,9 +13,13 @@ import {
 // high contrast variant (`#lib/helpers/contrast`), which is the one that has to pass.
 
 const PUBLIC_ROUTES = ['/', '/unsubscribe'];
-const PARTICIPANT_ROUTES = ['', '/info', '/paperhub', '/payment', '/postal-registration'].map(
-	(suffix) => `/dashboard/${E2E_PREP_CONFERENCE_ID}${suffix}`
-);
+const PARTICIPANT_ROUTES = [
+	'',
+	'/announcements',
+	'/paperhub',
+	'/payment',
+	'/postal-registration'
+].map((suffix) => `/dashboard/${E2E_PREP_CONFERENCE_ID}${suffix}`);
 
 /** The serious and critical WCAG 2.2 A/AA violations on the page, one line each. */
 async function violations(page: Page, { contrast }: { contrast: boolean }) {

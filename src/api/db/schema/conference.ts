@@ -50,7 +50,6 @@ export const conference = snakeCase.table('conference', {
 	startConference: timestamp({ precision: 3 }).notNull(),
 	state: conferenceState().default('PRE').notNull(),
 	imageFileId: fileRef(),
-	info: text(),
 	linkToPreparationGuide: text(),
 	bankAccountHolder: text(),
 	bankName: text(),
@@ -80,7 +79,6 @@ export const conference = snakeCase.table('conference', {
 	registrationDeadlineGracePeriodMinutes: integer().default(30).notNull(),
 	isOpenPaperSubmission: boolean().default(false).notNull(),
 	emblemFileId: fileRef(),
-	showInfoExpanded: boolean().default(false).notNull(),
 	linkToServicesPage: text(),
 	linkToTeamWiki: text(),
 	logoFileId: fileRef(),
@@ -121,5 +119,10 @@ export const conference = snakeCase.table('conference', {
 	 * Whether the team may reach the conference through AI assistants (the MCP server,
 	 * `src/api/mcp/`). Project management switches it on; off, no assistant sees anything of it.
 	 */
-	mcpEnabled: boolean().default(false).notNull()
+	mcpEnabled: boolean().default(false).notNull(),
+	/**
+	 * Whether the people of the conference can write each other inside the app (`chat`). Off, the
+	 * chats there are stay readable and nothing new is written.
+	 */
+	messagingEnabled: boolean().default(false).notNull()
 });

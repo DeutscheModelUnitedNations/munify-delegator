@@ -66,6 +66,7 @@
 		linkToServicesPage: true,
 		isOpenPaperSubmission: true,
 		showCalendar: true,
+		messagingEnabled: true,
 		timezone: true,
 		unlockPayments: true,
 		unlockPostals: true,
@@ -136,6 +137,7 @@
 		state: storedConference.state,
 		timezone: storedConference.timezone,
 		showCalendar: storedConference.showCalendar,
+		messagingEnabled: storedConference.messagingEnabled,
 		isOpenPaperSubmission: storedConference.isOpenPaperSubmission,
 		linkToPreparationGuide: storedConference.linkToPreparationGuide ?? undefined,
 		linkToTeamWiki: storedConference.linkToTeamWiki ?? undefined,
@@ -236,7 +238,8 @@
 					unlockPayments: settings.unlockPayments,
 					unlockPostals: settings.unlockPostals,
 					isOpenPaperSubmission: settings.isOpenPaperSubmission,
-					showCalendar: settings.showCalendar
+					showCalendar: settings.showCalendar,
+					messagingEnabled: settings.messagingEnabled
 				};
 				const promise = client.mutate.updateConference({
 					__args: {

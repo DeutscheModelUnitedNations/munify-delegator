@@ -623,6 +623,10 @@ export const relations = defineRelations(schema, (r) => ({
 		resolutionOf: r.many.resolution({
 			from: r.storedFile.id,
 			to: r.resolution.fileId
+		}),
+		announcementAttachmentOf: r.many.announcementAttachment({
+			from: r.storedFile.id,
+			to: r.announcementAttachment.fileId
 		})
 	},
 	place: {
@@ -802,6 +806,133 @@ export const relations = defineRelations(schema, (r) => ({
 		user: r.one.user({
 			from: r.teamMember.userId,
 			to: r.user.id,
+			optional: false
+		}),
+		functions: r.many.teamFunction({
+			from: r.teamMember.id,
+			to: r.teamFunction.teamMemberId
+		})
+	},
+	teamFunction: {
+		teamMember: r.one.teamMember({
+			from: r.teamFunction.teamMemberId,
+			to: r.teamMember.id,
+			optional: false
+		}),
+		committee: r.one.committee({
+			from: r.teamFunction.committeeId,
+			to: r.committee.id
+		})
+	},
+	chat: {
+		conference: r.one.conference({
+			from: r.chat.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		participant: r.one.conferenceParticipant({
+			from: r.chat.participantId,
+			to: r.conferenceParticipant.id,
+			alias: 'chatParticipant'
+		}),
+		otherParticipant: r.one.conferenceParticipant({
+			from: r.chat.otherParticipantId,
+			to: r.conferenceParticipant.id,
+			alias: 'chatOtherParticipant'
+		}),
+		delegation: r.one.delegation({
+			from: r.chat.delegationId,
+			to: r.delegation.id
+		}),
+		committee: r.one.committee({
+			from: r.chat.committeeId,
+			to: r.committee.id
+		}),
+		messages: r.many.chatMessage({
+			from: r.chat.id,
+			to: r.chatMessage.chatId
+		}),
+		reports: r.many.chatReport({
+			from: r.chat.id,
+			to: r.chatReport.chatId
+		})
+	},
+	announcement: {
+		conference: r.one.conference({
+			from: r.announcement.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		author: r.one.user({
+			from: r.announcement.authorId,
+			to: r.user.id,
+			alias: 'announcementAuthor'
+		}),
+		publishedBy: r.one.user({
+			from: r.announcement.publishedById,
+			to: r.user.id,
+			alias: 'announcementPublisher'
+		}),
+		audiences: r.many.announcementAudience({
+			from: r.announcement.id,
+			to: r.announcementAudience.announcementId
+		}),
+		attachments: r.many.announcementAttachment({
+			from: r.announcement.id,
+			to: r.announcementAttachment.announcementId
+		})
+	},
+	announcementAudience: {
+		announcement: r.one.announcement({
+			from: r.announcementAudience.announcementId,
+			to: r.announcement.id,
+			optional: false
+		}),
+		committee: r.one.committee({
+			from: r.announcementAudience.committeeId,
+			to: r.committee.id
+		}),
+		role: r.one.conferenceRole({
+			from: r.announcementAudience.roleId,
+			to: r.conferenceRole.id
+		}),
+		surveyOption: r.one.surveyOption({
+			from: r.announcementAudience.surveyOptionId,
+			to: r.surveyOption.id
+		})
+	},
+	announcementAttachment: {
+		announcement: r.one.announcement({
+			from: r.announcementAttachment.announcementId,
+			to: r.announcement.id,
+			optional: false
+		}),
+		file: r.one.storedFile({
+			from: r.announcementAttachment.fileId,
+			to: r.storedFile.id,
+			optional: false
+		})
+	},
+	chatMessage: {
+		chat: r.one.chat({
+			from: r.chatMessage.chatId,
+			to: r.chat.id,
+			optional: false
+		}),
+		paper: r.one.paper({
+			from: r.chatMessage.paperId,
+			to: r.paper.id
+		})
+	},
+	chatReport: {
+		chat: r.one.chat({
+			from: r.chatReport.chatId,
+			to: r.chat.id,
+			optional: false
+		}),
+		conference: r.one.conference({
+			from: r.chatReport.conferenceId,
+			to: r.conference.id,
 			optional: false
 		})
 	},

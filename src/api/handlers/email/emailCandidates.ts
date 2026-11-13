@@ -154,11 +154,34 @@ type Predicate = (ctx: Ctx) => SQL | undefined;
 const registering = (ctx: Ctx) => ctx.conference.state === 'PARTICIPANT_REGISTRATION';
 const released = (ctx: Ctx) => ctx.conference.assignmentReleased;
 const when = (gate: boolean, predicate: () => SQL) => (gate ? predicate() : undefined);
-/** One per automatic kind about participants; `undefined` when the conference cannot owe it now. */
+/**
+ * One per automatic kind about participants; `undefined` when the conference cannot owe it now.
+ * An announcement's mail is not among them: its audience is read as a part of its own
+ * (`loadAnnouncementMails`), already matched to the people it reaches.
+ */
 const PARTICIPANT_PREDICATES: Record<
-	Exclude<AutomaticEmailKind, 'WAITING_LIST_REGISTERED' | 'TEAM_WELCOME'>,
+	Exclude<AutomaticEmailKind, 'WAITING_LIST_REGISTERED' | 'TEAM_WELCOME' | 'ANNOUNCEMENT'>,
 	Predicate
 > = {
+	// A message of one of the person's chats they have not read and were not told about. The
+	// quarter of an hour it has to wait, and that only the oldest one counts, is `dueEmails`'.
+	UNREAD_MESSAGES: (ctx) =>
+		when(
+			ctx.conference.messagingEnabled,
+			() => sql`exists (
+				select 1 from chat c
+				join chat_message m on m.chat_id = c.id
+					and m.author_participant_id is distinct from ${ctx.id}
+				left join chat_read cr on cr.chat_id = c.id and cr.user_id = ${ctx.userId}
+				where c.conference_id = ${ctx.conference.id}
+					and (c.participant_id = ${ctx.id} or c.other_participant_id = ${ctx.id}
+						or (c.kind = 'DELEGATION' and exists (
+							select 1 from delegation_member cdm
+							where cdm.delegation_id = c.delegation_id
+								and cdm.conference_participant_id = ${ctx.id})))
+					and (cr.read_at is null or m.created_at > cr.read_at)
+					and ${ctx.open({ kind: 'UNREAD_MESSAGES', key: sql`m.id` })})`
+		),
 	DELEGATION_CREATED: (ctx) =>
 		when(registering(ctx), () =>
 			memberOf(
@@ -397,13 +420,24 @@ export const waitingListCandidates = ({
 	userId: Column;
 }) => sql`not ${closed({ conferenceId, kind: 'WAITING_LIST_REGISTERED', userId, key: id })}`;
 
-/** The team members (`id`, `userId` their columns) not yet welcomed. */
-export const teamCandidates = ({
-	conferenceId,
+/**
+ * The team members (`id`, `userId` their columns) who may be owed a mail of `kinds`: not yet
+ * welcomed, or, while the chats are on, anybody (a team is small, and which inboxes somebody
+ * answers is `loadUnreadOfTeam`'s to work out); `false` when none can be.
+ */
+export function teamCandidates({
+	conference,
+	kinds,
 	id,
 	userId
 }: {
-	conferenceId: string;
+	conference: Conference;
+	kinds: ReadonlySet<string>;
 	id: Column;
 	userId: Column;
-}) => sql`not ${closed({ conferenceId, kind: 'TEAM_WELCOME', userId, key: id })}`;
+}): SQL {
+	if (kinds.has('UNREAD_MESSAGES') && conference.messagingEnabled) return sql`true`;
+	return kinds.has('TEAM_WELCOME')
+		? sql`not ${closed({ conferenceId: conference.id, kind: 'TEAM_WELCOME', userId, key: id })}`
+		: sql`false`;
+}

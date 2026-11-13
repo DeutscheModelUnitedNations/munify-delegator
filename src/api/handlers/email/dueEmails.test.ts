@@ -6,6 +6,7 @@ import {
 	type SnapshotReview,
 	type SnapshotSurvey,
 	type SnapshotTeamMember,
+	type SnapshotUnreadMessage,
 	type SnapshotWaitingEntry
 } from './dueEmails';
 
@@ -84,6 +85,7 @@ function snapshot(
 			timezone: 'Europe/Berlin',
 			certificateAvailable: false,
 			chaseUrl: null,
+			messagingEnabled: true,
 			...conference
 		},
 		people,
@@ -91,7 +93,9 @@ function snapshot(
 		team,
 		reviews,
 		surveys,
-		waitingList
+		waitingList,
+		unreadMessages: [],
+		announcementMails: []
 	};
 }
 
@@ -583,5 +587,86 @@ describe('a page of people', () => {
 		expect(onlyKinds({ snap, kinds: ['DELEGATION_MEMBER_JOINED'] })).toEqual([
 			`DELEGATION_MEMBER_JOINED:${head.user.id}:d-page:${newcomer.participantId}`
 		]);
+	});
+});
+
+describe('unread chat messages', () => {
+	const MINUTE = 60 * 1000;
+	const unreadSince = (minutes: number, reader: SnapshotUnreadMessage['reader']) => ({
+		messageId: 'm1',
+		writtenAt: new Date(now.getTime() - minutes * MINUTE),
+		reader
+	});
+	const unreadKinds = (snap: EmailSnapshot) =>
+		kindsOf(snap).filter((kind) => kind.startsWith('UNREAD_MESSAGES'));
+
+	test('tells a participant once their oldest unread message has waited a quarter of an hour', () => {
+		const reader = seated();
+		const waiting = (minutes: number) => ({
+			...snapshot([reader]),
+			unreadMessages: [unreadSince(minutes, { participantId: reader.participantId })]
+		});
+		expect(unreadKinds(waiting(14))).toEqual([]);
+		expect(unreadKinds(waiting(15))).toEqual([`UNREAD_MESSAGES:${reader.user.id}:m1`]);
+	});
+
+	test('tells the team members answering an inbox', () => {
+		const member: SnapshotTeamMember = {
+			id: 'tm1',
+			role: 'PARTICIPANT_CARE',
+			user: seated().user,
+			inviterName: null
+		};
+		const due = dueEmails({
+			snapshot: {
+				...snapshot([], {}, [], [], [member]),
+				unreadMessages: [unreadSince(20, { teamMemberId: 'tm1' })]
+			},
+			now
+		}).filter((email) => email.kind === 'UNREAD_MESSAGES');
+		expect(due).toHaveLength(1);
+		expect(due[0]?.teamMember).toBe(member);
+		expect(due[0]?.person).toBeUndefined();
+	});
+
+	test('owes nothing to a reader the snapshot does not know', () => {
+		expect(
+			unreadKinds({
+				...snapshot([]),
+				unreadMessages: [unreadSince(60, { participantId: 'gone' })]
+			})
+		).toEqual([]);
+	});
+});
+
+describe('announcements', () => {
+	const announcement = {
+		id: 'a1',
+		title: 'Room change',
+		body: 'The GA meets in room 2.',
+		signature: null,
+		mailRevision: 0,
+		attachmentNames: []
+	};
+
+	test('each person of the audience is owed the mail, keyed by announcement and revision', () => {
+		const reader = seated();
+		const snap = snapshot([reader]);
+		snap.announcementMails = [
+			{ announcement, recipient: reader.user },
+			// "notify again" raises the revision: a mail of its own
+			{ announcement: { ...announcement, mailRevision: 1 }, recipient: reader.user }
+		];
+		const due = dueEmails({ snapshot: snap, now }).filter((email) => email.kind === 'ANNOUNCEMENT');
+		expect(due.map((email) => email.subjectKey)).toEqual(['a1:0', 'a1:1']);
+		expect(due[0]?.recipient).toBe(reader.user);
+		expect(due[0]?.announcement).toBe(announcement);
+	});
+
+	test('goes to somebody who is no participant too: the team, the waiting list', () => {
+		const recipient = { ...seated().user, id: 'waiting' };
+		const snap = snapshot([]);
+		snap.announcementMails = [{ announcement, recipient }];
+		expect(kindsOf(snap)).toEqual(['ANNOUNCEMENT:waiting:a1:0']);
 	});
 });

@@ -12,10 +12,13 @@ import type {
 	SnapshotTeamMember,
 	SnapshotWaitingEntry
 } from './dueEmails';
+import { loadUnreadOfParticipants, loadUnreadOfTeam } from './unreadMessages';
+import { loadAnnouncementMails } from './announcementEmails';
 
 /**
  * What `dueEmails` decides from, read a page at a time: never a whole conference at once. A page
- * is one of three parts - participants, the waiting list, the team - and holds, besides its own
+ * is one of four parts - participants, the waiting list, the team, and the announcements'
+ * audiences, which reach across the other three - and holds, besides its own
  * rows, only what the rules about them read: the people around them (`neighbours`: co-members,
  * supervisors, students), the reviews of their papers and their survey answers. Parts and data
  * the asked-for kinds do not need are not read at all.
@@ -24,22 +27,35 @@ import type {
 /** Participants per page; the waiting list and the team page by the same size. */
 const EMAIL_PAGE_SIZE = 500;
 
-type EmailPagePart = 'people' | 'waitingList' | 'team';
+type EmailPagePart = 'people' | 'waitingList' | 'team' | 'announcements';
 /** Where a page starts: the part, and the last id before it. */
 export interface EmailCursor {
 	part: EmailPagePart;
 	after: string | null;
 }
-const PARTS: readonly EmailPagePart[] = ['people', 'waitingList', 'team'];
+const PARTS: readonly EmailPagePart[] = ['people', 'waitingList', 'team', 'announcements'];
 export const FIRST_EMAIL_PAGE: EmailCursor = { part: 'people', after: null };
 
 /** The kinds only one part makes due; every other kind is about participants. */
-const PART_OF_KIND: Partial<Record<EmailKind, EmailPagePart>> = {
-	WAITING_LIST_REGISTERED: 'waitingList',
-	TEAM_WELCOME: 'team'
+const PARTS_OF_KIND: Partial<Record<EmailKind, readonly EmailPagePart[]>> = {
+	WAITING_LIST_REGISTERED: ['waitingList'],
+	TEAM_WELCOME: ['team'],
+	// an announcement's audience can hold anybody: participants, the waiting list, the team
+	ANNOUNCEMENT: ['announcements'],
+	// chats are read by participants and by the team's inboxes
+	UNREAD_MESSAGES: ['people', 'team']
 };
+const PEOPLE_ONLY: readonly EmailPagePart[] = ['people'];
 export const partsFor = (kinds: ReadonlySet<EmailKind>) =>
-	new Set([...kinds].map((kind) => PART_OF_KIND[kind] ?? 'people'));
+	new Set([...kinds].flatMap((kind) => PARTS_OF_KIND[kind] ?? PEOPLE_ONLY));
+/** Whether the page has to read who has not read their chats. */
+const needsUnread = ({
+	conference,
+	kinds
+}: {
+	conference: EmailConference;
+	kinds: ReadonlySet<EmailKind>;
+}) => conference.messagingEnabled && kinds.has('UNREAD_MESSAGES');
 const needsReviews = (kinds: ReadonlySet<EmailKind>) => kinds.has('PAPER_REVIEWED');
 const needsSurveys = (kinds: ReadonlySet<EmailKind>) =>
 	kinds.has('SURVEY_PUBLISHED') || kinds.has('SURVEY_REMINDER');
@@ -76,7 +92,8 @@ export async function loadEmailConference(
 			applicationDeadline: true,
 			startConference: true,
 			timezone: true,
-			certificateFileId: true
+			certificateFileId: true,
+			messagingEnabled: true
 		}
 	});
 	if (!conference) return undefined;
@@ -95,7 +112,9 @@ const emptySnapshot = (conference: EmailConference): EmailSnapshot => ({
 	team: [],
 	reviews: [],
 	surveys: [],
-	waitingList: []
+	waitingList: [],
+	unreadMessages: [],
+	announcementMails: []
 });
 
 const PARTICIPANT_COLUMNS = {
@@ -336,6 +355,20 @@ async function loadSurveys({
 	}));
 }
 
+/** The unread chat messages of a page's participants, when the asked-for kinds read them. */
+async function peopleUnread({
+	conference,
+	kinds,
+	participantIds
+}: {
+	conference: EmailConference;
+	kinds: ReadonlySet<EmailKind>;
+	participantIds: string[];
+}) {
+	if (!needsUnread({ conference, kinds })) return [];
+	return loadUnreadOfParticipants({ conferenceId: conference.id, participantIds });
+}
+
 /** A snapshot of `participants` and the people, reviews and answers their rules read. */
 async function peopleSnapshot({
 	conference,
@@ -353,18 +386,19 @@ async function peopleSnapshot({
 	].filter((id) => !own.has(id));
 	const conferenceId = conference.id;
 	const participantIds = [...own];
-	const [around, reviews, surveys] = await Promise.all([
+	const [around, reviews, surveys, unreadMessages] = await Promise.all([
 		aroundIds.length > 0 ? loadNeighbours({ conferenceId, ids: aroundIds }) : [],
 		needsReviews(kinds) && participantIds.length > 0 ? loadReviews(participantIds) : [],
 		needsSurveys(kinds) && participantIds.length > 0
 			? loadSurveys({ conferenceId, participantIds })
-			: []
+			: [],
+		peopleUnread({ conference, kinds, participantIds })
 	]);
 	const [people, neighbours] = await Promise.all([
 		toPeople({ conferenceId, participants }),
 		toPeople({ conferenceId, participants: around })
 	]);
-	return { ...emptySnapshot(conference), people, neighbours, reviews, surveys };
+	return { ...emptySnapshot(conference), people, neighbours, reviews, surveys, unreadMessages };
 }
 
 function loadWaitingList({
@@ -411,26 +445,21 @@ async function loadTeam({
 	after,
 	userId,
 	limit,
-	onlyCandidates = false
+	candidates
 }: {
 	conferenceId: string;
 	after?: string | null;
 	userId?: string;
 	limit?: number;
-	/** Only the members not yet welcomed. */
-	onlyCandidates?: boolean;
+	/** Only the members who may be owed a mail (`teamCandidates`). */
+	candidates?: (row: typeof schema.teamMember) => SQL;
 }) {
 	const members = await db.query.teamMember.findMany({
 		where: {
 			conferenceId,
 			...(after ? { id: { gt: after } } : {}),
 			...(userId ? { userId } : {}),
-			...(onlyCandidates
-				? {
-						RAW: (row: typeof schema.teamMember) =>
-							teamCandidates({ conferenceId, id: row.id, userId: row.userId })
-					}
-				: {})
+			...(candidates ? { RAW: candidates } : {})
 		},
 		columns: { id: true, role: true },
 		with: { user: USER },
@@ -471,6 +500,24 @@ async function loadTeam({
 				: []
 		)
 	};
+}
+
+/** What the inboxes these team members answer have not read. */
+function teamUnread({
+	conference,
+	kinds,
+	team
+}: {
+	conference: EmailConference;
+	kinds: ReadonlySet<EmailKind>;
+	team: readonly SnapshotTeamMember[];
+}) {
+	return needsUnread({ conference, kinds })
+		? loadUnreadOfTeam({
+				conferenceId: conference.id,
+				teamMemberIds: team.map((member) => member.id)
+			})
+		: [];
 }
 
 /** The cursor after a page of `rows`: the same part on, or the next part once it ran out. */
@@ -540,14 +587,28 @@ async function loadEmailPage({
 			next: nextCursor({ cursor, rows: entries, size, parts })
 		};
 	}
+	if (cursor.part === 'announcements') {
+		// one page: the mails of the few announcements that are fresh, already matched to their people
+		return {
+			snapshot: {
+				...emptySnapshot(conference),
+				announcementMails: await loadAnnouncementMails({ conferenceId, now })
+			},
+			next: nextCursor({ cursor, rows: [], size, parts })
+		};
+	}
 	const { rows, team } = await loadTeam({
 		conferenceId,
 		after,
 		limit: size,
-		onlyCandidates: true
+		candidates: (row) => teamCandidates({ conference, kinds, id: row.id, userId: row.userId })
 	});
 	return {
-		snapshot: { ...emptySnapshot(conference), team },
+		snapshot: {
+			...emptySnapshot(conference),
+			team,
+			unreadMessages: await teamUnread({ conference, kinds, team })
+		},
 		next: nextCursor({ cursor, rows, size, parts })
 	};
 }
@@ -588,8 +649,18 @@ export async function loadUserSnapshot({
 		loadWaitingList({ conferenceId, userId }),
 		loadTeam({ conferenceId, userId })
 	]);
-	const people = await peopleSnapshot({ conference, participants, kinds });
-	return { ...people, waitingList: toWaitingList(entries), team };
+	const [people, unreadOfTeam, announcementMails] = await Promise.all([
+		peopleSnapshot({ conference, participants, kinds }),
+		teamUnread({ conference, kinds, team }),
+		kinds.has('ANNOUNCEMENT') ? loadAnnouncementMails({ conferenceId, userId }) : []
+	]);
+	return {
+		...people,
+		waitingList: toWaitingList(entries),
+		team,
+		unreadMessages: [...people.unreadMessages, ...unreadOfTeam],
+		announcementMails
+	};
 }
 
 /** A review as the mails read it; none for a paper without an author to tell. */

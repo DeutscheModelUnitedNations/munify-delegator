@@ -1,5 +1,8 @@
 import { pubsub } from '#api/rumble';
 
+export const announcementPubsub = pubsub({ table: 'announcement' });
+export const announcementAudiencePubsub = pubsub({ table: 'announcementAudience' });
+export const announcementAttachmentPubsub = pubsub({ table: 'announcementAttachment' });
 export const assignmentReviewPubsub = pubsub({ table: 'assignmentReview' });
 export const assignmentSingleRolePubsub = pubsub({ table: 'assignmentSingleRole' });
 export const assignmentUnitPubsub = pubsub({ table: 'assignmentUnit' });
@@ -10,6 +13,9 @@ export const attendanceSessionPubsub = pubsub({ table: 'attendanceSession' });
 export const calendarDayPubsub = pubsub({ table: 'calendarDay' });
 export const calendarEntryPubsub = pubsub({ table: 'calendarEntry' });
 export const calendarTrackPubsub = pubsub({ table: 'calendarTrack' });
+export const chatPubsub = pubsub({ table: 'chat' });
+export const chatMessagePubsub = pubsub({ table: 'chatMessage' });
+export const chatReportPubsub = pubsub({ table: 'chatReport' });
 export const committeePubsub = pubsub({ table: 'committee' });
 export const committeeAgendaItemPubsub = pubsub({ table: 'committeeAgendaItem' });
 export const conferencePubsub = pubsub({ table: 'conference' });
@@ -44,6 +50,7 @@ export const surveyOptionPubsub = pubsub({ table: 'surveyOption' });
 export const surveyQuestionPubsub = pubsub({ table: 'surveyQuestion' });
 export const tableViewPubsub = pubsub({ table: 'tableView' });
 export const tableViewDefaultPubsub = pubsub({ table: 'tableViewDefault' });
+export const teamFunctionPubsub = pubsub({ table: 'teamFunction' });
 export const teamMemberPubsub = pubsub({ table: 'teamMember' });
 export const teamMemberInvitationPubsub = pubsub({ table: 'teamMemberInvitation' });
 export const userPubsub = pubsub({ table: 'user' });

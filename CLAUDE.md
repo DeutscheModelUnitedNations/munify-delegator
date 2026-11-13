@@ -144,7 +144,7 @@ bun run preview
   - `(authenticated)/` - Protected routes requiring authentication
     - `dashboard/[conferenceId]/` - A conference's dashboard and everything around it
       - `team/` - **Every team-facing page** (settings, tables, assignment, workflows, team members,
-        scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
+        messages, announcements, scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
         entry (`stages/TeamMember/TeamMemberDashboard.svelte`) is one card that opens the first page
         the caller may open, next to the conference's resource links.
         The assignment lives in `team/assignment/`. See "Team area" below.
@@ -795,11 +795,14 @@ bun run preview
   verdict it reaches itself (`null` in a session that only records), and the check-in page reads
   `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
 - **Age limits are the conference's** (`participantMinAge`, `participantMaxAge`, `supervisorMinAge`,
-  inclusive, measured on the first conference day; empty switches one off). They only warn:
+  inclusive, measured on the first conference day; empty switches one off).
   `ageIssue` / `ageBands` (`#lib/helpers/plausibilityRules`) are the one rule, which the
   plausibility page lists people by and `myAgeNotice` answers the caller with; `AgeNotice`
   (`#lib/components/registration/`) shows it in the apply flow, on the waiting list and on the
-  dashboard. Nothing refuses a registration by age.
+  dashboard. Registering and joining a delegation are never refused by age, but an application
+  cannot be sent while one of its people is outside the limits, nor can a supervisor below theirs
+  confirm attending in person (`assertNoApplicationBlockers`,
+  `#api/services/registration/applicationReadiness.ts`); participant care can confirm it anyway.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -1326,6 +1329,122 @@ bun run preview
   chase), naming the person, the conference, an expiry and the card number on the participant
   row (`nsaCardNumber`); `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts` prints them. Chase's
   scanner checks them, and the `live` nametags, against `signedCodeKeys`.
+
+#### 15. Messages
+
+- **People of a conference write each other inside the app** (`#api/handlers/chat/`, tables in
+  `schema/messages.ts`), once the conference switched it on (`conference.messagingEnabled`, a
+  feature switch of `updateConference`). A `chat` is `DIRECT` (two seated participants), `DELEGATION`
+  (a delegation's group) or `TEAM` (one participant and a team inbox); `chatMessage` is append-only.
+  Delegation members and single participants take part, supervisors do not.
+- **Participants know each other by role, never by name.** A `ChatContact` (`chatContacts.ts`) is a
+  seated person as role, committee and, among several sharing both, a number (`numberContacts`).
+  A message names its participant author only by `authorParticipantId`; `authorName` is filled
+  where the reader may know it: a team member writing from an inbox, a member of the reader's own
+  delegation group, anybody for participant care. `chat.people` (names and accounts) answers
+  participant care only. Never expose a user row through a chat relation.
+- **Team inboxes are shared** (`chat.inbox`): `PARTICIPANT_CARE`, one per conference, answered by
+  the participant care roles; `CHAIR` and `CONSULTANT`, one per committee, answered by whoever holds
+  that **committee function** (`teamFunction`, `#api/handlers/teamFunction/`, handed out by
+  `manageTeam` on the team members page; in the caller's facts as `teamFunctions`); and
+  `TRUSTED_PERSON`, answered by the conference's trusted persons (see below). An inbox reads
+  as one (`chat.teamReadAt`); a person's reading is `chatRead`. `inboxReaches`
+  (`#lib/helpers/chat.ts`) says which inbox and person write each other: participant care anybody
+  with a registration, a committee's inboxes the people seated there and those seated without a
+  committee.
+- **What is written to the trusted persons stays with them.** A trusted person is a team function
+  without a committee (`teamFunction.kind = 'TRUSTED_PERSON'`, the switch on top of the functions
+  dialog). Participants reach them at any time while messaging is on: all of them together (a
+  `TRUSTED_PERSON` chat without `trustedUserId`) or one of them by full name (`trustedUserId`;
+  `chatInboxes` names each by their function's id, `trustedPersonId`, never by account, and
+  `chat.trustedPersonName` is the label). The shared chat is read by every trusted person of the
+  conference, a personal one by that person alone (`trustedChats`, `holdsTrustedInbox`): not by
+  participant care, not by a system admin (`adminChats` leaves the inbox out), not by an assistant
+  (`callerUserId`). Nobody learns the participant's name there, participant care included
+  (`knowsPeopleOf`), and a team chat cannot be reported. `chat.trustedUserId` has no relation on
+  purpose and answers only its own person. Anything new that reads chats has to keep this.
+- **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
+  inbox; participant care a chat between participants only while a report is open
+  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved). A system
+  admin reads what the team reads, never a private chat. `chatSide` answers how the caller relates
+  to a chat (`PARTICIPANT`, `TEAM`, `REVIEW`); `REVIEW` never writes.
+- **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages
+  through `chat.writeRefusal`): nobody while messaging is off; participants each other and their
+  delegation only once the roles are released, while both hold a seat, neither blocked the other
+  (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
+  participant care). The team is always reached.
+- **A participant agrees to the terms before their first message.** The terms of the message
+  service are the app's, in both languages (`messagingTermsSections`, `#lib/helpers/messagingTerms.ts`,
+  `chatTerms…` messages): conduct, who reads along (reports, the team inboxes, the trusted persons
+  as the exception), blocking, consequences. `sendChatMessage` refuses a party who has not accepted
+  `MESSAGING_TERMS_VERSION` with `TERMS_NOT_ACCEPTED` (`assertAcceptedTerms`); the composer then
+  shows `MessagingTermsModal`, `acceptMessagingTerms` stores the version on the account
+  (`user.messagingTermsVersion`, once for every conference) and the message goes out. The team
+  writes without. **Raise the version when the terms change in meaning**, and everybody is asked again.
+- **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
+  "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
+  read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
+  that message, without the text. A person turns it off for themselves
+  (`user.messageNotificationEmails`).
+- **The pages** are `dashboard/[conferenceId]/messages` (participants) and `team/messages` (the
+  inboxes the caller answers, and the reports for participant care), both built from
+  `#lib/components/chat/` (see CLAUDE-UI.md). `WriteToDelegateButton` opens the chat of a team
+  inbox with a participant from wherever the team meets them (a paper, the paper tables) and
+  attaches the paper to the first message. `e2e/authorization/messages.spec.ts` pins the rules
+  down, `e2e/messages/` the flows; the dev seed's `seed-dev/messages.ts` has every state.
+
+#### 16. Announcements
+
+- **The team tells its conference things through announcements** (`#api/handlers/announcement/`,
+  tables in `schema/announcements.ts`): any number, each with a title, a Markdown text, an
+  importance (`NORMAL`, `IMPORTANT`, `URGENT`), an optional signature and attachments
+  (`announcement_attachment`, files of the kind `announcement`/`attachment`). They replace the one
+  text a conference had (`conference.info`, which the `announcements` migration turned into each
+  conference's first, pinned announcement).
+- **A life in three stored states** (`announcement.status`): `DRAFT`, `PUBLISHED`, `ARCHIVED`.
+  Scheduling is not a state: publishing sets `publishAt`, ahead for a scheduled one, and
+  `visibleUntil` ends it. `announcementState` (`#lib/helpers/announcements`) derives what the team
+  sees (`SCHEDULED`, `EXPIRED`) from the clock, `isOut` whether readers get it. Nothing in the app
+  runs on a timer: a scheduled announcement is readable from its time on because the feed compares
+  the clock, and the `send-emails` job tells open pages (`announceReleasedAnnouncements`, once per
+  announcement, `releaseAnnounced`). Editing the title or text of one that is out sets `editedAt`,
+  which readers see as "updated".
+- **An audience is any number of blocks, and matching one is enough** (`announcement_audience`,
+  `audienceMatches` / `inAudience`): kinds of participants, applicants without a seat, the seated,
+  the waiting list, a committee, a role, a survey option, open payment or paperwork, minors,
+  adults, and the team or one team role. The team is only ever in a `TEAM` block. **One pure
+  rule, one loader:** `audienceSubjects.ts` turns the people of a conference into
+  `AudienceSubject`s, which the feed (one person), the recipient counts and the mails all match
+  against, so they cannot disagree. **Everything about a seat is empty until the assignment is
+  released** (`participantSubjects`), so no announcement tells anybody their seat early; a new
+  audience kind that depends on a seat has to follow that. That a block's committee, role or
+  survey option is the conference's is the database's (`announcement_audience_same_conference`).
+- **Readers never read the table.** The rows (drafts, schedules, audiences, authors) are their
+  editors': the conference's content roles (`editConferenceContent`) and system admins, through
+  the abilities. Everybody else gets `announcementFeed(conferenceId)`, which answers what is out
+  for the caller's own part (`feedReader`: nobody's for an AI assistant) as plain
+  `AnnouncementFeedItem`s with their attachments' URLs, pinned first, then urgent, then newest
+  (`compareFeed`). It is a live field (`smartSubscription`): publishing and taking back announce
+  `created()` / `removed()` on the announcement pubsub, a change the row's `updated(id)`.
+- **Reading is per person** (`announcement_read`, `markAnnouncementsRead`, only for what is in
+  the reader's feed) and announces nothing, or every read would make every open feed ask again.
+  The pages keep what was read in this browser (`#lib/state/announcementReads.svelte.ts`), since
+  a feed that has had a live update no longer follows the mutation's answer. The team's list
+  shows `readCount` of `recipientCount` (`announcementReach`, once per request and conference).
+- **Mails are an automatic kind without a switch** (`ANNOUNCEMENT`, `ALWAYS_AUTOMATIC_KINDS`):
+  "notify by mail" on the announcement is the decision. `loadAnnouncementMails` owes the mail to
+  everybody in the audience while the announcement is out and fresh (`owesMail`,
+  `ANNOUNCEMENT_MAIL_HOURS` from `mailSince`), keyed by announcement and `mailRevision`; "notify
+  again" raises the revision and restarts the window. Publishing starts the sweep right away
+  (`sendOpenEmailsInBackground`), the job covers scheduled ones. The mail carries the text as
+  blocks (`announcementBlocks.ts`: headings, paragraphs, lists, http links; never HTML), the
+  signature and the attachments' names. `sendAnnouncementTestMail` sends it to the editor alone.
+- **The pages**: `team/announcement` (list, `AnnouncementEditor` with `AudiencePicker` and its
+  live recipient count, `PublishDialog`), the dashboard's `AnnouncementFeed` (pinned, unread and
+  the newest), `dashboard/[conferenceId]/announcements` (all of them) and `UrgentAnnouncementBar`
+  in the header, shown on every page of the conference while an urgent one is unread.
+  `e2e/authorization/announcements.spec.ts` pins the rules down, `e2e/announcements/` the flows;
+  the dev seed's `seed-dev/announcements.ts` has every state.
 
 ### Logging
 
