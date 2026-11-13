@@ -162,7 +162,7 @@ const previewAudiences = z.array(audienceSchema).transform(normalizeAudiences);
 schemaBuilder.queryFields((t) => ({
 	announcementFeed: t.field({
 		description:
-			"The conference's announcements that are out for the caller: published, their time come and not over, with the caller in their audience. Pinned ones first, then the urgent, then the newest. Empty for somebody without a part in the conference.",
+			"The conference's announcements that are out for the caller: published, their time come and not over, with the caller in their audience. Pinned ones first, then the urgent, then the newest. Empty for somebody without a part in the conference, a visitor included.",
 		type: [FeedItemRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		// live: open pages hear of announcements coming out and being taken down; a change to one

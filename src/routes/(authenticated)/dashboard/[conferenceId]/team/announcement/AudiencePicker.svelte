@@ -14,6 +14,7 @@
 		TEAM_ROLES,
 		type Audience
 	} from '#lib/helpers/announcements';
+	import AudienceSelect from './AudienceSelect.svelte';
 	import {
 		audienceKindLabel,
 		audienceLabel,
@@ -37,16 +38,6 @@
 
 	function remove(audience: Audience) {
 		audiences = audiences.filter((other) => audienceKey(other) !== audienceKey(audience));
-	}
-
-	/** A select that adds what is picked and goes back to its placeholder. */
-	function picked(
-		event: Event & { currentTarget: HTMLSelectElement },
-		build: (value: string) => Audience
-	) {
-		const { value } = event.currentTarget;
-		event.currentTarget.value = '';
-		if (value) add(build(value));
 	}
 
 	const isSimple = (value: string): value is (typeof SIMPLE_AUDIENCES)[number] =>
@@ -81,8 +72,49 @@
 			: []
 	);
 
-	const options = (entries: ReadonlyMap<string, string>, kind: Audience['kind']) =>
+	/** What a lookup still offers: the entries not picked yet. */
+	const open = (entries: ReadonlyMap<string, string>, kind: Audience['kind']) =>
 		[...entries].filter(([id]) => !taken.has(`${kind}:${id}`));
+
+	const WHOLE_TEAM = 'ALL';
+	const groupOptions = $derived(
+		SIMPLE_AUDIENCES.filter((kind) => !taken.has(kind)).map(
+			(kind) => [kind, audienceKindLabel(kind)] as const
+		)
+	);
+	const teamOptions = $derived([
+		...(taken.has('TEAM') ? [] : [[WHOLE_TEAM, m.announcementAudienceWholeTeam()] as const]),
+		...TEAM_ROLES.filter((role) => !taken.has(`TEAM:${role}`)).map(
+			(role) => [role, translateTeamRole(role)] as const
+		)
+	]);
+	/** The selects naming something of the conference, each only while there is anything to name. */
+	const namedSelects = $derived(
+		[
+			{
+				kind: 'COMMITTEE' as const,
+				label: m.announcementAudienceAddCommittee(),
+				testId: 'audience-add-committee',
+				entries: lookups.committees,
+				build: (committeeId: string): Audience => ({ kind: 'COMMITTEE', committeeId })
+			},
+			{
+				kind: 'ROLE' as const,
+				label: m.announcementAudienceAddRole(),
+				testId: 'audience-add-role',
+				entries: lookups.roles,
+				build: (roleId: string): Audience => ({ kind: 'ROLE', roleId })
+			},
+			{
+				kind: 'SURVEY_OPTION' as const,
+				label: m.announcementAudienceAddSurveyOption(),
+				testId: 'audience-add-survey-option',
+				entries: lookups.surveyOptions,
+				build: (surveyOptionId: string): Audience => ({ kind: 'SURVEY_OPTION', surveyOptionId })
+			}
+		].filter((select) => select.entries.size > 0)
+	);
+	const breakdownText = $derived(breakdown.map((part) => `${part.count} ${part.label}`).join(', '));
 </script>
 
 <div class="flex flex-col gap-3" data-testid="audience-picker">
@@ -111,84 +143,33 @@
 	{/if}
 
 	<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-		<select
-			class="select select-sm w-full"
-			aria-label={m.announcementAudienceAddGroup()}
-			data-testid="audience-add-group"
-			onchange={(event) =>
-				picked(event, (value) => ({ kind: isSimple(value) ? value : 'EVERYONE' }))}
-		>
-			<option value="">{m.announcementAudienceAddGroup()}</option>
-			{#each SIMPLE_AUDIENCES.filter((kind) => !taken.has(kind)) as kind (kind)}
-				<option value={kind}>{audienceKindLabel(kind)}</option>
-			{/each}
-		</select>
-
-		{#if lookups.committees.size > 0}
-			<select
-				class="select select-sm w-full"
-				aria-label={m.announcementAudienceAddCommittee()}
-				data-testid="audience-add-committee"
-				onchange={(event) => picked(event, (committeeId) => ({ kind: 'COMMITTEE', committeeId }))}
-			>
-				<option value="">{m.announcementAudienceAddCommittee()}</option>
-				{#each options(lookups.committees, 'COMMITTEE') as [id, name] (id)}
-					<option value={id}>{name}</option>
-				{/each}
-			</select>
-		{/if}
-
-		{#if lookups.roles.size > 0}
-			<select
-				class="select select-sm w-full"
-				aria-label={m.announcementAudienceAddRole()}
-				onchange={(event) => picked(event, (roleId) => ({ kind: 'ROLE', roleId }))}
-			>
-				<option value="">{m.announcementAudienceAddRole()}</option>
-				{#each options(lookups.roles, 'ROLE') as [id, name] (id)}
-					<option value={id}>{name}</option>
-				{/each}
-			</select>
-		{/if}
-
-		{#if lookups.surveyOptions.size > 0}
-			<select
-				class="select select-sm w-full"
-				aria-label={m.announcementAudienceAddSurveyOption()}
-				onchange={(event) =>
-					picked(event, (surveyOptionId) => ({ kind: 'SURVEY_OPTION', surveyOptionId }))}
-			>
-				<option value="">{m.announcementAudienceAddSurveyOption()}</option>
-				{#each options(lookups.surveyOptions, 'SURVEY_OPTION') as [id, name] (id)}
-					<option value={id}>{name}</option>
-				{/each}
-			</select>
-		{/if}
-
-		<select
-			class="select select-sm w-full"
-			aria-label={m.announcementAudienceAddTeam()}
-			data-testid="audience-add-team"
-			onchange={(event) =>
-				picked(event, (value) => ({ kind: 'TEAM', teamRole: isTeamRole(value) ? value : null }))}
-		>
-			<option value="">{m.announcementAudienceAddTeam()}</option>
-			{#if !taken.has('TEAM')}
-				<option value="ALL">{m.announcementAudienceWholeTeam()}</option>
-			{/if}
-			{#each TEAM_ROLES.filter((role) => !taken.has(`TEAM:${role}`)) as role (role)}
-				<option value={role}>{translateTeamRole(role)}</option>
-			{/each}
-		</select>
+		<AudienceSelect
+			label={m.announcementAudienceAddGroup()}
+			testId="audience-add-group"
+			options={groupOptions}
+			onPick={(value) => add({ kind: isSimple(value) ? value : 'EVERYONE' })}
+		/>
+		{#each namedSelects as select (select.kind)}
+			<AudienceSelect
+				label={select.label}
+				testId={select.testId}
+				options={open(select.entries, select.kind)}
+				onPick={(id) => add(select.build(id))}
+			/>
+		{/each}
+		<AudienceSelect
+			label={m.announcementAudienceAddTeam()}
+			testId="audience-add-team"
+			options={teamOptions}
+			onPick={(value) => add({ kind: 'TEAM', teamRole: isTeamRole(value) ? value : null })}
+		/>
 	</div>
 
 	{#if counts}
 		<p class="text-sm" data-testid="audience-count" aria-live="polite">
 			<strong>{m.announcementAudienceReaches({ count: counts.total })}</strong>
-			{#if breakdown.length > 0}
-				<span class="text-base-content/70">
-					({breakdown.map((part) => `${part.count} ${part.label}`).join(', ')})
-				</span>
+			{#if breakdownText}
+				<span class="text-base-content/70">({breakdownText})</span>
 			{/if}
 		</p>
 	{/if}

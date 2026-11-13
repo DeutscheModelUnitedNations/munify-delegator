@@ -4,6 +4,7 @@
 	import EmailButton from './EmailButton.svelte';
 	import EmailParagraphs from './EmailParagraphs.svelte';
 	import EmailText from './EmailText.svelte';
+	import EmailBlocks from './EmailBlocks.svelte';
 	import { smallStyle, textStyle } from './brand';
 	import type { MailBlock } from '../announcementBlocks';
 
@@ -51,25 +52,7 @@
 		<EmailText {paragraph} />
 	{/each}
 
-	{#each blocks as block, index (index)}
-		{#if block.type === 'heading'}
-			<p style="{textStyle} font-weight: 700;">{block.text}</p>
-		{:else if block.type === 'paragraph'}
-			<EmailText paragraph={block.text} />
-		{:else if block.ordered}
-			<ol style="{textStyle} padding-left: 20px;">
-				{#each block.items as item, itemIndex (itemIndex)}
-					<li style="margin-bottom: 6px; white-space: pre-line;">{item}</li>
-				{/each}
-			</ol>
-		{:else}
-			<ul style="{textStyle} padding-left: 20px;">
-				{#each block.items as item, itemIndex (itemIndex)}
-					<li style="margin-bottom: 6px; white-space: pre-line;">{item}</li>
-				{/each}
-			</ul>
-		{/if}
-	{/each}
+	<EmailBlocks {blocks} />
 
 	{#if button}
 		<EmailButton href={button.url} label={button.label} />

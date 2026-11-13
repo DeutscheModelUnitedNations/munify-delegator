@@ -3,6 +3,7 @@ import * as schema from '#api/db/schema/index';
 import {
 	announcementState,
 	AUDIENCE_KINDS,
+	audienceInput,
 	audienceMatches,
 	audienceSchema,
 	compareFeed,
@@ -128,6 +129,24 @@ describe('normalizeAudiences', () => {
 			{ kind: 'TEAM', committeeId: null, roleId: null, surveyOptionId: null, teamRole: null },
 			{ kind: 'TEAM', committeeId: null, roleId: null, surveyOptionId: null, teamRole: 'REVIEWER' }
 		]);
+	});
+});
+
+describe('audienceInput', () => {
+	test('sends only what a block names, never a null', () => {
+		expect(audienceInput({ kind: 'EVERYONE', committeeId: null, roleId: null })).toEqual({
+			kind: 'EVERYONE',
+			committeeId: undefined,
+			roleId: undefined,
+			surveyOptionId: undefined,
+			teamRole: undefined
+		});
+		expect(audienceInput({ kind: 'COMMITTEE', committeeId: 'ga' }).committeeId).toBe('ga');
+		expect(audienceInput({ kind: 'ROLE', roleId: 'fra' }).roleId).toBe('fra');
+		expect(audienceInput({ kind: 'SURVEY_OPTION', surveyOptionId: 'bus' }).surveyOptionId).toBe(
+			'bus'
+		);
+		expect(audienceInput({ kind: 'TEAM', teamRole: 'REVIEWER' }).teamRole).toBe('REVIEWER');
 	});
 });
 

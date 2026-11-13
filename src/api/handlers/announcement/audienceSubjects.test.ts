@@ -3,7 +3,13 @@ import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#api/db/db', () => ({ db: {} }));
 
-import { countAudience, participantSubjects, type ParticipantFacts } from './audienceSubjects';
+import {
+	countAudience,
+	participantFacts,
+	participantSubjects,
+	type ParticipantFacts,
+	type ParticipantRow
+} from './audienceSubjects';
 
 const startConference = new Date('2027-03-01T08:00:00Z');
 
@@ -128,5 +134,73 @@ describe('countAudience', () => {
 			countAudience({ people, audiences: [{ kind: 'COMMITTEE', committeeId: 'ga' }] }).total
 		).toBe(1);
 		expect(countAudience({ people, audiences: [{ kind: 'TEAM' }] }).total).toBe(0);
+	});
+});
+
+describe('participantFacts', () => {
+	const row = (overrides: Partial<ParticipantRow> = {}): ParticipantRow => ({
+		id: 'p1',
+		userId: 'u1',
+		paymentStatus: 'DONE',
+		termsAndConditions: 'PENDING',
+		guardianConsent: 'PENDING',
+		mediaConsent: 'PENDING',
+		user: { birthday: null },
+		delegationMember: null,
+		singleParticipant: null,
+		conferenceSupervisor: null,
+		...overrides
+	});
+
+	test("a delegate brings their delegation's role and their own committee", () => {
+		expect(
+			participantFacts({
+				row: row({
+					delegationMember: { assignedCommitteeId: 'ga', delegation: { assignedRoleId: 'fra' } }
+				}),
+				surveyOptionIds: ['bus']
+			})
+		).toMatchObject({
+			delegation: { roleId: 'fra', committeeId: 'ga' },
+			single: null,
+			supervisor: null,
+			surveyOptionIds: ['bus'],
+			paymentStatus: 'DONE'
+		});
+	});
+
+	test('a single participant brings their role', () => {
+		expect(
+			participantFacts({
+				row: row({ singleParticipant: { assignedRoleId: 'press' } }),
+				surveyOptionIds: []
+			}).single
+		).toEqual({ roleId: 'press' });
+	});
+
+	test('a supervisor has a seated student once one of them holds a role, either way', () => {
+		const supervisor = (
+			supervised: NonNullable<ParticipantRow['conferenceSupervisor']>['supervised']
+		) =>
+			participantFacts({
+				row: row({ conferenceSupervisor: { plansOwnAttendenceAtConference: true, supervised } }),
+				surveyOptionIds: []
+			}).supervisor;
+		const unseated = {
+			delegationMember: { delegation: { assignedRoleId: null } },
+			singleParticipant: null
+		};
+		expect(supervisor([unseated])).toEqual({ plansOwnAttendance: true, studentSeated: false });
+		expect(
+			supervisor([
+				unseated,
+				{ delegationMember: { delegation: { assignedRoleId: 'fra' } }, singleParticipant: null }
+			])?.studentSeated
+		).toBe(true);
+		expect(
+			supervisor([{ delegationMember: null, singleParticipant: { assignedRoleId: 'press' } }])
+				?.studentSeated
+		).toBe(true);
+		expect(supervisor([])?.studentSeated).toBe(false);
 	});
 });

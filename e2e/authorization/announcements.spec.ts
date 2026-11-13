@@ -83,9 +83,21 @@ test('a feed holds what is out for the reader, and nothing else of the conferenc
 	expect(await feedOf(annaPage, other.conferenceId)).toEqual([]);
 });
 
-test('a visitor reads no feed', async ({ page }) => {
-	const result = await gql(page, FEED, { c: CONFERENCE });
-	expect(codeOf(result)).toBe('UNAUTHENTICATED');
+test('a visitor gets an empty feed, not an error, and marks nothing read', async ({ page }) => {
+	// the header asks on the public conference pages too
+	const feed = await gql<{ announcementFeed: FeedRow[] }>(page, FEED, { c: CONFERENCE });
+	expect(feed.errors).toBeUndefined();
+	expect(feed.data?.announcementFeed).toEqual([]);
+	const read = await gql<{ markAnnouncementsRead: FeedRow[] }>(page, READ, {
+		c: CONFERENCE,
+		ids: [seeded.welcome.id]
+	});
+	expect(read.data?.markAnnouncementsRead).toEqual([]);
+
+	// a conference page a visitor opens renders, with nothing of the announcements on it
+	const response = await page.goto(`/dashboard/${CONFERENCE}`);
+	expect(response?.status()).toBeLessThan(400);
+	await expect(page.getByTestId('urgent-announcement-bar')).toBeHidden();
 });
 
 test('the rows are the content roles’: participants and the rest of the team read none', async ({

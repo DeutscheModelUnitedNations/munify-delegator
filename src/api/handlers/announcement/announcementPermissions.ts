@@ -108,10 +108,10 @@ export async function assertCanEditAnnouncement({
 }
 
 /**
- * Whose feed a caller reads: their own. Nobody's for an AI assistant, which takes no part in a
- * conference itself. UNAUTHENTICATED for a visitor.
+ * Whose feed a caller reads: their own. Nobody's for a visitor, who gets an empty feed rather
+ * than an error (the header asks on the public conference pages too), and nobody's for an AI
+ * assistant, which takes no part in a conference itself.
  */
 export function feedReader(ctx: ApiContext) {
-	ctx.mustBeLoggedIn();
 	return callerUserId(ctx);
 }

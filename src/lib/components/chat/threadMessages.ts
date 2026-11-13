@@ -121,3 +121,24 @@ export function unreadStateOf({
 	if (!chat || side === 'REVIEW' || chat.unreadCount === 0) return null;
 	return `${chat.id}:${newestId}`;
 }
+
+/**
+ * The message the reader left off before: the oldest of the `unreadCount` latest messages that
+ * stand on the other side, which a line marks when the chat is opened. Undefined when nothing is
+ * unread or while only reviewing; the oldest loaded message when more are unread than loaded.
+ */
+export function firstUnreadId({
+	messages,
+	side,
+	chat,
+	unreadCount
+}: {
+	messages: readonly ThreadMessage[];
+	side: ChatSide;
+	chat: ThreadChat;
+	unreadCount: number;
+}) {
+	if (side === 'REVIEW' || unreadCount <= 0) return undefined;
+	const others = messages.filter((message) => !standsOnOwnSide({ message, side, chat }));
+	return others.at(-unreadCount)?.id ?? others.at(0)?.id;
+}

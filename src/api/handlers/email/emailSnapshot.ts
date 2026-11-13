@@ -538,6 +538,69 @@ export function nextCursor({
 	return following ? { part: following, after: null } : null;
 }
 
+interface PageArgs {
+	conference: EmailConference;
+	after: string | null;
+	kinds: ReadonlySet<EmailKind>;
+	now: Date;
+	size: number;
+}
+
+/** One page of each part: its snapshot, and the rows the cursor moves on by. */
+const PAGE_OF: Record<
+	EmailCursor['part'],
+	(args: PageArgs) => Promise<{ snapshot: EmailSnapshot; rows: readonly { id: string }[] }>
+> = {
+	people: async ({ conference, after, kinds, now, size }) => {
+		const participants = await loadParticipants({
+			conferenceId: conference.id,
+			after,
+			limit: size,
+			candidates: (row) => participantCandidates({ conference, kinds, now, row })
+		});
+		return {
+			snapshot: await peopleSnapshot({ conference, participants, kinds }),
+			rows: participants
+		};
+	},
+	waitingList: async ({ conference, after, size }) => {
+		const entries = await loadWaitingList({
+			conferenceId: conference.id,
+			after,
+			limit: size,
+			onlyCandidates: true
+		});
+		return {
+			snapshot: { ...emptySnapshot(conference), waitingList: toWaitingList(entries) },
+			rows: entries
+		};
+	},
+	// one page: the mails of the few announcements that are fresh, already matched to their people
+	announcements: async ({ conference, now }) => ({
+		snapshot: {
+			...emptySnapshot(conference),
+			announcementMails: await loadAnnouncementMails({ conferenceId: conference.id, now })
+		},
+		rows: []
+	}),
+	team: async ({ conference, after, kinds, size }) => {
+		const { rows, team } = await loadTeam({
+			conferenceId: conference.id,
+			after,
+			limit: size,
+			candidates: (row) => teamCandidates({ conference, kinds, id: row.id, userId: row.userId })
+		});
+		return {
+			snapshot: {
+				...emptySnapshot(conference),
+				team,
+				unreadMessages: await teamUnread({ conference, kinds, team })
+			},
+			rows
+		};
+	}
+};
+
 /**
  * One page of what the conference may owe at `now`, from `cursor` on, with the cursor of the next
  * (`null` after the last). Parts the kinds do not need are skipped, and so is every row the log
@@ -561,56 +624,14 @@ async function loadEmailPage({
 		const next = nextCursor({ cursor, rows: [], size, parts });
 		return { snapshot: emptySnapshot(conference), next };
 	}
-	const conferenceId = conference.id;
-	const { after } = cursor;
-	if (cursor.part === 'people') {
-		const participants = await loadParticipants({
-			conferenceId,
-			after,
-			limit: size,
-			candidates: (row) => participantCandidates({ conference, kinds, now, row })
-		});
-		return {
-			snapshot: await peopleSnapshot({ conference, participants, kinds }),
-			next: nextCursor({ cursor, rows: participants, size, parts })
-		};
-	}
-	if (cursor.part === 'waitingList') {
-		const entries = await loadWaitingList({
-			conferenceId,
-			after,
-			limit: size,
-			onlyCandidates: true
-		});
-		return {
-			snapshot: { ...emptySnapshot(conference), waitingList: toWaitingList(entries) },
-			next: nextCursor({ cursor, rows: entries, size, parts })
-		};
-	}
-	if (cursor.part === 'announcements') {
-		// one page: the mails of the few announcements that are fresh, already matched to their people
-		return {
-			snapshot: {
-				...emptySnapshot(conference),
-				announcementMails: await loadAnnouncementMails({ conferenceId, now })
-			},
-			next: nextCursor({ cursor, rows: [], size, parts })
-		};
-	}
-	const { rows, team } = await loadTeam({
-		conferenceId,
-		after,
-		limit: size,
-		candidates: (row) => teamCandidates({ conference, kinds, id: row.id, userId: row.userId })
+	const { snapshot, rows } = await PAGE_OF[cursor.part]({
+		conference,
+		after: cursor.after,
+		kinds,
+		now,
+		size
 	});
-	return {
-		snapshot: {
-			...emptySnapshot(conference),
-			team,
-			unreadMessages: await teamUnread({ conference, kinds, team })
-		},
-		next: nextCursor({ cursor, rows, size, parts })
-	};
+	return { snapshot, next: nextCursor({ cursor, rows, size, parts }) };
 }
 
 /** Every page of the conference from `from` on, each with its own cursor and the next one's. */
