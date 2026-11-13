@@ -5,7 +5,7 @@ description: Positions-, Arbeits- und Vorstellungspapiere schreiben, einreichen 
 
 # Papier-Hub
 
-Im Papier-Hub schreibst du die Papiere deiner Delegation, reichst sie beim Team ein und liest das Feedback dazu. Betreuende sehen dort die Papiere der Delegationen, die sie betreuen.
+Im Papier-Hub schreibst du die Papiere deiner Delegation, reichst sie beim Team ein und liest das Feedback dazu. Außerdem liest du dort die eingereichten Papiere der ganzen Konferenz. Betreuende sehen dort die Papiere der Delegationen, die sie betreuen.
 
 ## Überblick {#overview}
 
@@ -15,7 +15,7 @@ Oben wählst du zwischen den Ansichten, die zu dir passen:
 
 - **Meine Papiere:** deine eigenen Papiere und die Knöpfe für ein neues Papier. Nur für Mitglieder einer Delegation.
 - **Betreuungsansicht:** die Papiere der Delegationen, die du betreust. Nur für Betreuende (siehe [Für Betreuende](#supervisors)).
-- **Konferenz-Papiere:** die eingereichten Papiere, die du lesen darfst, nach Gremium und Tagesordnungspunkt (siehe [Wer was sieht](#who-sees-what)).
+- **Konferenz-Papiere:** alle eingereichten Papiere der Konferenz, nach Gremium und Tagesordnungspunkt. Du siehst sie, sobald die Rollen veröffentlicht sind und du einen Platz hast (siehe [Wer was sieht](#who-sees-what)).
 
 ## Papierarten {#paper-types}
 
@@ -27,7 +27,7 @@ Welche Papiere du schreiben kannst, hängt von der Rolle deiner Delegation ab:
 
 Vertritt deine Delegation einen Staat, schreibst du nur zu den Tagesordnungspunkten deines eigenen Gremiums. Ein nichtstaatlicher Akteur sitzt in keinem Gremium und wählt aus allen Tagesordnungspunkten der Konferenz.
 
-Als Einzelteilnehmende\*r schreibst du keine Papiere.
+Als Einzelteilnehmende\*r schreibst du keine Papiere. Die **Konferenz-Papiere** liest du trotzdem.
 
 ## Wann du schreiben kannst {#when-you-can-write}
 
@@ -114,13 +114,16 @@ Zwei Versionen vergleichst du so: Klicke bei einer Version auf **Mit einer ander
 - **Du** siehst alle deine Papiere mit allen Versionen und allem Feedback, Entwürfe eingeschlossen.
 - **Deine Delegation** liest deine eingereichten Papiere unter **Konferenz-Papiere**, im Lesemodus und nur in der neuesten Version. Entwürfe und Feedback sehen die anderen Mitglieder nicht.
 - **Deine Betreuenden** lesen die eingereichten Papiere deiner Delegation (siehe unten).
+- **Alle mit einem Platz auf der Konferenz** lesen dein eingereichtes Papier unter **Konferenz-Papiere**, im Lesemodus und nur in der zuletzt eingereichten Version. Das sind die Mitglieder aller Delegationen, Einzelteilnehmende mit einer Rolle und ihre Betreuenden. Sie sehen, welche Delegation das Papier geschrieben hat. Entwürfe, frühere Versionen, den Status und das Feedback sehen sie nicht, auch nicht, wer aus deiner Delegation es geschrieben hat.
 - **Das Team** liest alle Papiere der Konferenz und begutachtet die eingereichten.
+
+Die Papiere der anderen erscheinen erst, wenn das Team die Rollen veröffentlicht hat. Wer keinen Platz hat oder nicht an der Konferenz teilnimmt, sieht keine fremden Papiere.
 
 Unter **Konferenz-Papiere** findest du die Papiere nach Gremium geordnet: Zeilen sind Delegationen, Spalten die Tagesordnungspunkte. Ein Symbol steht für jedes Papier und öffnet es. Vorstellungspapiere stehen in einem eigenen Abschnitt. Mit **Nach Delegationsname suchen...** filterst du die Liste.
 
 ## Für Betreuende {#supervisors}
 
-Als Betreuer\*in liest du die eingereichten Papiere aller Delegationen, in denen jemand ist, den du betreust. Entwürfe siehst du nicht. Schreiben kannst du selbst keine Papiere.
+Als Betreuer\*in liest du die eingereichten Papiere aller Delegationen, in denen jemand ist, den du betreust. Entwürfe siehst du nicht. Schreiben kannst du selbst keine Papiere. Hat jemand von deinen Schüler\*innen einen Platz, liest du unter **Konferenz-Papiere** auch die eingereichten Papiere der anderen Delegationen, so wie sie.
 
 Die **Betreuungsansicht** zählt oben, wie viele Papiere es gibt und wie viele davon **Eingereicht**, **Überarbeitungen angefordert** und **Akzeptiert** sind. Darunter stehen die Papiere nach Delegation, mit Typ, Status, Tagesordnungspunkt, **Autor\*in** und Datum der Einreichung. Diese Ansicht erscheint, sobald du jemanden in einer Delegation betreust.
 

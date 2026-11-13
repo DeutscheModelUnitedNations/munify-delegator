@@ -15,12 +15,13 @@ import {
 	PAPER_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
 	RELEASED_MIRRORED_CONFERENCE,
+	seatedConferenceIds,
 	systemAdmin,
 	type RuleArgs,
 	type TeamRole,
 	hop
 } from '#api/services/authHelper/rules';
-import { callerFacts, liveWhere } from '#api/services/authHelper/callerFacts';
+import { callerFacts, liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { apiError } from '#api/services/errors';
@@ -73,8 +74,20 @@ export function registerPaperAbilities() {
 	// Supervisors read the submitted (non-draft) papers of the delegations they supervise.
 	abilityBuilder.paper.allow('read').when(liveWhere(submittedPaperOfSupervisedDelegation));
 
-	// Delegates read the submitted (non-draft) papers of their own delegation - nobody else's.
+	// Delegates read the submitted (non-draft) papers of their own delegation.
 	abilityBuilder.paper.allow('read').when(liveWhere(submittedPaperOfOwnDelegation));
+
+	// Everybody with a seat (`seatedConferenceIds`) reads every submitted paper of the conference,
+	// the paper hub's "conference papers". A paper tells which delegation holds which role, hence
+	// only once the assignment is released. Not who of the delegation wrote it, nor its status,
+	// which is the reviewers' verdict (and a masked non-null column cannot be selected: the
+	// conference view does not ask for it).
+	abilityBuilder.paper.allow('read').when(
+		liveRule((args) => {
+			const where = submittedPaperOfSeatConference(args);
+			return where && { where, columns: { status: false, authorParticipantId: false } };
+		})
+	);
 }
 
 /** Matches the caller's own papers; undefined for an anonymous caller. */
@@ -108,6 +121,18 @@ export async function paperOfSupervisedDelegation(ctx: ApiContext) {
 export function submittedPaperOfOwnDelegation(args: RuleArgs) {
 	const delegation = isInOwnDelegation(args);
 	return delegation && { ...delegation, status: { ne: 'DRAFT' as const } };
+}
+
+/**
+ * Matches the submitted (non-draft) papers of the conferences in which the caller has a seat
+ * (`seatedConferenceIds`). A paper has no conference of its own: its delegation's.
+ */
+export function submittedPaperOfSeatConference(args: RuleArgs) {
+	const ids = seatedConferenceIds(args);
+	return hop(ids && { conferenceId: idIn(ids) }, (delegation) => ({
+		status: { ne: 'DRAFT' as const },
+		delegation
+	}));
 }
 
 /**

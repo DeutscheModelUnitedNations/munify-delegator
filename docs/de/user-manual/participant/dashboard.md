@@ -117,7 +117,7 @@ Im Schnellzugriff findest du außerdem, sobald das Team es eingerichtet hat:
 - **Digitales Namensschild:** siehe [Digitales Namensschild](#nametag).
 - **Nachrichten:** siehe [Nachrichten](#messages).
 - **Zeitplan:** siehe [Zeitplan](#schedule).
-- **Papier-Hub:** Hier reichst du Positions-, Arbeits- und Vorstellungspapiere ein und liest die eingereichten Papiere, die du sehen darfst. Wie das geht, steht unter [Papier-Hub](./paper-hub).
+- **Papier-Hub:** Hier reichst du Positions-, Arbeits- und Vorstellungspapiere ein und liest die eingereichten Papiere der Konferenz. Wie das geht, steht unter [Papier-Hub](./paper-hub).
 - **Link zum Einreichen von Papieren:** ein Formular außerhalb von DELEGATOR, über das du Papiere einreichst, falls das Team eines hinterlegt hat.
 - **Inhaltliche Vorbereitung** und **Plätze der Konferenz:** siehe [Informationen zur Konferenz](#conference-information).
 

@@ -916,6 +916,14 @@ bun run preview
   `AssignmentPending` instead of a rejection, and the mail sync keeps role lists back. Anything new
   that reveals a role to participants has to respect the flag; `e2e/authorization/assignment-release.spec.ts`
   checks the known paths.
+- **What the seated share goes by `seatedConferenceIds`** (`authHelper/rules.ts`): the conferences
+  that have released their assignment and in which the caller's delegation, the caller as single
+  participant or someone they supervise holds a role. The paper hub's "conference papers" are
+  that: every submitted paper of the conference, of each only the latest submitted version
+  (`isLatestSubmittedVersion`), without its status (the reviewers' verdict) and author, and of the
+  delegation that wrote it only which role it holds. Drafts, earlier versions and reviews stay with
+  the author, the delegation, its supervisors and the paper team.
+  `e2e/authorization/conference-papers.spec.ts` pins it down.
 
 #### 7. Possible duplicate accounts
 

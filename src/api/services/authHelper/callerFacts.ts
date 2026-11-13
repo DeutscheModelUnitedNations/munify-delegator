@@ -85,6 +85,12 @@ export type CallerFacts = {
 	}[];
 	/** The supervisors of the delegates and single participants the caller supervises. */
 	coSupervisors: readonly { supervisorId: string; userId: string }[];
+	/**
+	 * The conferences in which the caller has a seat: their delegation or they themselves, as single
+	 * participant, hold a role there, or someone they supervise does. Whether the conference has
+	 * released its assignment is in `conferences`; the rules ask for both (`seatedConferenceIds`).
+	 */
+	seatConferenceIds: readonly string[];
 	/** The caller's papers, with their versions and who reviewed them. */
 	authoredPapers: readonly {
 		id: string;
@@ -117,6 +123,7 @@ export const NO_CALLER_FACTS: CallerFacts = {
 	ownSupervisors: [],
 	supervised: [],
 	coSupervisors: [],
+	seatConferenceIds: [],
 	authoredPapers: [],
 	conferences: new Map(),
 	publicConferenceIds: [],
@@ -204,7 +211,7 @@ function queryParticipation(userId: string) {
 				columns: { id: true, delegationId: true, isHeadDelegate: true },
 				with: {
 					delegation: {
-						columns: { applied: true },
+						columns: { applied: true, assignedRoleId: true },
 						with: {
 							members: {
 								columns: { id: true, conferenceParticipantId: true },
@@ -214,7 +221,7 @@ function queryParticipation(userId: string) {
 					}
 				}
 			},
-			singleParticipant: { columns: { id: true, applied: true } },
+			singleParticipant: { columns: { id: true, applied: true, assignedRoleId: true } },
 			conferenceSupervisor: { columns: { id: true } },
 			supervisors: {
 				columns: { id: true },
@@ -239,8 +246,11 @@ function querySupervision(supervisorIds: readonly string[]) {
 			supervised: {
 				columns: { id: true, userId: true, conferenceId: true },
 				with: {
-					delegationMember: { columns: { id: true, delegationId: true } },
-					singleParticipant: { columns: { id: true } },
+					delegationMember: {
+						columns: { id: true, delegationId: true },
+						with: { delegation: { columns: { assignedRoleId: true } } }
+					},
+					singleParticipant: { columns: { id: true, assignedRoleId: true } },
 					supervisors: {
 						columns: { id: true },
 						with: { participant: { columns: { userId: true } } }
@@ -333,6 +343,17 @@ async function loadCareDuplicates(conferenceIds: readonly string[]) {
 
 function unique<T>(values: readonly T[]) {
 	return [...new Set(values)];
+}
+
+/** Whether the registrations of a person hold a role: their delegation's, or their own. */
+function holdsSeat({
+	delegationMember,
+	singleParticipant
+}: {
+	delegationMember: { delegation: { assignedRoleId: string | null } } | null;
+	singleParticipant: { assignedRoleId: string | null } | null;
+}) {
+	return !!(delegationMember?.delegation.assignedRoleId || singleParticipant?.assignedRoleId);
 }
 
 /** The team facts from the memberships, merging the roles held per conference. */
@@ -444,6 +465,9 @@ export function participationFacts({
 				supervisorId: supervisor.id,
 				userId: supervisor.participant.userId
 			}))
+		),
+		seatConferenceIds: unique(
+			[...participation, ...supervised].filter(holdsSeat).map((person) => person.conferenceId)
 		)
 	};
 }

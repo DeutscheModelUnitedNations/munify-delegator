@@ -5,7 +5,7 @@ description: Writing, submitting and revising position, working and introduction
 
 # Paper Hub
 
-In the Paper Hub you write your delegation's papers, submit them to the team and read the feedback on them. Supervisors see the papers of the delegations they supervise there.
+In the Paper Hub you write your delegation's papers, submit them to the team and read the feedback on them. You also read the submitted papers of the whole conference there. Supervisors see the papers of the delegations they supervise there.
 
 ## Overview {#overview}
 
@@ -15,7 +15,7 @@ At the top you choose between the views that apply to you:
 
 - **My Papers:** your own papers and the buttons for a new one. Only for members of a delegation.
 - **Supervisor View:** the papers of the delegations you supervise. Only for supervisors (see [For supervisors](#supervisors)).
-- **Conference Papers:** the submitted papers you may read, by committee and agenda item (see [Who sees what](#who-sees-what)).
+- **Conference Papers:** every submitted paper of the conference, by committee and agenda item. You see them once the roles are published and you have a seat (see [Who sees what](#who-sees-what)).
 
 ## Paper types {#paper-types}
 
@@ -27,7 +27,7 @@ Which papers you can write depends on your delegation's role:
 
 If your delegation represents a state, you write only on the agenda items of your own committee. A non-state actor sits in no committee and chooses from every agenda item of the conference.
 
-As a single participant you do not write papers.
+As a single participant you do not write papers. You still read the **Conference Papers**.
 
 ## When you can write {#when-you-can-write}
 
@@ -114,13 +114,16 @@ To compare two versions, click **Compare with another version** on one version, 
 - **You** see all your papers with every version and all feedback, drafts included.
 - **Your delegation** reads your submitted papers under **Conference Papers**, in read-only mode and only in their latest version. The other members see neither drafts nor feedback.
 - **Your supervisors** read your delegation's submitted papers (see below).
+- **Everyone with a seat at the conference** reads your submitted paper under **Conference Papers**, in read-only mode and only in its latest submitted version. That is the members of every delegation, single participants with a role and their supervisors. They see which delegation wrote the paper. They see neither drafts, earlier versions, the status nor the feedback, nor who in your delegation wrote it.
 - **The team** reads every paper of the conference and reviews the submitted ones.
+
+Other people's papers appear once the team has published the roles. Without a seat, or without a part in the conference, you see nobody else's papers.
 
 Under **Conference Papers** the papers are arranged by committee: rows are delegations, columns are agenda items. Each paper is an icon that opens it. Introduction papers have a section of their own. **Search by delegation name...** filters the list.
 
 ## For supervisors {#supervisors}
 
-As a supervisor you read the submitted papers of every delegation with someone in it whom you supervise. You do not see drafts. You cannot write papers yourself.
+As a supervisor you read the submitted papers of every delegation with someone in it whom you supervise. You do not see drafts. You cannot write papers yourself. Once one of your students has a seat, you also read the other delegations' submitted papers under **Conference Papers**, as they do.
 
 At the top, the **Supervisor View** counts how many papers there are and how many of them are **Submitted**, **Revisions requested** and **Accepted**. Below, the papers are listed by delegation, with type, status, agenda item, **Author** and submission date. This view appears as soon as you supervise someone in a delegation.
 

@@ -12,7 +12,8 @@
 	let { params }: PageProps = $props();
 	const paperId = $derived(params.paperId);
 
-	// The read ability decides: participants of the conference get it once it is submitted.
+	// The read ability decides: everybody with a seat in the conference gets it once it is submitted
+	// and the assignment is released, without its status or author.
 	const paperData = $derived(
 		await client.liveQuery.paper({
 			__args: { id: paperId },
@@ -32,7 +33,7 @@
 				title: true,
 				committee: { abbreviation: true, name: true, resolutionHeadline: true }
 			},
-			// Only the latest version is shown.
+			// Only the latest version is shown; of another delegation's paper it is the only one readable.
 			versions: {
 				__args: { orderBy: { version: 'desc' }, limit: 1 },
 				id: true,

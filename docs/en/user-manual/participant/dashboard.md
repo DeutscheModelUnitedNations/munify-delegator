@@ -117,7 +117,7 @@ Once the team has set them up, the quick links also hold:
 - **Digital Nametag:** see [Digital nametag](#nametag).
 - **Messages:** see [Messages](#messages).
 - **Schedule:** see [Schedule](#schedule).
-- **Paper Hub:** where you submit position, working and introduction papers and read the submitted papers you may see. How it works is explained under [Paper Hub](./paper-hub).
+- **Paper Hub:** where you submit position, working and introduction papers and read the submitted papers of the conference. How it works is explained under [Paper Hub](./paper-hub).
 - **Link to Submit Papers:** a form outside DELEGATOR for submitting papers, if the team has set one.
 - **Preparation** and **Seats of the Conference:** see [Conference information](#conference-information).
 
