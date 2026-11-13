@@ -898,6 +898,9 @@ list header.
   `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
   in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
   (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
+- **Where the reader left off**: `ChatThread` takes `firstUnreadId` (`threadMessages.ts`) once as
+  it opens, `ChatMessages` draws the "new messages" line above that message, and the thread opens
+  there instead of at the end. The line stays until the chat is opened again.
 - **`MessagingTermsModal`**: the terms of the message service (`messagingTermsSections`). The
   composer opens it with `onAccepted` when the API asks a participant to agree before their first
   message; `MessagingTermsLink` under the participant's chat list shows them to read.

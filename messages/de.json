@@ -969,6 +969,7 @@
 	"chatUnblockedDone": "Blockierung aufgehoben.",
 	"chatUnknownRole": "Unbekannte Rolle",
 	"chatUnreadCount": "{count} ungelesen",
+	"chatUnreadDivider": "Neue Nachrichten",
 	"chatUnreadMessages": "ungelesene Nachrichten",
 	"chatUnsuspend": "Sperre aufheben",
 	"chatUnsuspendedDone": "Sperre aufgehoben.",

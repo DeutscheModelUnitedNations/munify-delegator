@@ -181,6 +181,8 @@ Bleibt eine Nachricht eine Viertelstunde ungelesen, bekommst du eine E-Mail mit 
 :::tip Wenn etwas nicht in Ordnung ist
 Vor deiner ersten Nachricht zeigt dir die App die Nutzungsbedingungen der Nachrichten. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Deine Nachricht geht erst raus, wenn du zugestimmt hast. Das gilt einmal für dein Konto. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
 
+Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
+
 Über die drei Punkte oben im Chat kannst du eine Person blockieren oder den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht.
 :::
 
