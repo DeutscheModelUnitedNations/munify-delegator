@@ -15,7 +15,7 @@ describe('helpForRoute', () => {
 	});
 
 	it('falls back to the start page for routes without help, and for no route', () => {
-		for (const routeId of ['/(authenticated)/my-account', null] as const) {
+		for (const routeId of ['/(authenticated)/team-tender', null] as const) {
 			const help = helpForRoute(routeId);
 			expect(help.manualHref).toBe(`/docs/${DEFAULT_HELP_DOCS}`);
 			expect(help.specific).toBe(false);

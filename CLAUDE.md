@@ -795,11 +795,14 @@ bun run preview
   verdict it reaches itself (`null` in a session that only records), and the check-in page reads
   `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
 - **Age limits are the conference's** (`participantMinAge`, `participantMaxAge`, `supervisorMinAge`,
-  inclusive, measured on the first conference day; empty switches one off). They only warn:
+  inclusive, measured on the first conference day; empty switches one off).
   `ageIssue` / `ageBands` (`#lib/helpers/plausibilityRules`) are the one rule, which the
   plausibility page lists people by and `myAgeNotice` answers the caller with; `AgeNotice`
   (`#lib/components/registration/`) shows it in the apply flow, on the waiting list and on the
-  dashboard. Nothing refuses a registration by age.
+  dashboard. Registering and joining a delegation are never refused by age, but an application
+  cannot be sent while one of its people is outside the limits, nor can a supervisor below theirs
+  confirm attending in person (`assertNoApplicationBlockers`,
+  `#api/services/registration/applicationReadiness.ts`); participant care can confirm it anyway.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -1159,7 +1162,9 @@ bun run preview
 - **Everything generic is MUNify CHASE's, shared through `@deutschemodelunitednations/docs-kit`**
   (repository `munify-docs-kit`): the markdown renderer (admonitions as `:::tip Title … :::`,
   `{#id}` headings, `shot:` screenshots), the docs layout and page components, the help
-  dropdown, the driver.js tour runner, the guard tests and the screenshot capture. What is
+  dropdown, the driver.js tour runner, the guard tests and the screenshot capture. The kit names
+  its icons after Font Awesome; `src/lib/docs/kitIcons.css` gives each name its Phosphor glyphs
+  (`kitIcons.test.ts` fails on a name without one). What is
   DELEGATOR's lives in `src/lib/docs/` and `scripts/docs-screenshots/`. Improve the kit rather
   than working around it here: a GitHub release `v<version>` of `munify-docs-kit` publishes it to
   npm, then bump it here and in CHASE.
