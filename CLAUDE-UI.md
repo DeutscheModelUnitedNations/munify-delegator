@@ -861,7 +861,8 @@ The announcements (see "Announcements" in CLAUDE.md) are built from `#lib/compon
 - **`AnnouncementCard`**: one announcement as readers see it. Its edge colour, icon and badge
   follow `importance` (the badge says it in words too); `read={false}` shows "New" and, with
   `onread`, a "mark as read" button. A long text is folded until opened (never for an urgent one,
-  or with `expanded`). Without `read` it is a preview, which the editor uses.
+  or with `expanded`). Without `read` it is a preview, which the editor uses. Its badges and its
+  file links are `AnnouncementBadges` and `AnnouncementAttachments`.
 - **`AnnouncementFeed`**: the caller's feed of a conference. With `limit` (the dashboard) it shows
   the pinned, the unread and the newest and links to the rest; without, all of them. Renders
   nothing without announcements unless `showEmpty`.

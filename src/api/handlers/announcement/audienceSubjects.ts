@@ -45,6 +45,69 @@ export interface ParticipantFacts {
 
 const seatOf = (person: ParticipantFacts) => person.delegation?.roleId ?? person.single?.roleId;
 
+type Conference = { assignmentReleased: boolean; startConference: Date };
+
+/** How a participant row takes part; `undefined` for one that outlived its registration. */
+function partOf(person: ParticipantFacts) {
+	if (person.delegation) return 'DELEGATE' as const;
+	if (person.single) return 'SINGLE' as const;
+	if (person.supervisor) return 'SUPERVISOR' as const;
+	return undefined;
+}
+
+/** Whether the person's paperwork is in, with the guardian's consent for a minor. */
+const postalDone = ({ person, ofAge }: { person: ParticipantFacts; ofAge: boolean }) =>
+	getSimplifiedPostalStatus({
+		participantStatus: {
+			termsAndConditions: person.termsAndConditions,
+			guardianConsent: person.guardianConsent,
+			mediaConsent: person.mediaConsent
+		},
+		ofAge
+	}) === 'DONE';
+
+const WITHOUT_SEAT = { seated: false, roleId: null, committeeId: null } as const;
+
+/** A supervisor who comes to the conference themselves, with a student who holds a seat. */
+function comesAlong({ supervisor }: ParticipantFacts) {
+	return !!supervisor && supervisor.plansOwnAttendance && supervisor.studentSeated;
+}
+
+/** What the audiences ask about a seat, all empty until the assignment is released. */
+function seatFacts({ person, released }: { person: ParticipantFacts; released: boolean }) {
+	if (!released) return WITHOUT_SEAT;
+	const roleId = seatOf(person);
+	if (!roleId) return { ...WITHOUT_SEAT, seated: comesAlong(person) };
+	return { seated: true, roleId, committeeId: person.delegation?.committeeId ?? null };
+}
+
+function subjectOf({
+	person,
+	part,
+	conference
+}: {
+	person: ParticipantFacts;
+	part: NonNullable<ReturnType<typeof partOf>>;
+	conference: Conference;
+}): AudienceSubject {
+	const ofAge = person.birthday
+		? ofAgeAtConference({
+				startConference: conference.startConference,
+				dateOfBirth: person.birthday
+			})
+		: null;
+	const seat = seatFacts({ person, released: conference.assignmentReleased });
+	return {
+		part,
+		...seat,
+		surveyOptionIds: person.surveyOptionIds,
+		paymentOpen: seat.seated && person.paymentStatus !== 'DONE',
+		paperworkOpen: seat.seated && !postalDone({ person, ofAge: ofAge ?? false }),
+		ofAge,
+		teamRoles: []
+	};
+}
+
 /**
  * The subjects of a conference's participants. Before the assignment is released nobody holds a
  * seat as far as the audiences are concerned.
@@ -54,54 +117,80 @@ export function participantSubjects({
 	conference
 }: {
 	participants: readonly ParticipantFacts[];
-	conference: { assignmentReleased: boolean; startConference: Date };
+	conference: Conference;
 }): AudiencePerson[] {
-	const { assignmentReleased: released, startConference } = conference;
 	return participants.flatMap((person) => {
-		const part = person.delegation
-			? ('DELEGATE' as const)
-			: person.single
-				? ('SINGLE' as const)
-				: person.supervisor
-					? ('SUPERVISOR' as const)
-					: undefined;
-		// a participant row outlives its registration
-		if (!part) return [];
-		const ofAge = person.birthday
-			? ofAgeAtConference({ startConference, dateOfBirth: person.birthday })
-			: null;
-		const seat = released ? seatOf(person) : undefined;
-		const comesAlong =
-			released && !!person.supervisor?.plansOwnAttendance && person.supervisor.studentSeated;
-		const seated = !!seat || comesAlong;
-		const postalDone =
-			getSimplifiedPostalStatus({
-				participantStatus: {
-					termsAndConditions: person.termsAndConditions,
-					guardianConsent: person.guardianConsent,
-					mediaConsent: person.mediaConsent
-				},
-				ofAge: ofAge ?? false
-			}) === 'DONE';
-		return [
-			{
-				userId: person.userId,
-				participantId: person.id,
-				teamMemberId: null,
-				subject: {
-					part,
-					seated,
-					committeeId: seat ? (person.delegation?.committeeId ?? null) : null,
-					roleId: seat ?? null,
-					surveyOptionIds: person.surveyOptionIds,
-					paymentOpen: seated && person.paymentStatus !== 'DONE',
-					paperworkOpen: seated && !postalDone,
-					ofAge,
-					teamRoles: []
-				}
-			}
-		];
+		const part = partOf(person);
+		return part
+			? [
+					{
+						userId: person.userId,
+						participantId: person.id,
+						teamMemberId: null,
+						subject: subjectOf({ person, part, conference })
+					}
+				]
+			: [];
 	});
+}
+
+/** A participant row as it is loaded, for `participantFacts`. */
+export interface ParticipantRow {
+	id: string;
+	userId: string;
+	paymentStatus: Status;
+	termsAndConditions: Status;
+	guardianConsent: Status;
+	mediaConsent: Status;
+	user: { birthday: Date | null };
+	delegationMember: {
+		assignedCommitteeId: string | null;
+		delegation: { assignedRoleId: string | null };
+	} | null;
+	singleParticipant: { assignedRoleId: string | null } | null;
+	conferenceSupervisor: {
+		plansOwnAttendenceAtConference: boolean;
+		supervised: {
+			delegationMember: { delegation: { assignedRoleId: string | null } } | null;
+			singleParticipant: { assignedRoleId: string | null } | null;
+		}[];
+	} | null;
+}
+
+const holdsSeat = (
+	student: NonNullable<ParticipantRow['conferenceSupervisor']>['supervised'][number]
+) =>
+	!!student.delegationMember?.delegation.assignedRoleId ||
+	!!student.singleParticipant?.assignedRoleId;
+
+/** The row as the subjects are built from it, with the survey options the person picked. */
+export function participantFacts({
+	row,
+	surveyOptionIds
+}: {
+	row: ParticipantRow;
+	surveyOptionIds: readonly string[];
+}): ParticipantFacts {
+	const { delegationMember: member, singleParticipant: single, conferenceSupervisor } = row;
+	return {
+		id: row.id,
+		userId: row.userId,
+		birthday: row.user.birthday,
+		paymentStatus: row.paymentStatus,
+		termsAndConditions: row.termsAndConditions,
+		guardianConsent: row.guardianConsent,
+		mediaConsent: row.mediaConsent,
+		delegation: member && {
+			roleId: member.delegation.assignedRoleId,
+			committeeId: member.assignedCommitteeId
+		},
+		single: single && { roleId: single.assignedRoleId },
+		supervisor: conferenceSupervisor && {
+			plansOwnAttendance: conferenceSupervisor.plansOwnAttendenceAtConference,
+			studentSeated: conferenceSupervisor.supervised.some(holdsSeat)
+		},
+		surveyOptionIds
+	};
 }
 
 const NO_SEAT = {
@@ -185,33 +274,12 @@ export async function loadAudiencePeople({
 	const optionsOf = Map.groupBy(answers, (answer) => answer.conferenceParticipantId);
 	const people = participantSubjects({
 		conference,
-		participants: participants.map((row) => ({
-			id: row.id,
-			userId: row.userId,
-			birthday: row.user.birthday,
-			paymentStatus: row.paymentStatus,
-			termsAndConditions: row.termsAndConditions,
-			guardianConsent: row.guardianConsent,
-			mediaConsent: row.mediaConsent,
-			delegation: row.delegationMember
-				? {
-						roleId: row.delegationMember.delegation.assignedRoleId,
-						committeeId: row.delegationMember.assignedCommitteeId
-					}
-				: null,
-			single: row.singleParticipant ? { roleId: row.singleParticipant.assignedRoleId } : null,
-			supervisor: row.conferenceSupervisor
-				? {
-						plansOwnAttendance: row.conferenceSupervisor.plansOwnAttendenceAtConference,
-						studentSeated: row.conferenceSupervisor.supervised.some(
-							(student) =>
-								!!student.delegationMember?.delegation.assignedRoleId ||
-								!!student.singleParticipant?.assignedRoleId
-						)
-					}
-				: null,
-			surveyOptionIds: (optionsOf.get(row.id) ?? []).map((answer) => answer.optionId)
-		}))
+		participants: participants.map((row) =>
+			participantFacts({
+				row,
+				surveyOptionIds: (optionsOf.get(row.id) ?? []).map((answer) => answer.optionId)
+			})
+		)
 	});
 
 	// somebody with a registration is a participant, whatever the waiting list still says
