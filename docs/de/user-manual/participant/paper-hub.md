@@ -47,7 +47,7 @@ Bis wann Papiere eingereicht sein sollen, legt das Team fest und teilt es dir mi
 3. Schreibe den Text im Editor. Unter dem Editor zählt DELEGATOR Wörter, Zeichen und Absätze und schätzt die Lesezeit.
 4. Klicke auf **Entwurf speichern**, um später weiterzuschreiben, oder auf **Papier einreichen**, um es dem Team zu geben. Danach kommst du zurück zur Übersicht.
 
-Ohne Tagesordnungspunkt oder ohne Text speichert DELEGATOR nichts und sagt dir, was fehlt.
+Ohne Text speichert DELEGATOR nichts, bei Positions- und Arbeitspapieren auch nicht ohne Tagesordnungspunkt. Es sagt dir, was fehlt.
 
 :::tip Nichts geht verloren
 Solange du ein neues Papier schreibst, merkt sich dein Browser den Text jede Sekunde. Schließt du den Tab versehentlich, fragt DELEGATOR beim nächsten Öffnen unter **Ungespeicherter Entwurf gefunden**, ob du ihn wiederherstellen willst (**Entwurf wiederherstellen**) oder **Neu beginnen** möchtest. Das gilt nur in diesem Browser und für sieben Tage.
@@ -59,7 +59,7 @@ Ein Arbeitspapier schreibst du im Resolutionseditor. Er setzt den Kopf der Resol
 
 ## Entwurf oder einreichen {#drafts-and-submitting}
 
-Ein **Entwurf** gehört nur dir. Niemand sonst aus deiner Delegation sieht ihn, und das Team begutachtet ihn nicht. Erst ein eingereichtes Papier liest das Team.
+Ein **Entwurf** gehört nur dir. Niemand sonst aus deiner Delegation sieht ihn. Das Team kann ihn lesen, begutachtet ihn aber erst nach der Einreichung.
 
 So arbeitest du an einem bestehenden Papier weiter:
 

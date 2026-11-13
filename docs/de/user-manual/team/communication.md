@@ -45,7 +45,7 @@ Unter **Zielgruppe** fügst du Gruppen über die Auswahlfelder hinzu. Wer zu min
 - **Umfrage-Antwort hinzufügen …**: alle, die in einer Umfrage diese Antwort gewählt haben.
 - **Team hinzufügen …**: das **Ganze Team** oder alle mit einer Teamrolle. Das Team erreichst du nur über diese Auswahl, nie über die anderen Gruppen.
 
-**Alle Teilnehmenden** umfasst Delegierte, Einzelteilnehmende, Betreuende und alle, die noch auf der Warteliste stehen. Minderjährig und volljährig zählen am ersten Konferenztag. Wer kein Geburtsdatum hinterlegt hat, gehört zu keiner der beiden Gruppen.
+**Alle Teilnehmenden** sind während der Anmeldung alle Angemeldeten und die Warteliste. Ab der Vorbereitungsphase mit freigegebener Zuteilung sind es nur noch alle mit Platz und ihre Betreuenden. Wer keinen Platz bekommen hat oder noch wartet, erreichst du dann über **Bewerber\*innen ohne Platz** und **Warteliste**. Minderjährig und volljährig zählen am ersten Konferenztag. Wer kein Geburtsdatum hinterlegt hat, gehört zu keiner der beiden Gruppen.
 
 Unter der Auswahl steht, wie viele Personen die Zielgruppe gerade erreicht, aufgeteilt nach Delegierten, Einzelteilnehmenden, Betreuenden, Warteliste und Team. Die Zahl ändert sich mit den Anmeldungen. Wer später zur Zielgruppe stößt, sieht die Ankündigung ab dann auch.
 
@@ -109,7 +109,7 @@ Das Team antwortet aus Postfächern, die es gemeinsam betreut. Alle, die ein Pos
 Funktionen vergeben **Projektleitung** und **Teamkoordinator\*in** auf der Seite [Teammanagement](./overview#team-management). Das Hammer-Symbol **Funktionen** in der Zeile einer Person öffnet **Funktionen von …**: Dort kreuzt du je Gremium **Vorsitz** und **Gremienberatung** an oder machst die Person zur **Vertrauensperson** der ganzen Konferenz. Wer kein Postfach betreut, sieht auf der Seite **Nachrichten** nur einen Hinweis darauf.
 
 :::note Vertrauenspersonen
-Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
+Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Einzige Ausnahme ist die [Stellvertretung](./overview#impersonation): Wer stellvertretend für eine teilnehmende Person handelt, sieht deren Chats wie sie selbst, auch die mit den Vertrauenspersonen. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
 :::
 
 ### Wer wem schreiben kann

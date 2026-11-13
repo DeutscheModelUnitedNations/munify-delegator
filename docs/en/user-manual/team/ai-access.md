@@ -51,6 +51,7 @@ It can change much of what the team's pages change, with one tool for each actio
 - the committees and seats of individual delegates
 - the schedule with its days, tracks, entries and places
 - surveys and their options
+- [announcements](./communication#announcements): writing, changing, duplicating, publishing, taking back and mailing again. It creates drafts freely and previews everything else first. Deleting stays in the team area.
 - participant statuses, their school, payments and waiting list entries
 - decisions about possible duplicate accounts
 - the conference's settings
@@ -66,4 +67,4 @@ An assistant does not run right away what reaches people outside the team. That 
 
 **Log** lists every call an assistant made about this conference, the latest 200 first: **Time**, **Person**, **Tool**, **Outcome** (**Done**, **Refused** or **Error**) and **Details** with what the call passed. New calls show up without reloading. A preview is listed too, as **Done**.
 
-**Refused** means DELEGATOR declined the call, for example because the assistant tried to filter by redacted details, an input was invalid or the person's roles were not enough. **Error** means something unexpected went wrong. Questions about no conference, such as which conferences are reachable, are not in the log. When someone not on the team, or anyone while the switch is off, tries to reach the conference, DELEGATOR refuses without an entry here.
+**Refused** means DELEGATOR declined the call, for example because the assistant tried to filter by redacted details, an input was invalid or the person's roles were not enough. **Error** means something unexpected went wrong. Questions about no conference, such as which conferences are reachable, are not in the log. When someone who is neither on the team nor a system administrator, or anyone while the switch is off, tries to reach the conference, DELEGATOR refuses without an entry here.

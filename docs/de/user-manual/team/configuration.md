@@ -127,7 +127,7 @@ Die Karten unter **Schnellzugriff** auf dem Dashboard der Teilnehmenden, etwa **
 
 - **Zahlungen erlauben**: Teilnehmende sehen, [wie und wohin sie zahlen](../participant/dashboard#payment). Für alle mit Platz, die noch nicht bezahlt haben, wird die E-Mail **Teilnahmebeitrag freigeschaltet** fällig, nach der Freigabe der Zuteilung. Offene Zahlungen nennt außerdem die Erinnerung 14 Tage vor der Konferenz.
 - **Postalische Anmeldungen erlauben**: Teilnehmende laden ihre [postalische Anmeldung](../participant/dashboard#postal-registration) herunter. Das klappt nur, wenn alle vier [Vorlagen](#documents) hinterlegt sind. Für alle mit Platz, deren Unterlagen noch nicht vollständig sind, wird **Postalische Anmeldung freigeschaltet** fällig.
-- **Papier-Einreichung geöffnet**: Teilnehmende legen im [Papier-Hub](./paper-hub) Papiere zu den Themen ihrer Gremien an und speichern neue Fassungen. Ist der Schalter aus, lehnt DELEGATOR beides ab mit „Papier kann nicht eingereicht werden, weil das Papier-Postfach geschlossen ist.“, und der **Papier-Hub** fehlt im Schnellzugriff.
+- **Papier-Einreichung geöffnet**: Teilnehmende legen im [Papier-Hub](../participant/paper-hub) Papiere zu den Themen ihrer Gremien an und speichern neue Fassungen. Ist der Schalter aus, lehnt DELEGATOR beides ab mit „Papier kann nicht eingereicht werden, weil das Papier-Postfach geschlossen ist.“, und der **Papier-Hub** fehlt im Schnellzugriff.
 - **Kalender für Teilnehmende anzeigen**: Teilnehmende sehen den [Zeitplan](./communication#calendar). Das Team sieht ihn immer.
 - **Nachrichten zwischen Teilnehmenden und Team**: schaltet die [Nachrichten](./communication#messages) frei. Ausgeschaltet bleiben bestehende Chats lesbar, aber niemand schreibt mehr Neues.
 

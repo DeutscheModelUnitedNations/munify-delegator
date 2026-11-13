@@ -19,6 +19,7 @@ import {
 
 const subject = (overrides: Partial<AudienceSubject> = {}): AudienceSubject => ({
 	part: 'DELEGATE',
+	everyone: true,
 	seated: false,
 	committeeId: null,
 	roleId: null,
@@ -45,6 +46,14 @@ describe('audienceMatches', () => {
 		for (const part of ['DELEGATE', 'SINGLE', 'SUPERVISOR', 'WAITING_LIST'] as const)
 			expect(matches({ kind: 'EVERYONE' }, { part })).toBe(true);
 		expect(matches({ kind: 'EVERYONE' }, { part: 'TEAM', teamRoles: ['MEMBER'] })).toBe(false);
+	});
+
+	test('everyone leaves out whoever has no part once the seats are settled', () => {
+		expect(matches({ kind: 'EVERYONE' }, { everyone: false })).toBe(false);
+		expect(matches({ kind: 'EVERYONE' }, { part: 'WAITING_LIST', everyone: false })).toBe(false);
+		// the other kinds still reach them
+		expect(matches({ kind: 'WAITING_LIST' }, { part: 'WAITING_LIST', everyone: false })).toBe(true);
+		expect(matches({ kind: 'APPLICANTS' }, { everyone: false })).toBe(true);
 	});
 
 	test('the kinds of participants', () => {

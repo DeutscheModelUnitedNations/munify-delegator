@@ -159,7 +159,7 @@
 	"announcementAudienceDelegates": "Delegierte",
 	"announcementAudienceEveryone": "Alle Teilnehmenden",
 	"announcementAudienceGone": "nicht mehr vorhanden",
-	"announcementAudienceHint": "Wer zu mindestens einer der Gruppen gehört, sieht die Ankündigung. Gremien, Rollen, „mit Platz“ und offene Formalitäten gelten für Teilnehmende erst, wenn die Zuteilung veröffentlicht ist.",
+	"announcementAudienceHint": "Wer zu mindestens einer der Gruppen gehört, sieht die Ankündigung. Gremien, Rollen, „mit Platz“ und offene Formalitäten gelten für Teilnehmende erst, wenn die Zuteilung veröffentlicht ist. „Alle Teilnehmenden“ sind ab der Vorbereitungsphase mit veröffentlichter Zuteilung nur noch alle mit Platz und ihre Betreuenden. Wer keinen Platz bekommen hat oder noch wartet, erreichst du dann über „Bewerber*innen ohne Platz“ und „Warteliste“.",
 	"announcementAudienceIncomplete": "Bei einem Gremium, einer Rolle oder einer Umfrage-Antwort als Zielgruppe muss angegeben sein, welche gemeint ist.",
 	"announcementAudienceMinors": "Minderjährige",
 	"announcementAudiencePaperworkOpen": "Postanmeldung offen",

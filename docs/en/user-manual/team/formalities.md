@@ -91,7 +91,7 @@ The **Media Status** says what the person ticked on the media usage agreement. I
 1. Open **Postal Registration**. You can scan with the camera, with a hand scanner that types into the search field, or search by name, email or ID.
 2. Scan the QR code on one page of the letter. Next to the scanner, the person opens with their name, birthday and all statuses. Compare them with the letter.
 3. If all required documents are there and signed and the person allows photos without restriction, click **Confirm all** (Alt+A). This sets **Binding Registration** and **Media Usage Agreement** to **Done**, for minors the **Parental Agreement** too, and the **Media Status** to **Photos allowed without restriction**.
-4. If the person restricted photos, set the **Media Status** on its own afterwards: Alt+1 for no photos, Alt+2 for partially, Alt+3 for without restriction.
+4. If the person restricted photos, set the documents to **Done** one by one and then the **Media Status**: Alt+1 for no photos, Alt+2 for partially, Alt+3 for without restriction.
 5. If the person has no **Document number** yet, the field is already open. **Save next number** (Alt+N) gives the number after the highest one in the conference. You can also enter one yourself and save it.
 6. If a document is missing or faulty, set only that one to **Problem** and the others to **Done** one by one.
 7. Esc closes the person, and the scanner is ready for the next letter.

@@ -45,7 +45,7 @@ Under **Audience** you add groups through the select fields. Whoever is in at le
 - **Add a survey answer …**: everybody who picked that answer in a survey.
 - **Add the team …**: the **Whole team** or everybody with one team role. You reach the team only through this select, never through the other groups.
 
-**All participants** covers delegates, single participants, supervisors and everybody still on the waiting list. Minors and adults are counted on the first day of the conference. Somebody without a birthday on record is in neither group.
+**All participants** are everybody registered and the waiting list while people register. From the preparation stage on, with the assignment released, they are only those with a seat and their supervisors. Whoever got no seat or is still waiting is then reached through **Applicants without a seat** and **Waiting list**. Minors and adults are counted on the first day of the conference. Somebody without a birthday on record is in neither group.
 
 Below the selection you see how many people the audience reaches right now, split into delegates, single participants, supervisors, waiting list and team. The number follows the registrations. Whoever joins the audience later sees the announcement from then on too.
 
@@ -109,7 +109,7 @@ The team answers from inboxes it shares. Everyone answering an inbox reads along
 **Project Management** and **Team Coordinator** hand out functions on the [Team Management](./overview#team-management) page. The gavel icon **Functions** in a person's row opens **Functions of …**: there you tick **Chairs** and **Committee consultants** per committee, or make the person a **Trusted person** of the whole conference. Whoever answers no inbox only sees a hint about this on the **Messages** page.
 
 :::note Trusted persons
-Participants write to the trusted persons all together or to one of them by name. All trusted persons read the shared chat, only the person addressed reads a personal one. Nobody else reads along, not participant care, not project management and not system administrators. Trusted persons see participants by their role only, never by name. These chats cannot be reported.
+Participants write to the trusted persons all together or to one of them by name. All trusted persons read the shared chat, only the person addressed reads a personal one. Nobody else reads along, not participant care, not project management and not system administrators. The one exception is [impersonation](./overview#impersonation): whoever acts as a participant sees that person's chats as they do, those with the trusted persons included. Trusted persons see participants by their role only, never by name. These chats cannot be reported.
 :::
 
 ### Who can write to whom

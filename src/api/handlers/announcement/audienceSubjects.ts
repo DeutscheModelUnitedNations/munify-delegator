@@ -45,7 +45,24 @@ export interface ParticipantFacts {
 
 const seatOf = (person: ParticipantFacts) => person.delegation?.roleId ?? person.single?.roleId;
 
-type Conference = { assignmentReleased: boolean; startConference: Date };
+type ConferenceState = (typeof schema.conferenceState.enumValues)[number];
+type Conference = { state: ConferenceState; assignmentReleased: boolean; startConference: Date };
+
+const SEATS_SETTLED: readonly ConferenceState[] = ['PREPARATION', 'ACTIVE', 'POST'];
+
+/**
+ * Whether "everyone" has narrowed to the people with a part in the conference: once it prepares
+ * and the assignment is released. Before the release it stays everybody, or getting an
+ * announcement would tell who holds a seat.
+ */
+export const everyoneIsSeated = ({
+	state,
+	assignmentReleased
+}: Omit<Conference, 'startConference'>) => assignmentReleased && SEATS_SETTLED.includes(state);
+
+/** Holds a seat, or supervises somebody who does (coming along or not). */
+const hasPart = ({ person, seated }: { person: ParticipantFacts; seated: boolean }) =>
+	seated || !!person.supervisor?.studentSeated;
 
 /** How a participant row takes part; `undefined` for one that outlived its registration. */
 function partOf(person: ParticipantFacts) {
@@ -99,6 +116,7 @@ function subjectOf({
 	const seat = seatFacts({ person, released: conference.assignmentReleased });
 	return {
 		part,
+		everyone: !everyoneIsSeated(conference) || hasPart({ person, seated: seat.seated }),
 		...seat,
 		surveyOptionIds: person.surveyOptionIds,
 		paymentOpen: seat.seated && person.paymentStatus !== 'DONE',
@@ -215,7 +233,7 @@ export async function loadAudiencePeople({
 }): Promise<AudiencePerson[] | undefined> {
 	const conference = await db.query.conference.findFirst({
 		where: { id: conferenceId },
-		columns: { assignmentReleased: true, startConference: true }
+		columns: { state: true, assignmentReleased: true, startConference: true }
 	});
 	if (!conference) return undefined;
 	const own = userId ? { userId } : {};
@@ -296,6 +314,8 @@ export async function loadAudiencePeople({
 				subject: {
 					...NO_SEAT,
 					part: 'WAITING_LIST' as const,
+					// whoever still waits holds no seat
+					everyone: !everyoneIsSeated(conference),
 					ofAge: entry.user.birthday
 						? ofAgeAtConference({
 								startConference: conference.startConference,
@@ -312,6 +332,7 @@ export async function loadAudiencePeople({
 			subject: {
 				...NO_SEAT,
 				part: 'TEAM' as const,
+				everyone: false,
 				ofAge: null,
 				teamRoles: memberships.map((membership) => membership.role)
 			}

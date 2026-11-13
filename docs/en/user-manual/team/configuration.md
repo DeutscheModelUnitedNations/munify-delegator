@@ -127,7 +127,7 @@ The cards under **Quick Links** on the participants' dashboard, such as **Fee Pa
 
 - **Allow Payments**: participants see [how and where to pay](../participant/dashboard#payment). For everyone with a seat who has not paid yet, the email **Participation fee unlocked** becomes due once the assignment is released. Open payments are also named in the reminder 14 days before the conference.
 - **Allow Postal Registration**: participants download their [postal registration](../participant/dashboard#postal-registration). This only works when all four [templates](#documents) are stored. For everyone with a seat whose documents are not complete yet, **Postal registration unlocked** becomes due.
-- **Paper Submission Open**: participants create papers on their committees' agenda items in the [Paper Hub](./paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
+- **Paper Submission Open**: participants create papers on their committees' agenda items in the [Paper Hub](../participant/paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
 - **Show calendar for participants**: participants see the [schedule](./communication#calendar). The team always sees it.
 - **Messages between participants and team**: unlocks the [messages](./communication#messages). Switched off, existing chats stay readable, but nobody writes anything new.
 
