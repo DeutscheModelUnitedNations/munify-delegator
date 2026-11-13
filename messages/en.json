@@ -159,7 +159,7 @@
 	"announcementAudienceDelegates": "Delegates",
 	"announcementAudienceEveryone": "All participants",
 	"announcementAudienceGone": "no longer there",
-	"announcementAudienceHint": "Whoever is in at least one of the groups sees the announcement. Committees, roles, \"seated\" and open paperwork apply to participants only once the assignment is released.",
+	"announcementAudienceHint": "Whoever is in at least one of the groups sees the announcement. Committees, roles, \"seated\" and open paperwork apply to participants only once the assignment is released. From the preparation stage on, with the assignment released, \"All participants\" are only those with a seat and their supervisors. Whoever got no seat or is still waiting is then reached through \"Applicants without a seat\" and \"Waiting list\".",
 	"announcementAudienceIncomplete": "A committee, role or survey answer as audience has to say which one is meant.",
 	"announcementAudienceMinors": "Minors",
 	"announcementAudiencePaperworkOpen": "Paperwork open",

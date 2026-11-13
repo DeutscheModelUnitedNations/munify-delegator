@@ -84,7 +84,11 @@ export const announcement = snakeCase.table(
  * role, `SEATED`, open paperwork) match participants only once the assignment is released.
  */
 export const announcementAudienceKind = pgEnum('announcement_audience_kind', [
-	/** Every participant: delegates, single participants, supervisors and the waiting list. */
+	/**
+	 * Every participant: delegates, single participants, supervisors and the waiting list. Once
+	 * the conference prepares and its assignment is released, only those with a part in it: who
+	 * holds a seat, and the supervisors of somebody who does.
+	 */
 	'EVERYONE',
 	'DELEGATES',
 	'SINGLE_PARTICIPANTS',

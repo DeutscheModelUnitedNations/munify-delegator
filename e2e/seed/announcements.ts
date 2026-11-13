@@ -10,6 +10,9 @@
  * - the team: participant care, a reviewer and a plain member
  * - Olga Ohne, who has no part in the conference
  *
+ * With the seats released, "everyone" is the three delegates; the supervisor and the waiting list
+ * are only reached by the audiences naming them.
+ *
  * Every run starts with the same announcements (`ANNOUNCEMENTS`): one for everybody (pinned),
  * one for GV (important), one for supervisors, one for the team, a draft, a scheduled and an
  * expired one, and nothing read. There are two such conferences with people of their own

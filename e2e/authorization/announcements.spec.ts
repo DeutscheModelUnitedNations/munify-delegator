@@ -74,9 +74,10 @@ test('a feed holds what is out for the reader, and nothing else of the conferenc
 	const annaPage = await signedIn(browser, anna.id);
 	expect(idsOf(await feedOf(annaPage))).toEqual([seeded.gv.id, seeded.welcome.id].toSorted());
 	expect(idsOf(await feedOf(await signedIn(browser, bert.id)))).toEqual([seeded.welcome.id]);
-	expect(idsOf(await feedOf(await signedIn(browser, supervisor.id)))).toEqual(
-		[seeded.supervisors.id, seeded.welcome.id].toSorted()
-	);
+	// the seats are released, and the supervisor has no student with one: not in "everyone"
+	expect(idsOf(await feedOf(await signedIn(browser, supervisor.id)))).toEqual([
+		seeded.supervisors.id
+	]);
 	expect(idsOf(await feedOf(await signedIn(browser, member.id)))).toEqual([seeded.team.id]);
 	expect(await feedOf(await signedIn(browser, outsider.id))).toEqual([]);
 	// a part in one conference gives nothing in another
@@ -187,13 +188,15 @@ test('the audience count counts each person once and the team apart', async ({ b
 			})
 		).data?.announcementAudiencePreview;
 
+	// with the seats released, "everyone" is the three delegates who hold one
 	expect(await preview([{ kind: 'EVERYONE' }])).toEqual({
-		total: 5,
+		total: 3,
 		delegates: 3,
-		supervisors: 1,
+		supervisors: 0,
 		team: 0,
-		waitingList: 1
+		waitingList: 0
 	});
+	expect((await preview([{ kind: 'EVERYONE' }, { kind: 'WAITING_LIST' }]))?.total).toBe(4);
 	// Anna and Carla sit in GV and are delegates: counted once
 	expect(
 		(await preview([{ kind: 'DELEGATES' }, { kind: 'COMMITTEE', committeeId: fixture.gvId }]))

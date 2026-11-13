@@ -51,6 +51,7 @@ It can change much of what the team's pages change, with one tool for each actio
 - the committees and seats of individual delegates
 - the schedule with its days, tracks, entries and places
 - surveys and their options
+- [announcements](./communication#announcements): writing, changing, duplicating, publishing, taking back and mailing again. It creates drafts freely and previews everything else first. Deleting stays in the team area.
 - participant statuses, their school, payments and waiting list entries
 - decisions about possible duplicate accounts
 - the conference's settings

@@ -30,6 +30,7 @@ import {
 } from './announcementService';
 import { sendOpenEmailsInBackground } from '#api/handlers/email/emailSweep';
 import { sendAnnouncementTestMail } from '#api/handlers/email/announcementTestEmail';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerAnnouncementAbilities();
 
@@ -197,6 +198,9 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
+/** What an announcement says is about the conference, never about a person. */
+const TEXT_ARGUMENTS = ['title', 'body', 'signature'];
+
 const textArgs = {
 	title: 'The headline.',
 	body: 'Markdown.',
@@ -205,6 +209,7 @@ const textArgs = {
 
 schemaBuilder.mutationFields((t) => ({
 	createAnnouncement: t.drizzleField({
+		extensions: mcpTool({ textArguments: TEXT_ARGUMENTS }),
 		description:
 			"Writes a new announcement as a draft (the conference's content roles: project management, participant care, content lead; FORBIDDEN otherwise). It needs at least one audience block; a committee, role or survey option of another conference is refused with INVALID_INPUT. Attachments are uploaded through `requestFileUpload` (`announcement`/`attachment`) first.",
 		type: AnnouncementRef,
@@ -253,6 +258,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateAnnouncement: t.drizzleField({
+		extensions: mcpTool({ textArguments: TEXT_ARGUMENTS, outward: true }),
 		description:
 			'Changes the given fields of an announcement; left out keeps a field, `null` clears `signature` and `visibleUntil`. `audiences` and `attachmentFileIds` each replace the whole list. Changing the title or text of an announcement that is out marks it as edited for its readers.',
 		type: AnnouncementRef,
@@ -298,6 +304,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	publishAnnouncement: t.drizzleField({
+		extensions: mcpTool({ outward: true }),
 		description:
 			'Publishes an announcement to its audience: right away, or from `publishAt` on when that lies ahead (a scheduled one). With `notifyByMail` its audience is mailed once it is out. CONFLICT for one that is published already.',
 		type: AnnouncementRef,
@@ -316,6 +323,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	withdrawAnnouncement: t.drizzleField({
+		extensions: mcpTool({ outward: true }),
 		description:
 			'Takes an announcement away from its audience: back to a draft, or with `archive` into the archive, which only its editors see.',
 		type: AnnouncementRef,
@@ -330,6 +338,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	duplicateAnnouncement: t.drizzleField({
+		extensions: mcpTool(),
 		description: 'Copies an announcement, with its audience and attachments, as a new draft.',
 		type: AnnouncementRef,
 		args: { id: t.arg.id({ required: true }) },
@@ -343,6 +352,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	renotifyAnnouncement: t.field({
+		extensions: mcpTool({ outward: true }),
 		description:
 			'Mails an announcement that is out to its audience once more, as it reads now (after a correction). CONFLICT unless it is out and notifies by mail.',
 		type: 'Boolean',
@@ -356,6 +366,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	sendAnnouncementTestMail: t.field({
+		extensions: mcpTool(),
 		description:
 			"Sends the announcement's mail to the caller alone, as its audience would get it, whatever its state.",
 		type: 'Boolean',
@@ -371,6 +382,7 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
+	// not a tool for AI assistants: deleting stays with the people of the team
 	deleteAnnouncement: t.field({
 		description: 'Deletes an announcement for good.',
 		type: 'Boolean',

@@ -51,6 +51,7 @@ Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Tei
 - Gremien und Plätze einzelner Delegierter
 - den Zeitplan mit Tagen, Tracks, Einträgen und Orten
 - Umfragen und ihre Optionen
+- [Ankündigungen](./communication#announcements): schreiben, ändern, duplizieren, veröffentlichen, zurückziehen und erneut per E-Mail verschicken. Entwürfe legt er frei an, alles andere zeigt er erst als Vorschau. Löschen geht nur im Team-Bereich.
 - Status von Teilnehmenden, ihre Schule, Zahlungen und Einträge der Warteliste
 - Entscheidungen über mögliche doppelte Konten
 - die Einstellungen der Konferenz

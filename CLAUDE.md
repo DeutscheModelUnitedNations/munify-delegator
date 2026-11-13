@@ -1409,12 +1409,19 @@ bun run preview
   `AudienceSubject`s, which the feed (one person), the recipient counts and the mails all match
   against, so they cannot disagree. **Everything about a seat is empty until the assignment is
   released** (`participantSubjects`), so no announcement tells anybody their seat early; a new
-  audience kind that depends on a seat has to follow that. That a block's committee, role or
+  audience kind that depends on a seat has to follow that. **"Everyone" narrows with the
+  conference** (`AudienceSubject.everyone`, `everyoneIsSeated`): every participant and everybody
+  waiting while people register, and from `PREPARATION` on with the assignment released only who
+  holds a seat and the supervisors of somebody who does, so a rejected applicant or somebody
+  still waiting is not told what is meant for the people who come. Before the release it stays
+  everybody, or getting an announcement would tell the seats. That a block's committee, role or
   survey option is the conference's is the database's (`announcement_audience_same_conference`).
 - **Readers never read the table.** The rows (drafts, schedules, audiences, authors) are their
   editors': the conference's content roles (`editConferenceContent`) and system admins, through
   the abilities. Everybody else gets `announcementFeed(conferenceId)`, which answers what is out
-  for the caller's own part (`feedReader`: nobody's for an AI assistant) as plain
+  for the caller's own part (`feedReader`: nobody's for an AI assistant, which works on the rows
+  instead: every mutation but deleting is an MCP tool, and what changes what readers get or
+  mails them previews first, `outward`) as plain
   `AnnouncementFeedItem`s with their attachments' URLs, pinned first, then urgent, then newest
   (`compareFeed`). It is a live field (`smartSubscription`): publishing and taking back announce
   `created()` / `removed()` on the announcement pubsub, a change the row's `updated(id)`.

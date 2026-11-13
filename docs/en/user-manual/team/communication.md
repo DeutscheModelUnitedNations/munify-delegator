@@ -45,7 +45,7 @@ Under **Audience** you add groups through the select fields. Whoever is in at le
 - **Add a survey answer …**: everybody who picked that answer in a survey.
 - **Add the team …**: the **Whole team** or everybody with one team role. You reach the team only through this select, never through the other groups.
 
-**All participants** covers delegates, single participants, supervisors and everybody still on the waiting list. Minors and adults are counted on the first day of the conference. Somebody without a birthday on record is in neither group.
+**All participants** are everybody registered and the waiting list while people register. From the preparation stage on, with the assignment released, they are only those with a seat and their supervisors. Whoever got no seat or is still waiting is then reached through **Applicants without a seat** and **Waiting list**. Minors and adults are counted on the first day of the conference. Somebody without a birthday on record is in neither group.
 
 Below the selection you see how many people the audience reaches right now, split into delegates, single participants, supervisors, waiting list and team. The number follows the registrations. Whoever joins the audience later sees the announcement from then on too.
 

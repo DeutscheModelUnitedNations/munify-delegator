@@ -63,6 +63,12 @@ export type AudiencePart = 'DELEGATE' | 'SINGLE' | 'SUPERVISOR' | 'WAITING_LIST'
  */
 export interface AudienceSubject {
 	part: AudiencePart;
+	/**
+	 * In the `EVERYONE` audience: every participant and everybody waiting until the conference
+	 * prepares with its assignment released, from then on only who has a part in it (a seat, or a
+	 * student who has one).
+	 */
+	everyone: boolean;
 	/** Holds a seat, or supervises someone who does and comes along. */
 	seated: boolean;
 	committeeId: string | null;
@@ -76,7 +82,7 @@ export interface AudienceSubject {
 }
 
 const MATCHES: Record<AudienceKind, (subject: AudienceSubject, audience: Audience) => boolean> = {
-	EVERYONE: () => true,
+	EVERYONE: ({ everyone }) => everyone,
 	DELEGATES: ({ part }) => part === 'DELEGATE',
 	SINGLE_PARTICIPANTS: ({ part }) => part === 'SINGLE',
 	SUPERVISORS: ({ part }) => part === 'SUPERVISOR',
