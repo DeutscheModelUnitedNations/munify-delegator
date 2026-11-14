@@ -71,7 +71,7 @@
 				</div>
 			</div>
 		{/if}
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region has to take the keyboard -->
+		<!-- A scrolling region has to take the keyboard, so it is in the tab order -->
 		<div
 			role="region"
 			aria-label={m.chatTermsTitle()}
