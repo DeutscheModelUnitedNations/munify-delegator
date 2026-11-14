@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
-	import PersonName from '../PersonName.svelte';
-	import OpenUserCardButton from '../OpenUserCardButton.svelte';
+	import PersonNameButton from '../PersonNameButton.svelte';
+	import { openUserCard } from '../userCardState.svelte';
+	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
 	import AssignSupervisorModal from '../AssignSupervisorModal.svelte';
 	import { uniqueSupervisorsByFamilyName } from '../tabs/supervisorList';
 	import { removeSupervision } from './removeSupervision';
@@ -92,9 +93,9 @@
 				</thead>
 				<tbody>
 					{#each supervisors as sup (sup.id)}
-						<tr>
+						<tr class={CLICKABLE_ROW} onclick={rowClick(() => openUserCard(sup.user.id))}>
 							<td>
-								<PersonName givenName={sup.user.givenName} familyName={sup.user.familyName} />
+								<PersonNameButton user={sup.user} />
 							</td>
 							<td>
 								<code class="bg-base-300 rounded-field px-1 text-xs">{sup.connectionCode}</code>
@@ -108,7 +109,6 @@
 							</td>
 							<td>
 								<div class="flex justify-end gap-1">
-									<OpenUserCardButton user={sup.user} />
 									<button
 										class="btn btn-ghost btn-xs btn-square text-error"
 										onclick={() =>

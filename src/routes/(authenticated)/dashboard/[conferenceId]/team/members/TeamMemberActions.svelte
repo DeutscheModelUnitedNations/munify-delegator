@@ -1,27 +1,17 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 
+	/** The row itself opens the user card (`onRowClick`); these are the actions beside it. */
 	interface Props {
-		onOpenUserCard: () => void;
 		/** Only given to people who may impersonate */
 		onImpersonate?: () => void;
 		onDelete: () => void;
 	}
 
-	let { onOpenUserCard, onImpersonate, onDelete }: Props = $props();
+	let { onImpersonate, onDelete }: Props = $props();
 </script>
 
 <div class="flex justify-end gap-2">
-	<button
-		class="btn btn-ghost btn-sm btn-square"
-		title={m.adminUserCard()}
-		onclick={(e) => {
-			e.stopPropagation();
-			onOpenUserCard();
-		}}
-	>
-		<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
-	</button>
 	{#if onImpersonate}
 		<button
 			class="btn btn-sm"

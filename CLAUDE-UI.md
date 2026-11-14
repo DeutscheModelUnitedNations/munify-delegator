@@ -35,6 +35,9 @@ the public and participant pages, contrast in the high contrast variant, plus th
   just `btn-disabled`.
 - **Clickable rows** keep their table semantics: the row's `onclick` is for the mouse, a real
   `<a href>` in a cell is for everyone else (`PaperTable`). Never `role="button"` on a `<tr>`.
+  A list of people or things opens an entry from the whole row, not from a small button at its
+  end: `rowClick` / `CLICKABLE_ROW` (`#lib/helpers/rowClick`) skip the row's own controls and
+  text selections, and `PersonNameButton` is the name cell that opens the user card by keyboard.
 - **`<dl>`**: each `<div>` wrapper holds one `<dt>`/`<dd>` pair and nothing else (an icon goes
   inside the `<dt>`).
 - **High contrast** (`#lib/helpers/contrast`, the footer's `ContrastToggle`, or the system's

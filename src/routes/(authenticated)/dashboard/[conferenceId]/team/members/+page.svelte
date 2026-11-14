@@ -50,11 +50,11 @@
 		label={m.teamManagement()}
 		exportName="team"
 		selectable
-		actionsWidth={130}
+		actionsWidth={100}
+		onRowClick={(row) => openUserCard(row.userId)}
 	>
 		{#snippet actions(row)}
 			<TeamMemberActions
-				onOpenUserCard={() => openUserCard(row.userId)}
 				onImpersonate={isAdmin ? () => startImpersonation(row.userId) : undefined}
 				onDelete={() => handleDelete(row.id)}
 			/>
