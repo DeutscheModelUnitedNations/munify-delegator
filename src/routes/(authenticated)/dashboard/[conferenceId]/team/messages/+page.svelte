@@ -1,22 +1,20 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchChats } from '#lib/api/chats';
-	import { fetchTeamAccess } from '#lib/api/teamAccess';
-	import { canManageParticipants } from '#lib/helpers/teamAccess';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { m } from '#lib/paraglide/messages';
-	import Tabs from '#lib/components/tabs/Tabs.svelte';
-	import Tab from '#lib/components/tabs/Tab.svelte';
 	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
 	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
 	import NewChatDialog from '#lib/components/chat/NewChatDialog.svelte';
-	import { sideOf } from '#lib/components/chat/chatLabels';
-	import InboxChips from './InboxChips.svelte';
+	import { inboxName, sideOf } from '#lib/components/chat/chatLabels';
 	import ReportDesk from './ReportDesk.svelte';
 	import SettledReports from './SettledReports.svelte';
-	import { inboxKey, inboxesOf } from './teamInboxes';
+	import { fetchTeamInboxes, teamInboxesOf } from './fetchTeamInboxes';
+	import InboxOverview from './InboxOverview.svelte';
+	import { inboxKey } from './teamInboxes';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -26,26 +24,19 @@
 	const params = queryParameters({ chat: true, view: true, inbox: true, paper: true });
 
 	const me = await getCurrentUser();
-	const [access, conference, chats, functions] = $derived(
+	const [conference, chats, sources] = $derived(
 		await Promise.all([
-			fetchTeamAccess(conferenceId),
 			client.liveQuery.conference({
 				__args: { id: conferenceId },
 				messagingEnabled: true,
 				assignmentReleased: true
 			}),
 			fetchChats({ conferenceId }),
-			client.liveQuery.teamFunctions({
-				__args: {
-					where: { teamMember: { userId: { eq: me.sub }, conferenceId: { eq: conferenceId } } }
-				},
-				kind: true,
-				committeeId: true,
-				committee: { abbreviation: true }
-			})
+			fetchTeamInboxes({ conferenceId, userId: me.sub })
 		])
 	);
-	const cares = $derived(canManageParticipants(access));
+	const team = $derived(teamInboxesOf(sources));
+	const cares = $derived(team.cares);
 	const reports = $derived(
 		cares
 			? await client.liveQuery.chatReports({
@@ -66,7 +57,7 @@
 			: []
 	);
 
-	const inboxes = $derived(inboxesOf({ cares, functions }));
+	const inboxes = $derived(team.inboxes);
 	const teamChats = $derived(chats.filter((chat) => sideOf(chat) === 'TEAM'));
 	const reviewChats = $derived(chats.filter((chat) => sideOf(chat) === 'REVIEW'));
 	const openReports = $derived(reports.filter((report) => report.status === 'OPEN'));
@@ -76,20 +67,20 @@
 	const shownChats = $derived(
 		teamChats.filter((chat) => !params.inbox || inboxKey(chat) === params.inbox)
 	);
-	const unreadOf = (key: string) =>
-		teamChats
-			.filter((chat) => inboxKey(chat) === key)
-			.reduce((total, chat) => total + chat.unreadCount, 0);
-
 	let pickerOpen = $state(false);
 
 	const reporting = $derived(view === 'reports');
 	const selectedId = $derived(params.chat ?? null);
 	const selectedInbox = $derived(params.inbox ?? null);
-	const paperId = $derived(params.paper ?? null);
-	const reportsTitle = $derived(
-		openReports.length > 0 ? m.chatReportsWithCount({ count: openReports.length }) : m.chatReports()
+	// the team menu picks the inbox; the list says which one it shows
+	const shownInbox = $derived(inboxes.find((inbox) => inbox.key === selectedInbox));
+	// several inboxes start at their overview; one inbox, or a chat opened by its link, at the chats
+	const several = $derived(cares || inboxes.length > 1);
+	const overview = $derived(several && !reporting && !selectedInbox && !selectedId);
+	const listTitle = $derived(
+		!shownInbox ? m.chatChats() : shownInbox.own ? m.chatInboxTrustedOwn() : inboxName(shownInbox)
 	);
+	const paperId = $derived(params.paper ?? null);
 	const severalInboxes = $derived(inboxes.length > 1);
 	// the team starts a chat with a participant once the roles are released
 	const onNew = $derived(
@@ -97,11 +88,6 @@
 			? () => (pickerOpen = true)
 			: undefined
 	);
-
-	function show(next: 'inboxes' | 'reports') {
-		params.chat = null;
-		params.view = next === 'reports' ? 'reports' : null;
-	}
 </script>
 
 <div class="flex flex-col gap-4 py-4 sm:p-6">
@@ -117,16 +103,18 @@
 		</div>
 	{/if}
 
-	{#if cares}
-		<Tabs>
-			<Tab
-				title={m.chatInboxes()}
-				icon="tray"
-				active={!reporting}
-				onclick={() => show('inboxes')}
-			/>
-			<Tab title={reportsTitle} icon="flag" active={reporting} onclick={() => show('reports')} />
-		</Tabs>
+	{#if several && !overview}
+		<a
+			href={resolve(`dashboard/${conferenceId}/team/messages`)}
+			class={[
+				'link link-hover flex items-center gap-1.5 self-start text-sm',
+				selectedId && 'max-md:hidden'
+			]}
+			data-testid="team-inbox-back"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
+			{m.chatInboxOverview()}
+		</a>
 	{/if}
 
 	{#if reporting}
@@ -143,6 +131,13 @@
 			<i aria-hidden="true" class="ph-duotone ph-tray text-2xl"></i>
 			<p>{m.chatNoInboxHint()}</p>
 		</div>
+	{:else if overview}
+		<InboxOverview
+			{conferenceId}
+			{inboxes}
+			chats={teamChats}
+			reported={cares ? reviewChats.length : undefined}
+		/>
 	{:else}
 		<ChatWorkspace
 			chats={shownChats}
@@ -153,16 +148,7 @@
 			onPaperSent={() => (params.paper = null)}
 		>
 			{#snippet listHeader()}
-				<ChatListHeader title={m.chatChats()} {onNew}>
-					{#if severalInboxes}
-						<InboxChips
-							{inboxes}
-							selected={selectedInbox}
-							{unreadOf}
-							onSelect={(key) => (params.inbox = key)}
-						/>
-					{/if}
-				</ChatListHeader>
+				<ChatListHeader title={listTitle} {onNew} />
 			{/snippet}
 			{#snippet emptyList()}
 				<div class="text-base-content/60 flex flex-col items-center gap-3 px-4 py-10 text-center">

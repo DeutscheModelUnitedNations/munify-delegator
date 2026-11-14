@@ -35,9 +35,9 @@ async function write(page: Page, text: string) {
 	await expect(page.getByTestId('chat-input')).toHaveValue('');
 }
 
-/** A chip narrowing the team's chat list to one of the inboxes the caller answers. */
+/** An inbox the caller answers, in the team menu: it narrows the chat list to that inbox. */
 const inboxChip = (page: Page, name: string) =>
-	page.getByRole('group', { name: 'Postfächer' }).getByRole('button', { name });
+	page.getByTestId('team-inbox-menu').getByRole('link', { name });
 
 const openChat = (page: Page, title: string | RegExp) =>
 	page.getByTestId('chat-list').getByRole('button', { name: title }).click();
@@ -206,7 +206,11 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 	await expect(carlaPage.getByText('Gemeldet. Die Teilnehmendenbetreuung')).toBeVisible();
 
 	const carePage = await signedIn(browser, { id: care.id, startUrl: TEAM_MESSAGES });
-	await carePage.getByRole('tab', { name: 'Meldungen (1)' }).click();
+	// participant care starts at the overview of what it answers: its inbox and the reports
+	const overview = carePage.getByTestId('team-inbox-overview');
+	await expect(overview.getByTestId('team-inbox-card')).toContainText('Teilnehmendenbetreuung');
+	await expect(overview.getByTestId('team-reports-card')).toContainText('1 gemeldete Chats warten');
+	await overview.getByTestId('team-reports-card').click();
 	const report = carePage.getByTestId('chat-reports').getByRole('listitem');
 	await expect(report).toContainText('Frankreich · MSGV');
 	await expect(report).toContainText('Bitte schaut euch das an.');
@@ -323,6 +327,9 @@ test('a participant writes to one trusted person in confidence', async ({ browse
 	await expect(answer).toContainText(`Vertrauensperson · ${tessaName}`);
 
 	const theoPage = await signedIn(browser, { id: theo.id, startUrl: TEAM_MESSAGES });
+	// a trusted person answers two inboxes, so the page starts at their overview
+	await expect(theoPage.getByTestId('team-inbox-card')).toHaveCount(2);
+	await inboxChip(theoPage, 'An mich persönlich').click();
 	await expect(theoPage.getByTestId('chat-workspace')).toBeVisible();
 	await expect(theoPage.getByText('In diesem Postfach ist noch nichts angekommen.')).toBeVisible();
 });
@@ -347,7 +354,7 @@ test('project management makes a team member a trusted person', async ({ browser
 	await trusted.check();
 
 	// the member answers the shared inbox and their own now
-	await expect(memberPage.getByTestId('chat-workspace')).toBeVisible();
+	await expect(memberPage.getByTestId('team-inbox-card')).toHaveCount(2);
 	await expect(inboxChip(memberPage, 'Vertrauenspersonen')).toBeVisible();
 	await expect(inboxChip(memberPage, 'An mich persönlich')).toBeVisible();
 

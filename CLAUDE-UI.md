@@ -869,7 +869,7 @@ list header.
   caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
   reviewing a report it says so (`ChatReviewBanner`) and, given `reportedAt`, draws a line where
   the chat was reported (`firstMessageAfter`).
-- **The report desk** (`team/messages/ReportDesk.svelte`, the "Reports" tab of participant care):
+- **The report desk** (`team/messages/ReportDesk.svelte`, "Reports" in the team menu, for participant care):
   three columns, which take turns on a narrow screen. `ReportQueue` lists one case per reported
   chat, the one waiting longest first (`reportCases`, `waitingSince`); the middle is the chat's
   `ChatThread`, read only; `ReportCaseFile` holds the chat's reports, everybody of the chat by
@@ -887,7 +887,15 @@ list header.
   `paperId` and `compact` (icon only, for table rows). Asks for the inboxes on the click.
 - **`FilterChips`**: a row of chips narrowing a list to one group ("all" first, a pressed chip
   lifts the filter): `options` with a `key`, `selected`, `onSelect`, a `label` and a `chip`
-  snippet for an option's content. `CommitteeChips` and the team page's `InboxChips` are built on it.
+  snippet for an option's content. `CommitteeChips` is built on it.
+- **The team's inboxes** are picked in the team menu, not on the page: `MessagesNavButton` is a
+  plain entry for somebody answering one inbox, and folds open for several (or for participant
+  care, who also get the reports) into the overview, each inbox with its unread count, a
+  committee holding several as a group to fold (`inboxMenu`), and the reports. The links set
+  `?inbox=` / `?view=reports`. `team/messages` without either shows `InboxOverview` (a card per
+  inbox) when there are several, the chat list right away when there is one. A system admin gets
+  participant care's inbox and both inboxes of every committee (`inboxesOf`), never the trusted
+  persons'. `fetchTeamInboxes` + `teamInboxesOf` are what both the menu and the page read.
 - **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
   `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
   `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
