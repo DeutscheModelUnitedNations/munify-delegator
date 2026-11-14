@@ -3,12 +3,14 @@
 
 	interface Props {
 		onOpenUserCard: () => void;
+		/** Opens the member's committee functions (chair, consultant) */
+		onFunctions: () => void;
 		/** Only given to people who may impersonate */
 		onImpersonate?: () => void;
 		onDelete: () => void;
 	}
 
-	let { onOpenUserCard, onImpersonate, onDelete }: Props = $props();
+	let { onOpenUserCard, onFunctions, onImpersonate, onDelete }: Props = $props();
 </script>
 
 <div class="flex justify-end gap-2">
@@ -21,6 +23,18 @@
 		}}
 	>
 		<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
+	</button>
+	<button
+		class="btn btn-ghost btn-sm btn-square"
+		title={m.teamFunctions()}
+		aria-label={m.teamFunctions()}
+		data-testid="team-functions-open"
+		onclick={(e) => {
+			e.stopPropagation();
+			onFunctions();
+		}}
+	>
+		<i aria-hidden="true" class="ph-duotone ph-gavel"></i>
 	</button>
 	{#if onImpersonate}
 		<button

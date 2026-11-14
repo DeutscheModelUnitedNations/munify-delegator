@@ -155,6 +155,24 @@ Many mail services accept only so many emails per second. Under **Sending speed*
 
 At the bottom, the **Log** shows the last 200 emails of the conference, automatic and sent by hand.
 
+## Messages {#messages}
+
+The switch "Messages between participants and team" under "Status" opens the chats. Participants then write to participant care and, once the roles are released, to each other, to their delegation and to the team of their committee.
+
+The team answers from **inboxes** it shares:
+
+- **Participant care.** One inbox for the whole conference. It belongs to everybody with the role participant care or project management.
+- **Chairs and committee consultants.** One inbox each per committee. You decide who answers it under "Team members". The gavel icon in a row opens that person's functions.
+- **Trusted persons.** In the same dialog you make a team member a trusted person of the conference. Participants write to all trusted persons together or to one of them by name. All trusted persons read the shared inbox. Only the person addressed reads a personal chat. Nobody else reads along, not participant care, not project management and not system administrators. Trusted persons see participants by their role only. These chats cannot be reported.
+
+You find all inboxes under "Messages" in the communication section. Participants see an answer with the function and the name. You see participants there by their role. Only participant care also sees the name.
+
+In the paper hub you write to the author of a paper directly. The button "Write to delegate" is on the paper and in the paper lists. If you answer several inboxes that fit you pick the one to write from. The first message links to the paper.
+
+When somebody reports a chat it appears in the tab "Reports". Participant care reads it there with names, can suspend a person from chats with other participants and resolves the report. After that the chat is private again. The team still reaches a suspended person.
+
+The notification "Unread messages" is one of the automatic [emails](#emails). Switch it to automatic there so that it goes out without you.
+
 ## Committees and seats {#committees-and-seats}
 
 In the **Committees and Agenda Items** tab you manage the conference's committees and their agenda items.

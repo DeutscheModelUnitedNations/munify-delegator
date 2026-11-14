@@ -61,7 +61,10 @@ const FIELDS: Record<string, TypeClassification> = {
 			'globalNotes',
 			'locale',
 			'wantsJoinTeamInformation',
-			'wantsToReceiveGeneralInformation'
+			'wantsToReceiveGeneralInformation',
+			'messageNotificationEmails',
+			'messagingTermsVersion',
+			'messagingTermsAcceptedAt'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
@@ -96,8 +99,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'nsaCardNumber'
 		],
-		// The number printed on the person's badge.
-		redacted: ['accessCardId']
+		// The number printed on the person's badge, and a sanction against the person.
+		redacted: ['accessCardId', 'messagingSuspended']
 	},
 	Conferencesupervisor: {
 		visible: [...ROW, 'conferenceParticipantId', 'plansOwnAttendenceAtConference'],
@@ -125,6 +128,88 @@ const FIELDS: Record<string, TypeClassification> = {
 		redacted: ['experience', 'motivation', 'requests']
 	},
 	Teammember: { visible: [...ROW, 'conferenceId', 'userId', 'role'] },
+	Teamfunction: { visible: [...ROW, 'teamMemberId', 'committeeId', 'kind'] },
+	// --- Chats ----------------------------------------------------------------------------------
+	// What people write each other is theirs: an assistant sees that chats exist, never a word.
+	Chat: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'kind',
+			'inbox',
+			'committeeId',
+			'delegationId',
+			'participantId',
+			'otherParticipantId',
+			'lastMessageAt',
+			'lastParticipantMessageAt',
+			'teamReadAt',
+			'underReview',
+			'unreadCount',
+			'side',
+			'blockedByMe',
+			'writeRefusal',
+			'trustedUserId'
+		],
+		redacted: ['lastMessagePreview', 'trustedPersonName']
+	},
+	ChatContact: {
+		visible: [
+			'participantId',
+			'roleId',
+			'roleKind',
+			'nationAlpha3Code',
+			'nationAlpha2Code',
+			'roleName',
+			'roleAbbreviation',
+			'roleIcon',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'ordinal',
+			'userId'
+		],
+		// A sanction against a person.
+		redacted: ['suspended']
+	},
+	ChatPerson: { visible: ['participantId', 'userId'], redacted: ['name'] },
+	ChatInboxOption: {
+		visible: [
+			'inbox',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'trustedPersonId',
+			'chatId'
+		],
+		redacted: ['personName']
+	},
+	Chatmessage: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'chatId',
+			'fromTeam',
+			'mine',
+			'paperId',
+			'authorParticipantId',
+			'teamAuthorUserId'
+		],
+		redacted: ['body', 'authorName']
+	},
+	Chatreport: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'chatId',
+			'status',
+			'resolvedAt',
+			'resolvedById',
+			'reporterUserId'
+		],
+		redacted: ['reason', 'reporterName']
+	},
 	Teammemberinvitation: {
 		visible: [
 			...ROW,
@@ -261,6 +346,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'maxForeignGuaranteedSeatsPercent',
 			'maxGuaranteedSeatsPerForeignSchool',
 			'mcpEnabled',
+			'messagingEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
 			'nextDocumentNumber',

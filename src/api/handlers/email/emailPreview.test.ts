@@ -43,7 +43,8 @@ const conference: EmailSnapshot['conference'] = {
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: true,
-	chaseUrl: null
+	chaseUrl: null,
+	messagingEnabled: true
 };
 
 const user: SnapshotPerson['user'] = {
