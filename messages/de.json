@@ -850,6 +850,7 @@
 	"chatTermsReadersTeam": "Nachrichten an ein Postfach des Teams (Teilnehmendenbetreuung, Vorsitz oder Beratung eines Gremiums) lesen alle Teammitglieder, die dieses Postfach betreuen. Sie sehen, wer du bist.",
 	"chatTermsReadersTitle": "Wer deine Nachrichten lesen kann",
 	"chatTermsReadersTrusted": "Eine Ausnahme sind Nachrichten an die Vertrauenspersonen: Sie werden nur von den Vertrauenspersonen gelesen, an die du schreibst, also von allen gemeinsam oder nur von der Person, die du auswählst. Das übrige Team liest sie nicht, sie können nicht gemeldet werden, und dein Name wird dort nicht angezeigt.",
+	"chatTermsScrollHint": "Lies sie bis zum Ende: Erst dann kannst du unten zustimmen.",
 	"chatTermsStorageMails": "Bleibt eine Nachricht an dich eine Weile ungelesen, erinnert dich eine E-Mail daran. Sie enthält nie den Text der Nachricht, und du kannst sie unter deinen Chats abschalten.",
 	"chatTermsStorageText": "Gesendete Nachrichten lassen sich nicht nachträglich ändern oder löschen. Sie werden zusammen mit den übrigen Daten der Konferenz gespeichert.",
 	"chatTermsStorageTitle": "Speicherung und E-Mails",

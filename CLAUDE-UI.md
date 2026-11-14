@@ -887,7 +887,11 @@ list header.
   there instead of at the end. The line stays until the chat is opened again.
 - **`MessagingTermsModal`**: the terms of the message service (`messagingTermsSections`). The
   composer opens it with `onAccepted` when the API asks a participant to agree before their first
-  message; `MessagingTermsLink` under the participant's chat list shows them to read.
+  message; `MessagingTermsLink` under the participant's chat list shows them to read. The text
+  scrolls in a focusable region of its own, so the dialog opens at its beginning (focus would
+  otherwise go to a control below the text and scroll there), a banner on top says the agreement
+  is at the bottom, and the checkbox is disabled until the reader scrolled to the end
+  (`scrolledToEnd`).
 - **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
 - **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
   `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a

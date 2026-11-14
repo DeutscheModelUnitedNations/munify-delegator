@@ -72,6 +72,11 @@ test('a delegate finds another by country and committee and writes to them', asy
 	const terms = page.getByRole('dialog', { name: 'Nutzungsbedingungen der Nachrichten' });
 	await expect(terms).toContainText('Wer deine Nachrichten lesen kann');
 	await expect(terms).toContainText('Vertrauenspersonen');
+	// they open at their beginning, under a note saying where to agree
+	const text = page.getByTestId('chat-terms-text');
+	await expect(terms).toContainText('Lies sie bis zum Ende');
+	await expect(text).toBeFocused();
+	expect(await text.evaluate((region) => region.scrollTop)).toBe(0);
 	await expect(page.getByTestId('chat-message')).toHaveCount(0);
 	// nothing goes out without her agreement, and her text is kept
 	await expect(page.getByTestId('chat-terms-accept')).toBeDisabled();
@@ -80,6 +85,9 @@ test('a delegate finds another by country and committee and writes to them', asy
 	await expect(page.getByTestId('chat-message')).toHaveCount(0);
 
 	await page.getByTestId('chat-send').click();
+	// only who scrolled through them can agree
+	await expect(page.getByTestId('chat-terms-agree')).toBeDisabled();
+	await text.evaluate((region) => region.scrollTo({ top: region.scrollHeight }));
 	await page.getByTestId('chat-terms-agree').check();
 	await page.getByTestId('chat-terms-accept').click();
 	await expect(

@@ -850,6 +850,7 @@
 	"chatTermsReadersTeam": "Messages to a team inbox (participant care, a committee's chair or consultants) are read by every team member answering that inbox. They see who you are.",
 	"chatTermsReadersTitle": "Who can read your messages",
 	"chatTermsReadersTrusted": "Messages to the trusted persons are an exception: they are read only by the trusted persons you write to, that is by all of them together or only by the one you choose. The rest of the team does not read them, they cannot be reported, and your name is not shown there.",
+	"chatTermsScrollHint": "Read them to the end: only then can you agree at the bottom.",
 	"chatTermsStorageMails": "When a message to you stays unread for a while, an email reminds you of it. It never contains the message's text, and you can switch it off below your chats.",
 	"chatTermsStorageText": "Messages you sent cannot be changed or deleted afterwards. They are stored together with the conference's other data.",
 	"chatTermsStorageTitle": "Storage and emails",
