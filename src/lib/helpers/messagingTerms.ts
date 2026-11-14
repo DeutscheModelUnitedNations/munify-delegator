@@ -12,6 +12,19 @@ export function acceptedMessagingTerms(version: number | null | undefined) {
 	return version === MESSAGING_TERMS_VERSION;
 }
 
+/** Whether a scrolling element shows its end, give or take a few pixels of rounding. */
+export function scrolledToEnd({
+	scrollTop,
+	clientHeight,
+	scrollHeight
+}: {
+	scrollTop: number;
+	clientHeight: number;
+	scrollHeight: number;
+}) {
+	return scrollTop + clientHeight >= scrollHeight - 8;
+}
+
 /** The version an acceptance names: the current one, so nobody accepts a text they were not shown. */
 export const messagingTermsVersionSchema = z
 	.number()

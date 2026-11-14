@@ -212,7 +212,7 @@ Chats with other delegates and the delegation group exist only once the roles ar
 When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off below the chat list at **Email about unread messages**.
 
 :::tip When something is not right
-Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
+Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. Read them to the end, only then can you agree at the bottom with **Agree and send**. Your message only goes out once you agreed. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
 
 When you open a chat with unread messages, the line **New messages** shows where you left off.
 

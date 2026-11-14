@@ -212,7 +212,13 @@ Chats mit anderen Delegierten und die Delegationsgruppe gibt es erst, wenn die R
 Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Unter der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
 
 :::tip Wenn etwas nicht in Ordnung ist
-Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
+<<<<<<< HEAD
+Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Lies sie bis zum Ende, erst dann kannst du unten mit **Zustimmen und senden** zustimmen. Deine Nachricht geht erst raus, wenn du zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
+=======
+
+Vor deiner ersten Nachricht zeigt dir die App die Nutzungsbedingungen der Nachrichten. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Lies sie bis zum Ende, erst dann kannst du unten zustimmen. Deine Nachricht geht erst raus, wenn du zugestimmt hast. Das gilt einmal für dein Konto. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
+
+> > > > > > > origin/claude/loving-bardeen-me7km2
 
 Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
 
