@@ -79,11 +79,11 @@ bun run db:studio
 bun run format
 
 # Type checking (PREFERRED for development - fast feedback)
-bun run check          # Single run - use this to verify changes
+bun run check          # Single run - use this to verify changes (incremental: cached in .svelte-kit/.svelte-check)
 bun run check:watch    # Watch mode
 bun run typecheck      # TypeScript only (tsc is TypeScript 7, installed as @typescript/native)
 
-# Lint (slow - runs automatically on git push via lefthook)
+# Lint (slow - the pushed files are linted on git push via lefthook)
 bun run lint           # Only run manually when specifically needed
 
 # Codebase analysis (fallow: dead code, cycles, duplication, complexity)
@@ -108,7 +108,7 @@ maps back to the sources: Vite's module runner evaluates modules with `new Async
 Node keeps no source map for, so c8 cannot. Generated code (Paraglide, the rumble client) is left
 out by `scripts/coverageScope.ts`. CI scores with unit coverage only.
 
-**Note:** Prefer `bun run check` over `bun run lint` during development. Linting is slow (~2 min) and runs automatically on push via lefthook pre-push hooks. Use `bun run check` for quick type-checking feedback.
+**Note:** Prefer `bun run check` over `bun run lint` during development. Linting the whole repo is slow (~2 min without its cache); the lefthook pre-push hook lints the pushed files. Use `bun run check` for quick type-checking feedback.
 
 ### i18n (Internationalization)
 
@@ -1569,7 +1569,7 @@ Required variables (see `.env.example`):
 ## Git Hooks (Lefthook)
 
 **Pre-commit**: Auto-format staged files with Prettier, then run `fallow audit` on the working tree
-**Pre-push**: The same checks as CI, over the whole repo rather than the pushed files (so a commit made with `--no-verify` is caught by the next push): tests, lint (`eslint .`, cached), format check, type check and the i18n check, plus `fallow audit` against the branch base
+**Pre-push**: The same checks as CI, made cheap: lint (`eslint`, cached by content) and the format check look only at the files the push changes, the tests run with `vitest run --sinceLastRun` (the tests whose recorded dependencies changed since they last ran, and those that failed), the type check is `bun run check`, which is incremental, and the i18n check and `fallow audit` against the branch base run as before. A commit made with `--no-verify` is still caught by the push that carries it. What the shortcuts cannot see (an eslint or prettier upgrade changing the verdict on untouched files) is CI's to catch, which checks everything without a cache. The caches are gitignored and safe to delete when a result looks stale: `.eslintcache`, `.svelte-kit/.svelte-check`, `node_modules/.vitest-cache`.
 
 The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
 

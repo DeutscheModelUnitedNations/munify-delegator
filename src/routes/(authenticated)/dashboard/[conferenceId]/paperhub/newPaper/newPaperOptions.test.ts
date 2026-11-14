@@ -65,6 +65,18 @@ describe('agendaItemOptions', () => {
 		expect(options(committeeAgendaItems)).toEqual([{ value: 'c', label: 'Health' }]);
 		expect(options(undefined)).toEqual([]);
 	});
+
+	test('working papers: nations from their committee, non-state actors from the conference', () => {
+		const options = (isNSA: boolean) =>
+			agendaItemOptions({
+				isNSA,
+				type: 'WORKING_PAPER',
+				conferenceAgendaItems,
+				committeeAgendaItems
+			}).map((o) => o.value);
+		expect(options(false)).toEqual(['c']);
+		expect(options(true)).toEqual(['a', 'b']);
+	});
 });
 
 describe('newPaperAgendaItemId', () => {

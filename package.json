@@ -210,7 +210,7 @@
 		"build:compute": "tsdown --config tsdown.compute.config.ts",
 		"jobs": "tsdown --config tsdown.jobs.config.ts --logLevel warn && bun jobsOut/cli.js",
 		"build:jobs": "tsdown --config tsdown.jobs.config.ts",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --incremental",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"coverage": "vitest run --coverage && bun scripts/mergeCoverage.ts",
 		"db:generate": "drizzle-kit generate",
@@ -246,7 +246,7 @@
 		"test:e2e:coverage": "bun scripts/e2eCoverage.ts"
 	},
 	"type": "module",
-	"version": "2.1.22",
+	"version": "2.1.24",
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@9.0.0": "patches/@magidoc%2Fplugin-svelte-marked@9.0.0.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
