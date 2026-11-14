@@ -3,7 +3,8 @@
 	The terms of the message service. With `onAccepted` it asks for the reader's agreement, which a
 	participant has to give before their first message, and calls it once that is stored; without,
 	it only shows them. The text scrolls in a region of its own, which opens at the top, and the
-	agreement can only be given once the reader has scrolled through to its end.
+	agreement can only be given once the reader has scrolled through to its end. That region is in the tab order,
+	since a scrolling region has to take the keyboard.
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
@@ -71,7 +72,7 @@
 				</div>
 			</div>
 		{/if}
-		<!-- A scrolling region has to take the keyboard, so it is in the tab order -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			role="region"
 			aria-label={m.chatTermsTitle()}
