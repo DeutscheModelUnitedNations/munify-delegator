@@ -18,7 +18,6 @@ export interface DashboardLinkContext {
 	isHeadDelegate?: boolean;
 	unlockPayments?: boolean;
 	unlockPostals?: boolean;
-	hasConferenceInfo?: boolean;
 	linkToPreparationGuide?: string | null;
 	isOpenPaperSubmission?: boolean;
 	showCalendar?: boolean;

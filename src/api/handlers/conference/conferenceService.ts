@@ -167,8 +167,6 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				location: args.location,
 				language: args.language,
 				website: args.website,
-				info: args.info,
-				showInfoExpanded: nullToUndefined(args.showInfoExpanded),
 				linkToPreparationGuide: args.linkToPreparationGuide,
 				linkToTeamWiki: args.linkToTeamWiki,
 				linkToServicesPage: args.linkToServicesPage,

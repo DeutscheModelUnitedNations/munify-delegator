@@ -72,6 +72,348 @@ type AgendaItemPaperGroup {
   papers: [Paper!]!
 }
 
+type Announcement {
+  """Get the announcementAttachments related to this announcement"""
+  attachments(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: AnnouncementattachmentSearchInputArgument, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
+
+  """Get the announcementAudiences related to this announcement"""
+  audiences(limit: Int, offset: Int, orderBy: AnnouncementaudienceOrderInputArgument, search: AnnouncementaudienceSearchInputArgument, where: AnnouncementaudienceWhereInputArgument): [Announcementaudience!]!
+
+  """Get the users related to this announcement"""
+  author(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
+  authorId: ID
+  body: String!
+
+  """Get the conferences related to this announcement"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
+  conferenceId: ID!
+  createdAt: DateTime!
+  editedAt: DateTime
+  id: ID!
+  importance: AnnouncementimportanceEnum!
+  mailRevision: Int!
+  mailSince: DateTime
+  notifyByMail: Boolean!
+  pinned: Boolean!
+  publishAt: DateTime
+
+  """Get the users related to this announcement"""
+  publishedBy(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
+  publishedById: ID
+
+  """How many of them marked it as read."""
+  readCount: Int!
+
+  """How many people its audience holds right now."""
+  recipientCount: Int!
+  releaseAnnounced: Boolean!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  signature: String
+
+  """
+  Where the announcement is in its life right now: `DRAFT`, `SCHEDULED` (published, its time not yet come), `PUBLISHED` (out), `EXPIRED` (past `visibleUntil`) or `ARCHIVED`.
+  """
+  state: String!
+  status: AnnouncementstatusEnum!
+  title: String!
+  updatedAt: DateTime!
+  visibleUntil: DateTime
+}
+
+"""
+How many people an audience reaches, each counted once, by how they take part.
+"""
+type AnnouncementAudienceCounts {
+  delegates: Int!
+  singleParticipants: Int!
+  supervisors: Int!
+  team: Int!
+  total: Int!
+  waitingList: Int!
+}
+
+"""
+One block of an audience; whoever matches any block of an announcement reads it. `COMMITTEE`, `ROLE` and `SURVEY_OPTION` name what they are about, `TEAM` optionally one team role.
+"""
+input AnnouncementAudienceInput {
+  committeeId: ID
+  kind: AnnouncementaudiencekindEnum!
+  roleId: ID
+  surveyOptionId: ID
+  teamRole: TeamroleEnum
+}
+
+type AnnouncementFeedAttachment {
+  fileName: String
+  id: ID!
+  mimeType: String!
+  size: Int!
+
+  """The file straight from the bucket."""
+  url: String!
+}
+
+"""An announcement as one of its readers gets it."""
+type AnnouncementFeedItem {
+  attachments: [AnnouncementFeedAttachment!]!
+
+  """Markdown."""
+  body: String!
+
+  """When its title or text last changed since it came out."""
+  editedAt: DateTime
+  id: ID!
+  importance: AnnouncementimportanceEnum!
+  pinned: Boolean!
+  publishAt: DateTime!
+
+  """Whether the caller marked it as read."""
+  read: Boolean!
+  signature: String
+  title: String!
+}
+
+input AnnouncementOrderInputArgument {
+  authorId: SortingParameter
+  body: SortingParameter
+  conferenceId: SortingParameter
+  createdAt: SortingParameter
+  editedAt: SortingParameter
+  id: SortingParameter
+  importance: SortingParameter
+  mailRevision: SortingParameter
+  mailSince: SortingParameter
+  notifyByMail: SortingParameter
+  pinned: SortingParameter
+  publishAt: SortingParameter
+  publishedById: SortingParameter
+  releaseAnnounced: SortingParameter
+  signature: SortingParameter
+  status: SortingParameter
+  title: SortingParameter
+  updatedAt: SortingParameter
+  visibleUntil: SortingParameter
+}
+
+"""A column of announcement the search can look at"""
+enum AnnouncementSearchFieldEnum {
+  authorId
+  body
+  conferenceId
+  id
+  publishedById
+  signature
+  title
+}
+
+"""
+Fuzzy search on announcement, ranked by how close the columns are to the term
+"""
+input AnnouncementSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AnnouncementSearchFieldEnum!]
+  term: String!
+}
+
+input AnnouncementWhereInputArgument {
+  AND: [AnnouncementWhereInputArgument!]
+  NOT: AnnouncementWhereInputArgument
+  OR: [AnnouncementWhereInputArgument!]
+  attachments: AnnouncementattachmentWhereInputArgument
+  audiences: AnnouncementaudienceWhereInputArgument
+  author: UserWhereInputArgument
+  authorId: IDWhereInputArgument
+  body: StringWhereInputArgument
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  editedAt: DateTimeWhereInputArgument
+  id: IDWhereInputArgument
+  importance: AnnouncementimportanceEnum
+  mailRevision: IntWhereInputArgument
+  mailSince: DateTimeWhereInputArgument
+  notifyByMail: BooleanWhereInputArgument
+  pinned: BooleanWhereInputArgument
+  publishAt: DateTimeWhereInputArgument
+  publishedBy: UserWhereInputArgument
+  publishedById: IDWhereInputArgument
+  releaseAnnounced: BooleanWhereInputArgument
+  signature: StringWhereInputArgument
+  status: AnnouncementstatusEnum
+  title: StringWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
+  visibleUntil: DateTimeWhereInputArgument
+}
+
+type Announcementattachment {
+  """Get the announcements related to this announcementAttachment"""
+  announcement(orderBy: AnnouncementOrderInputArgument, where: AnnouncementWhereInputArgument): Announcement!
+  announcementId: ID!
+  createdAt: DateTime!
+
+  """Get the storedFiles related to this announcementAttachment"""
+  file(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile!
+  fileId: ID!
+  id: ID!
+  position: Int!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+}
+
+input AnnouncementattachmentOrderInputArgument {
+  announcementId: SortingParameter
+  createdAt: SortingParameter
+  fileId: SortingParameter
+  id: SortingParameter
+  position: SortingParameter
+}
+
+"""A column of announcementAttachment the search can look at"""
+enum AnnouncementattachmentSearchFieldEnum {
+  announcementId
+  fileId
+  id
+}
+
+"""
+Fuzzy search on announcementAttachment, ranked by how close the columns are to the term
+"""
+input AnnouncementattachmentSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AnnouncementattachmentSearchFieldEnum!]
+  term: String!
+}
+
+input AnnouncementattachmentWhereInputArgument {
+  AND: [AnnouncementattachmentWhereInputArgument!]
+  NOT: AnnouncementattachmentWhereInputArgument
+  OR: [AnnouncementattachmentWhereInputArgument!]
+  announcement: AnnouncementWhereInputArgument
+  announcementId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  file: StoredfileWhereInputArgument
+  fileId: IDWhereInputArgument
+  id: IDWhereInputArgument
+  position: IntWhereInputArgument
+}
+
+type Announcementaudience {
+  """Get the announcements related to this announcementAudience"""
+  announcement(orderBy: AnnouncementOrderInputArgument, where: AnnouncementWhereInputArgument): Announcement!
+  announcementId: ID!
+
+  """Get the committees related to this announcementAudience"""
+  committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee
+  committeeId: ID
+  createdAt: DateTime!
+  id: ID!
+  kind: AnnouncementaudiencekindEnum!
+
+  """Get the conferenceRoles related to this announcementAudience"""
+  role(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
+  roleId: ID
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+
+  """Get the surveyOptions related to this announcementAudience"""
+  surveyOption(orderBy: SurveyoptionOrderInputArgument, where: SurveyoptionWhereInputArgument): Surveyoption
+  surveyOptionId: ID
+  teamRole: TeamroleEnum
+}
+
+input AnnouncementaudienceOrderInputArgument {
+  announcementId: SortingParameter
+  committeeId: SortingParameter
+  createdAt: SortingParameter
+  id: SortingParameter
+  kind: SortingParameter
+  roleId: SortingParameter
+  surveyOptionId: SortingParameter
+  teamRole: SortingParameter
+}
+
+"""A column of announcementAudience the search can look at"""
+enum AnnouncementaudienceSearchFieldEnum {
+  announcementId
+  committeeId
+  id
+  roleId
+  surveyOptionId
+}
+
+"""
+Fuzzy search on announcementAudience, ranked by how close the columns are to the term
+"""
+input AnnouncementaudienceSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AnnouncementaudienceSearchFieldEnum!]
+  term: String!
+}
+
+input AnnouncementaudienceWhereInputArgument {
+  AND: [AnnouncementaudienceWhereInputArgument!]
+  NOT: AnnouncementaudienceWhereInputArgument
+  OR: [AnnouncementaudienceWhereInputArgument!]
+  announcement: AnnouncementWhereInputArgument
+  announcementId: IDWhereInputArgument
+  committee: CommitteeWhereInputArgument
+  committeeId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  id: IDWhereInputArgument
+  kind: AnnouncementaudiencekindEnum
+  role: ConferenceroleWhereInputArgument
+  roleId: IDWhereInputArgument
+  surveyOption: SurveyoptionWhereInputArgument
+  surveyOptionId: IDWhereInputArgument
+  teamRole: TeamroleEnum
+}
+
+enum AnnouncementaudiencekindEnum {
+  ADULTS
+  APPLICANTS
+  COMMITTEE
+  DELEGATES
+  EVERYONE
+  MINORS
+  PAPERWORK_OPEN
+  PAYMENT_OPEN
+  ROLE
+  SEATED
+  SINGLE_PARTICIPANTS
+  SUPERVISORS
+  SURVEY_OPTION
+  TEAM
+  WAITING_LIST
+}
+
+enum AnnouncementimportanceEnum {
+  IMPORTANT
+  NORMAL
+  URGENT
+}
+
+enum AnnouncementstatusEnum {
+  ARCHIVED
+  DRAFT
+  PUBLISHED
+}
+
 """
 A person of an application the plausibility checks find something about, which keeps the application from being sent. Says what is wrong, never the values.
 """
@@ -1585,7 +1927,6 @@ type Conference {
   """Get the storedFiles related to this conference"""
   imageFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
   imageFileId: ID
-  info: String
   isOpenPaperSubmission: Boolean!
   language: String
   linkToPaperInbox: String
@@ -1648,7 +1989,6 @@ type Conference {
   """
   search_distance: Float
   showCalendar: Boolean!
-  showInfoExpanded: Boolean!
 
   """Get the singleParticipants related to this conference"""
   singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
@@ -1711,7 +2051,6 @@ input ConferenceOrderInputArgument {
   iban: SortingParameter
   id: SortingParameter
   imageFileId: SortingParameter
-  info: SortingParameter
   isOpenPaperSubmission: SortingParameter
   language: SortingParameter
   linkToPaperInbox: SortingParameter
@@ -1738,7 +2077,6 @@ input ConferenceOrderInputArgument {
   postalZip: SortingParameter
   registrationDeadlineGracePeriodMinutes: SortingParameter
   showCalendar: SortingParameter
-  showInfoExpanded: SortingParameter
   startConference: SortingParameter
   state: SortingParameter
   supervisorMinAge: SortingParameter
@@ -1775,7 +2113,6 @@ enum ConferenceSearchFieldEnum {
   iban
   id
   imageFileId
-  info
   language
   linkToPaperInbox
   linkToPreparationGuide
@@ -1844,7 +2181,6 @@ input ConferenceWhereInputArgument {
   id: IDWhereInputArgument
   imageFile: StoredfileWhereInputArgument
   imageFileId: IDWhereInputArgument
-  info: StringWhereInputArgument
   isOpenPaperSubmission: BooleanWhereInputArgument
   language: StringWhereInputArgument
   linkToPaperInbox: StringWhereInputArgument
@@ -1878,7 +2214,6 @@ input ConferenceWhereInputArgument {
   resolutions: ResolutionWhereInputArgument
   roles: ConferenceroleWhereInputArgument
   showCalendar: BooleanWhereInputArgument
-  showInfoExpanded: BooleanWhereInputArgument
   singleParticipants: SingleparticipantWhereInputArgument
   startConference: DateTimeWhereInputArgument
   state: ConferencestateEnum
@@ -2747,6 +3082,7 @@ type EmailStatusResult {
 }
 
 enum EmailkindEnum {
+  ANNOUNCEMENT
   APPLICATION_DEADLINE_REMINDER
   APPLICATION_SENT
   ASSIGNMENT_ACCEPTED
@@ -3330,6 +3666,30 @@ type Mutation {
   createAgendaItem(committeeId: ID!, teaserText: String, title: String!): Committeeagendaitem!
 
   """
+  Writes a new announcement as a draft (the conference's content roles: project management, participant care, content lead; FORBIDDEN otherwise). It needs at least one audience block; a committee, role or survey option of another conference is refused with INVALID_INPUT. Attachments are uploaded through `requestFileUpload` (`announcement`/`attachment`) first.
+  """
+  createAnnouncement(
+    attachmentFileIds: [ID!]
+    audiences: [AnnouncementAudienceInput!]!
+
+    """Markdown."""
+    body: String!
+    conferenceId: ID!
+    importance: AnnouncementimportanceEnum
+
+    """Whether its audience is told by mail once it is out."""
+    notifyByMail: Boolean
+    pinned: Boolean
+
+    """The line under the text saying who speaks; blank for none."""
+    signature: String
+
+    """The headline."""
+    title: String!
+    visibleUntil: DateTime
+  ): Announcement!
+
+  """
   Participant care placing a user straight into the delegation holding a role, bypassing the application. The user's delegation membership or single registration in the conference is cleared first; a supervisor or team member is refused with CONFLICT, as is a role with no seat left or a committee that already seats as many of the delegation as it may. The delegation is created for the role if none holds it yet.
   """
   createAppliedDelegationMember(
@@ -3707,6 +4067,9 @@ type Mutation {
   """Deletes an agenda item; its papers stay, without an agenda item."""
   deleteAgendaItem(id: ID!): Boolean!
 
+  """Deletes an announcement for good."""
+  deleteAnnouncement(id: ID!): Boolean!
+
   """Takes back a recorded scan."""
   deleteAttendanceEntry(id: ID!): Boolean!
 
@@ -3838,6 +4201,11 @@ type Mutation {
   distributeUnansweredSurvey(questionId: ID!): Int!
 
   """
+  Copies an announcement, with its audience and attachments, as a new draft.
+  """
+  duplicateAnnouncement(id: ID!): Announcement!
+
+  """
   Ends a session for everybody working in it; ending it again changes nothing.
   """
   endAttendanceSession(id: ID!): Boolean!
@@ -3871,6 +4239,11 @@ type Mutation {
   Participant care turning a delegate into a supervisor, for someone too old to be a delegate: they leave their delegation (a new head delegate, an empty delegation deleted), keep their part in the conference, are no longer supervised, and supervise everyone left in the delegation. Attending in person.
   """
   makeDelegationMemberSupervisor(delegationMemberId: ID!): Conferencesupervisor!
+
+  """
+  Marks announcements of the conference as read by the caller: the given ones, or without `ids` every one in their feed. Answers the caller's feed.
+  """
+  markAnnouncementsRead(conferenceId: ID!, ids: [ID!]): [AnnouncementFeedItem!]!
 
   """
   Marks a chat as read up to now: for the caller, or, answering a team inbox, for everybody holding it.
@@ -3925,6 +4298,16 @@ type Mutation {
   ): Chat!
 
   """
+  Publishes an announcement to its audience: right away, or from `publishAt` on when that lies ahead (a scheduled one). With `notifyByMail` its audience is mailed once it is out. CONFLICT for one that is published already.
+  """
+  publishAnnouncement(
+    id: ID!
+
+    """Left out or past: now."""
+    publishAt: DateTime
+  ): Announcement!
+
+  """
   Records a result the caller picked in the search. Picking the same result again moves it to the top instead of listing it twice, and only the newest entries are kept. Every team member records their own searches; FORBIDDEN for anyone else.
   """
   recordSearch(
@@ -3961,6 +4344,11 @@ type Mutation {
   Gives a session another name; one another session of the conference has (ignoring case) is refused with CONFLICT.
   """
   renameAttendanceSession(id: ID!, occasion: String!): Boolean!
+
+  """
+  Mails an announcement that is out to its audience once more, as it reads now (after a correction). CONFLICT unless it is out and notifies by mail.
+  """
+  renotifyAnnouncement(id: ID!): Boolean!
 
   """
   Opens an ended session again, keeping its scans; reopening a running one changes nothing.
@@ -4035,6 +4423,11 @@ type Mutation {
   Creates a whole conference - committees, non-state actors and custom roles - from a seeding document (JSON, as string or parsed). System admins only. A malformed document, or one naming unknown nations, is refused with INVALID_INPUT.
   """
   seedNewConference(data: JSON!): Conference!
+
+  """
+  Sends the announcement's mail to the caller alone, as its audience would get it, whatever its state.
+  """
+  sendAnnouncementTestMail(id: ID!): Boolean!
 
   """
   Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, TERMS_NOT_ACCEPTED for a participant who has not accepted the terms (`acceptMessagingTerms`), CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.
@@ -4259,6 +4652,28 @@ type Mutation {
   updateAllConferenceParticipants(conferenceId: ID!, didAttend: Boolean): UpdateAllConferenceParticipantsResponse!
 
   """
+  Changes the given fields of an announcement; left out keeps a field, `null` clears `signature` and `visibleUntil`. `audiences` and `attachmentFileIds` each replace the whole list. Changing the title or text of an announcement that is out marks it as edited for its readers.
+  """
+  updateAnnouncement(
+    attachmentFileIds: [ID!]
+    audiences: [AnnouncementAudienceInput!]
+
+    """Markdown."""
+    body: String
+    id: ID!
+    importance: AnnouncementimportanceEnum
+    notifyByMail: Boolean
+    pinned: Boolean
+
+    """The line under the text saying who speaks; blank for none."""
+    signature: String
+
+    """The headline."""
+    title: String
+    visibleUntil: DateTime
+  ): Announcement!
+
+  """
   Changes the given fields of a schedule day; the others stay as they are.
   """
   updateCalendarDay(date: Date, id: ID!, name: String): Calendarday!
@@ -4351,7 +4766,6 @@ type Mutation {
     A file uploaded through `requestFileUpload` for this field of this conference; `null` removes the stored one, left out keeps it.
     """
     imageFileId: ID
-    info: String
     isOpenPaperSubmission: Boolean
 
     """A conference language (`de`, `en`, …)."""
@@ -4415,7 +4829,6 @@ type Mutation {
     """How long after the application deadline applications are still taken."""
     registrationDeadlineGracePeriodMinutes: Int
     showCalendar: Boolean
-    showInfoExpanded: Boolean
     startConference: DateTime
     state: ConferencestateEnum
 
@@ -4726,6 +5139,11 @@ type Mutation {
     """Whose answer it is; left out, the caller’s own."""
     userId: ID
   ): Surveyanswer!
+
+  """
+  Takes an announcement away from its audience: back to a draft, or with `archive` into the archive, which only its editors see.
+  """
+  withdrawAnnouncement(archive: Boolean, id: ID!): Announcement!
 }
 
 type MyReviewStats {
@@ -5446,6 +5864,22 @@ type Query {
   Whether a person's age on the first conference day fits the conference's range for taking part as `role`, for participant care (`myAgeNotice` for one's own); null when it does or no birthday is known.
   """
   ageNotice(conferenceId: ID!, role: AgeRole!, userId: ID!): AgeNotice
+
+  """Get a single announcement by ID"""
+  announcement(id: ID!): Announcement!
+
+  """
+  How many people of the conference the audience reaches right now, for the editor (the conference's content roles; FORBIDDEN otherwise).
+  """
+  announcementAudiencePreview(audiences: [AnnouncementAudienceInput!]!, conferenceId: ID!): AnnouncementAudienceCounts!
+
+  """
+  The conference's announcements that are out for the caller: published, their time come and not over, with the caller in their audience. Pinned ones first, then the urgent, then the newest. Empty for somebody without a part in the conference, a visitor included.
+  """
+  announcementFeed(conferenceId: ID!): [AnnouncementFeedItem!]!
+
+  """List all announcements"""
+  announcements(limit: Int, offset: Int, orderBy: AnnouncementOrderInputArgument, search: AnnouncementSearchInputArgument, where: AnnouncementWhereInputArgument): [Announcement!]!
 
   """Get a single assignmentReview by ID"""
   assignmentReview(id: ID!): Assignmentreview!
@@ -7693,6 +8127,9 @@ enum StatsFilter {
 }
 
 type Storedfile {
+  """Get the announcementAttachments related to this storedFile"""
+  announcementAttachmentOf(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: AnnouncementattachmentSearchInputArgument, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
+
   """Get the conferences related to this storedFile"""
   certificateOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
 
@@ -7764,6 +8201,7 @@ input StoredfileWhereInputArgument {
   AND: [StoredfileWhereInputArgument!]
   NOT: StoredfileWhereInputArgument
   OR: [StoredfileWhereInputArgument!]
+  announcementAttachmentOf: AnnouncementattachmentWhereInputArgument
   certificateOf: ConferenceWhereInputArgument
   contractOf: ConferenceWhereInputArgument
   createdAt: DateTimeWhereInputArgument
@@ -7824,6 +8262,17 @@ input StringWhereInputArgument {
 }
 
 type Subscription {
+  """Get a single announcement by ID"""
+  announcement(id: ID!): Announcement!
+
+  """
+  The conference's announcements that are out for the caller: published, their time come and not over, with the caller in their audience. Pinned ones first, then the urgent, then the newest. Empty for somebody without a part in the conference, a visitor included.
+  """
+  announcementFeed(conferenceId: ID!): [AnnouncementFeedItem!]!
+
+  """List all announcements"""
+  announcements(limit: Int, offset: Int, orderBy: AnnouncementOrderInputArgument, search: AnnouncementSearchInputArgument, where: AnnouncementWhereInputArgument): [Announcement!]!
+
   """Get a single assignmentReview by ID"""
   assignmentReview(id: ID!): Assignmentreview!
 
