@@ -106,6 +106,13 @@
 	let committee = $derived(
 		isNSA ? selectedAgendaItem?.committee : delegationMember.assignedCommittee
 	);
+	const committeeName = $derived(committee?.name ?? '');
+
+	// The resolution names its committee in its text, and an NA's changes with the agenda item
+	$effect(() => {
+		const name = committeeName;
+		if (name) untrack(() => resolutionStore.setCommitteeName(name));
+	});
 
 	// Resolution header data for working papers
 	let resolutionHeaderData = $derived(
@@ -125,6 +132,8 @@
 		}
 
 		// Read the current snapshot from the resolution store
+		// A recovered draft may carry another committee's name
+		resolutionStore.setCommitteeName(committeeName);
 		const content = resolutionStore.snapshot;
 
 		// Guard against empty content
@@ -166,7 +175,7 @@
 	{#snippet editor()}
 		{#key draft.editorKey}
 			<PaperEditor.Resolution.ResolutionEditor
-				committeeName={committee?.name ?? 'Committee'}
+				{committeeName}
 				editable
 				headerData={resolutionHeaderData}
 			/>
