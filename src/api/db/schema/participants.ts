@@ -63,6 +63,11 @@ export const conferenceParticipant = snakeCase.table(
 		 */
 		nsaCardNumber: integer().default(1).notNull(),
 		/**
+		 * Participant care took the person out of the chats between participants (after a report);
+		 * they still reach the team.
+		 */
+		messagingSuspended: boolean().default(false).notNull(),
+		/**
 		 * The person's own school, the only place a school of someone taking part is kept. Given when
 		 * they apply (or carried over from their waiting list entry), changed by themselves or by
 		 * participant care, and kept when the assignment merges delegations of several schools, so

@@ -35,6 +35,7 @@
 			linkToPreparationGuide: true,
 			isOpenPaperSubmission: true,
 			showCalendar: true,
+			messagingEnabled: true,
 			linkToPaperInbox: true
 		})
 	);
@@ -49,6 +50,7 @@
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
 		showCalendar: conference.showCalendar,
+		messagingEnabled: conference.messagingEnabled,
 		linkToPaperInbox: conference.linkToPaperInbox,
 		paymentStatus: status?.paymentStatus,
 		postalRegistrationStatus: getSimplifiedPostalStatus({

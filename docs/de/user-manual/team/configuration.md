@@ -155,6 +155,24 @@ Viele Mail-Dienste nehmen nur eine begrenzte Zahl an E-Mails pro Sekunde an. Unt
 
 Ganz unten zeigt das **Protokoll** die letzten 200 E-Mails der Konferenz, automatische und von Hand verschickte.
 
+## Nachrichten {#messages}
+
+Mit dem Schalter „Nachrichten zwischen Teilnehmenden und Team“ unter „Status“ gibst du die Chats frei. Teilnehmende schreiben dann der Teilnehmendenbetreuung und, sobald die Rollen veröffentlicht sind, einander, ihrer Delegation und dem Team ihres Gremiums.
+
+Das Team antwortet aus **Postfächern**, die es gemeinsam betreut:
+
+- **Teilnehmendenbetreuung.** Ein Postfach für die ganze Konferenz. Es gehört allen mit der Rolle Teilnehmendenbetreuung oder Projektleitung.
+- **Vorsitz und Gremienberatung.** Je ein Postfach pro Gremium. Wer es betreut, legst du unter „Teammitglieder“ fest. Das Hammer-Symbol in einer Zeile öffnet die Funktionen der Person.
+- **Vertrauenspersonen.** Im selben Dialog machst du ein Teammitglied zur Vertrauensperson der Konferenz. Teilnehmende schreiben allen Vertrauenspersonen gemeinsam oder einer einzelnen mit Namen. Das gemeinsame Postfach lesen alle Vertrauenspersonen, einen persönlichen Chat nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Systemadministration. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle. Diese Chats lassen sich nicht melden.
+
+Alle Postfächer findest du unter „Nachrichten“ im Bereich Kommunikation. Eine Antwort kommt bei Teilnehmenden mit Funktion und Namen an. Teilnehmende siehst du dort nach ihrer Rolle. Nur die Teilnehmendenbetreuung sieht auch den Namen.
+
+Im Paper Hub schreibst du die Verfasser\*innen eines Papiers direkt an. Der Knopf „Delegierte\*n anschreiben“ steht am Papier und in den Papierlisten. Betreust du mehrere passende Postfächer, wählst du, aus welchem du schreibst. Die erste Nachricht verweist auf das Papier.
+
+Meldet jemand einen Chat, erscheint er im Reiter „Meldungen“. Links stehen die offenen Fälle, der älteste zuerst. Mehrere Meldungen zu einem Chat sind ein Fall. Wählst du einen, liest du in der Mitte den Chat mit Namen. Eine Linie zeigt, wann er gemeldet wurde. Rechts steht die Fallakte mit den Meldungen und allen Beteiligten, bei einer Delegationsgruppe mit allen Mitgliedern. Dort siehst du frühere erledigte Meldungen zu den Chats einer Person, sperrst sie für Chats mit anderen Teilnehmenden, schreibst sie an oder öffnest ihre Karte. Mit einer internen Notiz erledigst du alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat. Die Notiz bleibt bei den erledigten Meldungen und ist nur für das Team sichtbar. Das Team erreicht eine gesperrte Person weiterhin.
+
+Die Benachrichtigung „Ungelesene Nachrichten“ gehört zu den automatischen [E-Mails](#emails). Schalte sie dort auf automatisch, damit sie ohne dein Zutun verschickt wird.
+
 ## Gremien und Sitze {#committees-and-seats}
 
 Im Reiter **Gremien und Themen** verwaltest du die Gremien der Konferenz mit ihren Tagesordnungspunkten.

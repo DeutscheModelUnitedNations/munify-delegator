@@ -130,7 +130,8 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'unlockPayments',
 	'unlockPostals',
 	'isOpenPaperSubmission',
-	'showCalendar'
+	'showCalendar',
+	'messagingEnabled'
 ];
 
 /**
