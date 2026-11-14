@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { instanceLinkPubsub } from '#api/pubsub';
 import { instanceSignals } from '#api/rumble';
 import { logger } from '#lib/logger';
+import { isShuttingDown } from '#api/services/shutdown';
 import { createChaseClient, type ChaseClient } from './chaseRemote';
 import { watchChaseTables, type ChaseTables } from './chaseTables';
 import { linkAccessToken, linkConfig, type LinkConfig } from './linkAuth';
@@ -51,7 +52,8 @@ function runWorker() {
 		if (!link) return stop();
 		watchLink({ ...link, cleanups, isStopped: () => stopped });
 	})().catch((error) => {
-		logger.error('The CHASE link worker stopped', error);
+		// closing the pool at shutdown fails whatever the worker was waiting for
+		if (!isShuttingDown()) logger.error('The CHASE link worker stopped', error);
 		stop();
 		running = undefined;
 	});
