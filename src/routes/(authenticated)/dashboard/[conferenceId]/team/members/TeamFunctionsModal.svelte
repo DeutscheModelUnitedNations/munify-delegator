@@ -53,7 +53,7 @@
 			(candidate) => candidate.kind === kind && (candidate.committeeId ?? null) === committeeId
 		)?.id}
 	<label
-		class="bg-base-200 mb-4 flex cursor-pointer items-start gap-3 rounded-lg p-3"
+		class="bg-base-200 mb-4 flex cursor-pointer items-start gap-3 rounded-box p-3"
 		data-testid="team-function-trusted"
 	>
 		<FunctionToggle

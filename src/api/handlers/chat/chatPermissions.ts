@@ -434,3 +434,23 @@ export async function assertCanSuspend({
 	});
 	return participant.conferenceId;
 }
+
+/**
+ * The reported chat whose reports the caller may settle: participant care of its conference.
+ * NOT_FOUND for anybody else, and for a chat without an open report.
+ */
+export async function assertCanSettleReportsOf({
+	ctx,
+	chatId
+}: {
+	ctx: ApiContext;
+	chatId: string;
+}) {
+	ctx.mustBeLoggedIn();
+	const chat = await db.query.chat.findFirst({ where: { id: chatId, underReview: true } });
+	const facts = await callerFacts(ctx);
+	if (!chat || !caresFor({ ctx, facts, conferenceId: chat.conferenceId })) {
+		throw apiError({ code: 'NOT_FOUND', message: m.chatReportNotFound() });
+	}
+	return chat;
+}

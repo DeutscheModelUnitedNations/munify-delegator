@@ -3,13 +3,17 @@ import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
-import { assertPartyOfChat } from '#api/handlers/chat/chatPermissions';
+import { assertCanSettleReportsOf, assertPartyOfChat } from '#api/handlers/chat/chatPermissions';
 import {
+	participantIdOfUser,
 	reportChat,
 	reportReasonSchema,
 	resolveChatReport,
+	resolveChatReports,
 	userNameOf
 } from '#api/handlers/chat/chatService';
+
+import { reportNoteSchema } from '#api/handlers/chat/reportNote';
 
 // The abilities of reports are registered with the chats' (`chatPermissions.ts`).
 
@@ -20,6 +24,19 @@ const ChatReportRef = object({
 			nullable: true,
 			description: 'Who reported the chat.',
 			resolve: async (report) => (await userNameOf(report.reporterUserId)) ?? null
+		}),
+		reporterParticipantId: t.id({
+			nullable: true,
+			description:
+				"The reporter's participant row in the conference: which of the chat's people it was.",
+			resolve: (report) =>
+				participantIdOfUser({ userId: report.reporterUserId, conferenceId: report.conferenceId })
+		}),
+		resolvedByName: t.string({
+			nullable: true,
+			description: 'Who settled the report.',
+			resolve: async (report) =>
+				report.resolvedById ? ((await userNameOf(report.resolvedById)) ?? null) : null
 		})
 	})
 });
@@ -38,6 +55,25 @@ schemaBuilder.mutationFields((t) => ({
 			const { chat, userId } = await assertPartyOfChat({ ctx, id: args.chatId });
 			await reportChat({ chat, reporterUserId: userId, reason: args.reason.trim() });
 			return true;
+		}
+	}),
+
+	resolveChatReports: t.field({
+		description:
+			"Settles every open report of a chat at once, with an optional note for the team, and answers how many it settled; the chat is private again. Participant care of the chat's conference only (NOT_FOUND otherwise, and for a chat without an open report).",
+		type: 'Int',
+		args: {
+			chatId: t.arg.id({ required: true }),
+			note: t.arg.string().validate(reportNoteSchema)
+		},
+		resolve: async (_root, args, ctx) => {
+			const resolvedById = ctx.mustBeLoggedIn().sub;
+			const chat = await assertCanSettleReportsOf({ ctx, chatId: args.chatId });
+			return resolveChatReports({
+				chatId: chat.id,
+				resolvedById,
+				note: args.note?.trim() || null
+			});
 		}
 	}),
 

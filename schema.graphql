@@ -966,7 +966,7 @@ type Chat {
   conferenceId: ID!
 
   """
-  The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties for participant care. Empty for a delegation group and for someone who holds no seat (any more).
+  The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties, or every member of a delegation group, for participant care. Empty for a member of a delegation group and for someone who holds no seat (any more).
   """
   contacts: [ChatContact!]!
   createdAt: DateTime!
@@ -1104,6 +1104,10 @@ input ChatOrderInputArgument {
 
 """A participant of a chat by name, as participant care sees them."""
 type ChatPerson {
+  """
+  How many settled reports there are about chats this person takes part in, not counting their own.
+  """
+  earlierReports: Int!
   name: String!
   participantId: ID!
   userId: ID!
@@ -1263,9 +1267,18 @@ type Chatreport {
 
   """Who reported the chat."""
   reporterName: String
+
+  """
+  The reporter's participant row in the conference: which of the chat's people it was.
+  """
+  reporterParticipantId: ID
   reporterUserId: ID!
+  resolutionNote: String
   resolvedAt: DateTime
   resolvedById: ID
+
+  """Who settled the report."""
+  resolvedByName: String
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -1282,6 +1295,7 @@ input ChatreportOrderInputArgument {
   id: SortingParameter
   reason: SortingParameter
   reporterUserId: SortingParameter
+  resolutionNote: SortingParameter
   resolvedAt: SortingParameter
   resolvedById: SortingParameter
   status: SortingParameter
@@ -1295,6 +1309,7 @@ enum ChatreportSearchFieldEnum {
   id
   reason
   reporterUserId
+  resolutionNote
   resolvedById
 }
 
@@ -1321,6 +1336,7 @@ input ChatreportWhereInputArgument {
   id: IDWhereInputArgument
   reason: StringWhereInputArgument
   reporterUserId: IDWhereInputArgument
+  resolutionNote: StringWhereInputArgument
   resolvedAt: DateTimeWhereInputArgument
   resolvedById: IDWhereInputArgument
   status: ChatreportstatusEnum
@@ -4010,6 +4026,11 @@ type Mutation {
   Settles a report. Once none of its reports is open the chat is private again. Participant care of its conference only (NOT_FOUND otherwise).
   """
   resolveChatReport(id: ID!): Chatreport!
+
+  """
+  Settles every open report of a chat at once, with an optional note for the team, and answers how many it settled; the chat is private again. Participant care of the chat's conference only (NOT_FOUND otherwise, and for a chat without an open report).
+  """
+  resolveChatReports(chatId: ID!, note: String): Int!
 
   """
   Drops the plan to turn a single participant into a delegation, with any role planned for it.

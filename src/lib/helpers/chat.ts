@@ -9,6 +9,8 @@ export type ChatInbox = 'PARTICIPANT_CARE' | 'CHAIR' | 'CONSULTANT' | 'TRUSTED_P
 export type ChatSide = 'PARTICIPANT' | 'TEAM' | 'REVIEW';
 
 export const CHAT_MESSAGE_MAX_LENGTH = 4000;
+/** How long the note participant care leaves when settling a report may be. */
+export const CHAT_REPORT_NOTE_MAX_LENGTH = 2000;
 export const CHAT_REPORT_REASON_MAX_LENGTH = 1000;
 /** How long a message stays unread before a mail tells its reader. */
 export const UNREAD_MESSAGE_MAIL_MINUTES = 15;

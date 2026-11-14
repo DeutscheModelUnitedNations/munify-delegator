@@ -169,7 +169,7 @@ You find all inboxes under "Messages" in the communication section. Participants
 
 In the paper hub you write to the author of a paper directly. The button "Write to delegate" is on the paper and in the paper lists. If you answer several inboxes that fit you pick the one to write from. The first message links to the paper.
 
-When somebody reports a chat it appears in the tab "Reports". Participant care reads it there with names, can suspend a person from chats with other participants and resolves the report. After that the chat is private again. The team still reaches a suspended person.
+When somebody reports a chat it appears in the tab "Reports". The open cases are on the left, the oldest first. Several reports of one chat are one case. Pick one and you read the chat with names in the middle. A line shows when it was reported. The case file on the right holds the reports and everybody involved, for a delegation group all its members. There you see earlier settled reports about a person's chats, suspend them from chats with other participants, write to them or open their card. With an internal note you settle all reports of the chat at once. After that the chat is private again. The note stays with the settled reports and only the team sees it. The team still reaches a suspended person.
 
 The notification "Unread messages" is one of the automatic [emails](#emails). Switch it to automatic there so that it goes out without you.
 

@@ -116,6 +116,18 @@ describe('chatTitle', () => {
 		);
 		expect(chatTitle({ ...base, kind: 'DELEGATION', side: 'REVIEW' })).toBe('Delegationsgruppe');
 	});
+
+	test('participant care is told whose group it reads, and who is in it', () => {
+		const group = {
+			...base,
+			kind: 'DELEGATION' as const,
+			side: 'REVIEW',
+			contacts: [germany, germany],
+			people: [{ name: 'Anna Schmidt' }, { name: 'Ben Braun' }]
+		};
+		expect(chatTitle(group)).toBe('Delegation Deutschland');
+		expect(chatSubtitle(group)).toBe('Anna Schmidt, Ben Braun');
+	});
 });
 
 describe('chatAvatar', () => {

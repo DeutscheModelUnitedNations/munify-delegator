@@ -8,7 +8,7 @@
 	import type { OpenChat } from '#lib/api/chats';
 	import type { ChatSide } from '#lib/helpers/chat';
 	import { m } from '#lib/paraglide/messages';
-	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import UserCardButton from './UserCardButton.svelte';
 	import ChatAvatar from './ChatAvatar.svelte';
 	import ChatThreadMenu from './ChatThreadMenu.svelte';
 	import { chatAvatar, chatSubtitle, chatTitle, kindHint } from './chatLabels';
@@ -45,15 +45,7 @@
 	{#if !asParticipant}
 		<div class="flex shrink-0 gap-1">
 			{#each chat.people as person (person.participantId)}
-				<button
-					type="button"
-					class="btn btn-ghost btn-sm btn-square"
-					title={m.chatOpenUserCard({ name: person.name })}
-					aria-label={m.chatOpenUserCard({ name: person.name })}
-					onclick={() => openUserCard(person.userId)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-identification-card text-lg"></i>
-				</button>
+				<UserCardButton userId={person.userId} name={person.name} />
 			{/each}
 		</div>
 	{:else if chat.kind !== 'TEAM'}

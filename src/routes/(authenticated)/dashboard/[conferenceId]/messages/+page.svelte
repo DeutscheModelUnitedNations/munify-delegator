@@ -68,7 +68,7 @@
 	</header>
 
 	{#if view.closed}
-		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-xl p-5">
+		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-box p-5">
 			<i aria-hidden="true" class="ph-duotone ph-chat-slash text-2xl"></i>
 			<p>{view.closed === 'disabled' ? m.chatRefusedDisabled() : m.chatOnlyParticipants()}</p>
 		</div>

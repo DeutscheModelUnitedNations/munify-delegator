@@ -12,9 +12,9 @@
 	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
 	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
 	import NewChatDialog from '#lib/components/chat/NewChatDialog.svelte';
-	import { chatTitle, sideOf } from '#lib/components/chat/chatLabels';
-	import ChatReports from './ChatReports.svelte';
+	import { sideOf } from '#lib/components/chat/chatLabels';
 	import InboxChips from './InboxChips.svelte';
+	import ReportDesk from './ReportDesk.svelte';
 	import SettledReports from './SettledReports.svelte';
 	import { inboxKey, inboxesOf } from './teamInboxes';
 	import type { PageProps } from './$types';
@@ -58,7 +58,10 @@
 					status: true,
 					createdAt: true,
 					resolvedAt: true,
-					reporterName: true
+					reporterName: true,
+					reporterParticipantId: true,
+					resolutionNote: true,
+					resolvedByName: true
 				})
 			: []
 	);
@@ -71,9 +74,7 @@
 
 	const view = $derived(params.view === 'reports' && cares ? 'reports' : 'inboxes');
 	const shownChats = $derived(
-		view === 'reports'
-			? reviewChats
-			: teamChats.filter((chat) => !params.inbox || inboxKey(chat) === params.inbox)
+		teamChats.filter((chat) => !params.inbox || inboxKey(chat) === params.inbox)
 	);
 	const unreadOf = (key: string) =>
 		teamChats
@@ -89,11 +90,10 @@
 	const reportsTitle = $derived(
 		openReports.length > 0 ? m.chatReportsWithCount({ count: openReports.length }) : m.chatReports()
 	);
-	const hasWorkspace = $derived(reporting ? reviewChats.length > 0 : inboxes.length > 0);
-	const severalInboxes = $derived(!reporting && inboxes.length > 1);
+	const severalInboxes = $derived(inboxes.length > 1);
 	// the team starts a chat with a participant once the roles are released
 	const onNew = $derived(
-		!reporting && conference.messagingEnabled && conference.assignmentReleased
+		conference.messagingEnabled && conference.assignmentReleased
 			? () => (pickerOpen = true)
 			: undefined
 	);
@@ -102,11 +102,6 @@
 		params.chat = null;
 		params.view = next === 'reports' ? 'reports' : null;
 	}
-
-	const titleOfChat = (chatId: string) => {
-		const chat = reviewChats.find((candidate) => candidate.id === chatId);
-		return chat ? chatTitle(chat) : undefined;
-	};
 </script>
 
 <div class="flex flex-col gap-4 py-4 sm:p-6">
@@ -135,19 +130,20 @@
 	{/if}
 
 	{#if reporting}
-		<ChatReports
+		<ReportDesk
+			{conferenceId}
 			reports={openReports}
-			titleOf={titleOfChat}
-			onRead={(chatId) => (params.chat = chatId)}
+			chats={reviewChats}
+			{selectedId}
+			onSelect={(chatId) => (params.chat = chatId)}
 		/>
+		<SettledReports reports={settledReports} />
 	{:else if inboxes.length === 0}
-		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-xl p-5">
+		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-box p-5">
 			<i aria-hidden="true" class="ph-duotone ph-tray text-2xl"></i>
 			<p>{m.chatNoInboxHint()}</p>
 		</div>
-	{/if}
-
-	{#if hasWorkspace}
+	{:else}
 		<ChatWorkspace
 			chats={shownChats}
 			{selectedId}
@@ -157,7 +153,7 @@
 			onPaperSent={() => (params.paper = null)}
 		>
 			{#snippet listHeader()}
-				<ChatListHeader title={reporting ? m.chatReportedChats() : m.chatChats()} {onNew}>
+				<ChatListHeader title={m.chatChats()} {onNew}>
 					{#if severalInboxes}
 						<InboxChips
 							{inboxes}
@@ -175,10 +171,6 @@
 				</div>
 			{/snippet}
 		</ChatWorkspace>
-	{/if}
-
-	{#if reporting}
-		<SettledReports reports={settledReports} />
 	{/if}
 </div>
 

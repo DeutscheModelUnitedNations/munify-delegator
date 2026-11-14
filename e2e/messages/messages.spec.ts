@@ -208,22 +208,33 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 	const carePage = await signedIn(browser, { id: care.id, startUrl: TEAM_MESSAGES });
 	await carePage.getByRole('tab', { name: 'Meldungen (1)' }).click();
 	const report = carePage.getByTestId('chat-reports').getByRole('listitem');
+	await expect(report).toContainText('Frankreich · MSGV');
 	await expect(report).toContainText('Bitte schaut euch das an.');
-	await expect(report).toContainText(`Gemeldet von ${carla.given} ${carla.family}`);
 	await carePage.getByTestId('chat-report-open').click();
+
+	// the case file beside the chat: the report, and both people by name and role
+	const file = carePage.getByTestId('chat-case-file');
+	await expect(file.getByTestId('chat-case-report')).toContainText(
+		`Gemeldet von ${carla.given} ${carla.family}`
+	);
+	const people = file.getByTestId('chat-case-people').getByRole('listitem');
+	await expect(people).toHaveCount(2);
+	await expect(people.filter({ hasText: `${carla.given} ${carla.family}` })).toContainText(
+		'hat gemeldet'
+	);
 
 	// participant care reads along, with the names, and cannot write
 	const thread = carePage.getByTestId('chat-thread');
 	await expect(thread).toContainText('Du liest diesen Chat, weil er gemeldet wurde.');
 	await expect(thread).toContainText(`${anna.given} ${anna.family}`);
 	await expect(thread.getByTestId('chat-message')).toContainText(['Hallo aus Deutschland']);
+	await expect(thread.getByTestId('chat-reported-divider')).toContainText('Gemeldet');
 	await expect(carePage.getByTestId('chat-input')).toHaveCount(0);
 	await expect(carePage.getByTestId('chat-refusal')).toBeVisible();
 
 	// suspending Germany's delegate closes her chats with other participants
-	const suspendAnna = thread
-		.getByRole('listitem')
-		.filter({ hasText: 'Deutschland · MSGV' })
+	const suspendAnna = people
+		.filter({ hasText: `${anna.given} ${anna.family}` })
 		.getByTestId('chat-suspend');
 	await suspendAnna.click();
 	await expect(suspendAnna).toHaveText('Sperre aufheben');
@@ -236,8 +247,12 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 
 	await suspendAnna.click();
 	await expect(suspendAnna).toHaveText('Für Chats sperren');
+	// settling it with a note closes the case; the note stays with the settled reports
+	await carePage.getByTestId('chat-case-note').fill('Mit beiden gesprochen.');
 	await carePage.getByTestId('chat-report-resolve').click();
 	await expect(carePage.getByTestId('chat-no-reports')).toBeVisible();
+	await carePage.getByText('Erledigte Meldungen (1)').click();
+	await expect(carePage.getByText('Mit beiden gesprochen.')).toBeVisible();
 });
 
 test('project management hands out a committee function, which opens an inbox', async ({

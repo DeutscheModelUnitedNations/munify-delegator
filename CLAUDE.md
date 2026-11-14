@@ -1354,7 +1354,11 @@ bun run preview
   purpose and answers only its own person. Anything new that reads chats has to keep this.
 - **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
   inbox; participant care a chat between participants only while a report is open
-  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved). A system
+  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved:
+  `resolveChatReports` settles all of a chat's at once, with an internal note,
+  `chatReport.resolutionNote`). There it gets everybody of the chat by role and name
+  (`chat.contacts`, `chat.people`), the members of a delegation's group included, each with the
+  settled reports there were before about their chats (`earlierReports`). A system
   admin reads what the team reads, never a private chat. `chatSide` answers how the caller relates
   to a chat (`PARTICIPANT`, `TEAM`, `REVIEW`); `REVIEW` never writes.
 - **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages

@@ -25,9 +25,11 @@
 		/** A paper the next message is about (the team writing from a paper) */
 		paperId?: string | null;
 		onPaperSent?: () => void;
+		/** A reported chat participant care reads: when its first open report came in */
+		reportedAt?: Date | string | null;
 	}
 
-	let { chatId, onBack, paperId = null, onPaperSent }: Props = $props();
+	let { chatId, onBack, paperId = null, onPaperSent, reportedAt = null }: Props = $props();
 
 	const PAGE = 50;
 	let limit = $state(PAGE);
@@ -105,7 +107,7 @@
 		<ChatThreadHeader {chat} {side} {onBack} />
 
 		{#if side === 'REVIEW'}
-			<ChatReviewBanner contacts={chat.contacts} people={chat.people} />
+			<ChatReviewBanner />
 		{/if}
 
 		<div
@@ -130,7 +132,14 @@
 					<p>{m.chatEmptyThread()}</p>
 				</div>
 			{/if}
-			<ChatMessages {messages} {chat} {side} {unreadFromId} conferenceId={chat.conferenceId} />
+			<ChatMessages
+				{messages}
+				{chat}
+				{side}
+				{unreadFromId}
+				{reportedAt}
+				conferenceId={chat.conferenceId}
+			/>
 		</div>
 
 		<ChatComposer chatId={chat.id} refusal={chat.writeRefusal ?? null} {paperId} {onPaperSent} />

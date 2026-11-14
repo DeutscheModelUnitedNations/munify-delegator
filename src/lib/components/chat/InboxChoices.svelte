@@ -21,7 +21,7 @@
 		<li>
 			<button
 				type="button"
-				class="hover:bg-base-200 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left"
+				class="hover:bg-base-200 flex w-full items-center gap-3 rounded-box px-3 py-2 text-left"
 				{disabled}
 				onclick={() => onChoose(option)}
 				data-testid="inbox-choice"

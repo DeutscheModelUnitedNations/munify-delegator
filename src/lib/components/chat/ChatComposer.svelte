@@ -68,7 +68,7 @@
 <footer class="border-base-300 border-t p-3 sm:px-4">
 	{#if refusal}
 		<p
-			class="bg-base-200 text-base-content/70 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm"
+			class="bg-base-200 text-base-content/70 flex items-start gap-2 rounded-box px-3 py-2.5 text-sm"
 			data-testid="chat-refusal"
 		>
 			<i aria-hidden="true" class="ph-duotone ph-lock-simple mt-0.5"></i>

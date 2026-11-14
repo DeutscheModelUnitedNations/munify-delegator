@@ -169,7 +169,7 @@ Alle Postfächer findest du unter „Nachrichten“ im Bereich Kommunikation. Ei
 
 Im Paper Hub schreibst du die Verfasser\*innen eines Papiers direkt an. Der Knopf „Delegierte\*n anschreiben“ steht am Papier und in den Papierlisten. Betreust du mehrere passende Postfächer, wählst du, aus welchem du schreibst. Die erste Nachricht verweist auf das Papier.
 
-Meldet jemand einen Chat, erscheint er im Reiter „Meldungen“. Die Teilnehmendenbetreuung liest ihn dort mit Namen, kann eine Person für Chats mit anderen Teilnehmenden sperren und erledigt die Meldung. Danach ist der Chat wieder privat. Das Team erreicht eine gesperrte Person weiterhin.
+Meldet jemand einen Chat, erscheint er im Reiter „Meldungen“. Links stehen die offenen Fälle, der älteste zuerst. Mehrere Meldungen zu einem Chat sind ein Fall. Wählst du einen, liest du in der Mitte den Chat mit Namen. Eine Linie zeigt, wann er gemeldet wurde. Rechts steht die Fallakte mit den Meldungen und allen Beteiligten, bei einer Delegationsgruppe mit allen Mitgliedern. Dort siehst du frühere erledigte Meldungen zu den Chats einer Person, sperrst sie für Chats mit anderen Teilnehmenden, schreibst sie an oder öffnest ihre Karte. Mit einer internen Notiz erledigst du alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat. Die Notiz bleibt bei den erledigten Meldungen und ist nur für das Team sichtbar. Das Team erreicht eine gesperrte Person weiterhin.
 
 Die Benachrichtigung „Ungelesene Nachrichten“ gehört zu den automatischen [E-Mails](#emails). Schalte sie dort auf automatisch, damit sie ohne dein Zutun verschickt wird.
 

@@ -867,7 +867,18 @@ list header.
 - **`ChatThread`**: one chat. Fetches itself by `chatId`, marks it read while on screen, shows the
   messages by day and the field to write in (Enter sends, Shift+Enter breaks the line), or why the
   caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
-  reviewing a report it shows who the people are and suspends them.
+  reviewing a report it says so (`ChatReviewBanner`) and, given `reportedAt`, draws a line where
+  the chat was reported (`firstMessageAfter`).
+- **The report desk** (`team/messages/ReportDesk.svelte`, the "Reports" tab of participant care):
+  three columns, which take turns on a narrow screen. `ReportQueue` lists one case per reported
+  chat, the one waiting longest first (`reportCases`, `waitingSince`); the middle is the chat's
+  `ChatThread`, read only; `ReportCaseFile` holds the chat's reports, everybody of the chat by
+  name and role (a delegation group's members included) with their earlier settled reports, the
+  suspension switch, `WriteToDelegateButton` and the user card, and the internal note that
+  settles all of the chat's reports at once (`resolveChatReports`). `SettledReports` keeps the
+  settled ones with their notes.
+- **Corners follow the theme**: `rounded-box` for cards, panels and bubbles, `rounded-field` for
+  small things. DMUN's theme draws both (almost) square, so never `rounded-lg` / `rounded-xl`.
 - **`NewChatDialog` / `NewChatPicker`**: finding whom to write to. One search field over role,
   country and committee (`matchesSearch`: every word has to be found, so "ger ga" works), chips
   per committee, the team inboxes and the delegation group on top. `mode="team"` picks a person
