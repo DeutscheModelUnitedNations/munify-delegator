@@ -30,14 +30,16 @@
 	);
 </script>
 
-<div
+<p
 	role="note"
-	class="alert alert-info alert-soft items-start {className}"
+	class="text-base-content/70 flex items-start gap-2 text-sm {className}"
 	data-testid="conference-language-notice"
 >
-	<i aria-hidden="true" class="ph-duotone ph-translate mt-0.5 text-xl"></i>
-	<div class="flex flex-col gap-1">
-		<h2 class="font-semibold">{m.conferenceLanguageNoticeTitle({ language })}</h2>
-		<p class="text-sm">{m.conferenceLanguageNoticeText({ language })}</p>
-	</div>
-</div>
+	<i aria-hidden="true" class="ph-duotone ph-translate text-info mt-0.5 text-base"></i>
+	<span>
+		<strong class="text-base-content font-semibold"
+			>{m.conferenceLanguageNoticeTitle({ language })}.</strong
+		>
+		{m.conferenceLanguageNoticeText({ language })}
+	</span>
+</p>
