@@ -146,3 +146,19 @@ export function unreadByInbox(
 	}
 	return unread;
 }
+
+/**
+ * An inbox's chats as its list shows them: the open ones, and with the archive shown the archived
+ * ones after them. `archived` counts the ones put away, shown or not.
+ */
+export function listedChats<T extends { archived: boolean }>({
+	chats,
+	showArchive
+}: {
+	chats: readonly T[];
+	showArchive: boolean;
+}) {
+	const open = chats.filter((chat) => !chat.archived);
+	const archived = chats.filter((chat) => chat.archived);
+	return { chats: showArchive ? [...open, ...archived] : open, archived: archived.length };
+}

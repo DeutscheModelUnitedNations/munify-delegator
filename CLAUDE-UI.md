@@ -899,6 +899,10 @@ list header.
   inbox) when there are several, the chat list right away when there is one. A system admin gets
   participant care's inbox and both inboxes of every committee (`inboxesOf`), never the trusted
   persons'. `fetchTeamInboxes` + `teamInboxesOf` are what both the menu and the page read.
+- **An inbox's archive**: `ChatArchiveButton` in the thread header (team side only) puts a chat
+  away or takes it out; the list leaves archived chats out until `ArchiveToggle` in `InboxChats` (`?archive=1`)
+  shows them after the open ones, marked "archived" (`listedChats`). The overview cards count
+  open chats only.
 - **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
   `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
   `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than

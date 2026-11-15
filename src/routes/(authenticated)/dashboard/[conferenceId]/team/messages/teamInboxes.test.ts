@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { inboxKey, inboxMenu, inboxesOf, unreadByInbox } from './teamInboxes';
+import { inboxKey, inboxMenu, inboxesOf, listedChats, unreadByInbox } from './teamInboxes';
 
 const fn = (kind: 'CHAIR' | 'CONSULTANT', committeeId: string, abbreviation: string) => ({
 	kind,
@@ -108,5 +108,29 @@ describe('inboxKey', () => {
 		expect(inboxKey({ inbox: 'TRUSTED_PERSON', trustedPersonName: 'Anna Meier' })).toBe(
 			'TRUSTED_PERSON:own'
 		);
+	});
+});
+
+describe('listedChats', () => {
+	const chats = [
+		{ id: 'a', archived: false },
+		{ id: 'b', archived: true },
+		{ id: 'c', archived: false }
+	];
+
+	test('leaves the archive out until it is asked for, and counts it', () => {
+		const listed = listedChats({ chats, showArchive: false });
+		expect(listed.chats.map((chat) => chat.id)).toEqual(['a', 'c']);
+		expect(listed.archived).toBe(1);
+	});
+
+	test('shows the archived chats after the open ones', () => {
+		const listed = listedChats({ chats, showArchive: true });
+		expect(listed.chats.map((chat) => chat.id)).toEqual(['a', 'c', 'b']);
+		expect(listed.archived).toBe(1);
+	});
+
+	test('counts none in an inbox without an archive', () => {
+		expect(listedChats({ chats: [], showArchive: true })).toEqual({ chats: [], archived: 0 });
 	});
 });

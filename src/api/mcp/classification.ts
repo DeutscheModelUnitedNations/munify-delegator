@@ -144,6 +144,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'lastMessageAt',
 			'lastParticipantMessageAt',
 			'teamReadAt',
+			'teamArchivedAt',
+			'archived',
 			'underReview',
 			'unreadCount',
 			'side',

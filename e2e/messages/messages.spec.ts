@@ -167,6 +167,53 @@ test('a question to a team inbox is answered under the function and name', async
 	);
 });
 
+test('an answered chat is archived and comes back with the next message', async ({ browser }) => {
+	const reviewerPage = await signedIn(browser, { id: reviewer.id, startUrl: TEAM_MESSAGES });
+	const list = reviewerPage.getByTestId('chat-list');
+	await openChat(reviewerPage, /Deutschland · MSGV/);
+
+	// archiving closes the chat and takes it out of the list
+	await reviewerPage.getByTestId('chat-archive').click();
+	await expect(reviewerPage.getByTestId('chat-thread')).toBeHidden();
+	await expect(list).toBeHidden();
+	await expect(reviewerPage.getByText('Erledigte Chats findest du im Archiv.')).toBeVisible();
+
+	// the archive is hidden until it is asked for
+	const toggle = reviewerPage.getByTestId('chat-archive-toggle');
+	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+	await expect(toggle).toContainText('1');
+	await toggle.click();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+	const archived = list.getByRole('button', { name: /Deutschland · MSGV/ });
+	await expect(archived).toContainText('Archiviert');
+	await toggle.click();
+	await expect(list).toBeHidden();
+
+	// the participant's next message brings it back, live
+	const annaPage = await signedIn(browser, { id: anna.id, startUrl: MESSAGES });
+	await openChat(annaPage, 'Gremienberatung · MSGV');
+	await write(annaPage, 'Und wie viele Quellen?');
+	const back = list.getByRole('button', { name: /Deutschland · MSGV/ });
+	await expect(back).toBeVisible();
+	await expect(back).not.toContainText('Archiviert');
+	await expect(toggle).toBeHidden();
+
+	// it can also be taken out of the archive by hand
+	await back.click();
+	const button = reviewerPage.getByTestId('chat-archive');
+	await button.click();
+	await toggle.click();
+	await list.getByRole('button', { name: /Deutschland · MSGV/ }).click();
+	await expect(button).toHaveAttribute('aria-pressed', 'true');
+	await button.click();
+	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	await expect(list.getByRole('button', { name: /Deutschland · MSGV/ })).not.toContainText(
+		'Archiviert'
+	);
+
+	for (const page of [reviewerPage, annaPage]) await page.context().close();
+});
+
 test('a reviewer writes to a paper’s author from the paper', async ({ browser }) => {
 	const reviewerPage = await signedIn(browser, {
 		id: reviewer.id,

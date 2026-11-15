@@ -790,6 +790,7 @@ export type ChasePresenceRepresentation = {
 };
 		
 export type Chat = {
+  archived: Boolean,
   blockedByMe: Boolean,
   committee: (p?: {
     orderBy?: CommitteeOrderInputArgument | null | undefined,
@@ -841,6 +842,7 @@ export type Chat = {
   }) => Chatreport[],
   search_distance: Float | null,
   side: String,
+  teamArchivedAt: DateTime | null,
   teamReadAt: DateTime | null,
   trustedPersonName: String | null,
   trustedUserId: ID | null,
@@ -889,6 +891,7 @@ export type ChatOrderInputArgument = {
   lastParticipantMessageAt?: SortingParameter | null | undefined,
   otherParticipantId?: SortingParameter | null | undefined,
   participantId?: SortingParameter | null | undefined,
+  teamArchivedAt?: SortingParameter | null | undefined,
   teamReadAt?: SortingParameter | null | undefined,
   trustedUserId?: SortingParameter | null | undefined,
   underReview?: SortingParameter | null | undefined,
@@ -931,6 +934,7 @@ export type ChatWhereInputArgument = {
   participant?: ConferenceparticipantWhereInputArgument | null | undefined,
   participantId?: IDWhereInputArgument | null | undefined,
   reports?: ChatreportWhereInputArgument | null | undefined,
+  teamArchivedAt?: DateTimeWhereInputArgument | null | undefined,
   teamReadAt?: DateTimeWhereInputArgument | null | undefined,
   trustedUserId?: IDWhereInputArgument | null | undefined,
   underReview?: BooleanWhereInputArgument | null | undefined,
@@ -3184,6 +3188,10 @@ export type Mutation = {
     calendarDayId: ID,
     id: ID,
     runs: Boolean
+  }) => Boolean,
+  setChatArchived: (p: {
+    archived: Boolean,
+    chatId: ID
   }) => Boolean,
   setChatBlocked: (p: {
     blocked: Boolean,

@@ -114,6 +114,11 @@ export const chat = snakeCase.table(
 		lastParticipantMessageAt: timestamp({ precision: 3 }),
 		/** `TEAM`: when somebody holding the inbox last read the chat; the inbox shares it. */
 		teamReadAt: timestamp({ precision: 3 }),
+		/**
+		 * `TEAM`: when somebody holding the inbox put the chat away into the archive, for everybody
+		 * holding it; emptied by the next message, which brings the chat back.
+		 */
+		teamArchivedAt: timestamp({ precision: 3 }),
 		/** While a report is open participant care reads the chat (`chatReport`). */
 		underReview: boolean().default(false).notNull()
 	},
