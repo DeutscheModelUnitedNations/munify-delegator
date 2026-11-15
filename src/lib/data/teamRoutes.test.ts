@@ -71,12 +71,13 @@ describe('who sees what', () => {
 		expect(teamRouteForPath('team/emails')?.id).toBe('emails');
 	});
 
-	test('the content lead plans seats but sees none of the care pages', () => {
+	test('the content lead plans seats and writes announcements but sees none of the care pages', () => {
 		expect(ids(as('CONTENT_LEAD'))).toEqual([
 			'stats',
 			'settings',
 			'seatPlanning',
 			'attendance',
+			'announcement',
 			'messages'
 		]);
 	});

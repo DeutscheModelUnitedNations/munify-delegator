@@ -102,8 +102,7 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 1 · Pre',
 			longTitle: 'Seed-Konferenz in Planung',
-			state: 'PRE',
-			info: 'Die Bewerbung öffnet bald. Diese Ankündigung ist eingeklappt.'
+			state: 'PRE'
 		},
 		days: { applicationDeadline: 60, startConference: 120, endConference: 123 },
 		assigned: false,
@@ -172,8 +171,6 @@ export const conferencePlans: ConferencePlan[] = [
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: true,
-			info: 'Willkommen! Bitte erledigt Zahlung und Postanmeldung bis Monatsende. Diese Ankündigung ist ausgeklappt.',
-			showInfoExpanded: true,
 			showCalendar: false,
 			linkToPaperInbox: 'https://example.org/paper-inbox',
 			linkToTeamWiki: 'https://example.org/team-wiki',
@@ -207,8 +204,7 @@ export const conferencePlans: ConferencePlan[] = [
 			assignmentReleased: false,
 			assignmentReleasedAt: null,
 			feeAmount: null,
-			linkToPreparationGuide: null,
-			info: null
+			linkToPreparationGuide: null
 		},
 		days: { applicationDeadline: -20, startConference: 28, endConference: 31 },
 		assigned: true,
@@ -236,8 +232,7 @@ export const conferencePlans: ConferencePlan[] = [
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: true,
-			showCalendar: true,
-			info: 'Die Konferenz läuft! Raumänderungen stehen im Kalender.'
+			showCalendar: true
 		},
 		days: { applicationDeadline: -60, startConference: -1, endConference: 2 },
 		assigned: true,

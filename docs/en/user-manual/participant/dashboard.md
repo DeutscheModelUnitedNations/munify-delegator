@@ -142,7 +142,15 @@ The other members can only view the page and see **Not yet assigned** until then
 
 ## Conference information {#conference-information}
 
-Whatever the team wants everyone to know is under **Announcements**, right below the conference header. Expand long announcements with **Show more**.
+Whatever the team wants you to know is under **Announcements**, right below the conference header. You only see what is meant for you, for example for your committee or for supervisors.
+
+- **New** marks what you have not read yet. **Mark as read** removes the mark.
+- Pinned announcements always stay on top.
+- Expand long announcements with **Show more**.
+- Open attachments with the buttons below the text.
+- The dashboard shows the newest ones. **Show all announcements** leads to the full list.
+
+An **urgent** announcement also shows as a red bar on every page of the conference until you have read it. For some announcements you also get a mail with the full text.
 
 The quick links also hold:
 

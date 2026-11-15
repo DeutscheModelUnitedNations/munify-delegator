@@ -81,7 +81,6 @@ export function makeSeedConference(
 		location: faker.location.city(),
 		language: 'deu',
 		website: faker.internet.url(),
-		info: faker.company.catchPhrase(),
 		state,
 		applicationDeadline,
 		startConference,

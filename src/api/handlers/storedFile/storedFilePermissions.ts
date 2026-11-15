@@ -3,9 +3,11 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
+	CONFERENCE_CONTENT_ROLES,
 	hasPartIn,
 	hasPartInConference,
 	hop,
+	isTeamMemberOfConference,
 	readableConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
@@ -32,7 +34,8 @@ const WITHOUT_UPLOADER = { uploadedById: false };
  * - its templates (contract, consents, terms, certificate): to the people with a part in it, like
  *   the members-only columns that hold them;
  * - a place's site plan: to whoever reads the conference's calendar, like the place;
- * - a resolution's PDF: to the people with a part in its conference, like the resolution.
+ * - a resolution's PDF: to the people with a part in its conference, like the resolution;
+ * - an announcement's attachments: to its editors (readers get them through their feed).
  */
 export function registerStoredFileAbilities() {
 	abilityBuilder.storedFile.allow('read').when(systemAdmin);
@@ -76,6 +79,18 @@ export function registerStoredFileAbilities() {
 	abilityBuilder.storedFile.allow('read').when(
 		liveRule((args) => {
 			const where = hop(calendarConference(args), (sitePlanOf) => ({ sitePlanOf }));
+			return where && { where, columns: WITHOUT_UPLOADER };
+		})
+	);
+
+	// An announcement's attachments: its editors. Its readers get the files with their feed
+	// (`announcementFeed`), which hands out the URLs itself.
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const where = hop(
+				isTeamMemberOfConference({ ...args, roles: CONFERENCE_CONTENT_ROLES }),
+				(announcement) => ({ announcementAttachmentOf: { announcement } })
+			);
 			return where && { where, columns: WITHOUT_UPLOADER };
 		})
 	);

@@ -13,10 +13,12 @@ import type {
 	SnapshotWaitingEntry
 } from './dueEmails';
 import { loadUnreadOfParticipants, loadUnreadOfTeam } from './unreadMessages';
+import { loadAnnouncementMails } from './announcementEmails';
 
 /**
  * What `dueEmails` decides from, read a page at a time: never a whole conference at once. A page
- * is one of three parts - participants, the waiting list, the team - and holds, besides its own
+ * is one of four parts - participants, the waiting list, the team, and the announcements'
+ * audiences, which reach across the other three - and holds, besides its own
  * rows, only what the rules about them read: the people around them (`neighbours`: co-members,
  * supervisors, students), the reviews of their papers and their survey answers. Parts and data
  * the asked-for kinds do not need are not read at all.
@@ -25,19 +27,21 @@ import { loadUnreadOfParticipants, loadUnreadOfTeam } from './unreadMessages';
 /** Participants per page; the waiting list and the team page by the same size. */
 const EMAIL_PAGE_SIZE = 500;
 
-type EmailPagePart = 'people' | 'waitingList' | 'team';
+type EmailPagePart = 'people' | 'waitingList' | 'team' | 'announcements';
 /** Where a page starts: the part, and the last id before it. */
 export interface EmailCursor {
 	part: EmailPagePart;
 	after: string | null;
 }
-const PARTS: readonly EmailPagePart[] = ['people', 'waitingList', 'team'];
+const PARTS: readonly EmailPagePart[] = ['people', 'waitingList', 'team', 'announcements'];
 export const FIRST_EMAIL_PAGE: EmailCursor = { part: 'people', after: null };
 
 /** The kinds only one part makes due; every other kind is about participants. */
 const PARTS_OF_KIND: Partial<Record<EmailKind, readonly EmailPagePart[]>> = {
 	WAITING_LIST_REGISTERED: ['waitingList'],
 	TEAM_WELCOME: ['team'],
+	// an announcement's audience can hold anybody: participants, the waiting list, the team
+	ANNOUNCEMENT: ['announcements'],
 	// chats are read by participants and by the team's inboxes
 	UNREAD_MESSAGES: ['people', 'team']
 };
@@ -109,7 +113,8 @@ const emptySnapshot = (conference: EmailConference): EmailSnapshot => ({
 	reviews: [],
 	surveys: [],
 	waitingList: [],
-	unreadMessages: []
+	unreadMessages: [],
+	announcementMails: []
 });
 
 const PARTICIPANT_COLUMNS = {
@@ -533,6 +538,69 @@ export function nextCursor({
 	return following ? { part: following, after: null } : null;
 }
 
+interface PageArgs {
+	conference: EmailConference;
+	after: string | null;
+	kinds: ReadonlySet<EmailKind>;
+	now: Date;
+	size: number;
+}
+
+/** One page of each part: its snapshot, and the rows the cursor moves on by. */
+const PAGE_OF: Record<
+	EmailCursor['part'],
+	(args: PageArgs) => Promise<{ snapshot: EmailSnapshot; rows: readonly { id: string }[] }>
+> = {
+	people: async ({ conference, after, kinds, now, size }) => {
+		const participants = await loadParticipants({
+			conferenceId: conference.id,
+			after,
+			limit: size,
+			candidates: (row) => participantCandidates({ conference, kinds, now, row })
+		});
+		return {
+			snapshot: await peopleSnapshot({ conference, participants, kinds }),
+			rows: participants
+		};
+	},
+	waitingList: async ({ conference, after, size }) => {
+		const entries = await loadWaitingList({
+			conferenceId: conference.id,
+			after,
+			limit: size,
+			onlyCandidates: true
+		});
+		return {
+			snapshot: { ...emptySnapshot(conference), waitingList: toWaitingList(entries) },
+			rows: entries
+		};
+	},
+	// one page: the mails of the few announcements that are fresh, already matched to their people
+	announcements: async ({ conference, now }) => ({
+		snapshot: {
+			...emptySnapshot(conference),
+			announcementMails: await loadAnnouncementMails({ conferenceId: conference.id, now })
+		},
+		rows: []
+	}),
+	team: async ({ conference, after, kinds, size }) => {
+		const { rows, team } = await loadTeam({
+			conferenceId: conference.id,
+			after,
+			limit: size,
+			candidates: (row) => teamCandidates({ conference, kinds, id: row.id, userId: row.userId })
+		});
+		return {
+			snapshot: {
+				...emptySnapshot(conference),
+				team,
+				unreadMessages: await teamUnread({ conference, kinds, team })
+			},
+			rows
+		};
+	}
+};
+
 /**
  * One page of what the conference may owe at `now`, from `cursor` on, with the cursor of the next
  * (`null` after the last). Parts the kinds do not need are skipped, and so is every row the log
@@ -556,46 +624,14 @@ async function loadEmailPage({
 		const next = nextCursor({ cursor, rows: [], size, parts });
 		return { snapshot: emptySnapshot(conference), next };
 	}
-	const conferenceId = conference.id;
-	const { after } = cursor;
-	if (cursor.part === 'people') {
-		const participants = await loadParticipants({
-			conferenceId,
-			after,
-			limit: size,
-			candidates: (row) => participantCandidates({ conference, kinds, now, row })
-		});
-		return {
-			snapshot: await peopleSnapshot({ conference, participants, kinds }),
-			next: nextCursor({ cursor, rows: participants, size, parts })
-		};
-	}
-	if (cursor.part === 'waitingList') {
-		const entries = await loadWaitingList({
-			conferenceId,
-			after,
-			limit: size,
-			onlyCandidates: true
-		});
-		return {
-			snapshot: { ...emptySnapshot(conference), waitingList: toWaitingList(entries) },
-			next: nextCursor({ cursor, rows: entries, size, parts })
-		};
-	}
-	const { rows, team } = await loadTeam({
-		conferenceId,
-		after,
-		limit: size,
-		candidates: (row) => teamCandidates({ conference, kinds, id: row.id, userId: row.userId })
+	const { snapshot, rows } = await PAGE_OF[cursor.part]({
+		conference,
+		after: cursor.after,
+		kinds,
+		now,
+		size
 	});
-	return {
-		snapshot: {
-			...emptySnapshot(conference),
-			team,
-			unreadMessages: await teamUnread({ conference, kinds, team })
-		},
-		next: nextCursor({ cursor, rows, size, parts })
-	};
+	return { snapshot, next: nextCursor({ cursor, rows, size, parts }) };
 }
 
 /** Every page of the conference from `from` on, each with its own cursor and the next one's. */
@@ -634,15 +670,17 @@ export async function loadUserSnapshot({
 		loadWaitingList({ conferenceId, userId }),
 		loadTeam({ conferenceId, userId })
 	]);
-	const [people, unreadOfTeam] = await Promise.all([
+	const [people, unreadOfTeam, announcementMails] = await Promise.all([
 		peopleSnapshot({ conference, participants, kinds }),
-		teamUnread({ conference, kinds, team })
+		teamUnread({ conference, kinds, team }),
+		kinds.has('ANNOUNCEMENT') ? loadAnnouncementMails({ conferenceId, userId }) : []
 	]);
 	return {
 		...people,
 		waitingList: toWaitingList(entries),
 		team,
-		unreadMessages: [...people.unreadMessages, ...unreadOfTeam]
+		unreadMessages: [...people.unreadMessages, ...unreadOfTeam],
+		announcementMails
 	};
 }
 

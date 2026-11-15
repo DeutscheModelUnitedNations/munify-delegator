@@ -15,6 +15,7 @@
 	import UserMenu from './UserMenu.svelte';
 	import HelpButton from '#lib/docs/HelpButton.svelte';
 	import UnreadMessagesButton from '#lib/components/chat/UnreadMessagesButton.svelte';
+	import UrgentAnnouncementBar from '#lib/components/announcement/UrgentAnnouncementBar.svelte';
 	import { page } from '$app/state';
 
 	//TODO
@@ -174,6 +175,13 @@
 			<UserMenu />
 		</div>
 	</div>
+	{#if conferenceOnScreen}
+		<!-- fetched on its own, so the header does not wait for it -->
+		<svelte:boundary>
+			<UrgentAnnouncementBar conferenceId={conferenceOnScreen} />
+			{#snippet failed()}{/snippet}
+		</svelte:boundary>
+	{/if}
 </header>
 
 {#snippet handoffBadge()}

@@ -40,6 +40,20 @@ export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 export const isAlwaysSent = (kind: string): kind is AlwaysSentKind =>
 	ALWAYS_SENT_KINDS.some((always) => always === kind);
 
+/**
+ * The automatic mails without a switch, which the sweeps always send: an announcement's mail,
+ * which the team decides on per announcement ("notify by mail").
+ */
+const ALWAYS_AUTOMATIC_KINDS = ['ANNOUNCEMENT'] as const satisfies readonly EmailkindEnum[];
+
+export const isAlwaysAutomatic = (kind: string) =>
+	ALWAYS_AUTOMATIC_KINDS.some((always) => always === kind);
+
+/** The kinds a conference cannot switch: sent where they happen, or always sent by the sweeps. */
+export const hasNoSwitch = (kind: string) => isAlwaysSent(kind) || isAlwaysAutomatic(kind);
+
+export { ALWAYS_AUTOMATIC_KINDS };
+
 /** The mails releasing the assignment makes due: the result to each applicant and supervisor. */
 const ASSIGNMENT_RESULT_KINDS = [
 	'ASSIGNMENT_ACCEPTED',
@@ -123,6 +137,7 @@ export const EMAIL_GROUPS = [
 	{ id: 'reminders', kinds: REMINDER_KINDS },
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
 	{ id: 'messages', kinds: ['UNREAD_MESSAGES'] },
+	{ id: 'announcements', kinds: ['ANNOUNCEMENT'] },
 	{ id: 'onSite', kinds: ['BADGE_FOUND'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
 	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED', 'SUPERVISOR_CONNECTED'] },

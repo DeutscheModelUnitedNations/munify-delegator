@@ -111,7 +111,6 @@ export function buildConferenceStructure({
 		currency: 'EUR',
 		feeAmount: 85,
 		linkToPreparationGuide: 'https://example.org/vorbereitung',
-		info: null,
 		imageFileId: file({ field: 'image', bytes: conferenceImageJpeg, mimeType: 'image/jpeg' }),
 		contractFileId: template('contract'),
 		guardianConsentFileId: template('guardianConsent'),

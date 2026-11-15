@@ -154,9 +154,13 @@ type Predicate = (ctx: Ctx) => SQL | undefined;
 const registering = (ctx: Ctx) => ctx.conference.state === 'PARTICIPANT_REGISTRATION';
 const released = (ctx: Ctx) => ctx.conference.assignmentReleased;
 const when = (gate: boolean, predicate: () => SQL) => (gate ? predicate() : undefined);
-/** One per automatic kind about participants; `undefined` when the conference cannot owe it now. */
+/**
+ * One per automatic kind about participants; `undefined` when the conference cannot owe it now.
+ * An announcement's mail is not among them: its audience is read as a part of its own
+ * (`loadAnnouncementMails`), already matched to the people it reaches.
+ */
 const PARTICIPANT_PREDICATES: Record<
-	Exclude<AutomaticEmailKind, 'WAITING_LIST_REGISTERED' | 'TEAM_WELCOME'>,
+	Exclude<AutomaticEmailKind, 'WAITING_LIST_REGISTERED' | 'TEAM_WELCOME' | 'ANNOUNCEMENT'>,
 	Predicate
 > = {
 	// A message of one of the person's chats they have not read and were not told about. The

@@ -1,5 +1,6 @@
 import './certificate/certificate';
 import './auth/auth';
+import './announcement/announcement';
 import './assignment/assignment';
 import './attendanceEntry/attendanceEntry';
 import './calendar/calendarDay';

@@ -124,7 +124,8 @@
 		entryCode: m.emailPlaceholderEntryCode,
 		joinLink: m.emailPlaceholderJoinLink,
 		member: m.emailPlaceholderMember,
-		supervisor: m.emailPlaceholderSupervisor
+		supervisor: m.emailPlaceholderSupervisor,
+		title: m.emailPlaceholderTitle
 	};
 </script>
 

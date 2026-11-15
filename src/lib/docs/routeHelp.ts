@@ -52,7 +52,7 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	'/(authenticated)/dashboard/[conferenceId]/committee-assignment': {
 		docs: 'user-manual/participant/dashboard#committee-assignment'
 	},
-	'/(authenticated)/dashboard/[conferenceId]/info': {
+	'/(authenticated)/dashboard/[conferenceId]/announcements': {
 		docs: 'user-manual/participant/dashboard#conference-information'
 	},
 	'/(authenticated)/dashboard/[conferenceId]/calendar': {
@@ -74,6 +74,9 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/messages': {
 		docs: 'user-manual/team/configuration#messages'
+	},
+	'/(authenticated)/dashboard/[conferenceId]/team/announcement': {
+		docs: 'user-manual/team/configuration#announcements'
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/emails': {
 		docs: 'user-manual/team/configuration#emails'

@@ -31,6 +31,8 @@ export interface SeedBatch {
 	teamMember: (typeof schema.teamMember.$inferInsert)[];
 	teamMemberInvitation: (typeof schema.teamMemberInvitation.$inferInsert)[];
 	teamFunction: (typeof schema.teamFunction.$inferInsert)[];
+	announcement: (typeof schema.announcement.$inferInsert)[];
+	announcementAudience: (typeof schema.announcementAudience.$inferInsert)[];
 	chat: (typeof schema.chat.$inferInsert)[];
 	chatMessage: (typeof schema.chatMessage.$inferInsert)[];
 	chatRead: (typeof schema.chatRead.$inferInsert)[];
@@ -90,6 +92,8 @@ export function emptyBatch(): SeedBatch {
 		teamMember: [],
 		teamMemberInvitation: [],
 		teamFunction: [],
+		announcement: [],
+		announcementAudience: [],
 		chat: [],
 		chatMessage: [],
 		chatRead: [],
@@ -365,6 +369,14 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.teamFunction,
 		insert: (rows) => db.insert(s.teamFunction).values(rows)
+	});
+	await insertChunked({
+		rows: batch.announcement,
+		insert: (rows) => db.insert(s.announcement).values(rows)
+	});
+	await insertChunked({
+		rows: batch.announcementAudience,
+		insert: (rows) => db.insert(s.announcementAudience).values(rows)
 	});
 	await insertChunked({ rows: batch.chat, insert: (rows) => db.insert(s.chat).values(rows) });
 	await insertChunked({
