@@ -3138,6 +3138,10 @@ type Mutation {
   Records a reviewer's verdict on a paper's latest version. Besides writing the review it gives the paper and version that status, has the author told (the `PAPER_REVIEWED` mail, where the conference sends it) and works out whether this was the first review for a "piece" of the flag collection - the gamified progress display. That last part has three shapes: a nation delegation counts one piece per agenda item, a non-state actor's introduction paper is its own piece, and its other papers count up to two more. NOT_FOUND for anyone but the conference's paper team, CONFLICT for a draft.
   """
   createPaperReview(
+    """
+    Publishes the review under this team name: its author reads it instead of the reviewer's. Left out, the review carries the reviewer's name.
+    """
+    anonymousAs: PaperreviewanonymousasEnum
     comments: JSON!
 
     """The verdict: ACCEPTED or CHANGES_REQUESTED."""
@@ -4483,6 +4487,7 @@ input PaperWhereInputArgument {
 }
 
 type Paperreview {
+  anonymousAs: PaperreviewanonymousasEnum
   comments: JSON!
   createdAt: DateTime!
   id: ID!
@@ -4492,7 +4497,7 @@ type Paperreview {
   paperVersionId: ID!
 
   """Get the users related to this paperReview"""
-  reviewer(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User!
+  reviewer(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
   reviewerId: ID!
 
   """
@@ -4504,6 +4509,7 @@ type Paperreview {
 }
 
 input PaperreviewOrderInputArgument {
+  anonymousAs: SortingParameter
   comments: SortingParameter
   createdAt: SortingParameter
   id: SortingParameter
@@ -4535,6 +4541,7 @@ input PaperreviewWhereInputArgument {
   AND: [PaperreviewWhereInputArgument!]
   NOT: PaperreviewWhereInputArgument
   OR: [PaperreviewWhereInputArgument!]
+  anonymousAs: PaperreviewanonymousasEnum
   comments: JSONWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
@@ -4544,6 +4551,11 @@ input PaperreviewWhereInputArgument {
   reviewerId: IDWhereInputArgument
   statusAfter: PaperstatusEnum
   statusBefore: PaperstatusEnum
+}
+
+enum PaperreviewanonymousasEnum {
+  RESEARCH_SERVICE
+  SECRETARIAT
 }
 
 enum PaperstatusEnum {

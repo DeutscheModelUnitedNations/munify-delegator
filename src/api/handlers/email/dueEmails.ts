@@ -80,7 +80,9 @@ export interface SnapshotReview {
 	paperType: (typeof schema.paperType.enumValues)[number];
 	/** Committee and agenda item (`GV: Climate`), for a paper that belongs to one. */
 	agendaItem: string | null;
+	/** Who wrote it; none for a review published under a team name (`anonymousAs`). */
 	reviewer: { name: string; email: string } | null;
+	anonymousAs: (typeof schema.paperReviewAnonymousAs.enumValues)[number] | null;
 	statusAfter: (typeof schema.paperStatus.enumValues)[number] | null;
 }
 

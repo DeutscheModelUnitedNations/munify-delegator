@@ -1,0 +1,77 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "692f352c-f101-444f-beda-ba41b505d0e7",
+  "prevIds": [
+    "a56f338a-d23a-4709-8515-0efcc990dbd5"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "paper_review_anonymous_as"
+      ],
+      "writes": [
+        "s|enum|public.paper_review_anonymous_as",
+        "n|enum|public.paper_review_anonymous_as",
+        "e|enum|public.paper_review_anonymous_as",
+        "n|type|public.paper_review_anonymous_as"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "paper_review",
+        "anonymous_as"
+      ],
+      "writes": [
+        "s|col|public.paper_review.anonymous_as",
+        "n|col|public.paper_review.anonymous_as",
+        "e|col|public.paper_review.anonymous_as"
+      ],
+      "reads": [
+        "n|tbl|public.paper_review",
+        "n|sch|public",
+        "n|enum|public.paper_review_anonymous_as"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "paper_review_anonymous_as",
+        "values": [
+          "SECRETARIAT",
+          "RESEARCH_SERVICE"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review",
+        "name": "anonymous_as",
+        "type": "paper_review_anonymous_as",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import {
 	hop
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
-import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { liveRule, liveWhere, type CallerFacts } from '#api/services/authHelper/callerFacts';
 import { paperOfTeamConference } from '../paper/paperPermissions';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -17,16 +17,32 @@ import { apiError } from '#api/services/errors';
 export function registerPaperReviewAbilities() {
 	abilityBuilder.paperReview.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Authors read the reviews of their own papers.
+	// Authors read the reviews of their own papers, but not who wrote one published under a team
+	// name (`anonymousAs`): the `reviewer` relation then resolves to nothing.
+	const ownPaperVersions = (facts: CallerFacts) =>
+		idIn(facts.authoredPapers.flatMap((paper) => paper.versionIds));
 	abilityBuilder.paperReview
 		.allow('read')
 		.when(
 			liveWhere(({ ctx, facts }) =>
 				callerUserId(ctx)
-					? { paperVersionId: idIn(facts.authoredPapers.flatMap((paper) => paper.versionIds)) }
+					? { paperVersionId: ownPaperVersions(facts), anonymousAs: { isNull: true } as const }
 					: undefined
 			)
 		);
+	abilityBuilder.paperReview.allow('read').when(
+		liveRule(({ ctx, facts }) =>
+			callerUserId(ctx)
+				? {
+						where: {
+							paperVersionId: ownPaperVersions(facts),
+							anonymousAs: { isNotNull: true } as const
+						},
+						columns: { reviewerId: false }
+					}
+				: undefined
+		)
+	);
 
 	// The paper team (`reviewPapers`: reviewer, project management, participant care, team
 	// coordinator, content lead) reads the reviews of the conference's papers.

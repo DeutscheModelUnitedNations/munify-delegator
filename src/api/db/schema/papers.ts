@@ -78,6 +78,12 @@ export const paperVersion = snakeCase.table(
 	]
 );
 
+/** The team name a review is published under instead of the reviewer's own. */
+export const paperReviewAnonymousAs = pgEnum('paper_review_anonymous_as', [
+	'SECRETARIAT',
+	'RESEARCH_SERVICE'
+]);
+
 export const paperReview = snakeCase.table('paper_review', {
 	...defaultIdAndCreatedAt,
 	comments: jsonb().notNull(),
@@ -86,7 +92,9 @@ export const paperReview = snakeCase.table('paper_review', {
 		.notNull()
 		.references(() => paperVersion.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 	statusAfter: paperStatus(),
-	statusBefore: paperStatus()
+	statusBefore: paperStatus(),
+	/** Set, the author reads this team name instead of the reviewer's (`reviewerId` is masked). */
+	anonymousAs: paperReviewAnonymousAs()
 });
 
 export const reviewerSnippet = snakeCase.table(

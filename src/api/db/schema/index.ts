@@ -68,6 +68,7 @@ export {
 	paperType,
 	paper,
 	paperVersion,
+	paperReviewAnonymousAs,
 	paperReview,
 	reviewerSnippet,
 	resolution
