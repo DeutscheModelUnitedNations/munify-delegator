@@ -1348,7 +1348,11 @@ bun run preview
   that **committee function** (`teamFunction`, `#api/handlers/teamFunction/`, handed out by
   `manageTeam` on the team members page; in the caller's facts as `teamFunctions`); and
   `TRUSTED_PERSON`, answered by the conference's trusted persons (see below). An inbox reads
-  as one (`chat.teamReadAt`); a person's reading is `chatRead`. `inboxReaches`
+  as one (`chat.teamReadAt`); a person's reading is `chatRead`. An inbox files a settled chat in
+  its **archive** (`chat.teamArchivedAt`, `setChatArchived`, for whoever answers the inbox): that
+  reads it, the list hides it until asked, and the next message from either side empties the
+  column (`sendMessage`), so the chat is back. The participant is not told (`chat.archived` and
+  `teamArchivedAt` answer the team side only). `inboxReaches`
   (`#lib/helpers/chat.ts`) says which inbox and person write each other: participant care anybody
   with a registration, a committee's inboxes the people seated there and those seated without a
   committee.

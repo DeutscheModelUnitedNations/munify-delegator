@@ -1,5 +1,6 @@
 import type {
 	CalendarentrycolorEnum,
+	PaperreviewanonymousasEnum,
 	PaperstatusEnum,
 	PapertypeEnum
 } from '#lib/api/rumbleClient/client';
@@ -169,4 +170,19 @@ const regionalBaselineLabels: Record<RegionalBaseline, () => string> = {
 
 export function translateRegionalBaseline(baseline: RegionalBaseline) {
 	return regionalBaselineLabels[baseline]();
+}
+
+const paperReviewAnonymousAsLabels: Record<PaperreviewanonymousasEnum, () => string> = {
+	SECRETARIAT: m.paperReviewSignatureSecretariat,
+	RESEARCH_SERVICE: m.paperReviewSignatureResearchService
+};
+
+/** The team names a review can be published under instead of the reviewer's, in order. */
+export const PAPER_REVIEW_ANONYMOUS_AS = [
+	'SECRETARIAT',
+	'RESEARCH_SERVICE'
+] as const satisfies readonly PaperreviewanonymousasEnum[];
+
+export function translatePaperReviewAnonymousAs(anonymousAs: PaperreviewanonymousasEnum) {
+	return paperReviewAnonymousAsLabels[anonymousAs]();
 }

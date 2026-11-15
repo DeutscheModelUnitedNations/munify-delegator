@@ -15,6 +15,7 @@ import {
 	assertDelegationMember,
 	assertHoldsInbox,
 	assertAcceptedTerms,
+	assertAnswersInboxOfChat,
 	assertPartyOfChat,
 	assertTakesPartInChat,
 	assertWritingParticipant,
@@ -38,6 +39,7 @@ import {
 	openTeamChat,
 	sameInbox,
 	sendMessage,
+	setChatArchived,
 	setChatBlocked,
 	setMessageNotificationEmails,
 	setMessagingSuspended,
@@ -249,6 +251,21 @@ const ChatRef = object({
 				'The full name of the one trusted person the chat is with; null for a chat with all of them and for every other chat.',
 			resolve: async (chat) =>
 				chat.trustedUserId ? ((await userNameOf(chat.trustedUserId)) ?? null) : null
+		}),
+		// what an inbox files is the inbox's own business: the participant is not told
+		teamArchivedAt: t.field({
+			type: 'DateTime',
+			nullable: true,
+			description:
+				'A team chat: when its inbox put it away into the archive, for whoever answers the inbox (null for everybody else). The next message empties it.',
+			resolve: async (chat, _args, ctx) =>
+				(await sideOf({ ctx, chat })) === 'TEAM' ? chat.teamArchivedAt : null
+		}),
+		archived: t.boolean({
+			description:
+				'Whether the chat is in the archive of its inbox, for whoever answers the inbox (false for everybody else): put away until the next message.',
+			resolve: async (chat, _args, ctx) =>
+				chat.teamArchivedAt !== null && (await sideOf({ ctx, chat })) === 'TEAM'
 		}),
 		unreadCount: t.int({
 			description: 'How many messages the caller (or, for a team chat, their inbox) has not read.',
@@ -575,6 +592,21 @@ schemaBuilder.mutationFields((t) => ({
 			const { chat, side, userId } = await readableChat({ ctx, id: args.chatId });
 			if (side === 'REVIEW') return false;
 			await markChatRead({ chat, side, userId });
+			return true;
+		}
+	}),
+
+	setChatArchived: t.field({
+		description:
+			'Puts a team chat away into the archive of its inbox, or takes it out again, for everybody holding the inbox. Archiving reads the chat; the next message brings it back. For whoever answers the inbox (FORBIDDEN otherwise, NOT_FOUND for a chat they cannot read).',
+		type: 'Boolean',
+		args: {
+			chatId: t.arg.id({ required: true }),
+			archived: t.arg.boolean({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const { chat } = await assertAnswersInboxOfChat({ ctx, id: args.chatId });
+			await setChatArchived({ chat, archived: args.archived });
 			return true;
 		}
 	}),

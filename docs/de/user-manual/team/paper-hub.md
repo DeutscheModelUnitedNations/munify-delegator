@@ -70,14 +70,15 @@ Vor jedem Tagesordnungspunkt steht ein Knopf, mit dem das Team sich abstimmt, wo
 2. Lies den Text. Markierst du eine Stelle, fügt **Zitieren** sie als Zitat in dein Feedback ein. Neben jedem Zitat springt **Im Papier finden** zurück zur Stelle im Papier.
 3. Schreibe deine Kommentare unter **Bewerten**. Ohne Kommentar lässt sich nichts abgeben (**Kommentare sind erforderlich**). [Textbausteine](#snippets) fügst du über das Lesezeichen in der Werkzeugleiste ein oder indem du `/` und den Namen tippst.
 4. Wähle unter **Neuer Status** entweder **Überarbeitungen angefordert** oder **Akzeptiert**.
-5. Klicke auf **Bewertung abgeben** und bestätige im Fenster **Bewertung bestätigen**.
+5. Soll dein Name nicht beim Feedback stehen, schalte **Anonym veröffentlichen** ein und wähle **Sekretariat** oder **Wissenschaftlicher Dienst**. Dein Browser merkt sich die Wahl.
+6. Klicke auf **Bewertung abgeben** und bestätige im Fenster **Bewertung bestätigen**.
 
 Danach meldet die Seite **Deine Bewertung wurde erfolgreich gespeichert.** Gibt es zum selben Tagesordnungspunkt noch ein Papier, das auf Feedback wartet, bringt dich **Direkt weiter bewerten und zum nächsten Papier springen** dorthin. Dabei kommen Papiere ohne jedes Feedback vor überarbeiteten, und unter ihnen das, das am längsten unberührt ist. Sonst steht dort **Du hast alle offenen Papiere dieses Themas bearbeitet**.
 
 Unter dem Formular steht die **Historie** des Papiers mit allen Versionen und allem bisherigen Feedback. Klickst du bei zwei Versionen auf **Mit einer anderen Version vergleichen**, siehst du, was sich zwischen ihnen geändert hat.
 
 :::warning Feedback ist endgültig
-Ein abgegebenes Feedback kannst du weder ändern noch löschen. Der neue Status gilt sofort, und die Person, die das Papier geschrieben hat, sieht das Feedback mit deinem Namen.
+Ein abgegebenes Feedback kannst du weder ändern noch löschen. Der neue Status gilt sofort, und die Person, die das Papier geschrieben hat, sieht das Feedback mit deinem Namen, bei anonymem Feedback mit der gewählten Bezeichnung. Das Team sieht immer, wer es geschrieben hat.
 :::
 
 Begutachten kannst du jedes eingereichte Papier, auch ein schon akzeptiertes noch einmal. Einen Entwurf lehnt DELEGATOR ab.
@@ -90,10 +91,10 @@ Solange du schreibst, merkt sich dein Browser dein Feedback zu diesem Papier jed
 
 Im Papier-Hub sieht die Person, die das Papier geschrieben hat, den neuen Status sofort und dein Feedback unter **Historie**. Das Feedback selbst sieht außer dem Team nur sie. Ihre Betreuenden sehen den Status.
 
-Mit jedem Feedback wird die E-Mail **Feedback zu einem Papier** an die Person fällig, die das Papier geschrieben hat, einmal pro Feedback. Sie nennt das Papier, wer das Feedback gegeben hat, und den neuen Status, und verlinkt auf das Papier. Ist die Art auf der Seite [E-Mails](./communication#emails) auf automatisch gestellt, geht sie mit dem nächsten Versand von selbst hinaus. Sonst wartet sie dort, bis jemand sie verschickt.
+Mit jedem Feedback wird die E-Mail **Feedback zu einem Papier** an die Person fällig, die das Papier geschrieben hat, einmal pro Feedback. Sie nennt das Papier, wer das Feedback gegeben hat (bei anonymem Feedback das Sekretariat oder den Wissenschaftlichen Dienst), und den neuen Status, und verlinkt auf das Papier. Ist die Art auf der Seite [E-Mails](./communication#emails) auf automatisch gestellt, geht sie mit dem nächsten Versand von selbst hinaus. Sonst wartet sie dort, bis jemand sie verschickt.
 
 :::warning Antworten gehen an dich
-Antwortet jemand auf diese E-Mail, geht die Antwort an die Adresse der Person, die das Feedback geschrieben hat. Damit sieht sie auch deine E-Mail-Adresse.
+Antwortet jemand auf diese E-Mail, geht die Antwort an die Adresse der Person, die das Feedback geschrieben hat. Damit sieht sie auch deine E-Mail-Adresse. Bei anonymem Feedback hat die E-Mail keine Antwortadresse.
 :::
 
 Mit dem Knopf **Delegierte\*n anschreiben** schreibst du der Person direkt, aus der Liste oder vom Papier aus. Den Knopf gibt es, wenn die Nachrichten der Konferenz eingeschaltet sind und du ein passendes Postfach betreust. Mehr dazu unter [Kommunikation](./communication).

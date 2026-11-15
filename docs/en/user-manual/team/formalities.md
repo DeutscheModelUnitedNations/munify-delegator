@@ -35,7 +35,7 @@ The **Fee Payment** page is made for working through a bank statement line by li
 
 1. At the top it shows the last confirmed transaction with its date. That way you see where you or someone else stopped.
 2. Enter the reference from the payment reference line into **Reference Search**, exactly as it appears there. The command palette (Ctrl+K) also finds references and opens them on this page.
-3. The page shows the reference, when it was created, the amount due for it and, under **Referenced Users**, everybody it covers. The icon in front of each name shows their payment status, the button behind it opens their user card.
+3. The page shows the reference, when it was created, the amount due for it and, under **Referenced Users**, everybody it covers. The icon in front of each name shows their payment status, a click on the row opens their user card.
 4. Compare the amount with what arrived. If everything fits, click **Mark as Received** (Alt+A). The search field empties and is ready for the next reference.
 5. If something does not fit, click **Mark as Problem**.
 

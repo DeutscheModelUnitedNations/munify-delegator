@@ -6,14 +6,13 @@
 	import { fetchChats } from '#lib/api/chats';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { m } from '#lib/paraglide/messages';
-	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
-	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
 	import NewChatDialog from '#lib/components/chat/NewChatDialog.svelte';
 	import { inboxName, sideOf } from '#lib/components/chat/chatLabels';
 	import ReportDesk from './ReportDesk.svelte';
 	import SettledReports from './SettledReports.svelte';
 	import { fetchTeamInboxes, teamInboxesOf } from './fetchTeamInboxes';
 	import InboxOverview from './InboxOverview.svelte';
+	import InboxChats from './InboxChats.svelte';
 	import { inboxKey } from './teamInboxes';
 	import type { PageProps } from './$types';
 
@@ -21,7 +20,13 @@
 
 	// Read once: the team shell keys each page by its pathname (see the members page).
 	const conferenceId = untrack(() => routeParams.conferenceId);
-	const params = queryParameters({ chat: true, view: true, inbox: true, paper: true });
+	const params = queryParameters({
+		chat: true,
+		view: true,
+		inbox: true,
+		paper: true,
+		archive: true
+	});
 
 	const me = await getCurrentUser();
 	const [conference, chats, sources] = $derived(
@@ -64,7 +69,8 @@
 	const settledReports = $derived(reports.filter((report) => report.status !== 'OPEN'));
 
 	const view = $derived(params.view === 'reports' && cares ? 'reports' : 'inboxes');
-	const shownChats = $derived(
+	const showArchive = $derived(params.archive === '1');
+	const inboxChats = $derived(
 		teamChats.filter((chat) => !params.inbox || inboxKey(chat) === params.inbox)
 	);
 	let pickerOpen = $state(false);
@@ -139,24 +145,18 @@
 			reported={cares ? reviewChats.length : undefined}
 		/>
 	{:else}
-		<ChatWorkspace
-			chats={shownChats}
+		<InboxChats
+			chats={inboxChats}
+			title={listTitle}
+			{onNew}
 			{selectedId}
 			onSelect={(id) => (params.chat = id)}
 			showInbox={severalInboxes && !selectedInbox}
+			{showArchive}
+			onArchive={(shown) => (params.archive = shown ? '1' : null)}
 			{paperId}
 			onPaperSent={() => (params.paper = null)}
-		>
-			{#snippet listHeader()}
-				<ChatListHeader title={listTitle} {onNew} />
-			{/snippet}
-			{#snippet emptyList()}
-				<div class="text-base-content/60 flex flex-col items-center gap-3 px-4 py-10 text-center">
-					<i aria-hidden="true" class="ph-duotone ph-tray text-4xl"></i>
-					<p>{m.chatInboxEmpty()}</p>
-				</div>
-			{/snippet}
-		</ChatWorkspace>
+		/>
 	{/if}
 
 	{#if inboxes.length > 0}

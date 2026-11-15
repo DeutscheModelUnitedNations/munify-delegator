@@ -304,6 +304,61 @@ test('a team inbox is read by whoever answers it, and answers carry a name', asy
 	).toBe(chat.annaChairs);
 });
 
+test('an inbox files its chats in an archive until the next message', async ({ browser }) => {
+	const annaPage = await signedIn(browser, anna.id);
+	const bertPage = await signedIn(browser, bert.id);
+	const chairPage = await signedIn(browser, chair.id);
+	const carePage = await signedIn(browser, care.id);
+
+	const ARCHIVE = `mutation ($chat: ID!, $archived: Boolean!) { setChatArchived(chatId: $chat, archived: $archived) }`;
+	const FILED = `query ($chat: ID!) {
+		chats(where: { id: { eq: $chat } }) { archived teamArchivedAt unreadCount }
+	}`;
+	type Filed = { archived: boolean; teamArchivedAt: string | null; unreadCount: number };
+	const filed = async (page: Page, id: string) =>
+		(await gql<{ chats: Filed[] }>(page, FILED, { chat: id })).data?.chats[0];
+
+	// only whoever answers the inbox files its chats: not the participant, not another inbox, and
+	// a chat between participants has no archive
+	expect(codeOf(await gql(bertPage, ARCHIVE, { chat: chat.bertCare, archived: true }))).toBe(
+		'FORBIDDEN'
+	);
+	expect(codeOf(await gql(chairPage, ARCHIVE, { chat: chat.bertCare, archived: true }))).toBe(
+		'NOT_FOUND'
+	);
+	expect(codeOf(await gql(annaPage, ARCHIVE, { chat: chat.annaCarla, archived: true }))).toBe(
+		'FORBIDDEN'
+	);
+	expect((await filed(carePage, chat.bertCare))?.archived).toBe(false);
+
+	// participant care puts the chat away, which reads it; the participant is not told
+	expect(
+		(await gql(carePage, ARCHIVE, { chat: chat.bertCare, archived: true })).errors
+	).toBeUndefined();
+	const put = await filed(carePage, chat.bertCare);
+	expect(put).toMatchObject({ archived: true, unreadCount: 0 });
+	expect(put?.teamArchivedAt).not.toBeNull();
+	expect(await filed(bertPage, chat.bertCare)).toMatchObject({
+		archived: false,
+		teamArchivedAt: null
+	});
+
+	// it can be taken out again by hand
+	await gql(carePage, ARCHIVE, { chat: chat.bertCare, archived: false });
+	expect((await filed(carePage, chat.bertCare))?.archived).toBe(false);
+
+	// and the next message brings it back by itself, unread
+	await gql(carePage, ARCHIVE, { chat: chat.bertCare, archived: true });
+	expect((await send(bertPage, chat.bertCare, 'Noch eine Frage')).errors).toBeUndefined();
+	expect(await filed(carePage, chat.bertCare)).toMatchObject({
+		archived: false,
+		teamArchivedAt: null,
+		unreadCount: 1
+	});
+
+	for (const page of [annaPage, bertPage, chairPage, carePage]) await page.context().close();
+});
+
 test('blocking closes a direct chat for both, and only that chat', async ({ browser }) => {
 	const annaPage = await signedIn(browser, anna.id);
 	const carlaPage = await signedIn(browser, carla.id);

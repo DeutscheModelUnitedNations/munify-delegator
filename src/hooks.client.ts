@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection';
+import { dropFailedFetches } from '#lib/sentryNoise';
 import { forwardErrors } from '#lib/logger';
 import { building } from '$app/env';
 import { PUBLIC_SENTRY_DSN, PUBLIC_SENTRY_SEND_DEFAULT_PII } from '$app/env/public';
@@ -9,7 +10,8 @@ if (!building && PUBLIC_SENTRY_DSN) {
 		dsn: PUBLIC_SENTRY_DSN,
 		environment: import.meta.env.MODE,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		dataCollection: sentryDataCollection(PUBLIC_SENTRY_SEND_DEFAULT_PII ?? false)
+		dataCollection: sentryDataCollection(PUBLIC_SENTRY_SEND_DEFAULT_PII ?? false),
+		beforeSend: dropFailedFetches
 	});
 
 	// Every `logger.error` in the browser becomes an issue, as on the server.

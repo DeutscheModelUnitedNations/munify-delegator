@@ -53,6 +53,7 @@
 		"@pothos/plugin-simple-objects": "^4.1.4",
 		"@pothos/plugin-smart-subscriptions": "4.1.7",
 		"@pothos/plugin-validation": "4.3.5",
+		"@sentry/bundler-plugins": "11.12.0",
 		"@sentry/cli": "^3.8.2",
 		"@sentry/sveltekit": "^11.12.0",
 		"@svelte-plugins/datepicker": "^1.0.11",
@@ -247,7 +248,7 @@
 		"test:e2e:coverage": "bun scripts/e2eCoverage.ts"
 	},
 	"type": "module",
-	"version": "2.1.24",
+	"version": "2.1.30",
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@9.0.0": "patches/@magidoc%2Fplugin-svelte-marked@9.0.0.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",

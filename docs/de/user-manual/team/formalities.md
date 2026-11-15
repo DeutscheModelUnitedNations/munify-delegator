@@ -35,7 +35,7 @@ Die Seite **Beitragszahlung** ist dafür gemacht, einen Kontoauszug Zeile für Z
 
 1. Oben steht die zuletzt bestätigte Transaktion mit Datum. So siehst du, wo du oder jemand anderes aufgehört hat.
 2. Gib die Referenz aus dem Verwendungszweck in **Referenzsuche** ein, genau wie sie dort steht. Auch die Befehlspalette (Strg+K) findet Referenzen und öffnet sie auf dieser Seite.
-3. Die Seite zeigt die Referenz, wann sie erstellt wurde, den Betrag, der für sie fällig ist, und unter **Referenzierte Teilnehmende** alle Personen, die sie abdeckt. Das Symbol vor jedem Namen zeigt deren Zahlungsstatus, der Knopf dahinter öffnet die Teilnehmendenkarte.
+3. Die Seite zeigt die Referenz, wann sie erstellt wurde, den Betrag, der für sie fällig ist, und unter **Referenzierte Teilnehmende** alle Personen, die sie abdeckt. Das Symbol vor jedem Namen zeigt deren Zahlungsstatus, ein Klick auf die Zeile öffnet die Teilnehmendenkarte.
 4. Vergleiche den Betrag mit dem, was eingegangen ist. Passt alles, klicke **Als erhalten markieren** (Alt+A). Das Suchfeld leert sich und ist bereit für die nächste Referenz.
 5. Passt etwas nicht, klicke **Als Problem markieren**.
 

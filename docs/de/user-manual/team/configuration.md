@@ -132,7 +132,7 @@ Die Karten unter **Schnellzugriff** auf dem Dashboard der Teilnehmenden, etwa **
 - **Nachrichten zwischen Teilnehmenden und Team**: schaltet die [Nachrichten](./communication#messages) frei. Ausgeschaltet bleiben bestehende Chats lesbar, aber niemand schreibt mehr Neues.
 
 :::tip Erst die Freigabe, dann die Formalitäten
-**Teilnahmebeitrag freigeschaltet** und **Postalische Anmeldung freigeschaltet** werden erst fällig, wenn die Zuteilung freigegeben ist. Schaltest du Zahlungen vorher frei, bietet das Speichern keine E-Mails an. Sie warten dann auf der Seite [E-Mails](./communication#emails), bis du sie nach der Freigabe verschickst.
+**Teilnahmebeitrag freigeschaltet** und **Postalische Anmeldung freigeschaltet** werden erst fällig, wenn die Zuteilung freigegeben ist. Schaltest du Zahlungen vorher frei, bietet das Speichern keine E-Mails an. Nach der Freigabe gehen sie mit dem nächsten automatischen Lauf raus, wenn die Art auf automatisch steht. Sonst warten sie auf der Seite [E-Mails](./communication#emails), bis du sie verschickst.
 :::
 
 ### Schulregeln {#school-rules}

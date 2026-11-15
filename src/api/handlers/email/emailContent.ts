@@ -130,12 +130,24 @@ const supervisorSummaryItem = (student: SnapshotPerson) =>
 			})
 		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student.user) });
 
+/** The team name an anonymous review is from, as the mail's sentence reads it ("von dem …"). */
+function translateReviewSignatureInMail(anonymousAs: NonNullable<SnapshotReview['anonymousAs']>) {
+	switch (anonymousAs) {
+		case 'SECRETARIAT':
+			return m.emailAutoPaperReviewedSecretariat();
+		case 'RESEARCH_SERVICE':
+			return m.emailAutoPaperReviewedResearchService();
+	}
+}
+
 /** What the author reads about a review: the paper, who reviewed it, the paper's new status. */
 const reviewValues = (review: SnapshotReview) => ({
 	paper: review.agendaItem ?? translatePaperType(review.paperType),
 	reviewer: review.reviewer
 		? `${review.reviewer.name} (${review.reviewer.email})`
-		: m.emailAutoPaperReviewedTeam(),
+		: review.anonymousAs
+			? translateReviewSignatureInMail(review.anonymousAs)
+			: m.emailAutoPaperReviewedTeam(),
 	status: review.statusAfter ? translatePaperStatus(review.statusAfter) : ''
 });
 

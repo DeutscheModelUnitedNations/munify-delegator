@@ -386,6 +386,8 @@ export async function sendMessage({
 			.update(schema.chat)
 			.set({
 				lastMessageAt: now,
+				// a new message brings an archived chat back into its inbox
+				teamArchivedAt: null,
 				// an answer from the inbox means the inbox has read what came before
 				...(fromTeam ? { teamReadAt: now } : {}),
 				...(chat.kind === 'TEAM' && !fromTeam ? { lastParticipantMessageAt: now } : {})
@@ -444,6 +446,22 @@ export async function markChatRead({
 	} else {
 		await writeRead({ tx: db, chatId: chat.id, userId, readAt: now });
 	}
+	chatPubsub.updated(chat.id);
+}
+
+/**
+ * Puts a team chat away into its inbox's archive, for everybody holding the inbox, or takes it
+ * out again. Putting it away reads it. The next message brings it back (`sendMessage`).
+ */
+export async function setChatArchived({ chat, archived }: { chat: ChatRow; archived: boolean }) {
+	if (chat.kind !== 'TEAM') {
+		throw apiError({ code: 'INVALID_INPUT', message: m.chatOnlyTeamCanBeArchived() });
+	}
+	const now = new Date();
+	await db
+		.update(schema.chat)
+		.set(archived ? { teamArchivedAt: now, teamReadAt: now } : { teamArchivedAt: null })
+		.where(eq(schema.chat.id, chat.id));
 	chatPubsub.updated(chat.id);
 }
 
