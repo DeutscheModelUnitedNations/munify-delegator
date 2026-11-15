@@ -26,13 +26,13 @@
 		own
 			? {
 					row: 'items-end',
-					bubble: 'bg-primary text-primary-content rounded-br-md',
+					bubble: 'bg-primary text-primary-content',
 					paper: 'bg-primary-content/15',
 					time: 'opacity-80'
 				}
 			: {
 					row: 'items-start',
-					bubble: 'bg-base-200 text-base-content rounded-bl-md',
+					bubble: 'bg-base-200 text-base-content',
 					paper: 'bg-base-300',
 					time: 'text-base-content/60'
 				}
@@ -46,12 +46,12 @@
 	{#if author}
 		<span class="text-base-content/60 mb-0.5 px-1 text-xs">{author}</span>
 	{/if}
-	<div class={['max-w-5/6 rounded-2xl px-3.5 py-2 text-sm sm:max-w-3/4', look.bubble]}>
+	<div class={['max-w-5/6 rounded-box px-3.5 py-2 text-sm sm:max-w-3/4', look.bubble]}>
 		{#if message.paperId}
 			<a
 				href={resolve(`dashboard/${conferenceId}/paperhub/${message.paperId}`)}
 				class={[
-					'mb-1.5 flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium',
+					'mb-1.5 flex items-center gap-1.5 rounded-box px-2 py-1 text-xs font-medium',
 					look.paper
 				]}
 			>

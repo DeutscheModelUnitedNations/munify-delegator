@@ -7,8 +7,8 @@ import { conferenceHeaderInfo } from '../conferenceHeaderInfo';
 import { newResolutionSchema } from './form-schema';
 
 /**
- * The delegation writing the resolution, the conference its header names, and the form seeded
- * with the delegation's name and committee.
+ * The delegation writing the resolution, the conference's agenda items, the conference its header
+ * names, and the form seeded with the delegation's name and committee.
  * `defaults` rather than `superValidate`: the resolution is created by a GraphQL mutation in SPA
  * mode, so there is no action to validate against.
  */
@@ -19,7 +19,7 @@ export async function fetchNewResolutionContext({
 	conferenceId: string;
 	userId: string;
 }) {
-	const [delegationMembers, conference] = await Promise.all([
+	const [delegationMembers, conferenceAgendaItems, conference] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {
 				where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
@@ -36,6 +36,13 @@ export async function fetchNewResolutionContext({
 				id: true,
 				assignedRole: { kind: true, name: true, nation: { alpha3Code: true } }
 			}
+		}),
+		// Non-state actors sit in no committee and write on any agenda item of the conference
+		client.liveQuery.committeeAgendaItems({
+			__args: { where: { committee: { conferenceId: { eq: conferenceId } } } },
+			id: true,
+			title: true,
+			committee: { name: true, abbreviation: true, resolutionHeadline: true }
 		}),
 		// What the resolution header prints about the conference
 		client.liveQuery.conference({
@@ -63,6 +70,7 @@ export async function fetchNewResolutionContext({
 	return {
 		form,
 		delegationMember,
+		conferenceAgendaItems,
 		conference: await conferenceHeaderInfo(conference)
 	};
 }

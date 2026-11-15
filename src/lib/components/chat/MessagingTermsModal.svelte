@@ -63,7 +63,7 @@
 		{#if onAccepted}
 			<div
 				role="note"
-				class="border-info/40 bg-info/10 text-base-content flex items-start gap-3 rounded-lg border p-3 text-sm"
+				class="border-info/40 bg-info/10 text-base-content flex items-start gap-3 rounded-box border p-3 text-sm"
 			>
 				<i aria-hidden="true" class="ph-duotone ph-arrow-circle-down text-info text-xl"></i>
 				<div class="flex flex-col gap-1">
@@ -77,7 +77,7 @@
 			role="region"
 			aria-label={m.chatTermsTitle()}
 			tabindex="0"
-			class="border-base-300 flex max-h-80 sm:max-h-96 flex-col gap-5 overflow-y-auto rounded-lg border p-4"
+			class="border-base-300 flex max-h-80 sm:max-h-96 flex-col gap-5 overflow-y-auto rounded-box border p-4"
 			onscroll={(event) => noteScroll(event.currentTarget)}
 			{@attach watchScroll}
 			data-testid="chat-terms-text"
@@ -96,7 +96,7 @@
 		</div>
 		{#if onAccepted}
 			<label
-				class="bg-base-200 flex items-start gap-3 rounded-lg p-3 text-sm {read
+				class="bg-base-200 flex items-start gap-3 rounded-box p-3 text-sm {read
 					? 'cursor-pointer'
 					: 'opacity-60'}"
 			>

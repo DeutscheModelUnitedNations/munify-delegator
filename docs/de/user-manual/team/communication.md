@@ -128,7 +128,7 @@ Vor ihrer ersten Nachricht stimmen Teilnehmende den **Nutzungsbedingungen der Na
 
 ### Antworten und neue Chats
 
-Auf der Seite **Nachrichten** stehen links die Chats deiner Postfächer, rechts der geöffnete Chat. Betreust du mehrere Postfächer, filterst du die Liste über die Postfach-Knöpfe, jeweils mit der Zahl ungelesener Nachrichten. Liest jemand aus dem Postfach einen Chat, gilt er für alle im Postfach als gelesen.
+Alle Postfächer findest du unter **Nachrichten** im Bereich Kommunikation. Betreust du mehrere, klappt der Menüpunkt auf: Darunter stehen die **Übersicht** und jedes Postfach mit der Zahl ungelesener Nachrichten. Postfächer eines Gremiums sind unter dem Gremium zusammengefasst. Die Übersicht zeigt alle deine Postfächer als Karten. Betreust du nur eines, öffnet **Nachrichten** direkt dessen Chats. Links stehen die Chats des Postfachs, rechts der geöffnete Chat. Liest jemand aus dem Postfach einen Chat, gilt er für alle im Postfach als gelesen.
 
 Teilnehmende siehst du in der Liste mit ihrer Rolle. Die Teilnehmendenbetreuung sieht im Chat auch den Namen und öffnet von dort die [Teilnehmendenkarte](./participants#user-card). Wer ein Gremienpostfach betreut, sieht nur die Rolle.
 
@@ -140,13 +140,12 @@ Im [Papier-Hub](./paper-hub) schreibst du die Verfasser\*innen eines Papiers dir
 
 ### Meldungen und Sperren
 
-Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats mit dem Team lassen sich nicht melden. Für die Teilnehmendenbetreuung und die Projektleitung hat die Seite **Nachrichten** dafür neben **Postfächer** den Reiter **Meldungen**:
+Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats mit dem Team lassen sich nicht melden. Die Teilnehmendenbetreuung und die Projektleitung finden gemeldete Chats unter **Meldungen** im Menü und in der Übersicht:
 
-1. Jede offene Meldung zeigt den Grund und wer gemeldet hat. **Chat lesen** öffnet den Chat. Ein Hinweis darüber sagt, dass du ihn wegen einer Meldung liest, und nennt die beteiligten Personen mit Rolle und Namen. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
-2. **Für Chats sperren** an einer Person nimmt sie aus allen Chats mit anderen Teilnehmenden dieser Konferenz. Sie erreicht das Team weiterhin, und das Team erreicht sie. **Sperre aufheben** macht das rückgängig.
-3. **Erledigt** schließt die Meldung. Ist keine Meldung des Chats mehr offen, ist er wieder privat und die Teilnehmendenbetreuung liest ihn nicht mehr.
-
-Erledigte Meldungen stehen eingeklappt unter **Erledigte Meldungen**.
+1. Links stehen die offenen Fälle, der älteste zuerst. Mehrere Meldungen zu einem Chat sind ein Fall.
+2. Wählst du einen, liest du in der Mitte den Chat mit Namen. Die Linie **Gemeldet** zeigt, wann er gemeldet wurde. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
+3. Rechts steht die **Fallakte** mit den Meldungen und allen **Beteiligten**, bei einer Delegationsgruppe mit allen Mitgliedern. Dort siehst du die früheren erledigten Meldungen zu den Chats einer Person, schreibst sie an oder öffnest ihre [Teilnehmendenkarte](./participants#user-card). **Für Chats sperren** nimmt sie aus allen Chats mit anderen Teilnehmenden dieser Konferenz. Das Team erreicht sie weiterhin. **Sperre aufheben** macht das rückgängig.
+4. Mit einer **internen Notiz** und **Erledigen** schließt du alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat. Eine Sperre bleibt, bis du sie aufhebst. Die Notiz bleibt bei den erledigten Meldungen und ist nur für das Team sichtbar.
 
 ### Benachrichtigungen
 

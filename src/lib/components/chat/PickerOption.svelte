@@ -19,7 +19,7 @@
 
 <button
 	type="button"
-	class="hover:bg-base-200 flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left"
+	class="hover:bg-base-200 flex w-full items-center gap-3 rounded-box px-2 py-1.5 text-left"
 	{disabled}
 	{onclick}
 	data-testid={testId}
