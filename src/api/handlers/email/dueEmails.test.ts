@@ -350,6 +350,7 @@ describe('paper reviews', () => {
 		paperType: 'POSITION_PAPER',
 		agendaItem: null,
 		reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
+		anonymousAs: null,
 		statusAfter: 'CHANGES_REQUESTED'
 	});
 

@@ -21,7 +21,8 @@
 	import '@phosphor-icons/web/duotone/style.css';
 	import { dev } from '$app/env';
 	import type { LayoutProps } from './$types';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
+	import { beforeNavigate } from '$app/navigation';
 	import DevTools from '#lib/components/DevTools.svelte';
 	import NavigationProgress from '#lib/components/navigation/NavigationProgress.svelte';
 	import { enableViewTransitionApi } from '#lib/helpers/viewTransitionApi.svelte';
@@ -39,6 +40,13 @@
 	// is open.
 	onMount(() => {
 		document.body.dataset.hydrated = 'true';
+	});
+
+	// After a deploy, a tab still running the old build asks the API for fields that are gone
+	// ("Cannot query field ...") and loads chunks that no longer exist ("Failed to fetch dynamically
+	// imported module"). Once SvelteKit has noticed the new version, the next navigation loads it.
+	beforeNavigate(({ willUnload, to }) => {
+		if (updated.current && !willUnload && to?.url) location.href = to.url.href;
 	});
 </script>
 

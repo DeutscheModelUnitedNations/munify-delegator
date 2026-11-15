@@ -12,6 +12,15 @@ import { logger } from '#lib/logger';
 const CLOSE_TIMEOUT_MS = 2000;
 
 const closers: Array<() => Promise<unknown>> = [];
+let shuttingDown = false;
+
+/**
+ * Whether the connections are being closed. Work still running then fails on a closed pool or
+ * Redis client; that is the shutdown, not an error to report.
+ */
+export function isShuttingDown() {
+	return shuttingDown;
+}
 
 /** Closes a connection when the server shuts down. */
 export function closeOnShutdown(close: () => Promise<unknown>) {
@@ -20,6 +29,7 @@ export function closeOnShutdown(close: () => Promise<unknown>) {
 
 /** Closes everything registered, waiting at most `timeoutMs`. */
 export async function closeAll(timeoutMs = CLOSE_TIMEOUT_MS) {
+	shuttingDown = true;
 	const closed = Promise.all(
 		closers.map((close) =>
 			close().catch((error: unknown) => logger.warn('Closing a connection failed', error))

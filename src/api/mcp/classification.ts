@@ -546,6 +546,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	Paperreview: {
 		visible: [
 			'id',
+			'anonymousAs',
 			'createdAt',
 			'search_distance',
 			'paperVersionId',

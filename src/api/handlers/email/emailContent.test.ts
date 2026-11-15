@@ -85,6 +85,7 @@ function dueEmailOf(kind: AutomaticEmailKind): DueEmail {
 			paperType: 'POSITION_PAPER',
 			agendaItem: 'GV: Klimaschutz',
 			reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
+			anonymousAs: null,
 			statusAfter: 'ACCEPTED'
 		},
 		survey: {
@@ -162,6 +163,28 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 		kindChecks[kind]?.({ content, text, locale });
 		// Only a review's mail goes back to someone: the reviewer.
 		expect(content.replyTo).toBe(kind === 'PAPER_REVIEWED' ? 'robin@example.org' : undefined);
+	});
+});
+
+describe.each(['de', 'en'] as const)('an anonymous review in %s', (locale) => {
+	test('names the team instead of the reviewer and takes no replies', () => {
+		overwriteGetLocale(() => locale);
+		const email = dueEmailOf('PAPER_REVIEWED');
+		const review = email.review && {
+			...email.review,
+			reviewer: null,
+			anonymousAs: 'RESEARCH_SERVICE' as const
+		};
+		const content = emailContent({
+			email: { ...email, review },
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(bodyOf(content)).toContain(
+			locale === 'de' ? 'dem Wissenschaftlichen Dienst' : 'the Research Service'
+		);
+		expect(bodyOf(content)).not.toContain('Robin');
+		expect(content.replyTo).toBeUndefined();
 	});
 });
 

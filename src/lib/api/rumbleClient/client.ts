@@ -2877,6 +2877,7 @@ export type Mutation = {
     type: PapertypeEnum
   }) => Paper,
   createPaperReview: (p: {
+    anonymousAs?: PaperreviewanonymousasEnum | null | undefined,
     comments: JSON,
     newStatus: PaperstatusEnum,
     paperId: ID
@@ -3767,6 +3768,7 @@ export type PaperWhereInputArgument = {
 };
 		
 export type Paperreview = {
+  anonymousAs: PaperreviewanonymousasEnum | null,
   comments: JSON,
   createdAt: DateTime,
   id: ID,
@@ -3778,7 +3780,7 @@ export type Paperreview = {
   reviewer: (p?: {
     orderBy?: UserOrderInputArgument | null | undefined,
     where?: UserWhereInputArgument | null | undefined
-  }) => User,
+  }) => User | null,
   reviewerId: ID,
   search_distance: Float | null,
   statusAfter: PaperstatusEnum | null,
@@ -3786,6 +3788,7 @@ export type Paperreview = {
 };
 		
 export type PaperreviewOrderInputArgument = {
+  anonymousAs?: SortingParameter | null | undefined,
   comments?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
@@ -3806,6 +3809,7 @@ export type PaperreviewWhereInputArgument = {
   AND?: PaperreviewWhereInputArgument[] | undefined,
   NOT?: PaperreviewWhereInputArgument | null | undefined,
   OR?: PaperreviewWhereInputArgument[] | undefined,
+  anonymousAs?: PaperreviewanonymousasEnum | null | undefined,
   comments?: JSONWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
@@ -3816,6 +3820,8 @@ export type PaperreviewWhereInputArgument = {
   statusAfter?: PaperstatusEnum | null | undefined,
   statusBefore?: PaperstatusEnum | null | undefined    
 };
+		
+export type PaperreviewanonymousasEnum = "RESEARCH_SERVICE" | "SECRETARIAT";
 		
 export type PaperstatusEnum = "ACCEPTED" | "CHANGES_REQUESTED" | "DRAFT" | "REVISED" | "SUBMITTED";
 		

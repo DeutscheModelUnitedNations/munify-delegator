@@ -5,8 +5,9 @@
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import formatNames from '#lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
-	import PersonName from '../PersonName.svelte';
-	import OpenUserCardButton from '../OpenUserCardButton.svelte';
+	import PersonNameButton from '../PersonNameButton.svelte';
+	import { openUserCard } from '../userCardState.svelte';
+	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
 
 	interface Member {
 		id: string;
@@ -52,18 +53,16 @@
 			</thead>
 			<tbody>
 				{#each members as member (member.id)}
-					<tr class={member.user.id === userId ? 'bg-base-300/50 font-bold' : ''}>
+					<tr
+						class="{CLICKABLE_ROW} {member.user.id === userId ? 'bg-base-300/50 font-bold' : ''}"
+						onclick={rowClick(() => openUserCard(member.user.id))}
+					>
 						<td>
-							<PersonName
-								givenName={member.user.givenName}
-								familyName={member.user.familyName}
-								isHeadDelegate={member.isHeadDelegate}
-							/>
+							<PersonNameButton user={member.user} isHeadDelegate={member.isHeadDelegate} />
 						</td>
 						<td>{member.assignedCommittee?.abbreviation ?? 'N/A'}</td>
 						<td>
 							<div class="flex justify-end gap-1">
-								<OpenUserCardButton user={member.user} />
 								<button
 									class="btn btn-ghost btn-xs btn-square text-error"
 									onclick={() => removeMember(member)}

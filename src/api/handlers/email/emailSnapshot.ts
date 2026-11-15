@@ -301,7 +301,7 @@ async function toPeople({
 async function loadReviews(participantIds: string[]) {
 	const reviews = await db.query.paperReview.findMany({
 		where: { paperVersion: { paper: { authorParticipantId: { in: participantIds } } } },
-		columns: { id: true, statusAfter: true },
+		columns: { id: true, statusAfter: true, anonymousAs: true },
 		with: {
 			reviewer: { columns: { givenName: true, familyName: true, email: true } },
 			paperVersion: {
@@ -650,6 +650,7 @@ export async function loadUserSnapshot({
 export function reviewPart(review: {
 	id: string;
 	statusAfter: SnapshotReview['statusAfter'];
+	anonymousAs: SnapshotReview['anonymousAs'];
 	reviewer: { givenName: string; familyName: string; email: string } | null;
 	paperVersion: {
 		paper: {
@@ -673,12 +674,15 @@ export function reviewPart(review: {
 				committee && paper.agendaItem
 					? `${committee.abbreviation}: ${paper.agendaItem.title}`
 					: null,
-			reviewer: review.reviewer
-				? {
-						name: `${review.reviewer.givenName} ${review.reviewer.familyName}`,
-						email: review.reviewer.email
-					}
-				: null,
+			// an anonymous review names neither the reviewer nor where to reply to them
+			reviewer:
+				review.reviewer && !review.anonymousAs
+					? {
+							name: `${review.reviewer.givenName} ${review.reviewer.familyName}`,
+							email: review.reviewer.email
+						}
+					: null,
+			anonymousAs: review.anonymousAs,
 			statusAfter: review.statusAfter
 		}
 	];
