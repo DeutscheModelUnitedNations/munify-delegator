@@ -445,7 +445,7 @@ jobs:
           npm install -g @sentry/cli@2 || skip "sentry-cli could not be installed"
           echo "::endgroup::"
 
-          # The image's build stage injected the debug ids (scripts/injectDebugIds.ts): only ids
+          # The Vite build injected the debug ids (`debugIds` in vite.config.ts): only ids
           # in the files the app serves let Bugsink match an event to its sourcemap.
           grep -rqs --include='*.js' '//# debugId=' ./build-artifacts/build \
             || skip "the image's scripts carry no debug ids"
