@@ -17,8 +17,6 @@ ENV PUBLIC_SHA=$SHA
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 COPY . .
 RUN bun run build:app && bun run build:compute
-# Debug ids in the served scripts, for Bugsink to find the sourcemaps CI uploads from this image
-RUN bun scripts/injectDebugIds.ts build
 
 FROM node:26-slim AS release
 ARG OS_UPDATES_DATE
