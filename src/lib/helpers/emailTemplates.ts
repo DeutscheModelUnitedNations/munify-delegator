@@ -356,6 +356,17 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 			)
 		})
 	},
+	UNREAD_MESSAGES: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoUnreadMessagesSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoUnreadMessagesHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoUnreadMessagesBody({ conference: P.conference }, { locale }),
+				m.emailAutoUnreadMessagesClosing({}, { locale })
+			)
+		})
+	},
 	BADGE_FOUND: {
 		placeholders: [],
 		text: (locale) => ({

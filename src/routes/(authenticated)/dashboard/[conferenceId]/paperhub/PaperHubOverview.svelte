@@ -19,12 +19,28 @@
 	import { createPaperSortState, paperHasReviews, sortPapers } from './paperSorting';
 	import { createExpandedPaperGroup, createPaperGroupsSnapshot } from './paperGroups.svelte';
 	import { page } from '$app/state';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { fetchAnswersInbox } from '#lib/api/chats';
+	import WriteToDelegateButton from '#lib/components/chat/WriteToDelegateButton.svelte';
+	import { fetchMyPaperHubRoles } from './myPaperHubRoles';
 
 	interface Props {
 		conferenceId: string;
 	}
 
 	let { conferenceId }: Props = $props();
+
+	// Team members answering an inbox of the chats write to a paper's author from its row.
+	const [currentUser, myRoles] = $derived(
+		await Promise.all([getCurrentUser(), fetchMyPaperHubRoles(conferenceId)])
+	);
+	const answersInbox = $derived(
+		await fetchAnswersInbox({
+			conferenceId,
+			userId: currentUser.sub,
+			cares: myRoles.caresForParticipants
+		})
+	);
 
 	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
 	const focusMode = createPersistedState({ key: 'paperHubFocusMode', initial: false });
@@ -36,6 +52,7 @@
 		createdAt: true,
 		updatedAt: true,
 		firstSubmittedAt: true,
+		authorParticipantId: true,
 		delegation: {
 			id: true,
 			assignedRole: {
@@ -219,6 +236,17 @@
 	</div>
 {/snippet}
 
+{#snippet writeToAuthor(paper: { id: string; authorParticipantId?: string | null })}
+	{#if paper.authorParticipantId}
+		<WriteToDelegateButton
+			{conferenceId}
+			participantId={paper.authorParticipantId}
+			paperId={paper.id}
+			compact
+		/>
+	{/if}
+{/snippet}
+
 {#snippet papersTable(groupId: string, papers: Paper[])}
 	<div class="px-2 pb-2">
 		<PaperTable
@@ -227,6 +255,7 @@
 			sortConfig={sortState.get(groupId)}
 			onSort={(key) => sortState.toggle({ groupId, key })}
 			paperHref={(paperId) => resolve(`dashboard/${conferenceId}/paperhub/${paperId}`)}
+			rowAction={answersInbox ? writeToAuthor : undefined}
 		/>
 	</div>
 {/snippet}

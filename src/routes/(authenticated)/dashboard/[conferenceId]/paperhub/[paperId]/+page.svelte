@@ -13,6 +13,8 @@
 		paperTitle
 	} from '../paperDisplay';
 	import PaperHeaderCard from '../PaperHeaderCard.svelte';
+	import WriteToDelegateButton from '#lib/components/chat/WriteToDelegateButton.svelte';
+	import { fetchAnswersInbox } from '#lib/api/chats';
 	import PaperContent from '../PaperContent.svelte';
 	import { createLoadedPaper } from '../loadedPaper.svelte';
 	import { conferenceHeaderInfo } from '../conferenceHeaderInfo';
@@ -33,6 +35,17 @@
 			fetchPaperDetail(params.paperId),
 			fetchMyPaperHubRoles(params.conferenceId)
 		])
+	);
+
+	// "Write to delegate" is for team members answering an inbox of the chats
+	const answersInbox = $derived(
+		myRoles.isReviewer
+			? await fetchAnswersInbox({
+					conferenceId: params.conferenceId,
+					userId: currentUser.sub,
+					cares: myRoles.caresForParticipants
+				})
+			: false
 	);
 
 	// View mode detection
@@ -160,6 +173,13 @@
 		footer={baseViewMode === 'supervisor' ? undefined : actionBar}
 	>
 		{#snippet actions()}
+			{#if baseViewMode === 'reviewer' && answersInbox && paper.authorParticipantId}
+				<WriteToDelegateButton
+					conferenceId={params.conferenceId}
+					participantId={paper.authorParticipantId}
+					paperId={paper.id}
+				/>
+			{/if}
 			<PaperExportButtons {paper} {resolutionHeaderData} />
 		{/snippet}
 	</PaperHeaderCard>

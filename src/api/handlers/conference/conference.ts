@@ -106,6 +106,7 @@ schemaBuilder.mutationFields((t) => ({
 				'info',
 				'showInfoExpanded',
 				'showCalendar',
+				'messagingEnabled',
 				'unlockPayments',
 				'unlockPostals',
 				'isOpenPaperSubmission'
@@ -131,6 +132,9 @@ schemaBuilder.mutationFields((t) => ({
 			linkToPaperInbox: t.arg.string(),
 			isOpenPaperSubmission: t.arg.boolean(),
 			showCalendar: t.arg.boolean(),
+			messagingEnabled: t.arg.boolean({
+				description: 'Whether the people of the conference can write each other in the chats.'
+			}),
 			timezone: t.arg
 				.string({ description: 'An IANA time zone, such as `Europe/Berlin`.' })
 				.validate(conferenceSettingSchemas.timezone),

@@ -24,7 +24,9 @@ const ERROR_CODES = [
 	/** The identity provider's email belongs to another account. */
 	'EMAIL_CONFLICT',
 	/** Too many wrong codes in a short time; the caller has to wait before trying again. */
-	'TOO_MANY_ATTEMPTS'
+	'TOO_MANY_ATTEMPTS',
+	/** A participant has to accept the message service's terms before they write. */
+	'TERMS_NOT_ACCEPTED'
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

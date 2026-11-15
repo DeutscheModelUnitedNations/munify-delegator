@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "947e380f-5ad9-4876-9bf7-ea9fb0e85f76",
+  "prevIds": [
+    "95cc239f-90f0-4529-be83-09022560dbbf"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "chat_report",
+        "resolution_note"
+      ],
+      "writes": [
+        "s|col|public.chat_report.resolution_note",
+        "n|col|public.chat_report.resolution_note",
+        "e|col|public.chat_report.resolution_note"
+      ],
+      "reads": [
+        "n|tbl|public.chat_report",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_report",
+        "name": "resolution_note",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

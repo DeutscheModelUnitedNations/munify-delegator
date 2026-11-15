@@ -130,6 +130,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'robot',
 		translation: () => m.aiAccess()
 	},
+	messages: {
+		icon: 'chats-circle',
+		translation: () => m.chatMessages()
+	},
 	calendar: {
 		icon: 'calendar-dots',
 		translation: () => m.calendar()

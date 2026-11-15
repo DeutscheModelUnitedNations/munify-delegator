@@ -801,6 +801,24 @@ const attendance = {
 
 // --- Information --------------------------------------------------------------------------------
 
+/** The messenger: a heading, then the chat list beside the open chat */
+const messages = {
+	name: 'messages',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-4 py-4 sm:p-6',
+			children: [
+				block('h-8 w-48'),
+				paragraph({ lines: 1 }),
+				{
+					class: 'grid gap-4 md:grid-cols-[22rem_1fr]',
+					children: [block('h-[30rem] w-full'), block('h-[30rem] w-full max-md:hidden')]
+				}
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
 const announcement = {
 	name: 'announcement',
 	nodes: [
@@ -1363,6 +1381,7 @@ export const TEAM_SKELETONS = {
 	payments,
 	attendance,
 	announcement,
+	messages,
 	calendar,
 	survey,
 	emails,

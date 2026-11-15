@@ -30,9 +30,19 @@ const MIXED_TEAM_CONFERENCES: ConferenceSeed['plan']['key'][] = [
 /** As `invitationToken.ts` stores it: only the SHA-256 of the token the link carries. */
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
+/** The id of a team persona's membership in the conference, for what points at it (their committee functions). */
+export function teamMemberId({ cs, userId }: { cs: ConferenceSeed; userId: DevAccountSub }) {
+	return cs.rowId(`team-${userId}`);
+}
+
 export function addTeam(cs: ConferenceSeed) {
 	for (const [userId, role] of TEAM_PERSONAS) {
-		cs.batch.teamMember.push({ conferenceId: cs.id, userId, role });
+		cs.batch.teamMember.push({
+			id: teamMemberId({ cs, userId }),
+			conferenceId: cs.id,
+			userId,
+			role
+		});
 	}
 	if (MIXED_TEAM_CONFERENCES.includes(cs.plan.key)) {
 		cs.batch.teamMember.push({ conferenceId: cs.id, userId: 'dev-mixed-team', role: 'MEMBER' });

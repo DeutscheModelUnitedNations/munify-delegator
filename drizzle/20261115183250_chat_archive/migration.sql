@@ -1,0 +1,1 @@
+ALTER TABLE "chat" ADD COLUMN "team_archived_at" timestamp(3);

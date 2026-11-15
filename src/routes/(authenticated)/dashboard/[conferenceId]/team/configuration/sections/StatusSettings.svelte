@@ -80,6 +80,15 @@
 			/>
 			<span>{m.showCalendar()}</span>
 		</label>
+		<label class="flex cursor-pointer items-center gap-3">
+			<input
+				type="checkbox"
+				class="toggle toggle-primary"
+				name="messagingEnabled"
+				bind:checked={$formData.messagingEnabled}
+			/>
+			<span>{m.messagingEnabled()}</span>
+		</label>
 	</div>
 	<!-- the inputs line up at the bottom, whatever their descriptions wrap to -->
 	<div class="grid grid-cols-1 items-end gap-x-4 lg:grid-cols-3">

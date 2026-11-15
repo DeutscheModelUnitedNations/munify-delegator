@@ -14,6 +14,7 @@
 	} from '#lib/data/teamRoutes';
 	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
 	import CleanupNavButton from './CleanupNavButton.svelte';
+	import MessagesNavButton from './MessagesNavButton.svelte';
 	import { helpForRoute } from '#lib/docs/help';
 
 	/** The menu itself: the registry's sections, each page a button, the open one marked. */
@@ -40,11 +41,13 @@
 </script>
 
 {#snippet entry(route: TeamRoute)}
-	{#if route.id === 'plausibility' || route.id === 'cleanup'}
+	{#if route.id === 'plausibility' || route.id === 'cleanup' || route.id === 'messages'}
 		<!-- the count is fetched on its own, so the menu does not wait for it -->
 		<svelte:boundary>
 			{#if route.id === 'plausibility'}
 				<PlausibilityNavButton {conferenceId} active={openRoute?.id === route.id} />
+			{:else if route.id === 'messages'}
+				<MessagesNavButton {conferenceId} active={openRoute?.id === route.id} />
 			{:else}
 				<CleanupNavButton {conferenceId} active={openRoute?.id === route.id} />
 			{/if}

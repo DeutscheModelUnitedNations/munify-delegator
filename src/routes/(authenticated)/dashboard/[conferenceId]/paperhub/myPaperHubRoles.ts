@@ -1,8 +1,10 @@
 import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
 import { client } from '#lib/api/rumbleClient/client';
-import { PAPER_ROLES } from '#lib/helpers/teamRoles';
+import { PAPER_ROLES, PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
 import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 import { canOpenPaperHub, paperHubAccess } from './paperHubViews';
+
+const CARE_ROLES: readonly string[] = PARTICIPANT_CARE_ROLES;
 
 /**
  * The paper hub looks different for reviewers and for supervisors, so it asks for both.
@@ -44,6 +46,10 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 		/** Project management (or an admin) may delete any paper, not just a draft of their own. */
 		get mayDeleteAnyPaper() {
 			return user.isAdmin || teamMembers.some((member) => member.role === 'PROJECT_MANAGEMENT');
+		},
+		/** Participant care (or an admin), who answer the care inbox of the chats. */
+		get caresForParticipants() {
+			return user.isAdmin || teamMembers.some((member) => CARE_ROLES.includes(member.role));
 		},
 		get supervisor() {
 			return supervisors.at(0) ?? null;

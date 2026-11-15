@@ -3,6 +3,7 @@ import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
 import { m } from '#lib/paraglide/messages';
 import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
+import MessagesLinkInfo from '#lib/components/chat/MessagesLinkInfo.svelte';
 import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink';
 
 export type UserType = 'delegation' | 'singleParticipant' | 'supervisor';
@@ -21,6 +22,7 @@ export interface DashboardLinkContext {
 	linkToPreparationGuide?: string | null;
 	isOpenPaperSubmission?: boolean;
 	showCalendar?: boolean;
+	messagingEnabled?: boolean;
 	linkToPaperInbox?: string | null;
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
@@ -113,6 +115,21 @@ const dashboardLinks: DashboardLink[] = [
 		isDisabled: (ctx) => !ctx.unlockPostals,
 		getBadge: (ctx) => (!ctx.unlockPostals ? undefined : { value: '!', type: 'warning' }),
 		isImportant: () => true
+	},
+	{
+		id: 'messages',
+		icon: 'chats-circle',
+		getTitle: () => m.chatMessages(),
+		getDescription: () => m.chatLinkDescription(),
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/messages', {
+				conferenceId: ctx.conferenceId
+			}),
+		info: MessagesLinkInfo,
+		// Supervisors take no part in the chats
+		showFor: ['delegation', 'singleParticipant'],
+		isVisible: (ctx) => !!ctx.messagingEnabled,
+		isDisabled: () => false
 	},
 	{
 		id: 'preparation',
