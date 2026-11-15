@@ -402,18 +402,7 @@ export async function sendMessage({
 	// a list only hears of as a new row
 	if (!chat.lastMessageAt) chatPubsub.created();
 	// whoever answers the inbox hears of it on Slack right away; the mail waits for the sweep
-	if (chat.kind === 'TEAM' && chat.inbox && !fromTeam) {
-		tellInboxOnSlack({
-			chat: {
-				conferenceId: chat.conferenceId,
-				inbox: chat.inbox,
-				committeeId: chat.committeeId,
-				trustedUserId: chat.trustedUserId
-			},
-			messageId: id,
-			origin
-		});
-	}
+	if (!fromTeam) tellInboxOnSlack({ chat, messageId: id, origin });
 	return id;
 }
 

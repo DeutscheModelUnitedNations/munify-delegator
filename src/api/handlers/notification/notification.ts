@@ -26,9 +26,9 @@ import {
 	slackWorkspaceOfConference,
 	updateSlackWorkspace,
 	workspaceNameSchema,
-	type ConferenceNotificationSettings,
-	type NotificationSetting
+	type ConferenceNotificationSettings
 } from './notificationService';
+import type { NotificationSetting } from './settingLines';
 
 /**
  * How the team hears of what waits for it: each member's settings per topic and channel, and the

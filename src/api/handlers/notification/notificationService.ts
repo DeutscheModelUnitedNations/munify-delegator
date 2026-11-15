@@ -11,17 +11,16 @@ import { runWithLocale, localeOfUser } from '#api/services/requestLocale';
 import { m } from '#lib/paraglide/messages';
 import {
 	topicsOf,
-	wantsNotification,
 	type NotificationChannel,
 	type NotificationTopic,
-	type NotifiedMember,
-	type TopicKey
+	type NotifiedMember
 } from '#lib/helpers/teamNotifications';
 import {
 	preferencesOfMembers,
 	workspaceOfConference,
 	workspacesOfConferences
 } from './notificationStore';
+import { settingLines, type NotificationSetting } from './settingLines';
 import { SlackApiError, sendSlackDirectMessage, slackWorkspaceOf } from './slackApi';
 import { decryptSlackToken, encryptSlackToken } from './slackToken';
 import { forgetSlackUsers, slackUserOf, type SlackConnection } from './slackUsers';
@@ -42,17 +41,6 @@ export const botTokenSchema = z
 	.string()
 	.trim()
 	.regex(/^xoxb-[A-Za-z0-9-]+$/, { error: () => m.slackBotTokenMalformed() });
-
-/** One line of somebody's settings: a topic of theirs, and whether mail and Slack tell them. */
-export interface NotificationSetting extends TopicKey {
-	/** Stable per member and topic, so clients can tell the lines apart. */
-	id: string;
-	functionKind: string | null;
-	committeeAbbreviation: string | null;
-	committeeName: string | null;
-	email: boolean;
-	slack: boolean;
-}
 
 /** A conference's part of somebody's settings. */
 export interface ConferenceNotificationSettings {
@@ -98,24 +86,10 @@ export async function notificationSettingsOf(
 			conferenceId: member.conferenceId,
 			conferenceTitle: member.conference.title,
 			workspaceName: workspaceOf.get(member.conferenceId)?.name ?? null,
-			settings: topicsOf(member).map((key) => {
-				const held = member.functions.find((fn) => fn.id === key.teamFunctionId);
-				const wants = (channel: NotificationChannel) =>
-					wantsNotification({
-						preferences: preferences.get(member.id) ?? [],
-						key,
-						channel,
-						mailByDefault: member.user.messageNotificationEmails
-					});
-				return {
-					...key,
-					id: `${member.id}:${key.topic}:${key.teamFunctionId ?? ''}`,
-					functionKind: held?.kind ?? null,
-					committeeAbbreviation: held?.committee?.abbreviation ?? null,
-					committeeName: held?.committee?.name ?? null,
-					email: wants('EMAIL'),
-					slack: wants('SLACK')
-				};
+			settings: settingLines({
+				member,
+				preferences: preferences.get(member.id) ?? [],
+				mailByDefault: member.user.messageNotificationEmails
 			})
 		}));
 }

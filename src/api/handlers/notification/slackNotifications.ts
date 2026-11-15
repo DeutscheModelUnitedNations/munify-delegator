@@ -235,8 +235,30 @@ function inBackground({ work, failure }: { work: Promise<void>; failure: string 
 	void work.catch((error: unknown) => logger.error(failure, error));
 }
 
-export function tellInboxOnSlack(args: Parameters<typeof tellInbox>[0]) {
-	inBackground({ work: tellInbox(args), failure: 'Telling an inbox on Slack failed' });
+/** A chat as far as telling its inbox asks: only a team chat has one. */
+interface ToldChat {
+	conferenceId: string;
+	kind: string;
+	inbox: NotifiedInbox['inbox'] | null;
+	committeeId: string | null;
+	trustedUserId: string | null;
+}
+
+/** Tells the inbox of a team chat that a participant wrote there; nothing for any other chat. */
+export function tellInboxOnSlack({
+	chat,
+	messageId,
+	origin
+}: {
+	chat: ToldChat;
+	messageId: string;
+	origin: string;
+}) {
+	if (chat.kind !== 'TEAM' || !chat.inbox) return;
+	inBackground({
+		work: tellInbox({ chat: { ...chat, inbox: chat.inbox }, messageId, origin }),
+		failure: 'Telling an inbox on Slack failed'
+	});
 }
 
 export function tellReportOnSlack(args: Parameters<typeof tellReport>[0]) {
