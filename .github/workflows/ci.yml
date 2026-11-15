@@ -421,7 +421,8 @@ jobs:
         continue-on-error: true
         if: github.ref_type == 'tag' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
         env:
-          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
+          # Bugsink (2.2+) takes the project's slug, not its name
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'munify-delegator' }}
         run: |
           skip() {
             echo "::endgroup::"
