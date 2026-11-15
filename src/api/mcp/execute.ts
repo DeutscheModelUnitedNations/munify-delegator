@@ -1,4 +1,4 @@
-import type { DocumentNode, OperationDefinitionNode } from 'graphql';
+import { GraphQLError, type DocumentNode, type OperationDefinitionNode } from 'graphql';
 import type { RequestEvent } from '@sveltejs/kit';
 import { yoga } from '#api/yoga';
 import { redactResult, type ResultValue } from './redact';
@@ -11,7 +11,11 @@ import { dataOfResult, McpRefusal } from './toolResults';
  * the database rule errors apply as on `/api/graphql`.
  */
 
-/** Validates a document against the schema, with graphql-armor's limits; the problems, or none. */
+/**
+ * Validates a document against the schema, with graphql-armor's limits; the problems, or none.
+ * Armor throws the limit it hit (`propagateOnRejection`) rather than returning it among the
+ * validation errors; that is a problem with the query too, and the assistant has to hear it.
+ */
 export function validationProblems({
 	event,
 	document
@@ -20,7 +24,12 @@ export function validationProblems({
 	document: DocumentNode;
 }) {
 	const envelop = yoga.getEnveloped(event);
-	return envelop.validate(envelop.schema, document).map((error) => error.message);
+	try {
+		return envelop.validate(envelop.schema, document).map((error) => error.message);
+	} catch (error) {
+		if (error instanceof GraphQLError) return [error.message];
+		throw error;
+	}
 }
 
 /** The executable schema, for building and checking documents. */

@@ -30,7 +30,9 @@
 	const committees = $derived(
 		entries.flatMap((entry) => (entry.kind === 'committee' ? [entry] : []))
 	);
-	const chatsIn = (key: string) => chats.filter((chat) => inboxKey(chat) === key).length;
+	// the archive is put away: a card counts what is open
+	const chatsIn = (key: string) =>
+		chats.filter((chat) => !chat.archived && inboxKey(chat) === key).length;
 	const inboxQuery = (key: string) => new URLSearchParams({ inbox: key }).toString();
 </script>
 

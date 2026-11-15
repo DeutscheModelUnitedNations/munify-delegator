@@ -1296,6 +1296,11 @@ type ChasePresenceRepresentation {
 }
 
 type Chat {
+  """
+  Whether the chat is in the archive of its inbox, for whoever answers the inbox (false for everybody else): put away until the next message.
+  """
+  archived: Boolean!
+
   """A direct chat whose other party the caller blocked."""
   blockedByMe: Boolean!
 
@@ -1353,6 +1358,11 @@ type Chat {
   How the caller relates to the chat: `PARTICIPANT` (a party), `TEAM` (answers its inbox) or `REVIEW` (participant care reading a reported chat, who cannot write).
   """
   side: String!
+
+  """
+  A team chat: when its inbox put it away into the archive, for whoever answers the inbox (null for everybody else). The next message empties it.
+  """
+  teamArchivedAt: DateTime
   teamReadAt: DateTime
 
   """
@@ -1438,6 +1448,7 @@ input ChatOrderInputArgument {
   lastParticipantMessageAt: SortingParameter
   otherParticipantId: SortingParameter
   participantId: SortingParameter
+  teamArchivedAt: SortingParameter
   teamReadAt: SortingParameter
   trustedUserId: SortingParameter
   underReview: SortingParameter
@@ -1497,6 +1508,7 @@ input ChatWhereInputArgument {
   participant: ConferenceparticipantWhereInputArgument
   participantId: IDWhereInputArgument
   reports: ChatreportWhereInputArgument
+  teamArchivedAt: DateTimeWhereInputArgument
   teamReadAt: DateTimeWhereInputArgument
   trustedUserId: IDWhereInputArgument
   underReview: BooleanWhereInputArgument
@@ -3905,6 +3917,10 @@ type Mutation {
   Records a reviewer's verdict on a paper's latest version. Besides writing the review it gives the paper and version that status, has the author told (the `PAPER_REVIEWED` mail, where the conference sends it) and works out whether this was the first review for a "piece" of the flag collection - the gamified progress display. That last part has three shapes: a nation delegation counts one piece per agenda item, a non-state actor's introduction paper is its own piece, and its other papers count up to two more. NOT_FOUND for anyone but the conference's paper team, CONFLICT for a draft.
   """
   createPaperReview(
+    """
+    Publishes the review under this team name: its author reads it instead of the reviewer's. Left out, the review carries the reviewer's name.
+    """
+    anonymousAs: PaperreviewanonymousasEnum
     comments: JSON!
 
     """The verdict: ACCEPTED or CHANGES_REQUESTED."""
@@ -4484,6 +4500,11 @@ type Mutation {
   Lets a track run on a day of its conference, or takes it off the day; the day's entries that ran on this track alone go with it. A day of another conference is refused with INVALID_INPUT.
   """
   setCalendarTrackOnDay(calendarDayId: ID!, id: ID!, runs: Boolean!): Boolean!
+
+  """
+  Puts a team chat away into the archive of its inbox, or takes it out again, for everybody holding the inbox. Archiving reads the chat; the next message brings it back. For whoever answers the inbox (FORBIDDEN otherwise, NOT_FOUND for a chat they cannot read).
+  """
+  setChatArchived(archived: Boolean!, chatId: ID!): Boolean!
 
   """
   Blocks (or unblocks) the other party of a direct chat: neither can write the other while it lasts. For a party of the chat (FORBIDDEN otherwise).
@@ -5392,6 +5413,7 @@ input PaperWhereInputArgument {
 }
 
 type Paperreview {
+  anonymousAs: PaperreviewanonymousasEnum
   comments: JSON!
   createdAt: DateTime!
   id: ID!
@@ -5401,7 +5423,7 @@ type Paperreview {
   paperVersionId: ID!
 
   """Get the users related to this paperReview"""
-  reviewer(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User!
+  reviewer(orderBy: UserOrderInputArgument, where: UserWhereInputArgument): User
   reviewerId: ID!
 
   """
@@ -5413,6 +5435,7 @@ type Paperreview {
 }
 
 input PaperreviewOrderInputArgument {
+  anonymousAs: SortingParameter
   comments: SortingParameter
   createdAt: SortingParameter
   id: SortingParameter
@@ -5444,6 +5467,7 @@ input PaperreviewWhereInputArgument {
   AND: [PaperreviewWhereInputArgument!]
   NOT: PaperreviewWhereInputArgument
   OR: [PaperreviewWhereInputArgument!]
+  anonymousAs: PaperreviewanonymousasEnum
   comments: JSONWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
@@ -5453,6 +5477,11 @@ input PaperreviewWhereInputArgument {
   reviewerId: IDWhereInputArgument
   statusAfter: PaperstatusEnum
   statusBefore: PaperstatusEnum
+}
+
+enum PaperreviewanonymousasEnum {
+  RESEARCH_SERVICE
+  SECRETARIAT
 }
 
 enum PaperstatusEnum {

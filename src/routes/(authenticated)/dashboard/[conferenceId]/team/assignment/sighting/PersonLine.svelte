@@ -2,6 +2,7 @@
 	import PreviousParticipations from './PreviousParticipations.svelte';
 	import { genderIcon, type delegationApplication } from './sighting';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
 	import { getAgeAtConference } from '#lib/helpers/ageChecker';
 	import formatNames from '#lib/helpers/formatNames';
 	import { careNotesOf } from '#lib/helpers/linkedNotes';
@@ -26,7 +27,7 @@
 	);
 </script>
 
-<tr>
+<tr class={CLICKABLE_ROW} onclick={rowClick(() => openUserCard(person.id))}>
 	<td class="font-medium">
 		<button
 			type="button"

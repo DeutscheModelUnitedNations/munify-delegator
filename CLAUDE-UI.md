@@ -35,6 +35,9 @@ the public and participant pages, contrast in the high contrast variant, plus th
   just `btn-disabled`.
 - **Clickable rows** keep their table semantics: the row's `onclick` is for the mouse, a real
   `<a href>` in a cell is for everyone else (`PaperTable`). Never `role="button"` on a `<tr>`.
+  A list of people or things opens an entry from the whole row, not from a small button at its
+  end: `rowClick` / `CLICKABLE_ROW` (`#lib/helpers/rowClick`) skip the row's own controls and
+  text selections, and `PersonNameButton` is the name cell that opens the user card by keyboard.
 - **`<dl>`**: each `<div>` wrapper holds one `<dt>`/`<dd>` pair and nothing else (an icon goes
   inside the `<dt>`).
 - **High contrast** (`#lib/helpers/contrast`, the footer's `ContrastToggle`, or the system's
@@ -912,6 +915,10 @@ list header.
   inbox) when there are several, the chat list right away when there is one. A system admin gets
   participant care's inbox and both inboxes of every committee (`inboxesOf`), never the trusted
   persons'. `fetchTeamInboxes` + `teamInboxesOf` are what both the menu and the page read.
+- **An inbox's archive**: `ChatArchiveButton` in the thread header (team side only) puts a chat
+  away or takes it out; the list leaves archived chats out until `ArchiveToggle` in `InboxChats` (`?archive=1`)
+  shows them after the open ones, marked "archived" (`listedChats`). The overview cards count
+  open chats only.
 - **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
   `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
   `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than

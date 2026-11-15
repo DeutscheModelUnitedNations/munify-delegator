@@ -82,7 +82,8 @@ export function addMessages(cs: ConferenceSeed) {
 		chat,
 		messages,
 		readBy = [],
-		teamRead = true
+		teamRead = true,
+		archived = false
 	}: {
 		id: string;
 		chat: Omit<typeof schema.chat.$inferInsert, 'conferenceId'>;
@@ -90,6 +91,8 @@ export function addMessages(cs: ConferenceSeed) {
 		/** Who has read everything; the others have not opened the chat since the first message. */
 		readBy?: string[];
 		teamRead?: boolean;
+		/** Put away by its inbox */
+		archived?: boolean;
 	}) => {
 		const chatId = cs.rowId(`chat-${id}`);
 		const at = (minutesAgo: number) => new Date(now - minutesAgo * MINUTE);
@@ -103,7 +106,8 @@ export function addMessages(cs: ConferenceSeed) {
 				chat.kind === 'TEAM' && fromParticipant.length > 0
 					? at(Math.min(...fromParticipant.map((message) => message.minutesAgo)))
 					: null,
-			teamReadAt: chat.kind === 'TEAM' && teamRead ? new Date(now) : null
+			teamReadAt: chat.kind === 'TEAM' && teamRead ? new Date(now) : null,
+			teamArchivedAt: archived ? new Date(now) : null
 		});
 		for (const message of messages) {
 			cs.batch.chatMessage.push({
@@ -308,6 +312,31 @@ export function addMessages(cs: ConferenceSeed) {
 		],
 		readBy: ['dev-delegate'],
 		teamRead: false
+	});
+
+	// settled and put away: in the archive of participant care's inbox until the next message
+	addChat({
+		id: 'care-archived',
+		chat: teamChat('dev-nsa-delegate', 'PARTICIPANT_CARE'),
+		messages: [
+			{
+				from: { participant: 'dev-nsa-delegate' },
+				minutesAgo: 3 * 24 * 60,
+				body: 'Hallo, ich habe meinen Teilnahmeausweis verloren. Bekomme ich einen neuen?'
+			},
+			{
+				from: { team: 'dev-team-care' },
+				minutesAgo: 3 * 24 * 60 - 30,
+				body: 'Kein Problem, am Infopoint liegt ein neuer für dich bereit.'
+			},
+			{
+				from: { participant: 'dev-nsa-delegate' },
+				minutesAgo: 3 * 24 * 60 - 40,
+				body: 'Super, vielen Dank!'
+			}
+		],
+		readBy: ['dev-nsa-delegate'],
+		archived: true
 	});
 
 	const stranger = others.find((member) => member.userId !== neighbour?.userId);

@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { logger } from '#lib/logger';
-import { closeAll, closeOnShutdown } from './shutdown';
+import { closeAll, closeOnShutdown, isShuttingDown } from './shutdown';
 
 describe('closeAll', () => {
 	test('closes every registered connection, logs a failed close, and stops waiting for a hanging one', async () => {
@@ -13,7 +13,9 @@ describe('closeAll', () => {
 		closeOnShutdown(() => new Promise(() => {}));
 
 		const started = Date.now();
+		expect(isShuttingDown()).toBe(false);
 		await closeAll(50);
+		expect(isShuttingDown()).toBe(true);
 
 		expect(closed).toHaveBeenCalledOnce();
 		expect(warn).toHaveBeenCalledWith('Closing a connection failed', expect.any(Error));

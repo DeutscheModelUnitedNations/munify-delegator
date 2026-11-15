@@ -85,7 +85,7 @@ export type CallerFacts = {
 	}[];
 	/** The supervisors of the delegates and single participants the caller supervises. */
 	coSupervisors: readonly { supervisorId: string; userId: string }[];
-	/** The caller's papers, with their versions and who reviewed them. */
+	/** The caller's papers, with their versions and who reviewed them by name (not `anonymousAs`). */
 	authoredPapers: readonly {
 		id: string;
 		versionIds: readonly string[];
@@ -257,13 +257,19 @@ async function loadSupervision(supervisorIds: readonly string[]): Promise<Superv
 	return supervisorIds.length === 0 ? [] : querySupervision(supervisorIds);
 }
 
-/** The papers the caller wrote, with their versions and reviewers. */
+/** The papers the caller wrote, with their versions and the reviewers who signed by name. */
 function queryAuthoredPapers(participantIds: readonly string[]) {
 	return db.query.paper.findMany({
 		where: { authorParticipantId: { in: [...participantIds] } },
 		columns: { id: true },
 		with: {
-			versions: { columns: { id: true }, with: { reviews: { columns: { reviewerId: true } } } }
+			versions: {
+				columns: { id: true },
+				with: {
+					// an anonymous review (`anonymousAs`) keeps its reviewer from the author
+					reviews: { where: { anonymousAs: { isNull: true } }, columns: { reviewerId: true } }
+				}
+			}
 		}
 	});
 }

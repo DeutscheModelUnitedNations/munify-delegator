@@ -204,6 +204,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'lastMessageAt',
 			'lastParticipantMessageAt',
 			'teamReadAt',
+			'teamArchivedAt',
+			'archived',
 			'underReview',
 			'unreadCount',
 			'side',
@@ -604,6 +606,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	Paperreview: {
 		visible: [
 			'id',
+			'anonymousAs',
 			'createdAt',
 			'search_distance',
 			'paperVersionId',

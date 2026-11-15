@@ -2,13 +2,14 @@
 	@component
 	The head of an open chat: who it is with, and what the caller can do about it. A participant
 	blocks or reports a chat with other participants; the team and participant care open the user
-	cards of the people in it.
+	cards of the people in it, and whoever answers its inbox files it in the archive.
 -->
 <script lang="ts">
 	import type { OpenChat } from '#lib/api/chats';
 	import type { ChatSide } from '#lib/helpers/chat';
 	import { m } from '#lib/paraglide/messages';
 	import UserCardButton from './UserCardButton.svelte';
+	import ChatArchiveButton from './ChatArchiveButton.svelte';
 	import ChatAvatar from './ChatAvatar.svelte';
 	import ChatThreadMenu from './ChatThreadMenu.svelte';
 	import { chatAvatar, chatSubtitle, chatTitle, kindHint } from './chatLabels';
@@ -47,6 +48,9 @@
 			{#each chat.people as person (person.participantId)}
 				<UserCardButton userId={person.userId} name={person.name} />
 			{/each}
+			{#if side === 'TEAM'}
+				<ChatArchiveButton chatId={chat.id} archived={chat.archived} onArchived={onBack} />
+			{/if}
 		</div>
 	{:else if chat.kind !== 'TEAM'}
 		<ChatThreadMenu
