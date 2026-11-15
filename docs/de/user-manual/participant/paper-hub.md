@@ -22,7 +22,7 @@ Oben wählst du zwischen den Ansichten, die zu dir passen:
 Welche Papiere du schreiben kannst, hängt von der Rolle deiner Delegation ab:
 
 - **Positionspapier:** beschreibt die Haltung deines Staates oder deines nichtstaatlichen Akteurs zu einem Tagesordnungspunkt. Alle Delegationen schreiben Positionspapiere.
-- **Arbeitspapier:** ein Vorschlag für eine Resolution, den du im Gremium verabschiedet sehen möchtest. Arbeitspapiere schreiben Delegationen, die einen Staat vertreten.
+- **Arbeitspapier:** ein Vorschlag für eine Resolution, den du im Gremium verabschiedet sehen möchtest. Arbeitspapiere schreiben alle Delegationen.
 - **Vorstellungspapier:** stellt deinen nichtstaatlichen Akteur vor, mit seinen Themen und seiner Haltung zu den Vereinten Nationen. Es gehört zu keinem Tagesordnungspunkt. Nur nichtstaatliche Akteure schreiben es.
 
 Vertritt deine Delegation einen Staat, schreibst du nur zu den Tagesordnungspunkten deines eigenen Gremiums. Ein nichtstaatlicher Akteur sitzt in keinem Gremium und wählt aus allen Tagesordnungspunkten der Konferenz.
@@ -55,7 +55,7 @@ Solange du ein neues Papier schreibst, merkt sich dein Browser den Text jede Sek
 
 ### Arbeitspapiere im Resolutionseditor {#working-papers}
 
-Ein Arbeitspapier schreibst du im Resolutionseditor. Er setzt den Kopf der Resolution selbst: Konferenz, Gremium, Tagesordnungspunkt und deine Delegation. Darunter fügst du **Präambelabsätze** und **Operative Absätze** hinzu, operative Absätze auch mit Unterklauseln. Mit **Operatoren nachschlagen** findest du passende Einleitungswörter. Die Warnung **Unbekannter Operator** darfst du übergehen, wenn deine Formulierung dem Stil von UN-Resolutionen entspricht. **Vorschau anzeigen** zeigt die Resolution, wie sie gedruckt aussieht.
+Ein Arbeitspapier schreibst du im Resolutionseditor. Er setzt den Kopf der Resolution selbst: Konferenz, Gremium, Tagesordnungspunkt und deine Delegation. Bei einem nichtstaatlichen Akteur steht dort das Gremium des gewählten Tagesordnungspunkts. Darunter fügst du **Präambelabsätze** und **Operative Absätze** hinzu, operative Absätze auch mit Unterklauseln. Mit **Operatoren nachschlagen** findest du passende Einleitungswörter. Die Warnung **Unbekannter Operator** darfst du übergehen, wenn deine Formulierung dem Stil von UN-Resolutionen entspricht. **Vorschau anzeigen** zeigt die Resolution, wie sie gedruckt aussieht.
 
 ## Entwurf oder einreichen {#drafts-and-submitting}
 

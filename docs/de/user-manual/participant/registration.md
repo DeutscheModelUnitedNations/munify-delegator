@@ -30,7 +30,7 @@ Im Abschnitt **Bewerben** wählst du im ersten Schritt **Weg wählen** eine von 
 
 Danach öffnet sich darunter Schritt für Schritt, was dieser Weg braucht. Ein erledigter Schritt bekommt einen Haken und zeigt nur noch, was du gewählt hast. Mit **Bearbeiten** öffnest du ihn wieder. Abgeschickt wird erst mit dem Button im letzten Schritt.
 
-Bist du unsicher, welcher Weg zu dir passt, hilft dir **Assistent starten**: Der Assistent stellt dir ein paar Fragen und führt dich zum passenden Weg. **Wie bewerbe ich mich?** zeigt dasselbe als Diagramm. Über **Plätze der Konferenz** siehst du die Gremien und ihre Themen, die Staaten und die nichtstaatlichen Akteure der Konferenz.
+Bist du unsicher, welcher Weg zu dir passt, hilft dir **Assistent starten**: Der Assistent stellt dir ein paar Fragen und führt dich zum passenden Weg. **Wie bewerbe ich mich?** zeigt dasselbe als Diagramm in einem Fenster. Über **Plätze der Konferenz** siehst du die Gremien und ihre Themen, die Staaten und die nichtstaatlichen Akteure der Konferenz.
 
 :::tip Ältere Links
 Links wie `/registration/<id>/create-delegation` oder ein Beitrittslink mit Code funktionieren weiter. Sie führen auf das Dashboard der Konferenz und öffnen das Formular gleich beim passenden Weg.

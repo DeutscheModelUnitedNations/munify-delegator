@@ -22,7 +22,7 @@ At the top you choose between the views that apply to you:
 Which papers you can write depends on your delegation's role:
 
 - **Position paper:** describes the stance of your state or non-state actor on an agenda item. Every delegation writes position papers.
-- **Working paper:** a proposal for a resolution that you would like the committee to adopt. Delegations representing a state write working papers.
+- **Working paper:** a proposal for a resolution that you would like the committee to adopt. Every delegation writes working papers.
 - **Introduction paper:** introduces your non-state actor, its topics and its stance on the United Nations. It belongs to no agenda item. Only non-state actors write one.
 
 If your delegation represents a state, you write only on the agenda items of your own committee. A non-state actor sits in no committee and chooses from every agenda item of the conference.
@@ -55,7 +55,7 @@ While you write a new paper, your browser keeps the text every second. If you cl
 
 ### Working papers in the resolution editor {#working-papers}
 
-You write a working paper in the resolution editor. It sets the resolution's header itself: the conference, the committee, the agenda item and your delegation. Below it you add **Preamble Clauses** and **Operative Clauses**, operative clauses with sub-clauses too. **Phrase Lookup** helps you find suitable opening phrases. You may ignore the **Unknown opening phrase** warning when your wording follows the style of UN resolutions. **Show Preview** shows the resolution as it will look in print.
+You write a working paper in the resolution editor. It sets the resolution's header itself: the conference, the committee, the agenda item and your delegation. For a non-state actor it names the committee of the chosen agenda item. Below it you add **Preamble Clauses** and **Operative Clauses**, operative clauses with sub-clauses too. **Phrase Lookup** helps you find suitable opening phrases. You may ignore the **Unknown opening phrase** warning when your wording follows the style of UN resolutions. **Show Preview** shows the resolution as it will look in print.
 
 ## Draft or submit {#drafts-and-submitting}
 

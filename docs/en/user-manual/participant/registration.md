@@ -30,7 +30,7 @@ In the **Sign up** section, the first step, **Choose a path**, offers four ways 
 
 The steps of the path you picked then open below, one after the other. A finished step gets a check mark and only shows what you chose. **Edit** opens it again. Nothing is sent until you click the button in the last step.
 
-Not sure which path fits you? **Start assistant** asks you a few questions and leads you to the right one. **How do I apply?** shows the same as a diagram. **Seats of the Conference** shows the conference's committees and their agenda items, its states and its non-state actors.
+Not sure which path fits you? **Start assistant** asks you a few questions and leads you to the right one. **How do I apply?** shows the same as a diagram in a window. **Seats of the Conference** shows the conference's committees and their agenda items, its states and its non-state actors.
 
 :::tip Older links
 Links like `/registration/<id>/create-delegation`, or a join link with a code, still work. They lead to the conference's dashboard and open the form on the matching path.

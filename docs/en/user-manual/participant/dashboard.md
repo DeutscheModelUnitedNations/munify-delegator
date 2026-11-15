@@ -106,7 +106,7 @@ With the release you see whom you represent. This is a head delegate's dashboard
 - **Quick Links:** cards for everything there is to do now. Cards marked **!** still need something from you. Greyed out cards have not been unlocked by the team yet.
 - **Personal Status:** your formal steps: **Registration**, **Fee Payment**, **Binding Registration**, for minors the **Parental Agreement**, the **Media Usage Agreement** and open surveys. You cannot take part without all of them. Each step is **Completed**, **Pending**, **Problem** or **Not unlocked yet**. It stays pending until participant care has ticked it off. For **Problem**, contact participant care if they have not already reached out to you.
 - **Delegation Status:** the country or non-state actor your delegation represents, the committees you sit in, the number of members and the delegation name.
-- **Delegation Members:** every member with their committee, payment and registration status.
+- **Delegation Members:** every member with their committee, email address, payment and registration status, so you can reach each other outside the app too.
 - **Supervisors:** your supervisors, and you can still connect one.
 - **Information on your country** or **Information on your NSA**.
 
