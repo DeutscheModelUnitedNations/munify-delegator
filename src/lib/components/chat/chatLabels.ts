@@ -158,7 +158,10 @@ export function listBadge({
 export function chatTitle(chat: ChatLabelSource) {
 	const side = sideOf(chat);
 	if (chat.kind === 'DELEGATION') {
-		return side === 'PARTICIPANT' ? m.chatMyDelegation() : m.chatDelegationGroup();
+		if (side === 'PARTICIPANT') return m.chatMyDelegation();
+		// participant care is told whose group it is: the members share the delegation's role
+		const [member] = chat.contacts;
+		return member ? m.chatDelegationOf({ role: contactName(member) }) : m.chatDelegationGroup();
 	}
 	if (chat.kind === 'TEAM' && side === 'PARTICIPANT' && chat.inbox) {
 		return inboxName(inboxOfChat({ ...chat, inbox: chat.inbox }));
@@ -173,7 +176,9 @@ export function chatTitle(chat: ChatLabelSource) {
 export function chatSubtitle(chat: ChatLabelSource) {
 	const side = sideOf(chat);
 	if (side === 'PARTICIPANT') return undefined;
-	const names = (chat.people ?? []).map((person) => person.name).join(' ↔ ');
+	const names = (chat.people ?? [])
+		.map((person) => person.name)
+		.join(chat.kind === 'DELEGATION' ? ', ' : ' ↔ ');
 	return names || undefined;
 }
 

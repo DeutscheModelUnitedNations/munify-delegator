@@ -55,8 +55,9 @@ function readMarkers({
  * Where the roles are released, `dev-head-delegate` has an unread direct chat with another
  * delegate of their committee, one with the single participant, the delegation's group and an
  * answered question to the consultants; `dev-delegate` waits for participant care; and
- * `dev-nsa-delegate` reported a chat, which participant care (`dev-team-care`) finds on the
- * team's messages page. Before the release only the chat with participant care exists.
+ * `dev-nsa-delegate` reported a chat twice (after an earlier, settled report of it) and
+ * `dev-delegate-minor` their delegation's group, which participant care (`dev-team-care`) finds
+ * on the team's messages page. Before the release only the chat with participant care exists.
  */
 export function addMessages(cs: ConferenceSeed) {
 	if (!cs.conference.messagingEnabled || !cs.plan.assigned) return;
@@ -243,9 +244,13 @@ export function addMessages(cs: ConferenceSeed) {
 		readBy: ['dev-head-delegate', 'dev-single']
 	});
 
-	addChat({
+	const groupChatId = addChat({
 		id: 'delegation-germany',
-		chat: { kind: 'DELEGATION', delegationId: cs.rowId('delegation-germany') },
+		chat: {
+			kind: 'DELEGATION',
+			delegationId: cs.rowId('delegation-germany'),
+			underReview: true
+		},
 		messages: [
 			{
 				from: { participant: 'dev-head-delegate' },
@@ -264,6 +269,13 @@ export function addMessages(cs: ConferenceSeed) {
 			}
 		],
 		readBy: ['dev-delegate', 'dev-delegate-minor']
+	});
+	cs.batch.chatReport.push({
+		conferenceId: cs.id,
+		chatId: groupChatId,
+		reporterUserId: 'dev-delegate-minor',
+		reason: 'Ich werde in der Gruppe übergangen und bekomme auf meine Fragen keine Antwort.',
+		createdAt: new Date(now - 50 * 60 * 1000)
 	});
 
 	addChat({
@@ -328,6 +340,25 @@ export function addMessages(cs: ConferenceSeed) {
 			reporterUserId: 'dev-nsa-delegate',
 			reason: 'Die Person schreibt unfreundlich und versucht, uns einzuschüchtern.',
 			createdAt: new Date(now - 5 * HOUR)
+		});
+		cs.batch.chatReport.push({
+			conferenceId: cs.id,
+			chatId,
+			reporterUserId: 'dev-nsa-delegate',
+			reason: 'Es geht weiter, obwohl ich um einen sachlichen Ton gebeten habe.',
+			createdAt: new Date(now - 4 * HOUR)
+		});
+		// an earlier report of the same chat, settled: it shows next to the other party
+		cs.batch.chatReport.push({
+			conferenceId: cs.id,
+			chatId,
+			reporterUserId: 'dev-nsa-delegate',
+			reason: 'Abfällige Bemerkung über unsere Organisation.',
+			createdAt: new Date(now - 3 * 24 * HOUR),
+			status: 'RESOLVED',
+			resolvedById: 'dev-team-care',
+			resolvedAt: new Date(now - 3 * 24 * HOUR + HOUR),
+			resolutionNote: 'Mit beiden gesprochen. Entschuldigung angenommen, keine Sperre.'
 		});
 	}
 }

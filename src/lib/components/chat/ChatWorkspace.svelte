@@ -7,10 +7,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ChatSummary } from '#lib/api/chats';
-	import LoadError from '#lib/components/LoadError.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import ChatList from './ChatList.svelte';
-	import ChatThread from './ChatThread.svelte';
+	import ChatThreadBoundary from './ChatThreadBoundary.svelte';
 
 	interface Props {
 		chats: readonly ChatSummary[];
@@ -42,7 +41,7 @@
 
 <div
 	class={[
-		'chat-workspace border-base-300 bg-base-100 grid overflow-hidden rounded-xl border shadow-sm',
+		'chat-workspace border-base-300 bg-base-100 grid overflow-hidden rounded-box border shadow-sm',
 		// on a phone an open chat takes the screen: the page around it steps back
 		selectedId && 'chat-open'
 	]}
@@ -66,17 +65,12 @@
 	<div class={['min-h-0 min-w-0', !selectedId && 'max-md:hidden']}>
 		{#if selectedId}
 			{#key selectedId}
-				<svelte:boundary>
-					<ChatThread chatId={selectedId} onBack={() => onSelect(null)} {paperId} {onPaperSent} />
-					{#snippet pending()}
-						<div class="flex h-full items-center justify-center">
-							<span class="loading loading-spinner" aria-label={m.genericToastLoading()}></span>
-						</div>
-					{/snippet}
-					{#snippet failed(_error, reset)}
-						<div class="p-4"><LoadError onretry={reset} /></div>
-					{/snippet}
-				</svelte:boundary>
+				<ChatThreadBoundary
+					chatId={selectedId}
+					onBack={() => onSelect(null)}
+					{paperId}
+					{onPaperSent}
+				/>
 			{/key}
 		{:else}
 			<div

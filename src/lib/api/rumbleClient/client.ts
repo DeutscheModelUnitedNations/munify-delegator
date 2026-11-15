@@ -1160,6 +1160,7 @@ export type ChatOrderInputArgument = {
 };
 		
 export type ChatPerson = {
+  earlierReports: Int,
   name: String,
   participantId: ID,
   userId: ID    
@@ -1275,9 +1276,12 @@ export type Chatreport = {
   id: ID,
   reason: String,
   reporterName: String | null,
+  reporterParticipantId: ID | null,
   reporterUserId: ID,
+  resolutionNote: String | null,
   resolvedAt: DateTime | null,
   resolvedById: ID | null,
+  resolvedByName: String | null,
   search_distance: Float | null,
   status: ChatreportstatusEnum,
   updatedAt: DateTime    
@@ -1290,13 +1294,14 @@ export type ChatreportOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   reason?: SortingParameter | null | undefined,
   reporterUserId?: SortingParameter | null | undefined,
+  resolutionNote?: SortingParameter | null | undefined,
   resolvedAt?: SortingParameter | null | undefined,
   resolvedById?: SortingParameter | null | undefined,
   status?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
-export type ChatreportSearchFieldEnum = "chatId" | "conferenceId" | "id" | "reason" | "reporterUserId" | "resolvedById";
+export type ChatreportSearchFieldEnum = "chatId" | "conferenceId" | "id" | "reason" | "reporterUserId" | "resolutionNote" | "resolvedById";
 		
 export type ChatreportSearchInputArgument = {
   fields?: ChatreportSearchFieldEnum[] | undefined,
@@ -1315,6 +1320,7 @@ export type ChatreportWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   reason?: StringWhereInputArgument | null | undefined,
   reporterUserId?: IDWhereInputArgument | null | undefined,
+  resolutionNote?: StringWhereInputArgument | null | undefined,
   resolvedAt?: DateTimeWhereInputArgument | null | undefined,
   resolvedById?: IDWhereInputArgument | null | undefined,
   status?: ChatreportstatusEnum | null | undefined,
@@ -3414,6 +3420,10 @@ export type Mutation = {
   resolveChatReport: (p: {
     id: ID
   }) => Chatreport,
+  resolveChatReports: (p: {
+    chatId: ID,
+    note?: String | null | undefined
+  }) => Int,
   revertSingleParticipantConversion: (p: {
     singleParticipantId: ID
   }) => Boolean,

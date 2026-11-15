@@ -228,7 +228,9 @@ export const chatReport = snakeCase.table(
 		reason: text().notNull(),
 		status: chatReportStatus().default('OPEN').notNull(),
 		resolvedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-		resolvedAt: timestamp({ precision: 3 })
+		resolvedAt: timestamp({ precision: 3 }),
+		/** What participant care noted when settling it: for the team only. */
+		resolutionNote: text()
 	},
 	(table) => [index('chat_report_conference_id_status_idx').on(table.conferenceId, table.status)]
 );
