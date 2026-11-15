@@ -116,6 +116,10 @@ export const variables = defineEnvVars({
 	// The resource indicator CHASE's tokens have to be issued for; OIDC_RESOURCE when unset.
 	LINK_RESOURCE: { schema: unlessEmpty(z.string().url().optional()) },
 
+	// Where Slack's Web API is reached, for the team's Slack notifications. Only a test sets it,
+	// to a stand-in; the workspaces and their bot tokens are kept in the app, not here.
+	SLACK_API_URL: { schema: unlessEmpty(z.string().url().default('https://slack.com/api')) },
+
 	OTEL_SERVICE_NAME: { schema: z.string().default('MUNIFY-DELEGATOR') },
 	OTEL_SERVICE_VERSION: { schema: z.string().optional() },
 	OTEL_ENDPOINT_URL: { schema: z.string().optional() },

@@ -1723,6 +1723,14 @@ export type Conference = {
   website: String | null    
 };
 		
+export type ConferenceNotificationSettings = {
+  conferenceId: ID,
+  conferenceTitle: String,
+  id: ID,
+  settings: () => NotificationSetting[],
+  slackWorkspaceName: String | null    
+};
+		
 export type ConferenceOrderInputArgument = {
   applicationDeadline?: SortingParameter | null | undefined,
   assignmentReleased?: SortingParameter | null | undefined,
@@ -2617,7 +2625,7 @@ export type EmailStatusResult = {
   status: TeamInvitationEmailStatus    
 };
 		
-export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "CHAT_REPORTED" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -3189,6 +3197,10 @@ export type Mutation = {
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
   }) => Singleparticipant,
+  createSlackWorkspace: (p: {
+    botToken: String,
+    name: String
+  }) => ID,
   createSurveyOption: (p: {
     description: String,
     questionId: ID,
@@ -3281,6 +3293,9 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deleteSingleParticipant: (p: {
+    id: ID
+  }) => Boolean,
+  deleteSlackWorkspace: (p: {
     id: ID
   }) => Boolean,
   deleteSurveyAnswer: (p: {
@@ -3457,6 +3472,9 @@ export type Mutation = {
     subjectKey: String,
     userId: ID
   }) => SendPersonEmailResult,
+  sendSlackTestMessage: (p: {
+    conferenceId: ID
+  }) => SlackConnection,
   setAgendaItemReviewHelpStatus: (p: {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
@@ -3507,6 +3525,10 @@ export type Mutation = {
     conferenceId: ID,
     enabled: Boolean
   }) => Boolean,
+  setConferenceSlackWorkspace: (p: {
+    conferenceId: ID,
+    slackWorkspaceId?: ID | null | undefined
+  }) => Boolean,
   setDocumentLayout: (p: {
     conferenceId: ID,
     document: LayoutDocument,
@@ -3523,6 +3545,13 @@ export type Mutation = {
     conferenceId: ID,
     tableKey: String,
     viewId?: ID | null | undefined
+  }) => Boolean,
+  setNotificationPreference: (p: {
+    channel: NotificationchannelEnum,
+    conferenceId: ID,
+    enabled: Boolean,
+    teamFunctionId?: ID | null | undefined,
+    topic: NotificationtopicEnum
   }) => Boolean,
   setParticipantSchool: (p: {
     conferenceId: ID,
@@ -3763,6 +3792,11 @@ export type Mutation = {
     motivation?: String | null | undefined,
     unApplyForRolesIdList?: ID[] | null | undefined
   }) => Singleparticipant,
+  updateSlackWorkspace: (p: {
+    botToken?: String | null | undefined,
+    id: ID,
+    name?: String | null | undefined
+  }) => Boolean,
   updateSurveyOption: (p: {
     description?: String | null | undefined,
     id: ID,
@@ -3942,6 +3976,21 @@ export type NationWhereInputArgument = {
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
+		
+export type NotificationSetting = {
+  committeeAbbreviation: String | null,
+  committeeName: String | null,
+  email: Boolean,
+  functionKind: String | null,
+  id: ID,
+  slack: Boolean,
+  teamFunctionId: ID | null,
+  topic: NotificationtopicEnum    
+};
+		
+export type NotificationchannelEnum = "EMAIL" | "SLACK";
+		
+export type NotificationtopicEnum = "CHAT_REPORT" | "COMMITTEE_INBOX" | "PARTICIPANT_CARE" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
 		
 export type NsaCard = {
   cardNumber: Int,
@@ -4667,6 +4716,9 @@ export type Query = {
     search?: ConferenceroleSearchInputArgument | null | undefined,
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole[],
+  conferenceSlackWorkspace: (p: {
+    conferenceId: ID
+  }) => SlackWorkspaceInfo | null,
   conferenceSupervisor: (p: {
     id: ID
   }) => Conferencesupervisor,
@@ -4801,11 +4853,15 @@ export type Query = {
     conferenceId: ID,
     role: AgeRole
   }) => AgeNotice | null,
+  myNotificationSettings: () => ConferenceNotificationSettings[],
   myOIDCRoles: OIDCRolesEnum[],
   myReviewStats: (p: {
     conferenceId: ID
   }) => MyReviewStats | null,
   myReviewerSnippets: () => Reviewersnippet[],
+  mySlackConnection: (p: {
+    conferenceId: ID
+  }) => SlackConnection | null,
   mySupervisorSignupBlockers: (p: {
     conferenceId: ID
   }) => ApplicationBlocker[],
@@ -5008,6 +5064,9 @@ export type Query = {
     search?: SingleparticipantSearchInputArgument | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
+  slackWorkspaces: (p?: {
+    conferenceId?: ID | null | undefined
+  }) => SlackWorkspaceInfo[],
   supervisorSignupOpen: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -5723,6 +5782,15 @@ export type SingleparticipantWhereInputArgument = {
   user?: UserWhereInputArgument | null | undefined    
 };
 		
+export type SlackConnection = "CONNECTED" | "NOT_FOUND" | "UNAVAILABLE";
+		
+export type SlackWorkspaceInfo = {
+  conferenceCount: Int | null,
+  id: ID,
+  name: String,
+  slackTeamName: String    
+};
+		
 export type SortingParameter = "asc" | "desc";
 		
 export type StatisticsResult = {
@@ -6348,6 +6416,9 @@ export type Subscription = {
     search?: ConferenceroleSearchInputArgument | null | undefined,
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole[],
+  conferenceSlackWorkspace: (p: {
+    conferenceId: ID
+  }) => SlackWorkspaceInfo | null,
   conferenceSupervisor: (p: {
     id: ID
   }) => Conferencesupervisor,
@@ -6418,6 +6489,7 @@ export type Subscription = {
   mcpAuditEntry: (p: {
     id: ID
   }) => Mcpauditentry,
+  myNotificationSettings: () => ConferenceNotificationSettings[],
   nation: (p: {
     id: ID
   }) => Nation,
@@ -6541,6 +6613,9 @@ export type Subscription = {
     search?: SingleparticipantSearchInputArgument | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
+  slackWorkspaces: (p?: {
+    conferenceId?: ID | null | undefined
+  }) => SlackWorkspaceInfo[],
   surveyAnswer: (p: {
     id: ID
   }) => Surveyanswer,
@@ -7544,7 +7619,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

@@ -12,6 +12,7 @@
 	import EmailEditorModal from './EmailEditorModal.svelte';
 	import EmailFooterCard from './EmailFooterCard.svelte';
 	import EmailPaceCard from './EmailPaceCard.svelte';
+	import SlackWorkspaceCard from './SlackWorkspaceCard.svelte';
 	import EmailFooterForm from './EmailFooterForm.svelte';
 	import EmailTextForm from './EmailTextForm.svelte';
 	import type { EmailChanges } from './emailChanges.svelte';
@@ -177,6 +178,7 @@
 <div class="flex flex-col gap-6">
 	<EmailFooterCard {conferenceId} onedit={() => (editingFooter = true)} />
 	<EmailPaceCard {conferenceId} {changes} />
+	<SlackWorkspaceCard {conferenceId} />
 
 	{#each groups as group (group.id)}
 		<section class="flex flex-col gap-3">

@@ -12,7 +12,11 @@ import type {
 	SnapshotTeamMember,
 	SnapshotWaitingEntry
 } from './dueEmails';
-import { loadUnreadOfParticipants, loadUnreadOfTeam } from './unreadMessages';
+import {
+	loadOpenReportsOfTeam,
+	loadUnreadOfParticipants,
+	loadUnreadOfTeam
+} from './unreadMessages';
 import { loadAnnouncementMails } from './announcementEmails';
 
 /**
@@ -43,7 +47,9 @@ const PARTS_OF_KIND: Partial<Record<EmailKind, readonly EmailPagePart[]>> = {
 	// an announcement's audience can hold anybody: participants, the waiting list, the team
 	ANNOUNCEMENT: ['announcements'],
 	// chats are read by participants and by the team's inboxes
-	UNREAD_MESSAGES: ['people', 'team']
+	UNREAD_MESSAGES: ['people', 'team'],
+	// a reported chat is participant care's to hear of
+	CHAT_REPORTED: ['team']
 };
 const PEOPLE_ONLY: readonly EmailPagePart[] = ['people'];
 export const partsFor = (kinds: ReadonlySet<EmailKind>) =>
@@ -114,6 +120,7 @@ const emptySnapshot = (conference: EmailConference): EmailSnapshot => ({
 	surveys: [],
 	waitingList: [],
 	unreadMessages: [],
+	openReports: [],
 	announcementMails: []
 });
 
@@ -520,6 +527,24 @@ function teamUnread({
 		: [];
 }
 
+/** The open reports these team members are told about by mail. */
+function teamReports({
+	conference,
+	kinds,
+	team
+}: {
+	conference: EmailConference;
+	kinds: ReadonlySet<EmailKind>;
+	team: readonly SnapshotTeamMember[];
+}) {
+	return conference.messagingEnabled && kinds.has('CHAT_REPORTED')
+		? loadOpenReportsOfTeam({
+				conferenceId: conference.id,
+				teamMemberIds: team.map((member) => member.id)
+			})
+		: [];
+}
+
 /** The cursor after a page of `rows`: the same part on, or the next part once it ran out. */
 export function nextCursor({
 	cursor,
@@ -590,12 +615,12 @@ const PAGE_OF: Record<
 			limit: size,
 			candidates: (row) => teamCandidates({ conference, kinds, id: row.id, userId: row.userId })
 		});
+		const [unreadMessages, openReports] = await Promise.all([
+			teamUnread({ conference, kinds, team }),
+			teamReports({ conference, kinds, team })
+		]);
 		return {
-			snapshot: {
-				...emptySnapshot(conference),
-				team,
-				unreadMessages: await teamUnread({ conference, kinds, team })
-			},
+			snapshot: { ...emptySnapshot(conference), team, unreadMessages, openReports },
 			rows
 		};
 	}
@@ -670,9 +695,10 @@ export async function loadUserSnapshot({
 		loadWaitingList({ conferenceId, userId }),
 		loadTeam({ conferenceId, userId })
 	]);
-	const [people, unreadOfTeam, announcementMails] = await Promise.all([
+	const [people, unreadOfTeam, openReports, announcementMails] = await Promise.all([
 		peopleSnapshot({ conference, participants, kinds }),
 		teamUnread({ conference, kinds, team }),
+		teamReports({ conference, kinds, team }),
 		kinds.has('ANNOUNCEMENT') ? loadAnnouncementMails({ conferenceId, userId }) : []
 	]);
 	return {
@@ -680,6 +706,7 @@ export async function loadUserSnapshot({
 		waitingList: toWaitingList(entries),
 		team,
 		unreadMessages: [...people.unreadMessages, ...unreadOfTeam],
+		openReports,
 		announcementMails
 	};
 }

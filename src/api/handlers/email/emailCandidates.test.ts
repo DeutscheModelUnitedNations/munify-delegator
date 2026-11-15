@@ -101,6 +101,9 @@ describe('waiting list and team', () => {
 		// while the chats are on, anybody on the team may have an inbox with something unread
 		const unread = teamCandidates({ ...member, kinds: new Set(['UNREAD_MESSAGES']) });
 		expect(render(unread).sql).toBe('true');
+		// and participant care may have a report to hear of
+		const reported = teamCandidates({ ...member, kinds: new Set(['CHAT_REPORTED']) });
+		expect(render(reported).sql).toBe('true');
 		const off = teamCandidates({
 			...member,
 			conference: { ...conference, messagingEnabled: false },

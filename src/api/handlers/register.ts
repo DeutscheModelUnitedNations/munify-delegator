@@ -22,6 +22,7 @@ import './delegationMember/delegationMember';
 import './email/email';
 import './flagCollection/flagCollection';
 import './nation/nation';
+import './notification/notification';
 import './paper/paper';
 import './paperReview/paperReview';
 import './paperVersion/paperVersion';

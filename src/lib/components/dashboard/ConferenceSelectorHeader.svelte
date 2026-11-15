@@ -23,6 +23,10 @@
 					<i aria-hidden="true" class="ph-duotone ph-link sm:text-2xl"></i>
 					{m.chaseLinkTitle()}
 				</a>
+				<a class="btn btn-ghost sm:btn-lg gap-2" href={resolve('dashboard/slack-workspaces')}>
+					<i aria-hidden="true" class="ph-duotone ph-slack-logo sm:text-2xl"></i>
+					{m.slackWorkspaces()}
+				</a>
 				<a class="btn btn-primary sm:btn-lg gap-2" href={resolve('dashboard/create')}>
 					<i aria-hidden="true" class="ph-duotone ph-plus sm:text-2xl"></i>
 					{m.seedConference()}

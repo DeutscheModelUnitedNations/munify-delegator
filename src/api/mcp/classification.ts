@@ -244,6 +244,25 @@ const FIELDS: Record<string, TypeClassification> = {
 		],
 		redacted: ['personName']
 	},
+	// Somebody's own notification choices; an assistant is refused them (`assertOwnNotifications`).
+	// Nothing here is about a person: a conference, an inbox, two switches.
+	ConferenceNotificationSettings: {
+		visible: ['id', 'conferenceId', 'conferenceTitle', 'slackWorkspaceName']
+	},
+	NotificationSetting: {
+		visible: [
+			'id',
+			'topic',
+			'teamFunctionId',
+			'functionKind',
+			'committeeAbbreviation',
+			'committeeName',
+			'email',
+			'slack'
+		]
+	},
+	// A workspace by name; its bot token is no field of the schema at all.
+	SlackWorkspaceInfo: { visible: ['id', 'name', 'slackTeamName', 'conferenceCount'] },
 	Chatmessage: {
 		visible: [
 			'id',
@@ -957,6 +976,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'logoutUrl',
 			'mcpServerUrl',
 			'myOIDCRoles',
+			'mySlackConnection',
 			'papersCount',
 			'supervisorSignupOpen',
 			'teamMembersCount',

@@ -158,6 +158,17 @@
 			{/snippet}
 		</ChatWorkspace>
 	{/if}
+
+	{#if inboxes.length > 0}
+		<a
+			href={resolve('my-account/notifications')}
+			class="link link-hover text-base-content/70 flex items-center gap-1.5 self-start text-sm"
+			data-testid="team-notifications-link"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-bell"></i>
+			{m.chatTeamNotificationsLink()}
+		</a>
+	{/if}
 </div>
 
 <NewChatDialog

@@ -101,6 +101,12 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 		docs: 'user-manual/team/configuration#creating-a-conference'
 	},
 	'/(authenticated)/dashboard/chase-link': { docs: 'user-manual/team/overview#chase-link' },
+	'/(authenticated)/dashboard/slack-workspaces': {
+		docs: 'user-manual/team/overview#slack-workspaces'
+	},
+	'/(authenticated)/my-account/notifications': {
+		docs: 'user-manual/team/communication#notifications'
+	},
 
 	// Team: the team itself
 	'/(authenticated)/dashboard/[conferenceId]/team/members': {

@@ -311,6 +311,18 @@ Während der Stellvertretung handelst du als diese Person. Was du abschickst, ä
 
 DELEGATOR prüft die Stellvertretung bei jedem Seitenaufruf neu. Sie endet von selbst, sobald du sie nicht mehr dürftest, etwa weil du das Team verlassen hast oder die Person inzwischen in einem Team ist. Während einer Stellvertretung kannst du keine zweite beginnen (**Du handelst bereits stellvertretend für eine andere Person. Beende das zuerst.**). Ist die Stellvertretung auf dem Server nicht eingerichtet, meldet DELEGATOR **Die Stellvertretung ist auf diesem Server nicht eingerichtet.**
 
+## Slack-Workspaces {#slack-workspaces}
+
+DELEGATOR kann Teammitglieder per Slack benachrichtigen (siehe [Benachrichtigungen](./communication#notifications)). Dafür trägt die Administration des Systems jeden Slack-Workspace einmal ein. Die Seite **Slack-Workspaces** erreichst du als Admin über den gleichnamigen Knopf auf der Konferenzübersicht.
+
+1. Lege im Workspace eine Slack-App an und gib ihr die Bot-Scopes `chat:write`, `users:read` und `users:read.email`.
+2. Installiere die App im Workspace und kopiere ihr Bot-Token. Es beginnt mit `xoxb-`.
+3. Trage unter **Workspace hinzufügen** einen Namen und das Token ein. DELEGATOR prüft das Token bei Slack und zeigt danach den Namen, den der Workspace bei Slack hat.
+
+Das Token wird verschlüsselt gespeichert und nie wieder angezeigt. Mit **Token ersetzen** hinterlegst du ein neues Token desselben Workspace. Entfernst du einen Workspace, bekommen die Konferenzen, die ihn ausgewählt haben, keine Slack-Nachrichten mehr.
+
+Welchen Workspace eine Konferenz nutzt, entscheidet deren Projektleitung auf der Seite [E-Mails](./communication#emails). Ein Workspace kann für beliebig viele Konferenzen stehen.
+
 ## Verbindung zu CHASE {#chase-link}
 
 DELEGATOR kann mit einer Instanz von MUNify CHASE verbunden sein, der App für die Sitzungen während der Konferenz. Die Verbindung gilt für den ganzen Server, nicht für eine einzelne Konferenz. Eingerichtet wird sie in der Konfiguration des Servers, ein Team muss dafür nichts tun.

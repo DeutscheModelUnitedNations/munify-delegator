@@ -182,6 +182,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		recipients: m.emailKindUnreadMessagesRecipients(),
 		content: m.emailKindUnreadMessagesContent()
 	}),
+	CHAT_REPORTED: () => ({
+		title: m.emailKindChatReportedTitle(),
+		trigger: m.emailKindChatReportedTrigger(),
+		recipients: m.emailKindChatReportedRecipients(),
+		content: m.emailKindChatReportedContent()
+	}),
 	ANNOUNCEMENT: () => ({
 		title: m.emailKindAnnouncementTitle(),
 		trigger: m.emailKindAnnouncementTrigger({ hours: ANNOUNCEMENT_MAIL_HOURS }),

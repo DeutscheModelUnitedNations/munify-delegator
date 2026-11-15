@@ -369,6 +369,17 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 			)
 		})
 	},
+	CHAT_REPORTED: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoChatReportedSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoChatReportedHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoChatReportedBody({ conference: P.conference }, { locale }),
+				m.emailAutoChatReportedClosing({}, { locale })
+			)
+		})
+	},
 	ANNOUNCEMENT: {
 		placeholders: ['title'],
 		text: (locale) => ({

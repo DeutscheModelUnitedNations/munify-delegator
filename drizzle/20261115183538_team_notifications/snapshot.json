@@ -1,0 +1,1387 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "6f9ad8bb-4938-4350-a662-d058f2245543",
+  "prevIds": [
+    "947e380f-5ad9-4876-9bf7-ea9fb0e85f76",
+    "c0697976-c866-4ef5-ae99-11e1137972b9"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "notification_channel"
+      ],
+      "writes": [
+        "s|enum|public.notification_channel",
+        "n|enum|public.notification_channel",
+        "e|enum|public.notification_channel",
+        "n|type|public.notification_channel"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "notification_topic"
+      ],
+      "writes": [
+        "s|enum|public.notification_topic",
+        "n|enum|public.notification_topic",
+        "e|enum|public.notification_topic",
+        "n|type|public.notification_topic"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "email_kind"
+      ],
+      "writes": [
+        "s|enum|public.email_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conference_slack_workspace"
+      ],
+      "writes": [
+        "s|tbl|public.conference_slack_workspace",
+        "n|tbl|public.conference_slack_workspace",
+        "e|tbl|public.conference_slack_workspace",
+        "n|rel|public.conference_slack_workspace",
+        "n|type|public.conference_slack_workspace",
+        "n|rel|public.conference_slack_workspace_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_preference"
+      ],
+      "writes": [
+        "s|tbl|public.notification_preference",
+        "n|tbl|public.notification_preference",
+        "e|tbl|public.notification_preference",
+        "n|rel|public.notification_preference",
+        "n|type|public.notification_preference",
+        "n|rel|public.notification_preference_pkey",
+        "n|rel|public.notification_preference_key"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.notification_topic",
+        "n|enum|public.notification_channel"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "slack_notification"
+      ],
+      "writes": [
+        "s|tbl|public.slack_notification",
+        "n|tbl|public.slack_notification",
+        "e|tbl|public.slack_notification",
+        "n|rel|public.slack_notification",
+        "n|type|public.slack_notification",
+        "n|rel|public.slack_notification_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "slack_user_lookup"
+      ],
+      "writes": [
+        "s|tbl|public.slack_user_lookup",
+        "n|tbl|public.slack_user_lookup",
+        "e|tbl|public.slack_user_lookup",
+        "n|rel|public.slack_user_lookup",
+        "n|type|public.slack_user_lookup",
+        "n|rel|public.slack_user_lookup_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "slack_workspace"
+      ],
+      "writes": [
+        "s|tbl|public.slack_workspace",
+        "n|tbl|public.slack_workspace",
+        "e|tbl|public.slack_workspace",
+        "n|rel|public.slack_workspace",
+        "n|type|public.slack_workspace",
+        "n|rel|public.slack_workspace_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "slack_notification",
+        "slack_notification_team_member_id_inbox_key_idx"
+      ],
+      "writes": [
+        "s|idx|public.slack_notification_team_member_id_inbox_key_idx",
+        "n|idx|public.slack_notification_team_member_id_inbox_key_idx",
+        "e|idx|public.slack_notification_team_member_id_inbox_key_idx",
+        "n|rel|public.slack_notification_team_member_id_inbox_key_idx"
+      ],
+      "reads": [
+        "n|tbl|public.slack_notification",
+        "n|sch|public",
+        "n|col|public.slack_notification.team_member_id",
+        "n|col|public.slack_notification.inbox_key",
+        "n|col|public.slack_notification.created_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "slack_user_lookup",
+        "slack_user_lookup_workspace_id_user_id_key"
+      ],
+      "writes": [
+        "s|idx|public.slack_user_lookup_workspace_id_user_id_key",
+        "n|idx|public.slack_user_lookup_workspace_id_user_id_key",
+        "e|idx|public.slack_user_lookup_workspace_id_user_id_key",
+        "n|rel|public.slack_user_lookup_workspace_id_user_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.slack_user_lookup",
+        "n|sch|public",
+        "n|col|public.slack_user_lookup.slack_workspace_id",
+        "n|col|public.slack_user_lookup.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "slack_workspace",
+        "slack_workspace_slack_team_id_key"
+      ],
+      "writes": [
+        "s|idx|public.slack_workspace_slack_team_id_key",
+        "n|idx|public.slack_workspace_slack_team_id_key",
+        "e|idx|public.slack_workspace_slack_team_id_key",
+        "n|rel|public.slack_workspace_slack_team_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.slack_workspace",
+        "n|sch|public",
+        "n|col|public.slack_workspace.slack_team_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "team_function",
+        "team_function_id_team_member_id_key"
+      ],
+      "writes": [
+        "s|idx|public.team_function_id_team_member_id_key",
+        "n|idx|public.team_function_id_team_member_id_key",
+        "e|idx|public.team_function_id_team_member_id_key",
+        "n|rel|public.team_function_id_team_member_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.team_function.id",
+        "n|col|public.team_function.team_member_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conference_slack_workspace"
+      ],
+      "writes": [
+        "s|fk|public.conference_slack_workspace.conference_slack_workspace_conference_id_conference_id_fkey",
+        "n|fk|public.conference_slack_workspace.conference_slack_workspace_conference_id_conference_id_fkey",
+        "e|fk|public.conference_slack_workspace.conference_slack_workspace_conference_id_conference_id_fkey",
+        "n|con|public.conference_slack_workspace.conference_slack_workspace_conference_id_conference_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.conference_slack_workspace",
+        "n|sch|public",
+        "n|tbl|public.conference",
+        "n|sch|public",
+        "n|col|public.conference_slack_workspace.conference_id",
+        "n|col|public.conference.id",
+        "e|uniqueness|public.conference.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conference_slack_workspace"
+      ],
+      "writes": [
+        "s|fk|public.conference_slack_workspace.conference_slack_workspace_cIvqnDIcE4h5_fkey",
+        "n|fk|public.conference_slack_workspace.conference_slack_workspace_cIvqnDIcE4h5_fkey",
+        "e|fk|public.conference_slack_workspace.conference_slack_workspace_cIvqnDIcE4h5_fkey",
+        "n|con|public.conference_slack_workspace.conference_slack_workspace_cIvqnDIcE4h5_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.conference_slack_workspace",
+        "n|sch|public",
+        "n|tbl|public.slack_workspace",
+        "n|sch|public",
+        "n|col|public.conference_slack_workspace.slack_workspace_id",
+        "n|col|public.slack_workspace.id",
+        "e|uniqueness|public.slack_workspace.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_preference"
+      ],
+      "writes": [
+        "s|fk|public.notification_preference.notification_preference_team_member_id_team_member_id_fkey",
+        "n|fk|public.notification_preference.notification_preference_team_member_id_team_member_id_fkey",
+        "e|fk|public.notification_preference.notification_preference_team_member_id_team_member_id_fkey",
+        "n|con|public.notification_preference.notification_preference_team_member_id_team_member_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preference",
+        "n|sch|public",
+        "n|tbl|public.team_member",
+        "n|sch|public",
+        "n|col|public.notification_preference.team_member_id",
+        "n|col|public.team_member.id",
+        "e|uniqueness|public.team_member.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_preference"
+      ],
+      "writes": [
+        "s|fk|public.notification_preference.notification_preference_team_function_fkey",
+        "n|fk|public.notification_preference.notification_preference_team_function_fkey",
+        "e|fk|public.notification_preference.notification_preference_team_function_fkey",
+        "n|con|public.notification_preference.notification_preference_team_function_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preference",
+        "n|sch|public",
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.notification_preference.team_function_id",
+        "n|col|public.notification_preference.team_member_id",
+        "n|col|public.team_function.id",
+        "n|col|public.team_function.team_member_id",
+        "e|uniqueness|public.team_function.id.team_member_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "slack_notification"
+      ],
+      "writes": [
+        "s|fk|public.slack_notification.slack_notification_team_member_id_team_member_id_fkey",
+        "n|fk|public.slack_notification.slack_notification_team_member_id_team_member_id_fkey",
+        "e|fk|public.slack_notification.slack_notification_team_member_id_team_member_id_fkey",
+        "n|con|public.slack_notification.slack_notification_team_member_id_team_member_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.slack_notification",
+        "n|sch|public",
+        "n|tbl|public.team_member",
+        "n|sch|public",
+        "n|col|public.slack_notification.team_member_id",
+        "n|col|public.team_member.id",
+        "e|uniqueness|public.team_member.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "slack_user_lookup"
+      ],
+      "writes": [
+        "s|fk|public.slack_user_lookup.slack_user_lookup_slack_workspace_id_slack_workspace_id_fkey",
+        "n|fk|public.slack_user_lookup.slack_user_lookup_slack_workspace_id_slack_workspace_id_fkey",
+        "e|fk|public.slack_user_lookup.slack_user_lookup_slack_workspace_id_slack_workspace_id_fkey",
+        "n|con|public.slack_user_lookup.slack_user_lookup_slack_workspace_id_slack_workspace_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.slack_user_lookup",
+        "n|sch|public",
+        "n|tbl|public.slack_workspace",
+        "n|sch|public",
+        "n|col|public.slack_user_lookup.slack_workspace_id",
+        "n|col|public.slack_workspace.id",
+        "e|uniqueness|public.slack_workspace.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "slack_user_lookup"
+      ],
+      "writes": [
+        "s|fk|public.slack_user_lookup.slack_user_lookup_user_id_user_id_fkey",
+        "n|fk|public.slack_user_lookup.slack_user_lookup_user_id_user_id_fkey",
+        "e|fk|public.slack_user_lookup.slack_user_lookup_user_id_user_id_fkey",
+        "n|con|public.slack_user_lookup.slack_user_lookup_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.slack_user_lookup",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.slack_user_lookup.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conference_slack_workspace",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "notification_preference",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "slack_notification",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "slack_user_lookup",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "slack_workspace",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "notification_channel",
+        "values": [
+          "EMAIL",
+          "SLACK"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "notification_topic",
+        "values": [
+          "PARTICIPANT_CARE",
+          "COMMITTEE_INBOX",
+          "TRUSTED_SHARED",
+          "TRUSTED_PERSONAL",
+          "CHAT_REPORT"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "conference_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "slack_workspace_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "team_member_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "topic",
+        "type": "notification_topic",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "team_function_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "channel",
+        "type": "notification_channel",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "team_member_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "inbox_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "subject_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "slack_workspace_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "looked_up_email",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "slack_user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "checked_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "slack_team_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "slack_team_name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "bot_token_ciphertext",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "slack_notification_team_member_id_inbox_key_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "team_member_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "inbox_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "slack_user_lookup_workspace_id_user_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "slack_workspace_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "slack_workspace_slack_team_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "slack_team_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "team_function",
+        "name": "team_function_id_team_member_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "team_member_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "conference_slack_workspace_conference_id_conference_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "conference_slack_workspace_cIvqnDIcE4h5_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "slack_workspace_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "slack_workspace",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "notification_preference_team_member_id_team_member_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "team_member_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "team_member",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "notification_preference_team_function_fkey",
+        "nameExplicit": true,
+        "columns": [
+          "team_function_id",
+          "team_member_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "team_function",
+        "columnsTo": [
+          "id",
+          "team_member_id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "slack_notification_team_member_id_team_member_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "team_member_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "team_member",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "slack_user_lookup_slack_workspace_id_slack_workspace_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "slack_workspace_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "slack_workspace",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "slack_user_lookup_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_slack_workspace",
+        "name": "conference_slack_workspace_pkey",
+        "columns": [
+          "conference_id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "notification_preference_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_notification",
+        "name": "slack_notification_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_user_lookup",
+        "name": "slack_user_lookup_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "slack_workspace",
+        "name": "slack_workspace_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "notification_preference_key",
+        "nameExplicit": true,
+        "columns": [
+          "team_member_id",
+          "topic",
+          "team_function_id",
+          "channel"
+        ],
+        "nullsNotDistinct": true,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_preference",
+        "name": "notification_preference_function_check",
+        "value": "(\"topic\" = 'COMMITTEE_INBOX') = (\"team_function_id\" is not null)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"email_kind\"]",
+      "set": {
+        "values": [
+          "DELEGATION_CREATED",
+          "DELEGATION_JOINED",
+          "DELEGATION_MEMBER_JOINED",
+          "APPLICATION_SENT",
+          "WAITING_LIST_REGISTERED",
+          "SUPERVISOR_CONNECTED",
+          "SURVEY_PUBLISHED",
+          "ASSIGNMENT_ACCEPTED",
+          "ASSIGNMENT_REJECTED",
+          "SUPERVISOR_ASSIGNMENT_SUMMARY",
+          "WAITING_LIST_SEATED",
+          "POSTAL_UNLOCKED",
+          "PAYMENT_UNLOCKED",
+          "POSTAL_RECEIVED",
+          "PAYMENT_RECEIVED",
+          "PAPERWORK_PROBLEM",
+          "APPLICATION_DEADLINE_REMINDER",
+          "OPEN_ISSUES_REMINDER",
+          "PHONE_READY_REMINDER",
+          "SURVEY_REMINDER",
+          "CHASE_INTRO_REMINDER",
+          "CERTIFICATE_AVAILABLE",
+          "SUPERVISOR_STUDENT_LINKED",
+          "PAPER_REVIEWED",
+          "TEAM_INVITATION",
+          "TEAM_WELCOME",
+          "BADGE_FOUND",
+          "UNREAD_MESSAGES",
+          "ANNOUNCEMENT",
+          "CHAT_REPORTED"
+        ]
+      }
+    }
+  ]
+}

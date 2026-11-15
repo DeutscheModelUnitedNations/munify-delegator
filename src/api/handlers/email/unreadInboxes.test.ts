@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { answersInbox, oldestUnreadPerMember, type UnreadInbox } from './unreadInboxes';
+import {
+	answersInbox,
+	oldestUnreadPerMember,
+	type InboxMember,
+	type UnreadInbox
+} from './unreadInboxes';
 
 const at = (minute: number) => new Date(Date.UTC(2026, 0, 1, 12, minute));
 
@@ -18,18 +23,27 @@ const chairs: UnreadInbox = {
 	writtenAt: at(5)
 };
 
-const carer = { id: 'carer', userId: 'u-carer', role: 'PARTICIPANT_CARE', functions: [] };
-const chair = {
+const choices = { preferences: [], mailByDefault: true };
+const carer: InboxMember = {
+	id: 'carer',
+	userId: 'u-carer',
+	role: 'PARTICIPANT_CARE',
+	functions: [],
+	...choices
+};
+const chair: InboxMember = {
 	id: 'chair',
 	userId: 'u-chair',
 	role: 'MEMBER',
-	functions: [{ committeeId: 'ga', kind: 'CHAIR' }]
+	functions: [{ id: 'f-chair', committeeId: 'ga', kind: 'CHAIR' }],
+	...choices
 };
-const consultant = {
+const consultant: InboxMember = {
 	id: 'consultant',
 	userId: 'u-consultant',
 	role: 'MEMBER',
-	functions: [{ committeeId: 'ga', kind: 'CONSULTANT' }]
+	functions: [{ id: 'f-consultant', committeeId: 'ga', kind: 'CONSULTANT' }],
+	...choices
 };
 
 describe('answersInbox', () => {
@@ -54,11 +68,12 @@ describe('trusted persons', () => {
 		messageId: 'shared-message',
 		writtenAt: at(20)
 	};
-	const anna = {
+	const anna: InboxMember = {
 		id: 'anna',
 		userId: 'u-anna',
 		role: 'MEMBER',
-		functions: [{ committeeId: null, kind: 'TRUSTED_PERSON' }]
+		functions: [{ id: 'f-anna', committeeId: null, kind: 'TRUSTED_PERSON' }],
+		...choices
 	};
 	const ben = { ...anna, id: 'ben', userId: 'u-ben' };
 	const toAnna: UnreadInbox = { ...shared, trustedUserId: 'u-anna', messageId: 'anna-message' };
@@ -103,5 +118,42 @@ describe('oldestUnreadPerMember', () => {
 	it('owes nothing to a member who answers no unread inbox', () => {
 		expect(oldestUnreadPerMember({ inboxes: [chairs], members: [carer, consultant] })).toEqual([]);
 		expect(oldestUnreadPerMember({ inboxes: [], members: [carer] })).toEqual([]);
+	});
+});
+
+describe('mail choices', () => {
+	it('leaves out the inboxes a member switched the mail off for', () => {
+		const both: InboxMember = {
+			...carer,
+			functions: chair.functions,
+			preferences: [
+				{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-chair', channel: 'EMAIL', enabled: false }
+			]
+		};
+		expect(oldestUnreadPerMember({ inboxes: [care, chairs], members: [both] })).toEqual([
+			{ messageId: 'care-message', writtenAt: at(10), reader: { teamMemberId: 'carer' } }
+		]);
+	});
+
+	it('keeps Slack choices out of the mails', () => {
+		const slackOff: InboxMember = {
+			...carer,
+			preferences: [
+				{ topic: 'PARTICIPANT_CARE', teamFunctionId: null, channel: 'SLACK', enabled: false }
+			]
+		};
+		expect(oldestUnreadPerMember({ inboxes: [care], members: [slackOff] })).toHaveLength(1);
+	});
+
+	it('starts with mail off for whoever switched the unread mails off before', () => {
+		const before: InboxMember = { ...carer, mailByDefault: false };
+		expect(oldestUnreadPerMember({ inboxes: [care], members: [before] })).toEqual([]);
+		const onAgain: InboxMember = {
+			...before,
+			preferences: [
+				{ topic: 'PARTICIPANT_CARE', teamFunctionId: null, channel: 'EMAIL', enabled: true }
+			]
+		};
+		expect(oldestUnreadPerMember({ inboxes: [care], members: [onAgain] })).toHaveLength(1);
 	});
 });
