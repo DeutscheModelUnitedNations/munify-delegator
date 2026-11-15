@@ -38,7 +38,7 @@ const REVIEW = `mutation ($paperId: ID!, $comments: JSON!) {
 const HISTORY = `query ($id: ID!) {
 	paper(id: $id) { versions { reviews { id anonymousAs reviewer { id givenName familyName } } } }
 }`;
-const BY_REVIEWER = `query ($id: ID!, $reviewerId: String!) {
+const BY_REVIEWER = `query ($id: ID!, $reviewerId: ID!) {
 	paper(id: $id) { versions { reviews(where: { reviewerId: { eq: $reviewerId } }) { id anonymousAs reviewer { id } } } }
 }`;
 
