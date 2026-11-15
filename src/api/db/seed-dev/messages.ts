@@ -55,8 +55,9 @@ function readMarkers({
  * Where the roles are released, `dev-head-delegate` has an unread direct chat with another
  * delegate of their committee, one with the single participant, the delegation's group and an
  * answered question to the consultants; `dev-delegate` waits for participant care; and
- * `dev-nsa-delegate` reported a chat, which participant care (`dev-team-care`) finds on the
- * team's messages page. Before the release only the chat with participant care exists.
+ * `dev-nsa-delegate` reported a chat twice (after an earlier, settled report of it) and
+ * `dev-delegate-minor` their delegation's group, which participant care (`dev-team-care`) finds
+ * on the team's messages page. Before the release only the chat with participant care exists.
  */
 export function addMessages(cs: ConferenceSeed) {
 	if (!cs.conference.messagingEnabled || !cs.plan.assigned) return;
@@ -81,7 +82,8 @@ export function addMessages(cs: ConferenceSeed) {
 		chat,
 		messages,
 		readBy = [],
-		teamRead = true
+		teamRead = true,
+		archived = false
 	}: {
 		id: string;
 		chat: Omit<typeof schema.chat.$inferInsert, 'conferenceId'>;
@@ -89,6 +91,8 @@ export function addMessages(cs: ConferenceSeed) {
 		/** Who has read everything; the others have not opened the chat since the first message. */
 		readBy?: string[];
 		teamRead?: boolean;
+		/** Put away by its inbox */
+		archived?: boolean;
 	}) => {
 		const chatId = cs.rowId(`chat-${id}`);
 		const at = (minutesAgo: number) => new Date(now - minutesAgo * MINUTE);
@@ -102,7 +106,8 @@ export function addMessages(cs: ConferenceSeed) {
 				chat.kind === 'TEAM' && fromParticipant.length > 0
 					? at(Math.min(...fromParticipant.map((message) => message.minutesAgo)))
 					: null,
-			teamReadAt: chat.kind === 'TEAM' && teamRead ? new Date(now) : null
+			teamReadAt: chat.kind === 'TEAM' && teamRead ? new Date(now) : null,
+			teamArchivedAt: archived ? new Date(now) : null
 		});
 		for (const message of messages) {
 			cs.batch.chatMessage.push({
@@ -243,9 +248,13 @@ export function addMessages(cs: ConferenceSeed) {
 		readBy: ['dev-head-delegate', 'dev-single']
 	});
 
-	addChat({
+	const groupChatId = addChat({
 		id: 'delegation-germany',
-		chat: { kind: 'DELEGATION', delegationId: cs.rowId('delegation-germany') },
+		chat: {
+			kind: 'DELEGATION',
+			delegationId: cs.rowId('delegation-germany'),
+			underReview: true
+		},
 		messages: [
 			{
 				from: { participant: 'dev-head-delegate' },
@@ -264,6 +273,13 @@ export function addMessages(cs: ConferenceSeed) {
 			}
 		],
 		readBy: ['dev-delegate', 'dev-delegate-minor']
+	});
+	cs.batch.chatReport.push({
+		conferenceId: cs.id,
+		chatId: groupChatId,
+		reporterUserId: 'dev-delegate-minor',
+		reason: 'Ich werde in der Gruppe übergangen und bekomme auf meine Fragen keine Antwort.',
+		createdAt: new Date(now - 50 * 60 * 1000)
 	});
 
 	addChat({
@@ -298,6 +314,31 @@ export function addMessages(cs: ConferenceSeed) {
 		teamRead: false
 	});
 
+	// settled and put away: in the archive of participant care's inbox until the next message
+	addChat({
+		id: 'care-archived',
+		chat: teamChat('dev-nsa-delegate', 'PARTICIPANT_CARE'),
+		messages: [
+			{
+				from: { participant: 'dev-nsa-delegate' },
+				minutesAgo: 3 * 24 * 60,
+				body: 'Hallo, ich habe meinen Teilnahmeausweis verloren. Bekomme ich einen neuen?'
+			},
+			{
+				from: { team: 'dev-team-care' },
+				minutesAgo: 3 * 24 * 60 - 30,
+				body: 'Kein Problem, am Infopoint liegt ein neuer für dich bereit.'
+			},
+			{
+				from: { participant: 'dev-nsa-delegate' },
+				minutesAgo: 3 * 24 * 60 - 40,
+				body: 'Super, vielen Dank!'
+			}
+		],
+		readBy: ['dev-nsa-delegate'],
+		archived: true
+	});
+
 	const stranger = others.find((member) => member.userId !== neighbour?.userId);
 	if (stranger) {
 		const chatId = addChat({
@@ -328,6 +369,25 @@ export function addMessages(cs: ConferenceSeed) {
 			reporterUserId: 'dev-nsa-delegate',
 			reason: 'Die Person schreibt unfreundlich und versucht, uns einzuschüchtern.',
 			createdAt: new Date(now - 5 * HOUR)
+		});
+		cs.batch.chatReport.push({
+			conferenceId: cs.id,
+			chatId,
+			reporterUserId: 'dev-nsa-delegate',
+			reason: 'Es geht weiter, obwohl ich um einen sachlichen Ton gebeten habe.',
+			createdAt: new Date(now - 4 * HOUR)
+		});
+		// an earlier report of the same chat, settled: it shows next to the other party
+		cs.batch.chatReport.push({
+			conferenceId: cs.id,
+			chatId,
+			reporterUserId: 'dev-nsa-delegate',
+			reason: 'Abfällige Bemerkung über unsere Organisation.',
+			createdAt: new Date(now - 3 * 24 * HOUR),
+			status: 'RESOLVED',
+			resolvedById: 'dev-team-care',
+			resolvedAt: new Date(now - 3 * 24 * HOUR + HOUR),
+			resolutionNote: 'Mit beiden gesprochen. Entschuldigung angenommen, keine Sperre.'
 		});
 	}
 }

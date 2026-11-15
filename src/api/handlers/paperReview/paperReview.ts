@@ -6,6 +6,7 @@ registerPaperReviewAbilities();
 
 object({ table: 'paperReview' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
+const anonymousAsEnum = enum_({ tsName: 'paperReviewAnonymousAs' });
 
 /** Which kind of flag a newly found piece belongs to. */
 const FlagTypeForUnlock = schemaBuilder.enumType('FlagTypeForUnlock', {
@@ -49,7 +50,13 @@ schemaBuilder.mutationFields((t) => ({
 					required: true,
 					description: 'The verdict: ACCEPTED or CHANGES_REQUESTED.'
 				})
-				.validate(reviewVerdictSchema)
+				.validate(reviewVerdictSchema),
+			anonymousAs: t.arg({
+				type: anonymousAsEnum,
+				required: false,
+				description:
+					"Publishes the review under this team name: its author reads it instead of the reviewer's. Left out, the review carries the reviewer's name."
+			})
 		},
 		resolve: async (_root, args, ctx) => {
 			const { reviewerId } = await assertCanReviewPaper({ ctx, paperId: args.paperId });
@@ -57,7 +64,8 @@ schemaBuilder.mutationFields((t) => ({
 				paperId: args.paperId,
 				comments: args.comments,
 				verdict: args.newStatus,
-				reviewerId
+				reviewerId,
+				anonymousAs: args.anonymousAs ?? null
 			});
 		}
 	})

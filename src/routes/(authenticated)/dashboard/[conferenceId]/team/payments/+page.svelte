@@ -376,7 +376,11 @@
 		givenName: user.givenName ?? undefined,
 		familyName: user.familyName ?? undefined
 	})}
-	<div class="bg-base-200 flex w-full items-center gap-2 rounded-field px-3 py-2 sm:gap-4 sm:px-4">
+	<button
+		type="button"
+		class="bg-base-200 hover:bg-base-300 flex w-full cursor-pointer items-center gap-2 rounded-field px-3 py-2 text-left sm:gap-4 sm:px-4"
+		onclick={() => openUserCard(user.id)}
+	>
 		<i
 			aria-hidden="true"
 			class="ph-duotone {paymentStatusIcon({
@@ -384,18 +388,12 @@
 				transactionReceived: received
 			})} text-2xl"
 		></i>
-		<div class="min-w-0 text-lg font-bold break-words">
+		<span class="min-w-0 text-lg font-bold break-words">
 			{name}
-		</div>
-		<div class="min-w-0 truncate text-sm opacity-60 max-sm:hidden">{user.id}</div>
-		<button
-			class="btn btn-soft btn-sm ml-auto"
-			onclick={() => openUserCard(user.id)}
-			aria-label="Details for {name}"
-		>
-			<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
-		</button>
-	</div>
+		</span>
+		<span class="min-w-0 truncate text-sm opacity-60 max-sm:hidden">{user.id}</span>
+		<i aria-hidden="true" class="ph-duotone ph-caret-right ml-auto opacity-60"></i>
+	</button>
 {/snippet}
 
 {#snippet transactionDetails(transaction: NonNullable<typeof paymentTransaction>)}

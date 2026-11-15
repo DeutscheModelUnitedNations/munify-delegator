@@ -100,12 +100,12 @@ This is how you revise a paper after feedback:
 You can still resubmit an accepted paper. It is then **Revised** again until the team reviews it once more.
 
 :::note An email for every review
-For every review the conference can send the email **New feedback on “…”**, showing the new status and a **View feedback** button. The team decides whether and when it is sent, so rely on the Paper Hub. If you reply to the email, your reply reaches the person who wrote the review.
+For every review the conference can send the email **New feedback on “…”**, showing the new status and a **View feedback** button. The team decides whether and when it is sent, so rely on the Paper Hub. If you reply to the email, your reply reaches the person who wrote the review. If it says **Secretariat** or **Research Service** instead of a name, you cannot reply to the email. Write through the [messages](./dashboard#messages) instead.
 :::
 
 ## Versions and history {#history}
 
-**History** lists every saved version and every review, newest first. For each version you see how much was added and removed. For each review you see who wrote it, the status before and after, and the comments.
+**History** lists every saved version and every review, newest first. For each version you see how much was added and removed. For each review you see who wrote it (or **Secretariat** or **Research Service** when the team published it anonymously), the status before and after, and the comments.
 
 To compare two versions, click **Compare with another version** on one version, then on a second one. A window shows the differences.
 

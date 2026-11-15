@@ -100,12 +100,12 @@ So überarbeitest du ein Papier nach einem Feedback:
 Auch ein akzeptiertes Papier kannst du noch aktualisieren. Es steht dann wieder auf **Überarbeitet**, bis das Team es erneut begutachtet.
 
 :::note E-Mail zu jedem Feedback
-Zu jedem Feedback kann die Konferenz die E-Mail **Neues Feedback zu „…“** mit dem neuen Status und dem Knopf **Feedback ansehen** schicken. Ob und wann sie verschickt wird, entscheidet das Team. Verlass dich deshalb auf den Papier-Hub. Antwortest du auf die Mail, erreicht deine Antwort die Person, die das Feedback geschrieben hat.
+Zu jedem Feedback kann die Konferenz die E-Mail **Neues Feedback zu „…“** mit dem neuen Status und dem Knopf **Feedback ansehen** schicken. Ob und wann sie verschickt wird, entscheidet das Team. Verlass dich deshalb auf den Papier-Hub. Antwortest du auf die Mail, erreicht deine Antwort die Person, die das Feedback geschrieben hat. Steht dort statt eines Namens **Sekretariat** oder **Wissenschaftlicher Dienst**, kannst du nicht auf die Mail antworten. Schreib dann über die [Nachrichten](./dashboard#messages).
 :::
 
 ## Versionen und Verlauf {#history}
 
-Unter **Historie** stehen alle gespeicherten Versionen und alle Feedbacks, das Neueste zuerst. Bei jeder Version siehst du, wie viel hinzugekommen und weggefallen ist. Bei jedem Feedback siehst du, wer es geschrieben hat, den Status vorher und nachher und die Kommentare.
+Unter **Historie** stehen alle gespeicherten Versionen und alle Feedbacks, das Neueste zuerst. Bei jeder Version siehst du, wie viel hinzugekommen und weggefallen ist. Bei jedem Feedback siehst du, wer es geschrieben hat (oder **Sekretariat** bzw. **Wissenschaftlicher Dienst**, wenn das Team es anonym veröffentlicht hat), den Status vorher und nachher und die Kommentare.
 
 Zwei Versionen vergleichst du so: Klicke bei einer Version auf **Mit einer anderen Version vergleichen**, dann bei einer zweiten. Ein Fenster zeigt die Unterschiede.
 

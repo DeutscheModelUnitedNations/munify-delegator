@@ -382,6 +382,8 @@ export async function sendMessage({
 			.update(schema.chat)
 			.set({
 				lastMessageAt: now,
+				// a new message brings an archived chat back into its inbox
+				teamArchivedAt: null,
 				// an answer from the inbox means the inbox has read what came before
 				...(fromTeam ? { teamReadAt: now } : {}),
 				...(chat.kind === 'TEAM' && !fromTeam ? { lastParticipantMessageAt: now } : {})
@@ -438,6 +440,22 @@ export async function markChatRead({
 	} else {
 		await writeRead({ tx: db, chatId: chat.id, userId, readAt: now });
 	}
+	chatPubsub.updated(chat.id);
+}
+
+/**
+ * Puts a team chat away into its inbox's archive, for everybody holding the inbox, or takes it
+ * out again. Putting it away reads it. The next message brings it back (`sendMessage`).
+ */
+export async function setChatArchived({ chat, archived }: { chat: ChatRow; archived: boolean }) {
+	if (chat.kind !== 'TEAM') {
+		throw apiError({ code: 'INVALID_INPUT', message: m.chatOnlyTeamCanBeArchived() });
+	}
+	const now = new Date();
+	await db
+		.update(schema.chat)
+		.set(archived ? { teamArchivedAt: now, teamReadAt: now } : { teamArchivedAt: null })
+		.where(eq(schema.chat.id, chat.id));
 	chatPubsub.updated(chat.id);
 }
 
@@ -544,6 +562,80 @@ export async function resolveChatReport({
 	});
 	chatReportPubsub.updated(id);
 	chatPubsub.updated(chatId);
+}
+
+/**
+ * Settles every open report of a chat at once, with what participant care noted about it; the
+ * chat is private again.
+ */
+export async function resolveChatReports({
+	chatId,
+	resolvedById,
+	note
+}: {
+	chatId: string;
+	resolvedById: string;
+	note: string | null;
+}) {
+	const ids = await db.transaction(async (tx) => {
+		const settled = await tx
+			.update(schema.chatReport)
+			.set({ status: 'RESOLVED', resolvedById, resolvedAt: new Date(), resolutionNote: note })
+			.where(and(eq(schema.chatReport.chatId, chatId), eq(schema.chatReport.status, 'OPEN')))
+			.returning({ id: schema.chatReport.id });
+		await tx.update(schema.chat).set({ underReview: false }).where(eq(schema.chat.id, chatId));
+		return settled.map((report) => report.id);
+	});
+	if (ids.length > 0) chatReportPubsub.updated(ids);
+	chatPubsub.updated(chatId);
+	return ids.length;
+}
+
+/**
+ * How many settled reports there are about chats a person takes part in (their direct chats and
+ * their delegation's group), not counting the ones they filed themselves: what participant care
+ * sees next to a person of a reported chat, so a repetition shows.
+ */
+export async function earlierReportCount({
+	participantId,
+	userId,
+	delegationId
+}: {
+	participantId: string;
+	userId: string;
+	delegationId: string | null;
+}) {
+	const [row] = await db
+		.select({ reports: count() })
+		.from(schema.chatReport)
+		.innerJoin(schema.chat, eq(schema.chat.id, schema.chatReport.chatId))
+		.where(
+			and(
+				eq(schema.chatReport.status, 'RESOLVED'),
+				sql`${schema.chatReport.reporterUserId} <> ${userId}`,
+				or(
+					eq(schema.chat.participantId, participantId),
+					eq(schema.chat.otherParticipantId, participantId),
+					delegationId ? eq(schema.chat.delegationId, delegationId) : undefined
+				)
+			)
+		);
+	return row?.reports ?? 0;
+}
+
+/** The participant row of a user in a conference: who of a chat filed a report. */
+export async function participantIdOfUser({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}) {
+	const participant = await db.query.conferenceParticipant.findFirst({
+		where: { userId, conferenceId },
+		columns: { id: true }
+	});
+	return participant?.id ?? null;
 }
 
 /** Takes a person out of the chats between participants, or lets them back in. */

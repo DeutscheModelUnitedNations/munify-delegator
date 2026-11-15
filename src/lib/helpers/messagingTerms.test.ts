@@ -3,7 +3,8 @@ import {
 	acceptedMessagingTerms,
 	MESSAGING_TERMS_VERSION,
 	messagingTermsSections,
-	messagingTermsVersionSchema
+	messagingTermsVersionSchema,
+	scrolledToEnd
 } from './messagingTerms';
 
 describe('acceptedMessagingTerms', () => {
@@ -12,6 +13,19 @@ describe('acceptedMessagingTerms', () => {
 		expect(acceptedMessagingTerms(MESSAGING_TERMS_VERSION - 1)).toBe(false);
 		expect(acceptedMessagingTerms(null)).toBe(false);
 		expect(acceptedMessagingTerms(undefined)).toBe(false);
+	});
+});
+
+describe('scrolledToEnd', () => {
+	test('the end counts once it is on screen', () => {
+		expect(scrolledToEnd({ scrollTop: 0, clientHeight: 400, scrollHeight: 1200 })).toBe(false);
+		expect(scrolledToEnd({ scrollTop: 700, clientHeight: 400, scrollHeight: 1200 })).toBe(false);
+		expect(scrolledToEnd({ scrollTop: 795.5, clientHeight: 400, scrollHeight: 1200 })).toBe(true);
+		expect(scrolledToEnd({ scrollTop: 800, clientHeight: 400, scrollHeight: 1200 })).toBe(true);
+	});
+
+	test('a text that fits has nothing to scroll', () => {
+		expect(scrolledToEnd({ scrollTop: 0, clientHeight: 400, scrollHeight: 400 })).toBe(true);
 	});
 });
 

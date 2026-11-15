@@ -128,7 +128,11 @@ Before their first message, participants agree to the **Terms of the message ser
 
 ### Replying and new chats
 
-On the **Messages** page the chats of your inboxes are on the left and the open chat on the right. If you answer several inboxes, you narrow the list with the inbox buttons, each with its number of unread messages. Once somebody from the inbox reads a chat, it counts as read for everyone in the inbox.
+If you answer several inboxes, **Messages** folds open in the navigation. Below it are the **Overview** and each inbox with its number of unread messages. The inboxes of a committee are grouped under the committee. The **Overview** shows all your inboxes as cards. If you answer only one, **Messages** opens its chats right away.
+
+In an inbox the chats are on the left and the open chat on the right. Once somebody from the inbox reads a chat, it counts as read for everyone in the inbox.
+
+You put a settled chat away with **Archive** at the top of the chat. It leaves the list for everybody who answers the inbox. The next message brings it back by itself. The button **Archive** above the list shows the archived chats. There you take a chat out again by hand with **Take out of the archive**. Participants are not told that their chat is archived.
 
 You see participants in the list by their role. Participant care also sees the name in the chat and opens the [user card](./participants#user-card) from there. Whoever answers a committee inbox only sees the role.
 
@@ -140,13 +144,15 @@ In the [paper hub](./paper-hub) you write to the author of a paper directly. The
 
 ### Reports and suspensions
 
-Participants can report a direct chat or their delegation group. Chats with the team cannot be reported. For participant care and project management, the **Messages** page has a **Reports** tab next to **Inboxes**:
+Participants can report a direct chat or their delegation group. Chats with the team cannot be reported. Participant care and project management find reported chats under **Reports** in the navigation and in the **Overview**:
 
-1. Each open report shows the reason and who reported. **Read chat** opens the chat. A note above it says that you read it because of a report and names the people involved with role and name. You cannot write in this chat. The other person is not told who reported.
-2. **Suspend from chats** on a person takes them out of every chat with other participants of this conference. They still reach the team and the team still reaches them. **Lift suspension** undoes it.
-3. **Resolved** closes the report. Once none of the chat's reports is open, it is private again and participant care no longer reads it.
+1. The open cases are on the left, the oldest first. Several reports of one chat are one case.
+2. Pick a case and you read the chat with names in the middle. A line shows when it was reported. You cannot write in this chat. The other person is not told who reported.
+3. On the right is the **Case file** with the reports and the **People involved**, for a delegation group all its members. For each person you see earlier settled reports about their chats, write to them or open their [user card](./participants#user-card).
+4. **Suspend from chats** takes a person out of every chat with other participants of this conference. They still reach the team and the team still reaches them. **Lift suspension** undoes it.
+5. Write down under **Internal note** what was discussed and decided, and close all reports of the chat at once with **Settle**. After that the chat is private again and participant care no longer reads it. A suspension stays until you lift it.
 
-Resolved reports are folded away under **Resolved reports**.
+Settled reports are folded away with their note under **Resolved reports**. Only the team reads the note.
 
 ### Notifications
 

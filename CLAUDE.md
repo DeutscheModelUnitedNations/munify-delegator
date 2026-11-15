@@ -79,11 +79,11 @@ bun run db:studio
 bun run format
 
 # Type checking (PREFERRED for development - fast feedback)
-bun run check          # Single run - use this to verify changes
+bun run check          # Single run - use this to verify changes (incremental: cached in .svelte-kit/.svelte-check)
 bun run check:watch    # Watch mode
 bun run typecheck      # TypeScript only (tsc is TypeScript 7, installed as @typescript/native)
 
-# Lint (slow - runs automatically on git push via lefthook)
+# Lint (slow - the pushed files are linted on git push via lefthook)
 bun run lint           # Only run manually when specifically needed
 
 # Codebase analysis (fallow: dead code, cycles, duplication, complexity)
@@ -108,7 +108,7 @@ maps back to the sources: Vite's module runner evaluates modules with `new Async
 Node keeps no source map for, so c8 cannot. Generated code (Paraglide, the rumble client) is left
 out by `scripts/coverageScope.ts`. CI scores with unit coverage only.
 
-**Note:** Prefer `bun run check` over `bun run lint` during development. Linting is slow (~2 min) and runs automatically on push via lefthook pre-push hooks. Use `bun run check` for quick type-checking feedback.
+**Note:** Prefer `bun run check` over `bun run lint` during development. Linting the whole repo is slow (~2 min without its cache); the lefthook pre-push hook lints the pushed files. Use `bun run check` for quick type-checking feedback.
 
 ### i18n (Internationalization)
 
@@ -1340,7 +1340,11 @@ bun run preview
   that **committee function** (`teamFunction`, `#api/handlers/teamFunction/`, handed out by
   `manageTeam` on the team members page; in the caller's facts as `teamFunctions`); and
   `TRUSTED_PERSON`, answered by the conference's trusted persons (see below). An inbox reads
-  as one (`chat.teamReadAt`); a person's reading is `chatRead`. `inboxReaches`
+  as one (`chat.teamReadAt`); a person's reading is `chatRead`. An inbox files a settled chat in
+  its **archive** (`chat.teamArchivedAt`, `setChatArchived`, for whoever answers the inbox): that
+  reads it, the list hides it until asked, and the next message from either side empties the
+  column (`sendMessage`), so the chat is back. The participant is not told (`chat.archived` and
+  `teamArchivedAt` answer the team side only). `inboxReaches`
   (`#lib/helpers/chat.ts`) says which inbox and person write each other: participant care anybody
   with a registration, a committee's inboxes the people seated there and those seated without a
   committee.
@@ -1357,7 +1361,11 @@ bun run preview
   purpose and answers only its own person. Anything new that reads chats has to keep this.
 - **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
   inbox; participant care a chat between participants only while a report is open
-  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved). A system
+  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved:
+  `resolveChatReports` settles all of a chat's at once, with an internal note,
+  `chatReport.resolutionNote`). There it gets everybody of the chat by role and name
+  (`chat.contacts`, `chat.people`), the members of a delegation's group included, each with the
+  settled reports there were before about their chats (`earlierReports`). A system
   admin reads what the team reads, never a private chat. `chatSide` answers how the caller relates
   to a chat (`PARTICIPANT`, `TEAM`, `REVIEW`); `REVIEW` never writes.
 - **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages
@@ -1628,7 +1636,7 @@ Required variables (see `.env.example`):
 ## Git Hooks (Lefthook)
 
 **Pre-commit**: Auto-format staged files with Prettier, then run `fallow audit` on the working tree
-**Pre-push**: The same checks as CI, over the whole repo rather than the pushed files (so a commit made with `--no-verify` is caught by the next push): tests, lint (`eslint .`, cached), format check, type check and the i18n check, plus `fallow audit` against the branch base
+**Pre-push**: The same checks as CI, made cheap: lint (`eslint`, cached by content) and the format check look only at the files the push changes, the tests run with `vitest run --sinceLastRun` (the tests whose recorded dependencies changed since they last ran, and those that failed), the type check is `bun run check`, which is incremental, and the i18n check and `fallow audit` against the branch base run as before. A commit made with `--no-verify` is still caught by the push that carries it. What the shortcuts cannot see (an eslint or prettier upgrade changing the verdict on untouched files) is CI's to catch, which checks everything without a cache. The caches are gitignored and safe to delete when a result looks stale: `.eslintcache`, `.svelte-kit/.svelte-check`, `node_modules/.vitest-cache`.
 
 The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
 

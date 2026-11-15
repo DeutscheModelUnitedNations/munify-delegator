@@ -32,6 +32,7 @@ const CHAT_SUMMARY = {
 	lastMessagePreview: true,
 	unreadCount: true,
 	underReview: true,
+	archived: true,
 	trustedPersonName: true,
 	committee: { abbreviation: true, name: true },
 	contacts: CONTACT,

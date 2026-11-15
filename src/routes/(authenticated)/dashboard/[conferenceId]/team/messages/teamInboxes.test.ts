@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { inboxKey, inboxesOf } from './teamInboxes';
+import { inboxKey, inboxMenu, inboxesOf, listedChats, unreadByInbox } from './teamInboxes';
 
 const fn = (kind: 'CHAIR' | 'CONSULTANT', committeeId: string, abbreviation: string) => ({
 	kind,
@@ -43,6 +43,60 @@ describe('inboxesOf', () => {
 	});
 });
 
+describe('a system admin', () => {
+	test("reads participant care's inbox and both inboxes of every committee", () => {
+		const inboxes = inboxesOf({
+			cares: true,
+			functions: [],
+			isAdmin: true,
+			committees: [
+				{ id: 'sc', abbreviation: 'SR' },
+				{ id: 'ga', abbreviation: 'GV' }
+			]
+		});
+		expect(inboxes.map((inbox) => inbox.key)).toEqual([
+			'PARTICIPANT_CARE',
+			'CHAIR:ga',
+			'CONSULTANT:ga',
+			'CHAIR:sc',
+			'CONSULTANT:sc'
+		]);
+	});
+});
+
+describe('inboxMenu', () => {
+	test('folds a committee with several inboxes and keeps a single one flat', () => {
+		const menu = inboxMenu(
+			inboxesOf({
+				cares: true,
+				functions: [
+					fn('CHAIR', 'ga', 'GV'),
+					fn('CONSULTANT', 'ga', 'GV'),
+					fn('CONSULTANT', 'sc', 'SR')
+				]
+			})
+		);
+		expect(
+			menu.map((entry) =>
+				entry.kind === 'inbox' ? entry.inbox.key : [entry.abbreviation, entry.inboxes.length]
+			)
+		).toEqual(['PARTICIPANT_CARE', ['GV', 2], 'CONSULTANT:sc']);
+	});
+});
+
+describe('unreadByInbox', () => {
+	test('adds up the unread messages of each inbox', () => {
+		const unread = unreadByInbox([
+			{ inbox: 'CHAIR', committeeId: 'ga', unreadCount: 2 },
+			{ inbox: 'CHAIR', committeeId: 'ga', unreadCount: 1 },
+			{ inbox: 'PARTICIPANT_CARE', unreadCount: 4 }
+		]);
+		expect(unread.get('CHAIR:ga')).toBe(3);
+		expect(unread.get('PARTICIPANT_CARE')).toBe(4);
+		expect(unread.get('CONSULTANT:ga')).toBeUndefined();
+	});
+});
+
 describe('inboxKey', () => {
 	test('matches a chat to the inbox it belongs to', () => {
 		expect(inboxKey({ inbox: 'CHAIR', committeeId: 'ga' })).toBe('CHAIR:ga');
@@ -54,5 +108,29 @@ describe('inboxKey', () => {
 		expect(inboxKey({ inbox: 'TRUSTED_PERSON', trustedPersonName: 'Anna Meier' })).toBe(
 			'TRUSTED_PERSON:own'
 		);
+	});
+});
+
+describe('listedChats', () => {
+	const chats = [
+		{ id: 'a', archived: false },
+		{ id: 'b', archived: true },
+		{ id: 'c', archived: false }
+	];
+
+	test('leaves the archive out until it is asked for, and counts it', () => {
+		const listed = listedChats({ chats, showArchive: false });
+		expect(listed.chats.map((chat) => chat.id)).toEqual(['a', 'c']);
+		expect(listed.archived).toBe(1);
+	});
+
+	test('shows the archived chats after the open ones', () => {
+		const listed = listedChats({ chats, showArchive: true });
+		expect(listed.chats.map((chat) => chat.id)).toEqual(['a', 'c', 'b']);
+		expect(listed.archived).toBe(1);
+	});
+
+	test('counts none in an inbox without an archive', () => {
+		expect(listedChats({ chats: [], showArchive: true })).toEqual({ chats: [], archived: 0 });
 	});
 });

@@ -56,7 +56,7 @@ const CHATS = `query ($c: ID!) {
 	chats(where: { conferenceId: { eq: $c } }) {
 		id kind side underReview
 		contacts { participantId roleKind nationAlpha3Code committeeAbbreviation userId suspended }
-		people { name userId }
+		people { name userId earlierReports }
 	}
 }`;
 const MESSAGES = `query ($chat: ID!) {
@@ -77,7 +77,7 @@ type ChatRow = {
 		userId: string | null;
 		suspended: boolean | null;
 	}[];
-	people: { name: string; userId: string }[];
+	people: { name: string; userId: string; earlierReports: number }[];
 };
 type MessageRow = {
 	body: string;
@@ -283,7 +283,9 @@ test('a team inbox is read by whoever answers it, and answers carry a name', asy
 
 	// participant care knows whom it is talking to
 	const [caresChat] = await chatsOf(carePage);
-	expect(caresChat?.people).toEqual([{ name: `${bert.given} ${bert.family}`, userId: bert.id }]);
+	expect(caresChat?.people).toEqual([
+		{ name: `${bert.given} ${bert.family}`, userId: bert.id, earlierReports: 0 }
+	]);
 
 	// a team member opens a chat only from an inbox they answer, with somebody it reaches
 	expect(
@@ -300,6 +302,61 @@ test('a team inbox is read by whoever answers it, and answers carry a name', asy
 	expect(
 		(await openTeam(chairPage, { inbox: 'CHAIR', committee: GV, p: participant(anna) })).id
 	).toBe(chat.annaChairs);
+});
+
+test('an inbox files its chats in an archive until the next message', async ({ browser }) => {
+	const annaPage = await signedIn(browser, anna.id);
+	const bertPage = await signedIn(browser, bert.id);
+	const chairPage = await signedIn(browser, chair.id);
+	const carePage = await signedIn(browser, care.id);
+
+	const ARCHIVE = `mutation ($chat: ID!, $archived: Boolean!) { setChatArchived(chatId: $chat, archived: $archived) }`;
+	const FILED = `query ($chat: ID!) {
+		chats(where: { id: { eq: $chat } }) { archived teamArchivedAt unreadCount }
+	}`;
+	type Filed = { archived: boolean; teamArchivedAt: string | null; unreadCount: number };
+	const filed = async (page: Page, id: string) =>
+		(await gql<{ chats: Filed[] }>(page, FILED, { chat: id })).data?.chats[0];
+
+	// only whoever answers the inbox files its chats: not the participant, not another inbox, and
+	// a chat between participants has no archive
+	expect(codeOf(await gql(bertPage, ARCHIVE, { chat: chat.bertCare, archived: true }))).toBe(
+		'FORBIDDEN'
+	);
+	expect(codeOf(await gql(chairPage, ARCHIVE, { chat: chat.bertCare, archived: true }))).toBe(
+		'NOT_FOUND'
+	);
+	expect(codeOf(await gql(annaPage, ARCHIVE, { chat: chat.annaCarla, archived: true }))).toBe(
+		'FORBIDDEN'
+	);
+	expect((await filed(carePage, chat.bertCare))?.archived).toBe(false);
+
+	// participant care puts the chat away, which reads it; the participant is not told
+	expect(
+		(await gql(carePage, ARCHIVE, { chat: chat.bertCare, archived: true })).errors
+	).toBeUndefined();
+	const put = await filed(carePage, chat.bertCare);
+	expect(put).toMatchObject({ archived: true, unreadCount: 0 });
+	expect(put?.teamArchivedAt).not.toBeNull();
+	expect(await filed(bertPage, chat.bertCare)).toMatchObject({
+		archived: false,
+		teamArchivedAt: null
+	});
+
+	// it can be taken out again by hand
+	await gql(carePage, ARCHIVE, { chat: chat.bertCare, archived: false });
+	expect((await filed(carePage, chat.bertCare))?.archived).toBe(false);
+
+	// and the next message brings it back by itself, unread
+	await gql(carePage, ARCHIVE, { chat: chat.bertCare, archived: true });
+	expect((await send(bertPage, chat.bertCare, 'Noch eine Frage')).errors).toBeUndefined();
+	expect(await filed(carePage, chat.bertCare)).toMatchObject({
+		archived: false,
+		teamArchivedAt: null,
+		unreadCount: 1
+	});
+
+	for (const page of [annaPage, bertPage, chairPage, carePage]) await page.context().close();
 });
 
 test('blocking closes a direct chat for both, and only that chat', async ({ browser }) => {
@@ -390,6 +447,105 @@ test('participant care reads a chat only while it is reported, and may suspend',
 	expect((await gql(carePage, RESOLVE, { id: reportId })).errors).toBeUndefined();
 	expect((await chatsOf(carePage)).map((row) => row.id)).not.toContain(chat.annaCarla);
 	expect(await messagesOf(carePage, chat.annaCarla)).toEqual([]);
+});
+
+test("a reported delegation group names all its members, and a chat's reports are settled together", async ({
+	browser
+}) => {
+	const annaPage = await signedIn(browser, anna.id);
+	const bertPage = await signedIn(browser, bert.id);
+	const carlaPage = await signedIn(browser, carla.id);
+	const carePage = await signedIn(browser, care.id);
+	const chairPage = await signedIn(browser, chair.id);
+
+	const opened = await gql<{ openDelegationChat: { id: string } }>(
+		bertPage,
+		`mutation ($c: ID!) { openDelegationChat(conferenceId: $c) { id } }`,
+		{ c: CONFERENCE }
+	);
+	const group = opened.data?.openDelegationChat.id ?? '';
+	expect((await send(bertPage, group, 'Hallo Delegation')).errors).toBeUndefined();
+
+	// its members know each other: the group lists nobody for them, and nobody else reports it
+	expect((await chatsOf(annaPage)).find((row) => row.id === group)).toMatchObject({
+		contacts: [],
+		people: []
+	});
+	const REPORT = `mutation ($chat: ID!, $reason: String!) { reportChat(chatId: $chat, reason: $reason) }`;
+	expect(codeOf(await gql(carlaPage, REPORT, { chat: group, reason: 'x' }))).toBe('NOT_FOUND');
+	await gql(bertPage, REPORT, { chat: group, reason: 'Erste Meldung' });
+	await gql(bertPage, REPORT, { chat: group, reason: 'Zweite Meldung' });
+
+	// participant care gets every member, by role and by name
+	const reviewed = (await chatsOf(carePage)).find((row) => row.id === group);
+	expect(reviewed).toMatchObject({ kind: 'DELEGATION', side: 'REVIEW', underReview: true });
+	expect(reviewed?.people.map((person) => person.name).sort()).toEqual([
+		`${anna.given} ${anna.family}`,
+		`${bert.given} ${bert.family}`
+	]);
+	expect(reviewed?.contacts.map((contact) => contact.userId).sort()).toEqual(
+		[anna.id, bert.id].sort()
+	);
+
+	const REPORTS = `query ($chat: ID!) {
+		chatReports(where: { chatId: { eq: $chat } }, orderBy: { createdAt: asc }) {
+			reason status reporterParticipantId resolutionNote resolvedByName
+		}
+	}`;
+	type Report = {
+		reason: string;
+		status: string;
+		reporterParticipantId: string | null;
+		resolutionNote: string | null;
+		resolvedByName: string | null;
+	};
+	const reportsOf = async (page: Page) =>
+		(await gql<{ chatReports: Report[] }>(page, REPORTS, { chat: group })).data?.chatReports ?? [];
+	expect(await reportsOf(carePage)).toEqual([
+		expect.objectContaining({ reason: 'Erste Meldung', reporterParticipantId: participant(bert) }),
+		expect.objectContaining({ reason: 'Zweite Meldung', status: 'OPEN', resolutionNote: null })
+	]);
+
+	// only participant care settles them, all at once, with a note the team reads
+	const SETTLE = `mutation ($chat: ID!, $note: String) { resolveChatReports(chatId: $chat, note: $note) }`;
+	for (const page of [chairPage, bertPage]) {
+		expect(codeOf(await gql(page, SETTLE, { chat: group }))).toBe('NOT_FOUND');
+	}
+	expect(codeOf(await gql(carePage, SETTLE, { chat: group, note: 'x'.repeat(2001) }))).toBe(
+		'INVALID_INPUT'
+	);
+	const settled = await gql<{ resolveChatReports: number }>(carePage, SETTLE, {
+		chat: group,
+		note: ' Mit der Delegation gesprochen. '
+	});
+	expect(settled.data?.resolveChatReports).toBe(2);
+	for (const report of await reportsOf(carePage)) {
+		expect(report).toMatchObject({
+			status: 'RESOLVED',
+			resolutionNote: 'Mit der Delegation gesprochen.',
+			resolvedByName: `${care.given} ${care.family}`
+		});
+	}
+	expect(await reportsOf(bertPage)).toEqual([]);
+	// the group is private again, and there is nothing left to settle
+	expect((await chatsOf(carePage)).map((row) => row.id)).not.toContain(group);
+	expect(codeOf(await gql(carePage, SETTLE, { chat: group }))).toBe('NOT_FOUND');
+
+	// a later report shows what there was before about the chats of each person, their own aside:
+	// Anna's chat with Carla (settled above) and her delegation's group; Carla filed hers herself
+	await gql(carlaPage, REPORT, { chat: chat.annaCarla, reason: 'Schon wieder' });
+	const again = (await chatsOf(carePage)).find((row) => row.id === chat.annaCarla);
+	const earlier = (person: { id: string }) =>
+		again?.people.find((row) => row.userId === person.id)?.earlierReports;
+	expect(earlier(anna)).toBe(3);
+	expect(earlier(carla)).toBe(0);
+	expect((await gql(carePage, SETTLE, { chat: chat.annaCarla })).data).toEqual({
+		resolveChatReports: 1
+	});
+	// five more sessions than the specs before: hand them back
+	for (const page of [annaPage, bertPage, carlaPage, carePage, chairPage]) {
+		await page.context().close();
+	}
 });
 
 test('committee functions are handed out by whoever manages the team', async ({ browser }) => {

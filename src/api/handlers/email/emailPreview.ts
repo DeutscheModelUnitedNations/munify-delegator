@@ -118,6 +118,7 @@ export async function previewEmail({
 			paperType: 'POSITION_PAPER',
 			agendaItem: 'GV: Klimaschutz',
 			reviewer: { name: 'Robin Beispiel', email: 'reviewer@example.org' },
+			anonymousAs: null,
 			statusAfter: 'CHANGES_REQUESTED'
 		},
 		survey: {

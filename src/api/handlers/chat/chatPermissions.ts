@@ -312,6 +312,15 @@ export async function assertTakesPartInChat({ ctx, id }: { ctx: ApiContext; id: 
 	return { ...found, side: found.side };
 }
 
+/** `readableChat` for somebody answering the chat's inbox, who files it. FORBIDDEN for anybody else. */
+export async function assertAnswersInboxOfChat({ ctx, id }: { ctx: ApiContext; id: string }) {
+	const found = await readableChat({ ctx, id });
+	if (found.side !== 'TEAM') {
+		throw apiError({ code: 'FORBIDDEN', message: m.chatInboxNotYours() });
+	}
+	return found;
+}
+
 /**
  * Refuses (TERMS_NOT_ACCEPTED) a participant who has not accepted the message service's terms as
  * they stand. The team writes without.
@@ -433,4 +442,24 @@ export async function assertCanSuspend({
 		permission: 'manageParticipants'
 	});
 	return participant.conferenceId;
+}
+
+/**
+ * The reported chat whose reports the caller may settle: participant care of its conference.
+ * NOT_FOUND for anybody else, and for a chat without an open report.
+ */
+export async function assertCanSettleReportsOf({
+	ctx,
+	chatId
+}: {
+	ctx: ApiContext;
+	chatId: string;
+}) {
+	ctx.mustBeLoggedIn();
+	const chat = await db.query.chat.findFirst({ where: { id: chatId, underReview: true } });
+	const facts = await callerFacts(ctx);
+	if (!chat || !caresFor({ ctx, facts, conferenceId: chat.conferenceId })) {
+		throw apiError({ code: 'NOT_FOUND', message: m.chatReportNotFound() });
+	}
+	return chat;
 }

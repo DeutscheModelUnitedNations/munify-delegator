@@ -9,9 +9,20 @@
 
 	let svg = $state('');
 
+	/**
+	 * Mermaid only knows Font Awesome: `fa:fa-flag` in a label becomes `<i class='fa fa-flag'>`.
+	 * The app has Phosphor, so those become `ph-duotone ph-flag`.
+	 */
+	function phosphorIcons(rendered: string) {
+		return rendered.replace(
+			/class=(['"])fa fa-([\w-]+)\1/g,
+			'class="ph-duotone ph-$2" aria-hidden="true"'
+		);
+	}
+
 	async function renderDiagram() {
 		const rendered = await mermaid.render('mermaid', diagram);
-		svg = rendered.svg;
+		svg = phosphorIcons(rendered.svg);
 	}
 
 	$effect(() => {

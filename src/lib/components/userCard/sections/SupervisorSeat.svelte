@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
-	import PersonName from '../PersonName.svelte';
-	import OpenUserCardButton from '../OpenUserCardButton.svelte';
+	import PersonNameButton from '../PersonNameButton.svelte';
+	import { openUserCard } from '../userCardState.svelte';
+	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
 	import { removeSupervision } from './removeSupervision';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
@@ -165,16 +166,12 @@
 	</tr>
 	<!-- Nested member rows -->
 	{#each group.members as member (member.id)}
-		<tr class="text-sm">
+		<tr class="{CLICKABLE_ROW} text-sm" onclick={rowClick(() => openUserCard(member.user.id))}>
 			<td class="text-right">
 				<i aria-hidden="true" class="ph-duotone ph-arrow-elbow-down-right text-base-content/40"></i>
 			</td>
 			<td colspan="2">
-				<PersonName
-					givenName={member.user.givenName}
-					familyName={member.user.familyName}
-					isHeadDelegate={member.isHeadDelegate}
-				/>
+				<PersonNameButton user={member.user} isHeadDelegate={member.isHeadDelegate} />
 			</td>
 			<td>
 				{member.assignedCommittee?.abbreviation ?? ''}
@@ -186,7 +183,6 @@
 
 {#snippet studentActions(student: { id: string; givenName: string; familyName: string })}
 	<div class="flex justify-end gap-1">
-		<OpenUserCardButton user={student} />
 		<button
 			class="btn btn-ghost btn-xs btn-square text-error"
 			onclick={() => removeSupervision({ supervisor: conferenceSupervisor, student })}
@@ -211,13 +207,10 @@
 		</thead>
 		<tbody>
 			{#each sortedSingleParticipants as participant (participant.id)}
-				<tr>
+				<tr class={CLICKABLE_ROW} onclick={rowClick(() => openUserCard(participant.user.id))}>
 					<td>{@render appliedIcon(participant.applied)}</td>
 					<td>
-						<PersonName
-							givenName={participant.user.givenName}
-							familyName={participant.user.familyName}
-						/>
+						<PersonNameButton user={participant.user} />
 					</td>
 					<td>{participant.school?.name ?? 'N/A'}</td>
 					<td>{participant.assignedRole?.name ?? 'N/A'}</td>
