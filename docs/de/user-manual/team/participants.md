@@ -52,7 +52,7 @@ Ein Klick auf eine Zeile öffnet die [Teilnehmendenkarte](#user-card) der Person
 
 ## Die Teilnehmendenkarte {#user-card}
 
-Die Teilnehmendenkarte bündelt alles, was die Konferenz über eine Person weiß. Sie öffnet sich als Seitenleiste, wenn du in der Teilnehmendentabelle, der Warteliste, auf der Seite **Plätze**, auf der Seite einer Schule oder in der Befehlspalette (Strg+K) auf eine Person klickst. Die Adresse im Browser enthält dann die Person, ein kopierter Link öffnet also dieselbe Karte. **In neuem Tab öffnen** zeigt die Karte als eigene Seite **Teilnehmendenkartei**.
+Die Teilnehmendenkarte bündelt alles, was die Konferenz über eine Person weiß. Sie öffnet sich als Seitenleiste, wenn du in der Teilnehmendentabelle, der Warteliste, auf der Seite **Plätze**, auf der Seite einer Schule, unter **Teammitglieder**, bei einer Zahlungsreferenz, in der Sichtung oder in der Befehlspalette (Strg+K) auf eine Person klickst. Dafür reicht ein Klick irgendwo in die Zeile. Auch in der Karte selbst öffnen die Zeilen der Delegationsmitglieder, der Betreuenden und der betreuten Schüler\*innen deren Karte, und eine Zeile unter **Papiere** das Papier. Die Adresse im Browser enthält dann die Person, ein kopierter Link öffnet also dieselbe Karte. **In neuem Tab öffnen** zeigt die Karte als eigene Seite **Teilnehmendenkartei**.
 
 Gehört die Person nicht zur angezeigten Konferenz, steht oben ein Hinweis, dass die Daten zu ihrem Konto gehören und nicht zu dieser Konferenz.
 

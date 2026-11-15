@@ -312,6 +312,15 @@ export async function assertTakesPartInChat({ ctx, id }: { ctx: ApiContext; id: 
 	return { ...found, side: found.side };
 }
 
+/** `readableChat` for somebody answering the chat's inbox, who files it. FORBIDDEN for anybody else. */
+export async function assertAnswersInboxOfChat({ ctx, id }: { ctx: ApiContext; id: string }) {
+	const found = await readableChat({ ctx, id });
+	if (found.side !== 'TEAM') {
+		throw apiError({ code: 'FORBIDDEN', message: m.chatInboxNotYours() });
+	}
+	return found;
+}
+
 /**
  * Refuses (TERMS_NOT_ACCEPTED) a participant who has not accepted the message service's terms as
  * they stand. The team writes without.

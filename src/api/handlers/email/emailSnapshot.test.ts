@@ -60,7 +60,13 @@ describe('reviewPart', () => {
 
 	test('reads the paper, its agenda item, the reviewer and the new status', () => {
 		expect(
-			reviewPart({ id: 'r1', statusAfter: 'ACCEPTED', reviewer, paperVersion: { paper } })
+			reviewPart({
+				id: 'r1',
+				statusAfter: 'ACCEPTED',
+				anonymousAs: null,
+				reviewer,
+				paperVersion: { paper }
+			})
 		).toEqual([
 			{
 				id: 'r1',
@@ -69,6 +75,7 @@ describe('reviewPart', () => {
 				paperType: 'WORKING_PAPER',
 				agendaItem: 'GV: Klimaschutz',
 				reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
+				anonymousAs: null,
 				statusAfter: 'ACCEPTED'
 			}
 		]);
@@ -78,6 +85,7 @@ describe('reviewPart', () => {
 		const [review] = reviewPart({
 			id: 'r1',
 			statusAfter: null,
+			anonymousAs: null,
 			reviewer: null,
 			paperVersion: { paper: { ...paper, agendaItem: null } }
 		});
@@ -85,18 +93,37 @@ describe('reviewPart', () => {
 		expect(review?.reviewer).toBeNull();
 	});
 
+	test('keeps an anonymous review from naming its reviewer', () => {
+		const [review] = reviewPart({
+			id: 'r1',
+			statusAfter: 'ACCEPTED',
+			anonymousAs: 'SECRETARIAT',
+			reviewer,
+			paperVersion: { paper }
+		});
+		expect(review?.reviewer).toBeNull();
+		expect(review?.anonymousAs).toBe('SECRETARIAT');
+	});
+
 	test('is nothing for a paper without an author', () => {
 		expect(
 			reviewPart({
 				id: 'r1',
 				statusAfter: 'ACCEPTED',
+				anonymousAs: null,
 				reviewer,
 				paperVersion: { paper: { ...paper, authorParticipantId: null } }
 			})
 		).toEqual([]);
-		expect(reviewPart({ id: 'r1', statusAfter: 'ACCEPTED', reviewer, paperVersion: null })).toEqual(
-			[]
-		);
+		expect(
+			reviewPart({
+				id: 'r1',
+				statusAfter: 'ACCEPTED',
+				anonymousAs: null,
+				reviewer,
+				paperVersion: null
+			})
+		).toEqual([]);
 	});
 });
 

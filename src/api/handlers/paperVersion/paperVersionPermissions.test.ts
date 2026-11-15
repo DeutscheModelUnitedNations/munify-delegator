@@ -183,9 +183,14 @@ describe('the versions of a conference paper', () => {
 	});
 
 	test('and no review comes with them', async () => {
-		// the author's rule (no paper of their own) and the paper team's (no conference): nothing
+		// the author's rules (named reviews, and anonymous ones without the reviewer), which reach
+		// no version since no paper is their own, and the paper team's (no conference): nothing
 		expect(await grantsFor({ table: 'paperReview', ctx: seated })).toEqual([
-			{ where: { paperVersionId: { in: [] } } },
+			{ where: { anonymousAs: { isNull: true }, paperVersionId: { in: [] } } },
+			{
+				columns: { reviewerId: false },
+				where: { anonymousAs: { isNotNull: true }, paperVersionId: { in: [] } }
+			},
 			{ where: NOTHING }
 		]);
 	});
