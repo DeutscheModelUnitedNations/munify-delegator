@@ -132,7 +132,7 @@ The cards under **Quick Links** on the participants' dashboard, such as **Fee Pa
 - **Messages between participants and team**: unlocks the [messages](./communication#messages). Switched off, existing chats stay readable, but nobody writes anything new.
 
 :::tip Release first, then the paperwork
-**Participation fee unlocked** and **Postal registration unlocked** only become due once the assignment is released. If you allow payments before that, saving offers no emails. They then wait on the [Emails](./communication#emails) page until you send them after the release.
+**Participation fee unlocked** and **Postal registration unlocked** only become due once the assignment is released. If you allow payments before that, saving offers no emails. After the release they go out with the next automatic run if the kind is set to automatic. Otherwise they wait on the [Emails](./communication#emails) page until you send them.
 :::
 
 ### School rules {#school-rules}

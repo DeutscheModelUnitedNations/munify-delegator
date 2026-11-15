@@ -51,7 +51,7 @@ Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Tei
 - Gremien und Plätze einzelner Delegierter
 - den Zeitplan mit Tagen, Tracks, Einträgen und Orten
 - Umfragen und ihre Optionen
-- [Ankündigungen](./communication#announcements): schreiben, ändern, duplizieren, veröffentlichen, zurückziehen und erneut per E-Mail verschicken. Entwürfe legt er frei an, alles andere zeigt er erst als Vorschau. Löschen geht nur im Team-Bereich.
+- [Ankündigungen](./communication#announcements): schreiben, ändern, duplizieren, veröffentlichen, zurückziehen und erneut per E-Mail verschicken. Entwürfe anlegen und duplizieren geht ohne Rückfrage. Ändern, Veröffentlichen, Zurückziehen und erneutes Verschicken laufen erst über eine Vorschau. Löschen geht nur im Team-Bereich.
 - Status von Teilnehmenden, ihre Schule, Zahlungen und Einträge der Warteliste
 - Entscheidungen über mögliche doppelte Konten
 - die Einstellungen der Konferenz
@@ -60,7 +60,7 @@ Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Tei
 Eine Ansicht filtert, sortiert und gruppiert ein Assistent nur nach Spalten ohne personenbezogene Daten, persönliche Ansichten speichert er nicht. Notizen und andere Texte über Personen schreibt ein Assistent nicht, die bleiben im Team-Bereich. Die Zuteilung übernehmen oder freigeben kann er nicht, das geht nur auf der Seite [Zuteilung](./assignment#finish-and-release).
 
 :::warning Erst Vorschau, dann ausführen
-Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören der Konferenzstatus, der Kalender für Teilnehmende, die Nachrichten zwischen Teilnehmenden und Team, das Freischalten von Zahlungen, der postalischen Anmeldung und der Papiereinreichung, Status von Teilnehmenden wie Zahlung, Dokumente und Anwesenheit, der Status von Zahlungen, die Anwesenheit aller auf einmal und das Verteilen einer Umfrage. Der Assistent bekommt zuerst eine Vorschau und muss den Aufruf ausdrücklich bestätigen. Ein guter Assistent fragt dich vorher. Bestätige nur, was du selbst so tun würdest.
+Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören der Konferenzstatus, der Kalender für Teilnehmende, die Nachrichten zwischen Teilnehmenden und Team, das Freischalten von Zahlungen, der postalischen Anmeldung und der Papiereinreichung, Status von Teilnehmenden wie Zahlung, Dokumente und Anwesenheit, der Status von Zahlungen, die Anwesenheit aller auf einmal und das Verteilen einer Umfrage. Ohne ausdrückliche Bestätigung im Aufruf ändert DELEGATOR nichts und antwortet nur mit einer Vorschau. Die Bestätigung setzt der Assistent selbst. Ob er dich vorher fragt, liegt also an ihm. Ein guter Assistent tut das. Bestätige nur, was du selbst so tun würdest.
 :::
 
 ## Das Protokoll {#the-log}
