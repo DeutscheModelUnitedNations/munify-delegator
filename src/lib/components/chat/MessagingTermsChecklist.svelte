@@ -70,6 +70,8 @@
 	let ticked = $state<string[]>([]);
 	let saving = $state(false);
 	const headers: Record<string, HTMLButtonElement> = {};
+	/** Where the statements are, which take the focus once the last section is confirmed. */
+	let statements = $state<HTMLElement>();
 
 	const allRead = $derived(allSectionsConfirmed({ keys, done }));
 	const allTicked = $derived(
@@ -85,7 +87,9 @@
 		done = next.done;
 		open = next.open;
 		await tick();
+		// the confirmed section's panel closes with the focused button in it, so focus moves on
 		if (next.open) headers[next.open]?.focus();
+		else statements?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
 	}
 
 	function setTicked(key: string, checked: boolean) {
@@ -156,7 +160,7 @@
 	</ol>
 
 	{#if asking}
-		<div class="bg-base-200 rounded-box flex flex-col gap-3 p-4">
+		<div class="bg-base-200 rounded-box flex flex-col gap-3 p-4" bind:this={statements}>
 			<p class="flex items-center gap-2 text-sm" aria-live="polite" data-testid="chat-terms-status">
 				<i
 					aria-hidden="true"

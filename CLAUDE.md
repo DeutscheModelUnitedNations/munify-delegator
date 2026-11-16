@@ -1391,7 +1391,7 @@ bun run preview
   (`assertAcceptedTerms`); the composer then shows `MessagingTermsModal`, and
   `acceptMessagingTerms` takes the version, revision and hash the reader was shown and every
   confirmation (INVALID_INPUT otherwise) and adds a row to `messaging_terms_acceptance` (version,
-  revision, locale, hash, confirmations; once for every conference; never changed). An acceptance
+  revision, locale, hash, confirmations; one per account, for every conference; never changed). An acceptance
   holds for the current version with every confirmation it asks for (`acceptanceHolds`). The team
   writes without. **Raise `version` (in a new file, keeping the old one) when the terms change in
   meaning**, and everybody is asked again; raise `revision` for wording only. `terms/revisions.json`

@@ -94,6 +94,8 @@ test('a delegate finds another by country and committee and writes to them', asy
 		await sections.nth(index).getByTestId('chat-terms-understood').click();
 	}
 	await expect(terms).toContainText('7 von 7 gelesen');
+	// the last confirmation closes its section, so the focus moves on to the statements
+	await expect(page.getByTestId('chat-terms-confirm').first()).toBeFocused();
 	// only then the statements can be ticked, and only both together agree
 	const statements = page.getByTestId('chat-terms-confirm');
 	await expect(statements).toHaveCount(2);
