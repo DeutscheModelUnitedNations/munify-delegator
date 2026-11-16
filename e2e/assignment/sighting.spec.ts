@@ -113,9 +113,11 @@ test('the sighting seeks, filters and searches in the backend', async ({ page })
 	await page.getByLabel(/status/i).selectOption('all');
 	await expect(position).toHaveText(/^\d+ (von|of) \d+$/);
 
-	// the codename finds the application, and picking it brings it back to the deck
+	// the codename finds the application, and picking it brings it back to the deck. Search the
+	// whole codename: a prefix is shared by others ("Particularly Tired …" and "Particularly
+	// Dignified …"), and Enter picks whichever of them comes first.
 	const name = await heading.innerText();
-	await page.getByRole('searchbox').first().fill(name.trim().slice(0, 12));
+	await page.getByRole('searchbox').first().fill(name.trim());
 	const results = page.getByTestId('search-count');
 	await expect(results).toBeVisible({ timeout: 15_000 });
 	await page.getByRole('searchbox').first().press('Enter');
