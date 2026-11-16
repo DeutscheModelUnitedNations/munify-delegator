@@ -1,0 +1,48 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "36f87f54-b025-4798-8ee9-3e4ac2ea0c9f",
+  "prevIds": [
+    "692f352c-f101-444f-beda-ba41b505d0e7",
+    "947e380f-5ad9-4876-9bf7-ea9fb0e85f76"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "chat",
+        "team_archived_at"
+      ],
+      "writes": [
+        "s|col|public.chat.team_archived_at",
+        "n|col|public.chat.team_archived_at",
+        "e|col|public.chat.team_archived_at"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "team_archived_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import {
 	assertDelegationMember,
 	assertHoldsInbox,
 	assertAcceptedTerms,
+	assertAnswersInboxOfChat,
 	assertPartyOfChat,
 	assertTakesPartInChat,
 	assertWritingParticipant,
@@ -38,11 +39,13 @@ import {
 	openTeamChat,
 	sameInbox,
 	sendMessage,
+	setChatArchived,
 	setChatBlocked,
 	setMessageNotificationEmails,
 	setMessagingSuspended,
 	unreadCount,
 	personOfParticipant,
+	earlierReportCount,
 	trustedUserIdOf,
 	userNameOf,
 	type ChatRow,
@@ -139,7 +142,11 @@ const ChatPerson = schemaBuilder.simpleObject('ChatPerson', {
 	fields: (t) => ({
 		participantId: t.id(),
 		userId: t.id(),
-		name: t.string()
+		name: t.string(),
+		earlierReports: t.int({
+			description:
+				'How many settled reports there are about chats this person takes part in, not counting their own.'
+		})
 	})
 });
 
@@ -147,17 +154,61 @@ async function sideOf({ ctx, chat }: { ctx: ApiContext; chat: ChatRow }) {
 	return chatSide({ ctx, facts: await callerFacts(ctx), chat });
 }
 
-/** The participants of the chat other than the caller, as contacts. */
+/**
+ * The seated people of a chat: its one or two parties, or, for a delegation's group, everybody of
+ * the delegation.
+ */
+async function seatedPeopleOf(chat: ChatRow) {
+	const contacts = await conferenceContacts(chat.conferenceId);
+	if (chat.kind === 'DELEGATION') {
+		return [...contacts.values()].filter((contact) => contact.delegationId === chat.delegationId);
+	}
+	return [chat.participantId, chat.otherParticipantId].flatMap((participantId) => {
+		const contact = participantId ? contacts.get(participantId) : undefined;
+		return contact ? [contact] : [];
+	});
+}
+
+/**
+ * The participants of the chat other than the caller, as contacts. The members of a delegation's
+ * group are listed for participant care only: the members know each other anyway.
+ */
 async function contactsOfChat({ ctx, chat }: { ctx: ApiContext; chat: ChatRow }) {
 	const facts = await callerFacts(ctx);
-	const own = new Set(facts.participants.map((participant) => participant.id));
-	const contacts = await conferenceContacts(chat.conferenceId);
 	const exposeAccount = knowsPeopleOf({ ctx, facts, chat });
-	return [chat.participantId, chat.otherParticipantId].flatMap((participantId) => {
-		if (!participantId || own.has(participantId)) return [];
-		const contact = contacts.get(participantId);
-		return contact ? [{ ...contact, exposeAccount }] : [];
-	});
+	if (chat.kind === 'DELEGATION' && !exposeAccount) return [];
+	const own = new Set(facts.participants.map((participant) => participant.id));
+	return (await seatedPeopleOf(chat))
+		.filter((contact) => !own.has(contact.participantId))
+		.map((contact) => ({ ...contact, exposeAccount }));
+}
+
+/** Who the people of a chat are, for participant care: name, account and the reports before. */
+async function peopleOfChat(chat: ChatRow) {
+	const seated = await seatedPeopleOf(chat);
+	// a party who lost their seat is still a party of a direct or team chat
+	const unseated = [chat.participantId, chat.otherParticipantId].flatMap((id) =>
+		id && !seated.some((contact) => contact.participantId === id) ? [id] : []
+	);
+	const rows = await Promise.all(
+		[
+			...seated.map((contact) => ({
+				id: contact.participantId,
+				delegationId: contact.delegationId
+			})),
+			...unseated.map((id) => ({ id, delegationId: null }))
+		].map(async ({ id, delegationId }) => {
+			const person = await personOfParticipant(id);
+			if (!person?.name) return undefined;
+			const earlierReports = await earlierReportCount({
+				participantId: id,
+				userId: person.userId,
+				delegationId
+			});
+			return { ...person, name: person.name, earlierReports };
+		})
+	);
+	return rows.flatMap((row) => (row ? [row] : []));
 }
 
 const ChatRef = object({
@@ -171,7 +222,7 @@ const ChatRef = object({
 		contacts: t.field({
 			type: [ChatContact],
 			description:
-				'The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties for participant care. Empty for a delegation group and for someone who holds no seat (any more).',
+				'The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties, or every member of a delegation group, for participant care. Empty for a member of a delegation group and for someone who holds no seat (any more).',
 			resolve: (chat, _args, ctx) => contactsOfChat({ ctx, chat })
 		}),
 		people: t.field({
@@ -181,11 +232,7 @@ const ChatRef = object({
 			resolve: async (chat, _args, ctx) => {
 				const facts = await callerFacts(ctx);
 				if (!knowsPeopleOf({ ctx, facts, chat })) return [];
-				const participantIds = [chat.participantId, chat.otherParticipantId].flatMap((id) =>
-					id ? [id] : []
-				);
-				const people = await Promise.all(participantIds.map(personOfParticipant));
-				return people.flatMap((person) => (person?.name ? [{ ...person, name: person.name }] : []));
+				return peopleOfChat(chat);
 			}
 		}),
 		// the account of a trusted person is theirs alone; everybody else gets the name
@@ -204,6 +251,21 @@ const ChatRef = object({
 				'The full name of the one trusted person the chat is with; null for a chat with all of them and for every other chat.',
 			resolve: async (chat) =>
 				chat.trustedUserId ? ((await userNameOf(chat.trustedUserId)) ?? null) : null
+		}),
+		// what an inbox files is the inbox's own business: the participant is not told
+		teamArchivedAt: t.field({
+			type: 'DateTime',
+			nullable: true,
+			description:
+				'A team chat: when its inbox put it away into the archive, for whoever answers the inbox (null for everybody else). The next message empties it.',
+			resolve: async (chat, _args, ctx) =>
+				(await sideOf({ ctx, chat })) === 'TEAM' ? chat.teamArchivedAt : null
+		}),
+		archived: t.boolean({
+			description:
+				'Whether the chat is in the archive of its inbox, for whoever answers the inbox (false for everybody else): put away until the next message.',
+			resolve: async (chat, _args, ctx) =>
+				chat.teamArchivedAt !== null && (await sideOf({ ctx, chat })) === 'TEAM'
 		}),
 		unreadCount: t.int({
 			description: 'How many messages the caller (or, for a team chat, their inbox) has not read.',
@@ -529,6 +591,21 @@ schemaBuilder.mutationFields((t) => ({
 			const { chat, side, userId } = await readableChat({ ctx, id: args.chatId });
 			if (side === 'REVIEW') return false;
 			await markChatRead({ chat, side, userId });
+			return true;
+		}
+	}),
+
+	setChatArchived: t.field({
+		description:
+			'Puts a team chat away into the archive of its inbox, or takes it out again, for everybody holding the inbox. Archiving reads the chat; the next message brings it back. For whoever answers the inbox (FORBIDDEN otherwise, NOT_FOUND for a chat they cannot read).',
+		type: 'Boolean',
+		args: {
+			chatId: t.arg.id({ required: true }),
+			archived: t.arg.boolean({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const { chat } = await assertAnswersInboxOfChat({ ctx, id: args.chatId });
+			await setChatArchived({ chat, archived: args.archived });
 			return true;
 		}
 	}),

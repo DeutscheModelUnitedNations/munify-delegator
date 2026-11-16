@@ -51,6 +51,7 @@ Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Tei
 - Gremien und Plätze einzelner Delegierter
 - den Zeitplan mit Tagen, Tracks, Einträgen und Orten
 - Umfragen und ihre Optionen
+- [Ankündigungen](./communication#announcements): schreiben, ändern, duplizieren, veröffentlichen, zurückziehen und erneut per E-Mail verschicken. Entwürfe anlegen und duplizieren geht ohne Rückfrage. Ändern, Veröffentlichen, Zurückziehen und erneutes Verschicken laufen erst über eine Vorschau. Löschen geht nur im Team-Bereich.
 - Status von Teilnehmenden, ihre Schule, Zahlungen und Einträge der Warteliste
 - Entscheidungen über mögliche doppelte Konten
 - die Einstellungen der Konferenz
@@ -59,11 +60,11 @@ Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Tei
 Eine Ansicht filtert, sortiert und gruppiert ein Assistent nur nach Spalten ohne personenbezogene Daten, persönliche Ansichten speichert er nicht. Notizen und andere Texte über Personen schreibt ein Assistent nicht, die bleiben im Team-Bereich. Die Zuteilung übernehmen oder freigeben kann er nicht, das geht nur auf der Seite [Zuteilung](./assignment#finish-and-release).
 
 :::warning Erst Vorschau, dann ausführen
-Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören der Konferenzstatus, der Kalender für Teilnehmende, die Nachrichten zwischen Teilnehmenden und Team, das Freischalten von Zahlungen, der postalischen Anmeldung und der Papiereinreichung, Status von Teilnehmenden wie Zahlung, Dokumente und Anwesenheit, der Status von Zahlungen, die Anwesenheit aller auf einmal und das Verteilen einer Umfrage. Der Assistent bekommt zuerst eine Vorschau und muss den Aufruf ausdrücklich bestätigen. Ein guter Assistent fragt dich vorher. Bestätige nur, was du selbst so tun würdest.
+Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören der Konferenzstatus, der Kalender für Teilnehmende, die Nachrichten zwischen Teilnehmenden und Team, das Freischalten von Zahlungen, der postalischen Anmeldung und der Papiereinreichung, Status von Teilnehmenden wie Zahlung, Dokumente und Anwesenheit, der Status von Zahlungen, die Anwesenheit aller auf einmal und das Verteilen einer Umfrage. Ohne ausdrückliche Bestätigung im Aufruf ändert DELEGATOR nichts und antwortet nur mit einer Vorschau. Die Bestätigung setzt der Assistent selbst. Ob er dich vorher fragt, liegt also an ihm. Ein guter Assistent tut das. Bestätige nur, was du selbst so tun würdest.
 :::
 
 ## Das Protokoll {#the-log}
 
 Unter **Protokoll** steht jeder Aufruf eines Assistenten zu dieser Konferenz, die neuesten 200 zuerst: **Zeitpunkt**, **Person**, **Werkzeug**, **Ergebnis** (**Ausgeführt**, **Abgelehnt** oder **Fehler**) und **Details** mit den Angaben des Aufrufs. Neue Aufrufe erscheinen ohne Neuladen. Auch eine Vorschau steht dort, als **Ausgeführt**.
 
-**Abgelehnt** heißt, dass DELEGATOR den Aufruf verweigert hat, etwa weil der Assistent nach geschwärzten Angaben filtern wollte, eine Eingabe ungültig war oder die Rollen der Person nicht reichten. **Fehler** heißt, dass etwas Unerwartetes schiefging. Fragen, die keine Konferenz betreffen, etwa welche Konferenzen erreichbar sind, stehen nicht im Protokoll. Versucht jemand ohne Platz im Team oder bei ausgeschaltetem Schalter, die Konferenz zu erreichen, lehnt DELEGATOR das ab, ohne es hier einzutragen.
+**Abgelehnt** heißt, dass DELEGATOR den Aufruf verweigert hat, etwa weil der Assistent nach geschwärzten Angaben filtern wollte, eine Eingabe ungültig war oder die Rollen der Person nicht reichten. **Fehler** heißt, dass etwas Unerwartetes schiefging. Fragen, die keine Konferenz betreffen, etwa welche Konferenzen erreichbar sind, stehen nicht im Protokoll. Versucht jemand ohne Platz im Team, der nicht Administrator\*in des Systems ist, oder irgendjemand bei ausgeschaltetem Schalter, die Konferenz zu erreichen, lehnt DELEGATOR das ab, ohne es hier einzutragen.

@@ -106,7 +106,7 @@ Mit der Freigabe siehst du, wen du vertrittst. So sieht das Dashboard einer Dele
 - **Schnellzugriff:** Karten zu allem, was jetzt zu tun ist. Karten mit **!** brauchen noch etwas von dir. Ausgegraute Karten hat das Team noch nicht freigeschaltet.
 - **Persönlicher Status:** deine formellen Schritte: **Bewerbung**, **Beitragszahlung**, **Verbindliche Anmeldung**, bei Minderjährigen die **Einwilligung der Erziehungsberechtigten**, die **Einwilligung Bildnutzung** und offene Umfragen. Ohne alle diese Schritte kannst du nicht teilnehmen. Jeder Schritt ist **Erledigt**, **Ausstehend**, **Problem** oder **Noch nicht freigeschaltet**. Ausstehend bleibt er, bis die Teilnehmendenbetreuung ihn abgehakt hat. Bei **Problem** wende dich an die Teilnehmendenbetreuung, wenn sie sich nicht schon bei dir gemeldet hat.
 - **Delegationsstatus:** das Land oder der nichtstaatliche Akteur eurer Delegation, die Gremien, in denen ihr sitzt, die Zahl der Mitglieder und der Delegationsname.
-- **Delegationsmitglieder:** jedes Mitglied mit Gremium, Zahlungs- und Anmeldestatus.
+- **Delegationsmitglieder:** jedes Mitglied mit Gremium, E-Mail-Adresse, Zahlungs- und Anmeldestatus. So erreicht ihr euch auch außerhalb der App.
 - **Betreuer\*innen:** eure Betreuenden, auch jetzt noch zum Verbinden.
 - **Informationen zu deinem Land** oder **Informationen zu deinem nichtstaatlichen Akteur**.
 
@@ -212,7 +212,7 @@ Chats mit anderen Delegierten und die Delegationsgruppe gibt es erst, wenn die R
 Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Unter der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
 
 :::tip Wenn etwas nicht in Ordnung ist
-Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
+Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Lies sie bis zum Ende, erst dann kannst du unten zustimmen. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
 
 Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
 

@@ -25,7 +25,8 @@ export interface ThreadChat {
 
 /**
  * Whether a message stands on the caller's side of the thread (the right): the inbox's for the
- * team, their own for a participant. Reviewing, the chat's first participant is on the left.
+ * team, their own for a participant. Reviewing, the chat's first participant is on the left, and
+ * in a delegation's group, which has no sides, everybody is.
  */
 export function standsOnOwnSide({
 	message,
@@ -38,7 +39,7 @@ export function standsOnOwnSide({
 }) {
 	if (side === 'TEAM') return message.fromTeam;
 	if (side === 'PARTICIPANT') return message.mine;
-	return message.authorParticipantId !== chat.participantId;
+	return chat.kind !== 'DELEGATION' && message.authorParticipantId !== chat.participantId;
 }
 
 /** The function a team member writes under: their inbox, a trusted person as just that. */
@@ -141,4 +142,19 @@ export function firstUnreadId({
 	if (side === 'REVIEW' || unreadCount <= 0) return undefined;
 	const others = messages.filter((message) => !standsOnOwnSide({ message, side, chat }));
 	return others.at(-unreadCount)?.id ?? others.at(0)?.id;
+}
+
+/**
+ * Where a report falls into a thread: the first message written after it, before which the
+ * "reported" line stands. Undefined when nothing was written since: the line then closes the thread.
+ */
+export function firstMessageAfter({
+	messages,
+	at
+}: {
+	messages: readonly { id: string; createdAt: Date | string }[];
+	at: Date | string;
+}) {
+	const moment = new Date(at).getTime();
+	return messages.find((message) => new Date(message.createdAt).getTime() > moment)?.id;
 }

@@ -52,7 +52,7 @@ Clicking a row opens the person's [user card](#user-card).
 
 ## The user card {#user-card}
 
-The user card brings together everything the conference knows about a person. It opens as a side panel when you click a person in the participants table, the waiting list, on the **Seats** page, on a school's page or in the command palette (Ctrl+K). The address in the browser then names the person, so a copied link opens the same card. **Open in new tab** shows the card as a page of its own, the **Participant File**.
+The user card brings together everything the conference knows about a person. It opens as a side panel when you click a person in the participants table, the waiting list, on the **Seats** page, on a school's page, under **Team Members**, on a payment reference, in the sighting or in the command palette (Ctrl+K). A click anywhere in the row is enough. Inside the card, too, the rows of the delegation members, the supervisors and the supervised students open their card, and a row under **Papers** opens the paper. The address in the browser then names the person, so a copied link opens the same card. **Open in new tab** shows the card as a page of its own, the **Participant File**.
 
 If the person is not part of the conference shown, a note at the top says that the data belongs to their account and not to this conference.
 

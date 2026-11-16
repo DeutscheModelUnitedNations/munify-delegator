@@ -35,7 +35,7 @@
 <button
 	type="button"
 	class={[
-		'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+		'flex w-full items-center gap-3 rounded-box px-3 py-2.5 text-left transition-colors',
 		selected ? 'bg-primary/10' : 'hover:bg-base-200'
 	]}
 	aria-current={selected ? 'true' : undefined}
@@ -63,6 +63,12 @@
 			>
 				{chat.lastMessagePreview ?? ''}
 			</span>
+			{#if chat.archived}
+				<span class="badge badge-ghost badge-sm shrink-0 gap-1">
+					<i aria-hidden="true" class="ph-duotone ph-archive"></i>
+					{m.chatArchived()}
+				</span>
+			{/if}
 			{#if badge === 'reported'}
 				<span class="badge badge-warning badge-sm shrink-0">{m.chatReported()}</span>
 			{:else if badge}

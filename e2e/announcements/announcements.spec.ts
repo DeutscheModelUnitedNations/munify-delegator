@@ -21,14 +21,25 @@ const titles = fixture.announcements;
 
 const URGENT = 'Der Shuttlebus fällt heute aus';
 
+/** The extra people's browsers of the running test, closed when it ends. */
+const opened: import('@playwright/test').BrowserContext[] = [];
+
 async function signedIn(
 	browser: import('@playwright/test').Browser,
 	{ id, startUrl }: { id: string; startUrl: string }
 ) {
-	const page = await (await browser.newContext()).newPage();
+	const context = await browser.newContext();
+	opened.push(context);
+	const page = await context.newPage();
 	await loginAs(page, fixedTestUser(id, fixture.claims(id)), { startUrl });
 	return page;
 }
+
+// Every open page holds its live queries' connections to the server. Left open, the pages of the
+// earlier tests pile up until a later one no longer gets its answers.
+test.afterEach(async () => {
+	await Promise.all(opened.splice(0).map((context) => context.close()));
+});
 
 const cards = (page: Page) => page.getByTestId('announcement-card');
 const card = (page: Page, title: string) => cards(page).filter({ hasText: title });
@@ -84,8 +95,10 @@ test('everybody gets their own feed, and somebody without a part none', async ({
 	const feedOf = async (id: string) => feedTitles(await signedIn(browser, { id, startUrl: FEED }));
 
 	expect(await feedOf(bert.id)).toEqual([titles.welcome.title]);
-	expect(await feedOf(supervisor.id)).toEqual([titles.welcome.title, titles.supervisors.title]);
-	expect(await feedOf(waiting.id)).toEqual([titles.welcome.title]);
+	// the seats are released: "everyone" is whoever holds one. A supervisor without a seated
+	// student and somebody still waiting only get what names them
+	expect(await feedOf(supervisor.id)).toEqual([titles.supervisors.title]);
+	expect(await feedOf(waiting.id)).toEqual([]);
 	// the team is in no participant audience, only in its own
 	expect(await feedOf(member.id)).toEqual([titles.team.title]);
 
@@ -107,9 +120,9 @@ test('the team lists every announcement with its state and how many it reaches',
 	await expect(stateOf(titles.scheduled.title)).toHaveText('Geplant');
 	await expect(stateOf(titles.expired.title)).toHaveText('Abgelaufen');
 
-	// Anna, Bert, Carla, the supervisor and the waiting list; Anna read none of it but the GV one
+	// Anna, Bert and Carla, who hold seats; Anna read none of it but the GV one
 	await expect(row(page, titles.welcome.title).getByTestId('announcement-reach')).toHaveText(
-		'gelesen von 0 von 5'
+		'gelesen von 0 von 3'
 	);
 	await expect(row(page, titles.gv.title).getByTestId('announcement-reach')).toHaveText(
 		'gelesen von 1 von 2'

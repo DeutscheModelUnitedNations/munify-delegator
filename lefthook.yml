@@ -21,8 +21,11 @@ pre-commit:
       skip:
         - merge
         - rebase
-# The same checks as the CI jobs, over the whole repo rather than the pushed files: a commit made
-# with --no-verify is caught by the next push instead of by CI.
+# The same checks as the CI jobs, made cheap for a push: each one either looks only at the files
+# the push changes, or keeps a local cache and redoes only what changed since its last run. CI
+# checks the whole repo again without any of it, so whatever a shortcut misses (a prettier or
+# eslint upgrade reformatting files nobody touched, say) is caught there. All caches are
+# gitignored and safe to delete: .eslintcache, .svelte-kit/.svelte-check, node_modules/.vitest-cache.
 pre-push:
   parallel: true
   # Nothing to check when the branch has no commits its remote lacks, such as a push of a tag
@@ -31,13 +34,20 @@ pre-push:
     - run: git diff --quiet '@{push}' HEAD
   commands:
     test:
-      # vitest, like CI — bun's own runner cannot resolve SvelteKit's aliases and virtual modules
-      run: bun run test
+      # vitest, like CI — bun's own runner cannot resolve SvelteKit's aliases and virtual modules.
+      # `--sinceLastRun` runs the tests whose recorded dependencies changed since they last ran,
+      # and those that failed then; the first run records and runs everything.
+      run: bunx vitest run --sinceLastRun
     lint:
-      run: bunx eslint . --cache --cache-strategy content
+      # Only the pushed files (skipped when there are none to lint), and of those only the ones
+      # whose content the cache has not seen pass yet.
+      glob: '*.{js,cjs,mjs,ts,svelte}'
+      run: bunx eslint --cache --cache-strategy content --no-warn-ignored {push_files}
     format:
-      run: bun run format:check
+      run: bunx prettier --check --ignore-unknown {push_files}
     typecheck:
+      # Types cross files, so this stays the whole project; `check` is incremental
+      # (svelte-check's and TypeScript's build info under .svelte-kit/.svelte-check).
       run: bun run check
     i18n:
       run: bun run i18n:check

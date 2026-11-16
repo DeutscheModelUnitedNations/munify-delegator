@@ -35,9 +35,9 @@ async function write(page: Page, text: string) {
 	await expect(page.getByTestId('chat-input')).toHaveValue('');
 }
 
-/** A chip narrowing the team's chat list to one of the inboxes the caller answers. */
+/** An inbox the caller answers, in the team menu: it narrows the chat list to that inbox. */
 const inboxChip = (page: Page, name: string) =>
-	page.getByRole('group', { name: 'Postfächer' }).getByRole('button', { name });
+	page.getByTestId('team-inbox-menu').getByRole('link', { name });
 
 const openChat = (page: Page, title: string | RegExp) =>
 	page.getByTestId('chat-list').getByRole('button', { name: title }).click();
@@ -72,6 +72,11 @@ test('a delegate finds another by country and committee and writes to them', asy
 	const terms = page.getByRole('dialog', { name: 'Nutzungsbedingungen der Nachrichten' });
 	await expect(terms).toContainText('Wer deine Nachrichten lesen kann');
 	await expect(terms).toContainText('Vertrauenspersonen');
+	// they open at their beginning, under a note saying where to agree
+	const text = page.getByTestId('chat-terms-text');
+	await expect(terms).toContainText('Lies sie bis zum Ende');
+	await expect(text).toBeFocused();
+	expect(await text.evaluate((region) => region.scrollTop)).toBe(0);
 	await expect(page.getByTestId('chat-message')).toHaveCount(0);
 	// nothing goes out without her agreement, and her text is kept
 	await expect(page.getByTestId('chat-terms-accept')).toBeDisabled();
@@ -80,6 +85,9 @@ test('a delegate finds another by country and committee and writes to them', asy
 	await expect(page.getByTestId('chat-message')).toHaveCount(0);
 
 	await page.getByTestId('chat-send').click();
+	// only who scrolled through them can agree
+	await expect(page.getByTestId('chat-terms-agree')).toBeDisabled();
+	await text.evaluate((region) => region.scrollTo({ top: region.scrollHeight }));
 	await page.getByTestId('chat-terms-agree').check();
 	await page.getByTestId('chat-terms-accept').click();
 	await expect(
@@ -159,6 +167,53 @@ test('a question to a team inbox is answered under the function and name', async
 	);
 });
 
+test('an answered chat is archived and comes back with the next message', async ({ browser }) => {
+	const reviewerPage = await signedIn(browser, { id: reviewer.id, startUrl: TEAM_MESSAGES });
+	const list = reviewerPage.getByTestId('chat-list');
+	await openChat(reviewerPage, /Deutschland · MSGV/);
+
+	// archiving closes the chat and takes it out of the list
+	await reviewerPage.getByTestId('chat-archive').click();
+	await expect(reviewerPage.getByTestId('chat-thread')).toBeHidden();
+	await expect(list).toBeHidden();
+	await expect(reviewerPage.getByText('Erledigte Chats findest du im Archiv.')).toBeVisible();
+
+	// the archive is hidden until it is asked for
+	const toggle = reviewerPage.getByTestId('chat-archive-toggle');
+	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+	await expect(toggle).toContainText('1');
+	await toggle.click();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+	const archived = list.getByRole('button', { name: /Deutschland · MSGV/ });
+	await expect(archived).toContainText('Archiviert');
+	await toggle.click();
+	await expect(list).toBeHidden();
+
+	// the participant's next message brings it back, live
+	const annaPage = await signedIn(browser, { id: anna.id, startUrl: MESSAGES });
+	await openChat(annaPage, 'Gremienberatung · MSGV');
+	await write(annaPage, 'Und wie viele Quellen?');
+	const back = list.getByRole('button', { name: /Deutschland · MSGV/ });
+	await expect(back).toBeVisible();
+	await expect(back).not.toContainText('Archiviert');
+	await expect(toggle).toBeHidden();
+
+	// it can also be taken out of the archive by hand
+	await back.click();
+	const button = reviewerPage.getByTestId('chat-archive');
+	await button.click();
+	await toggle.click();
+	await list.getByRole('button', { name: /Deutschland · MSGV/ }).click();
+	await expect(button).toHaveAttribute('aria-pressed', 'true');
+	await button.click();
+	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	await expect(list.getByRole('button', { name: /Deutschland · MSGV/ })).not.toContainText(
+		'Archiviert'
+	);
+
+	for (const page of [reviewerPage, annaPage]) await page.context().close();
+});
+
 test('a reviewer writes to a paper’s author from the paper', async ({ browser }) => {
 	const reviewerPage = await signedIn(browser, {
 		id: reviewer.id,
@@ -198,24 +253,39 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 	await expect(carlaPage.getByText('Gemeldet. Die Teilnehmendenbetreuung')).toBeVisible();
 
 	const carePage = await signedIn(browser, { id: care.id, startUrl: TEAM_MESSAGES });
-	await carePage.getByRole('tab', { name: 'Meldungen (1)' }).click();
+	// participant care starts at the overview of what it answers: its inbox and the reports
+	const overview = carePage.getByTestId('team-inbox-overview');
+	await expect(overview.getByTestId('team-inbox-card')).toContainText('Teilnehmendenbetreuung');
+	await expect(overview.getByTestId('team-reports-card')).toContainText('1 gemeldete Chats warten');
+	await overview.getByTestId('team-reports-card').click();
 	const report = carePage.getByTestId('chat-reports').getByRole('listitem');
+	await expect(report).toContainText('Frankreich · MSGV');
 	await expect(report).toContainText('Bitte schaut euch das an.');
-	await expect(report).toContainText(`Gemeldet von ${carla.given} ${carla.family}`);
 	await carePage.getByTestId('chat-report-open').click();
+
+	// the case file beside the chat: the report, and both people by name and role
+	const file = carePage.getByTestId('chat-case-file');
+	await expect(file.getByTestId('chat-case-report')).toContainText(
+		`Gemeldet von ${carla.given} ${carla.family}`
+	);
+	const people = file.getByTestId('chat-case-people').getByRole('listitem');
+	await expect(people).toHaveCount(2);
+	await expect(people.filter({ hasText: `${carla.given} ${carla.family}` })).toContainText(
+		'hat gemeldet'
+	);
 
 	// participant care reads along, with the names, and cannot write
 	const thread = carePage.getByTestId('chat-thread');
 	await expect(thread).toContainText('Du liest diesen Chat, weil er gemeldet wurde.');
 	await expect(thread).toContainText(`${anna.given} ${anna.family}`);
 	await expect(thread.getByTestId('chat-message')).toContainText(['Hallo aus Deutschland']);
+	await expect(thread.getByTestId('chat-reported-divider')).toContainText('Gemeldet');
 	await expect(carePage.getByTestId('chat-input')).toHaveCount(0);
 	await expect(carePage.getByTestId('chat-refusal')).toBeVisible();
 
 	// suspending Germany's delegate closes her chats with other participants
-	const suspendAnna = thread
-		.getByRole('listitem')
-		.filter({ hasText: 'Deutschland · MSGV' })
+	const suspendAnna = people
+		.filter({ hasText: `${anna.given} ${anna.family}` })
 		.getByTestId('chat-suspend');
 	await suspendAnna.click();
 	await expect(suspendAnna).toHaveText('Sperre aufheben');
@@ -228,8 +298,12 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 
 	await suspendAnna.click();
 	await expect(suspendAnna).toHaveText('Für Chats sperren');
+	// settling it with a note closes the case; the note stays with the settled reports
+	await carePage.getByTestId('chat-case-note').fill('Mit beiden gesprochen.');
 	await carePage.getByTestId('chat-report-resolve').click();
 	await expect(carePage.getByTestId('chat-no-reports')).toBeVisible();
+	await carePage.getByText('Erledigte Meldungen (1)').click();
+	await expect(carePage.getByText('Mit beiden gesprochen.')).toBeVisible();
 });
 
 test('project management hands out a committee function, which opens an inbox', async ({
@@ -300,6 +374,9 @@ test('a participant writes to one trusted person in confidence', async ({ browse
 	await expect(answer).toContainText(`Vertrauensperson · ${tessaName}`);
 
 	const theoPage = await signedIn(browser, { id: theo.id, startUrl: TEAM_MESSAGES });
+	// a trusted person answers two inboxes, so the page starts at their overview
+	await expect(theoPage.getByTestId('team-inbox-card')).toHaveCount(2);
+	await inboxChip(theoPage, 'An mich persönlich').click();
 	await expect(theoPage.getByTestId('chat-workspace')).toBeVisible();
 	await expect(theoPage.getByText('In diesem Postfach ist noch nichts angekommen.')).toBeVisible();
 });
@@ -324,7 +401,7 @@ test('project management makes a team member a trusted person', async ({ browser
 	await trusted.check();
 
 	// the member answers the shared inbox and their own now
-	await expect(memberPage.getByTestId('chat-workspace')).toBeVisible();
+	await expect(memberPage.getByTestId('team-inbox-card')).toHaveCount(2);
 	await expect(inboxChip(memberPage, 'Vertrauenspersonen')).toBeVisible();
 	await expect(inboxChip(memberPage, 'An mich persönlich')).toBeVisible();
 

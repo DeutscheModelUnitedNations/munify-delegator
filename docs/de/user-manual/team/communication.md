@@ -45,7 +45,7 @@ Unter **Zielgruppe** fügst du Gruppen über die Auswahlfelder hinzu. Wer zu min
 - **Umfrage-Antwort hinzufügen …**: alle, die in einer Umfrage diese Antwort gewählt haben.
 - **Team hinzufügen …**: das **Ganze Team** oder alle mit einer Teamrolle. Das Team erreichst du nur über diese Auswahl, nie über die anderen Gruppen.
 
-**Alle Teilnehmenden** umfasst Delegierte, Einzelteilnehmende, Betreuende und alle, die noch auf der Warteliste stehen. Minderjährig und volljährig zählen am ersten Konferenztag. Wer kein Geburtsdatum hinterlegt hat, gehört zu keiner der beiden Gruppen.
+**Alle Teilnehmenden** sind während der Anmeldung alle Angemeldeten und die Warteliste. Ab der Vorbereitungsphase mit freigegebener Zuteilung sind es nur noch alle mit Platz und ihre Betreuenden. Wer keinen Platz bekommen hat oder noch wartet, erreichst du dann über **Bewerber\*innen ohne Platz** und **Warteliste**. Minderjährig und volljährig zählen am ersten Konferenztag. Wer kein Geburtsdatum hinterlegt hat, gehört zu keiner der beiden Gruppen.
 
 Unter der Auswahl steht, wie viele Personen die Zielgruppe gerade erreicht, aufgeteilt nach Delegierten, Einzelteilnehmenden, Betreuenden, Warteliste und Team. Die Zahl ändert sich mit den Anmeldungen. Wer später zur Zielgruppe stößt, sieht die Ankündigung ab dann auch.
 
@@ -109,7 +109,7 @@ Das Team antwortet aus Postfächern, die es gemeinsam betreut. Alle, die ein Pos
 Funktionen vergeben **Projektleitung** und **Teamkoordinator\*in** auf der Seite [Teammanagement](./overview#team-management). Das Hammer-Symbol **Funktionen** in der Zeile einer Person öffnet **Funktionen von …**: Dort kreuzt du je Gremium **Vorsitz** und **Gremienberatung** an oder machst die Person zur **Vertrauensperson** der ganzen Konferenz. Wer kein Postfach betreut, sieht auf der Seite **Nachrichten** nur einen Hinweis darauf.
 
 :::note Vertrauenspersonen
-Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
+Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Einzige Ausnahme ist die [Stellvertretung](./overview#impersonation): Wer stellvertretend für eine teilnehmende Person handelt, sieht deren Chats wie sie selbst, auch die mit den Vertrauenspersonen. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
 :::
 
 ### Wer wem schreiben kann
@@ -128,7 +128,11 @@ Vor ihrer ersten Nachricht stimmen Teilnehmende den **Nutzungsbedingungen der Na
 
 ### Antworten und neue Chats
 
-Auf der Seite **Nachrichten** stehen links die Chats deiner Postfächer, rechts der geöffnete Chat. Betreust du mehrere Postfächer, filterst du die Liste über die Postfach-Knöpfe, jeweils mit der Zahl ungelesener Nachrichten. Liest jemand aus dem Postfach einen Chat, gilt er für alle im Postfach als gelesen.
+Betreust du mehrere Postfächer, klappt **Nachrichten** in der Navigation auf. Darunter stehen die **Übersicht** und jedes Postfach mit der Zahl ungelesener Nachrichten. Die Postfächer eines Gremiums sind unter dem Gremium zusammengefasst. Die **Übersicht** zeigt alle deine Postfächer als Karten. Betreust du nur eines, öffnet **Nachrichten** direkt dessen Chats.
+
+Im Postfach stehen links die Chats, rechts der geöffnete Chat. Liest jemand aus dem Postfach einen Chat, gilt er für alle im Postfach als gelesen.
+
+Einen erledigten Chat legst du mit **Archivieren** oben im Chat ab. Er verschwindet für alle, die das Postfach betreuen, aus der Liste. Mit der nächsten Nachricht kommt er von selbst zurück. Der Knopf **Archiv** über der Liste blendet die archivierten Chats ein. Dort holst du einen Chat mit **Aus dem Archiv holen** auch von Hand zurück. Teilnehmende erfahren nicht, dass ihr Chat archiviert ist.
 
 Teilnehmende siehst du in der Liste mit ihrer Rolle. Die Teilnehmendenbetreuung sieht im Chat auch den Namen und öffnet von dort die [Teilnehmendenkarte](./participants#user-card). Wer ein Gremienpostfach betreut, sieht nur die Rolle.
 
@@ -140,13 +144,15 @@ Im [Papier-Hub](./paper-hub) schreibst du die Verfasser\*innen eines Papiers dir
 
 ### Meldungen und Sperren
 
-Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats mit dem Team lassen sich nicht melden. Für die Teilnehmendenbetreuung und die Projektleitung hat die Seite **Nachrichten** dafür neben **Postfächer** den Reiter **Meldungen**:
+Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats mit dem Team lassen sich nicht melden. Die Teilnehmendenbetreuung und die Projektleitung finden gemeldete Chats unter **Meldungen** in der Navigation und in der **Übersicht**:
 
-1. Jede offene Meldung zeigt den Grund und wer gemeldet hat. **Chat lesen** öffnet den Chat. Ein Hinweis darüber sagt, dass du ihn wegen einer Meldung liest, und nennt die beteiligten Personen mit Rolle und Namen. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
-2. **Für Chats sperren** an einer Person nimmt sie aus allen Chats mit anderen Teilnehmenden dieser Konferenz. Sie erreicht das Team weiterhin, und das Team erreicht sie. **Sperre aufheben** macht das rückgängig.
-3. **Erledigt** schließt die Meldung. Ist keine Meldung des Chats mehr offen, ist er wieder privat und die Teilnehmendenbetreuung liest ihn nicht mehr.
+1. Links stehen die offenen Fälle, der älteste zuerst. Mehrere Meldungen zu einem Chat sind ein Fall.
+2. Wählst du einen Fall, liest du in der Mitte den Chat mit Namen. Eine Linie zeigt, wann er gemeldet wurde. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
+3. Rechts steht die **Fallakte** mit den Meldungen und den **Beteiligten**, bei einer Delegationsgruppe mit allen Mitgliedern. Bei jeder Person siehst du frühere erledigte Meldungen zu ihren Chats, schreibst ihr oder öffnest ihre [Teilnehmendenkarte](./participants#user-card).
+4. **Für Chats sperren** nimmt eine Person aus allen Chats mit anderen Teilnehmenden dieser Konferenz. Sie erreicht das Team weiterhin, und das Team erreicht sie. **Sperre aufheben** macht das rückgängig.
+5. Halte unter **Interne Notiz** fest, was besprochen und entschieden wurde, und schließe mit **Erledigen** alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat und die Teilnehmendenbetreuung liest ihn nicht mehr. Eine Sperre bleibt, bis du sie aufhebst.
 
-Erledigte Meldungen stehen eingeklappt unter **Erledigte Meldungen**.
+Erledigte Meldungen stehen mit ihrer Notiz eingeklappt unter **Erledigte Meldungen**. Die Notiz liest nur das Team.
 
 ### Benachrichtigungen
 

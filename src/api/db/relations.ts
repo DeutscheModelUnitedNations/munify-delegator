@@ -546,7 +546,8 @@ export const relations = defineRelations(schema, (r) => ({
 		reviewer: r.one.user({
 			from: r.paperReview.reviewerId,
 			to: r.user.id,
-			optional: false
+			// masked for the author of an anonymous review (`anonymousAs`)
+			optional: true
 		})
 	},
 	paperVersion: {

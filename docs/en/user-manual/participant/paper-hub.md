@@ -22,7 +22,7 @@ At the top you choose between the views that apply to you:
 Which papers you can write depends on your delegation's role:
 
 - **Position paper:** describes the stance of your state or non-state actor on an agenda item. Every delegation writes position papers.
-- **Working paper:** a proposal for a resolution that you would like the committee to adopt. Delegations representing a state write working papers.
+- **Working paper:** a proposal for a resolution that you would like the committee to adopt. Every delegation writes working papers.
 - **Introduction paper:** introduces your non-state actor, its topics and its stance on the United Nations. It belongs to no agenda item. Only non-state actors write one.
 
 If your delegation represents a state, you write only on the agenda items of your own committee. A non-state actor sits in no committee and chooses from every agenda item of the conference.
@@ -47,7 +47,7 @@ The team decides by when papers should be submitted and tells you. DELEGATOR its
 3. Write the text in the editor. Below the editor, DELEGATOR counts words, characters and paragraphs and estimates the reading time.
 4. Click **Save draft** to continue later, or **Submit paper** to hand it to the team. You then return to the overview.
 
-Without an agenda item or without text, DELEGATOR saves nothing and tells you what is missing.
+Without text DELEGATOR saves nothing, and for position and working papers not without an agenda item either. It tells you what is missing.
 
 :::tip Nothing gets lost
 While you write a new paper, your browser keeps the text every second. If you close the tab by accident, DELEGATOR asks the next time under **Unsaved Draft Found** whether you want to **Restore Draft** or **Start Fresh**. This only works in the same browser and for seven days.
@@ -55,11 +55,11 @@ While you write a new paper, your browser keeps the text every second. If you cl
 
 ### Working papers in the resolution editor {#working-papers}
 
-You write a working paper in the resolution editor. It sets the resolution's header itself: the conference, the committee, the agenda item and your delegation. Below it you add **Preamble Clauses** and **Operative Clauses**, operative clauses with sub-clauses too. **Phrase Lookup** helps you find suitable opening phrases. You may ignore the **Unknown opening phrase** warning when your wording follows the style of UN resolutions. **Show Preview** shows the resolution as it will look in print.
+You write a working paper in the resolution editor. It sets the resolution's header itself: the conference, the committee, the agenda item and your delegation. For a non-state actor it names the committee of the chosen agenda item. Below it you add **Preamble Clauses** and **Operative Clauses**, operative clauses with sub-clauses too. **Phrase Lookup** helps you find suitable opening phrases. You may ignore the **Unknown opening phrase** warning when your wording follows the style of UN resolutions. **Show Preview** shows the resolution as it will look in print.
 
 ## Draft or submit {#drafts-and-submitting}
 
-A **draft** is yours alone. Nobody else in your delegation sees it, and the team does not review it. The team only reads a paper once it is submitted.
+A **draft** is yours alone. Nobody else in your delegation sees it. The team can read it, but only reviews it once it is submitted.
 
 This is how you continue working on an existing paper:
 
@@ -100,12 +100,12 @@ This is how you revise a paper after feedback:
 You can still resubmit an accepted paper. It is then **Revised** again until the team reviews it once more.
 
 :::note An email for every review
-For every review the conference can send the email **New feedback on “…”**, showing the new status and a **View feedback** button. The team decides whether and when it is sent, so rely on the Paper Hub. If you reply to the email, your reply reaches the person who wrote the review.
+For every review the conference can send the email **New feedback on “…”**, showing the new status and a **View feedback** button. The team decides whether and when it is sent, so rely on the Paper Hub. If you reply to the email, your reply reaches the person who wrote the review. If it says **Secretariat** or **Research Service** instead of a name, you cannot reply to the email. Write through the [messages](./dashboard#messages) instead.
 :::
 
 ## Versions and history {#history}
 
-**History** lists every saved version and every review, newest first. For each version you see how much was added and removed. For each review you see who wrote it, the status before and after, and the comments.
+**History** lists every saved version and every review, newest first. For each version you see how much was added and removed. For each review you see who wrote it (or **Secretariat** or **Research Service** when the team published it anonymously), the status before and after, and the comments.
 
 To compare two versions, click **Compare with another version** on one version, then on a second one. A window shows the differences.
 

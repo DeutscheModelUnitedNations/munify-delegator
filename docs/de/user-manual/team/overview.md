@@ -141,9 +141,8 @@ Auf der Seite **Teammanagement** stellen die **Projektleitung** und die **Teamko
 
 **Teammitglieder** ist eine Tabelle wie die anderen großen Tabellen, mit Suche, Filtern, Gruppieren, Export und gespeicherten Ansichten (siehe [Tabellen](#tables)). Sie zeigt **Nachname**, **Vorname**, **E-Mail**, **Rolle** und **Profil** (**Vollständig** oder **Unvollständig**, wenn die Person ihre Profildaten noch nicht ausgefüllt hat). **Telefon** und **Im Team seit** blendest du bei Bedarf über die Spalten ein.
 
-Am Ende jeder Zeile stehen:
+Ein Klick auf eine Zeile öffnet die Teilnehmendenkarte der Person. Am Ende jeder Zeile stehen:
 
-- **Teilnehmendenkartei**: öffnet die Teilnehmendenkarte der Person.
 - **Funktionen**: öffnet ihre [Funktionen](#functions).
 - **Stellvertretung**: nur für Administrator\*innen, siehe [Stellvertretung](#impersonation).
 - **Löschen**: nimmt die Person aus dem Team.

@@ -54,19 +54,21 @@ function assertReviewable({ paper }: { paper: Awaited<ReturnType<typeof fetchPap
 
 /**
  * Records a reviewer's verdict on a paper's latest version and gives the paper and the version
- * that status. Refuses (CONFLICT) a paper that is still a draft. Returns the review's id and the
+ * that status; with `anonymousAs` the author reads that team name instead of the reviewer's. Refuses (CONFLICT) a paper that is still a draft. Returns the review's id and the
  * flag piece the review uncovered (`flagPieces.ts`), if it was the first for one.
  */
 export async function createPaperReview({
 	paperId,
 	comments,
 	verdict,
-	reviewerId
+	reviewerId,
+	anonymousAs
 }: {
 	paperId: string;
 	comments: (typeof schema.paperReview.$inferInsert)['comments'];
 	verdict: z.output<typeof reviewVerdictSchema>;
 	reviewerId: string;
+	anonymousAs: (typeof schema.paperReview.$inferInsert)['anonymousAs'];
 }) {
 	const { versionId, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview({ tx, paperId });
@@ -80,7 +82,8 @@ export async function createPaperReview({
 				paperVersionId: latestVersion.id,
 				reviewerId,
 				statusBefore: paper.status,
-				statusAfter: verdict
+				statusAfter: verdict,
+				anonymousAs
 			})
 			.returning({ id: schema.paperReview.id })
 			.then(assertFirstEntryExists);

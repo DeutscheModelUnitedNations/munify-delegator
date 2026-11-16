@@ -54,11 +54,11 @@
 		label={m.teamManagement()}
 		exportName="team"
 		selectable
-		actionsWidth={170}
+		actionsWidth={135}
+		onRowClick={(row) => openUserCard(row.userId)}
 	>
 		{#snippet actions(row)}
 			<TeamMemberActions
-				onOpenUserCard={() => openUserCard(row.userId)}
 				onFunctions={() => {
 					functionsOf = { id: row.id, name: `${row.given_name} ${row.family_name}` };
 					functionsOpen = true;

@@ -51,6 +51,7 @@ It can change much of what the team's pages change, with one tool for each actio
 - the committees and seats of individual delegates
 - the schedule with its days, tracks, entries and places
 - surveys and their options
+- [announcements](./communication#announcements): writing, changing, duplicating, publishing, taking back and mailing again. Creating and duplicating drafts needs no confirmation. Changing, publishing, taking back and mailing again go through a preview first. Deleting stays in the team area.
 - participant statuses, their school, payments and waiting list entries
 - decisions about possible duplicate accounts
 - the conference's settings
@@ -59,11 +60,11 @@ It can change much of what the team's pages change, with one tool for each actio
 An assistant filters, sorts and groups a view only by columns without personal data, and saves no personal views. An assistant does not write notes or other texts about people. Those stay in the team area. It cannot apply or release the assignment, that only happens on the [Assignment](./assignment#finish-and-release) page.
 
 :::warning Preview first, then run
-An assistant does not run right away what reaches people outside the team. That covers the conference stage, the calendar for participants, messages between participants and team, unlocking payments, postal registration or paper submission, participant statuses such as payment, documents and attendance, the status of payments, setting everybody's attendance at once, and distributing a survey. The assistant first gets a preview and has to confirm the call explicitly. A good assistant asks you before it does. Only confirm what you would do yourself.
+An assistant does not run right away what reaches people outside the team. That covers the conference stage, the calendar for participants, messages between participants and team, unlocking payments, postal registration or paper submission, participant statuses such as payment, documents and attendance, the status of payments, setting everybody's attendance at once, and distributing a survey. Without an explicit confirmation in the call DELEGATOR changes nothing and only answers with a preview. The assistant sets that confirmation itself, so whether it asks you first is up to the assistant. A good one does. Only confirm what you would do yourself.
 :::
 
 ## The log {#the-log}
 
 **Log** lists every call an assistant made about this conference, the latest 200 first: **Time**, **Person**, **Tool**, **Outcome** (**Done**, **Refused** or **Error**) and **Details** with what the call passed. New calls show up without reloading. A preview is listed too, as **Done**.
 
-**Refused** means DELEGATOR declined the call, for example because the assistant tried to filter by redacted details, an input was invalid or the person's roles were not enough. **Error** means something unexpected went wrong. Questions about no conference, such as which conferences are reachable, are not in the log. When someone not on the team, or anyone while the switch is off, tries to reach the conference, DELEGATOR refuses without an entry here.
+**Refused** means DELEGATOR declined the call, for example because the assistant tried to filter by redacted details, an input was invalid or the person's roles were not enough. **Error** means something unexpected went wrong. Questions about no conference, such as which conferences are reachable, are not in the log. When someone who is neither on the team nor a system administrator, or anyone while the switch is off, tries to reach the conference, DELEGATOR refuses without an entry here.

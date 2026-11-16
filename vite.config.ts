@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { sentrySvelteKit } from '@sentry/sveltekit/vite';
+import { sentryVitePlugin } from '@sentry/bundler-plugins/vite';
 import { oidcMock } from 'oidc-mock/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath } from 'node:url';
@@ -83,8 +84,23 @@ const unitTestOptions = {
 	css: { include: [/corporate-identity\/dist\/.*\.css/] }
 };
 
+/**
+ * Gives every built script a debug id, the key Bugsink finds its sourcemap by (CI uploads them
+ * from the image, `.github/workflows/ci.yml`). It has to happen inside the build: adapter-node
+ * records each asset's size and compresses it afterwards, and a script that grew later was served
+ * cut off at the recorded length (v2.1.27). Nothing is uploaded or reported from here.
+ */
+function debugIds(): Plugin[] {
+	return sentryVitePlugin({
+		telemetry: false,
+		sourcemaps: { disable: 'disable-upload' },
+		release: { inject: false, create: false, finalize: false }
+	}).map((plugin) => ({ ...plugin, apply: 'build' }) as Plugin);
+}
+
 export default defineConfig({
 	plugins: [
+		debugIds(),
 		externalOpenTelemetryApi(),
 		sentrySvelteKit({
 			autoUploadSourceMaps: false, // We upload manually via CI to Bugsink

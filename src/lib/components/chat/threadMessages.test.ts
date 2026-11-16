@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	bubblesOf,
+	firstMessageAfter,
 	firstUnreadId,
 	messageAuthor,
 	standsOnOwnSide,
@@ -167,5 +168,30 @@ describe('firstUnreadId', () => {
 		expect(
 			firstUnreadId({ messages: [], side: 'TEAM', chat: teamChat, unreadCount: 2 })
 		).toBeUndefined();
+	});
+});
+
+describe('a reviewed delegation group', () => {
+	test('has no sides: everybody stands on the left', () => {
+		const chat = { kind: 'DELEGATION' as const, participantId: null, contacts: [] };
+		const message = { id: 'm', mine: false, fromTeam: false, authorParticipantId: 'p1' };
+		expect(standsOnOwnSide({ message, side: 'REVIEW', chat })).toBe(false);
+	});
+});
+
+describe('firstMessageAfter', () => {
+	const messages = [
+		{ id: 'a', createdAt: '2026-11-12T21:00:00Z' },
+		{ id: 'b', createdAt: '2026-11-12T21:30:00Z' }
+	];
+
+	test('names the first message written after the moment', () => {
+		expect(firstMessageAfter({ messages, at: '2026-11-12T21:20:00Z' })).toBe('b');
+		expect(firstMessageAfter({ messages, at: '2026-11-12T20:00:00Z' })).toBe('a');
+	});
+
+	test('nothing was written since', () => {
+		expect(firstMessageAfter({ messages, at: '2026-11-12T22:00:00Z' })).toBeUndefined();
+		expect(firstMessageAfter({ messages: [], at: '2026-11-12T22:00:00Z' })).toBeUndefined();
 	});
 });

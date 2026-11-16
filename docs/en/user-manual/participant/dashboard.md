@@ -106,7 +106,7 @@ With the release you see whom you represent. This is a head delegate's dashboard
 - **Quick Links:** cards for everything there is to do now. Cards marked **!** still need something from you. Greyed out cards have not been unlocked by the team yet.
 - **Personal Status:** your formal steps: **Registration**, **Fee Payment**, **Binding Registration**, for minors the **Parental Agreement**, the **Media Usage Agreement** and open surveys. You cannot take part without all of them. Each step is **Completed**, **Pending**, **Problem** or **Not unlocked yet**. It stays pending until participant care has ticked it off. For **Problem**, contact participant care if they have not already reached out to you.
 - **Delegation Status:** the country or non-state actor your delegation represents, the committees you sit in, the number of members and the delegation name.
-- **Delegation Members:** every member with their committee, payment and registration status.
+- **Delegation Members:** every member with their committee, email address, payment and registration status, so you can reach each other outside the app too.
 - **Supervisors:** your supervisors, and you can still connect one.
 - **Information on your country** or **Information on your NSA**.
 
@@ -212,7 +212,7 @@ Chats with other delegates and the delegation group exist only once the roles ar
 When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off below the chat list at **Email about unread messages**.
 
 :::tip When something is not right
-Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
+Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. Read them to the end, only then can you agree at the bottom. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
 
 When you open a chat with unread messages, the line **New messages** shows where you left off.
 

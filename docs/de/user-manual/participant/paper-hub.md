@@ -22,7 +22,7 @@ Oben wählst du zwischen den Ansichten, die zu dir passen:
 Welche Papiere du schreiben kannst, hängt von der Rolle deiner Delegation ab:
 
 - **Positionspapier:** beschreibt die Haltung deines Staates oder deines nichtstaatlichen Akteurs zu einem Tagesordnungspunkt. Alle Delegationen schreiben Positionspapiere.
-- **Arbeitspapier:** ein Vorschlag für eine Resolution, den du im Gremium verabschiedet sehen möchtest. Arbeitspapiere schreiben Delegationen, die einen Staat vertreten.
+- **Arbeitspapier:** ein Vorschlag für eine Resolution, den du im Gremium verabschiedet sehen möchtest. Arbeitspapiere schreiben alle Delegationen.
 - **Vorstellungspapier:** stellt deinen nichtstaatlichen Akteur vor, mit seinen Themen und seiner Haltung zu den Vereinten Nationen. Es gehört zu keinem Tagesordnungspunkt. Nur nichtstaatliche Akteure schreiben es.
 
 Vertritt deine Delegation einen Staat, schreibst du nur zu den Tagesordnungspunkten deines eigenen Gremiums. Ein nichtstaatlicher Akteur sitzt in keinem Gremium und wählt aus allen Tagesordnungspunkten der Konferenz.
@@ -47,7 +47,7 @@ Bis wann Papiere eingereicht sein sollen, legt das Team fest und teilt es dir mi
 3. Schreibe den Text im Editor. Unter dem Editor zählt DELEGATOR Wörter, Zeichen und Absätze und schätzt die Lesezeit.
 4. Klicke auf **Entwurf speichern**, um später weiterzuschreiben, oder auf **Papier einreichen**, um es dem Team zu geben. Danach kommst du zurück zur Übersicht.
 
-Ohne Tagesordnungspunkt oder ohne Text speichert DELEGATOR nichts und sagt dir, was fehlt.
+Ohne Text speichert DELEGATOR nichts, bei Positions- und Arbeitspapieren auch nicht ohne Tagesordnungspunkt. Es sagt dir, was fehlt.
 
 :::tip Nichts geht verloren
 Solange du ein neues Papier schreibst, merkt sich dein Browser den Text jede Sekunde. Schließt du den Tab versehentlich, fragt DELEGATOR beim nächsten Öffnen unter **Ungespeicherter Entwurf gefunden**, ob du ihn wiederherstellen willst (**Entwurf wiederherstellen**) oder **Neu beginnen** möchtest. Das gilt nur in diesem Browser und für sieben Tage.
@@ -55,11 +55,11 @@ Solange du ein neues Papier schreibst, merkt sich dein Browser den Text jede Sek
 
 ### Arbeitspapiere im Resolutionseditor {#working-papers}
 
-Ein Arbeitspapier schreibst du im Resolutionseditor. Er setzt den Kopf der Resolution selbst: Konferenz, Gremium, Tagesordnungspunkt und deine Delegation. Darunter fügst du **Präambelabsätze** und **Operative Absätze** hinzu, operative Absätze auch mit Unterklauseln. Mit **Operatoren nachschlagen** findest du passende Einleitungswörter. Die Warnung **Unbekannter Operator** darfst du übergehen, wenn deine Formulierung dem Stil von UN-Resolutionen entspricht. **Vorschau anzeigen** zeigt die Resolution, wie sie gedruckt aussieht.
+Ein Arbeitspapier schreibst du im Resolutionseditor. Er setzt den Kopf der Resolution selbst: Konferenz, Gremium, Tagesordnungspunkt und deine Delegation. Bei einem nichtstaatlichen Akteur steht dort das Gremium des gewählten Tagesordnungspunkts. Darunter fügst du **Präambelabsätze** und **Operative Absätze** hinzu, operative Absätze auch mit Unterklauseln. Mit **Operatoren nachschlagen** findest du passende Einleitungswörter. Die Warnung **Unbekannter Operator** darfst du übergehen, wenn deine Formulierung dem Stil von UN-Resolutionen entspricht. **Vorschau anzeigen** zeigt die Resolution, wie sie gedruckt aussieht.
 
 ## Entwurf oder einreichen {#drafts-and-submitting}
 
-Ein **Entwurf** gehört nur dir. Niemand sonst aus deiner Delegation sieht ihn, und das Team begutachtet ihn nicht. Erst ein eingereichtes Papier liest das Team.
+Ein **Entwurf** gehört nur dir. Niemand sonst aus deiner Delegation sieht ihn. Das Team kann ihn lesen, begutachtet ihn aber erst nach der Einreichung.
 
 So arbeitest du an einem bestehenden Papier weiter:
 
@@ -100,12 +100,12 @@ So überarbeitest du ein Papier nach einem Feedback:
 Auch ein akzeptiertes Papier kannst du noch aktualisieren. Es steht dann wieder auf **Überarbeitet**, bis das Team es erneut begutachtet.
 
 :::note E-Mail zu jedem Feedback
-Zu jedem Feedback kann die Konferenz die E-Mail **Neues Feedback zu „…“** mit dem neuen Status und dem Knopf **Feedback ansehen** schicken. Ob und wann sie verschickt wird, entscheidet das Team. Verlass dich deshalb auf den Papier-Hub. Antwortest du auf die Mail, erreicht deine Antwort die Person, die das Feedback geschrieben hat.
+Zu jedem Feedback kann die Konferenz die E-Mail **Neues Feedback zu „…“** mit dem neuen Status und dem Knopf **Feedback ansehen** schicken. Ob und wann sie verschickt wird, entscheidet das Team. Verlass dich deshalb auf den Papier-Hub. Antwortest du auf die Mail, erreicht deine Antwort die Person, die das Feedback geschrieben hat. Steht dort statt eines Namens **Sekretariat** oder **Wissenschaftlicher Dienst**, kannst du nicht auf die Mail antworten. Schreib dann über die [Nachrichten](./dashboard#messages).
 :::
 
 ## Versionen und Verlauf {#history}
 
-Unter **Historie** stehen alle gespeicherten Versionen und alle Feedbacks, das Neueste zuerst. Bei jeder Version siehst du, wie viel hinzugekommen und weggefallen ist. Bei jedem Feedback siehst du, wer es geschrieben hat, den Status vorher und nachher und die Kommentare.
+Unter **Historie** stehen alle gespeicherten Versionen und alle Feedbacks, das Neueste zuerst. Bei jeder Version siehst du, wie viel hinzugekommen und weggefallen ist. Bei jedem Feedback siehst du, wer es geschrieben hat (oder **Sekretariat** bzw. **Wissenschaftlicher Dienst**, wenn das Team es anonym veröffentlicht hat), den Status vorher und nachher und die Kommentare.
 
 Zwei Versionen vergleichst du so: Klicke bei einer Version auf **Mit einer anderen Version vergleichen**, dann bei einer zweiten. Ein Fenster zeigt die Unterschiede.
 

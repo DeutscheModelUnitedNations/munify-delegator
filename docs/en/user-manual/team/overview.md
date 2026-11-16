@@ -141,9 +141,8 @@ On the **Team Management** page, **Project Management** and **Team Coordinators*
 
 **Team Members** is a table like the other big tables, with search, filters, grouping, export and saved views (see [Tables](#tables)). It shows **Family Name**, **Given Name**, **E-mail**, **Role** and **Profile** (**Complete**, or **Incomplete** when the person has not filled in their profile yet). Show **Phone** and **On the team since** through the columns when you need them.
 
-At the end of each row are:
+A click on a row opens the person's user card. At the end of each row are:
 
-- **Participant File**: opens the person's user card.
 - **Functions**: opens their [functions](#functions).
 - **Impersonation**: for system administrators only, see [Impersonation](#impersonation).
 - **Delete**: takes the person off the team.

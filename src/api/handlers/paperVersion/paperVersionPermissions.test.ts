@@ -183,10 +183,16 @@ describe('the versions of a conference paper', () => {
 	});
 
 	test('and no review comes with them', async () => {
-		// the author's rule (no paper of their own) and the paper team's (no conference): nothing
-		expect(await grantsFor({ table: 'paperReview', ctx: seated })).toEqual([
-			{ where: { paperVersionId: { in: [] } } },
-			{ where: NOTHING }
-		]);
+		// every review rule reaches nothing: the author's (no paper of their own, anonymous reviews
+		// or not) and the paper team's (no conference)
+		const grants = await grantsFor({ table: 'paperReview', ctx: seated });
+		expect(grants.length).toBeGreaterThan(0);
+		for (const grant of grants) {
+			expect(
+				grant.where === NOTHING ||
+					('paperVersionId' in grant.where &&
+						JSON.stringify(grant.where.paperVersionId) === '{"in":[]}')
+			).toBe(true);
+		}
 	});
 });

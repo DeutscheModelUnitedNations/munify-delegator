@@ -204,6 +204,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'lastMessageAt',
 			'lastParticipantMessageAt',
 			'teamReadAt',
+			'teamArchivedAt',
+			'archived',
 			'underReview',
 			'unreadCount',
 			'side',
@@ -232,7 +234,7 @@ const FIELDS: Record<string, TypeClassification> = {
 		// A sanction against a person.
 		redacted: ['suspended']
 	},
-	ChatPerson: { visible: ['participantId', 'userId'], redacted: ['name'] },
+	ChatPerson: { visible: ['participantId', 'userId', 'earlierReports'], redacted: ['name'] },
 	ChatInboxOption: {
 		visible: [
 			'inbox',
@@ -266,9 +268,10 @@ const FIELDS: Record<string, TypeClassification> = {
 			'status',
 			'resolvedAt',
 			'resolvedById',
-			'reporterUserId'
+			'reporterUserId',
+			'reporterParticipantId'
 		],
-		redacted: ['reason', 'reporterName']
+		redacted: ['reason', 'reporterName', 'resolutionNote', 'resolvedByName']
 	},
 	Teammemberinvitation: {
 		visible: [
@@ -603,6 +606,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	Paperreview: {
 		visible: [
 			'id',
+			'anonymousAs',
 			'createdAt',
 			'search_distance',
 			'paperVersionId',
