@@ -29,7 +29,7 @@
 		"@better-svelte-email/server": "^2.3.0",
 		"@bwip-js/browser": "^4.11.4",
 		"@deutschemodelunitednations/corporate-identity": "^2.1.0",
-		"@deutschemodelunitednations/docs-kit": "^0.1.2",
+		"@deutschemodelunitednations/docs-kit": "^0.2.0",
 		"@deutschemodelunitednations/munify-resolution-editor": "^0.7.0",
 		"@dipser/epc-qr-code.js": "^1.0.3",
 		"@eslint/compat": "^2.1.1",
