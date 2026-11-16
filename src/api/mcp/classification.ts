@@ -387,6 +387,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	CollectiveGroupMember: { visible: ['delegationId', 'delegationMemberId'] },
 	CollectiveGroupSchool: { visible: ['id', 'isForeignSchool', 'name'] },
+	SchoolApplicants: { visible: ['singleParticipantIds', 'size'] },
 	SeatPlanningAssignedRole: { visible: ['memberCount', 'nationAlpha3Code', 'roleId'] },
 	SeatPlanningCommitteeSeat: {
 		visible: ['committeeId', 'nationAlpha3Code'],

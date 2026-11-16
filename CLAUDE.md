@@ -1022,6 +1022,9 @@ bun run preview
     and summary warn past it. All Auslandsschulen together count against
     `conference.maxForeignGuaranteedSeatsPercent` (default 20, null for none) of the conference's
     seats (`conferenceCapacity`, every role's; `guaranteeShare`), warned about the same way.
+  - **Mixed results** (not a rule, a quiet note on the summary only): a school some of whose
+    applicants the plan seats and others not (`mixedSchoolOutcomes`, `team/assignment/finish/schoolOutcomes.ts`,
+    from the `schoolApplicants` query beside `collectiveGroups`).
   - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
     and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
     statistics (`statistics_schools`, delegation members and single participants per school) count

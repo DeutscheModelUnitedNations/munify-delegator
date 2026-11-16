@@ -5005,6 +5005,9 @@ export type Query = {
   school: (p: {
     id: ID
   }) => School,
+  schoolApplicants: (p: {
+    conferenceId: ID
+  }) => SchoolApplicants[],
   schoolMetrics: (p: {
     schoolId: ID
   }) => SchoolConferenceMetrics[],
@@ -5422,6 +5425,13 @@ export type School = {
   }) => Waitinglistentry[],
   website: String | null,
   zip: String | null    
+};
+		
+export type SchoolApplicants = {
+  members: () => CollectiveGroupMember[],
+  school: () => CollectiveGroupSchool,
+  singleParticipantIds: ID[],
+  size: Int    
 };
 		
 export type SchoolConferenceMetrics = {

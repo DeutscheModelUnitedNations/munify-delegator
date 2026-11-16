@@ -6558,6 +6558,11 @@ type Query {
   school(id: ID!): School!
 
   """
+  The conference's applicants by their own school, by school name; only schools with more than one. Not live. Participant care only (FORBIDDEN otherwise).
+  """
+  schoolApplicants(conferenceId: ID!): [SchoolApplicants!]!
+
+  """
   Per conference, how many people from the school registered, applied, got a seat and came, in every conference. NOT_FOUND unless the caller is participant care of any conference.
   """
   schoolMetrics(schoolId: ID!): [SchoolConferenceMetrics!]!
@@ -7119,6 +7124,18 @@ type School {
   waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
   website: String
   zip: String
+}
+
+"""
+The people of one school who applied, delegation members and single participants.
+"""
+type SchoolApplicants {
+  members: [CollectiveGroupMember!]!
+  school: CollectiveGroupSchool!
+  singleParticipantIds: [ID!]!
+
+  """Delegation members and single participants together."""
+  size: Int!
 }
 
 """

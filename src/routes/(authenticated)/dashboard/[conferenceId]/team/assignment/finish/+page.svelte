@@ -26,6 +26,7 @@
 	} from './seatChecks';
 	import ApplyProblems from './ApplyProblems.svelte';
 	import SeatWarnings from './SeatWarnings.svelte';
+	import SchoolOutcomeNotice from './SchoolOutcomeNotice.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';
 	import PendingSinglesTable from './PendingSinglesTable.svelte';
 	import PlanStats from './PlanStats.svelte';
@@ -160,6 +161,7 @@
 	<ApplyProblems errors={preview.errors} warnings={preview.warnings} {roleName} {customRoleName} />
 	<SeatWarnings {missingRequired} {missedPriorities} {occupancy} />
 	<SchoolRuleWarnings conferenceId={params.conferenceId} plan={view} />
+	<SchoolOutcomeNotice conferenceId={params.conferenceId} plan={view} />
 
 	<section class="card bg-base-100 border-base-200 border shadow-sm">
 		<div class="card-body gap-4 max-sm:p-4">
