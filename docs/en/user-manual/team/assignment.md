@@ -210,6 +210,7 @@ The following do not prevent applying:
 - **Applications would not get their prioritized role**: an application with a seat, but not on its prioritized wish.
 - **Every seat would be taken**: after applying, no seat would be left free.
 - **Groups are split** and **Too many guaranteed seats at schools abroad** (see [School rules](#school-rules)).
+- **Different results within schools**: a grey note, not a broken rule. Some applicants from a school would get a seat and others would not. Expanded, it shows per school how many would have a seat, and the codenames of the accepted applications and of those without a seat. Every person counts for their own school.
 
 :::tip Leave a few seats free
 A few free seats help with the unforeseen and are easy to fill from the [waiting list](./participants#waiting-list) later. Whoever moves up from the waiting list gets the email **Moved up from the waiting list** once the assignment is released.

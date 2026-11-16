@@ -1,6 +1,6 @@
 import { schemaBuilder } from '#api/rumble';
 import { assertCanReadCollectiveGroups } from './collectiveGroupPermissions';
-import { loadCollectiveGroups } from './collectiveGroupService';
+import { loadCollectiveGroups, loadSchoolApplicants } from './collectiveGroupService';
 
 const CollectiveGroupSchool = schemaBuilder.simpleObject('CollectiveGroupSchool', {
 	description: 'The school of a group decided together.',
@@ -32,7 +32,27 @@ const CollectiveGroup = schemaBuilder.simpleObject('CollectiveGroup', {
 	})
 });
 
+const SchoolApplicants = schemaBuilder.simpleObject('SchoolApplicants', {
+	description: 'The people of one school who applied, delegation members and single participants.',
+	fields: (t) => ({
+		school: t.field({ type: CollectiveGroupSchool }),
+		members: t.field({ type: [CollectiveGroupMember] }),
+		singleParticipantIds: t.idList(),
+		size: t.int({ description: 'Delegation members and single participants together.' })
+	})
+});
+
 schemaBuilder.queryFields((t) => ({
+	schoolApplicants: t.field({
+		description:
+			"The conference's applicants by their own school, by school name; only schools with more than one. Not live. Participant care only (FORBIDDEN otherwise).",
+		type: [SchoolApplicants],
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertCanReadCollectiveGroups({ ctx, conferenceId: args.conferenceId });
+			return loadSchoolApplicants(args.conferenceId);
+		}
+	}),
 	collectiveGroups: t.field({
 		description:
 			"The conference's groups decided together, by school name; none while the rule is switched off. A student with two supervisors is in two groups. Not live: ask again to see new supervisions. Participant care only (FORBIDDEN otherwise).",

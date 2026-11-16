@@ -35,8 +35,11 @@ const CREATE_PAPER = `mutation ($delegationId: ID!, $agendaItemId: ID!, $content
 const REVIEW = `mutation ($paperId: ID!, $comments: JSON!) {
 	createPaperReview(paperId: $paperId, comments: $comments, newStatus: CHANGES_REQUESTED, anonymousAs: RESEARCH_SERVICE) { reviewId }
 }`;
+const REVIEW_CUSTOM = `mutation ($paperId: ID!, $comments: JSON!, $name: String) {
+	createPaperReview(paperId: $paperId, comments: $comments, newStatus: CHANGES_REQUESTED, anonymousAs: CUSTOM, anonymousName: $name) { reviewId }
+}`;
 const HISTORY = `query ($id: ID!) {
-	paper(id: $id) { versions { reviews { id anonymousAs reviewer { id givenName familyName } } } }
+	paper(id: $id) { versions { reviews { id anonymousAs anonymousName reviewer { id givenName familyName } } } }
 }`;
 const BY_REVIEWER = `query ($id: ID!, $reviewerId: ID!) {
 	paper(id: $id) { versions { reviews(where: { reviewerId: { eq: $reviewerId } }) { id anonymousAs reviewer { id } } } }
@@ -45,7 +48,12 @@ const BY_REVIEWER = `query ($id: ID!, $reviewerId: ID!) {
 type History = {
 	paper: {
 		versions: {
-			reviews: { id: string; anonymousAs: string | null; reviewer: { id: string } | null }[];
+			reviews: {
+				id: string;
+				anonymousAs: string | null;
+				anonymousName?: string | null;
+				reviewer: { id: string } | null;
+			}[];
 		}[];
 	};
 };
@@ -86,6 +94,7 @@ test('the author of an anonymously reviewed paper never learns who reviewed it',
 	expect(authorView.find((review) => review.id === reviewId)).toEqual({
 		id: reviewId,
 		anonymousAs: 'RESEARCH_SERVICE',
+		anonymousName: null,
 		reviewer: null
 	});
 
@@ -93,4 +102,40 @@ test('the author of an anonymously reviewed paper never learns who reviewed it',
 		await gql(author, BY_REVIEWER, { id: paperId, reviewerId: E2E_PAPER_REVIEWER_ID })
 	);
 	expect(filtered).toEqual([]);
+});
+
+test('a review can go out under a name the reviewer types', async ({ browser }) => {
+	const author = await (await browser.newContext()).newPage();
+	await loginAs(author, fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
+	const created = await gql(author, CREATE_PAPER, {
+		delegationId: E2E_PAPER_DELEGATION_ID,
+		agendaItemId: E2E_AGENDA_ITEM_ID,
+		content: content('E2E custom name review paper.')
+	});
+	expect(created.errors, JSON.stringify(created)).toBeUndefined();
+	const paperId = (created.data?.createPaper as { id: string }).id;
+
+	const reviewer = await (await browser.newContext()).newPage();
+	await loginAs(reviewer, fixedTestUser(E2E_PAPER_REVIEWER_ID));
+	const comments = content('Please revise.');
+
+	// CUSTOM needs a name
+	const nameless = await gql(reviewer, REVIEW_CUSTOM, { paperId, comments, name: null });
+	expect(nameless.errors?.length).toBeGreaterThan(0);
+
+	const reviewed = await gql(reviewer, REVIEW_CUSTOM, {
+		paperId,
+		comments,
+		name: '  Vorsitz der Generalversammlung '
+	});
+	expect(reviewed.errors, JSON.stringify(reviewed)).toBeUndefined();
+	const reviewId = (reviewed.data?.createPaperReview as { reviewId: string }).reviewId;
+
+	const authorView = reviewsOf(await gql(author, HISTORY, { id: paperId }));
+	expect(authorView.find((review) => review.id === reviewId)).toEqual({
+		id: reviewId,
+		anonymousAs: 'CUSTOM',
+		anonymousName: 'Vorsitz der Generalversammlung',
+		reviewer: null
+	});
 });

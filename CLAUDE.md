@@ -1022,6 +1022,9 @@ bun run preview
     and summary warn past it. All Auslandsschulen together count against
     `conference.maxForeignGuaranteedSeatsPercent` (default 20, null for none) of the conference's
     seats (`conferenceCapacity`, every role's; `guaranteeShare`), warned about the same way.
+  - **Mixed results** (not a rule, a quiet note on the summary only): a school some of whose
+    applicants the plan seats and others not (`mixedSchoolOutcomes`, `team/assignment/finish/schoolOutcomes.ts`,
+    from the `schoolApplicants` query beside `collectiveGroups`).
   - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
     and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
     statistics (`statistics_schools`, delegation members and single participants per school) count
@@ -1869,6 +1872,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   not be - schema building fails every `instanceof` check across two copies.
 - **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
   `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
+  `bun run check` passes `--tsgo`, so svelte-check hands the type checking to TypeScript 7 too: on
+  TypeScript 6 it ran out of memory on this project. Types superforms takes (`defaults`,
+  `superForm`) are `type` aliases, not interfaces, which TypeScript 7 does not take as a
+  `Record<string, unknown>`.
 - **OpenTelemetry 3** has no `sdk-trace-node`: `#lib/tracing` builds a `TracerProvider` from
   `@opentelemetry/sdk-trace` and registers the async-hooks context manager and the W3C propagators
   itself, which `NodeTracerProvider.register()` used to do. The server (`src/instrumentation.server.ts`)

@@ -1,5 +1,10 @@
 import { enum_, object, schemaBuilder } from '#api/rumble';
-import { createPaperReview, reviewVerdictSchema } from './paperReviewService';
+import {
+	createPaperReview,
+	reviewAnonymityArgsSchema,
+	reviewAnonymousNameSchema,
+	reviewVerdictSchema
+} from './paperReviewService';
 import { assertCanReviewPaper, registerPaperReviewAbilities } from './paperReviewPermissions';
 
 registerPaperReviewAbilities();
@@ -55,9 +60,16 @@ schemaBuilder.mutationFields((t) => ({
 				type: anonymousAsEnum,
 				required: false,
 				description:
-					"Publishes the review under this team name: its author reads it instead of the reviewer's. Left out, the review carries the reviewer's name."
-			})
+					"Publishes the review under this name: its author reads it instead of the reviewer's. CUSTOM takes the name from `anonymousName`. Left out, the review carries the reviewer's name."
+			}),
+			anonymousName: t.arg
+				.string({
+					required: false,
+					description: 'The name to publish under, with `anonymousAs: CUSTOM` and only with it.'
+				})
+				.validate(reviewAnonymousNameSchema)
 		},
+		validate: reviewAnonymityArgsSchema,
 		resolve: async (_root, args, ctx) => {
 			const { reviewerId } = await assertCanReviewPaper({ ctx, paperId: args.paperId });
 			return createPaperReview({
@@ -65,7 +77,8 @@ schemaBuilder.mutationFields((t) => ({
 				comments: args.comments,
 				verdict: args.newStatus,
 				reviewerId,
-				anonymousAs: args.anonymousAs ?? null
+				anonymousAs: args.anonymousAs ?? null,
+				anonymousName: args.anonymousName ?? null
 			});
 		}
 	})

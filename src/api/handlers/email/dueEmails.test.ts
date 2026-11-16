@@ -353,6 +353,7 @@ describe('paper reviews', () => {
 		agendaItem: null,
 		reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
 		anonymousAs: null,
+		anonymousName: null,
 		statusAfter: 'CHANGES_REQUESTED'
 	});
 

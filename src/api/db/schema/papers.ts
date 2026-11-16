@@ -6,8 +6,10 @@ import {
 	jsonb,
 	integer,
 	index,
-	uniqueIndex
+	uniqueIndex,
+	check
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { defaultIdAndCreatedAt, defaultIdAndTimestamps } from './helpers';
 import { fileRef } from './storedFile';
 import { userRef } from './users';
@@ -78,24 +80,37 @@ export const paperVersion = snakeCase.table(
 	]
 );
 
-/** The team name a review is published under instead of the reviewer's own. */
+/** The name a review is published under instead of the reviewer's own; `CUSTOM` is `anonymousName`. */
 export const paperReviewAnonymousAs = pgEnum('paper_review_anonymous_as', [
 	'SECRETARIAT',
-	'RESEARCH_SERVICE'
+	'RESEARCH_SERVICE',
+	'CUSTOM'
 ]);
 
-export const paperReview = snakeCase.table('paper_review', {
-	...defaultIdAndCreatedAt,
-	comments: jsonb().notNull(),
-	reviewerId: userRef('restrict'),
-	paperVersionId: text()
-		.notNull()
-		.references(() => paperVersion.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	statusAfter: paperStatus(),
-	statusBefore: paperStatus(),
-	/** Set, the author reads this team name instead of the reviewer's (`reviewerId` is masked). */
-	anonymousAs: paperReviewAnonymousAs()
-});
+export const paperReview = snakeCase.table(
+	'paper_review',
+	{
+		...defaultIdAndCreatedAt,
+		comments: jsonb().notNull(),
+		reviewerId: userRef('restrict'),
+		paperVersionId: text()
+			.notNull()
+			.references(() => paperVersion.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		statusAfter: paperStatus(),
+		statusBefore: paperStatus(),
+		/** Set, the author reads this name instead of the reviewer's (`reviewerId` is masked). */
+		anonymousAs: paperReviewAnonymousAs(),
+		/** The name the reviewer typed, exactly when `anonymousAs` is `CUSTOM`. */
+		anonymousName: text()
+	},
+	(table) => [
+		// compared as text: a value added to the enum cannot be used in the migration adding it
+		check(
+			'paper_review_anonymous_name_iff_custom',
+			sql`(${table.anonymousAs}::text is not distinct from 'CUSTOM') = (${table.anonymousName} is not null)`
+		)
+	]
+);
 
 export const reviewerSnippet = snakeCase.table(
 	'reviewer_snippet',

@@ -393,6 +393,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	CollectiveGroupMember: { visible: ['delegationId', 'delegationMemberId'] },
 	CollectiveGroupSchool: { visible: ['id', 'isForeignSchool', 'name'] },
+	SchoolApplicants: { visible: ['singleParticipantIds', 'size'] },
 	SeatPlanningAssignedRole: { visible: ['memberCount', 'nationAlpha3Code', 'roleId'] },
 	SeatPlanningCommitteeSeat: {
 		visible: ['committeeId', 'nationAlpha3Code'],
@@ -639,8 +640,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'statusAfter',
 			'statusBefore'
 		],
-		// What a reviewer wrote to a participant.
-		redacted: ['comments']
+		// What a reviewer wrote to a participant, and the name they signed with (may be a person's).
+		redacted: ['comments', 'anonymousName']
 	},
 	Reviewersnippet: {
 		visible: [...ROW, 'name', 'userId'],

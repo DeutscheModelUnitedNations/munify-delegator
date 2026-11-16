@@ -64,6 +64,7 @@ describe('reviewPart', () => {
 				id: 'r1',
 				statusAfter: 'ACCEPTED',
 				anonymousAs: null,
+				anonymousName: null,
 				reviewer,
 				paperVersion: { paper }
 			})
@@ -76,6 +77,7 @@ describe('reviewPart', () => {
 				agendaItem: 'GV: Klimaschutz',
 				reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
 				anonymousAs: null,
+				anonymousName: null,
 				statusAfter: 'ACCEPTED'
 			}
 		]);
@@ -86,6 +88,7 @@ describe('reviewPart', () => {
 			id: 'r1',
 			statusAfter: null,
 			anonymousAs: null,
+			anonymousName: null,
 			reviewer: null,
 			paperVersion: { paper: { ...paper, agendaItem: null } }
 		});
@@ -98,6 +101,7 @@ describe('reviewPart', () => {
 			id: 'r1',
 			statusAfter: 'ACCEPTED',
 			anonymousAs: 'SECRETARIAT',
+			anonymousName: null,
 			reviewer,
 			paperVersion: { paper }
 		});
@@ -111,6 +115,7 @@ describe('reviewPart', () => {
 				id: 'r1',
 				statusAfter: 'ACCEPTED',
 				anonymousAs: null,
+				anonymousName: null,
 				reviewer,
 				paperVersion: { paper: { ...paper, authorParticipantId: null } }
 			})
@@ -120,6 +125,7 @@ describe('reviewPart', () => {
 				id: 'r1',
 				statusAfter: 'ACCEPTED',
 				anonymousAs: null,
+				anonymousName: null,
 				reviewer,
 				paperVersion: null
 			})

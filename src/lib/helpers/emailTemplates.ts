@@ -8,12 +8,13 @@ import type { Locale } from '#lib/paraglide/runtime';
  * and the e-mail page, which edits it per conference (`conference_email_text`), so the editor
  * starts from the very text that would be sent. The greeting and the button are not part of it.
  */
-export interface EmailText {
+// a type, not an interface: superforms takes it as a `Record<string, unknown>`
+export type EmailText = {
 	subject: string;
 	heading: string;
 	/** Paragraphs separated by a blank line; `{list}` alone in a paragraph places the kind's list. */
 	body: string;
-}
+};
 
 export type EmailPlaceholder =
 	| 'name'

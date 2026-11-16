@@ -5,7 +5,7 @@ import { schoolRows } from './conferenceAggregates';
 import { findSimilarSchools, suggestionKey } from './similarSchools';
 import { eq } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
-import { joinMemberSchool } from '#api/handlers/school/memberSchool';
+import { joinMemberSchool, joinSingleParticipantSchool } from '#api/handlers/school/memberSchool';
 
 /**
  * The people of applied registrations the caller may read (`readableSchoolRegistrations`), each
@@ -28,19 +28,16 @@ export async function loadSchoolRegistrations(readable: ReadableSchoolRegistrati
 				)
 				.$dynamic()
 		).where(readable.delegations),
-		db
-			.select({
-				id: schema.singleParticipant.id,
-				participantId: schema.conferenceParticipant.id,
-				school
-			})
-			.from(schema.singleParticipant)
-			.innerJoin(
-				schema.conferenceParticipant,
-				eq(schema.conferenceParticipant.id, schema.singleParticipant.conferenceParticipantId)
-			)
-			.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId))
-			.where(readable.singleParticipants)
+		joinSingleParticipantSchool(
+			db
+				.select({
+					id: schema.singleParticipant.id,
+					participantId: schema.conferenceParticipant.id,
+					school
+				})
+				.from(schema.singleParticipant)
+				.$dynamic()
+		).where(readable.singleParticipants)
 	]);
 	return { members, singleParticipants };
 }

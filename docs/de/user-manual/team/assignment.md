@@ -210,6 +210,7 @@ Die folgenden Hinweise verhindern die Übernahme nicht:
 - **Bewerbungen bekämen nicht ihre priorisierte Rolle**: eine Bewerbung mit Platz, aber nicht auf ihrem priorisierten Wunsch.
 - **Alle Plätze wären vergeben**: Nach der Übernahme wäre kein Platz mehr frei.
 - **Gruppen werden geteilt** und **Zu viele garantierte Plätze an Auslandsschulen** (siehe [Schulregeln](#school-rules)).
+- **Unterschiedliche Ergebnisse innerhalb von Schulen**: ein grauer Hinweis, kein Regelverstoß. Von einer Schule bekämen manche Bewerbende einen Platz und andere nicht. Aufgeklappt nennt er je Schule, wie viele einen Platz hätten, und die Codenamen der angenommenen Bewerbungen und derer ohne Platz. Gezählt wird jede Person nach ihrer eigenen Schule.
 
 :::tip Ein paar Plätze frei lassen
 Ein paar freie Plätze helfen bei Unvorhergesehenem und lassen sich später über die [Warteliste](./participants#waiting-list) füllen. Wer von der Warteliste nachrückt, bekommt nach der Freigabe die E-Mail **Von der Warteliste nachgerückt**.

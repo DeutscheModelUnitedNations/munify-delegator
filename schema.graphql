@@ -3981,9 +3981,14 @@ type Mutation {
   """
   createPaperReview(
     """
-    Publishes the review under this team name: its author reads it instead of the reviewer's. Left out, the review carries the reviewer's name.
+    Publishes the review under this name: its author reads it instead of the reviewer's. CUSTOM takes the name from `anonymousName`. Left out, the review carries the reviewer's name.
     """
     anonymousAs: PaperreviewanonymousasEnum
+
+    """
+    The name to publish under, with `anonymousAs: CUSTOM` and only with it.
+    """
+    anonymousName: String
     comments: JSON!
 
     """The verdict: ACCEPTED or CHANGES_REQUESTED."""
@@ -5548,6 +5553,7 @@ input PaperWhereInputArgument {
 
 type Paperreview {
   anonymousAs: PaperreviewanonymousasEnum
+  anonymousName: String
   comments: JSON!
   createdAt: DateTime!
   id: ID!
@@ -5570,6 +5576,7 @@ type Paperreview {
 
 input PaperreviewOrderInputArgument {
   anonymousAs: SortingParameter
+  anonymousName: SortingParameter
   comments: SortingParameter
   createdAt: SortingParameter
   id: SortingParameter
@@ -5581,6 +5588,7 @@ input PaperreviewOrderInputArgument {
 
 """A column of paperReview the search can look at"""
 enum PaperreviewSearchFieldEnum {
+  anonymousName
   id
   paperVersionId
   reviewerId
@@ -5602,6 +5610,7 @@ input PaperreviewWhereInputArgument {
   NOT: PaperreviewWhereInputArgument
   OR: [PaperreviewWhereInputArgument!]
   anonymousAs: PaperreviewanonymousasEnum
+  anonymousName: StringWhereInputArgument
   comments: JSONWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
@@ -5614,6 +5623,7 @@ input PaperreviewWhereInputArgument {
 }
 
 enum PaperreviewanonymousasEnum {
+  CUSTOM
   RESEARCH_SERVICE
   SECRETARIAT
 }
@@ -6602,6 +6612,11 @@ type Query {
   school(id: ID!): School!
 
   """
+  The conference's applicants by their own school, by school name; only schools with more than one. Not live. Participant care only (FORBIDDEN otherwise).
+  """
+  schoolApplicants(conferenceId: ID!): [SchoolApplicants!]!
+
+  """
   Per conference, how many people from the school registered, applied, got a seat and came, in every conference. NOT_FOUND unless the caller is participant care of any conference.
   """
   schoolMetrics(schoolId: ID!): [SchoolConferenceMetrics!]!
@@ -7163,6 +7178,18 @@ type School {
   waitingListEntries(limit: Int, offset: Int, orderBy: WaitinglistentryOrderInputArgument, search: WaitinglistentrySearchInputArgument, where: WaitinglistentryWhereInputArgument): [Waitinglistentry!]!
   website: String
   zip: String
+}
+
+"""
+The people of one school who applied, delegation members and single participants.
+"""
+type SchoolApplicants {
+  members: [CollectiveGroupMember!]!
+  school: CollectiveGroupSchool!
+  singleParticipantIds: [ID!]!
+
+  """Delegation members and single participants together."""
+  size: Int!
 }
 
 """

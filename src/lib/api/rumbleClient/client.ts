@@ -3190,6 +3190,7 @@ export type Mutation = {
   }) => Paper,
   createPaperReview: (p: {
     anonymousAs?: PaperreviewanonymousasEnum | null | undefined,
+    anonymousName?: String | null | undefined,
     comments: JSON,
     newStatus: PaperstatusEnum,
     paperId: ID
@@ -4160,6 +4161,7 @@ export type PaperWhereInputArgument = {
 		
 export type Paperreview = {
   anonymousAs: PaperreviewanonymousasEnum | null,
+  anonymousName: String | null,
   comments: JSON,
   createdAt: DateTime,
   id: ID,
@@ -4180,6 +4182,7 @@ export type Paperreview = {
 		
 export type PaperreviewOrderInputArgument = {
   anonymousAs?: SortingParameter | null | undefined,
+  anonymousName?: SortingParameter | null | undefined,
   comments?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
@@ -4189,7 +4192,7 @@ export type PaperreviewOrderInputArgument = {
   statusBefore?: SortingParameter | null | undefined    
 };
 		
-export type PaperreviewSearchFieldEnum = "id" | "paperVersionId" | "reviewerId";
+export type PaperreviewSearchFieldEnum = "anonymousName" | "id" | "paperVersionId" | "reviewerId";
 		
 export type PaperreviewSearchInputArgument = {
   fields?: PaperreviewSearchFieldEnum[] | undefined,
@@ -4201,6 +4204,7 @@ export type PaperreviewWhereInputArgument = {
   NOT?: PaperreviewWhereInputArgument | null | undefined,
   OR?: PaperreviewWhereInputArgument[] | undefined,
   anonymousAs?: PaperreviewanonymousasEnum | null | undefined,
+  anonymousName?: StringWhereInputArgument | null | undefined,
   comments?: JSONWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
@@ -4212,7 +4216,7 @@ export type PaperreviewWhereInputArgument = {
   statusBefore?: PaperstatusEnum | null | undefined    
 };
 		
-export type PaperreviewanonymousasEnum = "RESEARCH_SERVICE" | "SECRETARIAT";
+export type PaperreviewanonymousasEnum = "CUSTOM" | "RESEARCH_SERVICE" | "SECRETARIAT";
 		
 export type PaperstatusEnum = "ACCEPTED" | "CHANGES_REQUESTED" | "DRAFT" | "REVISED" | "SUBMITTED";
 		
@@ -5036,6 +5040,9 @@ export type Query = {
   school: (p: {
     id: ID
   }) => School,
+  schoolApplicants: (p: {
+    conferenceId: ID
+  }) => SchoolApplicants[],
   schoolMetrics: (p: {
     schoolId: ID
   }) => SchoolConferenceMetrics[],
@@ -5453,6 +5460,13 @@ export type School = {
   }) => Waitinglistentry[],
   website: String | null,
   zip: String | null    
+};
+		
+export type SchoolApplicants = {
+  members: () => CollectiveGroupMember[],
+  school: () => CollectiveGroupSchool,
+  singleParticipantIds: ID[],
+  size: Int    
 };
 		
 export type SchoolConferenceMetrics = {

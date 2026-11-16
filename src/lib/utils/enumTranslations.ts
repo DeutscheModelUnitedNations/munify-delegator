@@ -174,15 +174,30 @@ export function translateRegionalBaseline(baseline: RegionalBaseline) {
 
 const paperReviewAnonymousAsLabels: Record<PaperreviewanonymousasEnum, () => string> = {
 	SECRETARIAT: m.paperReviewSignatureSecretariat,
-	RESEARCH_SERVICE: m.paperReviewSignatureResearchService
+	RESEARCH_SERVICE: m.paperReviewSignatureResearchService,
+	CUSTOM: m.paperReviewSignatureCustom
 };
 
-/** The team names a review can be published under instead of the reviewer's, in order. */
+/** The names a review can be published under instead of the reviewer's, in order. */
 export const PAPER_REVIEW_ANONYMOUS_AS = [
 	'SECRETARIAT',
-	'RESEARCH_SERVICE'
+	'RESEARCH_SERVICE',
+	'CUSTOM'
 ] as const satisfies readonly PaperreviewanonymousasEnum[];
 
 export function translatePaperReviewAnonymousAs(anonymousAs: PaperreviewanonymousasEnum) {
 	return paperReviewAnonymousAsLabels[anonymousAs]();
+}
+
+/** The name an anonymous review is signed with: the typed one for `CUSTOM`, else the team's. */
+export function reviewSignature({
+	anonymousAs,
+	anonymousName
+}: {
+	anonymousAs: PaperreviewanonymousasEnum;
+	anonymousName: string | null | undefined;
+}) {
+	return anonymousAs === 'CUSTOM' && anonymousName
+		? anonymousName
+		: translatePaperReviewAnonymousAs(anonymousAs);
 }

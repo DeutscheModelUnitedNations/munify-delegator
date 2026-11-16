@@ -94,6 +94,7 @@ function dueEmailOf(kind: AutomaticEmailKind): DueEmail {
 			agendaItem: 'GV: Klimaschutz',
 			reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
 			anonymousAs: null,
+			anonymousName: null,
 			statusAfter: 'ACCEPTED'
 		},
 		survey: {
@@ -191,6 +192,25 @@ describe.each(['de', 'en'] as const)('an anonymous review in %s', (locale) => {
 		expect(bodyOf(content)).toContain(
 			locale === 'de' ? 'dem Wissenschaftlichen Dienst' : 'the Research Service'
 		);
+		expect(bodyOf(content)).not.toContain('Robin');
+		expect(content.replyTo).toBeUndefined();
+	});
+
+	test('names the custom name the reviewer typed', () => {
+		overwriteGetLocale(() => locale);
+		const email = dueEmailOf('PAPER_REVIEWED');
+		const review = email.review && {
+			...email.review,
+			reviewer: null,
+			anonymousAs: 'CUSTOM' as const,
+			anonymousName: 'Vorsitz der Generalversammlung'
+		};
+		const content = emailContent({
+			email: { ...email, review },
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(bodyOf(content)).toContain('Vorsitz der Generalversammlung');
 		expect(bodyOf(content)).not.toContain('Robin');
 		expect(content.replyTo).toBeUndefined();
 	});

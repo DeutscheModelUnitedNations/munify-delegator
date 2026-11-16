@@ -18,11 +18,12 @@
 	import { hasTextContent } from '../tiptapText';
 	import { unlockedPiece, type UnlockedPiece } from './unlockedPiece';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
-	import { translatePaperReviewAnonymousAs } from '#lib/utils/enumTranslations';
 	import ReviewAnonymityToggle from './ReviewAnonymityToggle.svelte';
 	import {
-		anonymousAsArg,
+		anonymityArgs,
 		DEFAULT_REVIEW_ANONYMITY,
+		reviewAnonymityComplete,
+		reviewAnonymityName,
 		storedReviewAnonymity,
 		type ReviewAnonymity
 	} from './reviewAnonymity';
@@ -70,19 +71,20 @@
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
 
-	// Whether to publish under a team name instead of the reviewer's, remembered across reviews.
+	// Whether to publish under another name instead of the reviewer's, remembered across reviews.
 	const anonymityStore = createPersistedState<ReviewAnonymity>({
 		key: 'paperReviewAnonymity',
 		initial: DEFAULT_REVIEW_ANONYMITY
 	});
 	const anonymity = $derived(storedReviewAnonymity(anonymityStore.current));
+	const anonymityComplete = $derived(reviewAnonymityComplete(anonymity));
 
 	// Who will be told, and under which name when the review goes out anonymously.
 	const submissionNotice = $derived.by(() => {
 		const author = authorName || m.theAuthor();
 		const notified = m.reviewSubmissionNotification({ author });
-		if (!anonymity.anonymous) return notified;
-		const name = translatePaperReviewAnonymousAs(anonymity.as);
+		const name = reviewAnonymityName(anonymity);
+		if (!name) return notified;
 		return `${notified} ${m.reviewSubmissionAnonymousNotice({ author, name })}`;
 	});
 
@@ -162,7 +164,7 @@
 					paperId,
 					comments: $reviewComments,
 					newStatus: selectedStatus,
-					anonymousAs: anonymousAsArg(anonymity)
+					...anonymityArgs(anonymity)
 				},
 				pieceUnlocked: true,
 				unlockedPieceData: {
@@ -257,7 +259,11 @@
 				bind:choice={() => anonymity, (next) => (anonymityStore.current = next)}
 			/>
 
-			<button class="btn btn-primary grow" onclick={openConfirmModal} disabled={isSubmitting}>
+			<button
+				class="btn btn-primary grow"
+				onclick={openConfirmModal}
+				disabled={isSubmitting || !anonymityComplete}
+			>
 				{#if isSubmitting}
 					<span class="loading loading-spinner loading-sm"></span>
 				{:else}
