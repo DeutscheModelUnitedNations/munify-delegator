@@ -15,3 +15,13 @@ export function joinMemberSchool<T extends PgSelect>(query: T) {
 		)
 		.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId));
 }
+
+/** Like `joinMemberSchool`, for a select over single participants. */
+export function joinSingleParticipantSchool<T extends PgSelect>(query: T) {
+	return query
+		.innerJoin(
+			schema.conferenceParticipant,
+			eq(schema.conferenceParticipant.id, schema.singleParticipant.conferenceParticipantId)
+		)
+		.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId));
+}
