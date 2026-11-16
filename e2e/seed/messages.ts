@@ -20,7 +20,7 @@ import * as schema from '../../src/api/db/schema';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
-import { upsertTeamMember } from './teamMember';
+import { resetTeam } from './teamMember';
 import { MESSAGING_TERMS_VERSION } from '../../src/lib/helpers/messagingTerms';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 import { upsertConference, upsertGvAndSr, upsertSeatedDelegations } from './conference';
@@ -146,13 +146,7 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 
 	// what a run left: chats (their messages, reads and reports go along), blocks, functions
 	await db.delete(schema.chat).where(eq(schema.chat.conferenceId, conferenceId));
-	const teamMemberIds = Object.values(fixture.team).map((person) => `e2e-team-${person.id}`);
-	await db
-		.delete(schema.teamFunction)
-		.where(inArray(schema.teamFunction.teamMemberId, teamMemberIds));
-	for (const person of Object.values(fixture.team)) {
-		await upsertTeamMember(db, conferenceId, person.id, person.role);
-	}
+	await resetTeam(db, { conferenceId, team: Object.values(fixture.team) });
 	await db.insert(schema.teamFunction).values([
 		{
 			teamMemberId: `e2e-team-${fixture.team.chair.id}`,

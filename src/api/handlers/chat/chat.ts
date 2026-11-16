@@ -570,7 +570,8 @@ schemaBuilder.mutationFields((t) => ({
 						? { side: 'PARTICIPANT', participantId, userId }
 						: { side: 'TEAM', userId },
 				body: args.body.trim(),
-				paperId: args.paperId ?? null
+				paperId: args.paperId ?? null,
+				origin: ctx.requestUrl().origin
 			});
 			return db.query.chatMessage
 				.findFirst(

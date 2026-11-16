@@ -1392,8 +1392,9 @@ bun run preview
 - **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
   "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
-  that message, without the text. A person turns it off for themselves
-  (`user.messageNotificationEmails`).
+  that message, without the text. A participant turns it off for themselves
+  (`user.messageNotificationEmails`); the team chooses per inbox, and hears on Slack too (see
+  "Team notifications").
 - **The pages** are `dashboard/[conferenceId]/messages` (participants) and `team/messages` (the
   inboxes the caller answers, and the reports for participant care), both built from
   `#lib/components/chat/` (see CLAUDE-UI.md). `WriteToDelegateButton` opens the chat of a team
@@ -1460,6 +1461,51 @@ bun run preview
   in the header, shown on every page of the conference while an urgent one is unread.
   `e2e/authorization/announcements.spec.ts` pins the rules down, `e2e/announcements/` the flows;
   the dev seed's `seed-dev/announcements.ts` has every state.
+
+#### 17. Team notifications
+
+- **Each team member decides how they hear of what waits for them** (`#api/handlers/notification/`,
+  tables in `schema/notifications.ts`): per conference, per **topic** and per **channel** (`EMAIL`,
+  `SLACK`). The topics are the inboxes they answer (`PARTICIPANT_CARE`; `COMMITTEE_INBOX`, one per
+  chair or consultant function they hold; `TRUSTED_SHARED` and `TRUSTED_PERSONAL`) and, for
+  participant care, `CHAT_REPORT`. `#lib/helpers/teamNotifications` is the one pure rule the page,
+  the mails and the Slack messages share: `topicsOf` (what a member is offered), `topicOfInbox`
+  (under which topic an inbox tells them, null when they do not answer it) and `wantsNotification`.
+  A new topic is an enum value, a case there and a label (`teamNotificationLabels.ts`).
+- **Only choices are stored** (`notificationPreference`, anchored on the team member, a committee
+  inbox on the member's own function by a composite key). Without a row the default holds: both
+  channels on, mail off for whoever switched `user.messageNotificationEmails` off before. That
+  switch stays the participants' own, on their messages page.
+- **The notification tables have no relations and no abilities, on purpose.** rumble exposes every
+  table a relation names, and neither the choices nor the workspaces with their bot tokens belong
+  in the schema. `notificationStore.ts` reads them; the API answers plain objects
+  (`myNotificationSettings`, `mySlackConnection`, `slackWorkspaces`, `conferenceSlackWorkspace`),
+  live through the tables' pubsubs (a bare `updated()` there: these lists listen for any change).
+  The settings are personal: `assertOwnNotifications` refuses an AI assistant.
+- **Slack workspaces are the system admins'** (`slackWorkspace`, page `dashboard/slack-workspaces`):
+  a name and a bot token (scopes `chat:write`, `users:read`, `users:read.email`), checked with
+  `auth.test` and stored encrypted (`slackToken.ts`, AES-GCM under a key derived from
+  `CERTIFICATE_SECRET`). A token is written, never answered. **A conference picks one**
+  (`conferenceSlackWorkspace`, `setConferenceSlackWorkspace`, project management, the card on the
+  team's e-mail page), so one workspace serves every conference of an organizer.
+- **People are found by their account's address, with nothing to connect** (`slackUsers.ts`,
+  `users.lookupByEmail`). The answer is kept in `slackUserLookup` (a month when found, an hour
+  when not, asked again when the address changed). Somebody not in the workspace gets no Slack
+  message and the settings page says so.
+- **Slack tells at once, mail after the wait.** `sendMessage` and `reportChat` call
+  `tellInboxOnSlack` / `tellReportOnSlack` (`slackNotifications.ts`) after their commit, in the
+  background: a direct message to everybody who answers the inbox (or cares for participants) and
+  left Slack on. It is the one thing that is sent because something happened. An inbox tells a
+  member once until it is read (`slackNotification`, claimed under an advisory lock; the claim is
+  taken back when the message did not go out). The mails stay state: `UNREAD_MESSAGES` now leaves
+  out the inboxes a member switched the mail off for (`wantsInboxMail`), and `CHAT_REPORTED` is
+  owed to participant care per open report (`loadOpenReportsOfTeam`). Both are ordinary kinds the
+  conference switches to automatic.
+- **Like the mails, Slack notifies and does not relay**: the inbox, the conference and a link,
+  never a word of the message or who wrote it. Anything new that tells the team has to keep that,
+  for the trusted persons' chats above all.
+- `SLACK_API_URL` points the calls at a stand-in; only tests set it.
+  `e2e/authorization/notifications.spec.ts` pins the rules down.
 
 ### Logging
 
@@ -1597,7 +1643,8 @@ Required variables (see `.env.example`):
 - `OIDC_ROLE_CLAIM` - claim name or dot path of the provider's role/group names (any provider's shape;
   `#api/services/oidc/roleClaims.ts`, falling back to the userinfo endpoint), `OIDC_ROLE_MAP` (JSON) maps
   them onto `admin` / `member` / `service_user`
-- `CERTIFICATE_SECRET` - Secret for signing participation certificates
+- `CERTIFICATE_SECRET` - Secret for signing participation certificates; the Slack bot tokens are
+  encrypted under a key derived from it, so changing it means entering them again
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
 - OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL` (the full `…/v1/traces` URL), `OTEL_SERVICE_NAME`,

@@ -160,7 +160,10 @@ const when = (gate: boolean, predicate: () => SQL) => (gate ? predicate() : unde
  * (`loadAnnouncementMails`), already matched to the people it reaches.
  */
 const PARTICIPANT_PREDICATES: Record<
-	Exclude<AutomaticEmailKind, 'WAITING_LIST_REGISTERED' | 'TEAM_WELCOME' | 'ANNOUNCEMENT'>,
+	Exclude<
+		AutomaticEmailKind,
+		'WAITING_LIST_REGISTERED' | 'TEAM_WELCOME' | 'ANNOUNCEMENT' | 'CHAT_REPORTED'
+	>,
 	Predicate
 > = {
 	// A message of one of the person's chats they have not read and were not told about. The
@@ -423,7 +426,7 @@ export const waitingListCandidates = ({
 /**
  * The team members (`id`, `userId` their columns) who may be owed a mail of `kinds`: not yet
  * welcomed, or, while the chats are on, anybody (a team is small, and which inboxes somebody
- * answers is `loadUnreadOfTeam`'s to work out); `false` when none can be.
+ * answers and which reports they hear of is `unreadMessages.ts`'s to work out); `false` when none can be.
  */
 export function teamCandidates({
 	conference,
@@ -436,7 +439,8 @@ export function teamCandidates({
 	id: Column;
 	userId: Column;
 }): SQL {
-	if (kinds.has('UNREAD_MESSAGES') && conference.messagingEnabled) return sql`true`;
+	const aboutChats = kinds.has('UNREAD_MESSAGES') || kinds.has('CHAT_REPORTED');
+	if (aboutChats && conference.messagingEnabled) return sql`true`;
 	return kinds.has('TEAM_WELCOME')
 		? sql`not ${closed({ conferenceId: conference.id, kind: 'TEAM_WELCOME', userId, key: id })}`
 		: sql`false`;

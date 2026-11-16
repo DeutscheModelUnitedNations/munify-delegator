@@ -1,8 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { db } from '#api/db/db';
 import { oldestUnreadPerMember } from './unreadInboxes';
+import { preferencesOfMembers } from '#api/handlers/notification/notificationStore';
+import { hearsOfReports, wantsNotification } from '#lib/helpers/teamNotifications';
 import type { ChatInbox } from '#lib/helpers/chat';
-import type { SnapshotUnreadMessage } from './dueEmails';
+import type { SnapshotOpenReport, SnapshotUnreadMessage } from './dueEmails';
 
 /**
  * The oldest chat message each reader has not read, for the readers of one page of the mail
@@ -64,7 +66,7 @@ export async function loadUnreadOfParticipants({
 
 /**
  * Per team member of `teamMemberIds`, the oldest message a participant wrote to an inbox they
- * answer that the inbox has not read.
+ * answer, and want mail about (`notificationPreference`), that the inbox has not read.
  */
 export async function loadUnreadOfTeam({
 	conferenceId,
@@ -74,7 +76,7 @@ export async function loadUnreadOfTeam({
 	teamMemberIds: string[];
 }): Promise<SnapshotUnreadMessage[]> {
 	if (teamMemberIds.length === 0) return [];
-	const [inboxes, members] = await Promise.all([
+	const [inboxes, members, preferences] = await Promise.all([
 		db.execute<{
 			inbox: ChatInbox;
 			committee_id: string | null;
@@ -93,14 +95,14 @@ export async function loadUnreadOfTeam({
 			'objects'
 		),
 		db.query.teamMember.findMany({
-			where: {
-				conferenceId,
-				id: { in: teamMemberIds },
-				user: { messageNotificationEmails: true }
-			},
+			where: { conferenceId, id: { in: teamMemberIds } },
 			columns: { id: true, userId: true, role: true },
-			with: { functions: { columns: { committeeId: true, kind: true } } }
-		})
+			with: {
+				user: { columns: { messageNotificationEmails: true } },
+				functions: { columns: { id: true, committeeId: true, kind: true } }
+			}
+		}),
+		preferencesOfMembers({ teamMemberIds, channel: 'EMAIL' })
 	]);
 
 	return oldestUnreadPerMember({
@@ -111,6 +113,52 @@ export async function loadUnreadOfTeam({
 			messageId: inbox.message_id,
 			writtenAt: written(inbox.written)
 		})),
-		members
+		members: members.map((member) => ({
+			id: member.id,
+			userId: member.userId,
+			role: member.role,
+			functions: member.functions,
+			preferences: preferences.get(member.id) ?? [],
+			mailByDefault: member.user.messageNotificationEmails
+		}))
 	});
+}
+
+/**
+ * The conference's open reports, for each member of participant care among `teamMemberIds` who
+ * wants a mail about them.
+ */
+export async function loadOpenReportsOfTeam({
+	conferenceId,
+	teamMemberIds
+}: {
+	conferenceId: string;
+	teamMemberIds: string[];
+}): Promise<SnapshotOpenReport[]> {
+	if (teamMemberIds.length === 0) return [];
+	const [reports, members, preferences] = await Promise.all([
+		db.query.chatReport.findMany({
+			where: { conferenceId, status: 'OPEN' },
+			columns: { id: true }
+		}),
+		db.query.teamMember.findMany({
+			where: { conferenceId, id: { in: teamMemberIds } },
+			columns: { id: true, role: true },
+			with: { user: { columns: { messageNotificationEmails: true } } }
+		}),
+		preferencesOfMembers({ teamMemberIds, channel: 'EMAIL' })
+	]);
+	const told = members.filter(
+		(member) =>
+			hearsOfReports(member) &&
+			wantsNotification({
+				preferences: preferences.get(member.id) ?? [],
+				key: { topic: 'CHAT_REPORT', teamFunctionId: null },
+				channel: 'EMAIL',
+				mailByDefault: member.user.messageNotificationEmails
+			})
+	);
+	return reports.flatMap((report) =>
+		told.map((member) => ({ reportId: report.id, teamMemberId: member.id }))
+	);
 }

@@ -53,7 +53,12 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const { chat, userId } = await assertPartyOfChat({ ctx, id: args.chatId });
-			await reportChat({ chat, reporterUserId: userId, reason: args.reason.trim() });
+			await reportChat({
+				chat,
+				reporterUserId: userId,
+				reason: args.reason.trim(),
+				origin: ctx.requestUrl().origin
+			});
 			return true;
 		}
 	}),

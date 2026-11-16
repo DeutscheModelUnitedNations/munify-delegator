@@ -162,6 +162,14 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'link',
 		translation: () => m.chaseLinkTitle()
 	},
+	'slack-workspaces': {
+		icon: 'slack-logo',
+		translation: () => m.slackWorkspaces()
+	},
+	notifications: {
+		icon: 'bell',
+		translation: () => m.notifications()
+	},
 	committees: {
 		icon: 'lectern',
 		translation: () => m.committees()

@@ -310,6 +310,18 @@ While impersonating, you act as this person. Whatever you submit, change or dele
 
 DELEGATOR checks the impersonation again on every request. It ends on its own as soon as you would no longer be allowed it, for example because you left the team or the person has joined a team. While impersonating, you cannot start a second one (**You are already acting as someone else. Stop that first.**). If impersonation is not set up on the server, DELEGATOR says **Impersonation is not set up on this server.**
 
+## Slack workspaces {#slack-workspaces}
+
+DELEGATOR can notify team members by Slack (see [Notifications](./communication#notifications)). For that the system's administration adds each Slack workspace once. As an admin you reach the **Slack workspaces** page through the button of that name on the conference overview.
+
+1. Create a Slack app in the workspace and give it the bot scopes `chat:write`, `users:read` and `users:read.email`.
+2. Install the app in the workspace and copy its bot token. It starts with `xoxb-`.
+3. Under **Add workspace**, enter a name and the token. DELEGATOR checks the token with Slack and then shows the name the workspace has at Slack.
+
+The token is stored encrypted and never shown again. With **Replace token** you store a new token of the same workspace. If you remove a workspace, the conferences that picked it get no more Slack messages.
+
+Which workspace a conference uses is decided by its project management on the [Emails](./communication#emails) page. One workspace can serve any number of conferences.
+
 ## Link to CHASE {#chase-link}
 
 DELEGATOR can be linked to an instance of MUNify CHASE, the app for the sessions during the conference. The link applies to the whole server, not to a single conference. It is set up in the server's configuration, and a team has nothing to do for it.

@@ -55,7 +55,9 @@ export const teamFunction = snakeCase.table(
 			table.committeeId,
 			table.kind
 		),
-		index('team_function_committee_id_idx').on(table.committeeId)
+		index('team_function_committee_id_idx').on(table.committeeId),
+		// what a notification preference of a function points at (`notification_preference`)
+		uniqueIndex('team_function_id_team_member_id_key').on(table.id, table.teamMemberId)
 	]
 );
 

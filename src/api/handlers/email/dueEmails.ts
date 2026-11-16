@@ -119,6 +119,12 @@ export interface SnapshotUnreadMessage {
 	reader: { participantId: string } | { teamMemberId: string };
 }
 
+/** A report of a chat that is still open, for a member of participant care who wants the mail. */
+export interface SnapshotOpenReport {
+	reportId: string;
+	teamMemberId: string;
+}
+
 /** An announcement as its mail carries it (`#api/handlers/announcement`). */
 export interface SnapshotAnnouncement {
 	id: string;
@@ -170,6 +176,8 @@ export interface EmailSnapshot {
 	surveys: SnapshotSurvey[];
 	/** Per reader who wants the mail, the oldest message they have not read; none while messaging is off. */
 	unreadMessages: SnapshotUnreadMessage[];
+	/** Per member of participant care who wants the mail, the reports nobody settled yet. */
+	openReports: SnapshotOpenReport[];
 	/** The waiting list entries not given a seat yet. */
 	waitingList: SnapshotWaitingEntry[];
 	/** The announcements that notify by mail and are fresh, per person of their audience. */
@@ -578,6 +586,24 @@ function unreadMessages({ snapshot, now }: { snapshot: EmailSnapshot; now: Date 
 		});
 }
 
+/** One mail per open report to each member of participant care, keyed by the report. */
+function chatReported(snapshot: EmailSnapshot): DueEmail[] {
+	const team = new Map(snapshot.team.map((member) => [member.id, member]));
+	return snapshot.openReports.flatMap((report): DueEmail[] => {
+		const teamMember = team.get(report.teamMemberId);
+		return teamMember
+			? [
+					{
+						kind: 'CHAT_REPORTED',
+						subjectKey: report.reportId,
+						recipient: teamMember.user,
+						teamMember
+					}
+				]
+			: [];
+	});
+}
+
 /** An announcement's mail, keyed by the announcement and its `mailRevision`. */
 export const announcementMail = ({
 	announcement,
@@ -642,6 +668,7 @@ export function dueEmails({
 		...snapshot.waitingList.map(waitingListRegistered),
 		...snapshot.team.map(teamWelcome),
 		...unreadMessages({ snapshot, now }),
+		...chatReported(snapshot),
 		...snapshot.announcementMails.map(announcementMail)
 	];
 }

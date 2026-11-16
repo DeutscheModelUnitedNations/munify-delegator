@@ -154,9 +154,24 @@ Participants can report a direct chat or their delegation group. Chats with the 
 
 Settled reports are folded away with their note under **Resolved reports**. Only the team reads the note.
 
-### Notifications
+### Notifications {#notifications}
 
-When a message stays unread for a quarter of an hour, DELEGATOR can point it out by email. This email, **Unread messages**, is one of the automatic emails and, like them, is off at first. Switch it to automatic on the [Emails](#emails) page. It goes to participants and to team members whose inbox has something unread, and it never contains the message's text. No further one follows until the person reads. Participants switch it off for themselves below their chats with **Email about unread messages**.
+When a message waits in one of your inboxes, DELEGATOR tells you in two ways:
+
+- **Slack:** right away, as a direct message in the conference's Slack workspace. You get one message per inbox. The next one follows only after somebody has read the inbox and something new arrives.
+- **Email:** when a message stays unread for a quarter of an hour. This email, **Unread messages**, is one of the automatic emails and, like them, is off at first. Switch it to automatic on the [Emails](#emails) page. No further one follows until you read.
+
+Participant care and project management also hear in both ways when a chat is reported. The email for that is called **Reported chat** and is switched on on the [Emails](#emails) page as well.
+
+A notification only names the inbox and leads into the app. The text of a message and who wrote it are never in an email or in Slack.
+
+**Setting it up for yourself:** In the menu behind your initials at the top right, open **Notifications**. The entry appears once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on.
+
+**Setting up Slack:** Project management picks the conference's workspace on the [Emails](#emails) page under **Slack workspace**. The choices are the workspaces the system's administration has added (see [Slack workspaces](./overview#slack-workspaces)). Without a workspace the conference sends no Slack messages.
+
+Slack finds you by the email address of your DELEGATOR account. You do not have to connect anything. The **Notifications** page shows for each conference whether Slack reaches you, and **Send a test message** sends you one to try. If you are signed in to the workspace with another address, Slack does not find you and you only get emails.
+
+Participants only get the email. They switch it off for themselves below their chats with **Email about unread messages**.
 
 ## Emails {#emails}
 
@@ -216,7 +231,8 @@ Three kinds have no switch. **Announcement** carries **Decided per announcement*
 | **MUNify DELEGATOR on the phone**          | everyone seated and supervisors coming along                                                  | 7 days before the conference starts                                                             |
 | **Reminder of open surveys**               | seated people who have not answered the survey                                                | 3 days before a survey's deadline                                                               |
 | **Feedback on a paper**                    | whoever wrote the paper, once per review                                                      | as soon as someone from the team gives feedback on the paper                                    |
-| **Unread messages**                        | participants and team members with unread messages                                            | when a message has been unread for 15 minutes                                                   |
+| **Unread messages**                        | participants and team members with unread messages, unless they switched the email off        | when a message has been unread for 15 minutes                                                   |
+| **Reported chat**                          | participant care, unless the person switched the email off                                    | when somebody reports a chat, while the report is open                                          |
 | **Announcement**                           | everybody in the audience at the next automatic run after publication                         | on publication with email and on **Notify again**, for 24 hours                                 |
 | **Badge found**                            | the person the badge belongs to                                                               | on every press of **Badge found**                                                               |
 | **Certificate available**                  | people marked as attended                                                                     | as soon as the conference is **After the conference** and a certificate template is uploaded    |

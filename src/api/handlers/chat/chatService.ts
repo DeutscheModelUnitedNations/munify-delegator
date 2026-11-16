@@ -28,6 +28,7 @@ import {
 import { refusalText } from '#lib/helpers/chatRefusalText';
 import { acceptedMessagingTerms, MESSAGING_TERMS_VERSION } from '#lib/helpers/messagingTerms';
 import { conferenceContacts, forgetContacts } from './chatContacts';
+import { tellInboxOnSlack, tellReportOnSlack } from '#api/handlers/notification/slackNotifications';
 
 export type ChatRow = typeof schema.chat.$inferSelect;
 
@@ -340,12 +341,15 @@ export async function sendMessage({
 	chat,
 	author,
 	body,
-	paperId
+	paperId,
+	origin
 }: {
 	chat: ChatRow;
 	author: MessageAuthor;
 	body: string;
 	paperId: string | null;
+	/** The app's address, which the Slack message about it links to. */
+	origin: string;
 }) {
 	const refusal = await chatWriteRefusal({
 		chat,
@@ -399,6 +403,8 @@ export async function sendMessage({
 	// the lists show chats that hold a message: with its first one a chat comes into them, which
 	// a list only hears of as a new row
 	if (!chat.lastMessageAt) chatPubsub.created();
+	// whoever answers the inbox hears of it on Slack right away; the mail waits for the sweep
+	if (!fromTeam) tellInboxOnSlack({ chat, messageId: id, origin });
 	return id;
 }
 
@@ -514,23 +520,30 @@ export async function hasBlocked({
 export async function reportChat({
 	chat,
 	reporterUserId,
-	reason
+	reason,
+	origin
 }: {
 	chat: ChatRow;
 	reporterUserId: string;
 	reason: string;
+	/** The app's address, which the Slack message about it links to. */
+	origin: string;
 }) {
 	if (chat.kind === 'TEAM') {
 		throw apiError({ code: 'INVALID_INPUT', message: m.chatTeamCannotBeReported() });
 	}
-	await db.transaction(async (tx) => {
-		await tx
+	const reportId = await db.transaction(async (tx) => {
+		const [report] = await tx
 			.insert(schema.chatReport)
-			.values({ conferenceId: chat.conferenceId, chatId: chat.id, reporterUserId, reason });
+			.values({ conferenceId: chat.conferenceId, chatId: chat.id, reporterUserId, reason })
+			.returning({ id: schema.chatReport.id });
 		await tx.update(schema.chat).set({ underReview: true }).where(eq(schema.chat.id, chat.id));
+		if (!report) throw new Error('reportChat: the insert returned no row');
+		return report.id;
 	});
 	chatReportPubsub.created();
 	chatPubsub.updated(chat.id);
+	tellReportOnSlack({ conferenceId: chat.conferenceId, reportId, origin });
 }
 
 /** Settles a report; the chat is private again once none of its reports is open. */

@@ -2059,6 +2059,27 @@ type Conference {
   website: String
 }
 
+"""
+The caller's notification settings in one conference they are on the team of.
+"""
+type ConferenceNotificationSettings {
+  conferenceId: ID!
+  conferenceTitle: String!
+
+  """The caller's membership of that team."""
+  id: ID!
+
+  """
+  One per topic the caller can be told about there; empty when there is none.
+  """
+  settings: [NotificationSetting!]!
+
+  """
+  The Slack workspace the conference picked; null while it has none, and Slack tells nobody.
+  """
+  slackWorkspaceName: String
+}
+
 input ConferenceOrderInputArgument {
   applicationDeadline: SortingParameter
   assignmentReleased: SortingParameter
@@ -3118,6 +3139,7 @@ enum EmailkindEnum {
   BADGE_FOUND
   CERTIFICATE_AVAILABLE
   CHASE_INTRO_REMINDER
+  CHAT_REPORTED
   DELEGATION_CREATED
   DELEGATION_JOINED
   DELEGATION_MEMBER_JOINED
@@ -4018,6 +4040,11 @@ type Mutation {
   ): Singleparticipant!
 
   """
+  Adds a Slack workspace by its bot's token (`xoxb-…`, with the scopes `chat:write`, `users:read` and `users:read.email`), once Slack vouched for it. System admins only. INVALID_INPUT for a token Slack refuses, CONFLICT for a workspace already added.
+  """
+  createSlackWorkspace(botToken: String!, name: String!): ID!
+
+  """
   Adds an option to a survey question, with how many may pick it. A title the question already has is refused with CONFLICT.
   """
   createSurveyOption(
@@ -4173,6 +4200,11 @@ type Mutation {
   Withdraws a single participant's registration: the participant until it is sent in, participant care at any time.
   """
   deleteSingleParticipant(id: ID!): Boolean!
+
+  """
+  Removes a Slack workspace; the conferences that picked it have none afterwards. System admins only.
+  """
+  deleteSlackWorkspace(id: ID!): Boolean!
 
   """
   Takes back the answer to the question, leaving it unanswered: participants their own until the deadline, participant care anybody’s. NOT_FOUND when there is none the caller may take back.
@@ -4482,6 +4514,11 @@ type Mutation {
   sendPersonEmail(conferenceId: ID!, kind: EmailkindEnum!, subjectKey: String!, userId: ID!): SendPersonEmailResult!
 
   """
+  Sends the caller a direct message in the conference's Slack workspace and answers how it went. NOT_FOUND when they are not on that team, CONFLICT while the conference has no workspace.
+  """
+  sendSlackTestMessage(conferenceId: ID!): SlackConnection!
+
+  """
   Marks whether an agenda item's papers need more reviewers. Paper reviewers may set it without being able to edit the agenda item otherwise.
   """
   setAgendaItemReviewHelpStatus(agendaItemId: ID!, status: ReviewhelpstatusEnum!): Committeeagendaitem!
@@ -4565,6 +4602,11 @@ type Mutation {
   setConferenceMcpEnabled(conferenceId: ID!, enabled: Boolean!): Boolean!
 
   """
+  Picks the Slack workspace a conference's team is told in, or none (`null`). Project management only (FORBIDDEN otherwise); NOT_FOUND for an unknown workspace.
+  """
+  setConferenceSlackWorkspace(conferenceId: ID!, slackWorkspaceId: ID): Boolean!
+
+  """
   Places a document's generated parts on the conference's template (the layout editor in the document settings); `null` returns that document to the default positions. A layout that does not fit the document is refused with INVALID_INPUT.
   """
   setDocumentLayout(
@@ -4591,6 +4633,19 @@ type Mutation {
   Picks the view the caller opens a table with in a conference - one of their own or a shared one, of that table and conference or global - or, with `viewId` null, none (the conference's shared default applies again). Needs the table's permission in the conference.
   """
   setMyTableViewDefault(conferenceId: ID!, tableKey: String!, viewId: ID): Boolean!
+
+  """
+  Switches one of the caller's notifications on or off: a topic of `myNotificationSettings` in a conference, by mail or Slack. NOT_FOUND when they are not on that team, INVALID_INPUT for a topic that is not theirs.
+  """
+  setNotificationPreference(
+    channel: NotificationchannelEnum!
+    conferenceId: ID!
+    enabled: Boolean!
+
+    """For `COMMITTEE_INBOX`: the function."""
+    teamFunctionId: ID
+    topic: NotificationtopicEnum!
+  ): Boolean!
 
   """
   Sets a person's school in a conference: the only school a person taking part has, which the seats and numbers per school count, and which the assignment never changes. Without `id` it is the caller's own (as a delegate, single participant or supervisor); with it, participant care correcting somebody's. Both school arguments null removes it, both left out keeps it.
@@ -5069,6 +5124,11 @@ type Mutation {
   ): Singleparticipant!
 
   """
+  Renames a Slack workspace or replaces its bot token; what is left out stays. System admins only. INVALID_INPUT for a token of another workspace.
+  """
+  updateSlackWorkspace(botToken: String, id: ID!, name: String): Boolean!
+
+  """
   Changes the given fields of a survey option; the others stay as they are, and `null` leaves one alone too. A lower limit keeps the answers already given. A title the question already has is refused with CONFLICT.
   """
   updateSurveyOption(
@@ -5264,6 +5324,39 @@ input NationWhereInputArgument {
   conferenceRoles: ConferenceroleWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
+}
+
+"""
+One thing a team member can be told about, and whether mail and Slack tell them: their choice, or the default (both on).
+"""
+type NotificationSetting {
+  committeeAbbreviation: String
+  committeeName: String
+  email: Boolean!
+
+  """`COMMITTEE_INBOX`: `CHAIR` or `CONSULTANT`."""
+  functionKind: String
+  id: ID!
+  slack: Boolean!
+
+  """
+  `COMMITTEE_INBOX`: the caller's function whose inbox this is, to pass to `setNotificationPreference`.
+  """
+  teamFunctionId: ID
+  topic: NotificationtopicEnum!
+}
+
+enum NotificationchannelEnum {
+  EMAIL
+  SLACK
+}
+
+enum NotificationtopicEnum {
+  CHAT_REPORT
+  COMMITTEE_INBOX
+  PARTICIPANT_CARE
+  TRUSTED_PERSONAL
+  TRUSTED_SHARED
 }
 
 """
@@ -6091,6 +6184,11 @@ type Query {
   """List all conferenceRoles"""
   conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
+  """
+  The Slack workspace a conference's team is told in, or null while it has none. Project management only (FORBIDDEN otherwise).
+  """
+  conferenceSlackWorkspace(conferenceId: ID!): SlackWorkspaceInfo
+
   """Get a single conferenceSupervisor by ID"""
   conferenceSupervisor(id: ID!): Conferencesupervisor!
 
@@ -6289,6 +6387,11 @@ type Query {
   myAgeNotice(conferenceId: ID!, role: AgeRole!): AgeNotice
 
   """
+  The caller's notification settings: per conference they are on the team of and that is not over, what they can be told about by mail and Slack. Empty for somebody on no team; FORBIDDEN for an AI assistant.
+  """
+  myNotificationSettings: [ConferenceNotificationSettings!]!
+
+  """
   The system roles the identity provider grants the caller; empty when signed out.
   """
   myOIDCRoles: [OIDCRolesEnum!]!
@@ -6300,6 +6403,11 @@ type Query {
 
   """The caller's own snippets, by name."""
   myReviewerSnippets: [Reviewersnippet!]!
+
+  """
+  Whether the caller's account address is known in the Slack workspace a conference picked, which is how Slack messages find them; null while it has none. NOT_FOUND when they are not on that team.
+  """
+  mySlackConnection(conferenceId: ID!): SlackConnection
 
   """
   What would keep the caller from signing up to the conference as a supervisor attending in person (`createConferenceSupervisor`): their profile and `supervisorMinAge`. Empty when nothing does; signing up as not attending is open either way.
@@ -6572,6 +6680,11 @@ type Query {
 
   """List all singleParticipants"""
   singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+
+  """
+  The Slack workspaces there are. For system admins; with `conferenceId` for that conference's project management, who pick one (FORBIDDEN otherwise).
+  """
+  slackWorkspaces(conferenceId: ID): [SlackWorkspaceInfo!]!
 
   """
   Whether supervisors may sign themselves up to the conference right now: in every stage until it is over. Readable by anyone, so the supervisor page can say so to someone who cannot read the conference; it tells nothing else about it. False for an unknown conference.
@@ -7521,6 +7634,30 @@ input SingleparticipantWhereInputArgument {
   user: UserWhereInputArgument
 }
 
+"""
+How somebody is known in a Slack workspace: `CONNECTED` when their account's address is a member's there, `NOT_FOUND` when it is nobody's, `UNAVAILABLE` when Slack could not be asked.
+"""
+enum SlackConnection {
+  CONNECTED
+  NOT_FOUND
+  UNAVAILABLE
+}
+
+"""
+A Slack workspace the app can write into. Its bot token is never answered.
+"""
+type SlackWorkspaceInfo {
+  """How many conferences picked it; for system admins."""
+  conferenceCount: Int
+  id: ID!
+
+  """What the app calls it."""
+  name: String!
+
+  """Slack's own name of the workspace."""
+  slackTeamName: String!
+}
+
 enum SortingParameter {
   asc
   desc
@@ -8443,6 +8580,11 @@ type Subscription {
   """List all conferenceRoles"""
   conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
+  """
+  The Slack workspace a conference's team is told in, or null while it has none. Project management only (FORBIDDEN otherwise).
+  """
+  conferenceSlackWorkspace(conferenceId: ID!): SlackWorkspaceInfo
+
   """Get a single conferenceSupervisor by ID"""
   conferenceSupervisor(id: ID!): Conferencesupervisor!
 
@@ -8484,6 +8626,11 @@ type Subscription {
 
   """Get a single mcpAuditEntry by ID"""
   mcpAuditEntry(id: ID!): Mcpauditentry!
+
+  """
+  The caller's notification settings: per conference they are on the team of and that is not over, what they can be told about by mail and Slack. Empty for somebody on no team; FORBIDDEN for an AI assistant.
+  """
+  myNotificationSettings: [ConferenceNotificationSettings!]!
 
   """Get a single nation by ID"""
   nation(id: ID!): Nation!
@@ -8559,6 +8706,11 @@ type Subscription {
 
   """List all singleParticipants"""
   singleParticipants(limit: Int, offset: Int, orderBy: SingleparticipantOrderInputArgument, search: SingleparticipantSearchInputArgument, where: SingleparticipantWhereInputArgument): [Singleparticipant!]!
+
+  """
+  The Slack workspaces there are. For system admins; with `conferenceId` for that conference's project management, who pick one (FORBIDDEN otherwise).
+  """
+  slackWorkspaces(conferenceId: ID): [SlackWorkspaceInfo!]!
 
   """Get a single surveyAnswer by ID"""
   surveyAnswer(id: ID!): Surveyanswer!

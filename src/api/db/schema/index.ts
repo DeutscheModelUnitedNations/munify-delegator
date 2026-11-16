@@ -100,6 +100,15 @@ export {
 	announcementRead
 } from './announcements';
 export {
+	notificationChannel,
+	notificationTopic,
+	slackWorkspace,
+	conferenceSlackWorkspace,
+	notificationPreference,
+	slackUserLookup,
+	slackNotification
+} from './notifications';
+export {
 	statisticsPeople,
 	statisticsDelegations,
 	statisticsSchools,

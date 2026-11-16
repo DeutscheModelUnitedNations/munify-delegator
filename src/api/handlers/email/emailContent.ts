@@ -318,6 +318,12 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			}
 		};
 	},
+	CHAT_REPORTED: ({ conference, origin }) => ({
+		button: {
+			label: m.emailAutoChatReportedButton(),
+			url: `${origin}/dashboard/${conference.id}/team/messages?view=reports`
+		}
+	}),
 	UNREAD_MESSAGES: ({ email, conference, origin }) => ({
 		button: {
 			label: m.emailAutoUnreadMessagesButton(),

@@ -95,6 +95,7 @@ function snapshot(
 		surveys,
 		waitingList,
 		unreadMessages: [],
+		openReports: [],
 		announcementMails: []
 	};
 }
@@ -628,6 +629,29 @@ describe('unread chat messages', () => {
 		expect(due).toHaveLength(1);
 		expect(due[0]?.teamMember).toBe(member);
 		expect(due[0]?.person).toBeUndefined();
+	});
+
+	test('tells participant care of each open report, once per report', () => {
+		const member: SnapshotTeamMember = {
+			id: 'tm1',
+			role: 'PARTICIPANT_CARE',
+			user: seated().user,
+			inviterName: null
+		};
+		const snap = {
+			...snapshot([], {}, [], [], [member]),
+			openReports: [
+				{ reportId: 'r1', teamMemberId: 'tm1' },
+				{ reportId: 'r2', teamMemberId: 'tm1' },
+				// a member the page does not hold is another page's
+				{ reportId: 'r1', teamMemberId: 'elsewhere' }
+			]
+		};
+		const due = dueEmails({ snapshot: snap, now }).filter(
+			(email) => email.kind === 'CHAT_REPORTED'
+		);
+		expect(due.map((email) => email.subjectKey)).toEqual(['r1', 'r2']);
+		expect(due.every((email) => email.teamMember === member)).toBe(true);
 	});
 
 	test('owes nothing to a reader the snapshot does not know', () => {
