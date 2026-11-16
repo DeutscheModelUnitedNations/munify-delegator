@@ -8,6 +8,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import formatNames from '#lib/helpers/formatNames';
 	import { emailKindTexts, emailStatusLabel } from '#lib/helpers/emailKindTexts';
+	import PersonNameButton from '#lib/components/userCard/PersonNameButton.svelte';
 
 	/** Rows of the mail log: when, which mail, to whom, how it went, and who sent it by hand. */
 	interface Props {
@@ -20,7 +21,7 @@
 			createdAt: Date;
 			sentAt?: Date | null;
 			/** Left out where the table is about one person anyway; none for a team invitation */
-			user?: { givenName: string; familyName: string } | null;
+			user?: { id: string; givenName: string; familyName: string } | null;
 			trigger?: EmailtriggerEnum;
 			sentBy?: { givenName: string; familyName: string } | null;
 		}[];
@@ -73,7 +74,9 @@
 							<span class="text-base-content/60 block text-xs">{byHand(entry)}</span>
 						</td>
 						<td>
-							{entry.user ? nameOf(entry.user) : ''}
+							{#if entry.user}
+								<PersonNameButton user={entry.user} />
+							{/if}
 							<span class="text-base-content/60 block text-xs">{entry.email}</span>
 						</td>
 						<td>
