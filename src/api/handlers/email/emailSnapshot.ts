@@ -313,7 +313,7 @@ async function toPeople({
 async function loadReviews(participantIds: string[]) {
 	const reviews = await db.query.paperReview.findMany({
 		where: { paperVersion: { paper: { authorParticipantId: { in: participantIds } } } },
-		columns: { id: true, statusAfter: true, anonymousAs: true },
+		columns: { id: true, statusAfter: true, anonymousAs: true, anonymousName: true },
 		with: {
 			reviewer: { columns: { givenName: true, familyName: true, email: true } },
 			paperVersion: {
@@ -716,6 +716,7 @@ export function reviewPart(review: {
 	id: string;
 	statusAfter: SnapshotReview['statusAfter'];
 	anonymousAs: SnapshotReview['anonymousAs'];
+	anonymousName: SnapshotReview['anonymousName'];
 	reviewer: { givenName: string; familyName: string; email: string } | null;
 	paperVersion: {
 		paper: {
@@ -748,6 +749,7 @@ export function reviewPart(review: {
 						}
 					: null,
 			anonymousAs: review.anonymousAs,
+			anonymousName: review.anonymousName,
 			statusAfter: review.statusAfter
 		}
 	];

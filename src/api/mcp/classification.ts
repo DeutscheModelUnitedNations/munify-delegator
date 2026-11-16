@@ -634,8 +634,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'statusAfter',
 			'statusBefore'
 		],
-		// What a reviewer wrote to a participant.
-		redacted: ['comments']
+		// What a reviewer wrote to a participant, and the name they signed with (may be a person's).
+		redacted: ['comments', 'anonymousName']
 	},
 	Reviewersnippet: {
 		visible: [...ROW, 'name', 'userId'],

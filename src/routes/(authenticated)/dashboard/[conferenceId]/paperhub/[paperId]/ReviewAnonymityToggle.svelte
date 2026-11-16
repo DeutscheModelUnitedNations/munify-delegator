@@ -4,9 +4,9 @@
 		PAPER_REVIEW_ANONYMOUS_AS,
 		translatePaperReviewAnonymousAs
 	} from '#lib/utils/enumTranslations';
-	import type { ReviewAnonymity } from './reviewAnonymity';
+	import { REVIEW_ANONYMOUS_NAME_MAX, type ReviewAnonymity } from './reviewAnonymity';
 
-	/** Whether a review goes out under a team name instead of the reviewer's, and which one. */
+	/** Whether a review goes out under another name than the reviewer's, and which one. */
 	interface Props {
 		choice: ReviewAnonymity;
 	}
@@ -17,6 +17,8 @@
 		const as = PAPER_REVIEW_ANONYMOUS_AS.find((option) => option === value);
 		if (as) choice = { ...choice, as };
 	}
+
+	const nameMissing = $derived(choice.as === 'CUSTOM' && choice.name.trim().length === 0);
 </script>
 
 <div class="flex flex-col gap-1">
@@ -41,6 +43,19 @@
 					<option value={option}>{translatePaperReviewAnonymousAs(option)}</option>
 				{/each}
 			</select>
+			{#if choice.as === 'CUSTOM'}
+				<input
+					type="text"
+					class="input input-sm w-56"
+					class:input-error={nameMissing}
+					aria-label={m.reviewAnonymousName()}
+					aria-invalid={nameMissing}
+					placeholder={m.reviewAnonymousNamePlaceholder()}
+					maxlength={REVIEW_ANONYMOUS_NAME_MAX}
+					value={choice.name}
+					oninput={(e) => (choice = { ...choice, name: e.currentTarget.value })}
+				/>
+			{/if}
 		{/if}
 	</div>
 	{#if choice.anonymous}

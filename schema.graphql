@@ -3940,9 +3940,14 @@ type Mutation {
   """
   createPaperReview(
     """
-    Publishes the review under this team name: its author reads it instead of the reviewer's. Left out, the review carries the reviewer's name.
+    Publishes the review under this name: its author reads it instead of the reviewer's. CUSTOM takes the name from `anonymousName`. Left out, the review carries the reviewer's name.
     """
     anonymousAs: PaperreviewanonymousasEnum
+
+    """
+    The name to publish under, with `anonymousAs: CUSTOM` and only with it.
+    """
+    anonymousName: String
     comments: JSON!
 
     """The verdict: ACCEPTED or CHANGES_REQUESTED."""
@@ -5507,6 +5512,7 @@ input PaperWhereInputArgument {
 
 type Paperreview {
   anonymousAs: PaperreviewanonymousasEnum
+  anonymousName: String
   comments: JSON!
   createdAt: DateTime!
   id: ID!
@@ -5529,6 +5535,7 @@ type Paperreview {
 
 input PaperreviewOrderInputArgument {
   anonymousAs: SortingParameter
+  anonymousName: SortingParameter
   comments: SortingParameter
   createdAt: SortingParameter
   id: SortingParameter
@@ -5540,6 +5547,7 @@ input PaperreviewOrderInputArgument {
 
 """A column of paperReview the search can look at"""
 enum PaperreviewSearchFieldEnum {
+  anonymousName
   id
   paperVersionId
   reviewerId
@@ -5561,6 +5569,7 @@ input PaperreviewWhereInputArgument {
   NOT: PaperreviewWhereInputArgument
   OR: [PaperreviewWhereInputArgument!]
   anonymousAs: PaperreviewanonymousasEnum
+  anonymousName: StringWhereInputArgument
   comments: JSONWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
@@ -5573,6 +5582,7 @@ input PaperreviewWhereInputArgument {
 }
 
 enum PaperreviewanonymousasEnum {
+  CUSTOM
   RESEARCH_SERVICE
   SECRETARIAT
 }

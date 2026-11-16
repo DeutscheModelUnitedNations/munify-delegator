@@ -84,6 +84,8 @@ export interface SnapshotReview {
 	/** Who wrote it; none for a review published under a team name (`anonymousAs`). */
 	reviewer: { name: string; email: string } | null;
 	anonymousAs: (typeof schema.paperReviewAnonymousAs.enumValues)[number] | null;
+	/** The name typed for `anonymousAs: CUSTOM`. */
+	anonymousName: string | null;
 	statusAfter: (typeof schema.paperStatus.enumValues)[number] | null;
 }
 

@@ -130,13 +130,21 @@ const supervisorSummaryItem = (student: SnapshotPerson) =>
 			})
 		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student.user) });
 
-/** The team name an anonymous review is from, as the mail's sentence reads it ("von dem …"). */
-function translateReviewSignatureInMail(anonymousAs: NonNullable<SnapshotReview['anonymousAs']>) {
+/** The name an anonymous review is from, as the mail's sentence reads it ("von dem …"). */
+function translateReviewSignatureInMail({
+	anonymousAs,
+	anonymousName
+}: {
+	anonymousAs: NonNullable<SnapshotReview['anonymousAs']>;
+	anonymousName: SnapshotReview['anonymousName'];
+}) {
 	switch (anonymousAs) {
 		case 'SECRETARIAT':
 			return m.emailAutoPaperReviewedSecretariat();
 		case 'RESEARCH_SERVICE':
 			return m.emailAutoPaperReviewedResearchService();
+		case 'CUSTOM':
+			return anonymousName ?? m.emailAutoPaperReviewedTeam();
 	}
 }
 
@@ -146,7 +154,10 @@ const reviewValues = (review: SnapshotReview) => ({
 	reviewer: review.reviewer
 		? `${review.reviewer.name} (${review.reviewer.email})`
 		: review.anonymousAs
-			? translateReviewSignatureInMail(review.anonymousAs)
+			? translateReviewSignatureInMail({
+					anonymousAs: review.anonymousAs,
+					anonymousName: review.anonymousName
+				})
 			: m.emailAutoPaperReviewedTeam(),
 	status: review.statusAfter ? translatePaperStatus(review.statusAfter) : ''
 });
