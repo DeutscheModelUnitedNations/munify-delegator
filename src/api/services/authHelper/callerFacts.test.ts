@@ -95,7 +95,11 @@ describe('participationFacts', () => {
 					id: 'm1',
 					delegationId: 'd1',
 					isHeadDelegate: true,
-					delegation: { applied: false, members: [member('m1', 'me'), member('m2', 'mate')] }
+					delegation: {
+						applied: false,
+						assignedRoleId: 'r1',
+						members: [member('m1', 'me'), member('m2', 'mate')]
+					}
 				},
 				singleParticipant: null,
 				conferenceSupervisor: null,
@@ -129,7 +133,11 @@ describe('participationFacts', () => {
 						id: 'student-p',
 						userId: 'student',
 						conferenceId: 'c2',
-						delegationMember: { id: 'student-m', delegationId: 'student-d' },
+						delegationMember: {
+							id: 'student-m',
+							delegationId: 'student-d',
+							delegation: { assignedRoleId: null }
+						},
 						singleParticipant: null,
 						supervisors: [
 							{ id: 'own-s', participant: { userId: 'me' } },
@@ -185,6 +193,58 @@ describe('participationFacts', () => {
 		]);
 		// only the supervisors of people holding a registration a supervisor looks after
 		expect(facts.coSupervisors.map((supervisor) => supervisor.userId)).toEqual(['me', 'colleague']);
+	});
+
+	test('a seat where their delegation holds a role, not where nobody they supervise does', () => {
+		expect(facts.seatConferenceIds).toEqual(['c1']);
+	});
+
+	test('a seat as single participant with a role, and through a supervised person with one', () => {
+		const row = {
+			conference: flags,
+			delegationMember: null,
+			singleParticipant: null,
+			conferenceSupervisor: null,
+			supervisors: []
+		};
+		const student = { userId: 'student', delegationMember: null, supervisors: [] };
+		const seats = participationFacts({
+			participation: [
+				{
+					...row,
+					id: 'p1',
+					conferenceId: 'single',
+					singleParticipant: { id: 'sp1', applied: true, assignedRoleId: 'r1' }
+				},
+				{
+					...row,
+					id: 'p2',
+					conferenceId: 'waiting',
+					singleParticipant: { id: 'sp2', applied: true, assignedRoleId: null }
+				},
+				{ ...row, id: 'p3', conferenceId: 'supervising', conferenceSupervisor: { id: 's3' } }
+			],
+			supervision: [
+				{
+					id: 's3',
+					supervised: [
+						{
+							...student,
+							id: 'p8',
+							conferenceId: 'supervising',
+							singleParticipant: { id: 'sp8', assignedRoleId: 'r8' }
+						},
+						{
+							...student,
+							id: 'p9',
+							conferenceId: 'supervising',
+							singleParticipant: { id: 'sp9', assignedRoleId: null }
+						}
+					]
+				}
+			]
+		}).seatConferenceIds;
+		expect(seats).toEqual(['single', 'supervising']);
 	});
 });
 

@@ -19,10 +19,11 @@
 	// Search state
 	let searchQuery = $state('');
 
+	// Without `status`: it is the reviewers' verdict, masked on other delegations' papers, and a
+	// masked column fails the whole query.
 	const paperSelection = {
 		id: true,
 		type: true,
-		status: true,
 		createdAt: true,
 		updatedAt: true,
 		firstSubmittedAt: true,

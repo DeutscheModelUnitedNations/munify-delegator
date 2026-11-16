@@ -23,6 +23,7 @@ const {
 	readableConference,
 	readableConferenceRows,
 	releasedIds,
+	seatedConferenceIds,
 	supervisedDelegationIds,
 	systemAdmin,
 	teamConference
@@ -289,6 +290,27 @@ describe('releasedIds', () => {
 			{ id: 'c', conferenceId: 'unknown' }
 		];
 		expect(releasedIds({ facts, rows })).toEqual(['a']);
+	});
+});
+
+describe('seatedConferenceIds', () => {
+	const facts = factsWith({
+		seatConferenceIds: ['open', 'closed'],
+		conferences: new Map([
+			['open', { assignmentReleased: true, showCalendar: false }],
+			['closed', { assignmentReleased: false, showCalendar: false }],
+			['seatless', { assignmentReleased: true, showCalendar: false }]
+		])
+	});
+
+	test('a seat counts once the conference has released its assignment', () => {
+		expect(seatedConferenceIds({ ctx: user, facts })).toEqual(['open']);
+	});
+
+	test('nobody without an account, nor an AI assistant', () => {
+		expect(seatedConferenceIds({ ctx: anonymous, facts })).toBeUndefined();
+		const assistant = contextFor('u1', [], { conferenceId: 'open', isAdmin: false });
+		expect(seatedConferenceIds({ ctx: assistant, facts })).toBeUndefined();
 	});
 });
 
