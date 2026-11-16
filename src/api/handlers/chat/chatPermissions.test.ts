@@ -6,7 +6,7 @@ import type { CallerFacts } from '#api/services/authHelper/callerFacts';
 vi.mock('#api/db/db', () => ({ db: {} }));
 vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
 const hasAcceptedTerms = vi.fn<(userId: string) => Promise<boolean>>();
-vi.mock('./chatService', () => ({ hasAcceptedTerms }));
+vi.mock('#api/handlers/messagingTerms/messagingTermsService', () => ({ hasAcceptedTerms }));
 
 const { assertAcceptedTerms, caresFor, chatSide, holdsInbox, knowsPeopleOf, writingParticipantId } =
 	await import('./chatPermissions');

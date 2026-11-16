@@ -88,7 +88,8 @@ export {
 	chatRead,
 	chatBlock,
 	chatReportStatus,
-	chatReport
+	chatReport,
+	messagingTermsAcceptance
 } from './messages';
 export {
 	announcementImportance,

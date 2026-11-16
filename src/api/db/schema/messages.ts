@@ -5,6 +5,7 @@ import {
 	timestamp,
 	boolean,
 	index,
+	integer,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -240,4 +241,33 @@ export const chatReport = snakeCase.table(
 		resolutionNote: text()
 	},
 	(table) => [index('chat_report_conference_id_status_idx').on(table.conferenceId, table.status)]
+);
+
+/**
+ * Somebody agreeing to the message service's terms (`#api/handlers/messagingTerms/`), once for
+ * every conference: the version and revision they were shown, in which locale, the hash of exactly
+ * that text, and the confirmations they ticked. Rows are only ever added; whether one still holds
+ * is `acceptanceHolds`. Agreements given before this table existed carry neither locale nor hash.
+ * No relation and no ability on purpose: nothing in the API reads these rows.
+ */
+export const messagingTermsAcceptance = snakeCase.table(
+	'messaging_terms_acceptance',
+	{
+		...defaultIdAndCreatedAt,
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		version: integer().notNull(),
+		revision: integer().notNull(),
+		locale: text(),
+		contentHash: text(),
+		confirmationIds: text().array().notNull()
+	},
+	(table) => [
+		uniqueIndex('messaging_terms_acceptance_user_id_version_revision_key').on(
+			table.userId,
+			table.version,
+			table.revision
+		)
+	]
 );

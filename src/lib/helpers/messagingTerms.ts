@@ -1,86 +1,28 @@
-import { z } from 'zod';
-import { m } from '#lib/paraglide/messages';
-
 /**
- * The version of the message service's terms (`messagingTermsSections`). Raise it whenever their
- * meaning changes: everybody is then asked to accept them again before their next message.
+ * The checklist a participant goes through before agreeing to the message service's terms: every
+ * section is opened and confirmed on its own, then the statements can be ticked. The terms
+ * themselves are the API's (`messagingTerms`); this is only the walk through them.
  */
-export const MESSAGING_TERMS_VERSION = 1;
 
-/** Whether somebody who accepted `version` of the terms has accepted them as they stand. */
-export function acceptedMessagingTerms(version: number | null | undefined) {
-	return version === MESSAGING_TERMS_VERSION;
+interface Checklist {
+	/** The sections' keys, in order. */
+	keys: readonly string[];
+	/** The keys confirmed so far. */
+	done: readonly string[];
 }
 
-/** Whether a scrolling element shows its end, give or take a few pixels of rounding. */
-export function scrolledToEnd({
-	scrollTop,
-	clientHeight,
-	scrollHeight
-}: {
-	scrollTop: number;
-	clientHeight: number;
-	scrollHeight: number;
-}) {
-	return scrollTop + clientHeight >= scrollHeight - 8;
+/** The first section not confirmed yet, which the checklist opens next; null once all are. */
+export function nextOpenSection({ keys, done }: Checklist) {
+	return keys.find((key) => !done.includes(key)) ?? null;
 }
 
-/** The version an acceptance names: the current one, so nobody accepts a text they were not shown. */
-export const messagingTermsVersionSchema = z
-	.number()
-	.refine((version) => version === MESSAGING_TERMS_VERSION, {
-		error: () => m.chatTermsOutdated()
-	});
-
-interface TermsSection {
-	icon: string;
-	title: string;
-	paragraphs: string[];
+/** Confirms `key`: what is done afterwards, and which section opens next. */
+export function confirmSection({ keys, done, key }: Checklist & { key: string }) {
+	const nowDone = done.includes(key) ? [...done] : [...done, key];
+	return { done: nowDone, open: nextOpenSection({ keys, done: nowDone }) };
 }
 
-/** The terms of the message service, in the reader's language. */
-export function messagingTermsSections(): TermsSection[] {
-	return [
-		{
-			icon: 'chats-circle',
-			title: m.chatTermsPurposeTitle(),
-			paragraphs: [m.chatTermsPurposeText(), m.chatTermsPurposeEmergency()]
-		},
-		{
-			icon: 'handshake',
-			title: m.chatTermsConductTitle(),
-			paragraphs: [
-				m.chatTermsConductRespect(),
-				m.chatTermsConductDiscrimination(),
-				m.chatTermsConductContent(),
-				m.chatTermsConductPrivacy()
-			]
-		},
-		{
-			icon: 'eye',
-			title: m.chatTermsReadersTitle(),
-			paragraphs: [
-				m.chatTermsReadersParticipants(),
-				m.chatTermsReadersReport(),
-				m.chatTermsReadersTeam(),
-				m.chatTermsReadersTrusted(),
-				m.chatTermsReadersOperation()
-			]
-		},
-		{
-			icon: 'shield-check',
-			title: m.chatTermsProtectionTitle(),
-			paragraphs: [m.chatTermsProtectionText()]
-		},
-		{
-			icon: 'warning',
-			title: m.chatTermsConsequencesTitle(),
-			paragraphs: [m.chatTermsConsequencesText()]
-		},
-		{
-			icon: 'database',
-			title: m.chatTermsStorageTitle(),
-			paragraphs: [m.chatTermsStorageText(), m.chatTermsStorageMails()]
-		}
-	];
+/** Whether every section is confirmed, so the statements can be ticked. */
+export function allSectionsConfirmed({ keys, done }: Checklist) {
+	return keys.every((key) => done.includes(key));
 }

@@ -3635,11 +3635,52 @@ enum MediaconsentstatusEnum {
   PARTIALLY_ALLOWED
 }
 
+"""The message service's terms as they stand, in the reader's locale."""
+type MessagingTerms {
+  confirmations: [MessagingTermsConfirmation!]!
+
+  """The hash of exactly this text, which `acceptMessagingTerms` names."""
+  contentHash: String!
+  id: ID!
+  intro: String!
+  locale: String!
+  revision: Int!
+  sections: [MessagingTermsSection!]!
+  version: Int!
+}
+
+"""A statement the reader ticks to agree to the terms."""
+type MessagingTermsConfirmation {
+  id: ID!
+
+  """What `acceptMessagingTerms` names in `confirmationIds`."""
+  key: String!
+  text: String!
+}
+
+"""One section of the terms: a title, its gist and its full text."""
+type MessagingTermsSection {
+  """A warning shown apart from the paragraphs."""
+  callout: String
+
+  """A Phosphor icon name."""
+  icon: String!
+  id: ID!
+
+  """The section's id in the terms file, the same in every locale."""
+  key: String!
+  paragraphs: [String!]!
+
+  """The section in one sentence, shown before its full text."""
+  summary: String!
+  title: String!
+}
+
 type Mutation {
   """
-  The caller accepts the message service's terms, which a participant has to before they write. `version` is the one they were shown (`MESSAGING_TERMS_VERSION`); INVALID_INPUT for any other, so nobody accepts a text they have not seen.
+  The caller agrees to the message service's terms, which a participant has to before they write. It names what it was shown (`messagingTerms`: `version`, `revision`, `contentHash`) and every confirmation's `key`; INVALID_INPUT when that is not the terms as they stand, so nobody accepts a text they have not seen. FORBIDDEN for an AI assistant.
   """
-  acceptMessagingTerms(version: Int!): Boolean!
+  acceptMessagingTerms(confirmationIds: [String!]!, contentHash: String!, revision: Int!, version: Int!): Boolean!
 
   """
   Looks for groups of similar school names among the people of the conference's applications (participant care) and brings the suggestions in line with them: a group found again keeps its decision, groups no longer found are removed.
@@ -6380,6 +6421,9 @@ type Query {
   The address AI assistants connect to (the MCP server), or null while it is not set up for this app. Each conference still switches assistants on for itself (`setConferenceMcpEnabled`).
   """
   mcpServerUrl: String
+
+  """The message service's terms as they stand, in the caller's locale."""
+  messagingTerms: MessagingTerms!
 
   """
   Whether the caller's age on the first conference day fits the conference's range for taking part as `role`; null when it does or no birthday is known. Registering is not refused by age, but a participant's application cannot be sent with an age outside the range (`applicationBlockers`).
@@ -9445,8 +9489,6 @@ type User {
   invitationsSent(limit: Int, offset: Int, orderBy: TeammemberinvitationOrderInputArgument, search: TeammemberinvitationSearchInputArgument, where: TeammemberinvitationWhereInputArgument): [Teammemberinvitation!]!
   locale: String!
   messageNotificationEmails: Boolean!
-  messagingTermsAcceptedAt: DateTime
-  messagingTermsVersion: Int
 
   """Get the paymentTransactions related to this user"""
   ownPaymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
@@ -9509,8 +9551,6 @@ input UserOrderInputArgument {
   id: SortingParameter
   locale: SortingParameter
   messageNotificationEmails: SortingParameter
-  messagingTermsAcceptedAt: SortingParameter
-  messagingTermsVersion: SortingParameter
   phone: SortingParameter
   preferredUsername: SortingParameter
   pronouns: SortingParameter
@@ -9566,8 +9606,6 @@ input UserWhereInputArgument {
   invitationsSent: TeammemberinvitationWhereInputArgument
   locale: StringWhereInputArgument
   messageNotificationEmails: BooleanWhereInputArgument
-  messagingTermsAcceptedAt: DateTimeWhereInputArgument
-  messagingTermsVersion: IntWhereInputArgument
   ownPaymentTransactions: PaymenttransactionWhereInputArgument
   paperReviews: PaperreviewWhereInputArgument
   papers: PaperWhereInputArgument

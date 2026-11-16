@@ -927,13 +927,14 @@ list header.
 - **Where the reader left off**: `ChatThread` takes `firstUnreadId` (`threadMessages.ts`) once as
   it opens, `ChatMessages` draws the "new messages" line above that message, and the thread opens
   there instead of at the end. The line stays until the chat is opened again.
-- **`MessagingTermsModal`**: the terms of the message service (`messagingTermsSections`). The
-  composer opens it with `onAccepted` when the API asks a participant to agree before their first
-  message; `MessagingTermsLink` under the participant's chat list shows them to read. The text
-  scrolls in a focusable region of its own, so the dialog opens at its beginning (focus would
-  otherwise go to a control below the text and scroll there), a banner on top says the agreement
-  is at the bottom, and the checkbox is disabled until the reader scrolled to the end
-  (`scrolledToEnd`).
+- **`MessagingTermsModal`**: the terms of the message service (`messagingTerms`), loaded when it
+  opens, inside a boundary with a skeleton and `LoadError`. The composer opens it with
+  `onAccepted` when the API asks a participant to agree before their first message;
+  `MessagingTermsLink` under the participant's chat list shows them to read.
+  `MessagingTermsChecklist` lists every section as a disclosure (`MessagingTermsSection`: title and
+  summary on the button, `aria-expanded`). Asked to agree, the first section opens, "Understood" confirms it and opens and
+  focuses the next one left (`confirmSection`, `#lib/helpers/messagingTerms`), a progress bar
+  counts them, and the statements' checkboxes stay disabled until every section is confirmed.
 - **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
 - **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
   `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a

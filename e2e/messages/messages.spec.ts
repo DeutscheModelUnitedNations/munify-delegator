@@ -70,35 +70,49 @@ test('a delegate finds another by country and committee and writes to them', asy
 	await page.getByTestId('chat-input').fill('Hallo aus Deutschland');
 	await page.getByTestId('chat-send').click();
 	const terms = page.getByRole('dialog', { name: 'Nutzungsbedingungen der Nachrichten' });
+	const sections = terms.getByTestId('chat-terms-section');
+	await expect(sections).toHaveCount(7);
 	await expect(terms).toContainText('Wer deine Nachrichten lesen kann');
-	await expect(terms).toContainText('Vertrauenspersonen');
-	// they open at their beginning, under a note saying where to agree
-	const text = page.getByTestId('chat-terms-text');
-	await expect(terms).toContainText('Lies sie bis zum Ende');
-	await expect(text).toBeFocused();
-	expect(await text.evaluate((region) => region.scrollTop)).toBe(0);
+	await expect(terms).toContainText('0 von 7 gelesen');
+	// the first section opens with its full text, the others show their gist only
+	await expect(sections.first()).toContainText('Notruf 112');
+	await expect(sections.nth(3)).toContainText('Nicht Ende-zu-Ende-verschlüsselt');
+	await expect(sections.nth(3).getByRole('button', { expanded: false })).toBeVisible();
+	await expect(sections.nth(3).getByTestId('chat-terms-understood')).toBeHidden();
 	await expect(page.getByTestId('chat-message')).toHaveCount(0);
 	// nothing goes out without her agreement, and her text is kept
 	await expect(page.getByTestId('chat-terms-accept')).toBeDisabled();
+	await expect(page.getByTestId('chat-terms-confirm').first()).toBeDisabled();
 	await terms.getByRole('button', { name: 'Abbruch' }).click();
 	await expect(page.getByTestId('chat-input')).toHaveValue('Hallo aus Deutschland');
 	await expect(page.getByTestId('chat-message')).toHaveCount(0);
 
 	await page.getByTestId('chat-send').click();
-	// only who scrolled through them can agree
-	await expect(page.getByTestId('chat-terms-agree')).toBeDisabled();
-	await text.evaluate((region) => region.scrollTo({ top: region.scrollHeight }));
-	await page.getByTestId('chat-terms-agree').check();
+	// she confirms one section after the other; each opens the next
+	for (let index = 0; index < 7; index++) {
+		await expect(sections.nth(index).getByRole('button', { expanded: true })).toBeVisible();
+		await sections.nth(index).getByTestId('chat-terms-understood').click();
+	}
+	await expect(terms).toContainText('7 von 7 gelesen');
+	// only then the statements can be ticked, and only both together agree
+	const statements = page.getByTestId('chat-terms-confirm');
+	await expect(statements).toHaveCount(2);
+	await statements.first().check();
+	await expect(page.getByTestId('chat-terms-accept')).toBeDisabled();
+	await statements.nth(1).check();
 	await page.getByTestId('chat-terms-accept').click();
 	await expect(
 		page.getByTestId('chat-message').filter({ hasText: 'Hallo aus Deutschland' })
 	).toBeVisible();
 	await expect(terms).toBeHidden();
 
-	// and they stay there to read
+	// and they stay there to read, without anything to confirm
 	await page.getByTestId('chat-terms-read').click();
-	await expect(terms).toContainText('Respektvoller Umgang');
-	await expect(page.getByTestId('chat-terms-agree')).toHaveCount(0);
+	await expect(terms.getByTestId('chat-terms-section')).toHaveCount(7);
+	await expect(page.getByTestId('chat-terms-understood')).toHaveCount(0);
+	await expect(page.getByTestId('chat-terms-confirm')).toHaveCount(0);
+	await terms.getByRole('button', { name: 'Respektvoller Umgang' }).click();
+	await expect(terms).toContainText('Schreibe so, wie du selbst angeschrieben werden möchtest.');
 	await terms.getByRole('button', { name: 'Schließen' }).first().click();
 	await expect(page.getByTestId('chat-list')).toContainText('Frankreich · MSGV');
 });

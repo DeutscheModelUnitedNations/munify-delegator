@@ -124,7 +124,7 @@ Participants write to the trusted persons all together or to one of them by name
 
 In direct chats and delegation groups, participants see each other by role only. The team does not read these chats, except after a report. When a person loses their seat, nobody can write in their direct chats any more.
 
-Before their first message, participants agree to the **Terms of the message service**. They cover respectful conduct, explain who reads along and apply once per account. The team writes without agreeing.
+Before their first message, participants agree to the **Terms of the message service**. They cover respectful conduct, explain who reads along and apply once per account. Participants confirm every point on its own and then two statements, one of them that misuse can lead to exclusion from the conference. The team writes without agreeing.
 
 ### Replying and new chats
 

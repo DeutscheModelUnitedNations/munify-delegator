@@ -1,0 +1,285 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0ac8fe8c-0d3b-48c4-8e79-0b45fa1883f0",
+  "prevIds": [
+    "2d40974a-d9fd-4a56-b844-f1d84f423171"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "messaging_terms_acceptance"
+      ],
+      "writes": [
+        "s|tbl|public.messaging_terms_acceptance",
+        "n|tbl|public.messaging_terms_acceptance",
+        "e|tbl|public.messaging_terms_acceptance",
+        "n|rel|public.messaging_terms_acceptance",
+        "n|type|public.messaging_terms_acceptance",
+        "n|rel|public.messaging_terms_acceptance_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "messaging_terms_acceptance",
+        "messaging_terms_acceptance_user_id_version_revision_key"
+      ],
+      "writes": [
+        "s|idx|public.messaging_terms_acceptance_user_id_version_revision_key",
+        "n|idx|public.messaging_terms_acceptance_user_id_version_revision_key",
+        "e|idx|public.messaging_terms_acceptance_user_id_version_revision_key",
+        "n|rel|public.messaging_terms_acceptance_user_id_version_revision_key"
+      ],
+      "reads": [
+        "n|tbl|public.messaging_terms_acceptance",
+        "n|sch|public",
+        "n|col|public.messaging_terms_acceptance.user_id",
+        "n|col|public.messaging_terms_acceptance.version",
+        "n|col|public.messaging_terms_acceptance.revision"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "messaging_terms_acceptance"
+      ],
+      "writes": [
+        "s|fk|public.messaging_terms_acceptance.messaging_terms_acceptance_user_id_user_id_fkey",
+        "n|fk|public.messaging_terms_acceptance.messaging_terms_acceptance_user_id_user_id_fkey",
+        "e|fk|public.messaging_terms_acceptance.messaging_terms_acceptance_user_id_user_id_fkey",
+        "n|con|public.messaging_terms_acceptance.messaging_terms_acceptance_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.messaging_terms_acceptance",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.messaging_terms_acceptance.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "messaging_terms_acceptance",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "version",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "revision",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "locale",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "content_hash",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "confirmation_ids",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 1,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "messaging_terms_acceptance_user_id_version_revision_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "version",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "revision",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "messaging_terms_acceptance_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "messaging_terms_acceptance",
+        "name": "messaging_terms_acceptance_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}
