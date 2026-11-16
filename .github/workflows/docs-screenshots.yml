@@ -33,8 +33,11 @@ jobs:
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
+        # Docker gives a container 64 MB of /dev/shm, too little for the parallel workers of
+        # the seeded conferences' queries ("could not resize shared memory segment").
         options: >-
-          --health-cmd pg_isready
+          --shm-size 1g
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
