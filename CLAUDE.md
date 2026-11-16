@@ -1865,6 +1865,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   not be - schema building fails every `instanceof` check across two copies.
 - **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
   `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
+  `bun run check` passes `--tsgo`, so svelte-check hands the type checking to TypeScript 7 too: on
+  TypeScript 6 it ran out of memory on this project. Types superforms takes (`defaults`,
+  `superForm`) are `type` aliases, not interfaces, which TypeScript 7 does not take as a
+  `Record<string, unknown>`.
 - **OpenTelemetry 3** has no `sdk-trace-node`: `#lib/tracing` builds a `TracerProvider` from
   `@opentelemetry/sdk-trace` and registers the async-hooks context manager and the W3C propagators
   itself, which `NodeTracerProvider.register()` used to do. The server (`src/instrumentation.server.ts`)
