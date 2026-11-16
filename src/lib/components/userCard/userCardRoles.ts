@@ -167,9 +167,10 @@ export function participationStage({
 	conferenceState: string;
 }): ParticipationStage | undefined {
 	if (application?.assignedRole) return didAttend ? 'attended' : 'seated';
+	// An applicant who got no seat keeps their application while they wait for one
+	if (waitingListEntry && !waitingListEntry.assignedAt) return 'waitingList';
 	if (application?.applied) return AFTER_ASSIGNMENT.has(conferenceState) ? 'notSeated' : 'applied';
 	if (application) return 'registered';
-	if (waitingListEntry && !waitingListEntry.assignedAt) return 'waitingList';
 	return undefined;
 }
 

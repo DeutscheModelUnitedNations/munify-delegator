@@ -68,6 +68,17 @@ describe('visibleUserCardTabs', () => {
 });
 
 describe('shownUserCardTab', () => {
+	it('opens the registration of somebody waiting for a seat', () => {
+		expect(
+			shownUserCardTab({
+				picked: null,
+				visible: ['person', 'registration', 'seat', 'formalities', 'history'],
+				state: 'PREPARATION',
+				waiting: true
+			})
+		).toBe('registration');
+	});
+
 	const tabs = visibleUserCardTabs({ ...none, registered: true, holdsPart: true });
 
 	it('keeps the picked tab when the person has it', () => {

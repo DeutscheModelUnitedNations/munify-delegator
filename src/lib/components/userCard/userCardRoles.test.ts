@@ -81,6 +81,16 @@ describe('participationStage', () => {
 		).toBeUndefined();
 	});
 
+	test('shows a rejected applicant on the waiting list as waiting', () => {
+		expect(
+			participationStage({
+				application: { applied: true, assignedRole: null },
+				waitingListEntry: { assignedAt: null },
+				conferenceState: 'PREPARATION'
+			})
+		).toBe('waitingList');
+	});
+
 	test('has nothing to say about somebody without an application', () => {
 		expect(participationStage({ conferenceState: state })).toBeUndefined();
 	});
