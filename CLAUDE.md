@@ -1537,7 +1537,8 @@ bun run preview
   a test and logged as sent by hand with a `test:` key, so it claims nothing the real ones use.
   A new topic needs its case in `testEmailKind` and the Slack text there.
 - `SLACK_API_URL` points the calls at a stand-in; only tests set it.
-  `e2e/authorization/notifications.spec.ts` pins the rules down.
+  `e2e/authorization/notifications.spec.ts` pins the rules down; the dev seed's
+  `seed-dev/notifications.ts` has the workspaces (with placeholder tokens), lookups and choices.
 
 ### Logging
 

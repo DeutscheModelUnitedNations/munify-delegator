@@ -37,6 +37,14 @@ export interface SeedBatch {
 	chatMessage: (typeof schema.chatMessage.$inferInsert)[];
 	chatRead: (typeof schema.chatRead.$inferInsert)[];
 	chatReport: (typeof schema.chatReport.$inferInsert)[];
+	chatBlock: (typeof schema.chatBlock.$inferInsert)[];
+	announcementAttachment: (typeof schema.announcementAttachment.$inferInsert)[];
+	announcementRead: (typeof schema.announcementRead.$inferInsert)[];
+	slackWorkspace: (typeof schema.slackWorkspace.$inferInsert)[];
+	conferenceSlackWorkspace: (typeof schema.conferenceSlackWorkspace.$inferInsert)[];
+	slackUserLookup: (typeof schema.slackUserLookup.$inferInsert)[];
+	notificationPreference: (typeof schema.notificationPreference.$inferInsert)[];
+	slackNotification: (typeof schema.slackNotification.$inferInsert)[];
 	waitingListEntry: (typeof schema.waitingListEntry.$inferInsert)[];
 	conferenceParticipant: (typeof schema.conferenceParticipant.$inferInsert)[];
 	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
@@ -98,6 +106,14 @@ export function emptyBatch(): SeedBatch {
 		chatMessage: [],
 		chatRead: [],
 		chatReport: [],
+		chatBlock: [],
+		announcementAttachment: [],
+		announcementRead: [],
+		slackWorkspace: [],
+		conferenceSlackWorkspace: [],
+		slackUserLookup: [],
+		notificationPreference: [],
+		slackNotification: [],
 		waitingListEntry: [],
 		conferenceParticipant: [],
 		attendanceSession: [],
@@ -390,5 +406,37 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.chatReport,
 		insert: (rows) => db.insert(s.chatReport).values(rows)
+	});
+	await insertChunked({
+		rows: batch.chatBlock,
+		insert: (rows) => db.insert(s.chatBlock).values(rows)
+	});
+	await insertChunked({
+		rows: batch.announcementAttachment,
+		insert: (rows) => db.insert(s.announcementAttachment).values(rows)
+	});
+	await insertChunked({
+		rows: batch.announcementRead,
+		insert: (rows) => db.insert(s.announcementRead).values(rows)
+	});
+	await insertChunked({
+		rows: batch.slackWorkspace,
+		insert: (rows) => db.insert(s.slackWorkspace).values(rows)
+	});
+	await insertChunked({
+		rows: batch.conferenceSlackWorkspace,
+		insert: (rows) => db.insert(s.conferenceSlackWorkspace).values(rows)
+	});
+	await insertChunked({
+		rows: batch.slackUserLookup,
+		insert: (rows) => db.insert(s.slackUserLookup).values(rows)
+	});
+	await insertChunked({
+		rows: batch.notificationPreference,
+		insert: (rows) => db.insert(s.notificationPreference).values(rows)
+	});
+	await insertChunked({
+		rows: batch.slackNotification,
+		insert: (rows) => db.insert(s.slackNotification).values(rows)
 	});
 }

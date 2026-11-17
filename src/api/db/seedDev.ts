@@ -42,8 +42,9 @@ import {
 	addElsewhereTeam
 } from './seed-dev/duplicates';
 import { conferencePlans } from './seed-dev/plans';
-import { addMessages } from './seed-dev/messages';
+import { addMessages, addMessagingAccountSettings } from './seed-dev/messages';
 import { addAnnouncements } from './seed-dev/announcements';
+import { addNotifications, addSlackWorkspaces } from './seed-dev/notifications';
 import { logger } from '#lib/logger';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
@@ -86,6 +87,8 @@ for (const account of devAccounts) {
 	if (account.profile !== 'none') batch.user.push(makeDevAccountUser(account));
 }
 addReviewerSnippets(batch);
+addMessagingAccountSettings(batch);
+addSlackWorkspaces(batch);
 addDuplicateScenarioAccounts(batch);
 
 for (const plan of conferencePlans) {
@@ -108,8 +111,10 @@ for (const plan of conferencePlans) {
 	addWaitingList({ cs, personaUserId: 'dev-waitlist' });
 	addPapers(cs);
 	addMessages(cs);
-	addAnnouncements(cs);
+	addNotifications(cs);
 	addSurveys(cs);
+	// after the surveys: an announcement is for one of their choices
+	await addAnnouncements(cs);
 	addEmails(cs);
 	await addCalendar(cs);
 	await addResolutions(cs);
