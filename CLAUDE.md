@@ -1508,7 +1508,8 @@ bun run preview
   never a word of the message or who wrote it. Anything new that tells the team has to keep that,
   for the trusted persons' chats above all.
 - `SLACK_API_URL` points the calls at a stand-in; only tests set it.
-  `e2e/authorization/notifications.spec.ts` pins the rules down.
+  `e2e/authorization/notifications.spec.ts` pins the rules down; the dev seed's
+  `seed-dev/notifications.ts` has the workspaces (with placeholder tokens), lookups and choices.
 
 ### Logging
 
