@@ -790,11 +790,12 @@ Main section wrapper with icon, title, and description:
 
 A link card of the dashboard (`#lib/components/dashboard/DashboardLinkCard.svelte`). Beside the
 title and description it takes an `info` snippet for live details the card carries itself: the
-schedule's card shows a small timeline of what is on now and the next two things on the signed-in person's track (`CalendarLinkInfo`), the team's
-card the caller's roles (`TeamEntryInfo`). A link definition (`dashboardLinks.ts`,
+schedule's card shows a small timeline of what is on now and the next two things on the signed-in person's track (`CalendarLinkInfo`), the paper
+hub's card the numbers of its papers (`PaperHubLinkInfo`). A link definition (`dashboardLinks.ts`,
 `teamDashboardLinks.ts`) sets `info` to such a component, which gets the `conferenceId` and fetches
 its own data; `DashboardLinkCards` and the quick links pass it on. Team members' cards sit on the
-page without a section box around them.
+page without a section box around them, below `TeamWaiting` (`stages/TeamMember/`), the team's
+list of what waits for them (`teamWaiting.ts`).
 
 ### DashboardContentCard
 
@@ -1269,16 +1270,24 @@ The signed-in area (`routes/(authenticated)/`) has **one** global navigation: a 
 (`AuthenticatedHeader.svelte`) inside a centered `max-w-[1400px]` container, which the page content
 shares.
 
-- **Wordmark** (`MUNify DELEGATOR`) links to `/dashboard`, the conference selector.
+Two levels, named apart: **global** ("Konferenzen", the list at `/dashboard`; "Mein Konto"; the
+system administration) and **one conference** (its "Übersicht" and every page below it). "Dashboard"
+names neither in the UI.
+
+- **Wordmark** (`MUNify DELEGATOR`) links to `/dashboard`, the list of conferences.
 - **Breadcrumbs** follow it. The conference crumb is `ConferenceSwitcher.svelte`, a dropdown that
-  names the current conference and switches to another; there is no conference list elsewhere.
-- **Avatar menu** (`UserMenu.svelte`): name and email, my account, feedback, logout, language. It
-  holds no navigation.
+  names the current conference and switches to another; beside the conference's side navigation,
+  whose head is the same switcher (`inMenu`), only phones keep the crumb
+  (`headerState.conferenceMenu`).
+- **Avatar menu** (`UserMenu.svelte`): name and email (leading to "Mein Konto", whose tabs are the
+  profile and, for team members, the notifications), "Konferenzen", "Administration" for system
+  admins (create a conference, CHASE link, Slack workspaces), feedback, logout, language.
 - A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
 
-The dashboard has no sidebar. Only the team area (and the paper hub, which shares its menu) adds one, through
-`SideNavigationDrawer` (directly, or via `TeamShell`): a menu that is always fully shown on
-desktop (a drawer behind the top bar's burger on mobile) for the many pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
+The list of conferences has no sidebar. A conference adds one for its team, through
+`SideNavigationDrawer` (via `ConferenceShell`): a menu that is always fully shown on desktop (a
+drawer behind the top bar's burger on mobile), headed by the conference switcher and its
+"Übersicht", with no logo and no back or home buttons - the top bar covers those.
 
 ### NavMenu
 
@@ -1319,15 +1328,19 @@ from the `+page.svelte` files' paths. Three rules keep every page covered, all c
 - A static folder beats a `[param]` sibling (`dashboard/create` vs `dashboard/[conferenceId]`);
   `staticFirst` orders the pages that way, because the library takes the first one that fits.
 
-A crumb for a folder with no page of its own (`team`) is shown as plain text, not a link.
+A crumb for a folder with no page of its own is shown as plain text, not a link; `team` is left out
+altogether, since the side navigation says where in the team area one is.
 
-### TeamShell
+### ConferenceShell
 
-The team side navigation around a page (`team/TeamShell.svelte`). The team layout and the paper hub
-both render inside it, so the menu stays the same. The menu is not written out: it is
-`#lib/data/teamRoutes.ts` (the route registry) filtered by what the caller may open, so a page is in
-the menu exactly when the route guard lets them in. The dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`, which links no team page directly), the
-command palette's page entries and the guard in `team/+layout.ts` read the same registry. A new team
+The frame of every page of a conference (`[conferenceId]/ConferenceShell.svelte`, from
+`[conferenceId]/+layout@(authenticated).svelte`). For the team it draws the side navigation
+(`ConferenceNavMenu.svelte`): the conference switcher, **Übersicht** (the conference's dashboard),
+then `#lib/data/teamRoutes.ts` (the route registry) filtered by what the caller may open, so a page
+is in the menu exactly when the route guard lets them in. Anybody else gets no menu, and the
+participant pages bring their own way back (`BackToDashboard`, which leaves itself out beside the
+menu). The command palette's page entries and the guard in `team/+layout.ts` read the same
+registry. A new team
 page is one entry there; its `roles` say who may open it. Members and invitations share a tab layout
 in the `team/(members)` route group.
 
@@ -1559,9 +1572,10 @@ passed in the browser, so a full page load is still server-rendered with its con
 | `key`      | `string`         | A new value creates a new boundary, which shows the skeleton |
 | `skeleton` | `SkeletonLayout` | What to draw; `PAGE_SKELETON` when left out                  |
 
-Where it sits: the team shell (`team/TeamShell.svelte`, `teamSkeletonForPath`), the assignment
-layout (below its tabs, `ASSIGNMENT_TAB_SKELETONS`), and `dashboard/+layout.svelte` (every
-dashboard page but the paper hub's, whose shell shows it). A layout that keeps state across its
+Where it sits: the conference shell (`[conferenceId]/ConferenceShell.svelte`, `DASHBOARD_SKELETON`
+for the overview, `teamSkeletonForPath` otherwise), the assignment layout (below its tabs,
+`ASSIGNMENT_TAB_SKELETONS`), the paper hub's layout (below its back link), and
+`dashboard/+layout.svelte` (the pages about no one conference). A layout that keeps state across its
 pages must not sit inside a boundary keyed by the pathname: name it as a frame in `boundaryKey`
 and give it a `PageBoundary` of its own.
 

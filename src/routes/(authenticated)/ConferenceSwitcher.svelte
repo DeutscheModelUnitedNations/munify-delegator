@@ -9,12 +9,17 @@
 	} from './dashboard/conferenceGroups';
 	import { fetchSelectableConferences } from './dashboard/conferenceSelector';
 
-	/** The breadcrumb's conference crumb: names the current conference and switches to another. */
+	/**
+	 * Names the current conference and switches to another: the head of the conference's side
+	 * navigation, and the breadcrumb's conference crumb wherever there is no such menu.
+	 */
 	interface Props {
 		conferenceId: string;
+		/** Drawn as the side navigation's head rather than as a crumb */
+		inMenu?: boolean;
 	}
 
-	let { conferenceId }: Props = $props();
+	let { conferenceId, inMenu = false }: Props = $props();
 
 	const conferences = $derived(await fetchSelectableConferences());
 	const groups = $derived(groupConferencesByState(conferences));
@@ -22,9 +27,15 @@
 </script>
 
 <DropdownMenu.Root>
-	<DropdownMenu.Trigger class="btn btn-ghost btn-sm max-w-56 gap-1.5 max-sm:px-1.5">
+	<DropdownMenu.Trigger
+		class={inMenu
+			? 'btn btn-outline border-base-300 btn-block h-auto min-h-10 min-w-0 max-w-full flex-nowrap justify-start gap-2 py-2 text-left'
+			: 'btn btn-ghost btn-sm max-w-56 gap-1.5 max-sm:px-1.5'}
+	>
 		<i aria-hidden="true" class="ph-duotone ph-flag"></i>
-		<span class="crumb-label truncate font-semibold">{current?.title ?? m.conference()}</span>
+		<span class={['min-w-0 truncate font-semibold', inMenu ? 'flex-1' : 'crumb-label']}>
+			{current?.title ?? m.conference()}
+		</span>
 		<i aria-hidden="true" class="ph-duotone ph-caret-down text-base-content/50 text-[0.6rem]"></i>
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>

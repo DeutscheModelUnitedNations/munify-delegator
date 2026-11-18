@@ -41,3 +41,37 @@ test('the team navigation switches pages client-side and marks the open one', as
 	expect(await page.evaluate(() => document.body.dataset.e2eSameDocument)).toBe('yes');
 	expect(errors).toEqual([]);
 });
+
+// The conference's overview is the first entry of the same menu: going there keeps the menu and
+// the document, names the conference at the menu's head, and shows the team what waits for it.
+test('the overview sits in the conference navigation, beside the team pages', async ({ page }) => {
+	test.setTimeout(120_000);
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+
+	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID, { roles: ['admin'] }), {
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/stats`
+	});
+	await waitForHydration(page);
+	await page.evaluate(() => {
+		document.body.dataset.e2eSameDocument = 'yes';
+	});
+
+	const menu = page.getByRole('navigation', { name: /seitennavigation|page navigation/i });
+	await expect(menu.getByTestId('conference-menu-switcher')).toBeVisible();
+	// the team area has no page of its own, so no crumb leads there
+	await expect(page.locator('.breadcrumbs li:visible', { hasText: /^\s*Team\s*$/ })).toHaveCount(0);
+
+	await menu.getByRole('link', { name: /übersicht|overview/i }).click();
+	await expect(page).toHaveURL(new RegExp(`/dashboard/${E2E_CONFERENCE_ID}$`));
+	await expect(
+		page.getByTestId('team-waiting').or(page.getByTestId('team-waiting-nothing'))
+	).toBeVisible({ timeout: 20_000 });
+	await expect(menu.locator('a.menu-active')).toHaveAttribute(
+		'href',
+		new RegExp(`/dashboard/${E2E_CONFERENCE_ID}$`)
+	);
+
+	expect(await page.evaluate(() => document.body.dataset.e2eSameDocument)).toBe('yes');
+	expect(errors).toEqual([]);
+});

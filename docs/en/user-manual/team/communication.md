@@ -165,7 +165,7 @@ Participant care and project management also hear in both ways when a chat is re
 
 A notification only names the inbox and leads into the app. The text of a message and who wrote it are never in an email or in Slack.
 
-**Setting it up for yourself:** In the menu behind your initials at the top right, open **Notifications**. The entry appears once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on.
+**Setting it up for yourself:** In the menu behind your initials at the top right, open **My Account** and there the **Notifications** tab. The tab is there once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on.
 
 **Setting up Slack:** Project management picks the conference's workspace on the [Emails](#emails) page under **Slack workspace**. The choices are the workspaces the system's administration has added (see [Slack workspaces](./overview#slack-workspaces)). Without a workspace the conference sends no Slack messages.
 

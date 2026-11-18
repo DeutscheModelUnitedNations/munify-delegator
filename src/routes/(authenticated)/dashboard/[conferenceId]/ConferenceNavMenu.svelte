@@ -12,20 +12,23 @@
 		type groupedTeamRoutes,
 		type TeamRoute
 	} from '#lib/data/teamRoutes';
-	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
-	import CleanupNavButton from './CleanupNavButton.svelte';
-	import MessagesNavButton from './MessagesNavButton.svelte';
+	import PlausibilityNavButton from './team/PlausibilityNavButton.svelte';
+	import CleanupNavButton from './team/CleanupNavButton.svelte';
+	import MessagesNavButton from './team/MessagesNavButton.svelte';
+	import ConferenceSwitcher from '../../ConferenceSwitcher.svelte';
 	import { helpForRoute } from '#lib/docs/help';
 
-	/** The menu itself: the registry's sections, each page a button, the open one marked. */
+	/**
+	 * The menu itself: which conference this is (and the way to another), its overview, then the
+	 * registry's sections, each page a button, the open one marked.
+	 */
 	let {
 		conferenceId,
 		sections
 	}: { conferenceId: string; sections: ReturnType<typeof groupedTeamRoutes> } = $props();
 
-	const openRoute = $derived(
-		teamRouteForPath(teamRelativePath({ pathname: page.url.pathname, conferenceId }))
-	);
+	const relativePath = $derived(teamRelativePath({ pathname: page.url.pathname, conferenceId }));
+	const openRoute = $derived(teamRouteForPath(relativePath));
 
 	const groupIcon = {
 		main: 'ph-house',
@@ -72,11 +75,15 @@
 {/snippet}
 
 <NavMenu>
+	<!-- The scope everything below is about; the dropdown leads to the other conferences -->
+	<li class="mb-2 w-full min-w-0" data-testid="conference-menu-switcher">
+		<ConferenceSwitcher {conferenceId} inMenu />
+	</li>
 	<NavMenuButton
 		href={resolve(`dashboard/${conferenceId}`)}
-		icon="ph-arrow-left"
-		title={m.backToDashboard()}
-		active={false}
+		icon="ph-squares-four"
+		title={m.overview()}
+		active={relativePath === ''}
 	/>
 	<li class="menu-title p-0"><div class="divider my-1"></div></li>
 	{#each sections as section (section.group)}

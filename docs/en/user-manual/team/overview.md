@@ -9,22 +9,22 @@ This page explains what holds for every team page: how you get into the team are
 
 ## Getting in and finding your way {#the-team-area}
 
-Everything a conference's team works on lives in one shared team area. On the conference dashboard, the **Team** card leads in. Your role in this conference is shown in its top right corner. The card opens the first page of the navigation you may open. That is **Statistics**, which every role sees.
+Everything a conference's team works on lives in one shared team area. Once you are on a conference's team, every page of the conference shows the conference's navigation on the left. Its first entry is the conference's **Overview**. There, **Waiting for you** shows your roles in this conference and what is waiting in your parts of the team: unread messages, reported chats, possible duplicate accounts, school merges, due emails and announcements in draft. A click leads to the matching page.
 
-Next to the team card are further cards:
+Below it are cards:
 
 - **Team Wiki**, **Services** and **Preparation**, once the conference has set these links in the [settings](./configuration)
-- **Seats of the Conference**, the public overview of committees, topics, nations and non-state actors
 - **App Documentation**, if the server has a link for it
-- **Schedule**, which the team always sees, even while it is still hidden from participants
 - **Paper Hub**, if you may review papers
 - **Link to CHASE**, while a CHASE instance is linked (see [below](#chase-link))
 
-On the home page, a button with the conference's name leads straight back into the team area you last opened in this browser, as long as you are still on its team.
+On the home page, a button with the conference's name leads straight back to the overview of the conference whose team you last worked in in this browser, as long as you are still on its team.
+
+What participants see you open from the team's page: **Seats** and **Calendar** have the link **Participant view** at the top.
 
 ### The side navigation
 
-On the left, the navigation lists every page your role lets you open. At the very top, **Back to Dashboard** returns to the conference. Below it come the everyday pages (**Statistics**, **Settings**, **Seats**, **Participants**, **Waiting List**, **Schools**, **Team Management**, **Paper Hub**), then the collapsible groups **Workflows**, **Communication** and **Maintenance**. At the very bottom, **Manual for this page** opens the matching section of this manual in a new tab. On pages without a section of their own the link reads **User manual**.
+On the left, the navigation lists every page your role lets you open. At the very top is the conference's name. Clicking it switches to another conference. Below it, **Overview** leads to the conference's overview. Then come the everyday pages (**Statistics**, **Settings**, **Seats**, **Participants**, **Waiting List**, **Schools**, **Team Management**, **Paper Hub**), then the collapsible groups **Workflows**, **Communication** and **Maintenance**. At the very bottom, **Manual for this page** opens the matching section of this manual in a new tab. On pages without a section of their own the link reads **User manual**.
 
 Three entries draw attention with a dot: **Messages** when an inbox you answer has unread messages or a reported chat waits for Participant Care, **Plausibility** while possible duplicate accounts wait for a decision, and **Cleanup** while suggested school merges are open.
 
@@ -312,7 +312,7 @@ DELEGATOR checks the impersonation again on every request. It ends on its own as
 
 ## Slack workspaces {#slack-workspaces}
 
-DELEGATOR can notify team members by Slack (see [Notifications](./communication#notifications)). For that the system's administration adds each Slack workspace once. As an admin you reach the **Slack workspaces** page through the button of that name on the conference overview.
+DELEGATOR can notify team members by Slack (see [Notifications](./communication#notifications)). For that the system's administration adds each Slack workspace once. As an admin you reach the **Slack workspaces** page in the menu behind your initials at the top right, under **Administration**.
 
 1. Create a Slack app in the workspace and give it the bot scopes `chat:write`, `users:read` and `users:read.email`.
 2. Install the app in the workspace and copy its bot token. It starts with `xoxb-`.
@@ -348,7 +348,7 @@ While a CHASE instance is linked, every team member sees the **Link to CHASE** c
 
 System administrators find the **Sync now** button on the card and on the **Link to CHASE** page. It makes DELEGATOR read everything from CHASE again and asks CHASE to do the same with DELEGATOR. It is not normally needed, since both sides hear changes right away. If CHASE cannot be reached at the moment, DELEGATOR still syncs on its side and says so in the message.
 
-System administrators open the **Link to CHASE** page through the button of the same name on the conference overview. It shows which address DELEGATOR is linked to, **Last notice from CHASE**, **Last full sync** and the last error, plus **Open CHASE**. Without a link, it explains which server settings it needs.
+System administrators open the **Link to CHASE** page in the menu behind their initials at the top right, under **Administration**. It shows which address DELEGATOR is linked to, **Last notice from CHASE**, **Last full sync** and the last error, plus **Open CHASE**. Without a link, it explains which server settings it needs.
 
 :::note When the link ends
 If the administration removes the link from the configuration, it ends at the server's next start. The resolutions from CHASE then stay as ordinary resolutions and can be deleted again.

@@ -230,7 +230,9 @@ test('the page lists the topics and a switch saves', async ({ browser }) => {
 	const page = await signedIn(browser, care.id);
 	await page.goto('/dashboard');
 	await page.getByRole('button', { name: /Nora Care/ }).click();
-	await page.getByTestId('user-menu-notifications').click();
+	// the notifications are a tab of the account
+	await page.locator('a[href$="/my-account"]').click();
+	await page.getByRole('tab', { name: /Benachrichtigungen|Notifications/ }).click();
 	await expect(page).toHaveURL(/\/my-account\/notifications$/);
 
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
@@ -252,6 +254,30 @@ test('the page lists the topics and a switch saves', async ({ browser }) => {
 	await expect(
 		section.getByRole('checkbox', { name: 'E-Mail für Teilnehmendenbetreuung' })
 	).not.toBeChecked();
+});
+
+test('a conference is switched off and on at once', async ({ browser }) => {
+	const page = await signedIn(browser, care.id);
+	await page.goto('/my-account/notifications');
+	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
+	const switches = section.getByRole('checkbox');
+	await expect(switches).toHaveCount(4);
+
+	await section
+		.getByRole('button', { name: `Alle Benachrichtigungen für ${fixture.title} ausschalten` })
+		.click();
+	await expect
+		.poll(async () => (await settingsOf(page))?.settings)
+		.toEqual([
+			expect.objectContaining({ email: false, slack: false }),
+			expect.objectContaining({ email: false, slack: false })
+		]);
+	for (const toggle of await switches.all()) await expect(toggle).not.toBeChecked();
+
+	await page
+		.getByRole('button', { name: 'Alle Benachrichtigungen in allen Konferenzen einschalten' })
+		.click();
+	for (const toggle of await switches.all()) await expect(toggle).toBeChecked();
 });
 
 test('a member without an inbox is told there is nothing to set up', async ({ browser }) => {

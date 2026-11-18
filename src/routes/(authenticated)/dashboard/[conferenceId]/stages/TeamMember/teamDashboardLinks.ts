@@ -1,12 +1,8 @@
 import type { Component } from 'svelte';
 import { resolve } from '$app/paths';
-import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
 import PaperHubLinkInfo from '#lib/components/dashboard/PaperHubLinkInfo.svelte';
-import TeamEntryInfo from '#lib/components/dashboard/TeamEntryInfo.svelte';
 import { m } from '#lib/paraglide/messages';
 import type { DashboardHref } from '#lib/data/dashboardLinks';
-import { firstTeamPagePath, publicCalendarPath, publicSeatsPath } from '#lib/data/teamRoutes';
-import type { TeamAccess } from '#lib/helpers/teamAccess';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;
@@ -28,26 +24,6 @@ export interface TeamDashboardLink {
 }
 
 /**
- * The one way into the team area from the dashboard. The team area has no landing page of its
- * own: this opens the first page of it the caller may open (the registry's order), and the side
- * navigation there lists the rest. `undefined` when the caller may open none.
- */
-export function getTeamEntryLink(
-	access: TeamAccess & { canSeePaperHub?: boolean }
-): TeamDashboardLink | undefined {
-	const first = firstTeamPagePath(access);
-	if (!first) return undefined;
-	return {
-		id: 'team',
-		icon: 'user-gear',
-		info: TeamEntryInfo,
-		getTitle: () => m.team(),
-		getDescription: () => m.manageConference(),
-		getHref: (ctx) => resolve(`dashboard/${ctx.conferenceId}/${first}`)
-	};
-}
-
-/**
  * The paper hub, next to the team's card because the registry lists it with the team's pages. It
  * stays at its own path, as participants and supervisors use it too, so this is offered only to
  * whoever may open it (`canSeePaperHub`, as the team navigation decides it).
@@ -66,7 +42,8 @@ export function getPaperHubLink(canSeePaperHub: boolean): TeamDashboardLink | un
 
 /**
  * What the conference's own settings and the app point the team to: the wiki, the services page,
- * the preparation guide, the public seats and the docs. Each shows only when it is set.
+ * the preparation guide and the docs. Each shows only when it is set. The participants' views of
+ * the seats and the schedule are linked from the team's own pages of them.
  */
 export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboardLink[] {
 	return [
@@ -97,13 +74,6 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 				getDescription: () => m.teamPreparationDescription()
 			}
 		}),
-		{
-			id: 'seats',
-			icon: 'chair',
-			getTitle: () => m.conferenceSeats(),
-			getDescription: () => m.seatsLinkDescription(),
-			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicSeatsPath}`)
-		},
 		externalLink({
 			url: ctx.docsUrl,
 			link: {
@@ -112,15 +82,7 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 				getTitle: () => m.appDocs(),
 				getDescription: () => m.appDocsDescription()
 			}
-		}),
-		{
-			id: 'calendar',
-			info: CalendarLinkInfo,
-			icon: 'calendar-dots',
-			getTitle: () => m.calendarSectionTitle(),
-			getDescription: () => m.calendarSectionDescription(),
-			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicCalendarPath}`)
-		}
+		})
 	].filter((link) => link !== undefined);
 }
 

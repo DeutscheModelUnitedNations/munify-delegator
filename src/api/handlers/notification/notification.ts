@@ -11,7 +11,8 @@ import {
 	assertCanManageSlackWorkspaces,
 	assertCanPickSlackWorkspace,
 	assertOwnNotifications,
-	assertOwnTeamMember
+	assertOwnTeamMember,
+	assertOwnTeamMembers
 } from './notificationPermissions';
 import {
 	botTokenSchema,
@@ -20,6 +21,7 @@ import {
 	listSlackWorkspaces,
 	notificationSettingsOf,
 	sendSlackTestMessage,
+	setAllNotificationPreferences,
 	setConferenceSlackWorkspace,
 	setNotificationPreference,
 	slackConnectionOf,
@@ -216,6 +218,21 @@ schemaBuilder.mutationFields((t) => ({
 				channel: args.channel,
 				enabled: args.enabled
 			});
+			return true;
+		}
+	}),
+
+	setAllNotificationPreferences: t.field({
+		description:
+			"Switches all of the caller's notifications on or off, by mail and Slack: those of one conference, or without `conferenceId` those of every conference `myNotificationSettings` lists. NOT_FOUND when they are not on that conference's team.",
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id(),
+			enabled: t.arg.boolean({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const members = await assertOwnTeamMembers({ ctx, conferenceId: args.conferenceId ?? null });
+			await setAllNotificationPreferences({ members, enabled: args.enabled });
 			return true;
 		}
 	}),

@@ -142,11 +142,15 @@ bun run preview
 
 - **`src/routes/`** - SvelteKit routes (filesystem-based routing)
   - `(authenticated)/` - Protected routes requiring authentication
-    - `dashboard/[conferenceId]/` - A conference's dashboard and everything around it
+    - `dashboard/` - The pages about no one conference: the list of conferences ("Konferenzen")
+      and the system administration (`create/`, `chase-link/`, `slack-workspaces/`, reached through
+      the account menu's "Administration")
+    - `dashboard/[conferenceId]/` - A conference's overview (its dashboard) and everything around it,
+      all inside `ConferenceShell.svelte` (`+layout@(authenticated).svelte`)
       - `team/` - **Every team-facing page** (settings, tables, assignment, workflows, team members,
-        messages, announcements, scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
-        entry (`stages/TeamMember/TeamMemberDashboard.svelte`) is one card that opens the first page
-        the caller may open, next to the conference's resource links.
+        messages, announcements, scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the conference's
+        overview is its home (`stages/TeamMember/TeamMemberDashboard.svelte`: what waits for the
+        caller, `TeamWaiting`, then the conference's resource links).
         The assignment lives in `team/assignment/`. See "Team area" below.
       - `paperhub/` - Stays outside `team/`: participants and supervisors use it too
     - `dashboard/create/` - Creating a conference from a seeding JSON (system admins)
@@ -700,8 +704,15 @@ bun run preview
 - **Team area.** Everything a conference's team works in is under `dashboard/[conferenceId]/team/`,
   behind **one guard** (`team/+layout.ts`) and **one registry** (`#lib/data/teamRoutes.ts`): each
   entry holds the path, title, icon, section, command palette keywords and the roles that may open
-  it. The side navigation (`team/TeamShell.svelte`), the dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`: one card that opens the first page the caller may open, plus the conference's resource links), the command palette and the guard are all
-  generated from it, so they cannot disagree. What a caller may open comes from `TeamAccess`
+  it. The side navigation (`[conferenceId]/ConferenceShell.svelte` and `ConferenceNavMenu.svelte`:
+  the conference switcher, the conference's overview, then the registry), the command palette and
+  the guard are all generated from it, so they cannot disagree. The menu is the team's only: it
+  frames every page of the conference (participant pages and the paper hub too) for whoever is on
+  the team, and nobody else gets one; `BackToDashboard` steps aside beside it
+  (`#lib/state/conferenceMenu`). The team's overview lists what waits for the caller
+  (`stages/TeamMember/teamWaiting.ts`), only for pages they may open. A team page editing what
+  participants see links their view (`team/ParticipantViewLink.svelte`, `participantViewOf`)
+  rather than the menu or the overview listing both. What a caller may open comes from `TeamAccess`
   (`#lib/helpers/teamAccess.ts`: every role they hold, plus the admin flag; fetch it with
   `fetchTeamAccess`). The page-level predicates (`canEditConference`, `canEditCommittees`, …) take
   that and mirror the API's abilities. There are no redirect stubs: a path that is not a page is a

@@ -165,7 +165,7 @@ Die Teilnehmendenbetreuung und die Projektleitung erfahren auf beiden Wegen auch
 
 Eine Benachrichtigung nennt nur das Postfach und führt in die App. Der Text einer Nachricht und wer sie geschrieben hat, stehen nie in einer E-Mail oder in Slack.
 
-**Für dich einstellen:** Im Menü hinter deinen Initialen oben rechts öffnest du **Benachrichtigungen**. Der Eintrag erscheint, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an.
+**Für dich einstellen:** Im Menü hinter deinen Initialen oben rechts öffnest du **Mein Konto** und dort den Reiter **Benachrichtigungen**. Den Reiter gibt es, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an.
 
 **Slack einrichten:** Die Projektleitung wählt auf der Seite [E-Mails](#emails) unter **Slack-Workspace** den Workspace der Konferenz aus. Zur Auswahl stehen die Workspaces, die die Administration des Systems eingetragen hat (siehe [Slack-Workspaces](./overview#slack-workspaces)). Ohne Workspace gibt es für die Konferenz keine Slack-Nachrichten.
 

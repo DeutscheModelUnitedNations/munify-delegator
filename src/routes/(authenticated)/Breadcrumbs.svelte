@@ -7,6 +7,7 @@
 	import ConferenceSwitcher from './ConferenceSwitcher.svelte';
 	import SurveyCrumbTitle from './SurveyCrumbTitle.svelte';
 	import type { LayoutProps } from './$types';
+	import { headerState } from '#lib/state/authenticatedHeaderStatus.svelte.js';
 
 	type Parameters = keyof LayoutProps['params'];
 
@@ -47,7 +48,13 @@ import path via the parameter! The home link is the wordmark in the header, so t
 <Breadcrumbs importObject={pages} availableLanguageTags={[...locales]} delimiterSnippet={delimiter}>
 	{#snippet pathSnippet(pathSegment: PathSegmentType)}
 		{#if pathSegment.key === 'conferenceId' && pathSegment.isParameter}
-			<ConferenceSwitcher conferenceId={pathSegment.value} />
+			<!-- beside the conference's side navigation, whose head is this switcher, only phones keep it -->
+			<span class={['contents', headerState.conferenceMenu && 'crumb-hidden-sm']}>
+				<ConferenceSwitcher conferenceId={pathSegment.value} />
+			</span>
+		{:else if !pathSegment.isParameter && String(pathSegment.key) === 'team'}
+			<!-- a folder without a page of its own; the side navigation says where in the team area one is -->
+			<span class="crumb-hidden"></span>
 		{:else}
 			{@const breadcrumb = getBreadcrumb(pathSegment)}
 			{#snippet label()}
@@ -83,6 +90,16 @@ import path via the parameter! The home link is the wordmark in the header, so t
 </Breadcrumbs>
 
 <style>
+	:global(.breadcrumbs li:has(> .crumb-hidden)) {
+		display: none;
+	}
+
+	@media (width >= 40rem) {
+		:global(.breadcrumbs li:has(> .crumb-hidden-sm)) {
+			display: none;
+		}
+	}
+
 	/* Phones show the trail as icons and spell out only the page they are on */
 	@media (width < 40rem) {
 		:global(.breadcrumbs li:not(:last-child)) .crumb-label {

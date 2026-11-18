@@ -1,22 +1,19 @@
 <!--
 	@component
-	What the dashboard offers a team member: one entry into the team area (whose side navigation,
-	read from the route registry, lists its pages) and the links the conference and the app give the
+	What the conference's overview offers a team member: what waits for them in the team (the side
+	navigation beside it lists the team's pages), then the links the conference and the app give the
 	team, as plain cards with no box or heading around them. Cards carry live details of their own,
-	such as what is on right now. No team page is linked directly from here.
+	such as what is on right now.
 -->
 <script lang="ts">
 	import DashboardLinkCards from '#lib/components/dashboard/DashboardLinkCards.svelte';
 	import ChaseStatusCard from './ChaseStatusCard.svelte';
+	import TeamWaiting from './TeamWaiting.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { fetchTeamAccess } from '#lib/api/teamAccess';
-	import { isOnTeam } from '#lib/helpers/teamAccess';
-	import { rememberTeamConference } from '#lib/state/lastTeamConference.svelte.js';
 	import { PUBLIC_DOCS_URL } from '$app/env/public';
 	import { fetchCanOpenPaperHub } from '../../paperhub/myPaperHubRoles';
 	import {
 		getPaperHubLink,
-		getTeamEntryLink,
 		getTeamResourceLinks,
 		type TeamDashboardLinkContext
 	} from './teamDashboardLinks';
@@ -31,12 +28,6 @@
 			linkToPreparationGuide: true
 		})
 	);
-	const access = $derived(await fetchTeamAccess(conferenceId));
-
-	// The home page offers the way back into this conference's team area
-	$effect(() => {
-		if (isOnTeam(access)) rememberTeamConference(conferenceId);
-	});
 
 	// A snapshot of a boolean, decided the same way as the team navigation's paper hub entry
 	const canSeePaperHub = $derived(await fetchCanOpenPaperHub(conferenceId));
@@ -49,13 +40,12 @@
 		docsUrl: PUBLIC_DOCS_URL
 	});
 	const links = $derived(
-		[
-			getTeamEntryLink(access),
-			...getTeamResourceLinks(context),
-			getPaperHubLink(canSeePaperHub)
-		].filter((link) => link !== undefined)
+		[...getTeamResourceLinks(context), getPaperHubLink(canSeePaperHub)].filter(
+			(link) => link !== undefined
+		)
 	);
 </script>
 
+<TeamWaiting {conferenceId} />
 <DashboardLinkCards {links} {context} {conferenceId} />
 <ChaseStatusCard {conferenceId} />
