@@ -1921,7 +1921,22 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 
 ## Development Workflow
 
-- Never use the git commit command after a task is finished.
+- **Local sessions:** never use the git commit command after a task is finished; the person
+  reviews and commits themselves.
+- **Cloud sessions** (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): the container is thrown
+  away, so work only survives as commits on the session's branch, and the PR is how it gets
+  reviewed. This standing instruction is the explicit request to open one; no need to ask first.
+  - **One PR per branch**, never one per step. Commit and push each step as it is done.
+  - **A step is done** (a coherent, type-checked part of the feature, `bun run check` and the
+    affected `bun test`s passing, but the feature is not finished): open the PR as a **draft**
+    if there is none yet, otherwise push to it and update its description. The description
+    lists what is done and what is still open, so a reviewer can tell how far it got.
+  - **The feature is done** (everything asked for, with its tests, the manual and CLAUDE.md /
+    CLAUDE-UI.md updated where they apply): mark the PR **ready for review**, or open it ready
+    if no draft exists.
+  - Title in the commit convention (`feat (Assignment): …`), the matching `PR: *` label (see
+    "PR Labels"), the body in English: what changed and why, how it was verified, what is left.
+  - Never merge it, and stop pushing once the person says the PR is theirs to finish.
 
 ### Releasing
 
