@@ -92,7 +92,7 @@ Ein abgegebenes Feedback kannst du weder ändern noch löschen. Der neue Status 
 Begutachten kannst du jedes eingereichte Papier, auch ein schon akzeptiertes noch einmal. Einen Entwurf lehnt DELEGATOR ab.
 
 :::tip Dein Feedback ist gesichert
-Solange du schreibst, speichert DELEGATOR dein Feedback zu diesem Papier als deinen Entwurf, sobald du kurz innehältst. Unter dem Formular steht dann **Entwurf gespeichert**. Kommst du zurück, auch an einem anderen Gerät, steht dein Entwurf mit dem gewählten Status wieder im Editor.
+Solange du schreibst, speichert DELEGATOR dein Feedback zu diesem Papier als deinen Entwurf, sobald du kurz innehältst. Unter dem Formular steht dann **Entwurf gespeichert**. Kommst du zurück, auch an einem anderen Gerät, steht dein Entwurf mit dem gewählten Status wieder im Editor. Ein Feedback, das sich dein Browser noch auf die alte Art gemerkt hat, übernimmt DELEGATOR beim ersten Öffnen des Papiers als Entwurf, sofern es dort noch keinen gibt.
 :::
 
 ### Review-Entwürfe {#review-drafts}
@@ -101,7 +101,7 @@ Pro Papier hast du höchstens einen Entwurf. Nur du siehst ihn. Weder die Delega
 
 Einen Entwurf kann auch ein [KI-Assistent](./ai-access#review-drafts) für dich anlegen. Dann steht über dem Editor **Entwurf (vom KI-Assistenten angelegt, …)** mit der Zeit. Lies ihn, ändere ihn wie dein eigenes Feedback und gib ihn mit **Bewertung abgeben** ab. Erst dann erfahren die Verfasser\*innen davon. Das abgegebene Feedback sieht aus wie jedes andere.
 
-- **Im Papier finden** zeigt, ob ein Zitat wörtlich im Papier steht. Findet DELEGATOR es nicht, ist der Text des Zitats nicht genau der des Papiers.
+- **Im Papier finden** zeigt, ob ein Zitat wörtlich im Papier steht. Gesucht wird in jedem Absatz, jeder Überschrift und jedem Listenpunkt einzeln. Ein Zitat über zwei Absätze findet DELEGATOR deshalb nicht, auch wenn jedes Wort stimmt.
 - Wurde nach dem Entwurf eine neue Version eingereicht, warnt DELEGATOR: **Dieser Entwurf bezieht sich auf Version 1, aktuell ist Version 2.** Prüfe dann, ob dein Feedback noch passt. Abgeben kannst du trotzdem.
 - Schreibt der Assistent deinen Entwurf neu, während du das Papier offen hast, bietet **Neuen Entwurf laden** an, ihn zu übernehmen.
 - Hast du einen Entwurf in DELEGATOR bearbeitet, überschreibt ihn der Assistent nicht ohne deine Zustimmung.

@@ -41,7 +41,7 @@ const ownDraft = async ({ ctx, paperId }: { ctx: ApiContext; paperId: string }) 
 	}).query.single;
 
 const OVERWRITE_DESCRIPTION =
-	'Replaces a draft the reviewer changed in the app, which is refused with CONFLICT otherwise. Set it only after the reviewer said their changes may go.';
+	"For an assistant only: once the reviewer edited the draft in the app, replacing or deleting it answers CONFLICT unless this is true. The server does not ask the reviewer, so set it only after they agreed. After a replacement the draft is the assistant's again, and later changes need no flag until the reviewer edits it in the app.";
 
 const SavedPaperReviewDraft = schemaBuilder.simpleObject('SavedPaperReviewDraft', {
 	fields: (t) => ({
@@ -125,7 +125,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	deletePaperReviewDraft: t.field({
 		description:
-			"Deletes the caller's review draft of a paper; false when there was none. For whoever may review the paper (NOT_FOUND otherwise).",
+			"Deletes the caller's review draft of a paper; false when there was none. An assistant deleting a draft the reviewer edited in the app needs `overwriteAppEdits` (CONFLICT otherwise). For whoever may review the paper (NOT_FOUND otherwise).",
 		type: 'Boolean',
 		args: {
 			paperId: t.arg.id({ required: true }),

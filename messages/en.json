@@ -2866,7 +2866,7 @@
 	"reviewDraftDiscardTitle": "Discard the draft?",
 	"reviewDraftDiscarded": "Draft discarded",
 	"reviewDraftEditedByYou": "Last edited by you: {time}",
-	"reviewDraftEditedInApp": "This draft was edited in the app. It is only replaced or deleted when its reviewer explicitly wants that (overwriteAppEdits).",
+	"reviewDraftEditedInApp": "This draft was edited in the app. Without overwriteAppEdits it is neither replaced nor deleted. Ask its reviewer before setting it: DELEGATOR does not check their consent.",
 	"reviewDraftLoadNew": "Load the new draft",
 	"reviewDraftOnlyYou": "Only you see this draft. The delegation only learns of it once you submit the review.",
 	"reviewDraftReady": "Your review draft is ready",

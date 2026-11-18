@@ -90,3 +90,28 @@ export function draftSnapshotToSave({
 	const snapshot = JSON.stringify({ comments, status });
 	return snapshot === savedSnapshot ? undefined : { snapshot, status };
 }
+
+/** Where the editor kept unsent reviews in the browser before drafts were stored on the server. */
+export const legacyDraftKey = (paperId: string) => `reviewDraft_${paperId}`;
+
+/**
+ * A review the editor kept in the browser (`legacyDraftKey`) before drafts were stored on the
+ * server, if the stored text holds one with text in it. The editor takes it over once, when the
+ * paper has no server draft, and saves it as one.
+ */
+export function legacyBrowserDraft(stored: string | null) {
+	if (!stored) return undefined;
+	let value: unknown;
+	try {
+		value = JSON.parse(stored);
+	} catch {
+		return undefined;
+	}
+	if (typeof value !== 'object' || value === null) return undefined;
+	const comments: unknown = 'comments' in value ? value.comments : undefined;
+	const status: unknown = 'selectedStatus' in value ? value.selectedStatus : undefined;
+	if (typeof comments !== 'object' || comments === null || !hasTextContent(comments)) {
+		return undefined;
+	}
+	return { comments, status: typeof status === 'string' && isVerdict(status) ? status : undefined };
+}

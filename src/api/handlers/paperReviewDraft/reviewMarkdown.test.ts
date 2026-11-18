@@ -90,6 +90,15 @@ describe('markdownToReviewDocument', () => {
 		assertValid(document);
 	});
 
+	it('starts a list item with a paragraph, even when it opens with a quote', () => {
+		const document = markdownToReviewDocument('- > Bitte so lassen\n- weiter');
+		expect(document.content?.[0]?.content?.[0]?.content?.map((node) => node.type)).toEqual([
+			'paragraph',
+			'blockquote'
+		]);
+		assertValid(document);
+	});
+
 	it('clamps headings to the levels the editor offers', () => {
 		const document = markdownToReviewDocument('# Eins\n\n#### Vier');
 		expect(document.content?.map((node) => node.attrs?.level)).toEqual([2, 3]);

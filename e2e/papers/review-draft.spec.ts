@@ -29,6 +29,20 @@ async function sql<Row extends Record<string, unknown>>(statement: string, value
 	}
 }
 
+/** The paper as the seed leaves it: one submitted version, no review, no draft. */
+async function resetPaper(paperId: string) {
+	await sql('DELETE FROM paper_review_draft WHERE paper_id = $1', [paperId]);
+	await sql('DELETE FROM paper_version WHERE paper_id = $1 AND id <> $2', [
+		paperId,
+		firstVersionId(paperId)
+	]);
+	await sql('DELETE FROM paper_review WHERE paper_version_id = $1', [firstVersionId(paperId)]);
+	await sql("UPDATE paper SET status = 'SUBMITTED' WHERE id = $1", [paperId]);
+	await sql("UPDATE paper_version SET status = 'SUBMITTED' WHERE id = $1", [
+		firstVersionId(paperId)
+	]);
+}
+
 function writeDraft({
 	request,
 	token,
@@ -77,6 +91,8 @@ test.describe('review drafts in the editor', () => {
 		request
 	}) => {
 		const paperId = E2E_DRAFTS_PAPER_IDS.lifecycle;
+		// A retry starts from what the failed attempt left: the paper as the seed has it
+		await resetPaper(paperId);
 		const written = await writeDraft({
 			request,
 			token,
@@ -158,6 +174,7 @@ test.describe('review drafts in the editor', () => {
 
 	test('a discarded draft is gone and the paper untouched', async ({ page, request }) => {
 		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
 		await writeDraft({ request, token, paperId, content: 'Ein Entwurf zum Verwerfen.' });
 
 		// the paper hub marks the paper

@@ -58,7 +58,9 @@ version does not contain word for word; `deletePaperReviewDraft` removes it, and
 `myPaperReviewDraft` / `myPaperReviewDrafts` read it back. A draft reaches nobody but its
 reviewer. Sending the review is only possible in the app: no tool sends one or changes a paper's
 status. Once the reviewer edited the draft in the app, both tools refuse (CONFLICT) unless called
-with `overwriteAppEdits: true`, which the assistant sets only after asking.
+with `overwriteAppEdits: true`. The server does not check that the reviewer agreed, so the
+assistant sets it only after asking. A replacement makes the draft the assistant's again: later
+changes need no flag until the reviewer edits it in the app once more.
 
 ## Setting it up
 

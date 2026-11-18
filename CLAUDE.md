@@ -1550,12 +1550,15 @@ bun run preview
   literally, one per paragraph, as `BlockquoteWithFind` searches a quote's whole text in one
   block) and answers a link (`#review` on the paper) and the quotes the latest version lacks word
   for word (`quoteCheck.ts`, mirroring `#lib/helpers/citeNavigation`); `deletePaperReviewDraft`.
-  Once the reviewer edited a draft in the app, both answer CONFLICT unless `overwriteAppEdits`
-  (`replacesAppEdits`). No mutation that sends a review or sets a status is an MCP tool; keep it
+  Once the reviewer edited a draft in the app (`lastEditedVia = UI`), both answer CONFLICT unless
+  `overwriteAppEdits` (`replacesAppEdits`, also as the upsert's `setWhere`, so a first draft the
+  app wrote after the lock found none is kept too). The server cannot check the reviewer agreed. No mutation that sends a review or sets a status is an MCP tool; keep it
   so. `mcpTool({ idempotent: true })` sets the `idempotentHint`.
 - **In the app** `PaperReviewSection.svelte` fills the editor from `myPaperReviewDraft` (seeded once),
-  saves edits as the draft (`savePaperReviewDraft`, debounced; it replaced the browser-only
-  autosave), names who wrote it, warns when the paper has a newer version, offers to load a draft
+  saves edits as the draft (`savePaperReviewDraft` through `createDraftSaver`, `reviewDraftSaver.svelte.ts`:
+  debounced, one save at a time and then the latest state, flushed when leaving the paper, settled
+  before discarding or submitting; it replaced the browser-only autosave, whose `reviewDraft_<paperId>`
+  entry is taken over once when there is no server draft), names who wrote it, warns when the paper has a newer version, offers to load a draft
   an assistant rewrote meanwhile (`reviewDraft.ts`) and discards it. The paper hub marks papers with
   a draft (`myPaperReviewDrafts`). Both queries are live (`smartSubscription`, created/removed).
   `e2e/authorization/review-drafts.spec.ts` and `e2e/papers/review-draft.spec.ts` pin it down.

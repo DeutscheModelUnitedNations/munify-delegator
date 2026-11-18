@@ -106,9 +106,14 @@ function quotes(token: Tokens.Blockquote): JSONContent[] {
 		}));
 }
 
+/** A list item starts with a paragraph in the editor (`ListItem`: `paragraph block*`). */
 function listItem(item: Tokens.ListItem): JSONContent {
 	const content = blocks(item.tokens);
-	return { type: 'listItem', content: content.length > 0 ? content : [paragraph([])] };
+	const first = content.at(0);
+	return {
+		type: 'listItem',
+		content: first?.type === 'paragraph' ? content : [paragraph([]), ...content]
+	};
 }
 
 function blocks(tokens: Token[]): JSONContent[] {

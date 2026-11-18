@@ -3,7 +3,6 @@ import { whereRows } from '#api/db/whereRows';
 import { paperReviewDraftPubsub } from '#api/pubsub';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
-import { assertFirstEntryExists } from '@m1212e/rumble';
 import { z } from 'zod';
 import { assertReviewable } from '../paperReview/paperReviewService';
 import { unmatchedQuotes } from './quoteCheck';
@@ -98,6 +97,40 @@ function assertNoAppEditsReplaced(args: Parameters<typeof replacesAppEdits>[0]) 
 }
 
 /**
+ * What a draft row already there is set to. An assistant's draft, or the reviewer's first, starts
+ * over: written for the latest version and counted as new. The reviewer's edits keep the rest.
+ */
+export function conflictUpdate({
+	startsOver,
+	paperVersionId,
+	comments,
+	statusAfter,
+	by,
+	now
+}: {
+	startsOver: boolean;
+	paperVersionId: string;
+	comments: Comments;
+	statusAfter: Verdict;
+	by: Origin;
+	now: Date;
+}) {
+	const edit = { comments, statusAfter, lastEditedVia: by, updatedAt: now };
+	return startsOver ? { ...edit, paperVersionId, origin: by, createdAt: now } : edit;
+}
+
+/**
+ * Keeps the upsert off a row the reviewer edited in the app, when the assistant may not replace
+ * it: their first draft may have been written after the lock found none.
+ */
+function keepAppEdits({ by, overwriteAppEdits }: { by: Origin; overwriteAppEdits: boolean }) {
+	if (!replacesAppEdits({ draft: { lastEditedVia: 'UI' }, by, overwriteAppEdits })) return {};
+	return {
+		setWhere: whereRows({ table: schema.paperReviewDraft, filter: { lastEditedVia: { ne: 'UI' } } })
+	};
+}
+
+/**
  * Writes the reviewer's draft of a paper, replacing the one there is. An assistant's draft (`by:
  * 'MCP'`) starts over: it is written for the latest version and counts as the assistant's,
  * and refuses (CONFLICT) to replace what the reviewer changed in the app unless
@@ -124,9 +157,7 @@ export async function saveReviewDraft({
 		const draft = await lockDraft({ tx, paperId, reviewerId });
 		assertNoAppEditsReplaced({ draft, by, overwriteAppEdits });
 
-		const now = new Date();
-		const startsOver = by === 'MCP' || !draft;
-		const written = await tx
+		const [written] = await tx
 			.insert(schema.paperReviewDraft)
 			.values({
 				paperId,
@@ -139,23 +170,22 @@ export async function saveReviewDraft({
 			})
 			.onConflictDoUpdate({
 				target: [schema.paperReviewDraft.paperId, schema.paperReviewDraft.reviewerId],
-				set: startsOver
-					? {
-							paperVersionId: latestVersion.id,
-							comments,
-							statusAfter,
-							origin: by,
-							lastEditedVia: by,
-							createdAt: now,
-							updatedAt: now
-						}
-					: { comments, statusAfter, lastEditedVia: by, updatedAt: now }
+				set: conflictUpdate({
+					startsOver: by === 'MCP' || !draft,
+					paperVersionId: latestVersion.id,
+					comments,
+					statusAfter,
+					by,
+					now: new Date()
+				}),
+				...keepAppEdits({ by, overwriteAppEdits })
 			})
 			.returning({
 				id: schema.paperReviewDraft.id,
 				paperVersionId: schema.paperReviewDraft.paperVersionId
-			})
-			.then(assertFirstEntryExists);
+			});
+		// Nothing written: the conflicting row was the reviewer's, which `setWhere` kept.
+		if (!written) throw apiError({ code: 'CONFLICT', message: m.reviewDraftEditedInApp() });
 
 		return { ...written, created: !draft, conferenceId, latestVersion };
 	});

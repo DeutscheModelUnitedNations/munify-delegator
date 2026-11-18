@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 vi.mock('#api/pubsub', () => ({ paperReviewDraftPubsub: {} }));
 
-const { replacesAppEdits, reviewDraftLink, reviewDraftMarkdownSchema } =
+const { conflictUpdate, replacesAppEdits, reviewDraftLink, reviewDraftMarkdownSchema } =
 	await import('./paperReviewDraftService');
 
 describe('replacesAppEdits', () => {
@@ -40,5 +40,44 @@ describe('the draft arguments', () => {
 		expect(
 			reviewDraftLink({ origin: 'https://delegator.dmun.de', conferenceId: 'c1', paperId: 'p1' })
 		).toBe('https://delegator.dmun.de/dashboard/c1/paperhub/p1#review');
+	});
+});
+
+describe('conflictUpdate', () => {
+	const now = new Date('2026-11-18T12:00:00Z');
+	const comments = { type: 'doc' };
+
+	it('starts an assistant’s draft over, for the latest version', () => {
+		expect(
+			conflictUpdate({
+				startsOver: true,
+				paperVersionId: 'v2',
+				comments,
+				statusAfter: 'ACCEPTED',
+				by: 'MCP',
+				now
+			})
+		).toEqual({
+			comments,
+			statusAfter: 'ACCEPTED',
+			lastEditedVia: 'MCP',
+			updatedAt: now,
+			paperVersionId: 'v2',
+			origin: 'MCP',
+			createdAt: now
+		});
+	});
+
+	it('keeps version, origin and creation time when the reviewer edits', () => {
+		expect(
+			conflictUpdate({
+				startsOver: false,
+				paperVersionId: 'v2',
+				comments,
+				statusAfter: 'CHANGES_REQUESTED',
+				by: 'UI',
+				now
+			})
+		).toEqual({ comments, statusAfter: 'CHANGES_REQUESTED', lastEditedVia: 'UI', updatedAt: now });
 	});
 });

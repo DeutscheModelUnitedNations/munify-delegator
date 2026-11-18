@@ -120,10 +120,10 @@ test.describe('review drafts over MCP', () => {
 				name: 'graphql_query',
 				args: {
 					conferenceId: E2E_DRAFTS_CONFERENCE_ID,
-					query: `{ myPaperReviewDrafts(conferenceId: "${E2E_DRAFTS_CONFERENCE_ID}") { id } }`
+					query: `{ myPaperReviewDrafts(conferenceId: "${E2E_DRAFTS_CONFERENCE_ID}") { id } myPaperReviewDraft(paperId: "${PAPER}") { id } }`
 				}
 			});
-			expect(JSON.parse(read.text).myPaperReviewDrafts).toEqual([]);
+			expect(JSON.parse(read.text)).toEqual({ myPaperReviewDrafts: [], myPaperReviewDraft: null });
 			const deleted = await callTool({
 				request,
 				token,

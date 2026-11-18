@@ -3,6 +3,7 @@ import {
 	changedElsewhere,
 	draftNotice,
 	draftSnapshotToSave,
+	legacyBrowserDraft,
 	staleDraftWarning
 } from './reviewDraft';
 
@@ -102,6 +103,30 @@ describe('draftSnapshotToSave', () => {
 		).toBeUndefined();
 		expect(
 			draftSnapshotToSave({ comments: text, status: 'SUBMITTED', savedSnapshot: undefined })
+		).toBeUndefined();
+	});
+});
+
+describe('legacyBrowserDraft', () => {
+	const comments = {
+		type: 'doc',
+		content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Alt.' }] }]
+	};
+
+	it('takes over a review kept the old way, with its verdict', () => {
+		expect(
+			legacyBrowserDraft(JSON.stringify({ comments, selectedStatus: 'ACCEPTED', savedAt: 1 }))
+		).toEqual({ comments, status: 'ACCEPTED' });
+		expect(
+			legacyBrowserDraft(JSON.stringify({ comments, selectedStatus: 'SUBMITTED' }))?.status
+		).toBeUndefined();
+	});
+
+	it('ignores nothing, broken JSON and empty text', () => {
+		expect(legacyBrowserDraft(null)).toBeUndefined();
+		expect(legacyBrowserDraft('{')).toBeUndefined();
+		expect(
+			legacyBrowserDraft(JSON.stringify({ comments: { type: 'doc', content: [] } }))
 		).toBeUndefined();
 	});
 });

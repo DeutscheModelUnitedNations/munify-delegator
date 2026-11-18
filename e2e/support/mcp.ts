@@ -87,6 +87,8 @@ export async function callTool({
 /** The tools the server offers, with their hints. */
 export async function listTools({ request, token }: { request: APIRequestContext; token: string }) {
 	const json = await rpc({ request, token, method: 'tools/list', params: {} });
-	const tools: { name: string; annotations?: Record<string, boolean> }[] = json.result?.tools ?? [];
+	if (json.error) throw new Error(`tools/list failed: ${JSON.stringify(json.error)}`);
+	if (!Array.isArray(json.result?.tools)) throw new Error('tools/list answered without tools');
+	const tools: { name: string; annotations?: Record<string, boolean> }[] = json.result.tools;
 	return tools;
 }

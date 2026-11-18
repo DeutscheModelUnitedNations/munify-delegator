@@ -2866,7 +2866,7 @@
 	"reviewDraftDiscardTitle": "Entwurf verwerfen?",
 	"reviewDraftDiscarded": "Entwurf verworfen",
 	"reviewDraftEditedByYou": "Zuletzt von dir bearbeitet: {time}",
-	"reviewDraftEditedInApp": "Dieser Entwurf wurde in der App bearbeitet. Er wird nur ersetzt oder gelöscht, wenn die Person das ausdrücklich will (overwriteAppEdits).",
+	"reviewDraftEditedInApp": "Dieser Entwurf wurde in der App bearbeitet. Ohne overwriteAppEdits wird er weder ersetzt noch gelöscht. Frag die Person, bevor du es setzt: DELEGATOR prüft ihre Zustimmung nicht.",
 	"reviewDraftLoadNew": "Neuen Entwurf laden",
 	"reviewDraftOnlyYou": "Nur du siehst diesen Entwurf. Die Delegation erfährt erst davon, wenn du das Review absendest.",
 	"reviewDraftReady": "Dein Review-Entwurf liegt bereit",
