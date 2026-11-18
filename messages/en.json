@@ -2396,6 +2396,8 @@
 	"paperDeletedSuccessfully": "Paper was deleted successfully",
 	"paperDeleting": "Deleting paper...",
 	"paperDetails": "Paper details",
+	"paperDocumentInvalid": "The text is not a document: {details}",
+	"paperDocumentMalformed": "The text is not valid JSON.",
 	"paperDraftRecoveryMessage": "You have an unsaved draft from a previous session. Would you like to continue where you left off?",
 	"paperDraftRecoveryTitle": "Unsaved Draft Found",
 	"paperDraftSavedAgo": "Saved {time}",

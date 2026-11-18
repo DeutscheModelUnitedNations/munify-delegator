@@ -12,6 +12,7 @@ vi.mock('#api/pubsub', () => ({
 import type * as schema from '#api/db/schema/index';
 import {
 	authorStatusSchema,
+	editorDocumentSchema,
 	groupPapersByCommittee,
 	newPaperRows,
 	newPaperStatusSchema,
@@ -267,5 +268,23 @@ describe('groupPapersByCommittee', () => {
 		expect(
 			groupPapersByCommittee([paper('intro', null), paper('orphan', agendaItem('x', null))])
 		).toEqual([]);
+	});
+});
+
+describe('editorDocumentSchema', () => {
+	const doc = { type: 'doc', content: [{ type: 'paragraph' }] };
+
+	test('keeps a document sent as an object', () => {
+		expect(editorDocumentSchema.parse(doc)).toEqual(doc);
+	});
+
+	test('parses a document sent as a JSON string, so it is never stored as one', () => {
+		expect(editorDocumentSchema.parse(JSON.stringify(doc))).toEqual(doc);
+	});
+
+	test('refuses a string that is not JSON, and JSON that is no document', () => {
+		expect(editorDocumentSchema.safeParse('{"type":').success).toBe(false);
+		expect(editorDocumentSchema.safeParse('"text"').success).toBe(false);
+		expect(editorDocumentSchema.safeParse(42).success).toBe(false);
 	});
 });

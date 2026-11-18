@@ -2396,6 +2396,8 @@
 	"paperDeletedSuccessfully": "Paper wurde erfolgreich gelöscht",
 	"paperDeleting": "Paper wird gelöscht...",
 	"paperDetails": "Papier-Details",
+	"paperDocumentInvalid": "Der Text ist kein Dokument: {details}",
+	"paperDocumentMalformed": "Der Text ist kein gültiges JSON.",
 	"paperDraftRecoveryMessage": "Du hast einen ungespeicherten Entwurf aus einer früheren Sitzung. Möchtest du dort weitermachen, wo du aufgehört hast?",
 	"paperDraftRecoveryTitle": "Ungespeicherter Entwurf gefunden",
 	"paperDraftSavedAgo": "Gespeichert {time}",
