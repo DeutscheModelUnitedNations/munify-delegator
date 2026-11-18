@@ -125,7 +125,10 @@
 		joinLink: m.emailPlaceholderJoinLink,
 		member: m.emailPlaceholderMember,
 		supervisor: m.emailPlaceholderSupervisor,
-		title: m.emailPlaceholderTitle
+		title: m.emailPlaceholderTitle,
+		paperType: m.emailPlaceholderPaperType,
+		delegation: m.emailPlaceholderDelegation,
+		version: m.emailPlaceholderVersion
 	};
 </script>
 

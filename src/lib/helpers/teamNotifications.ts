@@ -3,15 +3,23 @@
  * (`#api/handlers/email/unreadMessages`) and the Slack messages (`#api/handlers/notification/`)
  * share, so the page lists exactly what is sent.
  */
-import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
+import { PAPER_ROLES, PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
 import type { ChatInbox } from '#lib/helpers/chat';
 
 export type NotificationChannel = 'EMAIL' | 'SLACK';
 
 export type NotificationTopic =
-	'PARTICIPANT_CARE' | 'COMMITTEE_INBOX' | 'TRUSTED_SHARED' | 'TRUSTED_PERSONAL' | 'CHAT_REPORT';
+	| 'PARTICIPANT_CARE'
+	| 'COMMITTEE_INBOX'
+	| 'TRUSTED_SHARED'
+	| 'TRUSTED_PERSONAL'
+	| 'CHAT_REPORT'
+	| 'COMMITTEE_PAPERS';
 
-/** One line of the settings: a topic, and for a committee inbox the member's function there. */
+/**
+ * One line of the settings: a topic, and for a committee's inbox or papers the member's function
+ * there.
+ */
 export interface TopicKey {
 	topic: NotificationTopic;
 	teamFunctionId: string | null;
@@ -25,15 +33,24 @@ export interface NotifiedMember {
 }
 
 const careRoles: readonly string[] = PARTICIPANT_CARE_ROLES;
+const paperRoles: readonly string[] = PAPER_ROLES;
+
+/** A chair's or consultant's function, which answers its committee's inbox. */
+const isCommitteeFunction = (held: NotifiedMember['functions'][number]) =>
+	(held.kind === 'CHAIR' || held.kind === 'CONSULTANT') && held.committeeId !== null;
 
 /** The topics a member can be told about, in the order the page lists them. */
 export function topicsOf(member: NotifiedMember): TopicKey[] {
 	const topics: TopicKey[] = [];
 	const care = careRoles.includes(member.role);
 	if (care) topics.push({ topic: 'PARTICIPANT_CARE', teamFunctionId: null });
-	for (const held of member.functions) {
-		if ((held.kind === 'CHAIR' || held.kind === 'CONSULTANT') && held.committeeId) {
-			topics.push({ topic: 'COMMITTEE_INBOX', teamFunctionId: held.id });
+	const committeeFunctions = member.functions.filter(isCommitteeFunction);
+	for (const held of committeeFunctions) {
+		topics.push({ topic: 'COMMITTEE_INBOX', teamFunctionId: held.id });
+	}
+	if (paperRoles.includes(member.role)) {
+		for (const held of committeeFunctions) {
+			topics.push({ topic: 'COMMITTEE_PAPERS', teamFunctionId: held.id });
 		}
 	}
 	if (member.functions.some((held) => held.kind === 'TRUSTED_PERSON')) {
@@ -82,9 +99,50 @@ export function topicOfInbox({
 	return held ? { topic: 'COMMITTEE_INBOX', teamFunctionId: held.id } : null;
 }
 
+/**
+ * The topics under which `member` hears of a paper submitted in `committeeId`: one per chair or
+ * consultant function they hold there, and only while their team role may read the papers (the
+ * paper team, `PAPER_ROLES`). Empty for everybody else. Somebody holding both functions there is
+ * told once, when either of the two wants it.
+ */
+export function paperTopicsOf({
+	member,
+	committeeId
+}: {
+	member: NotifiedMember;
+	committeeId: string;
+}): TopicKey[] {
+	if (!paperRoles.includes(member.role)) return [];
+	return member.functions
+		.filter((held) => isCommitteeFunction(held) && held.committeeId === committeeId)
+		.map((held) => ({ topic: 'COMMITTEE_PAPERS', teamFunctionId: held.id }));
+}
+
 /** Whether `member` hears of new reports: participant care does. */
 export const hearsOfReports = (member: Pick<NotifiedMember, 'role'>) =>
 	careRoles.includes(member.role);
+
+/**
+ * Whether `member` wants to hear on `channel` of a paper submitted in `committeeId`: one of
+ * `paperTopicsOf` wants it. A member holding two functions there is told once either way.
+ */
+export function wantsPaperNotification({
+	member,
+	committeeId,
+	preferences,
+	channel,
+	mailByDefault
+}: {
+	member: NotifiedMember;
+	committeeId: string;
+	preferences: readonly StoredPreference[];
+	channel: NotificationChannel;
+	mailByDefault: boolean;
+}): boolean {
+	return paperTopicsOf({ member, committeeId }).some((key) =>
+		wantsNotification({ preferences, key, channel, mailByDefault })
+	);
+}
 
 /** One stored choice (`notificationPreference`). */
 export interface StoredPreference extends TopicKey {

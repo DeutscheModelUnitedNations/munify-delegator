@@ -25,15 +25,18 @@ export const REMINDER_GAP_DAYS = 2;
 export const SURVEY_REMINDER_DAYS = 3;
 
 /**
- * The mails sent by hand where they happen, which always go out (and are logged like any mail sent
- * by hand): the invitation into the team, whose link carries a token only the inviting request
- * knows, and the note that a lost badge was found, which participant care sends from the user card.
- * Only their text is the conference's to change, so the e-mail page lists them without a switch,
- * and `dueEmails` never owes them.
+ * The mails sent where they happen, which always go out (and are logged like any mail sent by
+ * hand): the invitation into the team, whose link carries a token only the inviting request knows,
+ * the note that a lost badge was found, which participant care sends from the user card, and the
+ * word to a committee's chairs and consultants that a paper was submitted there, sent the moment
+ * it is (each of them decides in their notification settings whether they get it). Only their text
+ * is the conference's to change, so the e-mail page lists them without a switch, and `dueEmails`
+ * never owes them.
  */
 const ALWAYS_SENT_KINDS = [
 	'TEAM_INVITATION',
-	'BADGE_FOUND'
+	'BADGE_FOUND',
+	'PAPER_SUBMITTED'
 ] as const satisfies readonly EmailkindEnum[];
 export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 
@@ -135,7 +138,7 @@ export const EMAIL_GROUPS = [
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },
 	{ id: 'surveys', kinds: ['SURVEY_PUBLISHED'] },
 	{ id: 'reminders', kinds: REMINDER_KINDS },
-	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
+	{ id: 'papers', kinds: ['PAPER_REVIEWED', 'PAPER_SUBMITTED'] },
 	{ id: 'messages', kinds: ['UNREAD_MESSAGES', 'CHAT_REPORTED'] },
 	{ id: 'announcements', kinds: ['ANNOUNCEMENT'] },
 	{ id: 'onSite', kinds: ['BADGE_FOUND'] },

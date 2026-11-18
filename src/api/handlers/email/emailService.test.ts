@@ -56,6 +56,7 @@ describe('the email argument schemas', () => {
 	test('refuse switching a kind that is always sent', () => {
 		expect(switchableKindSchema.safeParse({ kind: 'TEAM_INVITATION' }).success).toBe(false);
 		expect(switchableKindSchema.safeParse({ kind: 'BADGE_FOUND' }).success).toBe(false);
+		expect(switchableKindSchema.safeParse({ kind: 'PAPER_SUBMITTED' }).success).toBe(false);
 		expect(switchableKindSchema.safeParse({ kind: 'TEAM_WELCOME' }).success).toBe(true);
 	});
 

@@ -6,6 +6,7 @@ import type { DueEmail, EmailKind, EmailSnapshot, SnapshotPerson, SnapshotUser }
 import { loadEmailConference } from './emailSnapshot';
 import type { EmailTextOverride } from './emailText';
 import { renderBadgeFoundEmail } from './badgeFoundEmail';
+import { renderPaperSubmittedEmail } from './paperSubmittedEmail';
 import { renderTeamInvitationEmail } from './teamInvitationEmail';
 import {
 	loadWording,
@@ -42,6 +43,25 @@ export async function previewEmail({
 		return renderBadgeFoundEmail({
 			recipient: user,
 			conferenceTitle: conference.title,
+			wording
+		});
+	if (kind === 'PAPER_SUBMITTED')
+		return renderPaperSubmittedEmail({
+			recipient: user,
+			paper: {
+				paperId: 'sample-paper',
+				versionId: 'sample-version',
+				conferenceId,
+				conferenceTitle: conference.title,
+				committeeId: 'sample-committee',
+				committeeAbbreviation: 'GV',
+				agendaItem: m.emailPreviewAgendaItem({}, { locale }),
+				type: 'POSITION_PAPER',
+				status: 'REVISED',
+				version: 2,
+				role: { id: 'sample', kind: 'NATION', name: null, nationAlpha3Code: 'FRA' }
+			},
+			origin,
 			wording
 		});
 	if (isAlwaysSent(kind)) return previewInvitationEmail({ conference, user, origin, wording });

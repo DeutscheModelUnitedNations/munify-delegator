@@ -38,7 +38,10 @@ export type EmailPlaceholder =
 	| 'joinLink'
 	| 'member'
 	| 'supervisor'
-	| 'title';
+	| 'title'
+	| 'paperType'
+	| 'delegation'
+	| 'version';
 
 interface KindTemplate {
 	/** What this kind's text can use, besides `name` and `conference`, which every kind has. */
@@ -67,7 +70,11 @@ const P = {
 	joinLink: '{joinLink}',
 	member: '{member}',
 	supervisor: '{supervisor}',
-	title: '{title}'
+	title: '{title}',
+	committee: '{committee}',
+	paperType: '{paperType}',
+	delegation: '{delegation}',
+	version: '{version}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
@@ -326,6 +333,33 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 					{ locale }
 				),
 				m.emailAutoPaperReviewedStatus({ status: P.status }, { locale })
+			)
+		})
+	},
+	PAPER_SUBMITTED: {
+		placeholders: ['committee', 'paper', 'paperType', 'delegation', 'version', 'status'],
+		text: (locale) => ({
+			subject: m.emailAutoPaperSubmittedSubject(
+				{ committee: P.committee, paperType: P.paperType, delegation: P.delegation },
+				{ locale }
+			),
+			heading: m.emailAutoPaperSubmittedHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoPaperSubmittedBody(
+					{ conference: P.conference, committee: P.committee },
+					{ locale }
+				),
+				m.emailAutoPaperSubmittedDetails(
+					{
+						paperType: P.paperType,
+						paper: P.paper,
+						delegation: P.delegation,
+						version: P.version,
+						status: P.status
+					},
+					{ locale }
+				),
+				m.emailAutoPaperSubmittedClosing({}, { locale })
 			)
 		})
 	},

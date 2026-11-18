@@ -8,6 +8,7 @@ import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors';
 import { paperPubsub, paperVersionPubsub } from '#api/pubsub';
 import { jsonDocument } from '#api/services/argSchemas';
+import { announcePaperSubmission } from './paperSubmissionNotice';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
@@ -63,6 +64,13 @@ export function paperSubmissionChanges({
 	return { status, firstSubmittedAt: isFirstSubmission ? now : undefined };
 }
 
+/**
+ * Whether a save hands a version in: the author submitting (a first submission, or a resubmission
+ * after a review, which is REVISED). A draft, or a reviewer's edit keeping the status, does not.
+ */
+export const handsVersionIn = (requestedStatus: AuthorStatus | null | undefined) =>
+	requestedStatus === 'SUBMITTED' || requestedStatus === 'REVISED';
+
 type NewPaper = {
 	/** The author's part in the conference, which `assertCanCreatePaper` found. */
 	authorParticipantId: string;
@@ -107,16 +115,19 @@ async function assertPaperSubmissionOpen({
 
 /**
  * Writes a new paper in the conference together with its first version, unless the conference
- * takes no papers (CONFLICT). Returns its id.
+ * takes no papers (CONFLICT). Returns its id. A paper going straight out is told to its committee
+ * (`announcePaperSubmission`); `origin` is where the links in that point.
  */
 export async function createPaper({
 	conferenceId,
-	paper: newPaper
+	paper: newPaper,
+	origin
 }: {
 	conferenceId: string;
 	paper: NewPaper;
+	origin: string;
 }) {
-	const paperId = await db.transaction(async (tx) => {
+	const { paperId, versionId } = await db.transaction(async (tx) => {
 		await assertPaperSubmissionOpen({ tx, conferenceId });
 
 		const rows = newPaperRows({ args: newPaper, now: new Date() });
@@ -126,29 +137,37 @@ export async function createPaper({
 			.returning({ id: schema.paper.id })
 			.then(assertFirstEntryExists);
 
-		await tx.insert(schema.paperVersion).values({ ...rows.version, paperId: id });
+		const version = await tx
+			.insert(schema.paperVersion)
+			.values({ ...rows.version, paperId: id })
+			.returning({ id: schema.paperVersion.id })
+			.then(assertFirstEntryExists);
 
-		return id;
+		return { paperId: id, versionId: version.id };
 	});
 	paperPubsub.created();
 	paperVersionPubsub.created();
+	if (handsVersionIn(newPaper.status)) announcePaperSubmission({ versionId, origin });
 	return paperId;
 }
 
 /**
  * Saves a new version of the paper rather than editing the previous one, unless its conference
- * takes no papers any more (CONFLICT). A status left out keeps the paper's.
+ * takes no papers any more (CONFLICT). A status left out keeps the paper's. A version the author
+ * hands in is told to the paper's committee (`announcePaperSubmission`), with links to `origin`.
  */
 export async function updatePaper({
 	paperId,
 	content,
-	status: requestedStatus
+	status: requestedStatus,
+	origin
 }: {
 	paperId: string;
 	content: PaperContent;
 	status: AuthorStatus | null | undefined;
+	origin: string;
 }) {
-	await db.transaction(async (tx) => {
+	const versionId = await db.transaction(async (tx) => {
 		const paper = await tx.query.paper
 			.findFirst({
 				where: { id: paperId },
@@ -173,15 +192,16 @@ export async function updatePaper({
 			.set({ status, firstSubmittedAt, updatedAt: new Date() })
 			.where(whereRows({ table: schema.paper, filter: { id: paperId } }));
 
-		await tx.insert(schema.paperVersion).values({
-			paperId,
-			content,
-			status,
-			version: paper.versions.length + 1
-		});
+		const version = await tx
+			.insert(schema.paperVersion)
+			.values({ paperId, content, status, version: paper.versions.length + 1 })
+			.returning({ id: schema.paperVersion.id })
+			.then(assertFirstEntryExists);
+		return version.id;
 	});
 	paperPubsub.updated(paperId);
 	paperVersionPubsub.created();
+	if (handsVersionIn(requestedStatus)) announcePaperSubmission({ versionId, origin });
 }
 
 type CommitteeRow = InferSelectModel<typeof schema.committee>;
