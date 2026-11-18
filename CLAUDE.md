@@ -1921,7 +1921,22 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 
 ## Development Workflow
 
-- Never use the git commit command after a task is finished.
+- **Local sessions:** never use the git commit command after a task is finished; the person
+  reviews and commits themselves.
+- **Cloud sessions** (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): the container is thrown
+  away, so work only survives as commits on the session's branch, and the PR is how it gets
+  reviewed. This standing instruction is the explicit request to open one; no need to ask first.
+  - **One PR per branch**, never one per step. Commit and push each step as it is done.
+  - **A step is done** (a coherent, type-checked part of the feature, `bun run check` and the
+    affected `bun test`s passing, but the feature is not finished): open the PR as a **draft**
+    if there is none yet, otherwise push to it and update its description. The description
+    lists what is done and what is still open, so a reviewer can tell how far it got.
+  - **The feature is done** (everything asked for, with its tests, the manual and CLAUDE.md /
+    CLAUDE-UI.md updated where they apply): mark the PR **ready for review**, or open it ready
+    if no draft exists.
+  - Title and label as in "Pull Requests" below, set when opening; the body in English: what
+    changed and why, how it was verified, what is left.
+  - Never merge it, and stop pushing once the person says the PR is theirs to finish.
 
 ### Releasing
 
@@ -1937,9 +1952,19 @@ DockerHub, app and jobs), uploads the sourcemaps to Bugsink, triggers the Dokplo
 creates the GitHub release (`.github/actions/release-notes` renders its body). `package.json`'s
 `version` is the current release; never tag by hand.
 
-### PR Labels
+### Pull Requests
 
-When creating pull requests, always apply the appropriate `PR: *` label based on the conventional commit type in the PR title:
+Every PR needs a conventional title **and** a label; the `PR Lint` workflow
+(`.github/workflows/`, `pr-lint`) fails the PR until both are there and says so in a comment.
+
+**Title**: `<type> (<scope>): <description>`, like a commit (see "Commit Conventions"); the scope
+is optional, the space before it is the house style. Allowed types: `feat`, `fix`, `style`,
+`refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `deps`. Examples:
+`feat (Assignment): required applications`, `fix (Emails): reminder sent twice`,
+`docs: cloud session PR workflow`.
+
+**Label**: set it when opening the PR (not afterwards: the lint has then already failed once),
+chosen from the title's type:
 
 | Commit prefix              | Label                |
 | -------------------------- | -------------------- |
