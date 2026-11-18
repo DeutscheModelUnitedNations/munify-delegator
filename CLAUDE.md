@@ -1543,6 +1543,8 @@ bun run preview
   an assistant rewrote meanwhile (`reviewDraft.ts`) and discards it. The paper hub marks papers with
   a draft (`myPaperReviewDrafts`). Both queries are live (`smartSubscription`, created/removed).
   `e2e/authorization/review-drafts.spec.ts` and `e2e/papers/review-draft.spec.ts` pin it down.
+  The dev seed gives `dev-team-reviewer` an assistant's fresh draft on the first paper of the
+  review queue and a stale, edited one on the revised introduction paper (`seed-dev/papers.ts`).
 
 ### Logging
 

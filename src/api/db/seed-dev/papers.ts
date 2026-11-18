@@ -7,6 +7,7 @@ import {
 	resolutionDocument,
 	reviewComments
 } from '../seed-data/content';
+import { markdownToReviewDocument } from '../../handlers/paperReviewDraft/reviewMarkdown';
 import { PERSONA_NATION } from './conference';
 import type { ConferenceSeed } from './context';
 
@@ -33,7 +34,26 @@ interface PaperPlan {
 	history: Step[];
 	/** Replaces the content of every version, for the invalid working paper. */
 	content?: unknown;
+	/**
+	 * A review draft an AI assistant wrote for `by`: for the latest version, or for an earlier one
+	 * (`forVersion`) and since edited in the app, which the editor warns about.
+	 */
+	reviewDraft?: { by: DevAccountSub; forVersion?: number };
 }
+
+/** What an assistant's draft says, quoting the paper word for word and once not. */
+const DRAFT_MARKDOWN = `Liebe Delegation,
+
+vielen Dank für euer Papier. Besonders überzeugt uns:
+
+> Die Delegation bekräftigt ihr Bekenntnis zur Charta der Vereinten Nationen und fordert ein entschlossenes, gemeinsames Handeln der Staatengemeinschaft.
+
+Bitte überarbeitet noch:
+
+- die **Quellen**, die bisher fehlen
+- den Abschnitt zur *Finanzierung*
+
+> Ein Satz, der so nicht im Papier steht.`;
 
 /**
  * Writes the paper with its versions and reviews, spaced a day apart and ending today, so the
@@ -82,6 +102,24 @@ function addPaper({ cs, plan }: { cs: ConferenceSeed; plan: PaperPlan }) {
 		});
 		statusBefore = step.review;
 	});
+
+	if (plan.reviewDraft) {
+		const forVersion = plan.reviewDraft.forVersion ?? versions.length;
+		const version = versions[forVersion - 1];
+		const edited = forVersion < versions.length;
+		if (version) {
+			cs.batch.paperReviewDraft.push({
+				paperId,
+				reviewerId: plan.reviewDraft.by,
+				paperVersionId: version.id,
+				comments: markdownToReviewDocument(DRAFT_MARKDOWN),
+				statusAfter: 'CHANGES_REQUESTED',
+				origin: 'MCP',
+				lastEditedVia: edited ? 'UI' : 'MCP',
+				createdAt: new Date(start + (forVersion - 1) * DAY_MS + DAY_MS / 2)
+			});
+		}
+	}
 
 	// Reviews change the reviewed version's status after the fact.
 	for (const version of versions) {
@@ -182,7 +220,9 @@ export function addPapers(cs: ConferenceSeed) {
 				{ save: 'SUBMITTED' },
 				{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
 				{ save: 'REVISED' }
-			]
+			],
+			// a draft for the first version, edited since: the editor warns it is stale
+			reviewDraft: { by: 'dev-team-reviewer', forVersion: 1 }
 		}
 	});
 	addPaper({
@@ -212,7 +252,9 @@ export function addPapers(cs: ConferenceSeed) {
 				agendaItemId: committee.agendaItemIds[index % 2],
 				title: `Positionspapier ${delegation.nation.toUpperCase()}`,
 				history: [{ save: 'SUBMITTED' }],
-				content: index === 5 ? invalidResolutionDocument : undefined
+				content: index === 5 ? invalidResolutionDocument : undefined,
+				// an assistant's fresh draft waits for the reviewer on the first one
+				reviewDraft: index === 0 ? { by: 'dev-team-reviewer' } : undefined
 			}
 		});
 	});
