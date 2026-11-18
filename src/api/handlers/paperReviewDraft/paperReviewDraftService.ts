@@ -3,10 +3,9 @@ import { whereRows } from '#api/db/whereRows';
 import { paperReviewDraftPubsub } from '#api/pubsub';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
-import { translatePaperStatus } from '#lib/utils/enumTranslations';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { z } from 'zod';
-import { REVIEWABLE_STATUSES } from '../paperReview/paperReviewService';
+import { assertReviewable } from '../paperReview/paperReviewService';
 import { unmatchedQuotes } from './quoteCheck';
 import { markdownToReviewDocument } from './reviewMarkdown';
 
@@ -22,7 +21,7 @@ type Verdict = (typeof schema.paperReviewDraft.$inferSelect)['statusAfter'];
 type Comments = (typeof schema.paperReviewDraft.$inferInsert)['comments'];
 
 /** The longest Markdown text an assistant may send as a draft. */
-export const MAX_DRAFT_MARKDOWN_LENGTH = 50_000;
+const MAX_DRAFT_MARKDOWN_LENGTH = 50_000;
 
 /** The Markdown text of a draft written over MCP. */
 export const reviewDraftMarkdownSchema = z
@@ -48,15 +47,10 @@ async function loadDraftTarget({ tx, paperId }: { tx: Transaction; paperId: stri
 		}
 	});
 	if (!paper) throw apiError({ code: 'NOT_FOUND', message: m.reviewOnlyReviewers() });
-	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
-		throw apiError({
-			code: 'CONFLICT',
-			message: m.reviewStatusNotReviewable({ status: translatePaperStatus(paper.status) })
-		});
-	}
-	const latestVersion = paper.versions.at(0);
-	if (!latestVersion) throw apiError({ code: 'CONFLICT', message: m.reviewNoVersions() });
-	return { conferenceId: paper.delegation.conferenceId, latestVersion };
+	return {
+		conferenceId: paper.delegation.conferenceId,
+		latestVersion: assertReviewable({ paper })
+	};
 }
 
 /** The reviewer's draft of the paper, locked for the rest of the transaction. */

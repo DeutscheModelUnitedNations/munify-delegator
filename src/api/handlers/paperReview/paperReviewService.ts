@@ -16,7 +16,7 @@ import { isFirstReviewForPiece, unlockedPiece } from './flagPieces';
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 
 /** A paper can be reviewed once it is out: drafts are the author's alone. */
-export const REVIEWABLE_STATUSES: readonly PaperStatus[] = [
+const REVIEWABLE_STATUSES: readonly PaperStatus[] = [
 	'SUBMITTED',
 	'REVISED',
 	'CHANGES_REQUESTED',
@@ -62,8 +62,15 @@ function fetchPaperForReview({ tx, paperId }: { tx: Transaction; paperId: string
 		.then(assertFindFirstExists);
 }
 
-/** Refuses (CONFLICT) a draft or a paper without a version; returns the version to review. */
-function assertReviewable({ paper }: { paper: Awaited<ReturnType<typeof fetchPaperForReview>> }) {
+/**
+ * Refuses (CONFLICT) a draft or a paper without a version; returns the version to review, the
+ * first of `versions`, which are loaded newest first. Review drafts check the same.
+ */
+export function assertReviewable<V>({
+	paper
+}: {
+	paper: { status: PaperStatus; versions: readonly V[] };
+}) {
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
 		throw apiError({
 			code: 'CONFLICT',

@@ -34,6 +34,32 @@ export async function mcpToken(request: APIRequestContext, sub: string, resource
 	return String(access_token);
 }
 
+/** One JSON-RPC request to `/mcp`, answering its result. */
+async function rpc({
+	request,
+	token,
+	method,
+	params
+}: {
+	request: APIRequestContext;
+	token: string;
+	method: string;
+	params: Record<string, unknown>;
+}) {
+	const response = await request.post('/mcp', {
+		headers: {
+			authorization: `Bearer ${token}`,
+			accept: 'application/json, text/event-stream',
+			'mcp-protocol-version': '2025-06-18'
+		},
+		data: { jsonrpc: '2.0', id: 1, method, params }
+	});
+	expect(response.status()).toBe(200);
+	const body = await response.text();
+	// The stateless 2025 transport answers as one server-sent event
+	return JSON.parse(body.startsWith('{') ? body : (/^data: (.*)$/m.exec(body)?.[1] ?? '{}'));
+}
+
 /** Calls a tool and answers its text, and whether it was an error. */
 export async function callTool({
 	request,
@@ -46,18 +72,12 @@ export async function callTool({
 	name: string;
 	args: Record<string, unknown>;
 }) {
-	const response = await request.post('/mcp', {
-		headers: {
-			authorization: `Bearer ${token}`,
-			accept: 'application/json, text/event-stream',
-			'mcp-protocol-version': '2025-06-18'
-		},
-		data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }
+	const json = await rpc({
+		request,
+		token,
+		method: 'tools/call',
+		params: { name, arguments: args }
 	});
-	expect(response.status()).toBe(200);
-	const body = await response.text();
-	// The stateless 2025 transport answers as one server-sent event
-	const json = JSON.parse(body.startsWith('{') ? body : (/^data: (.*)$/m.exec(body)?.[1] ?? '{}'));
 	return {
 		text: String(json.result?.content?.[0]?.text ?? json.error?.message),
 		isError: Boolean(json.result?.isError ?? json.error)
@@ -66,17 +86,7 @@ export async function callTool({
 
 /** The tools the server offers, with their hints. */
 export async function listTools({ request, token }: { request: APIRequestContext; token: string }) {
-	const response = await request.post('/mcp', {
-		headers: {
-			authorization: `Bearer ${token}`,
-			accept: 'application/json, text/event-stream',
-			'mcp-protocol-version': '2025-06-18'
-		},
-		data: { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }
-	});
-	expect(response.status()).toBe(200);
-	const body = await response.text();
-	const json = JSON.parse(body.startsWith('{') ? body : (/^data: (.*)$/m.exec(body)?.[1] ?? '{}'));
+	const json = await rpc({ request, token, method: 'tools/list', params: {} });
 	const tools: { name: string; annotations?: Record<string, boolean> }[] = json.result?.tools ?? [];
 	return tools;
 }

@@ -55,6 +55,36 @@ Bitte überarbeitet noch:
 
 > Ein Satz, der so nicht im Papier steht.`;
 
+/** An assistant's review draft of the paper, for the version `draft` names (the latest by default). */
+function addReviewDraft({
+	cs,
+	paperId,
+	versionIds,
+	start,
+	draft
+}: {
+	cs: ConferenceSeed;
+	paperId: string;
+	versionIds: string[];
+	start: number;
+	draft: NonNullable<PaperPlan['reviewDraft']>;
+}) {
+	const forVersion = draft.forVersion ?? versionIds.length;
+	const paperVersionId = versionIds[forVersion - 1];
+	if (!paperVersionId) return;
+	cs.batch.paperReviewDraft.push({
+		paperId,
+		reviewerId: draft.by,
+		paperVersionId,
+		comments: markdownToReviewDocument(DRAFT_MARKDOWN),
+		statusAfter: 'CHANGES_REQUESTED',
+		origin: 'MCP',
+		// a draft for an older version has since been edited in the app
+		lastEditedVia: forVersion < versionIds.length ? 'UI' : 'MCP',
+		createdAt: new Date(start + (forVersion - 1) * DAY_MS + DAY_MS / 2)
+	});
+}
+
 /**
  * Writes the paper with its versions and reviews, spaced a day apart and ending today, so the
  * history reads in order and `firstSubmittedAt` is the first save that was not a draft.
@@ -104,21 +134,13 @@ function addPaper({ cs, plan }: { cs: ConferenceSeed; plan: PaperPlan }) {
 	});
 
 	if (plan.reviewDraft) {
-		const forVersion = plan.reviewDraft.forVersion ?? versions.length;
-		const version = versions[forVersion - 1];
-		const edited = forVersion < versions.length;
-		if (version) {
-			cs.batch.paperReviewDraft.push({
-				paperId,
-				reviewerId: plan.reviewDraft.by,
-				paperVersionId: version.id,
-				comments: markdownToReviewDocument(DRAFT_MARKDOWN),
-				statusAfter: 'CHANGES_REQUESTED',
-				origin: 'MCP',
-				lastEditedVia: edited ? 'UI' : 'MCP',
-				createdAt: new Date(start + (forVersion - 1) * DAY_MS + DAY_MS / 2)
-			});
-		}
+		addReviewDraft({
+			cs,
+			paperId,
+			versionIds: versions.map((v) => v.id),
+			start,
+			draft: plan.reviewDraft
+		});
 	}
 
 	// Reviews change the reviewed version's status after the fact.
