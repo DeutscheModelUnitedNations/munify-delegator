@@ -215,6 +215,7 @@
 					paperId={paper.id}
 					conferenceId={params.conferenceId}
 					currentStatus={paper.status}
+					latestVersion={versionNumber}
 					quoteToInsert={quoteToInsert ?? undefined}
 					onQuoteInserted={clearQuote}
 					paperContainer={paperEditorContainer}

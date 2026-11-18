@@ -8788,6 +8788,14 @@ type Subscription {
   """
   myNotificationSettings: [ConferenceNotificationSettings!]!
 
+  """
+  The caller's own review draft of a paper, null when there is none. Nobody reads another's draft.
+  """
+  myPaperReviewDraft(paperId: ID!): Paperreviewdraft
+
+  """The caller's own review drafts of a conference's papers, newest first."""
+  myPaperReviewDrafts(conferenceId: ID!): [Paperreviewdraft!]!
+
   """Get a single nation by ID"""
   nation(id: ID!): Nation!
 

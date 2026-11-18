@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages';
 	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client';
-	import { writable, get } from 'svelte/store';
+	import { writable } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import type { JSONContent } from '@tiptap/core';
@@ -10,13 +10,12 @@
 	import { PieceFoundModal } from '#lib/components/flagCollection/index';
 	import Modal from '#lib/components/Modal.svelte';
 	import { getEmptyTipTapDocument } from '#lib/components/paper/editor/contentValidation';
-	import { untrack } from 'svelte';
-	import { createDraftAutosave } from '#lib/components/paper/draft/draftAutosave.svelte.js';
-	import DraftRecoveryModal from '#lib/components/paper/draft/DraftRecoveryModal.svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import PaperHistory from './PaperHistory.svelte';
 	import ReviewStatusPicker from './ReviewStatusPicker.svelte';
 	import { hasTextContent } from '../tiptapText';
 	import { unlockedPiece, type UnlockedPiece } from './unlockedPiece';
+	import { changedElsewhere, draftNotice, staleDraftWarning } from './reviewDraft';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import ReviewAnonymityToggle from './ReviewAnonymityToggle.svelte';
 	import {
@@ -32,6 +31,8 @@
 		paperId: string;
 		conferenceId: string;
 		currentStatus: PaperstatusEnum;
+		/** The paper's latest version, which a draft may have been written before. */
+		latestVersion: number;
 		authorName?: string;
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
@@ -43,6 +44,7 @@
 		paperId,
 		conferenceId,
 		currentStatus,
+		latestVersion,
 		authorName = '',
 		quoteToInsert,
 		onQuoteInserted,
@@ -58,18 +60,85 @@
 	let reviewed = $state(false);
 	let nextPaperId = $state<string | null>(null);
 
-	// Types for draft persistence
-	interface ReviewDraft {
-		comments: JSONContent;
-		selectedStatus: PaperstatusEnum;
-		savedAt: number;
-	}
+	// The reviewer's own draft of this review (an AI assistant may have written it over MCP).
+	const DRAFT_SELECTION = {
+		comments: true,
+		statusAfter: true,
+		origin: true,
+		lastEditedVia: true,
+		createdAt: true,
+		updatedAt: true,
+		paperVersion: { version: true }
+	} as const;
+	const storedDraft = $derived(
+		await client.liveQuery.myPaperReviewDraft({ __args: { paperId }, ...DRAFT_SELECTION })
+	);
+	// The stored draft, unless this editor discarded or sent exactly that one: a live result does
+	// not reliably turn null again, and a later draft (another `updatedAt`) shows up as usual.
+	let goneUpdatedAt = $state<number | undefined>(undefined);
+	const storedUpdatedAt = $derived(
+		storedDraft ? new Date(storedDraft.updatedAt).getTime() : undefined
+	);
+	const hasDraft = $derived(storedUpdatedAt !== undefined && storedUpdatedAt !== goneUpdatedAt);
+	const draftOrigin = $derived(hasDraft ? storedDraft?.origin : undefined);
+	const draftLastEditedVia = $derived(storedDraft?.lastEditedVia);
+	const draftCreatedAt = $derived(storedDraft?.createdAt);
+	const draftUpdatedAt = $derived(storedDraft?.updatedAt);
+	const draftVersion = $derived(hasDraft ? storedDraft?.paperVersion.version : undefined);
+
+	// Seeded once from the draft: re-reading it while the reviewer types would discard their edits.
+	const initialDraft = await client.query.myPaperReviewDraft({
+		__args: { paperId: untrack(() => paperId) },
+		...DRAFT_SELECTION
+	});
 
 	// Review form state
-	let reviewComments = writable<JSONContent>(getEmptyTipTapDocument());
-	let selectedStatus = $state<PaperstatusEnum>(untrack(() => currentStatus));
+	let reviewComments = writable<JSONContent>(initialDraft?.comments ?? getEmptyTipTapDocument());
+	let selectedStatus = $state<PaperstatusEnum>(
+		initialDraft?.statusAfter ?? untrack(() => currentStatus)
+	);
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
+	let showDiscardModal = $state(false);
+	/** Bumped to remount the editor when its content is replaced from outside. */
+	let editorKey = $state(0);
+
+	// What the editor last loaded or saved, so autosave skips what is stored already and an
+	// assistant's later change is told apart from this editor's own.
+	let savedSnapshot: string | undefined = initialDraft
+		? JSON.stringify({ comments: initialDraft.comments, status: initialDraft.statusAfter })
+		: undefined;
+	let knownUpdatedAt = $state<number | undefined>(
+		initialDraft ? new Date(initialDraft.updatedAt).getTime() : undefined
+	);
+	let saveState = $state<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+	let saveTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const notice = $derived(
+		draftOrigin && draftLastEditedVia && draftCreatedAt && draftUpdatedAt
+			? draftNotice({
+					origin: draftOrigin,
+					lastEditedVia: draftLastEditedVia,
+					createdAt: draftCreatedAt,
+					updatedAt: draftUpdatedAt
+				})
+			: []
+	);
+	const staleWarning = $derived(
+		draftVersion === undefined
+			? undefined
+			: staleDraftWarning({ draftVersion, currentVersion: latestVersion })
+	);
+	const assistantChangedDraft = $derived(
+		hasDraft &&
+			changedElsewhere({
+				draft:
+					draftLastEditedVia && draftUpdatedAt
+						? { lastEditedVia: draftLastEditedVia, updatedAt: draftUpdatedAt }
+						: null,
+				knownUpdatedAt
+			})
+	);
 
 	// Whether to publish under another name instead of the reviewer's, remembered across reviews.
 	const anonymityStore = createPersistedState<ReviewAnonymity>({
@@ -88,22 +157,72 @@
 		return `${notified} ${m.reviewSubmissionAnonymousNotice({ author, name })}`;
 	});
 
-	// The page re-creates this component per paper, so the draft key is fixed for its lifetime.
-	const draft = createDraftAutosave<ReviewDraft, JSONContent>({
-		storageKey: `reviewDraft_${untrack(() => paperId)}`,
-		options: {
-			// Skip if content is empty
-			readContent: () => {
-				const comments = get(reviewComments);
-				return hasTextContent(comments) ? comments : undefined;
-			},
-			toDraft: (comments, savedAt) => ({ comments, selectedStatus, savedAt }),
-			applyDraft: (saved) => {
-				reviewComments.set(saved.comments);
-				selectedStatus = saved.selectedStatus;
-			}
+	/** Saves the editor's content as the draft, unless it is empty or stored already. */
+	async function saveDraft(comments: JSONContent, status: PaperstatusEnum) {
+		if (!hasTextContent(comments) || isSubmitting) return;
+		if (status !== 'CHANGES_REQUESTED' && status !== 'ACCEPTED') return;
+		const snapshot = JSON.stringify({ comments, status });
+		if (snapshot === savedSnapshot) return;
+		saveState = 'saving';
+		try {
+			const saved = await client.mutate.savePaperReviewDraft({
+				__args: { paperId, comments, statusAfter: status },
+				updatedAt: true
+			});
+			savedSnapshot = snapshot;
+			knownUpdatedAt = new Date(saved.updatedAt).getTime();
+			saveState = 'saved';
+		} catch {
+			saveState = 'failed';
 		}
+	}
+
+	// Saves the draft a moment after the reviewer stops typing or picks another status.
+	$effect(() => {
+		const comments = $reviewComments;
+		const status = selectedStatus;
+		clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => saveDraft(comments, status), 1500);
 	});
+	onDestroy(() => clearTimeout(saveTimer));
+
+	/** Puts the stored draft into the editor, replacing what it holds. */
+	async function loadStoredDraft() {
+		const latest = await client.query.myPaperReviewDraft({
+			__args: { paperId },
+			...DRAFT_SELECTION
+		});
+		if (!latest) return;
+		clearTimeout(saveTimer);
+		reviewComments.set(latest.comments);
+		selectedStatus = latest.statusAfter;
+		savedSnapshot = JSON.stringify({ comments: latest.comments, status: latest.statusAfter });
+		knownUpdatedAt = new Date(latest.updatedAt).getTime();
+		editorKey++;
+	}
+
+	/** Deletes the draft and empties the editor. */
+	async function discardDraft() {
+		showDiscardModal = false;
+		clearTimeout(saveTimer);
+		const promise = Promise.resolve(client.mutate.deletePaperReviewDraft({ __args: { paperId } }));
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.reviewDraftDiscarded(),
+			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
+		});
+		await promise;
+		resetEditor();
+	}
+
+	function resetEditor() {
+		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, knownUpdatedAt ?? 0);
+		reviewComments.set(getEmptyTipTapDocument());
+		savedSnapshot = undefined;
+		knownUpdatedAt = undefined;
+		saveState = 'idle';
+		editorKey++;
+	}
 
 	// Piece found modal state
 	let showPieceFoundModal = $state(false);
@@ -120,8 +239,9 @@
 				]
 	);
 
-	// Set initial selected status to first available transition
+	// Set initial selected status to first available transition, unless a draft proposes one
 	$effect(() => {
+		if (initialDraft) return;
 		if (availableTransitions.length > 0 && selectedStatus === currentStatus) {
 			selectedStatus = availableTransitions[0].value;
 		}
@@ -158,6 +278,7 @@
 
 		showConfirmModal = false;
 		isSubmitting = true;
+		clearTimeout(saveTimer);
 		try {
 			const promise = client.mutate.createPaperReview({
 				__args: {
@@ -200,19 +321,41 @@
 				nextPaperId = await findNextPaperId(agendaItemId);
 			}
 
-			// Clear form and localStorage draft
-			reviewComments.set(getEmptyTipTapDocument());
-			draft.clear();
+			// The review is out; the server deleted the draft along with it.
+			resetEditor();
 		} finally {
 			isSubmitting = false;
 		}
 	};
 </script>
 
-<DraftRecoveryModal {draft} />
-
-<div class="card bg-base-200 p-4 flex flex-col gap-4">
+<div id="review" class="card bg-base-200 p-4 flex flex-col gap-4 scroll-mt-20">
 	<h2 class="text-lg font-bold">{m.addReview()}</h2>
+
+	{#if notice.length > 0}
+		<div class="alert alert-info" data-testid="review-draft-notice">
+			<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
+			<div class="flex flex-col gap-1">
+				{#each notice as line (line)}
+					<span>{line}</span>
+				{/each}
+				<span class="text-sm">{m.reviewDraftOnlyYou()}</span>
+			</div>
+		</div>
+	{/if}
+	{#if staleWarning}
+		<div class="alert alert-warning" role="alert" data-testid="review-draft-stale">
+			<i aria-hidden="true" class="ph-duotone ph-warning"></i>
+			<span>{staleWarning}</span>
+		</div>
+	{/if}
+	{#if assistantChangedDraft}
+		<div class="alert alert-warning">
+			<i aria-hidden="true" class="ph-duotone ph-robot"></i>
+			<span>{m.reviewDraftChangedByAssistant()}</span>
+			<button class="btn btn-sm" onclick={loadStoredDraft}>{m.reviewDraftLoadNew()}</button>
+		</div>
+	{/if}
 
 	{#if reviewed}
 		<!-- Options after review has been saved -->
@@ -241,7 +384,7 @@
 		</div>
 	{:else}
 		<!-- Comments Editor -->
-		{#key draft.editorKey}
+		{#key editorKey}
 			<PaperEditor.ReviewFormat
 				contentStore={reviewComments}
 				{quoteToInsert}
@@ -272,8 +415,43 @@
 				{m.submitReview()}
 			</button>
 		</div>
+
+		<div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+			<span class="text-base-content/60" aria-live="polite">
+				{#if saveState === 'saving'}
+					{m.reviewDraftSaving()}
+				{:else if saveState === 'saved'}
+					{m.reviewDraftSaved()}
+				{:else if saveState === 'failed'}
+					<span class="text-error">{m.reviewDraftSaveFailed()}</span>
+				{/if}
+			</span>
+			{#if hasDraft}
+				<button
+					class="btn btn-ghost btn-sm text-error"
+					onclick={() => (showDiscardModal = true)}
+					disabled={isSubmitting}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-trash"></i>
+					{m.reviewDraftDiscard()}
+				</button>
+			{/if}
+		</div>
 	{/if}
 </div>
+
+<Modal bind:open={showDiscardModal} title={m.reviewDraftDiscardTitle()}>
+	<p>{m.reviewDraftDiscardConfirm()}</p>
+	{#snippet action()}
+		<div class="flex gap-2">
+			<button class="btn" onclick={() => (showDiscardModal = false)}>{m.cancel()}</button>
+			<button class="btn btn-error" onclick={discardDraft}>
+				<i aria-hidden="true" class="ph-duotone ph-trash"></i>
+				{m.reviewDraftDiscard()}
+			</button>
+		</div>
+	{/snippet}
+</Modal>
 
 <!-- Review Confirmation Modal -->
 <Modal bind:open={showConfirmModal} title={m.confirmReviewSubmission()}>

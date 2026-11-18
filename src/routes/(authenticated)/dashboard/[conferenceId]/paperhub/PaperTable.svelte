@@ -35,6 +35,8 @@
 		paperHref: (paperId: string) => ResolvedPathname;
 		/** Something to do with a paper right from its row, such as writing to its author */
 		rowAction?: Snippet<[Paper]>;
+		/** The papers the caller has a review draft for, marked in their row. */
+		draftPaperIds?: ReadonlySet<string>;
 	}
 
 	let {
@@ -45,7 +47,8 @@
 		showStatus = true,
 		showUpdatedAt = true,
 		paperHref,
-		rowAction
+		rowAction,
+		draftPaperIds
 	}: Props = $props();
 
 	// Type colors for icon badges
@@ -187,9 +190,21 @@
 					onmousedown={(e) => handleRowAuxclick({ e, paperId: paper.id })}
 				>
 					<td>
-						<a href={paperHref(paper.id)} class="link link-hover">
-							{@render delegationCell(paper.delegation)}
-						</a>
+						<span class="flex items-center gap-2">
+							<a href={paperHref(paper.id)} class="link link-hover">
+								{@render delegationCell(paper.delegation)}
+							</a>
+							{#if draftPaperIds?.has(paper.id)}
+								<span
+									class="tooltip tooltip-right"
+									data-tip={m.reviewDraftReady()}
+									data-testid="review-draft-marker"
+								>
+									<i aria-hidden="true" class="ph-duotone ph-note-pencil text-info"></i>
+									<span class="sr-only">{m.reviewDraftReady()}</span>
+								</span>
+							{/if}
+						</span>
 					</td>
 					<td>
 						<span class="flex items-center gap-2 whitespace-nowrap">

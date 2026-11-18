@@ -1,0 +1,62 @@
+import { m } from '#lib/paraglide/messages';
+import { getLocale } from '#lib/paraglide/runtime';
+
+/**
+ * What the review editor says about the reviewer's draft (`paperReviewDraft`): who wrote it and
+ * when, and whether it was written for an older version of the paper.
+ */
+
+type Via = 'MCP' | 'UI';
+
+interface DraftFacts {
+	origin: Via;
+	lastEditedVia: Via;
+	createdAt: Date | string;
+	updatedAt: Date | string;
+}
+
+function formatTime(value: Date | string) {
+	return new Date(value).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+/** The lines of the notice above the editor: who created the draft, and who changed it since. */
+export function draftNotice(draft: DraftFacts): string[] {
+	const created = formatTime(draft.createdAt);
+	const lines = [
+		draft.origin === 'MCP'
+			? m.reviewDraftByAssistant({ time: created })
+			: m.reviewDraftByYou({ time: created })
+	];
+	if (draft.origin === 'MCP' && draft.lastEditedVia === 'UI') {
+		lines.push(m.reviewDraftEditedByYou({ time: formatTime(draft.updatedAt) }));
+	}
+	return lines;
+}
+
+/** The warning for a draft written for an older version than the paper's latest, if it is. */
+export function staleDraftWarning({
+	draftVersion,
+	currentVersion
+}: {
+	draftVersion: number;
+	currentVersion: number;
+}) {
+	return draftVersion < currentVersion
+		? m.reviewDraftStale({ draftVersion, currentVersion })
+		: undefined;
+}
+
+/**
+ * Whether the stored draft changed since the editor last loaded or saved it, by somebody else than
+ * this editor: an assistant writing it again while the page is open.
+ */
+export function changedElsewhere({
+	draft,
+	knownUpdatedAt
+}: {
+	draft: { lastEditedVia: Via; updatedAt: Date | string } | null | undefined;
+	knownUpdatedAt: number | undefined;
+}) {
+	if (!draft || draft.lastEditedVia !== 'MCP') return false;
+	return new Date(draft.updatedAt).getTime() !== knownUpdatedAt;
+}

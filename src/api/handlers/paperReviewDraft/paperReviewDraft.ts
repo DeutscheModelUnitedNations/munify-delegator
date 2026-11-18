@@ -2,6 +2,7 @@ import { db } from '#api/db/db';
 import { editorDocumentSchema } from '#api/handlers/paper/paperService';
 import { enum_, object, schemaBuilder, type ApiContext } from '#api/rumble';
 import { mcpTool } from '#api/mcp/mcpTool';
+import { paperReviewDraftPubsub } from '#api/pubsub';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertCanReviewPaper } from '../paperReview/paperReviewPermissions';
 import { reviewVerdictSchema } from '../paperReview/paperReviewService';
@@ -15,6 +16,17 @@ import {
 } from './paperReviewDraftService';
 
 registerPaperReviewDraftAbilities();
+
+/**
+ * Live: a draft coming or going makes a field ask again; a change to one is that row's (its own
+ * id), so an open review editor hears of an assistant writing its draft again.
+ */
+function listenToDrafts(
+	instance: Parameters<typeof paperReviewDraftPubsub.registerOnInstance>[0]['instance']
+) {
+	paperReviewDraftPubsub.registerOnInstance({ instance, action: 'created' });
+	paperReviewDraftPubsub.registerOnInstance({ instance, action: 'removed' });
+}
 
 const PaperReviewDraftRef = object({ table: 'paperReviewDraft' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
@@ -138,6 +150,8 @@ schemaBuilder.queryFields((t) => ({
 			"The caller's own review draft of a paper, null when there is none. Nobody reads another's draft.",
 		type: PaperReviewDraftRef,
 		nullable: true,
+		smartSubscription: true,
+		subscribe: listenToDrafts,
 		args: { paperId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) =>
 			(await db.query.paperReviewDraft.findFirst(
@@ -148,6 +162,8 @@ schemaBuilder.queryFields((t) => ({
 	myPaperReviewDrafts: t.drizzleField({
 		description: "The caller's own review drafts of a conference's papers, newest first.",
 		type: [PaperReviewDraftRef],
+		smartSubscription: true,
+		subscribe: listenToDrafts,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) =>
 			db.query.paperReviewDraft.findMany(
