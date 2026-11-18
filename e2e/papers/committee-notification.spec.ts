@@ -141,6 +141,8 @@ test('each further submitted version tells again, a draft save does not', async 
 		.poll(async () => recipientsOf(await mailsAbout(resubmitted)), { timeout: 20_000 })
 		.toEqual(told);
 	expect(await mailsAbout(resubmitted)).toHaveLength(2);
+	// the draft before it still told nobody, now that the resubmission's mails are there
+	expect(await mailsAbout(draft)).toEqual([]);
 });
 
 test("a paper in another committee tells that committee's chair", async ({ browser }) => {
