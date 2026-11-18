@@ -221,9 +221,11 @@
 		saver.resume();
 	}
 
-	// Saves the draft a moment after the reviewer stops typing or picks another status.
+	// Saves the draft a moment after the reviewer stops typing or picks another status. Only the
+	// editor is tracked: the saver's own state changing must not count as an edit.
 	$effect(() => {
-		saver.edited({ comments: $reviewComments, status: selectedStatus });
+		const editor = { comments: $reviewComments, status: selectedStatus };
+		untrack(() => saver.edited(editor));
 	});
 	// Leaving the paper saves what is pending rather than dropping it; closing or reloading the
 	// page, where no save can be waited for, asks first while something is not stored yet.

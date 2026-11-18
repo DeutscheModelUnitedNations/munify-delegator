@@ -57,6 +57,22 @@ describe('createDraftSaver', () => {
 		expect(saver.dirty).toBe(false);
 	});
 
+	it('tells onSaved only about saves the server confirmed', async () => {
+		const { save, calls } = controlledSave();
+		const onSaved = vi.fn();
+		const saver = createDraftSaver({ save, onSaved });
+		saver.edited(editor('A'));
+		await vi.advanceTimersByTimeAsync(1500);
+		calls[0]?.fail();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(onSaved).not.toHaveBeenCalled();
+		saver.edited(editor('AB'));
+		await vi.advanceTimersByTimeAsync(1500);
+		calls[1]?.answer();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(onSaved).toHaveBeenCalledTimes(1);
+	});
+
 	it('stops showing "saved" once the editor changes again', async () => {
 		const { save, calls } = controlledSave();
 		const saver = createDraftSaver({ save });
