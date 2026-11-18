@@ -87,14 +87,14 @@ test('a delegate writes a new working paper in the resolution editor and submits
 	const { papers } = await gql<{ papers: StoredPaper[] }>(
 		page,
 		`query ($d: ID!) {
-			papers(where: { delegationId: { eq: $d }, type: { eq: WORKING_PAPER } }) {
+			papers(where: { delegationId: { eq: $d }, type: WORKING_PAPER }) {
 				id type status versions { version content }
 			}
 		}`,
 		{ d: E2E_PAPER_DELEGATION_ID }
 	);
 	const created = papers.find((paper) =>
-		latestContent(paper)?.preamble.some((clause) => clause.content === preamble)
+		latestContent(paper)?.preamble?.some((clause) => clause.content === preamble)
 	);
 	expect(created, JSON.stringify(papers)).toBeDefined();
 	expect(created?.status).toBe('SUBMITTED');
@@ -123,8 +123,12 @@ test('an author reopens a working paper draft in the resolution editor, extends 
 	await expect(operativeClauses).toHaveCount(1);
 	await expect(operativeClauses).toHaveValue(E2E_WORKING_PAPER_OPERATIVE);
 
-	// The last "add clause" button is the operative section's, below its clauses
-	await page.getByRole('button', { name: 'Absatz hinzufügen', exact: true }).last().click();
+	// The last "add clause" button is the operative section's, below its clauses. Matched by its
+	// text: the library's icons are not aria-hidden, so their glyph is part of the button's name.
+	await page
+		.locator('button', { hasText: /^\s*Absatz hinzufügen\s*$/ })
+		.last()
+		.click();
 	await expect(operativeClauses).toHaveCount(2);
 	await operativeClauses.last().fill(added);
 
