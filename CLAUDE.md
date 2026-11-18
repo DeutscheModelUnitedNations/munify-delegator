@@ -1934,8 +1934,8 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   - **The feature is done** (everything asked for, with its tests, the manual and CLAUDE.md /
     CLAUDE-UI.md updated where they apply): mark the PR **ready for review**, or open it ready
     if no draft exists.
-  - Title in the commit convention (`feat (Assignment): …`), the matching `PR: *` label (see
-    "PR Labels"), the body in English: what changed and why, how it was verified, what is left.
+  - Title and label as in "Pull Requests" below, set when opening; the body in English: what
+    changed and why, how it was verified, what is left.
   - Never merge it, and stop pushing once the person says the PR is theirs to finish.
 
 ### Releasing
@@ -1952,9 +1952,19 @@ DockerHub, app and jobs), uploads the sourcemaps to Bugsink, triggers the Dokplo
 creates the GitHub release (`.github/actions/release-notes` renders its body). `package.json`'s
 `version` is the current release; never tag by hand.
 
-### PR Labels
+### Pull Requests
 
-When creating pull requests, always apply the appropriate `PR: *` label based on the conventional commit type in the PR title:
+Every PR needs a conventional title **and** a label; the `PR Lint` workflow
+(`.github/workflows/`, `pr-lint`) fails the PR until both are there and says so in a comment.
+
+**Title**: `<type> (<scope>): <description>`, like a commit (see "Commit Conventions"); the scope
+is optional, the space before it is the house style. Allowed types: `feat`, `fix`, `style`,
+`refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `deps`. Examples:
+`feat (Assignment): required applications`, `fix (Emails): reminder sent twice`,
+`docs: cloud session PR workflow`.
+
+**Label**: set it when opening the PR (not afterwards: the lint has then already failed once),
+chosen from the title's type:
 
 | Commit prefix              | Label                |
 | -------------------------- | -------------------- |
