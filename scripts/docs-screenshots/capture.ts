@@ -30,8 +30,12 @@ export function capture({ baseUrl, filter }: { baseUrl: string; filter?: string 
 		outDir: join(ROOT, 'static/docs-assets/screenshots'),
 		messagesDir: join(ROOT, 'messages'),
 		stage: async () => ids,
-		// DOCS_CHROMIUM: a Chromium installed elsewhere, when Playwright's own download is missing
-		launch: process.env.DOCS_CHROMIUM ? { executablePath: process.env.DOCS_CHROMIUM } : undefined,
+		launch: {
+			// DOCS_CHROMIUM: a Chromium installed elsewhere, when Playwright's own download is missing
+			executablePath: process.env.DOCS_CHROMIUM,
+			// The dev server's certificate is self-signed (HTTPS for HTTP/2, see `run.ts`)
+			args: ['--ignore-certificate-errors']
+		},
 		// The locale is the URL's: German without a prefix, English below `/en`
 		localeCookie: false,
 		localizePath: ({ path, locale }) => (locale === 'de' ? path : `/${locale}${path}`),
