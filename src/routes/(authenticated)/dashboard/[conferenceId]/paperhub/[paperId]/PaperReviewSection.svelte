@@ -116,9 +116,13 @@
 		}
 	}
 
+	// Until the server has it, the browser's review is a draft too, and can be discarded.
+	let legacyPending = $state(legacyDraft !== undefined);
+
 	/** Forgets the review this browser kept the old way, once it is no longer needed. */
 	function dropLegacyDraft() {
-		if (!legacyDraft) return;
+		if (!legacyPending) return;
+		legacyPending = false;
 		try {
 			localStorage.removeItem(legacyKey);
 		} catch {
@@ -473,7 +477,7 @@
 
 		<ReviewDraftFooter
 			saveState={saver.state}
-			{hasDraft}
+			hasDraft={hasDraft || legacyPending}
 			disabled={isSubmitting}
 			onDiscard={() => (showDiscardModal = true)}
 		/>
