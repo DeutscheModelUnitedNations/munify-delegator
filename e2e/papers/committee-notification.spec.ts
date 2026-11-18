@@ -45,7 +45,7 @@ const UPDATE = `mutation ($id: ID!, $content: JSON!, $status: PaperstatusEnum) {
 	updatePaper(paperId: $id, content: $content, status: $status) { id }
 }`;
 const LOG = `query ($c: ID!) {
-	emailLogs(where: { conferenceId: { eq: $c }, kind: { eq: PAPER_SUBMITTED } }) {
+	emailLogs(where: { conferenceId: { eq: $c }, kind: PAPER_SUBMITTED }) {
 		userId subjectKey trigger sentById
 	}
 }`;
