@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a31c4daf-2f15-4f23-97e7-53d5611724e3",
+  "prevIds": [
+    "3d772910-0549-4dc6-af51-001d1021fbcb"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "max_foreign_guaranteed_seats_percent"
+      ],
+      "writes": [
+        "s|col|public.conference.max_foreign_guaranteed_seats_percent",
+        "n|col|public.conference.max_foreign_guaranteed_seats_percent",
+        "e|col|public.conference.max_foreign_guaranteed_seats_percent"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "max_foreign_guaranteed_seats_percent",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": "20",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

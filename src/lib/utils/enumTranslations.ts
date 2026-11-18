@@ -1,5 +1,6 @@
 import type {
 	CalendarentrycolorEnum,
+	PaperreviewanonymousasEnum,
 	PaperstatusEnum,
 	PapertypeEnum
 } from '#lib/api/rumbleClient/client';
@@ -169,4 +170,34 @@ const regionalBaselineLabels: Record<RegionalBaseline, () => string> = {
 
 export function translateRegionalBaseline(baseline: RegionalBaseline) {
 	return regionalBaselineLabels[baseline]();
+}
+
+const paperReviewAnonymousAsLabels: Record<PaperreviewanonymousasEnum, () => string> = {
+	SECRETARIAT: m.paperReviewSignatureSecretariat,
+	RESEARCH_SERVICE: m.paperReviewSignatureResearchService,
+	CUSTOM: m.paperReviewSignatureCustom
+};
+
+/** The names a review can be published under instead of the reviewer's, in order. */
+export const PAPER_REVIEW_ANONYMOUS_AS = [
+	'SECRETARIAT',
+	'RESEARCH_SERVICE',
+	'CUSTOM'
+] as const satisfies readonly PaperreviewanonymousasEnum[];
+
+export function translatePaperReviewAnonymousAs(anonymousAs: PaperreviewanonymousasEnum) {
+	return paperReviewAnonymousAsLabels[anonymousAs]();
+}
+
+/** The name an anonymous review is signed with: the typed one for `CUSTOM`, else the team's. */
+export function reviewSignature({
+	anonymousAs,
+	anonymousName
+}: {
+	anonymousAs: PaperreviewanonymousasEnum;
+	anonymousName: string | null | undefined;
+}) {
+	return anonymousAs === 'CUSTOM' && anonymousName
+		? anonymousName
+		: translatePaperReviewAnonymousAs(anonymousAs);
 }

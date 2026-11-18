@@ -2,6 +2,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import PersonName from '#lib/components/userCard/PersonName.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
 	import { m } from '#lib/paraglide/messages';
 	import { schoolPeople, type SchoolPersonKind, type SchoolPersonStage } from './schoolPeople';
 
@@ -59,7 +60,7 @@
 				</thead>
 				<tbody>
 					{#each people as person (person.userId)}
-						<tr>
+						<tr class={CLICKABLE_ROW} onclick={rowClick(() => openUserCard(person.userId))}>
 							<td>
 								<button
 									class="cursor-pointer text-left hover:underline"

@@ -75,12 +75,12 @@ export function createChaseClient({
 	};
 	const wsUrl = new URL('/api/graphql', url);
 	wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-	// connected from the start, so a CHASE that comes back is noticed (`onConnected`) even while
-	// nothing is subscribed
+	// for the link worker (`onConnected`) connected from the start, so a CHASE that comes back is
+	// noticed even while nothing is subscribed; a one-off read opens it only to subscribe
 	const ws = createWSClient({
 		url: wsUrl.toString(),
 		connectionParams: linkHeaders,
-		lazy: false,
+		lazy: !onConnected,
 		// keep trying while CHASE is away; the worker reconciles once it is back. Every failure counts:
 		// graphql-ws retries only close events by default, and a CHASE restarting refuses the
 		// connection instead, which left the client stopped for good.

@@ -1,6 +1,6 @@
 import codenamize from '#lib/helpers/codenamize';
 import { m } from '#lib/paraglide/messages';
-import type { CollectiveGroupProblem, GuaranteedSeatCount } from './schoolRules';
+import type { CollectiveGroupProblem, GuaranteedSeatCount, GuaranteeShare } from './schoolRules';
 
 /** How the board and the summary word a broken school rule (`schoolRules.ts`). */
 
@@ -35,4 +35,8 @@ export function withoutSeatText(problem: CollectiveGroupProblem) {
 
 export function guaranteeText({ count, limit }: { count: GuaranteedSeatCount; limit: number }) {
 	return m.schoolRuleGuaranteesOverLimit({ school: count.school.name, seats: count.seats, limit });
+}
+
+export function guaranteeShareText(share: GuaranteeShare) {
+	return m.schoolRuleGuaranteesOverShare({ ...share });
 }

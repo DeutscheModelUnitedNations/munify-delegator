@@ -5,6 +5,7 @@ import {
 	connectParticipantToSupervisor,
 	disconnectParticipantFromSupervisor,
 	findSupervisorByConnectionCode,
+	makeDelegationMemberSupervisor,
 	previewSupervisorByCode,
 	registerSupervisor,
 	updateConferenceSupervisor
@@ -14,6 +15,7 @@ import {
 	assertCanConnectToConferenceSupervisor,
 	assertCanCreateConferenceSupervisor,
 	assertCanDisconnectFromConferenceSupervisor,
+	assertCanMakeDelegationMemberSupervisor,
 	assertCanPreviewConferenceSupervisor,
 	assertCanRotateSupervisorConnectionCode,
 	registerConferenceSupervisorAbilities
@@ -21,11 +23,32 @@ import {
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertAllowed } from '#api/services/authHelper/utils';
-import { supervisorSignupOpen } from '#api/services/registration/applicationReadiness';
+import {
+	supervisorApplicationPeople,
+	supervisorSignupOpen
+} from '#api/services/registration/applicationReadiness';
+import {
+	APPLICATION_BLOCKERS_DESCRIPTION,
+	ApplicationBlockerRef,
+	resolveApplicationBlockers
+} from '#api/handlers/plausibility/plausibility';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import { byParticipantCareOf } from '#api/services/authHelper/rules';
 
 registerConferenceSupervisorAbilities();
 
-const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
+const ConferenceSupervisorRef = object({
+	table: 'conferenceSupervisor',
+	adjust: (t) => ({
+		applicationBlockers: t.field({
+			type: [ApplicationBlockerRef],
+			description: `${APPLICATION_BLOCKERS_DESCRIPTION} For a supervisor, sending is confirming they attend in person (\`plansOwnAttendenceAtConference\`), judged by \`supervisorMinAge\`.`,
+			resolve: resolveApplicationBlockers((supervisorId) =>
+				supervisorApplicationPeople({ supervisorId })
+			)
+		})
+	})
+});
 query({ table: 'conferenceSupervisor' });
 
 schemaBuilder.queryFields((t) => ({
@@ -38,14 +61,20 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
-/** The supervisor `id` as far as the caller may read it, for a `drizzleField` to answer with. */
-const readableSupervisor = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
-	(await ctx.abilities.conferenceSupervisor.filter('read')).merge({ where: { id } }).query.single;
+/**
+ * The supervisor `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
+async function readableSupervisor({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
+	return (await ctx.abilities.conferenceSupervisor.filter('read')).merge({ where: { id } }).query
+		.single;
+}
 
 schemaBuilder.mutationFields((t) => ({
 	createConferenceSupervisor: t.drizzleField({
 		description:
-			'Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT for a sign-up of their own once the conference is over (any earlier stage takes one), or when the person takes part in the conference already or is on its team.',
+			'Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT for a sign-up of their own once the conference is over (any earlier stage takes one), for one of their own attending in person while the plausibility checks find something about them (`applicationBlockers`), or when the person takes part in the conference already or is on its team.',
 		type: ConferenceSupervisorRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -84,9 +113,26 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
+	makeDelegationMemberSupervisor: t.drizzleField({
+		description:
+			'Participant care turning a delegate into a supervisor, for someone too old to be a delegate: they leave their delegation (a new head delegate, an empty delegation deleted), keep their part in the conference, are no longer supervised, and supervise everyone left in the delegation. Attending in person.',
+		type: ConferenceSupervisorRef,
+		args: { delegationMemberId: t.arg.id({ required: true }) },
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanMakeDelegationMemberSupervisor({
+				ctx,
+				delegationMemberId: args.delegationMemberId
+			});
+			const createdId = await makeDelegationMemberSupervisor(args.delegationMemberId);
+			return db.query.conferenceSupervisor
+				.findFirst(query(await readableSupervisor({ ctx, id: createdId })))
+				.then(assertFindFirstExists);
+		}
+	}),
+
 	updateConferenceSupervisor: t.drizzleField({
 		description:
-			'Changes whether the supervisor plans to attend the conference themselves: the supervisor, or participant care.',
+			'Changes whether the supervisor plans to attend the conference themselves: the supervisor, or participant care. Switching it on is refused with CONFLICT while the plausibility checks find something about them (`applicationBlockers`), unless participant care does it, who may override them; switching it off never is.',
 		type: ConferenceSupervisorRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -94,9 +140,20 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertAllowed({ ctx, table: 'conferenceSupervisor', action: 'update', id: args.id });
+			const supervisor = await db.query.conferenceSupervisor
+				.findFirst({
+					where: { id: args.id },
+					columns: { id: true },
+					with: { participant: { columns: { conferenceId: true } } }
+				})
+				.then(assertFindFirstExists);
 			await updateConferenceSupervisor({
 				id: args.id,
-				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
+				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
+				byParticipantCare: await byParticipantCareOf({
+					ctx,
+					conferenceId: supervisor.participant.conferenceId
+				})
 			});
 
 			return db.query.conferenceSupervisor

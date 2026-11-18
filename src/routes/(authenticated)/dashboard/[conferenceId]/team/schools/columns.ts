@@ -41,7 +41,15 @@ export function schoolColumns() {
 			applied: countColumn({ label: m.schoolsApplied(), value: (row) => row.applied }),
 			seated: countColumn({ label: m.schoolsSeated(), value: (row) => row.seated }),
 			supervisors: countColumn({ label: m.supervisors(), value: (row) => row.supervisors }),
-			waitingList: countColumn({ label: m.waitingList(), value: (row) => row.waitingList })
+			waitingList: countColumn({ label: m.waitingList(), value: (row) => row.waitingList }),
+			conferences: countColumn({
+				label: m.schoolMetricsConferences(),
+				value: (row) => row.conferences
+			}),
+			participantsOverall: countColumn({
+				label: m.schoolsParticipantsOverall(),
+				value: (row) => row.participantsOverall
+			})
 		}
 	});
 }

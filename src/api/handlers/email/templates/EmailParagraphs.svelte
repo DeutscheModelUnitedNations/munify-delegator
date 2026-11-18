@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { textStyle } from './brand';
+	import EmailText from './EmailText.svelte';
 
 	/** The greeting and the paragraphs of a mail whose text the conference writes. */
 	interface Props {
@@ -12,5 +13,5 @@
 
 <p style={textStyle}>{greeting}</p>
 {#each paragraphs as paragraph, index (index)}
-	<p style={textStyle}>{paragraph}</p>
+	<EmailText {paragraph} />
 {/each}

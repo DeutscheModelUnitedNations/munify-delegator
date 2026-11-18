@@ -5,8 +5,9 @@ import type { ConferenceSettings } from './form-schema';
 type SettingsFieldKey = keyof ConferenceSettings;
 
 /**
- * The tabs of the configuration page. The change preview reuses them so a change
- * is always presented in the same place the user edited it.
+ * The tabs of the configuration page, and the e-mail page (`team/emails`), whose switches use the
+ * same preview. The change preview reuses them so a change is always presented under the place the
+ * user edited it.
  */
 export type ChangeGroupKey = 'general' | 'status' | 'links' | 'payments' | 'documents' | 'emails';
 
@@ -154,6 +155,11 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 		label: () => m.conferenceMaxGuaranteedSeats(),
 		format: (value) => (typeof value === 'number' ? String(value) : m.conferenceSchoolRuleOff())
 	},
+	maxForeignGuaranteedSeatsPercent: {
+		group: 'general',
+		label: () => m.conferenceMaxForeignGuaranteedSeatsPercent(),
+		format: (value) => (typeof value === 'number' ? `${value} %` : m.conferenceSchoolRuleOff())
+	},
 	participantMinAge: {
 		group: 'general',
 		label: () => m.conferenceParticipantMinAge(),
@@ -200,6 +206,12 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	showCalendar: {
 		group: 'status',
 		label: () => m.showCalendar(),
+		highImpact: true,
+		note: featureToggleNote
+	},
+	messagingEnabled: {
+		group: 'status',
+		label: () => m.messagingEnabled(),
 		highImpact: true,
 		note: featureToggleNote
 	},
@@ -311,12 +323,28 @@ export function collectConfigChanges({
 
 		const before = saved[key];
 		const after = current[key];
+		const description = fieldDescriptions[key];
+
+		// The form holds no stored file, so `null` against one on the server is its removal.
+		if (after === null && existingFiles[key]) {
+			changes.push({
+				key,
+				group: description.group,
+				label: description.label(),
+				before: m.configChangeFileExisting(),
+				after: m.configChangeFileRemoved(),
+				// Nothing replaces it, so the preview's "replaced by this upload" note does not apply
+				isFile: false,
+				highImpact: description.highImpact ?? false,
+				note: description.note?.()
+			});
+			continue;
+		}
 
 		// Superforms untaints a field that was changed back to its original value, but
 		// guard against it anyway so the preview never lists a non-change.
 		if (valuesAreEqual({ before, after })) continue;
 
-		const description = fieldDescriptions[key];
 		const format = description.format ?? formatValue;
 		const isFile = after instanceof File;
 

@@ -11,7 +11,8 @@ import {
 	reviewerLeaderboard,
 	updatePaper,
 	type AgendaItemGroup,
-	type CommitteeGroup
+	type CommitteeGroup,
+	editorDocumentSchema
 } from './paperService';
 import {
 	assertCanCreatePaper,
@@ -20,8 +21,8 @@ import {
 	assertCanReviewPapers,
 	assertCanUpdatePaper,
 	canReviewPapers,
-	registerPaperAbilities,
-	supervisedDelegationOf
+	paperOfSupervisedDelegation,
+	registerPaperAbilities
 } from './paperPermissions';
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
@@ -84,7 +85,7 @@ schemaBuilder.mutationFields((t) => ({
 				description: 'The agenda item it is on; left out for an introduction paper.'
 			}),
 			type: t.arg({ type: paperTypeEnum, required: true }),
-			content: t.arg({ type: 'JSON', required: true }),
+			content: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema),
 			status: t
 				.arg({
 					type: paperStatusEnum,
@@ -119,7 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: PaperRef,
 		args: {
 			paperId: t.arg.id({ required: true }),
-			content: t.arg({ type: 'JSON', required: true }),
+			content: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema),
 			status: t
 				.arg({
 					type: paperStatusEnum,
@@ -182,14 +183,14 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = ctx.mustBeLoggedIn().sub;
+			ctx.mustBeLoggedIn();
 
 			return db.query.paper.findMany(
 				query(
 					await readableSubmittedPapers({
 						ctx,
 						conferenceId: args.conferenceId,
-						where: supervisedDelegationOf(callerId)
+						where: await paperOfSupervisedDelegation(ctx)
 					})
 				)
 			);

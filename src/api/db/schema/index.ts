@@ -68,15 +68,47 @@ export {
 	paperType,
 	paper,
 	paperVersion,
+	paperReviewAnonymousAs,
 	paperReview,
 	reviewerSnippet,
 	resolution
 } from './papers';
 export { paymentTransaction, userReferenceInPaymentTransaction } from './payments';
 export { mailingList } from './mailSync';
-export { instanceLink, chasePresence } from './chaseLink';
+export { instanceLink } from './chaseLink';
 export { tableView, tableViewDefault } from './tableViews';
 export { mcpCallOutcome, mcpAuditEntry } from './mcp';
+export {
+	teamFunctionKind,
+	teamFunction,
+	chatKind,
+	chatInbox,
+	chat,
+	chatMessage,
+	chatRead,
+	chatBlock,
+	chatReportStatus,
+	chatReport,
+	messagingTermsAcceptance
+} from './messages';
+export {
+	announcementImportance,
+	announcementStatus,
+	announcement,
+	announcementAudienceKind,
+	announcementAudience,
+	announcementAttachment,
+	announcementRead
+} from './announcements';
+export {
+	notificationChannel,
+	notificationTopic,
+	slackWorkspace,
+	conferenceSlackWorkspace,
+	notificationPreference,
+	slackUserLookup,
+	slackNotification
+} from './notifications';
 export {
 	statisticsPeople,
 	statisticsDelegations,

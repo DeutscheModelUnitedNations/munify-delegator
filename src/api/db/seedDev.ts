@@ -42,6 +42,8 @@ import {
 	addElsewhereTeam
 } from './seed-dev/duplicates';
 import { conferencePlans } from './seed-dev/plans';
+import { addMessages } from './seed-dev/messages';
+import { addAnnouncements } from './seed-dev/announcements';
 import { logger } from '#lib/logger';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
@@ -105,6 +107,8 @@ for (const plan of conferencePlans) {
 	if (plan.with.assignmentDraft) addAssignmentDraft(cs);
 	addWaitingList({ cs, personaUserId: 'dev-waitlist' });
 	addPapers(cs);
+	addMessages(cs);
+	addAnnouncements(cs);
 	addSurveys(cs);
 	addEmails(cs);
 	await addCalendar(cs);

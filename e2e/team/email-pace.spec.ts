@@ -2,8 +2,8 @@ import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import { E2E_EMAIL_PACE_CARE_ID, E2E_EMAIL_PACE_CONFERENCE_ID } from '../seed/emailPace';
 
-// Participant care limits how many mails per second the conference's sweeps send, on the e-mail
-// tab of the settings; the value waits for the save button like the switches next to it.
+// Participant care limits how many mails per second the conference's sweeps send, on the team's
+// e-mail page; the value waits for the save button like the switches next to it.
 
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 
@@ -29,7 +29,7 @@ const SET_PACE = `mutation ($c: ID!, $n: Int) {
 
 test('participant care sets and lifts the sending pace', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_EMAIL_PACE_CARE_ID), {
-		startUrl: `/dashboard/${E2E_EMAIL_PACE_CONFERENCE_ID}/team/configuration?tab=emails`
+		startUrl: `/dashboard/${E2E_EMAIL_PACE_CONFERENCE_ID}/team/emails`
 	});
 
 	const field = page.getByRole('spinbutton', {
@@ -62,6 +62,16 @@ test('participant care sets and lifts the sending pace', async ({ page }) => {
 	await save.click();
 	await dialog.getByRole('button', { name: /^(speichern|save)$/i }).click();
 	await expect.poll(() => storedPace(page)).toBeNull();
+});
+
+test("an old link to the settings' e-mail tab opens the e-mail page", async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_EMAIL_PACE_CARE_ID), {
+		startUrl: `/dashboard/${E2E_EMAIL_PACE_CONFERENCE_ID}/team/configuration?tab=emails`
+	});
+	await expect(page).toHaveURL(/\/team\/emails$/, { timeout: 15_000 });
+	await expect(
+		page.getByRole('spinbutton', { name: /E-Mails pro Sekunde|Emails per second/i })
+	).toBeVisible();
 });
 
 test('the API refuses a pace out of range', async ({ page }) => {

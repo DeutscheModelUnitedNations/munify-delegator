@@ -3,6 +3,7 @@
 	generics="A extends Record<string, unknown>, B, N extends FormPathLeaves<A, File> & FormPath<A>"
 >
 	import {
+		fieldProxy,
 		fileProxy,
 		type FormPath,
 		type FormPathLeaves,
@@ -38,13 +39,26 @@
 	let { form, name, title, icon, stored, onplace, ontest, printing, testBlocked }: Props = $props();
 
 	const file = $derived(fileProxy(form, name));
+	const value = $derived(fieldProxy(form, name));
 	/** A file is picked but not saved: placing and printing still work on the stored one. */
 	const pending = $derived(($file?.length ?? 0) > 0);
+	/** The stored template goes on the next save (the field is `null`). */
+	const removed = $derived($value === null && !!stored);
 
 	/** Why placing and printing are off, if they are. */
 	const blocked = $derived(
-		!stored ? m.templateNeedsSaving() : pending ? m.templatePendingBlocks() : undefined
+		!stored ? m.templateNeedsSaving() : pending || removed ? m.templatePendingBlocks() : undefined
 	);
+
+	/**
+	 * Through the form itself: the proxies cannot know that the field's schema takes `null`.
+	 * `undefined` takes a removal back and keeps the stored template.
+	 */
+	function setRemoved(remove: boolean) {
+		form.form.update(($form) => ({ ...$form, [name]: remove ? null : undefined }), {
+			taint: true
+		});
+	}
 	const testReason = $derived(blocked ?? testBlocked);
 </script>
 
@@ -57,7 +71,11 @@
 		</div>
 		<div class="flex min-w-0 flex-1 flex-col gap-1">
 			<span class="font-semibold leading-tight">{title}</span>
-			{#if pending}
+			{#if removed}
+				<span class="badge badge-error badge-soft badge-sm">
+					<i aria-hidden="true" class="ph-duotone ph-trash"></i>{m.templateRemovalPending()}
+				</span>
+			{:else if pending}
 				<span class="badge badge-info badge-soft badge-sm">
 					<i aria-hidden="true" class="ph-duotone ph-cloud-arrow-up"></i>{m.templatePending()}
 				</span>
@@ -84,6 +102,27 @@
 				<i aria-hidden="true" class="ph-duotone ph-eye"></i>
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			{#if removed}
+				<button
+					type="button"
+					class="btn btn-ghost btn-sm btn-square"
+					aria-label={m.templateUndoRemoval()}
+					title={m.templateUndoRemoval()}
+					onclick={() => setRemoved(false)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
+				</button>
+			{:else if !pending}
+				<button
+					type="button"
+					class="btn btn-ghost btn-sm btn-square text-error"
+					aria-label={m.templateRemove()}
+					title={m.templateRemove()}
+					onclick={() => setRemoved(true)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-trash"></i>
+				</button>
+			{/if}
 		{/if}
 	</div>
 

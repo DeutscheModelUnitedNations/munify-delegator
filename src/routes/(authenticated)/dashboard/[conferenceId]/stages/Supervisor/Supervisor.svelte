@@ -11,6 +11,7 @@
 	import AssignmentPending from '#lib/components/AssignmentPending.svelte';
 	import ChunkLoadError from '#lib/components/ChunkLoadError.svelte';
 	import formatNames from '#lib/helpers/formatNames';
+	import { owesOwnFormalities } from '#lib/helpers/owesOwnFormalities';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import SupervisorPresence from './SupervisorPresence.svelte';
@@ -52,6 +53,7 @@
 		await client.liveQuery.conferenceSupervisor({
 			__args: { id: supervisorId },
 			id: true,
+			plansOwnAttendenceAtConference: true,
 			supervisedDelegationMembers: {
 				id: true,
 				assignedCommittee: { id: true },
@@ -161,16 +163,19 @@
 		person.conferenceParticipants.find((s) => s.conference.id === conferenceId)?.paymentStatus ===
 		'DONE';
 
-	// The supervisor's own payment plus every listed student's
+	// A fee and paperwork of their own only while they attend in person; live, so toggling it shows
+	const owesOwn = $derived(owesOwnFormalities(supervisor));
+
+	// The supervisor's own payment, if they owe one, plus every listed student's
 	let allPaymentsComplete = $derived(
-		status?.paymentStatus === 'DONE' &&
+		(!owesOwn || status?.paymentStatus === 'DONE') &&
 			delegationMembers.every((member) => isPaid(member.user)) &&
 			singleParticipants.every((participant) => isPaid(participant.user))
 	);
 </script>
 
 {#snippet afterRegistration()}
-	{#if !allPaymentsComplete}
+	{#if owesOwn && !allPaymentsComplete}
 		<ConferenceStatusWidget {conferenceId} ofAgeAtConference={ofAge} {status} />
 	{/if}
 

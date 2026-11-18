@@ -1,4 +1,5 @@
-import { assertFindFirstExists, refreshAbilities } from '@m1212e/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 import { db } from '#api/db/db';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import type { TableState } from '#lib/dataGrid/stateSchema';
@@ -27,10 +28,11 @@ registerTableViewAbilities();
 
 /**
  * The read filter for the view `id`, to answer a mutation with the row it wrote. Rumble resolves
- * relational rules once per request, before the write, so they are resolved again first.
+ * relational rules, and the rules read the caller's facts, once per root field, before the write,
+ * so both are taken again first.
  */
 async function readableView({ ctx, id }: { ctx: ApiContext; id: string }) {
-	refreshAbilities(ctx.abilities);
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.tableView.filter('read')).merge({ where: { id } }).query.single;
 }
 

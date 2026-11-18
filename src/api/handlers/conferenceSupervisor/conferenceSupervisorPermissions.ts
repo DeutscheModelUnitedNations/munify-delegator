@@ -2,14 +2,15 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
-	isOwnUser,
-	isTeamMemberOfConference,
+	caredForVia,
+	idIn,
 	linkedChase,
-	PARTICIPANT_CARE_ROLES,
 	RELEASED_MIRRORED_CONFERENCE,
-	systemAdmin
+	systemAdmin,
+	teamConference
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
+import { callerUserId } from '#api/services/authHelper/utils';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import {
 	fetchParticipationsAndTeamMembership,
 	isParticipantOrTeamMember
@@ -37,48 +38,46 @@ export function registerConferenceSupervisorAbilities() {
 	abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
-	// supervisors of its conference.
+	// supervisors of its conference (through the supervisor's part in it, which holds the conference).
 	abilityBuilder.conferenceSupervisor
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(liveWhere((args) => caredForVia(args, 'participant')));
 
 	// Delegates and single participants read their own supervisors, without the connection code.
-	abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						OR: [
-							{ supervisedDelegationMembers: { user: { id } } },
-							{ supervisedSingleParticipants: { user: { id } } }
-						]
-					},
-					columns: WITHOUT_CONNECTION_CODE
-				}
-			: undefined;
-	});
+	abilityBuilder.conferenceSupervisor.allow('read').when(
+		liveRule(({ ctx, facts }) =>
+			callerUserId(ctx)
+				? {
+						where: { id: idIn(facts.ownSupervisors.map((supervisor) => supervisor.supervisorId)) },
+						columns: WITHOUT_CONNECTION_CODE
+					}
+				: undefined
+		)
+	);
 
 	// Everyone reads, updates and deletes their own supervisor row.
 	abilityBuilder.conferenceSupervisor
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isOwnUser(ctx)));
+		.when(
+			liveWhere(({ ctx, facts }) =>
+				callerUserId(ctx)
+					? { id: idIn(facts.supervisorRegistrations.map((supervisor) => supervisor.id)) }
+					: undefined
+			)
+		);
 
 	// Supervisors read the co-supervisors of their students, without the connection code: the group
 	// payment page splits a fee between them.
-	abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		if (!id) return undefined;
-		const supervisedByMe = { supervisors: { user: { id } } };
-		return {
-			where: {
-				OR: [
-					{ supervisedDelegationMembers: supervisedByMe },
-					{ supervisedSingleParticipants: supervisedByMe }
-				]
-			},
-			columns: WITHOUT_CONNECTION_CODE
-		};
-	});
+	abilityBuilder.conferenceSupervisor.allow('read').when(
+		liveRule(({ ctx, facts }) =>
+			callerUserId(ctx)
+				? {
+						where: { id: idIn(facts.coSupervisors.map((supervisor) => supervisor.supervisorId)) },
+						columns: WITHOUT_CONNECTION_CODE
+					}
+				: undefined
+		)
+	);
 }
 
 /**
@@ -220,4 +219,28 @@ export async function assertCanPreviewConferenceSupervisor({
 		throw apiError({ code: 'FORBIDDEN', message: m.notRegisteredForConference() });
 	}
 	return { callerId };
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the delegation member is in a conference where the caller holds
+ * `manageParticipants` (project management and participant care), who turn a delegate into a
+ * supervisor of their delegation.
+ */
+export async function assertCanMakeDelegationMemberSupervisor({
+	ctx,
+	delegationMemberId
+}: {
+	ctx: ApiContext;
+	delegationMemberId: string;
+}) {
+	const member = await db.query.delegationMember.findFirst({
+		where: {
+			id: delegationMemberId,
+			conference: await teamConference({ ctx, permission: 'manageParticipants' })
+		},
+		columns: { id: true }
+	});
+	if (!member) {
+		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
+	}
 }

@@ -7,7 +7,7 @@
 	/**
 	 * Where the plan breaks the conference's school rules (`schoolRules.ts`): groups decided
 	 * together that it seats only partly, or that the sighting excluded only partly, and
-	 * Auslandsschulen with more guaranteed seats than the limit. Only warns; shows nothing while
+	 * Auslandsschulen with more guaranteed seats than the limit, alone or all together. Only warns; shows nothing while
 	 * every rule holds.
 	 */
 	interface Props {
@@ -27,6 +27,7 @@
 	const breaches = $derived(schoolRuleBreaches({ ...checked, plan }));
 	const splitGroups = $derived(breaches.splitGroups);
 	const overGuarantee = $derived(breaches.overGuarantee);
+	const overShare = $derived(breaches.overShare);
 	const guaranteeLimit = $derived(checked.guaranteeLimit ?? 0);
 	// the names of the split groups' supervisors, keyed by a primitive so they are asked for again
 	// only when other groups split
@@ -41,10 +42,18 @@
 		{splitGroups}
 		{names}
 		{overGuarantee}
+		{overShare}
 		groupLimit={checked.groupLimit ?? 0}
 		{guaranteeLimit}
 		class={className}
 	/>
-{:else if splitGroups.length > 0 || overGuarantee.length > 0}
-	<SchoolRulesCard {splitGroups} {names} {overGuarantee} {guaranteeLimit} class={className} />
+{:else if splitGroups.length > 0 || overGuarantee.length > 0 || overShare}
+	<SchoolRulesCard
+		{splitGroups}
+		{names}
+		{overGuarantee}
+		{overShare}
+		{guaranteeLimit}
+		class={className}
+	/>
 {/if}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { placementProblem } from './placementRules';
+import { displacedBy, partToClear, placementProblem } from './placementRules';
 
 const committee = { id: 'gv', numOfSeatsPerDelegation: 2 };
 
@@ -38,5 +38,57 @@ describe('placementProblem', () => {
 				committee
 			})
 		).toBeUndefined();
+	});
+});
+
+describe('partToClear', () => {
+	test('refuses a team member or a supervisor', () => {
+		expect(partToClear({ participant: undefined, isTeamMember: true })).toEqual({
+			kind: 'refused'
+		});
+		expect(
+			partToClear({ participant: { conferenceSupervisor: { id: 's' } }, isTeamMember: false })
+		).toEqual({ kind: 'refused' });
+	});
+
+	test('clears a membership or a single registration', () => {
+		expect(
+			partToClear({ participant: { delegationMember: { id: 'm' } }, isTeamMember: false })
+		).toEqual({ kind: 'member', id: 'm' });
+		expect(
+			partToClear({ participant: { singleParticipant: { id: 's' } }, isTeamMember: false })
+		).toEqual({ kind: 'single', id: 's' });
+	});
+
+	test('clears nothing for someone without a part', () => {
+		expect(partToClear({ participant: undefined, isTeamMember: false })).toEqual({ kind: 'none' });
+		expect(partToClear({ participant: {}, isTeamMember: false })).toEqual({ kind: 'none' });
+	});
+});
+
+describe('displacedBy', () => {
+	const at = (day: number) => new Date(2026, 0, day);
+	const member = { id: 'me', assignedCommitteeId: 'sr', updatedAt: at(5) };
+
+	test('displaces nobody while the committee has room', () => {
+		expect(
+			displacedBy({
+				member,
+				members: [member, { id: 'a', assignedCommitteeId: 'gv', updatedAt: at(1) }],
+				committee
+			})
+		).toBeUndefined();
+	});
+
+	test('displaces the occupant left untouched longest', () => {
+		const older = { id: 'older', assignedCommitteeId: 'gv', updatedAt: at(1) };
+		const newer = { id: 'newer', assignedCommitteeId: 'gv', updatedAt: at(3) };
+		expect(displacedBy({ member, members: [member, newer, older], committee })).toBe(older);
+	});
+
+	test('does not count the member itself', () => {
+		const seated = { id: 'me', assignedCommitteeId: 'gv', updatedAt: at(5) };
+		const other = { id: 'a', assignedCommitteeId: 'gv', updatedAt: at(1) };
+		expect(displacedBy({ member: seated, members: [seated, other], committee })).toBeUndefined();
 	});
 });

@@ -22,7 +22,8 @@ const conference: EmailSnapshot['conference'] = {
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: true,
-	chaseUrl: null
+	chaseUrl: null,
+	messagingEnabled: true
 };
 
 const person: SnapshotPerson = {
@@ -41,6 +42,10 @@ const person: SnapshotPerson = {
 	mediaConsent: 'PENDING',
 	didAttend: true,
 	delegation: {
+		id: 'd1',
+		entryCode: 'ABCDEFGH',
+		isHeadDelegate: true,
+		joinedAt: new Date('2026-10-01T10:00:00Z'),
 		applied: true,
 		role: {
 			id: 'r1',
@@ -53,7 +58,8 @@ const person: SnapshotPerson = {
 	},
 	single: null,
 	supervisor: null,
-	seatedFromWaitingList: null
+	seatedFromWaitingList: null,
+	supervisorIds: []
 };
 
 /** A due mail of `kind` with everything any kind may need filled in. */
@@ -71,6 +77,14 @@ function dueEmailOf(kind: AutomaticEmailKind): DueEmail {
 		},
 		students: [person],
 		student: person,
+		announcement: {
+			id: 'a1',
+			title: 'Raumwechsel',
+			body: 'Die **GV** tagt im [Plenarsaal](https://example.org/plan).\n\n- Einlass ab 9 Uhr',
+			signature: 'Eure Orga',
+			mailRevision: 0,
+			attachmentNames: ['Lageplan.pdf']
+		},
 		field: 'mediaConsent',
 		review: {
 			id: 'review-1',
@@ -79,6 +93,8 @@ function dueEmailOf(kind: AutomaticEmailKind): DueEmail {
 			paperType: 'POSITION_PAPER',
 			agendaItem: 'GV: Klimaschutz',
 			reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
+			anonymousAs: null,
+			anonymousName: null,
 			statusAfter: 'ACCEPTED'
 		},
 		survey: {
@@ -100,6 +116,12 @@ const kindChecks: Partial<
 		(args: { content: Content; text: string; locale: 'de' | 'en' }) => void
 	>
 > = {
+	DELEGATION_CREATED: ({ content, text }) => {
+		const joinLink = 'https://delegator.example.org/registration/c1/join-delegation?code=ABCDEFGH';
+		expect(bodyOf(content)).toContain('ABCDEFGH');
+		expect(bodyOf(content)).toContain(`[${joinLink}](${joinLink})`);
+		expect(text).toContain(joinLink);
+	},
 	ASSIGNMENT_ACCEPTED: ({ text, locale }) => {
 		expect(text).toContain(locale === 'de' ? 'Frankreich' : 'France');
 	},
@@ -150,5 +172,153 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 		kindChecks[kind]?.({ content, text, locale });
 		// Only a review's mail goes back to someone: the reviewer.
 		expect(content.replyTo).toBe(kind === 'PAPER_REVIEWED' ? 'robin@example.org' : undefined);
+	});
+});
+
+describe.each(['de', 'en'] as const)('an anonymous review in %s', (locale) => {
+	test('names the team instead of the reviewer and takes no replies', () => {
+		overwriteGetLocale(() => locale);
+		const email = dueEmailOf('PAPER_REVIEWED');
+		const review = email.review && {
+			...email.review,
+			reviewer: null,
+			anonymousAs: 'RESEARCH_SERVICE' as const
+		};
+		const content = emailContent({
+			email: { ...email, review },
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(bodyOf(content)).toContain(
+			locale === 'de' ? 'dem Wissenschaftlichen Dienst' : 'the Research Service'
+		);
+		expect(bodyOf(content)).not.toContain('Robin');
+		expect(content.replyTo).toBeUndefined();
+	});
+
+	test('names the custom name the reviewer typed', () => {
+		overwriteGetLocale(() => locale);
+		const email = dueEmailOf('PAPER_REVIEWED');
+		const review = email.review && {
+			...email.review,
+			reviewer: null,
+			anonymousAs: 'CUSTOM' as const,
+			anonymousName: 'Vorsitz der Generalversammlung'
+		};
+		const content = emailContent({
+			email: { ...email, review },
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(bodyOf(content)).toContain('Vorsitz der Generalversammlung');
+		expect(bodyOf(content)).not.toContain('Robin');
+		expect(content.replyTo).toBeUndefined();
+	});
+});
+
+describe.each(['de', 'en'] as const)('the CHASE introduction in %s', (locale) => {
+	const linked = { ...conference, chaseUrl: 'https://chase.example.org/' };
+
+	test('sends the button to the conference selection and links the manual', async () => {
+		overwriteGetLocale(() => locale);
+		const content = emailContent({
+			email: dueEmailOf('CHASE_INTRO_REMINDER'),
+			conference: linked,
+			origin: 'https://delegator.example.org'
+		});
+		expect(content.button?.url).toBe('https://chase.example.org/app');
+		// the button is the way there: no CHASE address pasted into the text
+		expect(bodyOf(content)).not.toContain('https://chase.example.org/app');
+
+		const { html, text } = await renderEmail({
+			component: NotificationEmail,
+			props: {
+				heading: content.heading,
+				recipientName: recipientName(person.user),
+				paragraphs: content.paragraphs,
+				button: content.button,
+				conferenceTitle: conference.title
+			}
+		});
+		const manual = 'https://chase.example.org/docs/user-manual/participant/getting-started';
+		expect(html).toMatch(
+			new RegExp(`<a [^>]*href="${manual}"[^>]*>${locale === 'de' ? 'Handbuch' : 'manual'}</a>`)
+		);
+		expect(html).not.toContain('](');
+		expect(text).toContain(manual);
+	});
+});
+
+describe('the announcement mail', () => {
+	test('carries the announcement itself: title, text, signature and the names of its files', async () => {
+		overwriteGetLocale(() => 'de');
+		const content = emailContent({
+			email: dueEmailOf('ANNOUNCEMENT'),
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(content.subject).toBe('Raumwechsel | MUN-SH 2027');
+		expect(content.heading).toBe('Raumwechsel');
+		expect(content.blocks).toEqual([
+			{ type: 'paragraph', text: 'Die GV tagt im [Plenarsaal](https://example.org/plan).' },
+			{ type: 'list', ordered: false, items: ['Einlass ab 9 Uhr'] },
+			{ type: 'paragraph', text: 'Eure Orga' },
+			{ type: 'paragraph', text: expect.stringContaining('Anhänge') },
+			{ type: 'list', ordered: false, items: ['Lageplan.pdf'] }
+		]);
+		expect(content.button?.url).toBe('https://delegator.example.org/dashboard/c1/announcements');
+
+		const { html, text } = await renderEmail({
+			component: NotificationEmail,
+			props: {
+				heading: content.heading,
+				recipientName: recipientName(person.user),
+				paragraphs: content.paragraphs,
+				blocks: content.blocks,
+				button: content.button,
+				conferenceTitle: conference.title
+			}
+		});
+		expect(html).toContain('href="https://example.org/plan"');
+		expect(text).toContain('Einlass ab 9 Uhr');
+		expect(text).toContain('Lageplan.pdf');
+		// the Markdown's emphasis is dropped, not shown as asterisks
+		expect(text).not.toContain('**');
+	});
+});
+
+describe.each(['de', 'en'] as const)('a bundle of mails in %s', (locale) => {
+	const origin = 'https://delegator.example.org';
+	const withName = (givenName: string): SnapshotPerson => ({
+		...person,
+		participantId: givenName,
+		user: { ...person.user, id: givenName, givenName, familyName: 'Test' }
+	});
+
+	test('names every student linked at once', () => {
+		overwriteGetLocale(() => locale);
+		const [first, ...rest] = ['Ada', 'Ben', 'Cleo'].map((name) => ({
+			...dueEmailOf('SUPERVISOR_STUDENT_LINKED'),
+			student: withName(name)
+		}));
+		const content = emailContent({ email: first, bundle: [first, ...rest], conference, origin });
+		const names =
+			locale === 'de' ? 'Ada Test, Ben Test und Cleo Test' : 'Ada Test, Ben Test, and Cleo Test';
+		expect(content.subject).toContain(names);
+		expect(bodyOf(content)).toContain(names);
+	});
+
+	test('names every survey with their shared deadline', () => {
+		overwriteGetLocale(() => locale);
+		const first = dueEmailOf('SURVEY_PUBLISHED');
+		const deadline = new Date('2027-02-01T17:00:00Z');
+		const second = {
+			...first,
+			survey: { id: 'survey-2', title: 'Essen', deadline, answeredBy: [] }
+		};
+		const content = emailContent({ email: first, bundle: [first, second], conference, origin });
+		expect(content.subject).toContain(
+			locale === 'de' ? '„Workshop-Wahl“ und „Essen“' : '“Workshop-Wahl” and “Essen”'
+		);
 	});
 });

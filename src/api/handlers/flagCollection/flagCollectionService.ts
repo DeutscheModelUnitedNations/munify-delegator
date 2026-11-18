@@ -138,16 +138,14 @@ function committeeNations(committee: FlagSources['committees'][number]) {
 function nationAgendaItemsOf(committees: FlagSources['committees']) {
 	const nationAgendaItems = new Map<string, NationAgendaItem[]>();
 	for (const committee of committees) {
+		const items = committee.agendaItems.map((agendaItem) => ({
+			agendaItemId: agendaItem.id,
+			agendaItemTitle: agendaItem.title,
+			committeeAbbreviation: committee.abbreviation
+		}));
 		for (const nation of committeeNations(committee)) {
 			const existing = nationAgendaItems.get(nation.alpha3Code) ?? [];
-			for (const agendaItem of committee.agendaItems) {
-				existing.push({
-					agendaItemId: agendaItem.id,
-					agendaItemTitle: agendaItem.title,
-					committeeAbbreviation: committee.abbreviation
-				});
-			}
-			nationAgendaItems.set(nation.alpha3Code, existing);
+			nationAgendaItems.set(nation.alpha3Code, [...existing, ...items]);
 		}
 	}
 	return nationAgendaItems;

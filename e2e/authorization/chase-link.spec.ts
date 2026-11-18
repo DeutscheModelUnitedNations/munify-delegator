@@ -1,6 +1,7 @@
 import type { APIRequestContext } from '@playwright/test';
 import { test, expect } from '../support/test';
 import {
+	E2E_CONFERENCE_ID,
 	E2E_PREP_CONFERENCE_ID,
 	E2E_PREP_PARTICIPANT_USER_ID,
 	E2E_UNRELEASED_CONFERENCE_ID
@@ -94,6 +95,28 @@ test('the linked CHASE reads participants only once the assignment is released',
 	expect(unreleased.data?.delegations).toEqual([]);
 });
 
+test("the linked CHASE reads a mirrored conference's team and the team's people", async ({
+	request
+}) => {
+	// what CHASE's link worker asks: the team memberships, then the users they name
+	const team = await asChase({
+		request,
+		query: `{ teamMembers(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" } }) { id role userId } }`
+	});
+	expect(team.errors, JSON.stringify(team)).toBeUndefined();
+	const members = (team.data?.teamMembers ?? []) as { userId: string }[];
+	expect(members.length).toBeGreaterThan(0);
+
+	const userIds = [...new Set(members.map((member) => member.userId))];
+	const people = await asChase({
+		request,
+		query: `{ users(where: { id: { in: ${JSON.stringify(userIds)} } }) { id email givenName familyName } }`
+	});
+	expect(people.errors, JSON.stringify(people)).toBeUndefined();
+	const found = ((people.data?.users ?? []) as { id: string; email: string }[]).map((u) => u.id);
+	expect(found.toSorted()).toEqual(userIds.toSorted());
+});
+
 test("the linked CHASE reads a participant's name and e-mail, nothing more", async ({
 	request
 }) => {
@@ -132,4 +155,20 @@ test('the link state names where CHASE is, nothing more', async ({ request }) =>
 	expect(result.data?.instanceLinks).toEqual([
 		expect.objectContaining({ remoteUrl: 'https://chase.e2e.invalid' })
 	]);
+});
+
+test('the linked CHASE asks for a sync now; it may not make this instance ask CHASE back', async ({
+	request
+}) => {
+	const asked = await asChase({ request, query: 'mutation { requestLinkSync }' });
+	expect(asked.errors, JSON.stringify(asked)).toBeUndefined();
+	expect(asked.data?.requestLinkSync).toBe(true);
+
+	const anonymous = await asChase({ request, token: null, query: 'mutation { requestLinkSync }' });
+	expect(anonymous.data?.requestLinkSync ?? null, JSON.stringify(anonymous)).toBeNull();
+	expect(anonymous.errors?.length).toBeTruthy();
+
+	const bounced = await asChase({ request, query: 'mutation { requestRemoteLinkSync }' });
+	expect(bounced.data?.requestRemoteLinkSync ?? null, JSON.stringify(bounced)).toBeNull();
+	expect(bounced.errors?.length).toBeTruthy();
 });

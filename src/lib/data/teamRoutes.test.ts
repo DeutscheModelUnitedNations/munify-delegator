@@ -8,7 +8,7 @@ import {
 	teamRoutes,
 	teamRoutesFor
 } from './teamRoutes';
-import { NO_TEAM_ACCESS, type TeamAccess } from '#lib/helpers/teamAccess';
+import { canManageEmails, NO_TEAM_ACCESS, type TeamAccess } from '#lib/helpers/teamAccess';
 
 const as = (...roles: TeamAccess['roles']): TeamAccess => ({ isAdmin: false, roles });
 const ids = (access: TeamAccess & { canSeePaperHub?: boolean }) =>
@@ -58,12 +58,32 @@ describe('who sees what', () => {
 		}
 	});
 
-	test('the content lead plans seats but sees none of the care pages', () => {
-		expect(ids(as('CONTENT_LEAD'))).toEqual(['stats', 'settings', 'seatPlanning', 'attendance']);
+	test('the e-mail page is for whoever manages the mails, under communication', () => {
+		for (const role of ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] as const) {
+			expect(ids(as(role))).toContain('emails');
+			expect(canManageEmails(as(role))).toBe(true);
+		}
+		for (const role of ['CONTENT_LEAD', 'REVIEWER', 'MEMBER', 'TEAM_COORDINATOR'] as const) {
+			expect(ids(as(role))).not.toContain('emails');
+			expect(canManageEmails(as(role))).toBe(false);
+		}
+		expect(route('emails').group).toBe('info');
+		expect(teamRouteForPath('team/emails')?.id).toBe('emails');
+	});
+
+	test('the content lead plans seats and writes announcements but sees none of the care pages', () => {
+		expect(ids(as('CONTENT_LEAD'))).toEqual([
+			'stats',
+			'settings',
+			'seatPlanning',
+			'attendance',
+			'announcement',
+			'messages'
+		]);
 	});
 
 	test('a team coordinator also manages the team', () => {
-		expect(ids(as('TEAM_COORDINATOR'))).toEqual(['stats', 'members', 'attendance']);
+		expect(ids(as('TEAM_COORDINATOR'))).toEqual(['stats', 'members', 'attendance', 'messages']);
 	});
 
 	test('participant care has the care pages but not the seat planning or the team', () => {
@@ -75,7 +95,16 @@ describe('who sees what', () => {
 
 	test('the navigation sections leave out what is empty', () => {
 		const sections = groupedTeamRoutes(as('CONTENT_LEAD')).map((section) => section.group);
-		expect(sections).toEqual(['main', 'workflows']);
+		// nothing of the maintenance section is the content lead's
+		expect(sections).toEqual(['main', 'workflows', 'info']);
+	});
+
+	test('the messages page is open to the whole team: who answers an inbox follows functions', () => {
+		for (const role of ['MEMBER', 'REVIEWER', 'PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] as const) {
+			expect(ids(as(role))).toContain('messages');
+		}
+		expect(route('messages').group).toBe('info');
+		expect(teamRouteForPath('team/messages')?.id).toBe('messages');
 	});
 });
 

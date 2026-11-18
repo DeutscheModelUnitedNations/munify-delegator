@@ -4,11 +4,13 @@ import {
 	isTeamMemberOfConference,
 	linkedChase,
 	MIRRORED_CONFERENCE,
-	readableConference,
+	readableConferenceRows,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
-	teamConference
+	teamConference,
+	hop
 } from '#api/services/authHelper/rules';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -25,15 +27,17 @@ export function registerCommitteeAgendaItemAbilities() {
 	// they are part of the seat overview.
 	abilityBuilder.committeeAgendaItem
 		.allow('read')
-		.when((ctx) => ({ where: { committee: { conference: readableConference(ctx) } } }));
+		.when(liveWhere((args) => ({ committee: readableConferenceRows(args) })));
 	abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when(systemAdmin);
 
 	// Seat planning (project management and content lead) updates and deletes the agenda items of its
 	// conference's committees.
-	abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when((ctx) => {
-		const committee = isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES });
-		return committee ? { where: { committee } } : undefined;
-	});
+	abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const committee = isTeamMemberOfConference({ ...args, roles: SEAT_PLANNING_ROLES });
+			return hop(committee, (committee) => ({ committee }));
+		})
+	);
 }
 
 /**
@@ -50,7 +54,10 @@ export async function assertCanCreateAgendaItem({
 }) {
 	await db.query.committee
 		.findFirst({
-			where: { id: committeeId, conference: teamConference({ ctx, permission: 'planSeats' }) },
+			where: {
+				id: committeeId,
+				conference: await teamConference({ ctx, permission: 'planSeats' })
+			},
 			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
@@ -88,7 +95,7 @@ export async function assertCanSetAgendaItemReviewHelpStatus({
 		.findFirst({
 			where: {
 				id: agendaItemId,
-				committee: { conference: teamConference({ ctx, permission: 'reviewPapers' }) }
+				committee: { conference: await teamConference({ ctx, permission: 'reviewPapers' }) }
 			},
 			columns: { id: true }
 		})

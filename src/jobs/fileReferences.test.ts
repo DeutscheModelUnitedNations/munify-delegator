@@ -12,10 +12,11 @@ describe('fileReferenceColumns', () => {
 				schema.conference.logoFileId,
 				schema.conference.certificateFileId,
 				schema.place.sitePlanFileId,
-				schema.resolution.fileId
+				schema.resolution.fileId,
+				schema.announcementAttachment.fileId
 			])
 		);
-		expect(columns).toHaveLength(10);
+		expect(columns).toHaveLength(11);
 	});
 });
 

@@ -11,7 +11,12 @@ import {
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
-import { assertSupervisorSignupOpen } from '#api/services/registration/applicationReadiness';
+import {
+	assertNoApplicationBlockers,
+	assertSupervisorSignupOpen,
+	prospectiveSupervisorPeople,
+	supervisorApplicationPeople
+} from '#api/services/registration/applicationReadiness';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -19,6 +24,11 @@ import { m } from '#lib/paraglide/messages';
 import { apiError, codeNotFound } from '#api/services/errors';
 import { whereRows } from '#api/db/whereRows';
 import { supervisorPreview } from './supervisorPreview';
+import {
+	announceLeave,
+	leaveDelegation
+} from '#api/handlers/delegationMember/delegationMemberService';
+import { assertFindFirstExists } from '@m1212e/rumble';
 
 /**
  * A connection code no supervisor holds yet, in any conference: the codes are unique across
@@ -40,7 +50,10 @@ async function unusedConnectionCode() {
  * Registers a user as supervisor of a conference, with the school they name as their own. Refuses
  * (CONFLICT) somebody who takes part in the conference already or is on its team, and a
  * registration of one's own once the conference is over (any earlier stage is fine, registration
- * closed or not). Returns the new row's id.
+ * closed or not). Signing oneself up as attending in person (the default) is a supervisor's
+ * application, so it is refused while the plausibility checks find anything about them
+ * (`assertNoApplicationBlockers`); signing up as not attending is not. The team registering
+ * somebody else places them, which no finding stops. Returns the new row's id.
  */
 export async function registerSupervisor(
 	args: SchoolChoice & {
@@ -60,7 +73,17 @@ export async function registerSupervisor(
 
 	const connectionCode = await unusedConnectionCode();
 	// The person's row and the supervisor entry go in together, so a refused insert leaves neither.
+	const attends = args.plansOwnAttendenceAtConference ?? true;
 	const created = await db.transaction(async (tx) => {
+		if (args.selfService && attends) {
+			assertNoApplicationBlockers(
+				await prospectiveSupervisorPeople({
+					conferenceId: args.conferenceId,
+					userId: args.subjectId,
+					reader: tx
+				})
+			);
+		}
 		const participantId = await ensureConferenceParticipant({
 			tx,
 			conferenceId: args.conferenceId,
@@ -76,7 +99,7 @@ export async function registerSupervisor(
 			.insert(schema.conferenceSupervisor)
 			.values({
 				conferenceParticipantId: participantId,
-				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? true,
+				plansOwnAttendenceAtConference: attends,
 				connectionCode
 			})
 			.returning()
@@ -131,12 +154,29 @@ export async function connectParticipantToSupervisor({
 		.values({ a: supervisorId, b: participantId })
 		.onConflictDoNothing();
 
-	// Nothing on these rows changed, but who supervises whom did.
+	announceSupervision({
+		supervisorId,
+		participantId,
+		delegationMemberId: participation.foundDelegationMember?.id,
+		singleParticipantId: participation.foundSingleParticipant?.id
+	});
+}
+
+/** Announces a changed supervision: nothing on these rows changed, but who supervises whom did. */
+function announceSupervision({
+	supervisorId,
+	participantId,
+	delegationMemberId,
+	singleParticipantId
+}: {
+	supervisorId: string;
+	participantId: string;
+	delegationMemberId: string | undefined;
+	singleParticipantId: string | undefined;
+}) {
 	conferenceSupervisorPubsub.updated(supervisorId);
 	conferenceParticipantPubsub.updated(participantId);
-	const delegationMemberId = participation.foundDelegationMember?.id;
 	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
-	const singleParticipantId = participation.foundSingleParticipant?.id;
 	if (singleParticipantId) singleParticipantPubsub.updated(singleParticipantId);
 }
 
@@ -166,12 +206,12 @@ export async function disconnectParticipantFromSupervisor({
 			whereRows({ table: schema.supervision, filter: { a: supervisorId, b: participant.id } })
 		);
 
-	conferenceSupervisorPubsub.updated(supervisorId);
-	conferenceParticipantPubsub.updated(participant.id);
-	const delegationMemberId = participant.delegationMember?.id;
-	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
-	const singleParticipantId = participant.singleParticipant?.id;
-	if (singleParticipantId) singleParticipantPubsub.updated(singleParticipantId);
+	announceSupervision({
+		supervisorId,
+		participantId: participant.id,
+		delegationMemberId: participant.delegationMember?.id,
+		singleParticipantId: participant.singleParticipant?.id
+	});
 }
 
 /**
@@ -207,16 +247,22 @@ export async function previewSupervisorByCode({
 
 /**
  * Changes a supervisor's row; an absent field is left as it is. A rotated connection code makes
- * the old one stop working, people already connected stay so.
+ * the old one stop working, people already connected stay so. Confirming they attend in person is
+ * a supervisor's application: refused (CONFLICT) while the plausibility checks find anything
+ * about them (`assertNoApplicationBlockers`), unless participant care confirms it
+ * (`byParticipantCare`), who may override them; taking it back never is.
  */
 export async function updateConferenceSupervisor({
 	id,
 	plansOwnAttendenceAtConference,
-	rotateConnectionCode
+	rotateConnectionCode,
+	byParticipantCare = false
 }: {
 	id: string;
 	plansOwnAttendenceAtConference?: boolean | null;
 	rotateConnectionCode?: boolean;
+	/** Participant care asks (`byParticipantCareOf`). */
+	byParticipantCare?: boolean;
 }) {
 	const values = {
 		plansOwnAttendenceAtConference: plansOwnAttendenceAtConference ?? undefined,
@@ -224,10 +270,77 @@ export async function updateConferenceSupervisor({
 	};
 	// drizzle refuses an empty `set`
 	if (Object.values(values).some((value) => value !== undefined)) {
-		await db
-			.update(schema.conferenceSupervisor)
-			.set(values)
-			.where(whereRows({ table: schema.conferenceSupervisor, filter: { id } }));
+		await db.transaction(async (tx) => {
+			if (plansOwnAttendenceAtConference && !byParticipantCare) {
+				const supervisor = await supervisorApplicationPeople({ supervisorId: id, reader: tx });
+				// confirming again what is confirmed already changes nothing
+				if (!supervisor?.applied) assertNoApplicationBlockers(supervisor);
+			}
+			await tx
+				.update(schema.conferenceSupervisor)
+				.set(values)
+				.where(whereRows({ table: schema.conferenceSupervisor, filter: { id } }));
+		});
 	}
 	conferenceSupervisorPubsub.updated(id);
+}
+
+/**
+ * Turns a delegate into a supervisor of the delegation they leave, in one transaction: they leave
+ * it as `leaveDelegation` does, keep their participant row (school, payment, documents), are no
+ * longer anybody's student, and supervise everyone left in it. For someone too old to be a delegate.
+ * Returns the new supervisor's id.
+ */
+export async function makeDelegationMemberSupervisor(delegationMemberId: string) {
+	const connectionCode = await unusedConnectionCode();
+	const result = await db.transaction(async (tx) => {
+		const member = await tx.query.delegationMember
+			.findFirst({
+				where: { id: delegationMemberId },
+				columns: { conferenceParticipantId: true, delegationId: true }
+			})
+			.then(assertFindFirstExists);
+		const coMembers = await tx.query.delegationMember.findMany({
+			where: { delegationId: member.delegationId, id: { ne: delegationMemberId } },
+			columns: { id: true, conferenceParticipantId: true }
+		});
+		const leave = await leaveDelegation({ tx, memberId: delegationMemberId });
+		// a supervisor is nobody's student
+		const formerSupervisors = await tx
+			.delete(schema.supervision)
+			.where(
+				whereRows({ table: schema.supervision, filter: { b: member.conferenceParticipantId } })
+			)
+			.returning({ id: schema.supervision.a });
+		const supervisor = await tx
+			.insert(schema.conferenceSupervisor)
+			.values({
+				conferenceParticipantId: member.conferenceParticipantId,
+				plansOwnAttendenceAtConference: true,
+				connectionCode
+			})
+			.returning({ id: schema.conferenceSupervisor.id })
+			.then(assertFirstEntryExists);
+		if (coMembers.length > 0) {
+			await tx
+				.insert(schema.supervision)
+				.values(coMembers.map((co) => ({ a: supervisor.id, b: co.conferenceParticipantId })))
+				.onConflictDoNothing();
+		}
+		return { leave, member, coMembers, formerSupervisors, supervisorId: supervisor.id };
+	});
+
+	announceLeave(result.leave);
+	conferenceSupervisorPubsub.created();
+	if (result.formerSupervisors.length > 0) {
+		conferenceSupervisorPubsub.updated(result.formerSupervisors.map((row) => row.id));
+	}
+	conferenceParticipantPubsub.updated([
+		result.member.conferenceParticipantId,
+		...result.coMembers.map((co) => co.conferenceParticipantId)
+	]);
+	if (result.coMembers.length > 0) {
+		delegationMemberPubsub.updated(result.coMembers.map((co) => co.id));
+	}
+	return result.supervisorId;
 }

@@ -93,15 +93,15 @@ async function documentNumberOf(args: {
 	assignNextDocumentNumber?: boolean | null;
 }) {
 	if (!args.assignNextDocumentNumber) return args.assignedDocumentNumber ?? undefined;
+	return nextDocumentNumber(args.conferenceId);
+}
+
+/** One past the highest document number of the conference. */
+async function nextDocumentNumber(conferenceId: string) {
 	const [highest] = await db
 		.select({ value: max(schema.conferenceParticipant.assignedDocumentNumber) })
 		.from(schema.conferenceParticipant)
-		.where(
-			whereRows({
-				table: schema.conferenceParticipant,
-				filter: { conferenceId: args.conferenceId }
-			})
-		);
+		.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }));
 	return (highest?.value ?? 0) + 1;
 }
 
@@ -126,9 +126,10 @@ async function assertAccessCardFree({
 	ownId
 }: {
 	conferenceId: string;
-	accessCardId: string;
+	accessCardId: string | undefined;
 	ownId: string | undefined;
 }) {
+	if (!accessCardId) return;
 	const holder = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, accessCardId, ...(ownId ? { id: { ne: ownId } } : {}) },
 		columns: { id: true }
@@ -137,7 +138,7 @@ async function assertAccessCardFree({
 }
 
 /** The plain status fields to write; `null` keeps a field, like leaving it out. */
-function statusFields(args: StatusUpdateArgs) {
+export function statusFields(args: StatusUpdateArgs) {
 	return {
 		termsAndConditions: args.termsAndConditions ?? undefined,
 		guardianConsent: args.guardianConsent ?? undefined,
@@ -165,7 +166,7 @@ export async function upsertParticipantStatus({
 }) {
 	const existingId = 'existingId' in target ? target.existingId : undefined;
 	const accessCardId = args.accessCardId ?? undefined;
-	if (accessCardId) await assertAccessCardFree({ conferenceId, accessCardId, ownId: existingId });
+	await assertAccessCardFree({ conferenceId, accessCardId, ownId: existingId });
 
 	const values = {
 		...statusFields(args),

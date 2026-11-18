@@ -10,6 +10,7 @@
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import FlowStep from './FlowStep.svelte';
+	import ApplicationBlockers from '#lib/components/registration/ApplicationBlockers.svelte';
 
 	/** Signing up as a supervisor: the school first, then whether they attend themselves. */
 	interface Props {
@@ -19,6 +20,17 @@
 	}
 
 	let { conferenceId, firstNumber }: Props = $props();
+
+	// What would keep the caller from signing up as attending in person; not attending stays open.
+	const blockers = $derived(
+		await client.query.mySupervisorSignupBlockers({
+			__args: { conferenceId },
+			userId: true,
+			ageIssue: true,
+			invalidFields: true,
+			user: { givenName: true, familyName: true }
+		})
+	);
 
 	// The superform only holds the school picker's two fields; the signup itself is a plain handler,
 	// since a `goto` after superforms' own submit does not navigate.
@@ -36,6 +48,8 @@
 	let schoolChosen = $state(false);
 	let attends = $state<boolean>();
 	let submitting = $state(false);
+	const attendingBlocked = $derived(attends === true && blockers.length > 0);
+	const cannotSubmit = $derived(attends === undefined || attendingBlocked || submitting);
 
 	const attendanceChoices = $derived([
 		{
@@ -127,10 +141,18 @@
 				</button>
 			{/each}
 		</div>
+		{#if attendingBlocked}
+			<ApplicationBlockers
+				{blockers}
+				title={m.supervisorAttendanceBlockersTitle()}
+				description={m.supervisorSignupBlockersDescription()}
+				class="mt-4"
+			/>
+		{/if}
 		<button
 			class="btn btn-primary mt-4 self-end"
 			type="button"
-			disabled={attends === undefined || submitting}
+			disabled={cannotSubmit}
 			onclick={signup}
 		>
 			{#if submitting}

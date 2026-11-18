@@ -13,31 +13,36 @@
  */
 /* global Bun -- this script only runs under bun, which provides the Bun global; bun-types is not installed */
 import { existsSync, rmSync } from 'node:fs';
+import { createConnection } from 'node:net';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORT = 5173;
-const BASE_URL = `http://localhost:${PORT}`;
 const RAW_DIR = 'coverage/e2e-raw';
 const BROWSER_DIR = 'coverage/e2e-browser';
 const SERVER_DIR = 'coverage/e2e-server';
 
-/** A 5xx still means something is listening, so treat anything below it as "up". */
-async function serverResponds(url: string): Promise<boolean> {
-	try {
-		const res = await fetch(url);
-		return res.ok || res.status < 500;
-	} catch {
-		return false; // not up yet
-	}
+/**
+ * Whether something listens on the port. A TCP connect rather than a request: the dev server
+ * serves HTTPS with a self-signed certificate (vite.config.ts), which a fetch would refuse.
+ */
+function serverListens(port: number): Promise<boolean> {
+	return new Promise((resolve) => {
+		const socket = createConnection({ port, host: 'localhost' });
+		socket.once('connect', () => {
+			socket.destroy();
+			resolve(true);
+		});
+		socket.once('error', () => resolve(false)); // not up yet
+	});
 }
 
-async function waitForServer(url: string, timeoutMs: number) {
+async function waitForServer(port: number, timeoutMs: number) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
-		if (await serverResponds(url)) return;
+		if (await serverListens(port)) return;
 		await sleep(500);
 	}
-	throw new Error(`Server did not become ready at ${url} within ${timeoutMs}ms`);
+	throw new Error(`Server did not start listening on port ${port} within ${timeoutMs}ms`);
 }
 
 if (existsSync(RAW_DIR)) rmSync(RAW_DIR, { recursive: true });
@@ -59,7 +64,7 @@ const server = Bun.spawn(
 
 let exitCode: number;
 try {
-	await waitForServer(BASE_URL, 60_000);
+	await waitForServer(PORT, 60_000);
 
 	console.log('[e2e-coverage] running Playwright e2e suite...');
 	const playwright = Bun.spawn(['bunx', 'playwright', 'test', ...process.argv.slice(2)], {

@@ -14,6 +14,7 @@ export function fetchPaperDetail(paperId: string) {
 		createdAt: true,
 		firstSubmittedAt: true,
 		author: { id: true },
+		authorParticipantId: true,
 		conference: { title: true, longTitle: true, emblemFile: { url: true } },
 		delegation: {
 			id: true,

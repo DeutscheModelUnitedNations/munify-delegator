@@ -6,6 +6,7 @@
 		type FormPath,
 		type FormPathLeaves,
 		type SuperForm,
+		fieldProxy,
 		fileProxy
 	} from 'sveltekit-superforms';
 	import { Control, Field, Label } from 'formsnap';
@@ -15,7 +16,8 @@
 
 	/**
 	 * An image upload: a drop zone that takes a click or a dropped file and previews what was picked,
-	 * falling back to the stored image. Fills the same form field `FormFile` does.
+	 * falling back to the stored image. Fills the same form field `FormFile` does. With `removable`, a
+	 * stored image can be removed too, which sets the field to `null`.
 	 */
 	interface Props {
 		name: N;
@@ -25,11 +27,23 @@
 		accept?: string;
 		/** The image as currently stored, shown until a new file is picked. */
 		storedUrl?: string | null;
+		/** Whether the stored image may be removed; the field's schema has to accept `null`. */
+		removable?: boolean;
 	}
 
-	let { form, label, description, name, accept = 'image/*', storedUrl = null }: Props = $props();
+	let {
+		form,
+		label,
+		description,
+		name,
+		accept = 'image/*',
+		storedUrl = null,
+		removable = false
+	}: Props = $props();
 
 	const file = $derived(fileProxy(form, name));
+	const value = $derived(fieldProxy(form, name));
+	const removed = $derived($value === null && !!storedUrl);
 	let input: HTMLInputElement | undefined = $state();
 	let dragging = $state(false);
 
@@ -45,7 +59,7 @@
 		pickedUrl = url;
 		return () => URL.revokeObjectURL(url);
 	});
-	const src = $derived(pickedUrl ?? storedUrl);
+	const src = $derived(pickedUrl ?? (removed ? null : storedUrl));
 
 	function setFiles(files: FileList) {
 		if (!input) return;
@@ -67,8 +81,14 @@
 		if (files) setFiles(files);
 	}
 
+	/** Back to the stored image, from a picked file and from a removal alike. */
 	function clearPicked() {
 		setFiles(new DataTransfer().files);
+	}
+
+	function removeStored() {
+		// Through the form itself: the proxies cannot know that this field's schema takes `null`
+		form.form.update(($form) => ({ ...$form, [name]: null }), { taint: true });
 	}
 </script>
 
@@ -109,6 +129,26 @@
 							bind:files={$file}
 						/>
 					</label>
+					{#if removable && storedUrl && !picked && !removed}
+						<button
+							type="button"
+							class="btn btn-circle btn-xs btn-error absolute top-2 right-2"
+							aria-label={m.removeImage()}
+							title={m.removeImage()}
+							onclick={removeStored}
+						>
+							<i aria-hidden="true" class="ph-duotone ph-trash"></i>
+						</button>
+					{:else if removed}
+						<button
+							type="button"
+							class="btn btn-xs btn-neutral absolute top-2 right-2"
+							onclick={clearPicked}
+						>
+							<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
+							{m.undoImageRemoval()}
+						</button>
+					{/if}
 					{#if picked}
 						<button
 							type="button"

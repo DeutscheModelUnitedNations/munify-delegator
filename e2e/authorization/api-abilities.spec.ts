@@ -633,6 +633,11 @@ test('anybody finds schools by name, but only their participants’ care team re
 		await gql(page, `mutation { updateSchool(id: "missing", notes: "x") { id } }`),
 		/not found/i
 	);
+	// A school's history across conferences is participant care's.
+	expectRefused(
+		await gql(page, `query { schoolMetrics(schoolId: "missing") { conferenceId } }`),
+		/not found/i
+	);
 
 	// A school of one's own only exists in a conference one takes part in: the waiting list
 	// gives no participant row to set it on.
@@ -648,7 +653,7 @@ test('anybody finds schools by name, but only their participants’ care team re
 	);
 });
 
-test('participant care no longer reaches the school of somebody whose registration ended', async ({
+test('participant care reads every school in full, but changes only those of its people', async ({
 	page
 }) => {
 	// The only one naming the school is a participant row of the unreleased conference without a
@@ -659,7 +664,15 @@ test('participant care no longer reaches the school of somebody whose registrati
 		id: E2E_UNRELEASED_FORMER_SCHOOL_ID
 	});
 	expect(read.errors, JSON.stringify(read)).toBeUndefined();
-	expect(read.data?.school).toEqual({ name: 'E2E Schule Ehemalig', notes: null });
+	expect(read.data?.school).toMatchObject({ name: 'E2E Schule Ehemalig' });
+
+	const metrics = await gql(
+		page,
+		`query ($id: ID!) { schoolMetrics(schoolId: $id) { conferenceId } canUpdateSchool(id: $id) }`,
+		{ id: E2E_UNRELEASED_FORMER_SCHOOL_ID }
+	);
+	expect(metrics.errors, JSON.stringify(metrics)).toBeUndefined();
+	expect(metrics.data?.canUpdateSchool).toBe(false);
 
 	expectRefused(
 		await gql(page, `mutation ($id: ID!) { updateSchool(id: $id, notes: "x") { id } }`, {

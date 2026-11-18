@@ -20,7 +20,12 @@
 	import EditableIdentityField from './EditableIdentityField.svelte';
 	import SurveyOptionPicker from '#lib/components/survey/SurveyOptionPicker.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
-	import { isNetworkError, requeueFailed, retryDelay, type QueueEntry } from './attendanceQueue';
+	import {
+		neverReachedServer,
+		requeueFailed,
+		retryDelay,
+		type QueueEntry
+	} from './attendanceQueue';
 	import {
 		findLogged,
 		fullName,
@@ -732,7 +737,7 @@
 
 	function markFailed({ entry, err }: { entry: QueueEntry; err: unknown }) {
 		entry.status = 'error';
-		if (!isNetworkError(err)) {
+		if (!neverReachedServer(err)) {
 			entry.errorKind = 'unknown';
 			entry.errorMessage = err instanceof Error ? err.message : String(err);
 			queue = [...queue];

@@ -24,7 +24,7 @@ const single = (id: string, applied = true) => ({
 	applied,
 	school: null,
 	assignedRoleId: null,
-	user: { id: `user-${id}`, givenName: 'A', familyName: 'B' },
+	user: { id: `user-${id}`, givenName: 'A', familyName: 'B', conferenceParticipationsCount: 0 },
 	appliedForRoles: [],
 	assignmentReview: null
 });

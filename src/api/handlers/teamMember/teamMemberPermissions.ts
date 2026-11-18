@@ -2,6 +2,7 @@ import { db } from '#api/db/db';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import type { TeamRole } from '#api/services/authHelper/rules';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
@@ -12,7 +13,7 @@ import {
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
+import { assertAllowed } from '#api/services/authHelper/utils';
 
 export function registerTeamMemberAbilities() {
 	// The linked CHASE mirrors it (`docs/plans/chase-link.md`), with only these columns.
@@ -26,21 +27,23 @@ export function registerTeamMemberAbilities() {
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Every team member reads the memberships of their conference.
-	abilityBuilder.teamMember
-		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
+	abilityBuilder.teamMember.allow('read').when(liveWhere(isTeamMemberOfConference));
 
 	// Project management updates and deletes anybody on its team (a role change, a removal).
 	abilityBuilder.teamMember
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PROJECT_MANAGEMENT_ROLES }))
+		);
 
 	// Team coordinators update and delete anybody on their team but project management. Which role
 	// someone may be given is checked on top (`assertCanGrantTeamRole`).
-	abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference({ ctx, roles: ['TEAM_COORDINATOR'] });
-		return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
-	});
+	abilityBuilder.teamMember.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const team = isTeamMemberOfConference({ ...args, roles: ['TEAM_COORDINATOR'] });
+			return team && { ...team, role: { ne: 'PROJECT_MANAGEMENT' as const } };
+		})
+	);
 }
 
 /**

@@ -1,0 +1,66 @@
+name: 'Release Notes'
+description: 'Renders the GitHub release body used for a version tag'
+
+inputs:
+  version:
+    description: 'The release tag name, e.g. v2.1.11'
+    required: true
+
+outputs:
+  body:
+    description: 'Rendered release body markdown'
+    value: ${{ steps.render.outputs.body }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: render
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_NUMBER: ${{ inputs.version }}
+      run: |
+        VERSION_NUMBER="${VERSION_NUMBER#v}"
+        {
+          echo "body<<RELEASE_NOTES_EOF"
+          cat <<EOF
+        <div align="center">
+
+        # MUNify Delegator \`${VERSION}\`
+
+        [![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://svelte.dev)
+        [![Drizzle](https://img.shields.io/badge/Drizzle-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team)
+        [![GraphQL](https://img.shields.io/badge/GraphQL-E10098?style=for-the-badge&logo=graphql&logoColor=white)](https://graphql.org)
+        [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/deutschemodelunitednations/delegator)
+
+        </div>
+
+        ### Docker images
+
+        \`\`\`bash
+        # App
+        docker pull ghcr.io/${{ github.repository }}:${VERSION_NUMBER}
+
+        # Background jobs
+        docker pull ghcr.io/${{ github.repository }}-jobs:${VERSION_NUMBER}
+        \`\`\`
+
+        <details><summary>DockerHub mirror</summary>
+
+        \`\`\`bash
+        docker pull deutschemodelunitednations/delegator:${VERSION_NUMBER}
+        docker pull deutschemodelunitednations/delegator-jobs:${VERSION_NUMBER}
+        \`\`\`
+
+        </details>
+
+        ---
+
+        <div align="center">
+        <sub>A project by <a href="https://dmun.de">Deutsche Model United Nations (DMUN) e.V.</a></sub>
+        <br>
+        <sub>Proudly free and open source — built for the MUN community worldwide 🌍</sub>
+        </div>
+        EOF
+          echo "RELEASE_NOTES_EOF"
+        } >> "$GITHUB_OUTPUT"

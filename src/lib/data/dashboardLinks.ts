@@ -3,6 +3,7 @@ import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
 import { m } from '#lib/paraglide/messages';
 import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
+import MessagesLinkInfo from '#lib/components/chat/MessagesLinkInfo.svelte';
 import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink';
 
 export type UserType = 'delegation' | 'singleParticipant' | 'supervisor';
@@ -17,15 +18,17 @@ export interface DashboardLinkContext {
 	isHeadDelegate?: boolean;
 	unlockPayments?: boolean;
 	unlockPostals?: boolean;
-	hasConferenceInfo?: boolean;
 	linkToPreparationGuide?: string | null;
 	isOpenPaperSubmission?: boolean;
 	showCalendar?: boolean;
+	messagingEnabled?: boolean;
 	linkToPaperInbox?: string | null;
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
 	paymentStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
 	postalRegistrationStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
+	/** Whether the caller owes paperwork of their own (`owesOwnFormalities`); left out, they do. */
+	owesOwnFormalities?: boolean;
 	user?: { sub: string; email: string };
 }
 
@@ -107,10 +110,25 @@ const dashboardLinks: DashboardLink[] = [
 				conferenceId: ctx.conferenceId
 			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => ctx.postalRegistrationStatus !== 'DONE',
+		isVisible: (ctx) => ctx.owesOwnFormalities !== false && ctx.postalRegistrationStatus !== 'DONE',
 		isDisabled: (ctx) => !ctx.unlockPostals,
 		getBadge: (ctx) => (!ctx.unlockPostals ? undefined : { value: '!', type: 'warning' }),
 		isImportant: () => true
+	},
+	{
+		id: 'messages',
+		icon: 'chats-circle',
+		getTitle: () => m.chatMessages(),
+		getDescription: () => m.chatLinkDescription(),
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/messages', {
+				conferenceId: ctx.conferenceId
+			}),
+		info: MessagesLinkInfo,
+		// Supervisors take no part in the chats
+		showFor: ['delegation', 'singleParticipant'],
+		isVisible: (ctx) => !!ctx.messagingEnabled,
+		isDisabled: () => false
 	},
 	{
 		id: 'preparation',

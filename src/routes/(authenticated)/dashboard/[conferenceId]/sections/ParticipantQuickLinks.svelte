@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { owesOwnFormalities } from '#lib/helpers/owesOwnFormalities';
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
@@ -75,6 +76,7 @@
 	{:else if supervisorId}
 		{@const supervisor = await client.liveQuery.conferenceSupervisor({
 			__args: { id: supervisorId },
+			plansOwnAttendenceAtConference: true,
 			supervisedDelegationMembers: { delegation: { assignedRole: { id: true } } },
 			supervisedSingleParticipants: { assignedRole: { id: true } }
 		})}
@@ -85,6 +87,7 @@
 				{user}
 				{status}
 				ofAgeAtConference={ofAge}
+				extraContext={{ owesOwnFormalities: owesOwnFormalities(supervisor) }}
 			/>
 		{/if}
 	{/if}

@@ -6,23 +6,23 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { assertAllowed } from '#api/services/authHelper/utils';
 import { calendarConference } from '#api/handlers/calendar/calendarDayPermissions';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerPlaceAbilities() {
 	// Whoever reads the conference's schedule (`calendarConference`) reads its places.
-	abilityBuilder.place.allow('read').when((ctx) => {
-		const conference = calendarConference(ctx);
-		return conference ? { where: { conference } } : undefined;
-	});
+	abilityBuilder.place.allow('read').when(liveWhere(calendarConference));
 	abilityBuilder.place.allow(['update', 'delete']).when(systemAdmin);
 
 	// Participant care (project management and participant care) updates and deletes them.
 	abilityBuilder.place
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
 }
 
 /**

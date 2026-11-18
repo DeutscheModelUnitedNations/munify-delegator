@@ -1,14 +1,13 @@
-import { abilityBuilder } from '#api/rumble';
-import { systemAdmin, teamConference } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import type { ApiContext } from '#api/rumble';
+import { assertTeamPermission } from '#api/services/authHelper/rules';
 
-export function registerChasePresenceAbilities() {
-	abilityBuilder.chasePresence.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-	// Participant care decides who attended, from what CHASE recorded (the attendance import page).
-	abilityBuilder.chasePresence
-		.allow('read')
-		.when((ctx) =>
-			grantWhere({ conference: teamConference({ ctx, permission: 'manageParticipants' }) })
-		);
+/** Participant care decides who attended, from what CHASE recorded (the attendance import page). */
+export function assertCanReadChasePresence({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	return assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }

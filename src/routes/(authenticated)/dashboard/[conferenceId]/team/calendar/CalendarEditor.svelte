@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoCalendarDays from './NoCalendarDays.svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { formatClockMinutes } from '#lib/helpers/formatClock';
 	import { toast } from 'svelte-sonner';
@@ -247,16 +248,7 @@
 />
 
 {#if days.length === 0}
-	<div
-		class="bg-base-200 flex flex-col items-center justify-center rounded-box p-6 text-center sm:p-12"
-	>
-		<i aria-hidden="true" class="ph-fill ph-calendar-dots text-5xl opacity-50"></i>
-		<p class="mt-4 text-lg opacity-70">{m.calendarNoDays()}</p>
-		<button class="btn btn-primary mt-4" onclick={onOpenDays}>
-			<i aria-hidden="true" class="ph-fill ph-plus"></i>
-			{m.calendarAddDay()}
-		</button>
-	</div>
+	<NoCalendarDays onAdd={onOpenDays} />
 {:else}
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<p class="text-base-content/60 text-sm">

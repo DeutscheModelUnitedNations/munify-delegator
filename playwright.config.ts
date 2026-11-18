@@ -29,7 +29,9 @@ if (!['build', 'preview', 'dev'].includes(SERVER)) {
 // (and so CI can shard without port collisions). A build gets vite preview's port by default, so a
 // running dev server on 5173 is not mistaken for it.
 const PORT = Number(process.env.E2E_PORT ?? (SERVER === 'dev' ? 5173 : 4173));
-const baseURL = `http://localhost:${PORT}`;
+// HTTPS, so the browser talks HTTP/2 as to production (see the basic-ssl plugin in vite.config.ts);
+// the certificate is self-signed, hence `ignoreHTTPSErrors` below. `DEV_HTTP=1` serves plain HTTP.
+const baseURL = `${process.env.DEV_HTTP ? 'http' : 'https'}://localhost:${PORT}`;
 
 // A build is a production build whatever `.env` says: under NODE_ENV=development Vite compiles
 // Svelte in dev mode. Signing in still works, since the OIDC setup trusts a provider on this
@@ -54,6 +56,7 @@ export default defineConfig({
 	timeout: 30_000,
 	use: {
 		baseURL,
+		ignoreHTTPSErrors: true,
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure'
 	},
@@ -69,6 +72,7 @@ export default defineConfig({
 				? `NODE_ENV=production PRECOMPRESS=false bun run build && ${serve}`
 				: serve,
 		url: baseURL,
+		ignoreHTTPSErrors: true,
 		reuseExistingServer: !process.env.CI,
 		// A build takes a few minutes on a slow machine.
 		timeout: SERVER === 'build' ? 600_000 : 120_000,

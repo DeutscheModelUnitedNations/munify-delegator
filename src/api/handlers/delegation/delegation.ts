@@ -11,20 +11,42 @@ import {
 import {
 	assertCanDeleteDelegation,
 	assertCanUpdateDelegation,
-	mayWithdrawAnyTime,
 	registerDelegationAbilities
 } from './delegationPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import { byParticipantCareOf } from '#api/services/authHelper/rules';
+import {
+	APPLICATION_BLOCKERS_DESCRIPTION,
+	ApplicationBlockerRef,
+	resolveApplicationBlockers
+} from '#api/handlers/plausibility/plausibility';
+import { delegationApplicationPeople } from '#api/services/registration/applicationReadiness';
 
 registerDelegationAbilities();
 
-const DelegationRef = object({ table: 'delegation' });
+const DelegationRef = object({
+	table: 'delegation',
+	adjust: (t) => ({
+		applicationBlockers: t.field({
+			type: [ApplicationBlockerRef],
+			description: APPLICATION_BLOCKERS_DESCRIPTION,
+			resolve: resolveApplicationBlockers((delegationId) =>
+				delegationApplicationPeople({ delegationId })
+			)
+		})
+	})
+});
 query({ table: 'delegation' });
 countQuery({ table: 'delegation' });
 
-/** The delegation `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The delegation `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.delegation.filter('read')).merge({ where: { id } }).query.single;
 }
 
@@ -48,7 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateDelegation: t.drizzleField({
 		description:
-			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications and both texts (CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.',
+			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications, both texts and members the plausibility checks find nothing about (`applicationBlockers`; CONFLICT otherwise), which participant care may override; applicants withdraw only while the conference takes registrations, participant care at any stage.',
 		type: DelegationRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -73,7 +95,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateDelegationDetails({
 				delegation,
 				args,
-				withdrawAnyTime: await mayWithdrawAnyTime({ ctx, delegation })
+				byParticipantCare: await byParticipantCareOf({ ctx, conferenceId: delegation.conferenceId })
 			});
 
 			return db.query.delegation

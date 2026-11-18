@@ -7,6 +7,7 @@ import {
 	systemAdmin,
 	type TeamRole
 } from '#api/services/authHelper/rules';
+import { liveRule } from '#api/services/authHelper/callerFacts';
 import { assertCanGrantTeamRole } from '#api/handlers/teamMember/teamMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
@@ -18,19 +19,26 @@ export function registerTeamMemberInvitationAbilities() {
 	const WITHOUT_TOKEN = { token: false };
 
 	// Project management reads, updates and deletes every invitation of its conference.
-	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES });
-		return team ? { where: team, columns: WITHOUT_TOKEN } : undefined;
-	});
+	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(
+		liveRule((args) => {
+			const team = isTeamMemberOfConference({ ...args, roles: PROJECT_MANAGEMENT_ROLES });
+			return team ? { where: team, columns: WITHOUT_TOKEN } : undefined;
+		})
+	);
 
 	// Team coordinators read, update and delete the invitations of their conference to any role but
 	// project management, which they may not hand out (`assertCanGrantTeamRole`).
-	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference({ ctx, roles: ['TEAM_COORDINATOR'] });
-		return team
-			? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } }, columns: WITHOUT_TOKEN }
-			: undefined;
-	});
+	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(
+		liveRule((args) => {
+			const team = isTeamMemberOfConference({ ...args, roles: ['TEAM_COORDINATOR'] });
+			return team
+				? {
+						where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' as const } },
+						columns: WITHOUT_TOKEN
+					}
+				: undefined;
+		})
+	);
 }
 
 /**

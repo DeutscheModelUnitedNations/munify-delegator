@@ -4,8 +4,6 @@
 
 MUNify DELEGATOR is a Software to manage the Registration Process and organizational Matters of a Model United Nations Conference. It is part of the MUNify Project, which aims to provide a comprehensive Software Suite for Model United Nations Conferences. MUNify is an Open Source Project by the german non-profit organization Deutsche Model United Nations (DMUN) e.V.
 
-> Disclaimer: MUNify DELEGATOR is currently in an early stage of development and not yet ready for production use. We are working hard to provide a stable Version as soon as possible.
-
 We are happy to recieve feedback, contributions and donations. Please see below for more information.
 
 ## Features

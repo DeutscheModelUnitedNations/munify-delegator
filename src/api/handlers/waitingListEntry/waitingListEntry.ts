@@ -10,6 +10,7 @@ import { waitingListEntryPubsub } from '#api/pubsub';
 import { createWaitingListEntry, updateWaitingListEntry } from './waitingListEntryService';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
 import { mcpTool } from '#api/mcp/mcpTool';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 
 registerWaitingListEntryAbilities();
 
@@ -17,8 +18,12 @@ const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });
 countQuery({ table: 'waitingListEntry' });
 
-/** The entry `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The entry `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableEntry({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.waitingListEntry.filter('read')).merge({ where: { id } }).query
 		.single;
 }

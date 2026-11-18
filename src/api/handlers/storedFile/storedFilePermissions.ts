@@ -3,10 +3,15 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
+	CONFERENCE_CONTENT_ROLES,
 	hasPartIn,
+	hasPartInConference,
+	hop,
+	isTeamMemberOfConference,
 	readableConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
+import { liveRule } from '#api/services/authHelper/callerFacts';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { calendarConference } from '#api/handlers/calendar/calendarDayPermissions';
 import { m } from '#lib/paraglide/messages';
@@ -29,7 +34,8 @@ const WITHOUT_UPLOADER = { uploadedById: false };
  * - its templates (contract, consents, terms, certificate): to the people with a part in it, like
  *   the members-only columns that hold them;
  * - a place's site plan: to whoever reads the conference's calendar, like the place;
- * - a resolution's PDF: to the people with a part in its conference, like the resolution.
+ * - a resolution's PDF: to the people with a part in its conference, like the resolution;
+ * - an announcement's attachments: to its editors (readers get them through their feed).
  */
 export function registerStoredFileAbilities() {
 	abilityBuilder.storedFile.allow('read').when(systemAdmin);
@@ -41,50 +47,61 @@ export function registerStoredFileAbilities() {
 	});
 
 	// Image, emblem and logo: whoever may read the conference.
-	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = readableConference(ctx);
-		return {
-			where: {
-				OR: [{ imageOf: conference }, { emblemOf: conference }, { logoOf: conference }]
-			},
-			columns: WITHOUT_UPLOADER
-		};
-	});
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const conference = readableConference(args);
+			return {
+				where: {
+					OR: [{ imageOf: conference }, { emblemOf: conference }, { logoOf: conference }]
+				},
+				columns: WITHOUT_UPLOADER
+			};
+		})
+	);
 
 	// Templates: the conference's participants and team.
-	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = hasPartIn({ ctx });
-		return conference
-			? {
-					where: {
-						OR: [
-							{ contractOf: conference },
-							{ guardianConsentOf: conference },
-							{ mediaConsentOf: conference },
-							{ termsAndConditionsOf: conference },
-							{ certificateOf: conference }
-						]
-					},
-					columns: WITHOUT_UPLOADER
-				}
-			: undefined;
-	});
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const where = hop(hasPartIn(args), (conference) => ({
+				OR: [
+					{ contractOf: conference },
+					{ guardianConsentOf: conference },
+					{ mediaConsentOf: conference },
+					{ termsAndConditionsOf: conference },
+					{ certificateOf: conference }
+				]
+			}));
+			return where && { where, columns: WITHOUT_UPLOADER };
+		})
+	);
 
 	// Site plans: whoever reads the conference's calendar.
-	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = calendarConference(ctx);
-		return conference
-			? { where: { sitePlanOf: { conference } }, columns: WITHOUT_UPLOADER }
-			: undefined;
-	});
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const where = hop(calendarConference(args), (sitePlanOf) => ({ sitePlanOf }));
+			return where && { where, columns: WITHOUT_UPLOADER };
+		})
+	);
+
+	// An announcement's attachments: its editors. Its readers get the files with their feed
+	// (`announcementFeed`), which hands out the URLs itself.
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const where = hop(
+				isTeamMemberOfConference({ ...args, roles: CONFERENCE_CONTENT_ROLES }),
+				(announcement) => ({ announcementAttachmentOf: { announcement } })
+			);
+			return where && { where, columns: WITHOUT_UPLOADER };
+		})
+	);
 
 	// Resolution PDFs: the conference's participants and team.
-	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = hasPartIn({ ctx });
-		return conference
-			? { where: { resolutionOf: { conference } }, columns: WITHOUT_UPLOADER }
-			: undefined;
-	});
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const where = hop(hasPartInConference(args), (resolutionOf) => ({ resolutionOf }));
+			return where && { where, columns: WITHOUT_UPLOADER };
+		})
+	);
 }
 
 // Who may upload a file is part of its entry in `FILE_SOURCES`, and who may use an uploaded one

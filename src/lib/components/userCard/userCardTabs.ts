@@ -61,20 +61,23 @@ const STAGE_TAB: Record<ConferenceState, UserCardTab> = {
 
 /**
  * The tab to show: the one picked last if this person's card has it (the card stays on its tab
- * when it is pointed at someone else), else the one the conference's state suggests, else the
- * first.
+ * when it is pointed at someone else), else the registration for someone still waiting for a seat,
+ * else the one the conference's state suggests, else the first.
  */
 export function shownUserCardTab({
 	picked,
 	visible,
-	state
+	state,
+	waiting = false
 }: {
 	picked: UserCardTab | null;
 	visible: readonly UserCardTab[];
 	state: ConferenceState;
+	/** On the waiting list and not seated from it yet */
+	waiting?: boolean;
 }): UserCardTab {
 	if (picked && visible.includes(picked)) return picked;
-	const suggested = STAGE_TAB[state];
+	const suggested = waiting ? 'registration' : STAGE_TAB[state];
 	return visible.includes(suggested) ? suggested : (visible[0] ?? 'person');
 }
 

@@ -104,7 +104,9 @@ export const TABLE_COLUMN_CLASSES: Record<DataTableKey, ColumnClassification> = 
 			'applied',
 			'seated',
 			'supervisors',
-			'waitingList'
+			'waitingList',
+			'conferences',
+			'participantsOverall'
 		],
 		redacted: []
 	}

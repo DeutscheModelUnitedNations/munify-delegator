@@ -1,5 +1,5 @@
 import { test, expect } from '../support/test';
-import { loginAs, makeTestUser } from '../support/auth';
+import { loginAs, makeTestUser, SUPERVISOR_AGE } from '../support/auth';
 import { chooseApplyPath, openFirstConferenceForRegistration } from '../support/registration';
 
 // Covers the supervisor self-service flow: signup, toggling own attendance, and rotating the
@@ -8,7 +8,7 @@ import { chooseApplyPath, openFirstConferenceForRegistration } from '../support/
 test('a supervisor can sign up, toggle their own attendance, and rotate their connection code', async ({
 	page
 }) => {
-	const supervisor = makeTestUser('supervisor');
+	const supervisor = makeTestUser('supervisor', SUPERVISOR_AGE);
 	await loginAs(page, supervisor);
 	await openFirstConferenceForRegistration(page);
 

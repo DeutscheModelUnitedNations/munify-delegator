@@ -306,18 +306,8 @@ const schoolMetricsRowSchema = z.object({
 	fromWaitingList: z.number()
 });
 
-/**
- * Per conference, how many people from the school registered, applied, got a seat and came: in
- * `conferenceIds`, or in every conference when that is `undefined`.
- */
-export async function schoolMetrics({
-	schoolId,
-	conferenceIds
-}: {
-	schoolId: string;
-	conferenceIds: readonly string[] | undefined;
-}) {
-	if (conferenceIds?.length === 0) return [];
+/** Per conference, how many people from the school registered, applied, got a seat and came. */
+export async function schoolMetrics(schoolId: string) {
 	const result = await db.execute<{ result: unknown }>(sql`
 		-- each person by their own school, whatever delegation the assignment put them in
 		with people as (
@@ -360,14 +350,6 @@ export async function schoolMetrics({
 		from conferences x
 		join conference c on c.id = x.conference_id
 		left join waiting w on w.conference_id = c.id
-		${
-			conferenceIds
-				? sql`where c.id in (${sql.join(
-						conferenceIds.map((id) => sql`${id}`),
-						sql`, `
-					)})`
-				: sql``
-		}
 		order by c.start_conference desc`);
 	return z
 		.array(z.object({ result: schoolMetricsRowSchema }))

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { logger } from '#lib/logger';
-import fetchWBStat from './fetchWBStat';
+import fetchWBStat, { WB_TIMEOUT_MS } from './fetchWBStat';
 
 /** Answers every fetch with `body` as JSON, or with the given failing status. */
 function respondWith(body: unknown, status = 200) {
@@ -19,8 +19,27 @@ describe('fetchWBStat', () => {
 		const fetchMock = respondWith([{}, [{ value: 1 }]]);
 		await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' });
 		expect(fetchMock).toHaveBeenCalledWith(
-			'https://api.worldbank.org/v2/country/DEU/indicator/SP.POP.TOTL?format=json&per_page=10'
+			'https://api.worldbank.org/v2/country/DEU/indicator/SP.POP.TOTL?format=json&per_page=10',
+			{ signal: expect.any(AbortSignal) }
 		);
+	});
+
+	test('gives up on a request the API never answers', async () => {
+		vi.useFakeTimers();
+		vi.spyOn(logger, 'warn').mockImplementation(() => {});
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(
+				(_url: string, { signal }: { signal: AbortSignal }) =>
+					new Promise<Response>((_resolve, reject) =>
+						signal.addEventListener('abort', () => reject(signal.reason))
+					)
+			)
+		);
+		const result = fetchWBStat({ country: 'ESP', indicator: 'SE.ADT.LITR.ZS' });
+		await vi.advanceTimersByTimeAsync(WB_TIMEOUT_MS);
+		expect(await result).toBeNull();
+		vi.useRealTimers();
 	});
 
 	test('returns the most recent value that is not null', async () => {

@@ -8,12 +8,13 @@ import type { Locale } from '#lib/paraglide/runtime';
  * and the e-mail page, which edits it per conference (`conference_email_text`), so the editor
  * starts from the very text that would be sent. The greeting and the button are not part of it.
  */
-export interface EmailText {
+// a type, not an interface: superforms takes it as a `Record<string, unknown>`
+export type EmailText = {
 	subject: string;
 	heading: string;
 	/** Paragraphs separated by a blank line; `{list}` alone in a paragraph places the kind's list. */
 	body: string;
-}
+};
 
 export type EmailPlaceholder =
 	| 'name'
@@ -32,7 +33,12 @@ export type EmailPlaceholder =
 	| 'survey'
 	| 'committee'
 	| 'chaseLink'
-	| 'manualLink';
+	| 'manualLink'
+	| 'entryCode'
+	| 'joinLink'
+	| 'member'
+	| 'supervisor'
+	| 'title';
 
 interface KindTemplate {
 	/** What this kind's text can use, besides `name` and `conference`, which every kind has. */
@@ -56,12 +62,92 @@ const P = {
 	inviter: '{inviter}',
 	survey: '{survey}',
 	chaseLink: '{chaseLink}',
-	manualLink: '{manualLink}'
+	manualLink: '{manualLink}',
+	entryCode: '{entryCode}',
+	joinLink: '{joinLink}',
+	member: '{member}',
+	supervisor: '{supervisor}',
+	title: '{title}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
 
 const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
+	DELEGATION_CREATED: {
+		placeholders: ['entryCode', 'joinLink'],
+		text: (locale) => ({
+			subject: m.emailAutoDelegationCreatedSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoDelegationCreatedHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoDelegationCreatedBody(
+					{ conference: P.conference, entryCode: P.entryCode },
+					{ locale }
+				),
+				m.emailAutoDelegationCreatedLink({ joinLink: P.joinLink }, { locale }),
+				m.emailAutoDelegationCreatedApply({}, { locale })
+			)
+		})
+	},
+	DELEGATION_JOINED: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoDelegationJoinedSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoDelegationJoinedHeading({}, { locale }),
+			body: m.emailAutoDelegationJoinedBody({ conference: P.conference }, { locale })
+		})
+	},
+	DELEGATION_MEMBER_JOINED: {
+		placeholders: ['member'],
+		text: (locale) => ({
+			subject: m.emailAutoMemberJoinedSubject({ member: P.member }, { locale }),
+			heading: m.emailAutoMemberJoinedHeading({}, { locale }),
+			body: m.emailAutoMemberJoinedBody({ member: P.member, conference: P.conference }, { locale })
+		})
+	},
+	APPLICATION_SENT: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoApplicationSentSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoApplicationSentHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoApplicationSentBody({ conference: P.conference }, { locale }),
+				m.emailAutoApplicationSentClosing({}, { locale })
+			)
+		})
+	},
+	WAITING_LIST_REGISTERED: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoWaitingListRegisteredSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoWaitingListRegisteredHeading({}, { locale }),
+			body: m.emailAutoWaitingListRegisteredBody({ conference: P.conference }, { locale })
+		})
+	},
+	SUPERVISOR_CONNECTED: {
+		placeholders: ['supervisor'],
+		text: (locale) => ({
+			subject: m.emailAutoSupervisorConnectedSubject(
+				{ supervisor: P.supervisor, conference: P.conference },
+				{ locale }
+			),
+			heading: m.emailAutoSupervisorConnectedHeading({}, { locale }),
+			body: m.emailAutoSupervisorConnectedBody(
+				{ supervisor: P.supervisor, conference: P.conference },
+				{ locale }
+			)
+		})
+	},
+	SURVEY_PUBLISHED: {
+		placeholders: ['survey', 'date'],
+		text: (locale) => ({
+			subject: m.emailAutoSurveyPublishedSubject({ survey: P.survey }, { locale }),
+			heading: m.emailAutoSurveyPublishedHeading({}, { locale }),
+			body: m.emailAutoSurveyPublishedBody(
+				{ survey: P.survey, conference: P.conference, date: P.date },
+				{ locale }
+			)
+		})
+	},
 	ASSIGNMENT_ACCEPTED: {
 		placeholders: ['seat'],
 		text: (locale) => ({
@@ -271,6 +357,39 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 				),
 				m.emailTeamWelcomeInstruction({}, { locale })
 			)
+		})
+	},
+	UNREAD_MESSAGES: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoUnreadMessagesSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoUnreadMessagesHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoUnreadMessagesBody({ conference: P.conference }, { locale }),
+				m.emailAutoUnreadMessagesClosing({}, { locale })
+			)
+		})
+	},
+	CHAT_REPORTED: {
+		placeholders: [],
+		text: (locale) => ({
+			subject: m.emailAutoChatReportedSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoChatReportedHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoChatReportedBody({ conference: P.conference }, { locale }),
+				m.emailAutoChatReportedClosing({}, { locale })
+			)
+		})
+	},
+	ANNOUNCEMENT: {
+		placeholders: ['title'],
+		text: (locale) => ({
+			subject: m.emailAutoAnnouncementSubject(
+				{ title: P.title, conference: P.conference },
+				{ locale }
+			),
+			heading: P.title,
+			body: m.emailAutoAnnouncementBody({ conference: P.conference }, { locale })
 		})
 	},
 	BADGE_FOUND: {

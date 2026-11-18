@@ -6,6 +6,7 @@ import { appRolesOf, roleNamesInClaims } from './services/oidc/roleClaims';
 import { userInfoClaims } from './services/oidc/userInfoClaims';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { createCallerFactsCache } from '#api/services/authHelper/callerFactsCache';
 
 /**
  * The system roles a session grants: the role names in the claim `OIDC_ROLE_CLAIM` names, in the
@@ -129,6 +130,8 @@ export function context(req: RequestEvent) {
 		 * grants nothing beyond that conference there.
 		 */
 		mcp,
+		/** What the rules know about the caller, loaded once per root field (`callerFacts`). */
+		callerFactsCache: createCallerFactsCache(),
 		/**
 		 * A function, read only by the resolvers that need it: SvelteKit 3 throws on `event.url`
 		 * inside a remote query, which is how SSR runs the schema (`graphql.remote.ts`), and rumble

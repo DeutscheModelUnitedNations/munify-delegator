@@ -12,6 +12,7 @@ import {
 } from '$app/env/private';
 import { appRolesOf, roleNamesInClaims } from '#api/services/oidc/roleClaims';
 import { LINK_ROLE, REMOTE_LINK_ROLE } from '#api/services/oidc/oidcRoles';
+import { discoveryUrl } from '#api/services/oidc/discoveryUrl';
 import { PUBLIC_OIDC_AUTHORITY } from '$app/env/public';
 import { logger } from '#lib/logger';
 
@@ -34,28 +35,65 @@ export const LINK_TOKEN_HEADER = 'x-munify-link-token';
 const RENEW_BEFORE_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 10_000;
 
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/** https, or http on this machine (development): the link's tokens never travel unencrypted. */
+export function isSafeRemoteUrl(value: string) {
+	try {
+		const url = new URL(value);
+		return url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK.has(url.hostname));
+	} catch {
+		return false;
+	}
+}
+
+const linkSettingsSchema = z.object({
+	LINK_REMOTE_URL: z.string().refine(isSafeRemoteUrl),
+	LINK_REMOTE_RESOURCE: z.string().min(1),
+	'LINK_RESOURCE or OIDC_RESOURCE': z.string().min(1),
+	OIDC_M2M_CLIENT_ID: z.string().min(1),
+	OIDC_M2M_CLIENT_SECRET: z.string().min(1)
+});
+
+/** The variables the link needs, by the name a warning gives them. */
+type LinkSettings = Partial<Record<keyof z.infer<typeof linkSettingsSchema>, string>>;
+
+/**
+ * The link's configuration from its variables: undefined while the link is not set up at all, and
+ * the variables still `missing` while it is only partly.
+ */
+export function linkConfigOf(settings: LinkSettings) {
+	if (!settings.LINK_REMOTE_URL && !settings.LINK_REMOTE_RESOURCE)
+		return { missing: [], config: undefined };
+	const parsed = linkSettingsSchema.safeParse(settings);
+	if (!parsed.success) {
+		return { missing: parsed.error.issues.map(({ path }) => String(path[0])), config: undefined };
+	}
+	const values = parsed.data;
+	return {
+		missing: [],
+		config: {
+			remoteUrl: new URL(values.LINK_REMOTE_URL).origin,
+			remoteResource: values.LINK_REMOTE_RESOURCE,
+			resource: values['LINK_RESOURCE or OIDC_RESOURCE'],
+			clientId: values.OIDC_M2M_CLIENT_ID,
+			clientSecret: values.OIDC_M2M_CLIENT_SECRET
+		}
+	};
+}
+
 /** The link's configuration, or undefined while it is not (completely) set. */
 export function linkConfig() {
-	const values = {
+	const { config, missing } = linkConfigOf({
 		LINK_REMOTE_URL,
 		LINK_REMOTE_RESOURCE,
 		'LINK_RESOURCE or OIDC_RESOURCE': LINK_RESOURCE ?? OIDC_RESOURCE,
 		OIDC_M2M_CLIENT_ID,
 		OIDC_M2M_CLIENT_SECRET
-	};
-	const missing = Object.entries(values).flatMap(([name, value]) => (value ? [] : [name]));
-	if (!LINK_REMOTE_URL && !LINK_REMOTE_RESOURCE) return undefined;
-	if (missing.length > 0) {
-		logger.warn('The link is only partly configured, so it is off', { missing });
-		return undefined;
-	}
-	return {
-		remoteUrl: new URL(LINK_REMOTE_URL ?? '').origin,
-		remoteResource: LINK_REMOTE_RESOURCE ?? '',
-		resource: LINK_RESOURCE ?? OIDC_RESOURCE ?? '',
-		clientId: OIDC_M2M_CLIENT_ID ?? '',
-		clientSecret: OIDC_M2M_CLIENT_SECRET ?? ''
-	};
+	});
+	if (missing.length > 0)
+		logger.warn('The link is only partly or wrongly configured, so it is off', { missing });
+	return config;
 }
 
 export type LinkConfig = NonNullable<ReturnType<typeof linkConfig>>;
@@ -65,14 +103,6 @@ const discoverySchema = z.object({
 	jwks_uri: z.string().url(),
 	token_endpoint: z.string().url()
 });
-
-/** The provider's discovery document: `PUBLIC_OIDC_AUTHORITY` is the issuer or the document. */
-function discoveryUrl(authority: string) {
-	const url = new URL(authority);
-	if (url.href.includes('/.well-known/')) return url;
-	url.pathname = `${url.pathname.replace(/\/+$/, '')}/.well-known/openid-configuration`;
-	return url;
-}
 
 type Provider = z.infer<typeof discoverySchema> & { keys: ReturnType<typeof createRemoteJWKSet> };
 
@@ -146,8 +176,38 @@ export function rolesOfToken(payload: Record<string, unknown>) {
 }
 
 /**
+ * Whether a token is a machine's own (the client credentials grant), not a person's: Logto then
+ * names the client as the subject. A person's token for this API (the sign-in asks for
+ * `OIDC_RESOURCE`, which the link's resource defaults to) must never pass for the other instance,
+ * whatever role or permission that person was given.
+ */
+export function isMachineToken(payload: Record<string, unknown>) {
+	return typeof payload.client_id === 'string' && payload.sub === payload.client_id;
+}
+
+/**
+ * Whether a verified token is the other instance's - a machine's token granting the link role -
+ * and, when not, what it lacks: the scopes and roles it does carry and whether its subject is its
+ * client, so a link that does not connect says why. Never the token itself.
+ */
+export function linkTokenVerdict(payload: Record<string, unknown>) {
+	const machine = isMachineToken(payload);
+	const roles = rolesOfToken(payload);
+	if (machine && roles.includes(LINK_ROLE)) return { accepted: true as const };
+	return {
+		accepted: false as const,
+		reason: machine ? 'it grants no link role' : 'it is not a machine token',
+		scope: typeof payload.scope === 'string' ? payload.scope : null,
+		roles,
+		hasClientId: typeof payload.client_id === 'string',
+		subjectIsClient: payload.sub === payload.client_id
+	};
+}
+
+/**
  * Whether `token` is the other instance calling: signed by the provider, unexpired, for this
- * instance's API, and granting the link role. Never throws: a token that does not pass is nobody.
+ * instance's API, a machine's token, and granting the link role. Never throws: a token that does
+ * not pass is nobody.
  */
 export async function isRemoteInstanceToken({
 	token,
@@ -159,9 +219,15 @@ export async function isRemoteInstanceToken({
 	try {
 		const { issuer, keys } = await oidcProvider();
 		const { payload } = await jwtVerify(token, keys, { issuer, audience: config.resource });
-		return rolesOfToken(payload).includes(LINK_ROLE);
+		const verdict = linkTokenVerdict(payload);
+		if (verdict.accepted) return true;
+		logger.warn('A link token was refused', verdict);
+		return false;
 	} catch (error) {
-		logger.info('A link token was refused', { reason: String(error) });
+		logger.warn('A link token was refused', {
+			reason: String(error),
+			expectedAudience: config.resource
+		});
 		return false;
 	}
 }

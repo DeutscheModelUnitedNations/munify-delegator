@@ -1,10 +1,13 @@
 import { abilityBuilder } from '#api/rumble';
 import {
-	isTeamMemberOf,
+	idIn,
+	isTeamMemberOfConference,
+	ownParticipantIds,
 	PARTICIPANT_CARE_ROLES,
-	systemAdmin
+	systemAdmin,
+	hop
 } from '#api/services/authHelper/rules';
-import { callerUserId } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 
 /** The abilities of the rows saying whom a payment covers. */
 export function registerUserReferenceInPaymentTransactionAbilities() {
@@ -15,21 +18,23 @@ export function registerUserReferenceInPaymentTransactionAbilities() {
 		.when(systemAdmin);
 
 	// Participant care (project management and participant care) reads whom its conference's
-	// payments cover.
-	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
-		return conference ? { where: { paymentTransaction: { conference } } } : undefined;
-	});
+	// payments cover (a payment's conference is its payer's).
+	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when(
+		liveWhere((args) => {
+			const payer = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+			return hop(payer, (payer) => ({ paymentTransaction: { payer } }));
+		})
+	);
 
 	// The payer reads whom they paid for, and everybody reads the references that cover them.
-	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						OR: [{ paymentTransaction: { payer: { userId: id } } }, { participant: { userId: id } }]
-					}
-				}
-			: undefined;
-	});
+	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when(
+		liveWhere((args) => {
+			const ids = ownParticipantIds(args);
+			if (!ids) return undefined;
+			const own = idIn(ids);
+			return {
+				OR: [{ paymentTransaction: { payerParticipantId: own } }, { conferenceParticipantId: own }]
+			};
+		})
+	);
 }

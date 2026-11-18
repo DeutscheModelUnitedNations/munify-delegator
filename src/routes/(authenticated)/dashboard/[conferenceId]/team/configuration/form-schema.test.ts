@@ -7,6 +7,7 @@ describe('limitArgs', () => {
 			limitArgs({
 				maxCollectiveGroupSize: undefined,
 				maxGuaranteedSeatsPerForeignSchool: 0,
+				maxForeignGuaranteedSeatsPercent: undefined,
 				participantMinAge: 15,
 				participantMaxAge: null,
 				supervisorMinAge: 21
@@ -14,6 +15,7 @@ describe('limitArgs', () => {
 		).toEqual({
 			maxCollectiveGroupSize: null,
 			maxGuaranteedSeatsPerForeignSchool: 0,
+			maxForeignGuaranteedSeatsPercent: null,
 			participantMinAge: 15,
 			participantMaxAge: null,
 			supervisorMinAge: 21

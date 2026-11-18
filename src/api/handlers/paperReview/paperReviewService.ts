@@ -23,6 +23,26 @@ export const reviewVerdictSchema = z.enum(['CHANGES_REQUESTED', 'ACCEPTED'], {
 	error: (issue) => m.reviewInvalidStatus({ status: String(issue.input) })
 });
 
+/**
+ * The name a reviewer types to publish a review under (`anonymousAs: CUSTOM`). The argument's
+ * validator runs when the argument is left out too, so it lets an absent name through;
+ * whether one is needed is `reviewAnonymityArgsSchema`'s to say.
+ */
+export const reviewAnonymousNameSchema = z
+	.string()
+	.trim()
+	.min(1, { error: () => m.reviewAnonymousNameRequired() })
+	.max(80, { error: () => m.reviewAnonymousNameTooLong({ max: 80 }) })
+	.nullish();
+
+/** A typed name comes with `CUSTOM` and only with it. */
+export const reviewAnonymityArgsSchema = z
+	.looseObject({ anonymousAs: z.string().nullish(), anonymousName: z.string().nullish() })
+	.refine((args) => (args.anonymousAs === 'CUSTOM') === (args.anonymousName != null), {
+		error: () => m.reviewAnonymousNameRequired(),
+		path: ['anonymousName']
+	});
+
 /** The paper with its latest version and what the flag pieces are worked out from. */
 function fetchPaperForReview({ tx, paperId }: { tx: Transaction; paperId: string }) {
 	return tx.query.paper
@@ -54,19 +74,23 @@ function assertReviewable({ paper }: { paper: Awaited<ReturnType<typeof fetchPap
 
 /**
  * Records a reviewer's verdict on a paper's latest version and gives the paper and the version
- * that status. Refuses (CONFLICT) a paper that is still a draft. Returns the review's id and the
+ * that status; with `anonymousAs` the author reads that name (`anonymousName` for `CUSTOM`) instead of the reviewer's. Refuses (CONFLICT) a paper that is still a draft. Returns the review's id and the
  * flag piece the review uncovered (`flagPieces.ts`), if it was the first for one.
  */
 export async function createPaperReview({
 	paperId,
 	comments,
 	verdict,
-	reviewerId
+	reviewerId,
+	anonymousAs,
+	anonymousName
 }: {
 	paperId: string;
 	comments: (typeof schema.paperReview.$inferInsert)['comments'];
 	verdict: z.output<typeof reviewVerdictSchema>;
 	reviewerId: string;
+	anonymousAs: (typeof schema.paperReview.$inferInsert)['anonymousAs'];
+	anonymousName: (typeof schema.paperReview.$inferInsert)['anonymousName'];
 }) {
 	const { versionId, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview({ tx, paperId });
@@ -80,7 +104,9 @@ export async function createPaperReview({
 				paperVersionId: latestVersion.id,
 				reviewerId,
 				statusBefore: paper.status,
-				statusAfter: verdict
+				statusAfter: verdict,
+				anonymousAs,
+				anonymousName
 			})
 			.returning({ id: schema.paperReview.id })
 			.then(assertFirstEntryExists);

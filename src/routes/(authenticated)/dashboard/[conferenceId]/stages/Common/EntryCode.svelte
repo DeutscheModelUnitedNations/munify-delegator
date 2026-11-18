@@ -1,12 +1,15 @@
 <script lang="ts">
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages';
-	import { qr } from '@svelte-put/qr/svg';
+	import QrCode from '#lib/components/QrCode.svelte';
+	import { downloadQrPng } from '#lib/helpers/qrStyle';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		entryCode: string;
-		referralLink: string;
+		/** Adds the copy link and QR code buttons; left out where the page shows the link itself. */
+		referralLink?: string;
 		/** Takes a supervisor straight to registering as one, whatever state the conference is in. */
 		supervisorLink?: string;
 		userHasRotationPermission: boolean;
@@ -39,16 +42,18 @@
 			aria-label={m.copyEntryCode()}
 			><i aria-hidden="true" class="ph-duotone ph-clipboard text-xl"></i>
 		</button>
-		<button
-			class="btn btn-square btn-ghost tooltip"
-			data-tip={m.copyJoinLink()}
-			onclick={() => {
-				navigator.clipboard.writeText(referralLink as string);
-				toast.success(m.linkCopied());
-			}}
-			aria-label={m.copyJoinLink()}
-			><i aria-hidden="true" class="ph-duotone ph-link text-xl"></i>
-		</button>
+		{#if referralLink}
+			<button
+				class="btn btn-square btn-ghost tooltip"
+				data-tip={m.copyJoinLink()}
+				onclick={() => {
+					navigator.clipboard.writeText(referralLink);
+					toast.success(m.linkCopied());
+				}}
+				aria-label={m.copyJoinLink()}
+				><i aria-hidden="true" class="ph-duotone ph-link text-xl"></i>
+			</button>
+		{/if}
 		{#if supervisorLink}
 			<button
 				class="btn btn-square btn-ghost tooltip"
@@ -61,13 +66,15 @@
 				><i aria-hidden="true" class="ph-duotone ph-chalkboard-teacher text-xl"></i>
 			</button>
 		{/if}
-		<button
-			class="btn btn-square btn-ghost tooltip"
-			data-tip={m.showQrCode()}
-			onclick={() => (qrModalOpen = true)}
-			aria-label={m.showQrCode()}
-			><i aria-hidden="true" class="ph-duotone ph-qr-code text-xl"></i>
-		</button>
+		{#if referralLink}
+			<button
+				class="btn btn-square btn-ghost tooltip"
+				data-tip={m.showQrCode()}
+				onclick={() => (qrModalOpen = true)}
+				aria-label={m.showQrCode()}
+				><i aria-hidden="true" class="ph-duotone ph-qr-code text-xl"></i>
+			</button>
+		{/if}
 		{#if userHasRotationPermission}
 			<div class="tooltip" data-tip={m.rotateCode()}>
 				<button class="btn btn-square btn-ghost" onclick={rotationFn} aria-label={m.rotateCode()}
@@ -78,8 +85,24 @@
 	</div>
 </div>
 
-<Modal bind:open={qrModalOpen}>
-	<div class="flex w-full items-center justify-center">
-		<svg use:qr={{ data: referralLink, shape: 'circle' }} class="w-full max-w-sm" />
-	</div>
-</Modal>
+{#if referralLink}
+	<Modal bind:open={qrModalOpen}>
+		<div class="flex w-full flex-col items-center gap-4">
+			<div class="w-full max-w-sm rounded-box bg-base-300 p-1">
+				<QrCode data={referralLink} label={m.showQrCode()} />
+			</div>
+			<button
+				class="btn btn-ghost btn-sm"
+				type="button"
+				onclick={() =>
+					toast.promise(
+						downloadQrPng({ data: referralLink, filename: `qr-${entryCode}.png` }),
+						genericPromiseToastMessages
+					)}
+			>
+				<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
+				{m.downloadQrCode()}
+			</button>
+		</div>
+	</Modal>
+{/if}

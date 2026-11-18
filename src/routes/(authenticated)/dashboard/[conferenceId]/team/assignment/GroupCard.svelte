@@ -14,6 +14,7 @@
 	import DragGrip from './DragGrip.svelte';
 	import GroupBadges from './GroupBadges.svelte';
 	import { sightingHref } from '#lib/helpers/sightingLink';
+	import PreviousParticipations from './sighting/PreviousParticipations.svelte';
 
 	/**
 	 * One group on the board: a delegation, a part of a split one, or a single participant turned
@@ -58,6 +59,13 @@
 					.toSorted((a, b) => Number(b.isHeadDelegate) - Number(a.isHeadDelegate))
 					.map((member) => member.user)
 	);
+	/** The conferences the group's people took part in, added up; unknown when none may be read. */
+	const participations = $derived.by(() => {
+		const counts = people
+			.map((user) => user.conferenceParticipationsCount)
+			.filter((count): count is number => typeof count === 'number');
+		return counts.length > 0 ? counts.reduce((sum, count) => sum + count, 0) : undefined;
+	});
 	const names = $derived(
 		people
 			.map((user) => formatNames({ givenName: user.givenName, familyName: user.familyName }))
@@ -119,6 +127,7 @@
 	{/if}
 	<div class="flex items-center gap-1">
 		<StarRating rating={review?.evaluation ?? 0} size="xs" />
+		<PreviousParticipations count={participations} />
 		<GroupBadges {group} {review} />
 	</div>
 	{#if wishes.length > 0}

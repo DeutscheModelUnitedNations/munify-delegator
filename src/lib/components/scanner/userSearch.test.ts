@@ -36,7 +36,7 @@ describe('searchUsers', () => {
 		const found = await searchUsers({ conferenceId: 'conf', term: 'Max' });
 
 		expect(found.map((user) => user.id)).toEqual(['u2', 'u1']);
-		expect(mocks.users.mock.calls[0][0].__args.search).toBe('Max');
+		expect(mocks.users.mock.calls[0][0].__args.search).toEqual({ term: 'Max' });
 	});
 
 	test('a term that is too short asks nothing', async () => {

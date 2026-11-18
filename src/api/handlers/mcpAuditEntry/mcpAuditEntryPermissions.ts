@@ -5,7 +5,7 @@ import {
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 
 export function registerMcpAuditEntryAbilities() {
 	abilityBuilder.mcpAuditEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -13,7 +13,9 @@ export function registerMcpAuditEntryAbilities() {
 	// MCP server writes it.
 	abilityBuilder.mcpAuditEntry
 		.allow('read')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PROJECT_MANAGEMENT_ROLES }))
+		);
 }
 
 /**

@@ -10,7 +10,9 @@ export const SCHOOLS_COLUMNS = [
 	{ id: 'applied', type: 'number' },
 	{ id: 'seated', type: 'number' },
 	{ id: 'supervisors', type: 'number' },
-	{ id: 'waitingList', type: 'number' }
+	{ id: 'waitingList', type: 'number' },
+	{ id: 'conferences', type: 'number' },
+	{ id: 'participantsOverall', type: 'number' }
 ] as const satisfies readonly ColumnMeta[];
 
 /** A school row as the API answers it (the table reads its rows straight from the query). */
@@ -26,4 +28,8 @@ export interface SchoolRow {
 	seated: number;
 	supervisors: number;
 	waitingList: number;
+	/** In how many conferences people from it took part */
+	conferences: number;
+	/** Delegation members and single participants from it, across every conference */
+	participantsOverall: number;
 }

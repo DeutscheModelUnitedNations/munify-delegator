@@ -3,9 +3,10 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
 	isTeamMemberOfConference,
-	systemAdmin
+	systemAdmin,
+	hop
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
 
 export function registerSchoolSuggestionAbilities() {
 	// System admins read and decide every suggestion and read its variants.
@@ -16,11 +17,15 @@ export function registerSchoolSuggestionAbilities() {
 	// of its conference's cleanup page, and reads their variants.
 	abilityBuilder.schoolSuggestion
 		.allow(['read', 'update'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
-	abilityBuilder.schoolSuggestionVariant.allow('read').when((ctx) => {
-		const conference = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
-		return conference ? { where: { suggestion: conference } } : undefined;
-	});
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
+		);
+	abilityBuilder.schoolSuggestionVariant.allow('read').when(
+		liveWhere((args) => {
+			const suggestion = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+			return hop(suggestion, (suggestion) => ({ suggestion }));
+		})
+	);
 }
 
 /**

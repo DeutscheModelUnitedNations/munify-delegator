@@ -7,41 +7,51 @@ import {
 	userPubsub
 } from '#api/pubsub';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
-import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userUpdateSchema } from '#lib/schemata/userForm';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { z } from 'zod';
 
 /**
- * How many conferences this person actually took part in - registrations that never got a
- * seat do not count.
+ * How many conferences each of `userIds` actually took part in - registrations that never got a
+ * seat do not count. Two queries for all of them; a user without any seat counts 0.
  */
-export async function countConferenceParticipations(userId: string) {
+export async function countConferenceParticipations(
+	userIds: readonly string[]
+): Promise<Map<string, number>> {
+	const counts = new Map<string, number>(userIds.map((id) => [id, 0]));
+	if (userIds.length === 0) return counts;
 	const { delegation, delegationMember, singleParticipant, conferenceParticipant } = schema;
-	const [[memberships], [participations]] = await Promise.all([
+	const ids = [...counts.keys()];
+	const [memberships, participations] = await Promise.all([
 		db
-			.select({ value: count() })
+			.select({ userId: conferenceParticipant.userId, value: count() })
 			.from(delegationMember)
 			.innerJoin(
 				conferenceParticipant,
 				eq(conferenceParticipant.id, delegationMember.conferenceParticipantId)
 			)
 			.innerJoin(delegation, eq(delegation.id, delegationMember.delegationId))
-			.where(and(eq(conferenceParticipant.userId, userId), isNotNull(delegation.assignedRoleId))),
+			.where(and(inArray(conferenceParticipant.userId, ids), isNotNull(delegation.assignedRoleId)))
+			.groupBy(conferenceParticipant.userId),
 		db
-			.select({ value: count() })
+			.select({ userId: conferenceParticipant.userId, value: count() })
 			.from(singleParticipant)
 			.innerJoin(
 				conferenceParticipant,
 				eq(conferenceParticipant.id, singleParticipant.conferenceParticipantId)
 			)
 			.where(
-				and(eq(conferenceParticipant.userId, userId), isNotNull(singleParticipant.assignedRoleId))
+				and(inArray(conferenceParticipant.userId, ids), isNotNull(singleParticipant.assignedRoleId))
 			)
+			.groupBy(conferenceParticipant.userId)
 	]);
 
-	return (memberships?.value ?? 0) + (participations?.value ?? 0);
+	for (const { userId, value } of [...memberships, ...participations]) {
+		counts.set(userId, (counts.get(userId) ?? 0) + value);
+	}
+	return counts;
 }
 
 /** Where-clauses, one per table, that say which participation rows the caller may delete. */

@@ -118,6 +118,7 @@
 		firstNumber={3}
 		schoolLabel={m.whichSchoolAreYouFrom()}
 		motivationLabel={m.whyDoYouWantToJoinTheConference()}
+		motivationHint={m.applicationMotivationHintDelegation()}
 		experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
 		submitLabel={m.createDelegation()}
 		submit={(answers) =>

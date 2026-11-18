@@ -1,0 +1,1 @@
+ALTER TABLE "conference" ADD COLUMN "max_foreign_guaranteed_seats_percent" integer DEFAULT 20;

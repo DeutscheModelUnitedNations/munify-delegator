@@ -10,6 +10,8 @@
 	import { toast } from 'svelte-sonner';
 	import { ENTRY_CODE_LENGTH } from '#lib/helpers/entryCode';
 	import { createEntryCodeInput } from '#lib/helpers/entryCodeInput.svelte.js';
+	import { linkedSupervisorCode, SUPERVISOR_SECTION_ID } from '#lib/helpers/supervisorLink';
+	import { onMount } from 'svelte';
 
 	/** The supervisors of one registration: a delegation membership or a single participant. */
 	type Props = { conferenceId: string } & (
@@ -41,8 +43,20 @@
 	);
 	const supervisors = $derived(registration?.supervisors ?? []);
 
-	// A supervisor's shared link lands here with `?supervisorCode=`; it only seeds the field.
-	const code = createEntryCodeInput(page.url.searchParams.get('supervisorCode') ?? '');
+	// A supervisor's shared link lands here with `?supervisorCode=`; it only seeds the field, the
+	// participant still confirms with the button.
+	const linkedCode = linkedSupervisorCode(page.url);
+	const code = createEntryCodeInput(linkedCode);
+	// Points the participant at this section until they connected.
+	let arrivedByLink = $state(linkedCode !== '');
+
+	onMount(() => {
+		if (!arrivedByLink) return;
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		document
+			.getElementById(SUPERVISOR_SECTION_ID)
+			?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+	});
 	// The code to look up, as a primitive the awaited derived below is keyed by.
 	const readyCode = $derived(code.ready);
 
@@ -78,6 +92,7 @@
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
 			code.value = '';
+			arrivedByLink = false;
 		} finally {
 			connecting = false;
 		}
@@ -85,47 +100,52 @@
 </script>
 
 {#snippet previewCard(preview: SupervisorPreview)}
-	<div class="rounded-box border border-base-300 bg-base-200 p-4">
-		<div class="flex items-center gap-4">
+	<div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
+		<div class="flex flex-wrap items-center gap-3">
 			<div
-				class="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-lg font-bold text-primary-content"
+				class="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-bold text-primary-content"
+				aria-hidden="true"
 			>
 				{`${preview.given_name?.at(0) ?? ''}${preview.family_name?.at(0) ?? ''}`.toUpperCase()}
 			</div>
-			<div class="flex min-w-0 flex-col">
-				<span class="text-lg font-bold">
+			<div class="flex min-w-0 flex-1 flex-col">
+				<span class="font-semibold">
 					{formatNames({
 						givenName: preview.given_name ?? '',
 						familyName: preview.family_name ?? ''
 					})}
 				</span>
 				{#if preview.school_name}
-					<span class="flex items-center gap-2 text-sm text-base-content/70">
-						<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
-						<span class="truncate">
-							{preview.school_name}{preview.school_city ? `, ${preview.school_city}` : ''}
-						</span>
+					<span class="truncate text-sm text-base-content/70">
+						{preview.school_name}{preview.school_city ? `, ${preview.school_city}` : ''}
 					</span>
 				{/if}
 			</div>
+			<button class="btn btn-primary btn-sm" type="submit" disabled={connecting}>
+				{#if connecting}
+					<span class="loading loading-spinner loading-xs"></span>
+				{:else}
+					<i aria-hidden="true" class="ph-duotone ph-link"></i>
+				{/if}
+				{m.connectSupervisorBtn()}
+			</button>
 		</div>
 		{#if preview.different_school}
-			<div class="alert alert-warning alert-soft mt-4 text-sm">
-				<i aria-hidden="true" class="ph-duotone ph-warning"></i>
+			<p class="flex gap-2 text-sm text-warning">
+				<i aria-hidden="true" class="ph-duotone ph-warning mt-0.5"></i>
 				<span>{m.connectSupervisorDifferentSchool()}</span>
-			</div>
+			</p>
 		{/if}
-		<p class="mt-4 flex gap-2 border-t border-base-300 pt-3 text-sm text-base-content/70">
-			<i aria-hidden="true" class="ph-duotone ph-info mt-0.5 text-info"></i>
-			<span>{m.connectSupervisorWarning()}</span>
-		</p>
+		<p class="text-xs text-base-content/60">{m.connectSupervisorWarning()}</p>
 	</div>
 {/snippet}
 
 <DashboardSection
+	id={SUPERVISOR_SECTION_ID}
 	icon="chalkboard-teacher"
 	title={m.supervisors()}
 	description={m.supervisorsDescription()}
+	class={arrivedByLink ? 'ring-4 ring-primary ring-offset-2 ring-offset-base-100' : ''}
 >
 	{#if supervisors.length > 0}
 		<DelegationStatusTableWrapper withEmail>
@@ -142,33 +162,34 @@
 		</DelegationStatusTableWrapper>
 	{/if}
 
-	<form class="mt-4 flex w-full max-w-lg flex-col gap-2" onsubmit={connect}>
-		<label class="text-sm font-bold" for="supervisor-code">{m.connectSupervisor()}</label>
-		<p class="text-sm">{m.connectSupervisorDescription()}</p>
-		<div class="join w-full">
-			<input
-				id="supervisor-code"
-				type="text"
-				class="input join-item w-full font-mono tracking-[0.4rem] uppercase"
-				maxlength={ENTRY_CODE_LENGTH}
-				autocomplete="off"
-				bind:value={code.value}
-			/>
-			<button class="btn btn-primary join-item" type="submit" disabled={!preview || connecting}>
-				{#if connecting}
-					<span class="loading loading-spinner loading-sm"></span>
-				{:else}
-					<i aria-hidden="true" class="ph-duotone ph-link"></i>
-				{/if}
-				{m.connectSupervisorBtn()}
-			</button>
-		</div>
-		{#if readyCode}
-			{#if preview}
-				{@render previewCard(preview)}
-			{:else}
-				<div class="alert alert-warning">{m.notFound()}</div>
-			{/if}
+	<form class="flex flex-col gap-2 {supervisors.length > 0 ? 'mt-4' : ''}" onsubmit={connect}>
+		<label class="text-sm font-semibold" for="supervisor-code">{m.connectSupervisor()}</label>
+		{#if arrivedByLink}
+			<p class="flex gap-2 text-sm text-primary">
+				<i aria-hidden="true" class="ph-duotone ph-hand-pointing mt-0.5"></i>
+				<span>{m.supervisorLinkPrefilled()}</span>
+			</p>
+		{:else}
+			<p class="text-sm text-base-content/70">{m.connectSupervisorDescription()}</p>
 		{/if}
+		<div class="flex flex-col gap-3 md:flex-row md:items-start">
+			<div class="flex shrink-0 flex-col gap-1">
+				<input
+					id="supervisor-code"
+					type="text"
+					class="input w-full font-mono tracking-[0.4rem] uppercase md:w-52"
+					maxlength={ENTRY_CODE_LENGTH}
+					autocomplete="off"
+					aria-describedby={readyCode && !preview ? 'supervisor-code-error' : undefined}
+					bind:value={code.value}
+				/>
+				{#if readyCode && !preview}
+					<p id="supervisor-code-error" class="text-sm text-error">{m.notFound()}</p>
+				{/if}
+			</div>
+			{#if readyCode && preview}
+				<div class="min-w-0 flex-1 md:max-w-2xl">{@render previewCard(preview)}</div>
+			{/if}
+		</div>
 	</form>
 </DashboardSection>

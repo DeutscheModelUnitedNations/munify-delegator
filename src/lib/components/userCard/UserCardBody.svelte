@@ -74,7 +74,12 @@
 		})
 	);
 	const shownTab = $derived(
-		shownUserCardTab({ picked: activeTab, visible: tabs, state: conferenceState })
+		shownUserCardTab({
+			picked: activeTab,
+			visible: tabs,
+			state: conferenceState,
+			waiting: stage === 'waitingList'
+		})
 	);
 
 	const delegationId = $derived(delegationMember?.delegation.id);
@@ -116,7 +121,14 @@
 	{#if tab === 'person'}
 		<PersonTab {userId} {conferenceId} />
 	{:else if tab === 'registration'}
-		<RegistrationTab {userId} {conferenceId} {delegationId} {singleParticipantId} {supervisorId} />
+		<RegistrationTab
+			{userId}
+			{conferenceId}
+			{delegationId}
+			{singleParticipantId}
+			{supervisorId}
+			waiting={stage === 'waitingList'}
+		/>
 	{:else if tab === 'seat'}
 		<SeatTab
 			{userId}

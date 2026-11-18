@@ -23,6 +23,11 @@ export const conferenceSettingSchemas = {
 		.number()
 		.min(0, { error: () => m.conferenceMaxGuaranteedSeatsRange() })
 		.nullish(),
+	maxForeignGuaranteedSeatsPercent: z
+		.number()
+		.min(0, { error: () => m.conferenceMaxForeignGuaranteedSeatsPercentRange() })
+		.max(100, { error: () => m.conferenceMaxForeignGuaranteedSeatsPercentRange() })
+		.nullish(),
 	nametagBinCount: binCountSchema.nullish(),
 	participantMinAge: ageLimitSchema(),
 	participantMaxAge: ageLimitSchema(),

@@ -28,11 +28,18 @@ vi.mock('./dueEmails', async (importOriginal) => ({
 	...(await importOriginal<typeof import('./dueEmails')>()),
 	dueEmails: () => owed.due
 }));
-vi.mock('./emailSnapshot', () => ({ loadEmailSnapshot: vi.fn() }));
+vi.mock('./emailSnapshot', () => ({
+	FIRST_EMAIL_PAGE: { part: 'people', after: null },
+	loadEmailConference: vi.fn(),
+	// one page holding the whole conference: what it owes is dueEmails', faked above
+	emailPages: async function* ({ conference }: { conference: unknown }) {
+		yield { snapshot: { conference }, cursor: { part: 'people', after: null }, next: null };
+	}
+}));
 
 const { isOpen, sendOpenEmailsInBackground, skipOpenEmails, stillOpen } =
 	await import('./emailSweep');
-const { loadEmailSnapshot } = await import('./emailSnapshot');
+const { loadEmailConference } = await import('./emailSnapshot');
 const { db } = await import('#api/db/db');
 const { emailLogPubsub } = await import('#api/pubsub');
 const { logger } = await import('#lib/logger');
@@ -155,8 +162,8 @@ describe('stillOpen', () => {
 
 describe('skipOpenEmails', () => {
 	const recipient = { id: 'u1', email: 'ada@example.org' };
-	// TYPE-SAFETY-EXCEPTION: dueEmails is faked above, so only openEmails reads the snapshot
-	const snapshot = { conference: { id: 'c1' } } as Awaited<ReturnType<typeof loadEmailSnapshot>>;
+	// TYPE-SAFETY-EXCEPTION: dueEmails is faked above, so only openEmails reads the conference id
+	const conference = { id: 'c1' } as Awaited<ReturnType<typeof loadEmailConference>>;
 	/** The rows each insert wrote, one list per statement. */
 	const inserts: { kind: string; status: string; subjectKey: string }[][] = [];
 	Object.assign(db, {
@@ -174,7 +181,7 @@ describe('skipOpenEmails', () => {
 	test('marks what is owed of the kinds as skipped, 500 rows a statement', async () => {
 		inserts.length = 0;
 		vi.mocked(emailLogPubsub.created).mockClear();
-		vi.mocked(loadEmailSnapshot).mockResolvedValue(snapshot);
+		vi.mocked(loadEmailConference).mockResolvedValue(conference);
 		owed.due = [
 			...Array.from({ length: 501 }, (_, i) => ({
 				kind: 'PAYMENT_RECEIVED',
@@ -193,11 +200,11 @@ describe('skipOpenEmails', () => {
 	test('writes and announces nothing when nothing is owed', async () => {
 		inserts.length = 0;
 		vi.mocked(emailLogPubsub.created).mockClear();
-		vi.mocked(loadEmailSnapshot).mockResolvedValue(snapshot);
+		vi.mocked(loadEmailConference).mockResolvedValue(conference);
 		owed.due = [];
 		expect(await skip(['PAYMENT_RECEIVED'])).toBe(0);
 		expect(await skip([])).toBe(0);
-		vi.mocked(loadEmailSnapshot).mockResolvedValue(undefined);
+		vi.mocked(loadEmailConference).mockResolvedValue(undefined);
 		expect(await skip(['PAYMENT_RECEIVED'])).toBe(0);
 		expect(inserts).toEqual([]);
 		expect(emailLogPubsub.created).not.toHaveBeenCalled();
@@ -210,25 +217,25 @@ describe('sendOpenEmailsInBackground', () => {
 
 	test('sends kinds asked for while a sweep runs once it is done, one sweep at a time', async () => {
 		let release = () => {};
-		vi.mocked(loadEmailSnapshot).mockReset();
-		vi.mocked(loadEmailSnapshot)
+		vi.mocked(loadEmailConference).mockReset();
+		vi.mocked(loadEmailConference)
 			.mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve(undefined))))
 			.mockResolvedValue(undefined);
 		start(['PAYMENT_RECEIVED']);
 		start(['POSTAL_RECEIVED']);
-		expect(loadEmailSnapshot).toHaveBeenCalledOnce();
+		expect(loadEmailConference).toHaveBeenCalledOnce();
 		release();
-		await vi.waitFor(() => expect(loadEmailSnapshot).toHaveBeenCalledTimes(2));
+		await vi.waitFor(() => expect(loadEmailConference).toHaveBeenCalledTimes(2));
 		// once the sweep is over, the next request starts one of its own
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		start(['PAYMENT_RECEIVED']);
-		expect(loadEmailSnapshot).toHaveBeenCalledTimes(3);
+		expect(loadEmailConference).toHaveBeenCalledTimes(3);
 	});
 
 	test('logs a sweep that failed and lets the next one start', async () => {
 		const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
-		vi.mocked(loadEmailSnapshot).mockReset();
-		vi.mocked(loadEmailSnapshot)
+		vi.mocked(loadEmailConference).mockReset();
+		vi.mocked(loadEmailConference)
 			.mockRejectedValueOnce(new Error('down'))
 			.mockResolvedValue(undefined);
 		start(['PAYMENT_RECEIVED']);
@@ -236,7 +243,7 @@ describe('sendOpenEmailsInBackground', () => {
 			expect(logged).toHaveBeenCalledWith('Sending emails failed', expect.anything())
 		);
 		start(['PAYMENT_RECEIVED']);
-		expect(loadEmailSnapshot).toHaveBeenCalledTimes(2);
+		expect(loadEmailConference).toHaveBeenCalledTimes(2);
 		logged.mockRestore();
 	});
 });

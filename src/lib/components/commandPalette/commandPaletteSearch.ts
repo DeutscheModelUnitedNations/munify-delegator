@@ -144,14 +144,18 @@ async function searchCommittees({
 }): Promise<SearchCommittee[]> {
 	const [committees, agendaItems] = await Promise.all([
 		client.query.committees({
-			__args: { search: term, where: { conferenceId: { eq: conferenceId } }, limit: RESULT_LIMIT },
+			__args: {
+				search: { term },
+				where: { conferenceId: { eq: conferenceId } },
+				limit: RESULT_LIMIT
+			},
 			id: true,
 			name: true,
 			abbreviation: true
 		}),
 		client.query.committeeAgendaItems({
 			__args: {
-				search: term,
+				search: { term },
 				where: { committee: { conferenceId: { eq: conferenceId } } },
 				limit: RESULT_LIMIT
 			},
@@ -175,24 +179,10 @@ async function searchCommittees({
 	];
 }
 
-/**
- * Schools someone in the conference has as their own, or waits with. A school is shared by every
- * conference, so the filter keeps out those only other conferences know.
- */
-async function searchSchools({
-	conferenceId,
-	term
-}: {
-	conferenceId: string;
-	term: string;
-}): Promise<SearchSchool[]> {
-	const inConference = { conferenceId: { eq: conferenceId } };
+/** Every school, whichever conference knows it: they are shared, and so is their history. */
+async function searchSchools(term: string): Promise<SearchSchool[]> {
 	const schools = await client.query.schools({
-		__args: {
-			search: term,
-			where: { OR: [{ participants: inConference }, { waitingListEntries: inConference }] },
-			limit: RESULT_LIMIT
-		},
+		__args: { search: { term }, limit: RESULT_LIMIT },
 		id: true,
 		name: true,
 		city: true
@@ -268,7 +258,7 @@ export async function searchConference({
 			orNone({
 				group: 'users',
 				results: client.query.users({
-					__args: { search: term, where: participatesIn(conferenceId), limit: RESULT_LIMIT },
+					__args: { search: { term }, where: participatesIn(conferenceId), limit: RESULT_LIMIT },
 					id: true,
 					givenName: true,
 					familyName: true,
@@ -298,7 +288,7 @@ export async function searchConference({
 				group: 'foreignUsers',
 				results: client.query.users({
 					__args: {
-						search: term,
+						search: { term },
 						where: { NOT: participatesIn(conferenceId) },
 						limit: RESULT_LIMIT
 					},
@@ -329,7 +319,7 @@ export async function searchConference({
 			orNone({
 				group: 'transactions',
 				results: client.query.paymentTransactions({
-					__args: { search: term, where: registrationIn(conferenceId), limit: RESULT_LIMIT },
+					__args: { search: { term }, where: registrationIn(conferenceId), limit: RESULT_LIMIT },
 					id: true,
 					amount: true,
 					recievedAt: true,
@@ -338,9 +328,7 @@ export async function searchConference({
 			}),
 			orNone({ group: 'seats', results: searchSeats({ conferenceId, term }) }),
 			orNone({ group: 'committees', results: searchCommittees({ conferenceId, term }) }),
-			withSchools
-				? orNone({ group: 'schools', results: searchSchools({ conferenceId, term }) })
-				: []
+			withSchools ? orNone({ group: 'schools', results: searchSchools(term) }) : []
 		]);
 
 	return {

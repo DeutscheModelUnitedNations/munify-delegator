@@ -87,7 +87,6 @@ schemaBuilder.mutationFields((t) => ({
 				'location',
 				'language',
 				'website',
-				'info',
 				'linkToPreparationGuide',
 				'linkToTeamWiki',
 				'linkToServicesPage',
@@ -103,9 +102,8 @@ schemaBuilder.mutationFields((t) => ({
 			],
 			outwardArguments: [
 				'state',
-				'info',
-				'showInfoExpanded',
 				'showCalendar',
+				'messagingEnabled',
 				'unlockPayments',
 				'unlockPostals',
 				'isOpenPaperSubmission'
@@ -123,14 +121,15 @@ schemaBuilder.mutationFields((t) => ({
 				.string({ description: 'A conference language (`de`, `en`, …).' })
 				.validate(conferenceSettingSchemas.language),
 			website: t.arg.string(),
-			info: t.arg.string(),
-			showInfoExpanded: t.arg.boolean(),
 			linkToPreparationGuide: t.arg.string(),
 			linkToTeamWiki: t.arg.string(),
 			linkToServicesPage: t.arg.string(),
 			linkToPaperInbox: t.arg.string(),
 			isOpenPaperSubmission: t.arg.boolean(),
 			showCalendar: t.arg.boolean(),
+			messagingEnabled: t.arg.boolean({
+				description: 'Whether the people of the conference can write each other in the chats.'
+			}),
 			timezone: t.arg
 				.string({ description: 'An IANA time zone, such as `Europe/Berlin`.' })
 				.validate(conferenceSettingSchemas.timezone),
@@ -149,6 +148,12 @@ schemaBuilder.mutationFields((t) => ({
 						'How many people of one Auslandsschule may be given a guaranteed seat before the assignment warns; `null` for no limit.'
 				})
 				.validate(conferenceSettingSchemas.maxGuaranteedSeatsPerForeignSchool),
+			maxForeignGuaranteedSeatsPercent: t.arg
+				.int({
+					description:
+						'Which share (0 to 100 percent) of all seats the Auslandsschulen together may be given as guaranteed seats before the assignment warns; `null` for no limit.'
+				})
+				.validate(conferenceSettingSchemas.maxForeignGuaranteedSeatsPercent),
 			participantMinAge: t.arg
 				.int({
 					description:

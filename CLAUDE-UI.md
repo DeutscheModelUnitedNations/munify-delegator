@@ -35,6 +35,9 @@ the public and participant pages, contrast in the high contrast variant, plus th
   just `btn-disabled`.
 - **Clickable rows** keep their table semantics: the row's `onclick` is for the mouse, a real
   `<a href>` in a cell is for everyone else (`PaperTable`). Never `role="button"` on a `<tr>`.
+  A list of people or things opens an entry from the whole row, not from a small button at its
+  end: `rowClick` / `CLICKABLE_ROW` (`#lib/helpers/rowClick`) skip the row's own controls and
+  text selections, and `PersonNameButton` is the name cell that opens the user card by keyboard.
 - **`<dl>`**: each `<div>` wrapper holds one `<dt>`/`<dd>` pair and nothing else (an icon goes
   inside the `<dt>`).
 - **High contrast** (`#lib/helpers/contrast`, the footer's `ContrastToggle`, or the system's
@@ -853,6 +856,90 @@ The registration flow (`routes/(authenticated)/registration/[conferenceId]/`) fr
 the path on the dashboard is step 0) and the content in a `DashboardSection`.
 
 ---
+
+## Announcement Components
+
+The announcements (see "Announcements" in CLAUDE.md) are built from `#lib/components/announcement/`.
+
+- **`AnnouncementCard`**: one announcement as readers see it. Its edge colour, icon and badge
+  follow `importance` (the badge says it in words too); `read={false}` shows "New" and, with
+  `onread`, a "mark as read" button. A long text is folded until opened (never for an urgent one,
+  or with `expanded`). Without `read` it is a preview, which the editor uses. Its badges and its
+  file links are `AnnouncementBadges` and `AnnouncementAttachments`.
+- **`AnnouncementFeed`**: the caller's feed of a conference. With `limit` (the dashboard) it shows
+  the pinned, the unread and the newest and links to the rest; without, all of them. Renders
+  nothing without announcements unless `showEmpty`.
+- **`UrgentAnnouncementBar`**: the bar in the header while an urgent announcement is unread.
+- Fetch through `fetchAnnouncementFeed` and mark through `markAnnouncementsRead`
+  (`#lib/api/announcements`), so the feed and the bar share one result and one read state.
+
+## Chat Components
+
+The chats (see "Messages" in CLAUDE.md) are built from `#lib/components/chat/`. Both messages
+pages (`dashboard/[conferenceId]/messages`, `team/messages`) are a `ChatWorkspace` with their own
+list header.
+
+- **`ChatWorkspace`**: the messenger frame, the chat list beside the open chat; on a phone the two
+  take turns. It takes the `chats` (from `fetchChats`, `#lib/api/chats`), `selectedId` and
+  `onSelect` (keep the open chat in the URL as `?chat=` through `queryParameters`), and snippets
+  for the `listHeader`, the `emptyList` and a `listFooter`.
+- **`ChatThread`**: one chat. Fetches itself by `chatId`, marks it read while on screen, shows the
+  messages by day and the field to write in (Enter sends, Shift+Enter breaks the line), or why the
+  caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
+  reviewing a report it says so (`ChatReviewBanner`) and, given `reportedAt`, draws a line where
+  the chat was reported (`firstMessageAfter`).
+- **The report desk** (`team/messages/ReportDesk.svelte`, "Reports" in the team menu, for participant care):
+  three columns, which take turns on a narrow screen. `ReportQueue` lists one case per reported
+  chat, the one waiting longest first (`reportCases`, `waitingSince`); the middle is the chat's
+  `ChatThread`, read only; `ReportCaseFile` holds the chat's reports, everybody of the chat by
+  name and role (a delegation group's members included) with their earlier settled reports, the
+  suspension switch, `WriteToDelegateButton` and the user card, and the internal note that
+  settles all of the chat's reports at once (`resolveChatReports`). `SettledReports` keeps the
+  settled ones with their notes.
+- **Corners follow the theme**: `rounded-box` for cards, panels and bubbles, `rounded-field` for
+  small things. DMUN's theme draws both (almost) square, so never `rounded-lg` / `rounded-xl`.
+- **`NewChatDialog` / `NewChatPicker`**: finding whom to write to. One search field over role,
+  country and committee (`matchesSearch`: every word has to be found, so "ger ga" works), chips
+  per committee, the team inboxes and the delegation group on top. `mode="team"` picks a person
+  first and then the inbox to write from.
+- **`WriteToDelegateButton`**: `conferenceId`, the person's `participantId`, optionally a
+  `paperId` and `compact` (icon only, for table rows). Asks for the inboxes on the click.
+- **`FilterChips`**: a row of chips narrowing a list to one group ("all" first, a pressed chip
+  lifts the filter): `options` with a `key`, `selected`, `onSelect`, a `label` and a `chip`
+  snippet for an option's content. `CommitteeChips` is built on it.
+- **The team's inboxes** are picked in the team menu, not on the page: `MessagesNavButton` is a
+  plain entry for somebody answering one inbox, and folds open for several (or for participant
+  care, who also get the reports) into the overview, each inbox with its unread count, a
+  committee holding several as a group to fold (`inboxMenu`), and the reports. The links set
+  `?inbox=` / `?view=reports`. `team/messages` without either shows `InboxOverview` (a card per
+  inbox) when there are several, the chat list right away when there is one. A system admin gets
+  participant care's inbox and both inboxes of every committee (`inboxesOf`), never the trusted
+  persons'. `fetchTeamInboxes` + `teamInboxesOf` are what both the menu and the page read.
+- **An inbox's archive**: `ChatArchiveButton` in the thread header (team side only) puts a chat
+  away or takes it out; the list leaves archived chats out until `ArchiveToggle` in `InboxChats` (`?archive=1`)
+  shows them after the open ones, marked "archived" (`listedChats`). The overview cards count
+  open chats only.
+- **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
+  `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
+  `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
+  in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
+  (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
+- **Where the reader left off**: `ChatThread` takes `firstUnreadId` (`threadMessages.ts`) once as
+  it opens, `ChatMessages` draws the "new messages" line above that message, and the thread opens
+  there instead of at the end. The line stays until the chat is opened again.
+- **`MessagingTermsModal`**: the terms of the message service (`messagingTerms`), loaded when it
+  opens, inside a boundary with a skeleton and `LoadError`. The composer opens it with
+  `onAccepted` when the API asks a participant to agree before their first message;
+  `MessagingTermsLink` under the participant's chat list shows them to read.
+  `MessagingTermsChecklist` lists every section as a disclosure (`MessagingTermsSection`: title and
+  summary on the button, `aria-expanded`). Asked to agree, the first section opens, "Understood" confirms it and opens and
+  focuses the next one left (`confirmSection`, `#lib/helpers/messagingTerms`), a progress bar
+  counts them, and the statements' checkboxes stay disabled until every section is confirmed.
+- **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
+- **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
+  `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a
+  participant's name to another participant.
+- **`MessagesLinkInfo`**: the dashboard card's live details (unread chats).
 
 ## Survey Components
 

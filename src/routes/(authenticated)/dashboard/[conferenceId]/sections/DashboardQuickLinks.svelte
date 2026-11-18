@@ -31,10 +31,10 @@
 			state: true,
 			unlockPayments: true,
 			unlockPostals: true,
-			info: true,
 			linkToPreparationGuide: true,
 			isOpenPaperSubmission: true,
 			showCalendar: true,
+			messagingEnabled: true,
 			linkToPaperInbox: true
 		})
 	);
@@ -45,10 +45,10 @@
 		conferenceState: conference.state,
 		unlockPayments: conference.unlockPayments,
 		unlockPostals: conference.unlockPostals,
-		hasConferenceInfo: !!conference.info,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
 		showCalendar: conference.showCalendar,
+		messagingEnabled: conference.messagingEnabled,
 		linkToPaperInbox: conference.linkToPaperInbox,
 		paymentStatus: status?.paymentStatus,
 		postalRegistrationStatus: getSimplifiedPostalStatus({

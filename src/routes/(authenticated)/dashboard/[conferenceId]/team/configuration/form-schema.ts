@@ -16,6 +16,7 @@ export const conferenceSettingsFormSchema = z
 		linkToServicesPage: z.string().nullish(),
 		isOpenPaperSubmission: z.boolean().default(false),
 		showCalendar: z.boolean().default(false),
+		messagingEnabled: z.boolean().default(false),
 		timezone: z.string().min(1).default('Europe/Berlin'),
 		longTitle: z
 			.string()
@@ -36,18 +37,19 @@ export const conferenceSettingsFormSchema = z
 				message: m.pleaseEnterAValidWebsite()
 			})
 			.optional(),
+		/** The images: a picked `File` replaces the stored one, `null` removes it. */
 		image: z
 			.instanceof(File)
 			.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
-			.optional(),
+			.nullish(),
 		emblem: z
 			.instanceof(File)
 			.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
-			.optional(),
+			.nullish(),
 		logo: z
 			.instanceof(File)
 			.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
-			.optional(),
+			.nullish(),
 		applicationDeadline: z.date({
 			message: m.pleaseEnterAValidDate()
 		}),
@@ -56,6 +58,8 @@ export const conferenceSettingsFormSchema = z
 		maxCollectiveGroupSize: z.number().int().min(1).nullish(),
 		/** Guaranteed seats per Auslandsschule before the assignment warns; empty for no limit. */
 		maxGuaranteedSeatsPerForeignSchool: z.number().int().min(0).nullish(),
+		/** Which share of all seats the Auslandsschulen together may be guaranteed; empty for no limit. */
+		maxForeignGuaranteedSeatsPercent: z.number().int().min(0).max(100).nullish(),
 		/** The age range on the first conference day; empty switches a limit off. */
 		participantMinAge: ageLimitSchema(),
 		participantMaxAge: ageLimitSchema(),
@@ -116,26 +120,27 @@ export const conferenceSettingsFormSchema = z
 		postalZip: z.string().optional(),
 		postalCity: z.string().optional(),
 		postalCountry: z.string().optional(),
+		/** The templates: a picked `File` replaces the stored one, `null` removes it. */
 		contractBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		guardianConsentBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		mediaConsentBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		termsAndConditionsBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional(),
+			.nullish(),
 		certificateBasePDF: z
 			.instanceof(File)
 			.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
-			.optional()
+			.nullish()
 	})
 	// The same order `updateConference` keeps; shown on the date that is out of it.
 	.superRefine((settings, ctx) => {
@@ -171,6 +176,7 @@ export type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;
 export function limitArgs({
 	maxCollectiveGroupSize,
 	maxGuaranteedSeatsPerForeignSchool,
+	maxForeignGuaranteedSeatsPercent,
 	participantMinAge,
 	participantMaxAge,
 	supervisorMinAge
@@ -178,6 +184,7 @@ export function limitArgs({
 	ConferenceSettings,
 	| 'maxCollectiveGroupSize'
 	| 'maxGuaranteedSeatsPerForeignSchool'
+	| 'maxForeignGuaranteedSeatsPercent'
 	| 'participantMinAge'
 	| 'participantMaxAge'
 	| 'supervisorMinAge'
@@ -185,6 +192,7 @@ export function limitArgs({
 	return {
 		maxCollectiveGroupSize: maxCollectiveGroupSize ?? null,
 		maxGuaranteedSeatsPerForeignSchool: maxGuaranteedSeatsPerForeignSchool ?? null,
+		maxForeignGuaranteedSeatsPercent: maxForeignGuaranteedSeatsPercent ?? null,
 		participantMinAge: participantMinAge ?? null,
 		participantMaxAge: participantMaxAge ?? null,
 		supervisorMinAge: supervisorMinAge ?? null

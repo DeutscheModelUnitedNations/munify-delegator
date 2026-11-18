@@ -12,7 +12,9 @@ const schoolRowSchema = z.object({
 	applied: z.number(),
 	seated: z.number(),
 	supervisors: z.number(),
-	waitingList: z.number()
+	waitingList: z.number(),
+	conferences: z.number(),
+	participantsOverall: z.number()
 });
 
 /** Reads the rows the table engine answered for the schools table. */
@@ -21,7 +23,7 @@ function parseSchoolRows(values: readonly unknown[] | null): SchoolRow[] {
 }
 
 /**
- * The schools of a conference's people with how many each sends: the API's table engine counts,
+ * Every school, with how many people each sends to the conference and took part overall: the API's table engine counts,
  * searches, filters, sorts and groups them, and answers the rows whole.
  */
 export function schoolsSource(conferenceId: string) {

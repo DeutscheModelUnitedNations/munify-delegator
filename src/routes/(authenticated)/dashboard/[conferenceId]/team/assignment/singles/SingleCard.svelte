@@ -9,6 +9,7 @@
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardSingleParticipant } from '../board';
 	import { sightingHref } from '#lib/helpers/sightingLink';
+	import PreviousParticipations from '../sighting/PreviousParticipations.svelte';
 
 	/** A single participant on the board, dragged by their id out of `container`. */
 	interface Props {
@@ -87,6 +88,7 @@
 		{/if}
 		<div class="flex items-center gap-1">
 			<StarRating rating={review?.evaluation ?? 0} size="xs" />
+			<PreviousParticipations count={single?.user.conferenceParticipationsCount} />
 			{#if review?.required}
 				<i
 					aria-hidden="true"

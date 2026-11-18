@@ -25,6 +25,8 @@ import {
 	type EmailTextOverride
 } from './emailText';
 import { chaseLinks, chaseRoleOf } from '#lib/helpers/chaseLinks';
+import { announcementBlocks, type MailBlock } from './announcementBlocks';
+import type { EmailBundle } from './emailBundles';
 
 /**
  * What an automatic mail says, in the locale it is rendered in (`runWithLocale`). Every kind is the
@@ -37,6 +39,8 @@ export interface EmailContent {
 	paragraphs: string[];
 	items?: string[];
 	closing?: string[];
+	/** An announcement's own text, drawn between the paragraphs and what closes the mail. */
+	blocks?: MailBlock[];
 	button?: { label: string; url: string };
 	/** Where an answer goes, when not to the conference's own address. */
 	replyTo?: string;
@@ -62,6 +66,10 @@ const dateTime = ({ date, timeZone }: { date: Date; timeZone: string }) =>
 		timeStyle: 'short',
 		timeZone
 	});
+
+/** `A, B und C`, in the locale the mail is rendered in. */
+const listed = (names: readonly string[]) =>
+	new Intl.ListFormat(getLocale(), { style: 'long', type: 'conjunction' }).format(names);
 
 /** A role as the recipient reads it: the nation's name in their language, or the role's own. */
 function roleName(role: SnapshotRole) {
@@ -90,6 +98,8 @@ const paperworkLabel: Record<PaperworkField, () => string> = {
 /** What every kind's text can draw on. */
 interface ContentContext {
 	email: DueEmail;
+	/** The mails this one carries, `email` first: several of a bundled kind, one otherwise. */
+	bundle: EmailBundle;
 	conference: Conference;
 	dashboard: { label: string; url: string };
 	origin: string;
@@ -99,6 +109,7 @@ interface ContentContext {
 interface KindContent {
 	values?: EmailPlaceholderValues;
 	items?: string[];
+	blocks?: MailBlock[];
 	button?: { label: string; url: string };
 	replyTo?: string;
 }
@@ -119,16 +130,90 @@ const supervisorSummaryItem = (student: SnapshotPerson) =>
 			})
 		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student.user) });
 
+/** The name an anonymous review is from, as the mail's sentence reads it ("von dem …"). */
+function translateReviewSignatureInMail({
+	anonymousAs,
+	anonymousName
+}: {
+	anonymousAs: NonNullable<SnapshotReview['anonymousAs']>;
+	anonymousName: SnapshotReview['anonymousName'];
+}) {
+	switch (anonymousAs) {
+		case 'SECRETARIAT':
+			return m.emailAutoPaperReviewedSecretariat();
+		case 'RESEARCH_SERVICE':
+			return m.emailAutoPaperReviewedResearchService();
+		case 'CUSTOM':
+			return anonymousName ?? m.emailAutoPaperReviewedTeam();
+	}
+}
+
 /** What the author reads about a review: the paper, who reviewed it, the paper's new status. */
 const reviewValues = (review: SnapshotReview) => ({
 	paper: review.agendaItem ?? translatePaperType(review.paperType),
 	reviewer: review.reviewer
 		? `${review.reviewer.name} (${review.reviewer.email})`
-		: m.emailAutoPaperReviewedTeam(),
+		: review.anonymousAs
+			? translateReviewSignatureInMail({
+					anonymousAs: review.anonymousAs,
+					anonymousName: review.anonymousName
+				})
+			: m.emailAutoPaperReviewedTeam(),
 	status: review.statusAfter ? translatePaperStatus(review.statusAfter) : ''
 });
 
+/** The surveys' titles and their deadline (a bundle shares one), in the conference's time zone. */
+const surveyContent: ContentBuilder = ({ email, bundle, conference, dashboard }) => ({
+	values: email.survey
+		? {
+				survey: listed(
+					bundle.flatMap((each) =>
+						each.survey ? [m.emailAutoSurveyTitle({ title: each.survey.title })] : []
+					)
+				),
+				date: dateTime({ date: email.survey.deadline, timeZone: conference.timezone })
+			}
+		: {},
+	button: dashboard
+});
+
+/** The names of the people a bundle is about, one from each mail. */
+const namesOf = ({
+	bundle,
+	person
+}: {
+	bundle: EmailBundle;
+	person: (email: DueEmail) => SnapshotPerson | undefined;
+}) => listed(bundle.flatMap((email) => person(email)?.user ?? []).map(fullName));
+
 const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
+	DELEGATION_CREATED: ({ email, conference, origin, dashboard }) => {
+		const entryCode = email.person?.delegation?.entryCode ?? '';
+		return {
+			values: {
+				entryCode,
+				joinLink: `${origin}/registration/${conference.id}/join-delegation?code=${entryCode}`
+			},
+			button: dashboard
+		};
+	},
+	DELEGATION_JOINED: withDashboard,
+	DELEGATION_MEMBER_JOINED: ({ bundle, dashboard }) => ({
+		values: { member: namesOf({ bundle, person: (email) => email.member }) },
+		button: dashboard
+	}),
+	APPLICATION_SENT: withDashboard,
+	WAITING_LIST_REGISTERED: ({ conference, origin }) => ({
+		button: {
+			label: m.emailAutoToWaitingList(),
+			url: `${origin}/registration/${conference.id}/waiting-list`
+		}
+	}),
+	SUPERVISOR_CONNECTED: ({ bundle, dashboard }) => ({
+		values: { supervisor: namesOf({ bundle, person: (email) => email.supervisor }) },
+		button: dashboard
+	}),
+	SURVEY_PUBLISHED: surveyContent,
 	ASSIGNMENT_ACCEPTED: seated,
 	WAITING_LIST_SEATED: seated,
 	ASSIGNMENT_REJECTED: ({ conference, origin }) => ({
@@ -146,8 +231,10 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 	POSTAL_RECEIVED: () => ({}),
 	PAYMENT_RECEIVED: () => ({}),
 	CERTIFICATE_AVAILABLE: withDashboard,
-	PAPERWORK_PROBLEM: ({ email, dashboard }) => ({
-		values: { item: email.field ? paperworkLabel[email.field]() : '' },
+	PAPERWORK_PROBLEM: ({ bundle, dashboard }) => ({
+		values: {
+			item: listed(bundle.flatMap((email) => (email.field ? paperworkLabel[email.field]() : [])))
+		},
 		button: dashboard
 	}),
 	APPLICATION_DEADLINE_REMINDER: ({ email, conference, dashboard }) => ({
@@ -180,10 +267,11 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			values: {
 				date: day(conference.startConference),
 				committee: person.delegation?.committee ?? '',
-				chaseLink: links.app,
+				// CHASE's conference selection: it shows each person their conferences there
+				chaseLink: links.launcher,
 				manualLink: links.manual
 			},
-			button: { label: m.emailAutoChaseIntroButton(), url: links.app }
+			button: { label: m.emailAutoChaseIntroButton(), url: links.launcher }
 		};
 	},
 	PHONE_READY_REMINDER: ({ conference, origin }) => ({
@@ -194,17 +282,9 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			url: `${origin}/dashboard/${conference.id}/registration-mode`
 		}
 	}),
-	SURVEY_REMINDER: ({ email, conference, dashboard }) => ({
-		values: email.survey
-			? {
-					survey: email.survey.title,
-					date: dateTime({ date: email.survey.deadline, timeZone: conference.timezone })
-				}
-			: {},
-		button: dashboard
-	}),
-	SUPERVISOR_STUDENT_LINKED: ({ email, dashboard }) => ({
-		values: { student: email.student ? fullName(email.student.user) : '' },
+	SURVEY_REMINDER: surveyContent,
+	SUPERVISOR_STUDENT_LINKED: ({ bundle, dashboard }) => ({
+		values: { student: namesOf({ bundle, person: (email) => email.student }) },
 		button: dashboard
 	}),
 	PAPER_REVIEWED: ({ email, conference, origin, dashboard }) =>
@@ -226,6 +306,40 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 				}
 			: {},
 		button: dashboard
+	}),
+	ANNOUNCEMENT: ({ email, conference, origin }) => {
+		const announcement = email.announcement;
+		return {
+			values: { title: announcement?.title ?? '' },
+			blocks: [
+				...announcementBlocks(announcement?.body ?? ''),
+				...(announcement?.signature
+					? [{ type: 'paragraph' as const, text: announcement.signature }]
+					: []),
+				...(announcement && announcement.attachmentNames.length > 0
+					? [
+							{ type: 'paragraph' as const, text: m.emailAutoAnnouncementAttachments() },
+							{ type: 'list' as const, ordered: false, items: announcement.attachmentNames }
+						]
+					: [])
+			],
+			button: {
+				label: m.emailAutoAnnouncementButton(),
+				url: `${origin}/dashboard/${conference.id}/announcements`
+			}
+		};
+	},
+	CHAT_REPORTED: ({ conference, origin }) => ({
+		button: {
+			label: m.emailAutoChatReportedButton(),
+			url: `${origin}/dashboard/${conference.id}/team/messages?view=reports`
+		}
+	}),
+	UNREAD_MESSAGES: ({ email, conference, origin }) => ({
+		button: {
+			label: m.emailAutoUnreadMessagesButton(),
+			url: `${origin}/dashboard/${conference.id}/${email.teamMember ? 'team/messages' : 'messages'}`
+		}
 	})
 };
 
@@ -235,13 +349,16 @@ export interface ConferenceEmailText extends EmailTextOverride {
 	locale: string;
 }
 
+/** What a mail says; given a `bundle`, one mail naming everything in it (`emailBundles.ts`). */
 export function emailContent({
 	email,
+	bundle = [email],
 	conference,
 	origin,
 	texts = []
 }: {
 	email: DueEmail;
+	bundle?: EmailBundle;
 	conference: Conference;
 	origin: string;
 	texts?: readonly ConferenceEmailText[];
@@ -250,6 +367,7 @@ export function emailContent({
 	const own = texts.find((text) => text.kind === email.kind && toLocale(text.locale) === locale);
 	const kind = CONTENT[email.kind]({
 		email,
+		bundle,
 		conference,
 		origin,
 		dashboard: { label: m.emailAutoToDashboard(), url: `${origin}/dashboard/${conference.id}` }
@@ -261,6 +379,7 @@ export function emailContent({
 	});
 	return {
 		...filled,
+		...(kind.blocks ? { blocks: kind.blocks } : {}),
 		...(kind.button ? { button: kind.button } : {}),
 		...(kind.replyTo ? { replyTo: kind.replyTo } : {})
 	};
@@ -283,6 +402,9 @@ export function emailDetail(email: DueEmail): string | undefined {
 	if (email.survey) return email.survey.title;
 	if (email.review) return reviewValues(email.review).paper;
 	if (email.student) return fullName(email.student.user);
+	if (email.announcement) return email.announcement.title;
+	if (email.supervisor) return fullName(email.supervisor.user);
+	if (email.member) return fullName(email.member.user);
 	if (email.teamMember) return translateTeamRole(email.teamMember.role);
 	return undefined;
 }

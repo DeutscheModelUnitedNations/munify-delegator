@@ -68,8 +68,8 @@ describe('searchConference', () => {
 			await searchConference({ conferenceId, searchTerm: '  anna   schmidt ' });
 
 			expect(mocks.users.mock.calls.map(([call]) => call.__args.search)).toEqual([
-				'anna   schmidt',
-				'anna   schmidt'
+				{ term: 'anna   schmidt' },
+				{ term: 'anna   schmidt' }
 			]);
 		});
 
@@ -252,7 +252,7 @@ describe('searchConference', () => {
 
 			const { committees } = await searchConference({ conferenceId, searchTerm: 'sec' });
 
-			expect(argsOf(mocks.committees).search).toBe('sec');
+			expect(argsOf(mocks.committees).search).toEqual({ term: 'sec' });
 			expect(argsOf(mocks.committeeAgendaItems).where).toEqual({ committee: inConference });
 			expect(committees).toEqual([
 				{ id: 'c1', title: 'Security Council', subtitle: 'SC' },
@@ -305,7 +305,7 @@ describe('searchConference', () => {
 			expect(schools).toEqual([]);
 		});
 
-		test("are searched by rumble among the conference's people and waiting list", async () => {
+		test('are searched by rumble among every school, not only those of the conference', async () => {
 			mocks.schools.mockResolvedValueOnce([
 				{ id: 's1', name: 'Goethe-Gymnasium', city: 'Berlin' },
 				{ id: 's2', name: 'Gymnasium Nord', city: null }
@@ -318,8 +318,7 @@ describe('searchConference', () => {
 			});
 
 			expect(argsOf(mocks.schools)).toEqual({
-				search: 'gym',
-				where: { OR: [{ participants: inConference }, { waitingListEntries: inConference }] },
+				search: { term: 'gym' },
 				limit: 10
 			});
 			expect(schools).toEqual([

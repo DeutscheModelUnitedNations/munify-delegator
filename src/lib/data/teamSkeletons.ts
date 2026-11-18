@@ -801,36 +801,46 @@ const attendance = {
 
 // --- Information --------------------------------------------------------------------------------
 
+/** The messenger: a heading, then the chat list beside the open chat */
+const messages = {
+	name: 'messages',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-4 py-4 sm:p-6',
+			children: [
+				block('h-8 w-48'),
+				paragraph({ lines: 1 }),
+				{
+					class: 'grid gap-4 md:grid-cols-[22rem_1fr]',
+					children: [block('h-[30rem] w-full'), block('h-[30rem] w-full max-md:hidden')]
+				}
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
 const announcement = {
 	name: 'announcement',
 	nodes: [
 		{
 			class: 'flex w-full flex-col gap-4',
 			children: [
-				paragraph({ lines: 2 }),
-				alert('mb-6 h-12'),
 				{
-					class: 'border-base-300 bg-base-200 rounded-box flex flex-col gap-4 border p-4',
-					children: [
-						block('h-4 w-12 rounded-full'),
-						{
-							class: 'grid grid-cols-1 gap-4 lg:grid-cols-2',
-							children: [
-								{
-									class: 'flex flex-col gap-2',
-									children: [block('h-3 w-24 rounded-full'), block('h-64 w-full lg:h-96')]
-								},
-								{
-									class: 'flex flex-col gap-2',
-									children: [block('h-3 w-20 rounded-full'), block('h-64 w-full lg:h-96')]
-								}
-							]
-						},
-						toggle('w-40'),
-						block('h-3 w-64 max-w-full rounded-full')
-					]
+					class: 'flex flex-wrap items-center gap-3',
+					children: [block('h-4 min-w-0 flex-1 rounded-full'), block('h-10 w-44')]
 				},
-				block('mt-6 h-10 w-24')
+				...[0, 1, 2].map(() => ({
+					class: 'border-base-300 rounded-box flex flex-col gap-3 border p-4',
+					children: [
+						{
+							class: 'flex items-center gap-2',
+							children: [block('h-5 w-64 max-w-full rounded-full'), block('h-5 w-20 rounded-full')]
+						},
+						block('h-4 w-48 rounded-full'),
+						block('h-3 w-80 max-w-full rounded-full'),
+						block('h-8 w-72 max-w-full')
+					]
+				}))
 			]
 		}
 	]
@@ -955,6 +965,40 @@ const survey = {
 		}
 	]
 };
+
+/** One mail on the e-mail page: its title and edit button, its switch, what it does */
+const emailKindCard: SkeletonNode = {
+	class: 'border-base-300 bg-base-100 rounded-box flex flex-col gap-3 border p-4',
+	children: [
+		{
+			class: 'flex items-center gap-3',
+			children: [block('h-4 w-48 rounded-full'), block('ml-auto h-8 w-28')]
+		},
+		toggle('w-40'),
+		paragraph({ lines: 2, height: 'h-3' })
+	]
+};
+
+const emails = {
+	name: 'emails',
+	nodes: [
+		{
+			class: 'bg-base-100 dark:bg-base-200 rounded-box flex w-full flex-col gap-4 p-4 sm:p-8',
+			children: [
+				{
+					class: 'mb-2 flex items-center gap-4',
+					children: [block('h-4 max-w-md flex-1 rounded-full'), block('ml-auto h-8 w-8')]
+				},
+				block('h-3 w-80 max-w-full rounded-full'),
+				block('h-20 w-full'),
+				block('h-24 w-full'),
+				block('mt-2 h-6 w-48 rounded-full'),
+				...times(3, emailKindCard),
+				block('mt-6 h-10 w-full')
+			]
+		}
+	]
+} satisfies SkeletonLayout;
 
 const chartCard = ({ chart, span = '' }: { chart: string; span?: string }): SkeletonNode => ({
 	class: `border-base-200 rounded-box flex flex-col gap-4 border p-6 ${span}`,
@@ -1329,8 +1373,10 @@ export const TEAM_SKELETONS = {
 	payments,
 	attendance,
 	announcement,
+	messages,
 	calendar,
 	survey,
+	emails,
 	plausibility,
 	cleanup,
 	helper,

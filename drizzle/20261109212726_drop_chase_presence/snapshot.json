@@ -1,0 +1,63 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "3d772910-0549-4dc6-af51-001d1021fbcb",
+  "prevIds": [
+    "6d172a25-7a01-49d4-9b54-17ca703f830f"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "chase_presence"
+      ],
+      "writes": [
+        "s|tbl|public.chase_presence",
+        "n|tbl|public.chase_presence",
+        "e|tbl|public.chase_presence",
+        "n|rel|public.chase_presence",
+        "n|type|public.chase_presence"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"chase_presence\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"chase_presence\",\"conference_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"chase_presence\",\"data\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"chase_presence\",\"fetched_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"chase_presence\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"chase_presence\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"chase_presence\",\"chase_presence_conference_id_conference_id_fkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"chase_presence\",\"chase_presence_pkey\"]"
+    }
+  ]
+}

@@ -40,6 +40,20 @@ export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 export const isAlwaysSent = (kind: string): kind is AlwaysSentKind =>
 	ALWAYS_SENT_KINDS.some((always) => always === kind);
 
+/**
+ * The automatic mails without a switch, which the sweeps always send: an announcement's mail,
+ * which the team decides on per announcement ("notify by mail").
+ */
+const ALWAYS_AUTOMATIC_KINDS = ['ANNOUNCEMENT'] as const satisfies readonly EmailkindEnum[];
+
+export const isAlwaysAutomatic = (kind: string) =>
+	ALWAYS_AUTOMATIC_KINDS.some((always) => always === kind);
+
+/** The kinds a conference cannot switch: sent where they happen, or always sent by the sweeps. */
+export const hasNoSwitch = (kind: string) => isAlwaysSent(kind) || isAlwaysAutomatic(kind);
+
+export { ALWAYS_AUTOMATIC_KINDS };
+
 /** The mails releasing the assignment makes due: the result to each applicant and supervisor. */
 const ASSIGNMENT_RESULT_KINDS = [
 	'ASSIGNMENT_ACCEPTED',
@@ -81,6 +95,22 @@ export const REMINDER_KINDS = [
 	'SURVEY_REMINDER'
 ] as const satisfies readonly EmailkindEnum[];
 
+/**
+ * The kinds a person can owe several of at once, one per student, member, supervisor, paperwork
+ * or survey. The sweep sends those due together as one mail naming them all
+ * (`#api/handlers/email/emailBundles`), so linking five students is one mail, not five.
+ */
+const BUNDLED_KINDS = [
+	'DELEGATION_MEMBER_JOINED',
+	'SUPERVISOR_STUDENT_LINKED',
+	'SUPERVISOR_CONNECTED',
+	'PAPERWORK_PROBLEM',
+	'SURVEY_PUBLISHED',
+	'SURVEY_REMINDER'
+] as const satisfies readonly EmailkindEnum[];
+
+export const isBundled = (kind: string) => BUNDLED_KINDS.some((bundled) => bundled === kind);
+
 /** The kinds that exist only while a CHASE instance is linked. */
 const CHASE_KINDS = ['CHASE_INTRO_REMINDER'] as const satisfies readonly EmailkindEnum[];
 
@@ -90,15 +120,27 @@ export const kindApplies = ({ kind, chaseLinked }: { kind: string; chaseLinked: 
 
 /** How the e-mail page groups the mails, in this order. */
 export const EMAIL_GROUPS = [
+	{
+		id: 'registration',
+		kinds: [
+			'DELEGATION_CREATED',
+			'DELEGATION_JOINED',
+			'DELEGATION_MEMBER_JOINED',
+			'APPLICATION_SENT'
+		]
+	},
 	{ id: 'assignment', kinds: ASSIGNMENT_RESULT_KINDS },
-	{ id: 'waitingList', kinds: ['WAITING_LIST_SEATED'] },
+	{ id: 'waitingList', kinds: ['WAITING_LIST_REGISTERED', 'WAITING_LIST_SEATED'] },
 	{ id: 'unlocked', kinds: ['POSTAL_UNLOCKED', 'PAYMENT_UNLOCKED'] },
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },
+	{ id: 'surveys', kinds: ['SURVEY_PUBLISHED'] },
 	{ id: 'reminders', kinds: REMINDER_KINDS },
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
+	{ id: 'messages', kinds: ['UNREAD_MESSAGES', 'CHAT_REPORTED'] },
+	{ id: 'announcements', kinds: ['ANNOUNCEMENT'] },
 	{ id: 'onSite', kinds: ['BADGE_FOUND'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
-	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED'] },
+	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED', 'SUPERVISOR_CONNECTED'] },
 	{ id: 'team', kinds: ['TEAM_WELCOME', 'TEAM_INVITATION'] }
 ] as const satisfies readonly { id: string; kinds: readonly EmailkindEnum[] }[];
 

@@ -52,7 +52,16 @@
 {:else}
 	<div class="flex flex-col gap-3">
 		{#each papers as paper (paper.id)}
-			<div class="bg-base-200 rounded-box p-4">
+			<a
+				href={resolve('/(authenticated)/dashboard/[conferenceId]/paperhub/[paperId]', {
+					conferenceId,
+					paperId: paper.id
+				})}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="bg-base-200 hover:bg-base-300 rounded-box block p-4"
+				title={m.goToPaperHub()}
+			>
 				<div class="flex items-start justify-between gap-2">
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2">
@@ -67,18 +76,7 @@
 							</span>
 						{/if}
 					</div>
-					<a
-						href={resolve('/(authenticated)/dashboard/[conferenceId]/paperhub/[paperId]', {
-							conferenceId,
-							paperId: paper.id
-						})}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="btn btn-ghost btn-xs btn-square"
-						title={m.goToPaperHub()}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
-					</a>
+					<i aria-hidden="true" class="ph-duotone ph-arrow-square-out text-base-content/60"></i>
 				</div>
 
 				<div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-base-content/60">
@@ -101,7 +99,7 @@
 						</span>
 					{/if}
 				</div>
-			</div>
+			</a>
 		{/each}
 	</div>
 {/if}

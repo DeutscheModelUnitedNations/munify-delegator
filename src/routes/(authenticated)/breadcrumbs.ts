@@ -98,9 +98,9 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.committeeAssignment(),
 		icon: 'arrows-split'
 	},
-	info: {
-		translation: () => m.infos(),
-		icon: 'info'
+	announcements: {
+		translation: () => m.announcementSectionTitle(),
+		icon: 'megaphone'
 	},
 	payment: {
 		translation: () => m.payment(),
@@ -130,6 +130,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'robot',
 		translation: () => m.aiAccess()
 	},
+	messages: {
+		icon: 'chats-circle',
+		translation: () => m.chatMessages()
+	},
 	calendar: {
 		icon: 'calendar-dots',
 		translation: () => m.calendar()
@@ -157,6 +161,14 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	'chase-link': {
 		icon: 'link',
 		translation: () => m.chaseLinkTitle()
+	},
+	'slack-workspaces': {
+		icon: 'slack-logo',
+		translation: () => m.slackWorkspaces()
+	},
+	notifications: {
+		icon: 'bell',
+		translation: () => m.notifications()
 	},
 	committees: {
 		icon: 'lectern',

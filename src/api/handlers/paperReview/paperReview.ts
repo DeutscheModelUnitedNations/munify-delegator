@@ -1,11 +1,18 @@
 import { enum_, object, schemaBuilder } from '#api/rumble';
-import { createPaperReview, reviewVerdictSchema } from './paperReviewService';
+import { editorDocumentSchema } from '#api/handlers/paper/paperService';
+import {
+	createPaperReview,
+	reviewAnonymityArgsSchema,
+	reviewAnonymousNameSchema,
+	reviewVerdictSchema
+} from './paperReviewService';
 import { assertCanReviewPaper, registerPaperReviewAbilities } from './paperReviewPermissions';
 
 registerPaperReviewAbilities();
 
 object({ table: 'paperReview' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
+const anonymousAsEnum = enum_({ tsName: 'paperReviewAnonymousAs' });
 
 /** Which kind of flag a newly found piece belongs to. */
 const FlagTypeForUnlock = schemaBuilder.enumType('FlagTypeForUnlock', {
@@ -42,22 +49,37 @@ schemaBuilder.mutationFields((t) => ({
 		type: CreatePaperReviewResult,
 		args: {
 			paperId: t.arg.id({ required: true }),
-			comments: t.arg({ type: 'JSON', required: true }),
+			comments: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema),
 			newStatus: t
 				.arg({
 					type: paperStatusEnum,
 					required: true,
 					description: 'The verdict: ACCEPTED or CHANGES_REQUESTED.'
 				})
-				.validate(reviewVerdictSchema)
+				.validate(reviewVerdictSchema),
+			anonymousAs: t.arg({
+				type: anonymousAsEnum,
+				required: false,
+				description:
+					"Publishes the review under this name: its author reads it instead of the reviewer's. CUSTOM takes the name from `anonymousName`. Left out, the review carries the reviewer's name."
+			}),
+			anonymousName: t.arg
+				.string({
+					required: false,
+					description: 'The name to publish under, with `anonymousAs: CUSTOM` and only with it.'
+				})
+				.validate(reviewAnonymousNameSchema)
 		},
+		validate: reviewAnonymityArgsSchema,
 		resolve: async (_root, args, ctx) => {
 			const { reviewerId } = await assertCanReviewPaper({ ctx, paperId: args.paperId });
 			return createPaperReview({
 				paperId: args.paperId,
 				comments: args.comments,
 				verdict: args.newStatus,
-				reviewerId
+				reviewerId,
+				anonymousAs: args.anonymousAs ?? null,
+				anonymousName: args.anonymousName ?? null
 			});
 		}
 	})

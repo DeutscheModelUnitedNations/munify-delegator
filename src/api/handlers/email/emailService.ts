@@ -2,7 +2,7 @@ import { db, schema } from '#api/db/db';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { toLocale, type Locale } from '#lib/paraglide/runtime';
-import { isAlwaysSent } from '#lib/helpers/emailKinds';
+import { hasNoSwitch, isAlwaysSent } from '#lib/helpers/emailKinds';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { z } from 'zod';
 import type { EmailKind } from './dueEmails';
@@ -65,7 +65,7 @@ export const optionalLocaleSchema = z
 /** Refuses (INVALID_INPUT) the kinds the conference cannot switch: the ones always sent. */
 export const switchableKindSchema = z
 	.looseObject({ kind: z.string() })
-	.refine(({ kind }) => !isAlwaysSent(kind), { error: () => m.emailKindAlwaysSent() });
+	.refine(({ kind }) => !hasNoSwitch(kind), { error: () => m.emailKindAlwaysSent() });
 
 /** The kinds among `kinds` (else all) that follow from state; the team invitation never does. */
 const owedKinds = (kinds?: readonly EmailKind[] | null) =>

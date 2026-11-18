@@ -1,38 +1,38 @@
 import { CombinedError } from '@urql/core';
 import { GraphQLError } from 'graphql';
 import { describe, expect, test } from 'vitest';
-import { isNetworkError, requeueFailed, retryDelay, type QueueEntry } from './attendanceQueue';
+import { neverReachedServer, requeueFailed, retryDelay, type QueueEntry } from './attendanceQueue';
 
-describe('isNetworkError', () => {
+describe('neverReachedServer', () => {
 	test('treats a TypeError (failed fetch) as a network error', () => {
-		expect(isNetworkError(new TypeError('Failed to fetch'))).toBe(true);
+		expect(neverReachedServer(new TypeError('Failed to fetch'))).toBe(true);
 	});
 
 	test('recognizes a failed request wrapped by urql, but not a server answer', () => {
 		expect(
-			isNetworkError(new CombinedError({ networkError: new TypeError('Failed to fetch') }))
+			neverReachedServer(new CombinedError({ networkError: new TypeError('Failed to fetch') }))
 		).toBe(true);
 		expect(
-			isNetworkError(
+			neverReachedServer(
 				new CombinedError({ graphQLErrors: [new GraphQLError('network fetch failed')] })
 			)
 		).toBe(false);
 	});
 
 	test('does not read the message', () => {
-		expect(isNetworkError(new Error('could not fetch'))).toBe(false);
+		expect(neverReachedServer(new Error('could not fetch'))).toBe(false);
 	});
 
 	test('treats an aborted request as a network error', () => {
 		const err = new Error('The operation was aborted');
 		err.name = 'AbortError';
-		expect(isNetworkError(err)).toBe(true);
+		expect(neverReachedServer(err)).toBe(true);
 	});
 
 	test('does not retry errors the server answered with, or non-errors', () => {
-		expect(isNetworkError(new Error('User not found'))).toBe(false);
-		expect(isNetworkError('network')).toBe(false);
-		expect(isNetworkError(undefined)).toBe(false);
+		expect(neverReachedServer(new Error('User not found'))).toBe(false);
+		expect(neverReachedServer('network')).toBe(false);
+		expect(neverReachedServer(undefined)).toBe(false);
 	});
 });
 

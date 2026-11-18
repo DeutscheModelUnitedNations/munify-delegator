@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import type { CollectiveGroupProblem, GuaranteedSeatCount } from './schoolRules';
-	import {
-		guaranteeText,
-		splitGroupText,
-		withoutSeatText,
-		type SupervisorNames
-	} from './schoolRuleTexts';
+	import GuaranteeItems from './GuaranteeItems.svelte';
+	import type { CollectiveGroupProblem, GuaranteedSeatCount, GuaranteeShare } from './schoolRules';
+	import { splitGroupText, withoutSeatText, type SupervisorNames } from './schoolRuleTexts';
 
 	/** The broken school rules as alerts, on the summary and when applying (see `SchoolRuleWarnings`). */
 	interface Props {
 		splitGroups: readonly CollectiveGroupProblem[];
 		names: SupervisorNames;
 		overGuarantee: readonly GuaranteedSeatCount[];
+		/** All Auslandsschulen together past their share of the seats */
+		overShare: GuaranteeShare | null;
 		groupLimit: number;
 		guaranteeLimit: number;
 		class?: string;
@@ -22,6 +20,7 @@
 		splitGroups,
 		names,
 		overGuarantee,
+		overShare,
 		groupLimit,
 		guaranteeLimit,
 		class: className = ''
@@ -45,15 +44,13 @@
 		</div>
 	</div>
 {/if}
-{#if overGuarantee.length > 0}
+{#if overGuarantee.length > 0 || overShare}
 	<div class="alert alert-warning alert-soft {className}" role="status">
 		<i aria-hidden="true" class="ph-duotone ph-globe-hemisphere-east text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.schoolRuleGuaranteesOverLimitTitle()}</h3>
 			<ul class="list-inside list-disc text-sm">
-				{#each overGuarantee as count (count.school.id)}
-					<li>{guaranteeText({ count, limit: guaranteeLimit })}</li>
-				{/each}
+				<GuaranteeItems {overGuarantee} {overShare} {guaranteeLimit} />
 			</ul>
 		</div>
 	</div>

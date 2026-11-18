@@ -4,18 +4,9 @@ import type { InferSelectModel } from 'drizzle-orm';
 import { birthdayBoundsForAge, getAgeAtConference } from '#lib/helpers/ageChecker';
 import { ageBands, ageIssue, type AgeBand, type AgeRole } from '#lib/helpers/plausibilityRules';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { userFormSchema } from '#lib/schemata/userForm';
+import { invalidProfileFields } from '#lib/schemata/userForm';
 
 export type PlausibilityUser = InferSelectModel<typeof schema.user>;
-
-/**
- * The registration form still names these two fields the way the OIDC claims do, so a database
- * row has to be renamed into that shape before the form's schema can judge it complete.
- */
-function toFormShape(user: PlausibilityUser) {
-	const { givenName, familyName, ...rest } = user;
-	return { ...rest, given_name: givenName, family_name: familyName };
-}
 
 /** The caller's `read` filter on users, which decides who the plausibility lists may show. */
 export type ReadableUsers = Awaited<ReturnType<ApiContext['abilities']['user']['filter']>>;
@@ -92,7 +83,7 @@ export async function findPlausibilityIssues({
 		tooOldUsers,
 		shouldBeSupervisor,
 		shouldNotBeSupervisor,
-		dataMissing: candidates.filter((user) => !userFormSchema.safeParse(toFormShape(user)).success)
+		dataMissing: candidates.filter((user) => invalidProfileFields(user).length > 0)
 	};
 }
 

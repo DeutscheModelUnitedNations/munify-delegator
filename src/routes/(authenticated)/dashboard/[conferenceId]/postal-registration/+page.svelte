@@ -8,12 +8,14 @@
 	import { downloadPostalRegistration } from '#lib/api/postalRegistrationPdf';
 	import { page } from '$app/state';
 	import type { PageProps } from './$types';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
+	import { owesOwnFormalities } from '#lib/helpers/owesOwnFormalities';
 
 	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const [conference, userQueryData] = $derived(
+	const [conference, userQueryData, participation] = $derived(
 		await Promise.all([
 			client.liveQuery.conference({
 				__args: { id: params.conferenceId },
@@ -35,9 +37,12 @@
 				city: true,
 				country: true,
 				birthday: true
-			})
+			}),
+			fetchMyParticipation(params.conferenceId)
 		])
 	);
+	// A supervisor who does not attend in person sends no documents of their own
+	const owesDocuments = $derived(owesOwnFormalities(participation?.supervisor));
 
 	let userDataNotComplete = $derived(
 		!(
@@ -68,7 +73,16 @@
 	<BackToDashboard conferenceId={params.conferenceId} />
 	<h1 class="text-2xl font-bold">{m.postalRegistration()}</h1>
 
+	{#if !owesDocuments}
+		<div role="status" class="alert alert-info alert-soft">
+			<i aria-hidden="true" class="ph-duotone ph-info text-xl"></i>
+			<span>{m.postalRegistrationNotNeededSupervisor()}</span>
+		</div>
+	{/if}
+
+	<!-- Nothing below concerns a supervisor who does not attend in person -->
 	<div
+		hidden={!owesDocuments}
 		class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]"
 	>
 		<div class="prose max-w-none">

@@ -34,16 +34,22 @@ The rules live in `src/api/mcp/` (see CLAUDE.md, "MCP server"). How the team use
 | `participant_counts`                                | Participants counted by up to three attributes                        |
 | `assignment_overview`                               | Seats and holders per role, warnings, a page of the applications      |
 | `graphql_query` / `graphql_schema`                  | Any read-only query, and the schema with redacted fields marked       |
-| `createCommittee`, `assignDelegation`, … (about 62) | The mutations that opted in, one tool each                            |
+| `createCommittee`, `assignDelegation`, … (about 69) | The mutations that opted in, one tool each                            |
 
 Saved views of the team's tables (`createTableView`, `updateTableView`, `copyTableView`,
 `setTableViewDefault`, `deleteTableView`) are shared views only, and the state an assistant
 writes filters, sorts and groups only by columns without personal data
 (`src/api/mcp/viewStateGuard.ts`).
 
-Changes that reach people outside the team (the conference's stage, the announcement, unlocking
-payments, distributing a survey) answer with a preview first and run only when called again with
-`confirm: true`.
+Changes that reach people outside the team (the conference's stage, unlocking
+payments, distributing a survey, publishing an announcement) answer with a preview first and run
+only when called again with `confirm: true`.
+
+Announcements can be written, changed, duplicated, published, taken back and mailed again
+(`createAnnouncement`, `updateAnnouncement`, `duplicateAnnouncement`, `publishAnnouncement`,
+`withdrawAnnouncement`, `renotifyAnnouncement`, `sendAnnouncementTestMail`). An assistant creates
+drafts freely; changing, publishing, taking back and mailing again preview first. Deleting an
+announcement stays in the app.
 
 ## Setting it up
 
@@ -79,4 +85,6 @@ claude mcp add --transport http delegator http://localhost:5173/mcp --header "Au
 ```
 
 Set `MCP_RESOURCE=http://localhost:5173/mcp` in `.env`, and switch a conference on
-(`team/ai-access` as `dev-team-pm`). Tokens last an hour.
+(`team/ai-access` as `dev-team-pm`). Tokens last an hour. Start the dev server with `DEV_HTTP=1`
+(`DEV_HTTP=1 bun run dev`): it serves HTTPS with a self-signed certificate otherwise
+(`vite.config.ts`), which MCP clients refuse.

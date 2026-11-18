@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client';
-	import { m } from '#lib/paraglide/messages';
 	import ConferenceHeader from '#lib/components/dashboard/ConferenceHeader.svelte';
-	import AnnouncementContent from '#lib/components/dashboard/AnnouncementContent.svelte';
+	import AnnouncementFeed from '#lib/components/announcement/AnnouncementFeed.svelte';
 	import SurveySection from '#lib/components/dashboard/SurveySection.svelte';
 	import type { Snippet } from 'svelte';
 
@@ -10,15 +9,13 @@
 		conferenceId: string;
 		/** Left out for a visitor who is not signed in */
 		userId?: string;
-		/** Team members never see the participant announcement. */
-		isTeamMember: boolean;
 		/** Surveys are only for people who hold a role at the conference. */
 		hasAssignedRole: boolean;
 		/** Shown right under the header, before everything else: the caller's quick links. */
 		afterHeader?: Snippet;
 	}
 
-	let { conferenceId, userId, isTeamMember, hasAssignedRole, afterHeader }: Props = $props();
+	let { conferenceId, userId, hasAssignedRole, afterHeader }: Props = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
@@ -31,8 +28,6 @@
 			endConference: true,
 			emblemFile: { url: true },
 			logoFile: { url: true },
-			info: true,
-			showInfoExpanded: true,
 			timezone: true
 		})
 	);
@@ -48,13 +43,9 @@
 	logoUrl={conference.logoFile?.url}
 />
 {@render afterHeader?.()}
-{#if conference.info && !isTeamMember}
-	<AnnouncementContent
-		info={conference.info}
-		title={m.announcementSectionTitle()}
-		description={m.announcementSectionDescription()}
-		showExpanded={conference.showInfoExpanded}
-	/>
+{#if userId}
+	<!-- what is out for the caller's part in the conference, the team's included -->
+	<AnnouncementFeed {conferenceId} limit={3} />
 {/if}
 {#if userId && hasAssignedRole && (conference.state === 'PREPARATION' || conference.state === 'ACTIVE')}
 	<SurveySection {conferenceId} {userId} conferenceTimezone={conference.timezone} />

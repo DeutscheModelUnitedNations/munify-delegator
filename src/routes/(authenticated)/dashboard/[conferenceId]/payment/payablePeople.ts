@@ -16,7 +16,7 @@ const studentSelection = {
 /**
  * Whether the caller has paid, and everyone they may pay for in a conference, and how: their
  * delegation's members; as a supervisor, their students; and the supervisors sharing a student with
- * them, so one transfer can name the ones it covers. Not every supervisor of the conference: the caller may list those, but
+ * them (those attending in person), so one transfer can name the ones it covers. Not every supervisor of the conference: the caller may list those, but
  * may only read the `user` of the ones they share a participant with, and a non-nullable `user`
  * that comes back null fails the whole query.
  *
@@ -58,6 +58,7 @@ export async function fetchPayablePeople(conferenceId: string) {
 					}
 				},
 				id: true,
+				plansOwnAttendenceAtConference: true,
 				user: payableUser,
 				supervisedDelegationMembers: { id: true },
 				supervisedSingleParticipants: { id: true }

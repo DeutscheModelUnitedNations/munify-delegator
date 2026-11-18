@@ -16,12 +16,21 @@
 		(user?.email?.[0] ?? '?').toUpperCase();
 
 	let logoutUrl = $state<string>();
+	/** Whether the caller is on a conference's team, which is who has notifications to set up. */
+	let onTeam = $state(false);
 
 	$effect(() => {
 		if (!user) return;
 		void client.query.logoutUrl().then((url) => {
 			logoutUrl = String(url);
 		});
+		void client.query
+			.myNotificationSettings({ conferenceId: true })
+			.then((conferences) => {
+				onTeam = conferences.length > 0;
+			})
+			// an impersonated or expired session: the entry just stays away
+			.catch(() => undefined);
 	});
 </script>
 
@@ -72,6 +81,14 @@
 						{m.dashboard()}
 					</a>
 				</li>
+				{#if onTeam}
+					<li>
+						<a href={resolve('my-account/notifications')} data-testid="user-menu-notifications">
+							<i aria-hidden="true" class="ph-duotone ph-bell w-4"></i>
+							{m.notifications()}
+						</a>
+					</li>
+				{/if}
 				{#if PUBLIC_FEEDBACK_URL}
 					<li>
 						<a href={PUBLIC_FEEDBACK_URL} target="_blank" rel="external">

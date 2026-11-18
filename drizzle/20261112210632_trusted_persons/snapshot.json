@@ -1,0 +1,314 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "74924de9-7956-4e3a-a2e9-678eaaab27cd",
+  "prevIds": [
+    "ce1d4498-f59f-4d34-aba0-bc961fe6f619"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "chat_inbox"
+      ],
+      "writes": [
+        "s|enum|public.chat_inbox"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "team_function_kind"
+      ],
+      "writes": [
+        "s|enum|public.team_function_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "chat",
+        "trusted_user_id"
+      ],
+      "writes": [
+        "s|col|public.chat.trusted_user_id",
+        "n|col|public.chat.trusted_user_id",
+        "e|col|public.chat.trusted_user_id"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "team_function",
+        "committee_id"
+      ],
+      "writes": [
+        "s|colprop|public.team_function.committee_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.team_function.committee_id"
+      ],
+      "sqlHash": "abc38da70283ab6c"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_team_trusted_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_team_trusted_key",
+        "n|idx|public.chat_team_trusted_key",
+        "e|idx|public.chat_team_trusted_key",
+        "n|rel|public.chat_team_trusted_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.participant_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_team_trusted_person_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_team_trusted_person_key",
+        "n|idx|public.chat_team_trusted_person_key",
+        "e|idx|public.chat_team_trusted_person_key",
+        "n|rel|public.chat_team_trusted_person_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.participant_id",
+        "n|col|public.chat.trusted_user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "team_function",
+        "team_function_team_member_id_kind_key"
+      ],
+      "writes": [
+        "s|idx|public.team_function_team_member_id_kind_key",
+        "n|idx|public.team_function_team_member_id_kind_key",
+        "e|idx|public.team_function_team_member_id_kind_key",
+        "n|rel|public.team_function_team_member_id_kind_key"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.team_function.team_member_id",
+        "n|col|public.team_function.kind"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "chat"
+      ],
+      "writes": [
+        "s|fk|public.chat.chat_trusted_user_id_user_id_fkey",
+        "n|fk|public.chat.chat_trusted_user_id_user_id_fkey",
+        "e|fk|public.chat.chat_trusted_user_id_user_id_fkey",
+        "n|con|public.chat.chat_trusted_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.chat.trusted_user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "trusted_user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_team_trusted_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "participant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"kind\" = 'TEAM' and \"inbox\" <> 'PARTICIPANT_CARE' and \"committee_id\" is null and \"trusted_user_id\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_team_trusted_person_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "participant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "trusted_user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"trusted_user_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "team_function",
+        "name": "team_function_team_member_id_kind_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "team_member_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "kind",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"committee_id\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_trusted_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "trusted_user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"chat_inbox\"]",
+      "set": {
+        "values": [
+          "PARTICIPANT_CARE",
+          "CHAIR",
+          "CONSULTANT",
+          "TRUSTED_PERSON"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"team_function_kind\"]",
+      "set": {
+        "values": [
+          "CHAIR",
+          "CONSULTANT",
+          "TRUSTED_PERSON"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"team_function\",\"committee_id\"]",
+      "set": {
+        "notNull": false
+      }
+    }
+  ]
+}

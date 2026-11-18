@@ -36,8 +36,14 @@ import { seedSeats } from './seats';
 import { seedAttendance } from './attendance';
 import { seedEmailPace } from './emailPace';
 import { seedMcp } from './mcp';
+import { seedMessages } from './messages';
+import { seedNotifications } from './notifications';
+import { seedAnnouncements } from './announcements';
 import { seedLateSupervisor } from './lateSupervisor';
+import { seedMakeSupervisor } from './makeSupervisor';
 import { seedSchools } from './schools';
+import { seedConferencePapers } from './conferencePapers';
+import { seedWorkingPapers } from './workingPapers';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -75,6 +81,8 @@ export const E2E_PREP_NATION_ALPHA2 = 'ES';
 export const E2E_PREP_COMMITTEE_ID = 'e2e00000committee00000002';
 export const E2E_PREP_DELEGATION_ID = 'e2e00000delegation00000005';
 export const E2E_PREP_PARTICIPANT_USER_ID = 'e2e-prep-participant';
+// Their co-delegate, whose email address the participant's dashboard lists.
+export const E2E_PREP_CODELEGATE_USER_ID = 'e2e-prep-codelegate';
 
 // A third conference past registration whose assignment is NOT released: its participant holds a
 // nation and a committee the API must not show them yet. Only the release spec flips the flag, and
@@ -639,6 +647,13 @@ export default async function seed() {
 		.values(draftPaperVersion)
 		.onConflictDoUpdate({ target: schema.paperVersion.id, set: draftPaperVersion });
 
+	// --- working paper fixtures: drafts for working-paper.spec.ts to open in the resolution editor ---
+	await seedWorkingPapers(db, {
+		authorParticipantId: paperDelegationMember.conferenceParticipantId,
+		delegationId: paperDelegation.id,
+		agendaItemId: E2E_AGENDA_ITEM_ID
+	});
+
 	// --- second conference, already in PREPARATION, with one assigned participant ---
 	const prepConference = {
 		...makeSeedConference({ state: 'PREPARATION' }),
@@ -692,6 +707,24 @@ export default async function seed() {
 		.insert(schema.delegationMember)
 		.values(prepMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: prepMember });
+	await upsertActorUser(E2E_PREP_CODELEGATE_USER_ID);
+	const prepCodelegate = {
+		...makeSeedDelegationMember({
+			delegationId: prepDelegation.id,
+			conferenceParticipantId: await upsertParticipant(
+				db,
+				prepConference.id,
+				E2E_PREP_CODELEGATE_USER_ID
+			),
+			isHeadDelegate: false,
+			assignedCommitteeId: null
+		}),
+		id: 'e2e00000delegationmember0013'
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(prepCodelegate)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: prepCodelegate });
 
 	const supervisedElsewhere = {
 		...makeSeedSingleParticipant({
@@ -1017,7 +1050,12 @@ export default async function seed() {
 	await seedAttendance(db);
 	await seedEmailPace(db);
 	await seedLateSupervisor(db);
+	await seedMakeSupervisor(db);
 	await seedMcp(db);
+	await seedMessages(db);
+	await seedNotifications(db);
+	await seedAnnouncements(db);
+	await seedConferencePapers(db);
 	await seedSchools(db, { otherConferenceId: E2E_PREP_CONFERENCE_ID });
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);

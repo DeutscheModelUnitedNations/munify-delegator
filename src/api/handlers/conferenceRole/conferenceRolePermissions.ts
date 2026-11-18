@@ -5,11 +5,12 @@ import {
 	isTeamMemberOfConference,
 	linkedChase,
 	MIRRORED_CONFERENCE,
-	readableConference,
+	readableConferenceRows,
 	SEAT_PLANNING_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere, assertAllowed } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
@@ -32,20 +33,18 @@ export function registerConferenceRoleAbilities() {
 
 	// Everybody who may read the conference (`readableConference`) reads its roles: they are part
 	// of its seat overview. The nations they stand for are global reference data and public.
-	abilityBuilder.conferenceRole
-		.allow('read')
-		.when((ctx) => ({ where: { conference: readableConference(ctx) } }));
+	abilityBuilder.conferenceRole.allow('read').when(liveWhere(readableConferenceRows));
 	abilityBuilder.conferenceRole.allow(['update', 'delete']).when(systemAdmin);
 
 	// Seat planning (project management and content lead) updates and deletes the non-state actors
 	// and custom roles (the press, …) of its conference. Nation roles follow the committee seats
 	// (`setCommitteeNationSeat`) and are not edited directly.
-	abilityBuilder.conferenceRole.allow(['update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES });
-		return grantWhere(
-			team && { ...team, kind: { in: ['NON_STATE_ACTOR' as const, 'CUSTOM' as const] } }
-		);
-	});
+	abilityBuilder.conferenceRole.allow(['update', 'delete']).when(
+		liveWhere((args) => {
+			const team = isTeamMemberOfConference({ ...args, roles: SEAT_PLANNING_ROLES });
+			return team && { ...team, kind: { in: ['NON_STATE_ACTOR' as const, 'CUSTOM' as const] } };
+		})
+	);
 }
 
 /** The kinds of role the seat planning creates, edits and deletes directly. */

@@ -33,6 +33,19 @@ export function seatedRoles({
 	return [...nations, ...nsas].map((role) => ({ key: targetKey(role.target) ?? '', ...role }));
 }
 
+/** Every seat of a conference: its nations and non-state actors, and its custom roles. */
+export function conferenceCapacity({
+	committees,
+	nonStateActors,
+	customRoles
+}: Parameters<typeof seatedRoles>[0] & {
+	customRoles: readonly { seatAmount?: number | null }[];
+}) {
+	const roleSeats = seatedRoles({ committees, nonStateActors }).map((role) => role.seats);
+	const customSeats = customRoles.map((role) => role.seatAmount ?? 0);
+	return [...roleSeats, ...customSeats].reduce((total, seats) => total + seats, 0);
+}
+
 /** Seats per role key. */
 export function seatsByKey(roles: readonly SeatedRole[]) {
 	return new Map(roles.map((role) => [role.key, role.seats]));

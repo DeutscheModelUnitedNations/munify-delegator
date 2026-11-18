@@ -102,8 +102,7 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 1 · Pre',
 			longTitle: 'Seed-Konferenz in Planung',
-			state: 'PRE',
-			info: 'Die Bewerbung öffnet bald. Diese Ankündigung ist eingeklappt.'
+			state: 'PRE'
 		},
 		days: { applicationDeadline: 60, startConference: 120, endConference: 123 },
 		assigned: false,
@@ -166,13 +165,12 @@ export const conferencePlans: ConferencePlan[] = [
 			'PREPARATION: payments, postal and papers unlocked; surveys, invitations, waiting list (vacancies), email log',
 		conference: {
 			title: 'Seed 5 · Preparation',
+			messagingEnabled: true,
 			longTitle: 'Seed-Konferenz in der Vorbereitung',
 			state: 'PREPARATION',
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: true,
-			info: 'Willkommen! Bitte erledigt Zahlung und Postanmeldung bis Monatsende. Diese Ankündigung ist ausgeklappt.',
-			showInfoExpanded: true,
 			showCalendar: false,
 			linkToPaperInbox: 'https://example.org/paper-inbox',
 			linkToTeamWiki: 'https://example.org/team-wiki',
@@ -199,14 +197,14 @@ export const conferencePlans: ConferencePlan[] = [
 			'PREPARATION: nothing unlocked, assignment not released, no fee, no templates, no papers; waiting list is long',
 		conference: {
 			title: 'Seed 6 · Preparation, locked',
+			messagingEnabled: true,
 			longTitle: 'Seed-Konferenz in der Vorbereitung ohne Freischaltungen',
 			state: 'PREPARATION',
 			// Seats are handed out, but participants are still waiting for the release.
 			assignmentReleased: false,
 			assignmentReleasedAt: null,
 			feeAmount: null,
-			linkToPreparationGuide: null,
-			info: null
+			linkToPreparationGuide: null
 		},
 		days: { applicationDeadline: -20, startConference: 28, endConference: 31 },
 		assigned: true,
@@ -228,13 +226,13 @@ export const conferencePlans: ConferencePlan[] = [
 		summary: 'ACTIVE: started yesterday; calendar, attendance, surveys, registration mode',
 		conference: {
 			title: 'Seed 7 · Active',
+			messagingEnabled: true,
 			longTitle: 'Seed-Konferenz, die gerade läuft',
 			state: 'ACTIVE',
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: true,
-			showCalendar: true,
-			info: 'Die Konferenz läuft! Raumänderungen stehen im Kalender.'
+			showCalendar: true
 		},
 		days: { applicationDeadline: -60, startConference: -1, endConference: 2 },
 		assigned: true,

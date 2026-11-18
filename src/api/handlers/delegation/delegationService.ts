@@ -13,7 +13,9 @@ import {
 import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
 import {
 	assertApplicationReady,
-	assertRegistrationOpen
+	assertNoApplicationBlockers,
+	assertRegistrationOpen,
+	delegationApplicationPeople
 } from '#api/services/registration/applicationReadiness';
 import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
@@ -122,6 +124,19 @@ export async function createDelegationWithHead({
 	return created.id;
 }
 
+/**
+ * What applying, withdrawing and handing over the head delegate read of a delegation the caller
+ * may update (`UpdatableDelegation`).
+ */
+type DelegationToUpdate = Pick<UpdatableDelegation, 'id' | 'experience' | 'motivation'> & {
+	appliedForRoles: unknown[];
+	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[];
+	conference: Pick<
+		UpdatableDelegation['conference'],
+		'state' | 'applicationDeadline' | 'registrationDeadlineGracePeriodMinutes'
+	>;
+};
+
 type DelegationDetailArgs = {
 	id: string;
 	applied?: boolean | null;
@@ -131,27 +146,35 @@ type DelegationDetailArgs = {
 	motivation?: string | null;
 };
 
-/** Applies or withdraws the delegation's application; applying needs a complete one. */
+/**
+ * Applies or withdraws the delegation's application; applying needs a complete one, and members
+ * the plausibility checks find nothing about (`assertNoApplicationBlockers`) - unless participant
+ * care sends it (`byParticipantCare`), who may override them.
+ */
 async function setApplied({
 	tx,
 	delegation,
 	args,
 	applied,
-	withdrawAnyTime
+	byParticipantCare
 }: {
 	tx: Transaction;
-	delegation: UpdatableDelegation;
+	delegation: DelegationToUpdate;
 	args: DelegationDetailArgs;
 	applied: boolean;
-	withdrawAnyTime: boolean;
+	byParticipantCare: boolean;
 }) {
 	// Drop applications the delegation has outgrown before judging whether it may apply.
 	await tidyRoleApplications({ delegationId: delegation.id, tx });
 
 	// Taking an application back reopens it for changes, which for applicants only makes sense while
 	// the conference takes registrations; afterwards the assignment works with what was sent.
-	// Participant care may take one back at any stage (`withdrawAnyTime`), as for single participants.
-	if (!applied && !withdrawAnyTime && delegation.conference.state !== 'PARTICIPANT_REGISTRATION') {
+	// Participant care may take one back at any stage (`byParticipantCare`), as for single participants.
+	if (
+		!applied &&
+		!byParticipantCare &&
+		delegation.conference.state !== 'PARTICIPANT_REGISTRATION'
+	) {
 		throw apiError({ code: 'CONFLICT', message: m.applicationTimeframeClosed() });
 	}
 
@@ -164,6 +187,12 @@ async function setApplied({
 			edits: args,
 			minRoleApplications: MIN_ROLE_APPLICATIONS.delegation
 		});
+		// participant care may send it anyway: the team overrides the plausibility checks
+		if (!byParticipantCare) {
+			assertNoApplicationBlockers(
+				await delegationApplicationPeople({ delegationId: delegation.id, reader: tx })
+			);
+		}
 	}
 
 	await tx
@@ -175,23 +204,23 @@ async function setApplied({
 /**
  * Applies the changes of `updateDelegation` to a delegation the caller may update
  * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
- * leaves the delegation as it was. `withdrawAnyTime` (`mayWithdrawAnyTime`) lifts the
- * registration period from withdrawing.
+ * leaves the delegation as it was. `byParticipantCare` (`byParticipantCareOf`) lifts the
+ * registration period from withdrawing and the plausibility checks from applying.
  */
 export async function updateDelegationDetails({
 	delegation,
 	args,
-	withdrawAnyTime
+	byParticipantCare
 }: {
-	delegation: UpdatableDelegation;
+	delegation: DelegationToUpdate;
 	args: DelegationDetailArgs;
-	withdrawAnyTime: boolean;
+	byParticipantCare: boolean;
 }) {
 	const changes = delegationColumnChanges({ args, newEntryCode: makeEntryCode });
 	const newHeadDelegateUserId = args.newHeadDelegateUserId;
 	const changedMemberIds = await db.transaction(async (tx) => {
 		if (typeof args.applied === 'boolean')
-			await setApplied({ tx, delegation, args, applied: args.applied, withdrawAnyTime });
+			await setApplied({ tx, delegation, args, applied: args.applied, byParticipantCare });
 
 		if (Object.keys(changes).length > 0) {
 			await tx

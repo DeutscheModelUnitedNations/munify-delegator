@@ -8,6 +8,8 @@ import {
 	SURVEY_REMINDER_DAYS,
 	type EmailGroupId
 } from '#lib/helpers/emailKinds';
+import { UNREAD_MESSAGE_MAIL_MINUTES } from '#lib/helpers/chat';
+import { ANNOUNCEMENT_MAIL_HOURS } from '#lib/helpers/announcements';
 
 /** What the e-mail page says about each automatic mail: when it goes, to whom, with what. */
 export interface EmailKindTexts {
@@ -18,6 +20,48 @@ export interface EmailKindTexts {
 }
 
 const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
+	DELEGATION_CREATED: () => ({
+		title: m.emailKindDelegationCreatedTitle(),
+		trigger: m.emailKindDelegationCreatedTrigger(),
+		recipients: m.emailKindDelegationCreatedRecipients(),
+		content: m.emailKindDelegationCreatedContent()
+	}),
+	DELEGATION_JOINED: () => ({
+		title: m.emailKindDelegationJoinedTitle(),
+		trigger: m.emailKindDelegationJoinedTrigger(),
+		recipients: m.emailKindDelegationJoinedRecipients(),
+		content: m.emailKindDelegationJoinedContent()
+	}),
+	DELEGATION_MEMBER_JOINED: () => ({
+		title: m.emailKindMemberJoinedTitle(),
+		trigger: m.emailKindMemberJoinedTrigger(),
+		recipients: m.emailKindMemberJoinedRecipients(),
+		content: m.emailKindMemberJoinedContent()
+	}),
+	APPLICATION_SENT: () => ({
+		title: m.emailKindApplicationSentTitle(),
+		trigger: m.emailKindApplicationSentTrigger(),
+		recipients: m.emailKindApplicationSentRecipients(),
+		content: m.emailKindApplicationSentContent()
+	}),
+	WAITING_LIST_REGISTERED: () => ({
+		title: m.emailKindWaitingListRegisteredTitle(),
+		trigger: m.emailKindWaitingListRegisteredTrigger(),
+		recipients: m.emailKindWaitingListRegisteredRecipients(),
+		content: m.emailKindWaitingListRegisteredContent()
+	}),
+	SUPERVISOR_CONNECTED: () => ({
+		title: m.emailKindSupervisorConnectedTitle(),
+		trigger: m.emailKindSupervisorConnectedTrigger(),
+		recipients: m.emailKindSupervisorConnectedRecipients(),
+		content: m.emailKindSupervisorConnectedContent()
+	}),
+	SURVEY_PUBLISHED: () => ({
+		title: m.emailKindSurveyPublishedTitle(),
+		trigger: m.emailKindSurveyPublishedTrigger(),
+		recipients: m.emailKindSurveyPublishedRecipients(),
+		content: m.emailKindSurveyPublishedContent()
+	}),
 	ASSIGNMENT_ACCEPTED: () => ({
 		title: m.emailKindAcceptedTitle(),
 		trigger: m.emailKindAcceptedTrigger(),
@@ -132,6 +176,24 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		recipients: m.emailKindTeamWelcomeRecipients(),
 		content: m.emailKindTeamWelcomeContent()
 	}),
+	UNREAD_MESSAGES: () => ({
+		title: m.emailKindUnreadMessagesTitle(),
+		trigger: m.emailKindUnreadMessagesTrigger({ minutes: UNREAD_MESSAGE_MAIL_MINUTES }),
+		recipients: m.emailKindUnreadMessagesRecipients(),
+		content: m.emailKindUnreadMessagesContent()
+	}),
+	CHAT_REPORTED: () => ({
+		title: m.emailKindChatReportedTitle(),
+		trigger: m.emailKindChatReportedTrigger(),
+		recipients: m.emailKindChatReportedRecipients(),
+		content: m.emailKindChatReportedContent()
+	}),
+	ANNOUNCEMENT: () => ({
+		title: m.emailKindAnnouncementTitle(),
+		trigger: m.emailKindAnnouncementTrigger({ hours: ANNOUNCEMENT_MAIL_HOURS }),
+		recipients: m.emailKindAnnouncementRecipients(),
+		content: m.emailKindAnnouncementContent()
+	}),
 	BADGE_FOUND: () => ({
 		title: m.emailKindBadgeFoundTitle(),
 		trigger: m.emailKindBadgeFoundTrigger(),
@@ -143,6 +205,8 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 export const emailKindTexts = (kind: EmailkindEnum): EmailKindTexts => TEXTS[kind]();
 
 export const emailGroupTitle: Record<EmailGroupId, () => string> = {
+	registration: () => m.emailGroupRegistration(),
+	surveys: () => m.emailGroupSurveys(),
 	assignment: () => m.emailGroupAssignment(),
 	waitingList: () => m.emailGroupWaitingList(),
 	unlocked: () => m.emailGroupUnlocked(),
@@ -150,6 +214,8 @@ export const emailGroupTitle: Record<EmailGroupId, () => string> = {
 	reminders: () => m.emailGroupReminders(),
 	papers: () => m.emailGroupPapers(),
 	onSite: () => m.emailGroupOnSite(),
+	messages: () => m.emailGroupMessages(),
+	announcements: () => m.emailGroupAnnouncements(),
 	certificate: () => m.emailGroupCertificate(),
 	supervisors: () => m.emailGroupSupervisors(),
 	team: () => m.emailGroupTeam()

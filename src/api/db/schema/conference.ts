@@ -50,7 +50,6 @@ export const conference = snakeCase.table('conference', {
 	startConference: timestamp({ precision: 3 }).notNull(),
 	state: conferenceState().default('PRE').notNull(),
 	imageFileId: fileRef(),
-	info: text(),
 	linkToPreparationGuide: text(),
 	bankAccountHolder: text(),
 	bankName: text(),
@@ -80,7 +79,6 @@ export const conference = snakeCase.table('conference', {
 	registrationDeadlineGracePeriodMinutes: integer().default(30).notNull(),
 	isOpenPaperSubmission: boolean().default(false).notNull(),
 	emblemFileId: fileRef(),
-	showInfoExpanded: boolean().default(false).notNull(),
 	linkToServicesPage: text(),
 	linkToTeamWiki: text(),
 	logoFileId: fileRef(),
@@ -103,6 +101,11 @@ export const conference = snakeCase.table('conference', {
 	 */
 	maxGuaranteedSeatsPerForeignSchool: integer().default(12),
 	/**
+	 * Which share (in percent) of all the conference's seats the Auslandsschulen together may be
+	 * given as guaranteed seats; the assignment warns beyond it. Empty means no limit.
+	 */
+	maxForeignGuaranteedSeatsPercent: integer().default(20),
+	/**
 	 * The age range on the first conference day (`#lib/helpers/plausibilityRules`): participants
 	 * from `participantMinAge` to `participantMaxAge`, supervisors from `supervisorMinAge`. Outside it the entry flows warn and the plausibility page lists people;
 	 * nothing is refused. Empty switches that limit off.
@@ -116,5 +119,10 @@ export const conference = snakeCase.table('conference', {
 	 * Whether the team may reach the conference through AI assistants (the MCP server,
 	 * `src/api/mcp/`). Project management switches it on; off, no assistant sees anything of it.
 	 */
-	mcpEnabled: boolean().default(false).notNull()
+	mcpEnabled: boolean().default(false).notNull(),
+	/**
+	 * Whether the people of the conference can write each other inside the app (`chat`). Off, the
+	 * chats there are stay readable and nothing new is written.
+	 */
+	messagingEnabled: boolean().default(false).notNull()
 });

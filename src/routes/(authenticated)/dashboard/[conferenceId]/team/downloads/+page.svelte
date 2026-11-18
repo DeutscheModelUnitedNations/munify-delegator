@@ -3,6 +3,7 @@
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';
+	import CheckInTableBadges from './CheckInTableBadges.svelte';
 	import CommitteeMembers from './CommitteeMembers.svelte';
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 	import CsvSettingsPanel from './CsvSettingsPanel.svelte';
@@ -30,6 +31,14 @@
 	>
 		<BadgeData conferenceId={params.conferenceId} />
 		<NsaCards conferenceId={params.conferenceId} />
+	</DownloadCategoryCard>
+
+	<DownloadCategoryCard
+		title={m.badgeTablesTitle()}
+		description={m.badgeTablesDescription()}
+		icon="ph-fill ph-stack"
+	>
+		<CheckInTableBadges conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard

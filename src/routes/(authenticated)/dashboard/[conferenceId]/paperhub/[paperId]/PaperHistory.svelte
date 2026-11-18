@@ -12,7 +12,7 @@
 		VersionForComparison,
 		DiffStats
 	} from '#lib/components/paper/editor/diffViewer/index';
-	import { translatePaperStatus } from '#lib/utils/enumTranslations';
+	import { reviewSignature, translatePaperStatus } from '#lib/utils/enumTranslations';
 	import { getPaperStatusIcon } from '#lib/utils/enumIcons';
 	import { getStatusBadgeClass } from '../paperStatusHelpers';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -41,6 +41,9 @@
 					createdAt: true,
 					statusBefore: true,
 					statusAfter: true,
+					anonymousAs: true,
+					anonymousName: true,
+					// none for the author of an anonymous review
 					reviewer: { id: true, givenName: true, familyName: true }
 				}
 			}
@@ -161,10 +164,30 @@
 	<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
 		<div class="flex items-center gap-2">
 			<i aria-hidden="true" class="ph-duotone ph-pencil-simple-line text-base-content/50"></i>
-			<span class="font-semibold">
-				{review.reviewer.givenName}
-				{review.reviewer.familyName}
-			</span>
+			{#if review.reviewer}
+				<span class="font-semibold">
+					{review.reviewer.givenName}
+					{review.reviewer.familyName}
+				</span>
+				{#if review.anonymousAs}
+					<span class="badge badge-ghost badge-sm">
+						<i aria-hidden="true" class="ph-duotone ph-mask-happy"></i>
+						{m.reviewPublishedAs({
+							name: reviewSignature({
+								anonymousAs: review.anonymousAs,
+								anonymousName: review.anonymousName
+							})
+						})}
+					</span>
+				{/if}
+			{:else if review.anonymousAs}
+				<span class="font-semibold"
+					>{reviewSignature({
+						anonymousAs: review.anonymousAs,
+						anonymousName: review.anonymousName
+					})}</span
+				>
+			{/if}
 		</div>
 		{#if review.statusBefore && review.statusAfter}
 			<div class="flex flex-wrap items-center gap-1">

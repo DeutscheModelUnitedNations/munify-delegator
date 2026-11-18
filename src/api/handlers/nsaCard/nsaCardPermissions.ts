@@ -18,7 +18,7 @@ export function assertCanIssueNsaCards({
  * The participant row a new card is printed for, when the caller manages the participants of its
  * conference (NOT_FOUND otherwise).
  */
-export function participantForNewCard({
+export async function participantForNewCard({
 	ctx,
 	conferenceParticipantId
 }: {
@@ -29,7 +29,7 @@ export function participantForNewCard({
 		.findFirst({
 			where: {
 				id: conferenceParticipantId,
-				conference: teamConference({ ctx, permission: 'manageParticipants' })
+				conference: await teamConference({ ctx, permission: 'manageParticipants' })
 			},
 			columns: { id: true, conferenceId: true }
 		})

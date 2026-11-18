@@ -82,18 +82,10 @@ export const teamRoutes: readonly TeamRoute[] = [
 			'konfiguration',
 			'configuration',
 			'konferenz',
-			'conference',
-			'e-mails',
-			'emails',
-			'mails',
-			'automatisch',
-			'automatic',
-			'benachrichtigung',
-			'notification'
+			'conference'
 		],
 		// Everyone who can change something in there: the settings (project management), the
-		// content (+ participant care, content lead), the committees (+ content lead) and the
-		// automatic mails (participant care).
+		// content (+ participant care, content lead) and the committees (+ content lead).
 		roles: CONFERENCE_CONTENT_ROLES
 	},
 	{
@@ -260,7 +252,29 @@ export const teamRoutes: readonly TeamRoute[] = [
 		group: 'info',
 		category: 'communication',
 		keywords: ['ankündigungen', 'announcements', 'nachrichten', 'messages', 'mitteilungen'],
-		roles: PARTICIPANT_CARE_ROLES
+		roles: CONFERENCE_CONTENT_ROLES
+	},
+	{
+		id: 'messages',
+		skeleton: TEAM_SKELETONS.messages,
+		path: teamPath('messages'),
+		title: () => m.chatMessages(),
+		description: () => m.chatTeamPageDescription(),
+		icon: 'ph-chats-circle',
+		group: 'info',
+		category: 'communication',
+		keywords: [
+			'nachrichten',
+			'messages',
+			'chat',
+			'chats',
+			'postfach',
+			'inbox',
+			'meldungen',
+			'reports'
+		]
+		// Any team role: the page shows the inboxes the caller answers, which follow committee
+		// functions as much as team roles.
 	},
 	{
 		id: 'calendar',
@@ -282,6 +296,33 @@ export const teamRoutes: readonly TeamRoute[] = [
 		group: 'info',
 		category: 'communication',
 		keywords: ['umfrage', 'survey', 'abstimmung', 'poll', 'fragebogen'],
+		roles: PARTICIPANT_CARE_ROLES
+	},
+	{
+		id: 'emails',
+		skeleton: TEAM_SKELETONS.emails,
+		path: teamPath('emails'),
+		title: () => m.emailSettingsTab(),
+		icon: 'ph-envelope',
+		group: 'info',
+		category: 'communication',
+		keywords: [
+			'e-mails',
+			'emails',
+			'mails',
+			'automatisch',
+			'automatic',
+			'benachrichtigung',
+			'benachrichtigungen',
+			'notification',
+			'versand',
+			'sending',
+			'protokoll',
+			'log',
+			'fußzeile',
+			'footer'
+		],
+		// the switches, texts and pace of the automatic mails (`canManageEmails`)
 		roles: PARTICIPANT_CARE_ROLES
 	},
 	{

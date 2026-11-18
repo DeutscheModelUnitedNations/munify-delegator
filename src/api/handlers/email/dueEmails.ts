@@ -10,6 +10,7 @@ import {
 	type AlwaysSentKind
 } from '#lib/helpers/emailKinds';
 import { chaseRoleOf } from '#lib/helpers/chaseLinks';
+import { UNREAD_MESSAGE_MAIL_MINUTES } from '#lib/helpers/chat';
 
 /**
  * Which automatic mails a conference owes whom, decided from its current state alone. Every mail
@@ -50,6 +51,12 @@ export interface SnapshotPerson {
 	mediaConsent: Status;
 	didAttend: boolean;
 	delegation: {
+		id: string;
+		/** What others join the delegation with, while it is put together. */
+		entryCode: string;
+		isHeadDelegate: boolean;
+		/** When the person joined the delegation (their membership's creation). */
+		joinedAt: Date;
 		applied: boolean;
 		role: SnapshotRole | null;
 		/** The committee's abbreviation. */
@@ -59,6 +66,8 @@ export interface SnapshotPerson {
 	single: { applied: boolean; role: SnapshotRole | null } | null;
 	/** The people (participant ids) a supervisor supervises. */
 	supervisor: { plansOwnAttendance: boolean; studentIds: string[] } | null;
+	/** The people (participant ids) who supervise this person. */
+	supervisorIds: string[];
 	/** The waiting list entry the person was given their seat from. */
 	seatedFromWaitingList: { entryId: string } | null;
 }
@@ -72,7 +81,11 @@ export interface SnapshotReview {
 	paperType: (typeof schema.paperType.enumValues)[number];
 	/** Committee and agenda item (`GV: Climate`), for a paper that belongs to one. */
 	agendaItem: string | null;
+	/** Who wrote it; none for a review published under a team name (`anonymousAs`). */
 	reviewer: { name: string; email: string } | null;
+	anonymousAs: (typeof schema.paperReviewAnonymousAs.enumValues)[number] | null;
+	/** The name typed for `anonymousAs: CUSTOM`. */
+	anonymousName: string | null;
 	statusAfter: (typeof schema.paperStatus.enumValues)[number] | null;
 }
 
@@ -85,6 +98,12 @@ export interface SnapshotTeamMember {
 	inviterName: string | null;
 }
 
+/** Someone waiting for a seat; they have no participant row yet. */
+export interface SnapshotWaitingEntry {
+	id: string;
+	user: SnapshotUser;
+}
+
 /** A published survey, owed an answer by everybody holding a seat. */
 export interface SnapshotSurvey {
 	id: string;
@@ -92,6 +111,39 @@ export interface SnapshotSurvey {
 	deadline: Date;
 	/** The participants who answered it. */
 	answeredBy: string[];
+}
+
+/** The oldest chat message somebody has not read (`#api/handlers/chat`). */
+export interface SnapshotUnreadMessage {
+	messageId: string;
+	writtenAt: Date;
+	/** Who has not read it: a participant, or a team member answering the chat's inbox. */
+	reader: { participantId: string } | { teamMemberId: string };
+}
+
+/** A report of a chat that is still open, for a member of participant care who wants the mail. */
+export interface SnapshotOpenReport {
+	reportId: string;
+	teamMemberId: string;
+}
+
+/** An announcement as its mail carries it (`#api/handlers/announcement`). */
+export interface SnapshotAnnouncement {
+	id: string;
+	title: string;
+	/** Markdown. */
+	body: string;
+	signature: string | null;
+	/** Counts the "notify again"s, each of which mails once more. */
+	mailRevision: number;
+	/** The files it comes with, which the mail names and the dashboard offers. */
+	attachmentNames: string[];
+}
+
+/** An announcement owed to somebody in its audience by mail. */
+export interface SnapshotAnnouncementMail {
+	announcement: SnapshotAnnouncement;
+	recipient: SnapshotUser;
 }
 
 export interface EmailSnapshot {
@@ -110,11 +162,28 @@ export interface EmailSnapshot {
 		certificateAvailable: boolean;
 		/** The linked MUNify CHASE's address; `null` while no instance is linked. */
 		chaseUrl: string | null;
+		/** Whether the chats are switched on, which the unread-messages mail needs. */
+		messagingEnabled: boolean;
 	};
+	/** The people the mails are worked out for. */
 	people: SnapshotPerson[];
+	/**
+	 * People the rules read about but owe nothing here: the co-members, supervisors and students
+	 * of `people` outside them, when the snapshot is a page (`emailSnapshot.ts`), as far as the
+	 * kinds asked for read them. Read slim: no rule asks about a neighbour's own links.
+	 */
+	neighbours: SnapshotPerson[];
 	team: SnapshotTeamMember[];
 	reviews: SnapshotReview[];
 	surveys: SnapshotSurvey[];
+	/** Per reader who wants the mail, the oldest message they have not read; none while messaging is off. */
+	unreadMessages: SnapshotUnreadMessage[];
+	/** Per member of participant care who wants the mail, the reports nobody settled yet. */
+	openReports: SnapshotOpenReport[];
+	/** The waiting list entries not given a seat yet. */
+	waitingList: SnapshotWaitingEntry[];
+	/** The announcements that notify by mail and are fresh, per person of their audience. */
+	announcementMails: SnapshotAnnouncementMail[];
 }
 
 export type PaperworkField =
@@ -133,12 +202,20 @@ export interface DueEmail {
 	students?: SnapshotPerson[];
 	/** For a supervisor: the student who was linked. */
 	student?: SnapshotPerson;
+	/** For a student: the supervisor who was linked. */
+	supervisor?: SnapshotPerson;
+	/** For the members of a delegation: who joined it. */
+	member?: SnapshotPerson;
+	/** For a confirmation of the waiting list: the entry. */
+	waitingListEntry?: SnapshotWaitingEntry;
 	/** For a problem with the paperwork: which part. */
 	field?: PaperworkField;
 	/** For a review: the review. */
 	review?: SnapshotReview;
 	/** For a survey reminder: the survey. */
 	survey?: SnapshotSurvey;
+	/** For an announcement's mail: the announcement. */
+	announcement?: SnapshotAnnouncement;
 	/** For a reminder: the date it reminds of, which its window closes at (`reminderSpacing.ts`). */
 	remindsOf?: Date;
 }
@@ -162,15 +239,19 @@ const hasUnsentApplication = (person: SnapshotPerson) =>
 	(!!person.single && !person.single.applied);
 
 /** Within `days` days before `date`, the date itself excluded. */
-const inWindowBefore = ({ now, date, days }: { now: Date; date: Date; days: number }) =>
+export const inWindowBefore = ({ now, date, days }: { now: Date; date: Date; days: number }) =>
 	now.getTime() >= date.getTime() - days * DAY && now.getTime() < date.getTime();
 
 /** What the rules below ask about a person, worked out once per snapshot. */
 interface RuleContext {
 	conference: EmailSnapshot['conference'];
+	now: Date;
 	/** Whether a reminder for `date` is due: in its window, or any time before for one sent by hand. */
 	remindBefore: (args: { date: Date; days: number }) => boolean;
 	studentsOf: (person: SnapshotPerson) => SnapshotPerson[];
+	supervisorsOf: (person: SnapshotPerson) => SnapshotPerson[];
+	/** The members of a delegation, in the order they joined. */
+	membersOf: (delegationId: string) => SnapshotPerson[];
 	reviewsOf: (person: SnapshotPerson) => SnapshotReview[];
 	surveys: { survey: SnapshotSurvey; answeredBy: ReadonlySet<string> }[];
 	/** Holds a seat, or supervises someone who does and comes along. */
@@ -194,6 +275,7 @@ const email = ({
 }): DueEmail => ({ kind, recipient: person.user, person, subjectKey, ...extra });
 
 const paid = (person: SnapshotPerson) => person.paymentStatus === 'DONE';
+const joinedAt = (person: SnapshotPerson) => person.delegation?.joinedAt.getTime() ?? 0;
 
 function ruleContext({
 	snapshot,
@@ -204,11 +286,16 @@ function ruleContext({
 	now: Date;
 	anyTimeBefore: boolean;
 }): RuleContext {
-	const { conference, people, reviews, surveys } = snapshot;
-	const byParticipant = new Map(people.map((person) => [person.participantId, person]));
+	const { conference, reviews, surveys } = snapshot;
+	const everyone = [...snapshot.people, ...snapshot.neighbours];
+	const byParticipant = new Map(everyone.map((person) => [person.participantId, person]));
 	const reviewsByAuthor = Map.groupBy(reviews, (review) => review.authorParticipantId);
 	const studentsOf = (person: SnapshotPerson) =>
 		(person.supervisor?.studentIds ?? []).flatMap((id) => byParticipant.get(id) ?? []);
+	const membersByDelegation = Map.groupBy(
+		everyone.filter((person) => !!person.delegation),
+		(person) => person.delegation?.id
+	);
 	const ofAge = (person: SnapshotPerson) =>
 		ofAgeAtConference({
 			startConference: conference.startConference,
@@ -216,9 +303,13 @@ function ruleContext({
 		});
 	return {
 		conference,
+		now,
 		remindBefore: ({ date, days }) =>
 			inWindowBefore({ now, date, days: anyTimeBefore ? Infinity : days }),
 		studentsOf,
+		supervisorsOf: (person) => person.supervisorIds.flatMap((id) => byParticipant.get(id) ?? []),
+		membersOf: (delegationId) =>
+			(membersByDelegation.get(delegationId) ?? []).toSorted((a, b) => joinedAt(a) - joinedAt(b)),
 		reviewsOf: (person) => reviewsByAuthor.get(person.participantId) ?? [],
 		surveys: surveys.map((survey) => ({ survey, answeredBy: new Set(survey.answeredBy) })),
 		ofAge,
@@ -236,6 +327,57 @@ function ruleContext({
 			}) === 'DONE'
 	};
 }
+
+/**
+ * While a delegation is put together (registration open, not applied yet): the head delegate is
+ * told the entry code to pass on, everyone else that they joined, and each member who was there
+ * before about everyone joining after them. Delegations the assignment makes are applied from the
+ * start, so they never get these.
+ */
+const delegationRegistration: Rule = ({ conference, membersOf }, person) => {
+	const delegation = person.delegation;
+	if (conference.state !== 'PARTICIPANT_REGISTRATION' || !delegation || delegation.applied)
+		return [];
+	const own = email({
+		kind: delegation.isHeadDelegate ? 'DELEGATION_CREATED' : 'DELEGATION_JOINED',
+		person,
+		subjectKey: delegation.id
+	});
+	const joinedLater = membersOf(delegation.id).filter(
+		(member) => joinedAt(member) > delegation.joinedAt.getTime()
+	);
+	return [
+		own,
+		...joinedLater.map((member) =>
+			email({
+				kind: 'DELEGATION_MEMBER_JOINED',
+				person,
+				subjectKey: `${delegation.id}:${member.participantId}`,
+				extra: { member }
+			})
+		)
+	];
+};
+
+/**
+ * That the application went in, until the assignment is released. Once per person: the assignment
+ * may move them into another delegation before the release.
+ */
+const applicationSent: Rule = ({ conference }, person) =>
+	!conference.assignmentReleased && hasApplied(person)
+		? [email({ kind: 'APPLICATION_SENT', person, subjectKey: 'applied' })]
+		: [];
+
+/** The other side of `SUPERVISOR_STUDENT_LINKED`: each supervisor linked to the person. */
+const supervisorConnected: Rule = ({ supervisorsOf }, person) =>
+	supervisorsOf(person).map((supervisor) =>
+		email({
+			kind: 'SUPERVISOR_CONNECTED',
+			person,
+			subjectKey: supervisor.participantId,
+			extra: { supervisor }
+		})
+	);
 
 /** The seat, the seat from the waiting list, or the rejection. */
 const assignmentResult: Rule = ({ conference }, person) => {
@@ -343,6 +485,19 @@ const chaseIntro: Rule = ({ conference, remindBefore }, person) => {
 		: [];
 };
 
+/** Each survey that is open and the person has not answered yet, to the same people as the reminder. */
+const surveyPublished: Rule = ({ conference, now, surveys }, person) =>
+	conference.assignmentReleased && seatOf(person)
+		? surveys
+				.filter(
+					({ survey, answeredBy }) =>
+						!answeredBy.has(person.participantId) && now.getTime() < survey.deadline.getTime()
+				)
+				.map(({ survey }) =>
+					email({ kind: 'SURVEY_PUBLISHED', person, subjectKey: survey.id, extra: { survey } })
+				)
+		: [];
+
 /**
  * Every survey the person has not answered, in the last days before its deadline. Only those
  * holding a seat owe an answer - the same people the results page lists as not having answered.
@@ -408,16 +563,74 @@ const paperReviewed: Rule = ({ reviewsOf }, person) =>
 		email({ kind: 'PAPER_REVIEWED', person, subjectKey: review.id, extra: { review } })
 	);
 
+const MINUTE = 60 * 1000;
+
+/**
+ * One mail per reader once their oldest unread chat message has waited `UNREAD_MESSAGE_MAIL_MINUTES`,
+ * keyed by that message: no second mail while they have not read, and a new one when something
+ * else is left unread after they did.
+ */
+function unreadMessages({ snapshot, now }: { snapshot: EmailSnapshot; now: Date }): DueEmail[] {
+	const people = new Map(snapshot.people.map((person) => [person.participantId, person]));
+	const team = new Map(snapshot.team.map((member) => [member.id, member]));
+	return snapshot.unreadMessages
+		.filter(
+			(unread) => now.getTime() - unread.writtenAt.getTime() >= UNREAD_MESSAGE_MAIL_MINUTES * MINUTE
+		)
+		.flatMap((unread): DueEmail[] => {
+			const base = { kind: 'UNREAD_MESSAGES' as const, subjectKey: unread.messageId };
+			if ('participantId' in unread.reader) {
+				const person = people.get(unread.reader.participantId);
+				return person ? [{ ...base, recipient: person.user, person }] : [];
+			}
+			const teamMember = team.get(unread.reader.teamMemberId);
+			return teamMember ? [{ ...base, recipient: teamMember.user, teamMember }] : [];
+		});
+}
+
+/** One mail per open report to each member of participant care, keyed by the report. */
+function chatReported(snapshot: EmailSnapshot): DueEmail[] {
+	const team = new Map(snapshot.team.map((member) => [member.id, member]));
+	return snapshot.openReports.flatMap((report): DueEmail[] => {
+		const teamMember = team.get(report.teamMemberId);
+		return teamMember
+			? [
+					{
+						kind: 'CHAT_REPORTED',
+						subjectKey: report.reportId,
+						recipient: teamMember.user,
+						teamMember
+					}
+				]
+			: [];
+	});
+}
+
+/** An announcement's mail, keyed by the announcement and its `mailRevision`. */
+export const announcementMail = ({
+	announcement,
+	recipient
+}: SnapshotAnnouncementMail): DueEmail => ({
+	kind: 'ANNOUNCEMENT',
+	subjectKey: `${announcement.id}:${announcement.mailRevision}`,
+	recipient,
+	announcement
+});
+
 /** In the order a person's mails are listed. */
 const RULES: Rule[] = [
+	delegationRegistration,
+	applicationSent,
 	assignmentResult,
 	supervisorSummary,
 	acceptedEmails,
 	chaseIntro,
 	applicationReminder,
+	surveyPublished,
 	surveyReminders,
 	certificate,
 	studentsLinked,
+	supervisorConnected,
 	paperReviewed
 ];
 
@@ -427,6 +640,14 @@ const teamWelcome = (member: SnapshotTeamMember): DueEmail => ({
 	subjectKey: member.id,
 	recipient: member.user,
 	teamMember: member
+});
+
+/** Everybody on the waiting list who has no seat yet, once per entry. */
+const waitingListRegistered = (entry: SnapshotWaitingEntry): DueEmail => ({
+	kind: 'WAITING_LIST_REGISTERED',
+	subjectKey: entry.id,
+	recipient: entry.user,
+	waitingListEntry: entry
 });
 
 /**
@@ -446,7 +667,11 @@ export function dueEmails({
 	const ctx = ruleContext({ snapshot, now, anyTimeBefore });
 	return [
 		...snapshot.people.flatMap((person) => RULES.flatMap((rule) => rule(ctx, person))),
-		...snapshot.team.map(teamWelcome)
+		...snapshot.waitingList.map(waitingListRegistered),
+		...snapshot.team.map(teamWelcome),
+		...unreadMessages({ snapshot, now }),
+		...chatReported(snapshot),
+		...snapshot.announcementMails.map(announcementMail)
 	];
 }
 

@@ -6,12 +6,13 @@ import {
 	linkedChase,
 	MIRRORED_CONFERENCE,
 	PROJECT_MANAGEMENT_ROLES,
-	readableConference,
+	readableConferenceRows,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
 	teamConference
 } from '#api/services/authHelper/rules';
-import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
+import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAbilities() {
@@ -25,20 +26,20 @@ export function registerCommitteeAbilities() {
 
 	// Anyone who may read the conference (`readableConference`) reads its committees: they are part
 	// of the seat overview.
-	abilityBuilder.committee
-		.allow('read')
-		.when((ctx) => ({ where: { conference: readableConference(ctx) } }));
+	abilityBuilder.committee.allow('read').when(liveWhere(readableConferenceRows));
 	abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 
 	// Project management deletes its conference's committees.
 	abilityBuilder.committee
 		.allow('delete')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
+		.when(
+			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PROJECT_MANAGEMENT_ROLES }))
+		);
 	// Seat planning (project management and content lead) updates its conference's committees: names,
 	// headline and seats. Which nations sit in them is checked by `assertCanPlanCommitteeSeats`.
 	abilityBuilder.committee
 		.allow('update')
-		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES })));
+		.when(liveWhere((args) => isTeamMemberOfConference({ ...args, roles: SEAT_PLANNING_ROLES })));
 }
 
 /**
@@ -84,7 +85,10 @@ export async function assertCanPlanCommitteeSeats({
 }) {
 	return db.query.committee
 		.findFirst({
-			where: { id: committeeId, conference: teamConference({ ctx, permission: 'planSeats' }) },
+			where: {
+				id: committeeId,
+				conference: await teamConference({ ctx, permission: 'planSeats' })
+			},
 			columns: { conferenceId: true }
 		})
 		.then(assertFindFirstExists);

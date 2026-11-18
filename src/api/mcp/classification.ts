@@ -61,13 +61,20 @@ const FIELDS: Record<string, TypeClassification> = {
 			'globalNotes',
 			'locale',
 			'wantsJoinTeamInformation',
-			'wantsToReceiveGeneralInformation'
+			'wantsToReceiveGeneralInformation',
+			'messageNotificationEmails'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
 	AgeNotice: {
 		visible: ['participantMinAge', 'participantMaxAge', 'supervisorMinAge'],
 		redacted: ['age', 'issue']
+	},
+	// What holds a person's application back: their age verdict and which of their profile fields
+	// fail are about them, like the age notice.
+	ApplicationBlocker: {
+		visible: ['userId'],
+		redacted: ['ageIssue', 'invalidFields']
 	},
 	Address: {
 		visible: ['locality', 'region', 'countryCode'],
@@ -90,8 +97,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'nsaCardNumber'
 		],
-		// The number printed on the person's badge.
-		redacted: ['accessCardId']
+		// The number printed on the person's badge, and a sanction against the person.
+		redacted: ['accessCardId', 'messagingSuspended']
 	},
 	Conferencesupervisor: {
 		visible: [...ROW, 'conferenceParticipantId', 'plansOwnAttendenceAtConference'],
@@ -119,6 +126,178 @@ const FIELDS: Record<string, TypeClassification> = {
 		redacted: ['experience', 'motivation', 'requests']
 	},
 	Teammember: { visible: [...ROW, 'conferenceId', 'userId', 'role'] },
+	Teamfunction: { visible: [...ROW, 'teamMemberId', 'committeeId', 'kind'] },
+	// --- Announcements --------------------------------------------------------------------------
+	// What the team tells an audience is about the conference, not about a person. How many it
+	// reaches and how many read it are counts by attributes an assistant does not see.
+	Announcement: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'title',
+			'body',
+			'signature',
+			'importance',
+			'pinned',
+			'status',
+			'state',
+			'publishAt',
+			'visibleUntil',
+			'editedAt',
+			'notifyByMail',
+			'mailSince',
+			'mailRevision',
+			'releaseAnnounced',
+			'authorId',
+			'publishedById'
+		],
+		aggregate: ['recipientCount', 'readCount']
+	},
+	Announcementaudience: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'announcementId',
+			'kind',
+			'committeeId',
+			'roleId',
+			'surveyOptionId',
+			'teamRole'
+		]
+	},
+	Announcementattachment: {
+		visible: ['id', 'createdAt', 'search_distance', 'announcementId', 'fileId', 'position']
+	},
+	AnnouncementAudienceCounts: {
+		aggregate: ['total', 'delegates', 'singleParticipants', 'supervisors', 'waitingList', 'team']
+	},
+	// an assistant takes no part in a conference, so its feed is empty; classified all the same
+	AnnouncementFeedItem: {
+		visible: [
+			'id',
+			'title',
+			'body',
+			'signature',
+			'importance',
+			'pinned',
+			'publishAt',
+			'editedAt',
+			'read'
+		]
+	},
+	AnnouncementFeedAttachment: { visible: ['id', 'fileName', 'mimeType', 'size', 'url'] },
+	// --- Chats ----------------------------------------------------------------------------------
+	// What people write each other is theirs: an assistant sees that chats exist, never a word.
+	Chat: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'kind',
+			'inbox',
+			'committeeId',
+			'delegationId',
+			'participantId',
+			'otherParticipantId',
+			'lastMessageAt',
+			'lastParticipantMessageAt',
+			'teamReadAt',
+			'teamArchivedAt',
+			'archived',
+			'underReview',
+			'unreadCount',
+			'side',
+			'blockedByMe',
+			'writeRefusal',
+			'trustedUserId'
+		],
+		redacted: ['lastMessagePreview', 'trustedPersonName']
+	},
+	ChatContact: {
+		visible: [
+			'participantId',
+			'roleId',
+			'roleKind',
+			'nationAlpha3Code',
+			'nationAlpha2Code',
+			'roleName',
+			'roleAbbreviation',
+			'roleIcon',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'ordinal',
+			'userId'
+		],
+		// A sanction against a person.
+		redacted: ['suspended']
+	},
+	ChatPerson: { visible: ['participantId', 'userId', 'earlierReports'], redacted: ['name'] },
+	ChatInboxOption: {
+		visible: [
+			'inbox',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'trustedPersonId',
+			'chatId'
+		],
+		redacted: ['personName']
+	},
+	// The message service's terms: the app's text, about nobody.
+	MessagingTerms: {
+		visible: ['id', 'version', 'revision', 'locale', 'contentHash', 'intro']
+	},
+	MessagingTermsSection: {
+		visible: ['id', 'key', 'icon', 'title', 'summary', 'paragraphs', 'callout']
+	},
+	MessagingTermsConfirmation: { visible: ['id', 'key', 'text'] },
+	// Somebody's own notification choices; an assistant is refused them (`assertOwnNotifications`).
+	// Nothing here is about a person: a conference, an inbox, two switches.
+	ConferenceNotificationSettings: {
+		visible: ['id', 'conferenceId', 'conferenceTitle', 'slackWorkspaceName']
+	},
+	NotificationSetting: {
+		visible: [
+			'id',
+			'topic',
+			'teamFunctionId',
+			'functionKind',
+			'committeeAbbreviation',
+			'committeeName',
+			'email',
+			'slack'
+		]
+	},
+	// A workspace by name; its bot token is no field of the schema at all.
+	SlackWorkspaceInfo: { visible: ['id', 'name', 'slackTeamName', 'conferenceCount'] },
+	Chatmessage: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'chatId',
+			'fromTeam',
+			'mine',
+			'paperId',
+			'authorParticipantId',
+			'teamAuthorUserId'
+		],
+		redacted: ['body', 'authorName']
+	},
+	Chatreport: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'chatId',
+			'status',
+			'resolvedAt',
+			'resolvedById',
+			'reporterUserId',
+			'reporterParticipantId'
+		],
+		redacted: ['reason', 'reporterName', 'resolutionNote', 'resolvedByName']
+	},
 	Teammemberinvitation: {
 		visible: [
 			...ROW,
@@ -214,6 +393,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	CollectiveGroupMember: { visible: ['delegationId', 'delegationMemberId'] },
 	CollectiveGroupSchool: { visible: ['id', 'isForeignSchool', 'name'] },
+	SchoolApplicants: { visible: ['singleParticipantIds', 'size'] },
 	SeatPlanningAssignedRole: { visible: ['memberCount', 'nationAlpha3Code', 'roleId'] },
 	SeatPlanningCommitteeSeat: {
 		visible: ['committeeId', 'nationAlpha3Code'],
@@ -241,7 +421,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'feeAmount',
 			'guardianConsentFileId',
 			'imageFileId',
-			'info',
 			'isOpenPaperSubmission',
 			'language',
 			'linkToPaperInbox',
@@ -252,8 +431,10 @@ const FIELDS: Record<string, TypeClassification> = {
 			'logoFileId',
 			'longTitle',
 			'maxCollectiveGroupSize',
+			'maxForeignGuaranteedSeatsPercent',
 			'maxGuaranteedSeatsPerForeignSchool',
 			'mcpEnabled',
+			'messagingEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
 			'nextDocumentNumber',
@@ -266,7 +447,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'postalZip',
 			'registrationDeadlineGracePeriodMinutes',
 			'showCalendar',
-			'showInfoExpanded',
 			'startConference',
 			'state',
 			'supervisorMinAge',
@@ -385,11 +565,13 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [...ROW, 'remoteUrl', 'lastEventAt', 'lastReconcileAt'],
 		redacted: ['lastError']
 	},
-	// CHASE's presence records hold the people's e-mail addresses.
-	Chasepresence: {
-		visible: ['createdAt', 'updatedAt', 'search_distance', 'conferenceId', 'fetchedAt'],
-		redacted: ['data']
+	// CHASE's presence records name people by their e-mail address.
+	ChasePresence: { visible: ['conferenceId', 'exportedAt'] },
+	ChasePresenceParticipant: { visible: ['kind', 'committeeId'], redacted: ['email'] },
+	ChasePresenceRepresentation: {
+		visible: ['id', 'type', 'alpha2Code', 'alpha3Code', 'icon', 'name']
 	},
+	ChasePresenceEvent: { visible: ['id', 'committeeId', 'present', 'type', 'timestamp'] },
 	NsaCard: {
 		visible: ['conferenceParticipantId', 'cardNumber', 'nsaIcon', 'nsaName'],
 		redacted: ['givenName', 'familyName', 'code']
@@ -450,6 +632,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	Paperreview: {
 		visible: [
 			'id',
+			'anonymousAs',
 			'createdAt',
 			'search_distance',
 			'paperVersionId',
@@ -457,8 +640,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'statusAfter',
 			'statusBefore'
 		],
-		// What a reviewer wrote to a participant.
-		redacted: ['comments']
+		// What a reviewer wrote to a participant, and the name they signed with (may be a person's).
+		redacted: ['comments', 'anonymousName']
 	},
 	Reviewersnippet: {
 		visible: [...ROW, 'name', 'userId'],
@@ -798,10 +981,12 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [
 			'assignmentReviewsCount',
 			'canImpersonateUser',
+			'canUpdateSchool',
 			'delegationsCount',
 			'logoutUrl',
 			'mcpServerUrl',
 			'myOIDCRoles',
+			'mySlackConnection',
 			'papersCount',
 			'supervisorSignupOpen',
 			'teamMembersCount',

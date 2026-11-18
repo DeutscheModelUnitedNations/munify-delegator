@@ -1,7 +1,8 @@
 import { db, schema } from '#api/db/db';
 import { and, eq, isNotNull, or } from 'drizzle-orm';
-import { joinMemberSchool } from '#api/handlers/school/memberSchool';
+import { joinMemberSchool, joinSingleParticipantSchool } from '#api/handlers/school/memberSchool';
 import { collectiveGroups, type SupervisedStudent } from './collectiveGroups';
+import { schoolApplicants } from './schoolApplicants';
 
 /**
  * The conference's groups decided together (`collectiveGroups`), up to its
@@ -58,23 +59,11 @@ export async function loadCollectiveGroups(conferenceId: string) {
 			)
 		);
 
-	const members = await joinMemberSchool(
-		db
-			.select({
-				delegationMemberId: schema.delegationMember.id,
-				delegationId: schema.delegation.id,
-				schoolId: schema.school.id
-			})
-			.from(schema.delegationMember)
-			.innerJoin(
-				schema.delegation,
-				and(
-					eq(schema.delegation.id, schema.delegationMember.delegationId),
-					eq(schema.delegation.applied, true)
-				)
-			)
-			.$dynamic()
-	).where(eq(schema.delegation.conferenceId, conferenceId));
+	const members = (await loadAppliedMembers(conferenceId)).map((member) => ({
+		delegationMemberId: member.delegationMemberId,
+		delegationId: member.delegationId,
+		schoolId: member.school.id
+	}));
 
 	return collectiveGroups({ students: rows.flatMap(studentOf), members, limit });
 }
@@ -107,4 +96,53 @@ function studentOf(row: {
 		return [{ ...base, kind: 'single', singleParticipantId: row.singleParticipantId }];
 	}
 	return [];
+}
+
+const school = {
+	id: schema.school.id,
+	name: schema.school.name,
+	isForeignSchool: schema.school.isForeignSchool
+};
+
+/** The conference's applied delegation members with a school of their own. */
+function loadAppliedMembers(conferenceId: string) {
+	return joinMemberSchool(
+		db
+			.select({
+				delegationMemberId: schema.delegationMember.id,
+				delegationId: schema.delegation.id,
+				school
+			})
+			.from(schema.delegationMember)
+			.innerJoin(
+				schema.delegation,
+				and(
+					eq(schema.delegation.id, schema.delegationMember.delegationId),
+					eq(schema.delegation.applied, true)
+				)
+			)
+			.$dynamic()
+	).where(eq(schema.delegation.conferenceId, conferenceId));
+}
+
+/**
+ * The conference's applicants by school (`schoolApplicants`): applied delegation members and
+ * single participants with a school of their own.
+ */
+export async function loadSchoolApplicants(conferenceId: string) {
+	const [members, singles] = await Promise.all([
+		loadAppliedMembers(conferenceId),
+		joinSingleParticipantSchool(
+			db
+				.select({ singleParticipantId: schema.singleParticipant.id, school })
+				.from(schema.singleParticipant)
+				.$dynamic()
+		).where(
+			and(
+				eq(schema.conferenceParticipant.conferenceId, conferenceId),
+				eq(schema.singleParticipant.applied, true)
+			)
+		)
+	]);
+	return schoolApplicants([...members, ...singles]);
 }

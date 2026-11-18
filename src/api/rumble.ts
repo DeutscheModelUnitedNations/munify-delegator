@@ -5,19 +5,52 @@ import type {} from '@pothos/plugin-smart-subscriptions';
 import type {} from '@pothos/plugin-validation';
 import { trace } from '@opentelemetry/api';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
+import { createPubSub } from 'graphql-yoga';
 import { OTEL_ENDPOINT_URL, OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION } from '$app/env/private';
 import { redisClient } from './services/redisClient';
-import { graphqlLogger } from '#lib/logger';
+import { isShuttingDown } from './services/shutdown';
+import { graphqlLogger, logger } from '#lib/logger';
 import { apiError } from './services/errors';
 import { db, schema } from './db/db';
 import { context } from './context';
+import { refreshCallerFactsPluginName } from './services/authHelper/refreshCallerFactsPlugin';
 
 const publishClient = redisClient();
 const subscribeClient = redisClient();
 const eventTarget =
 	publishClient && subscribeClient
-		? createRedisEventTarget({ publishClient, subscribeClient })
+		? createRedisEventTarget({
+				publishClient: catchingUnawaited(publishClient),
+				subscribeClient: catchingUnawaited(subscribeClient)
+			})
 		: undefined;
+
+/**
+ * The event target calls `publish`, `subscribe` and `unsubscribe` without awaiting them, so a
+ * failed one (Redis gone, or closed at shutdown) was an unhandled rejection. It is logged instead.
+ */
+function catchingUnawaited<C extends NonNullable<ReturnType<typeof redisClient>>>(client: C): C {
+	const unawaited = new Set<string | symbol>(['publish', 'subscribe', 'unsubscribe']);
+	return new Proxy(client, {
+		get(target, property, receiver) {
+			const value = Reflect.get(target, property, receiver);
+			if (!unawaited.has(property) || typeof value !== 'function') return value;
+			return (...args: unknown[]) =>
+				(value.apply(target, args) as Promise<unknown>).catch((error: unknown) => {
+					if (!isShuttingDown()) logger.warn(`Redis ${String(property)} failed`, error);
+				});
+		}
+	});
+}
+
+/**
+ * Signals from one app instance to all of them that are not about a table, over the subscriptions'
+ * Redis channel (within this process without Redis). `linkSyncRequested` asks whichever instance
+ * runs the CHASE link worker to read everything again (`requestLinkSync`).
+ */
+export const instanceSignals = createPubSub<{ linkSyncRequested: [request: { at: string }] }>(
+	eventTarget ? { eventTarget } : {}
+);
 
 export const {
 	abilityBuilder,
@@ -57,7 +90,7 @@ export const {
 			})
 	},
 	pothosConfig: {
-		plugins: [SimpleObjectsPlugin]
+		plugins: [SimpleObjectsPlugin, refreshCallerFactsPluginName]
 	}
 });
 

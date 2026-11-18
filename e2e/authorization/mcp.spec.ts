@@ -75,7 +75,8 @@ test.describe('MCP server', () => {
 	let token: string;
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
-		const request = await playwright.request.newContext();
+		// the e2e server's certificate is self-signed (playwright.config.ts)
+		const request = await playwright.request.newContext({ ignoreHTTPSErrors: true });
 		token = await mcpToken(request, E2E_MCP_CARE_ID, new URL('/mcp', baseURL).href);
 		await request.dispose();
 	});

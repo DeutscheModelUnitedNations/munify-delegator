@@ -38,6 +38,12 @@ bun run dev:server    # Start Vite dev server only
 bunx lefthook install
 ```
 
+The dev server and `vite preview` (the e2e server) serve **HTTPS** on https://localhost:5173 /
+:4173 with a self-signed certificate (`@vitejs/plugin-basic-ssl`), so the browser talks HTTP/2 as
+to production (see "Subscriptions" below); accept the browser's warning once. `DEV_HTTP=1` serves
+plain HTTP instead, for clients that refuse the certificate: an MCP client (`docs/mcp.md`) or a
+linked local chase (`docs/plans/chase-link.md`). The e2e suite follows it.
+
 ### Database Operations
 
 ```bash
@@ -73,11 +79,11 @@ bun run db:studio
 bun run format
 
 # Type checking (PREFERRED for development - fast feedback)
-bun run check          # Single run - use this to verify changes
+bun run check          # Single run - use this to verify changes (incremental: cached in .svelte-kit/.svelte-check)
 bun run check:watch    # Watch mode
 bun run typecheck      # TypeScript only (tsc is TypeScript 7, installed as @typescript/native)
 
-# Lint (slow - runs automatically on git push via lefthook)
+# Lint (slow - the pushed files are linted on git push via lefthook)
 bun run lint           # Only run manually when specifically needed
 
 # Codebase analysis (fallow: dead code, cycles, duplication, complexity)
@@ -102,7 +108,7 @@ maps back to the sources: Vite's module runner evaluates modules with `new Async
 Node keeps no source map for, so c8 cannot. Generated code (Paraglide, the rumble client) is left
 out by `scripts/coverageScope.ts`. CI scores with unit coverage only.
 
-**Note:** Prefer `bun run check` over `bun run lint` during development. Linting is slow (~2 min) and runs automatically on push via lefthook pre-push hooks. Use `bun run check` for quick type-checking feedback.
+**Note:** Prefer `bun run check` over `bun run lint` during development. Linting the whole repo is slow (~2 min without its cache); the lefthook pre-push hook lints the pushed files. Use `bun run check` for quick type-checking feedback.
 
 ### i18n (Internationalization)
 
@@ -138,7 +144,7 @@ bun run preview
   - `(authenticated)/` - Protected routes requiring authentication
     - `dashboard/[conferenceId]/` - A conference's dashboard and everything around it
       - `team/` - **Every team-facing page** (settings, tables, assignment, workflows, team members,
-        scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
+        messages, announcements, scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
         entry (`stages/TeamMember/TeamMemberDashboard.svelte`) is one card that opens the first page
         the caller may open, next to the conference's resource links.
         The assignment lives in `team/assignment/`. See "Team area" below.
@@ -252,9 +258,11 @@ bun run preview
   plain arguments. Checks about _what_ (a stage, a size limit, uniqueness) stay in the service;
   checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
   query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
-  check. `authHelper/` holds only building blocks that are not about one entity, in two modules:
-  `rules.ts` says who may do what (`systemAdmin`, the team and participant filters,
-  `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
+  check. `authHelper/` holds only building blocks that are not about one entity, in three modules:
+  `callerFacts.ts` loads what the rules know about the caller (team roles, own registrations, the
+  people around them) once per root field and turns rules built from it into `.when()` rules
+  (`liveRule` / `liveWhere`), `rules.ts` says who may do what (`systemAdmin`, the team and
+  participant filters, `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
   `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
   row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
   reach - `assertAllowed` (check only) and `updateIfAllowed` / `deleteIfAllowed` (one statement). A row is re-read after a write with
@@ -323,10 +331,19 @@ bun run preview
 
   `services/authHelper/` is the one place authorization is built from. Rules of thumb, all of them enforced by `e2e/authorization/`:
 
-  - **Rules compose from the helpers** (`isTeamMemberOfConference({ ctx, roles })`, `isOwnUser`,
-    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `grantWhere(...)`. A helper returns
-    `undefined` for "grants nothing" and never throws. Every table also gets
+  - **Rules compose from the helpers** (`isTeamMemberOfConference({ ...args, roles })`, `isOwnUser`,
+    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `liveWhere(...)` (`liveRule` for
+    one with `columns`), which hands them the request and the caller's facts (`callerFacts`). A
+    helper returns `undefined` for "grants nothing" - decided by the context alone (anonymous, an
+    assistant), never by the facts - and never throws. Every table also gets
     `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
+  - **Rules filter on the table's own columns** - `{ id: { in: ids } }`, `{ conferenceId: { in: ids } }` -
+    with the ids from the caller's facts, not on chains of relations: rumble looks every
+    relational rule of a table up in one statement per root field, as nested `exists`, and
+    planning the user table's (101 of them) killed Postgres. A row without the column nests one
+    hop with `hop(filter, (participant) => ({ participant }))`, which is `NOTHING` (no hop) for an
+    empty list. An empty id list matches no row (`1 = 0`), never every row.
+    `relationalRules.test.ts` keeps the user and delegation rules free of relations.
   - **Updates and deletes go through the row's own ability** (`updateIfAllowed`, `deleteIfAllowed`,
     or `filter('update').merge({ where:
 { id } })`). Load the row through it first when the resolver needs the row anyway.
@@ -334,10 +351,10 @@ bun run preview
     shared with the team pages: `manageParticipants`, `planSeats`, `reviewPapers`, …, each
     granted to the roles `rolesWithTeamPermission` names). `teamConference({ ctx, permission })` is the
     filter on the conference: put it into the query that loads the row anyway
-    (`{ id, conference: teamConference({ ctx, permission: 'manageParticipants' }) }`), so a caller who may not
+    (`{ id, conference: await teamConference({ ctx, permission: 'manageParticipants' }) }`), so a caller who may not
     finds nothing. A create with no row to load checks the parent conference with
     `assertTeamPermission({ ctx, conferenceId, permission })` (`hasTeamPermission` is the
-    non-throwing form; both take a `tx`). A system admin always passes. Never compare a
+    non-throwing form; both answer from the caller's facts). A system admin always passes. Never compare a
     caller's roles by hand: a new kind of check is a new team permission.
   - **Every id an argument names has to belong where the row goes**: a track to its day, a
     place, role, committee or nation to the conference, a `userId` to the caller unless the
@@ -359,16 +376,15 @@ bun run preview
     such a column where the reader may see it.
 
 - The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
-  instance it, `/api/graphql/stream` and the SSR remote function all share. Adding fields needs a
-  **dev server restart**: the schema builder is populated at module init.
-- **Subscriptions share one stream per tab** (graphql-sse's single connection mode, wired up in
-  `src/lib/api/client.ts`). The browser reserves a stream with `PUT /api/graphql/stream`, holds it
-  open with a `GET`, and starts each subscription with a short `POST` whose results arrive on that
-  stream. Never go back to one response per subscription (urql's `fetchSubscriptions`): over
-  HTTP/1.1 a browser allows six connections per host, and a page with six live queries would hold
-  them all, queueing every later mutation, subscription and lazily imported chunk forever. The
-  reservation lives in the process's memory, so several app instances need sticky sessions for
-  `/api/graphql/stream`; the events themselves still fan out through Redis.
+  instance it and the SSR remote function share. Adding fields needs a **dev server restart**: the
+  schema builder is populated at module init.
+- **Subscriptions use yoga's built-in server-sent events** on `/api/graphql` (urql's
+  `fetchSubscriptions` in `src/lib/api/client.ts`): one streaming response per subscription, no
+  plugin, no extra route, no sticky sessions; the events fan out through Redis. Each subscription
+  holds a connection, and over HTTP/1.1 a browser allows six per host, so a page with six live
+  queries would queue every later request there. Production is served over HTTP/2, which
+  multiplexes them; keep it that way. Dev and e2e get HTTP/2 from the HTTPS dev server (above);
+  under `DEV_HTTP=1` mind the six.
 
 #### 2. Frontend Data Fetching (generated rumble client)
 
@@ -779,11 +795,14 @@ bun run preview
   verdict it reaches itself (`null` in a session that only records), and the check-in page reads
   `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
 - **Age limits are the conference's** (`participantMinAge`, `participantMaxAge`, `supervisorMinAge`,
-  inclusive, measured on the first conference day; empty switches one off). They only warn:
+  inclusive, measured on the first conference day; empty switches one off).
   `ageIssue` / `ageBands` (`#lib/helpers/plausibilityRules`) are the one rule, which the
   plausibility page lists people by and `myAgeNotice` answers the caller with; `AgeNotice`
   (`#lib/components/registration/`) shows it in the apply flow, on the waiting list and on the
-  dashboard. Nothing refuses a registration by age.
+  dashboard. Registering and joining a delegation are never refused by age, but an application
+  cannot be sent while one of its people is outside the limits, nor can a supervisor below theirs
+  confirm attending in person (`assertNoApplicationBlockers`,
+  `#api/services/registration/applicationReadiness.ts`); participant care can confirm it anyway.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -888,7 +907,7 @@ bun run preview
   assignment. Until then their read rules mask the delegation's and the single
   participant's `assignedRoleId` and the member's `assignedCommitteeId`
   (`src/api/services/authHelper/rules.ts`, two rules per participant-side ability:
-  `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
+  `maskedUntilRelease` for every row, and one for the rows of released conferences, `releasedIds`). Nothing but those rules is needed: rumble ≥ 0.26
   follows the masks. A relation backed by a masked key (`assignedRole`, `assignedCommittee`, …)
   resolves to nothing, the relations pointing back (`conferenceRole.assignedDelegations`,
   `committee.delegationMembers`, …) list only rows exposing their key, and `where` / `orderBy`
@@ -897,6 +916,14 @@ bun run preview
   `AssignmentPending` instead of a rejection, and the mail sync keeps role lists back. Anything new
   that reveals a role to participants has to respect the flag; `e2e/authorization/assignment-release.spec.ts`
   checks the known paths.
+- **What the seated share goes by `seatedConferenceIds`** (`authHelper/rules.ts`): the conferences
+  that have released their assignment and in which the caller's delegation, the caller as single
+  participant or someone they supervise holds a role. The paper hub's "conference papers" are
+  that: every submitted paper of the conference, of each only the latest submitted version
+  (`isLatestSubmittedVersion`), without its status (the reviewers' verdict) and author, and of the
+  delegation that wrote it only which role it holds. Drafts, earlier versions and reviews stay with
+  the author, the delegation, its supervisors and the paper team.
+  `e2e/authorization/conference-papers.spec.ts` pins it down.
 
 #### 7. Possible duplicate accounts
 
@@ -969,12 +996,14 @@ bun run preview
   `distinctSchoolNames` (`#lib/helpers/delegationSchools.ts`), most common first.
 - **Visibility:** everybody reads a school's name and place (applicants pick from
   `searchSchools`); address, contact and the team's `notes` are masked except for participant
-  care and project management of a conference where someone has it as their own (or waits with
-  it), who also edit it (`updateSchool`) and merge duplicates (`mergeSchools`, which repoints the
-  participant rows and waiting list entries of all conferences and deletes the sources).
-  The team's schools page (the `schools` table of the table engine, see "Data tables") and
+  care and project management of any conference, who read every school in full, and
   `schoolMetrics` (per conference: registered, applied, seated, attended, from the waiting list)
-  are participant care's.
+  across every conference: how long a school has been with us is the point. Only those of a
+  conference where someone has it as their own (or waits with it) edit it (`updateSchool`,
+  `canUpdateSchool` for the page) and merge duplicates (`mergeSchools`, which repoints the
+  participant rows and waiting list entries of all conferences and deletes the sources).
+  The team's schools page (the `schools` table of the table engine, see "Data tables") and the
+  command palette list every school; only the people list on a school's page is the conference's.
 - **School rules** (`team/assignment/schoolRules.ts`, pure; they only warn, never block):
   - **Decided together:** the applied students of one supervisor from one school are a group
     (the `collectiveGroups` query, `#api/handlers/collectiveGroup/`, worked out on the server so
@@ -990,7 +1019,12 @@ bun run preview
     page) marks an Auslandsschule. Its people in applications marked required count against
     `conference.maxGuaranteedSeatsPerForeignSchool` (default 12, null for none), each for their
     own school (`guaranteedSeatsAbroad`); the sighting card shows the count as it marks, the board
-    and summary warn past it.
+    and summary warn past it. All Auslandsschulen together count against
+    `conference.maxForeignGuaranteedSeatsPercent` (default 20, null for none) of the conference's
+    seats (`conferenceCapacity`, every role's; `guaranteeShare`), warned about the same way.
+  - **Mixed results** (not a rule, a quiet note on the summary only): a school some of whose
+    applicants the plan seats and others not (`mixedSchoolOutcomes`, `team/assignment/finish/schoolOutcomes.ts`,
+    from the `schoolApplicants` query beside `collectiveGroups`).
   - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
     and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
     statistics (`statistics_schools`, delegation members and single participants per school) count
@@ -1008,11 +1042,15 @@ bun run preview
   person's mails, the mails sent where they happen, and rendering one mail.
 - **Every mail follows from state, not from an event.** `dueEmails` (`#api/handlers/email/`) is
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
-  conference owes - acceptances and rejections once the assignment is released, seats from the
+  conference owes - during registration the head delegate's entry code, a welcome to whoever joins
+  a delegation, word to its earlier members of each newcomer (all only while the delegation has not
+  applied), a confirmation of the application (until the release) and of the waiting list entry,
+  then acceptances and rejections once the assignment is released, seats from the
   waiting list, postal/payment unlocked, received or with a problem, the reminders before the
   application deadline and the conference, a reminder to everyone seated who has not answered a
   published survey before its deadline (`SURVEY_REMINDER`, keyed by survey and deadline, so a
-  moved deadline reminds again), certificates, students linked to a supervisor, and
+  moved deadline reminds again), certificates, students linked to a supervisor (and the student told of the supervisor), a new
+  survey to everyone seated who has not answered it, and
   each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
   reviewer), and a welcome to everyone who joins the team (`TEAM_WELCOME`, keyed by the membership,
   to a `team` member rather than a participant: a `DueEmail` is addressed to its `recipient`, and
@@ -1028,11 +1066,27 @@ bun run preview
   it owes with "send now" and "skip" (`skipOpenEmails`, marks them `SKIPPED`). Changes to one
   person (a status, a review, a supervisor link) prompt nothing: their mails wait on the e-mail
   page, in the user card, or for the job.
+- **A conference is read a page at a time** (`emailSnapshot.ts`): participants, then the waiting
+  list, then the team, 500 rows a page by `(conference_id, id)`, each page with only the people
+  around it the asked-for kinds read (`neighbours`: students always, co-members and supervisors
+  only for the kinds about them) and only its own reviews and survey answers. `dueEmails` works
+  out mails for a page's `people` alone, never its neighbours. `sendDueEmails` answers a cursor
+  to go on from; the user card reads one person (`loadUserSnapshot`). A page holds only rows that
+  may be owed a mail: `emailCandidates.ts` has a SQL predicate per kind (a superset of its rule,
+  never a subset, minus what the log closed), and what depends on the conference alone gates a
+  kind in TypeScript. **A change to a rule in `dueEmails` needs the same change there**, or the
+  sweep stops reading the people it now owes.
 - **`emailLog` makes each automatic mail happen once.** The sweep (`emailSweep.ts`) claims a mail
   by writing its row, unique per conference, kind, person and `subjectKey` among the `AUTOMATIC`
   rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
   and instances never double-send; failures are retried three times, a claim left by a dead
   process frees up after 15 minutes. Every row (sent, failed, skipped, by hand) is shown in the log.
+- **One mail per recipient and kind and sweep** for the kinds a person can owe several of
+  (`BUNDLED_KINDS` in `#lib/helpers/emailKinds.ts`: students, members, supervisors linked,
+  paperwork problems, surveys of one deadline). `bundleEmails` (`emailBundles.ts`) groups them;
+  each keeps its own log row, all settled by the one delivery, and the text names them all
+  (`Intl.ListFormat` into the kind's placeholder), so those texts are worded to read right for one
+  name or several.
 - **Every mail goes out one way** (`emailDelivery.ts`): rendered in the recipient's language and
   the conference's words (`loadWording`, `wordingIn`), its log row written first and settled by
   `deliver`. A mail the team sends by hand (`sendByHand`) is a `MANUAL` row of its own with
@@ -1045,9 +1099,10 @@ bun run preview
   remind of still holds. A mail sent by hand counts as sent for the sweep (`stillOpen`), except a
   reminder: sending one early leaves the automatic one due.
 - **Automatic per conference and kind, off by default** (`conferenceEmailSetting`, the "send
-  automatically" switch), on the "E-Mails" tab of the conference settings
-  (`team/configuration/emails/`, participant care: `canManageEmails`). The switches wait for the settings' save button (`emailChanges.svelte.ts`) and show up in its change
-  preview next to the form's fields; confirming saves them through their own mutations. Switching a kind on asks whether
+  automatically" switch), on the team's e-mail page (`team/emails/`, under "Kommunikation",
+  participant care: `canManageEmails`; the settings' old `?tab=emails` links redirect there). The
+  switches and the pace wait for the page's save button (`emailChanges.svelte.ts`) and show up in
+  its change preview (the settings' `ConfigSave`); confirming saves them through their own mutations. Switching a kind on asks whether
   the people it already applies to get it with the next run (`notifyExisting`) or are marked `SKIPPED`.
 - **The texts are the conference's to change** (`conferenceEmailText`, unique per conference, kind
   and locale, since a mail goes out in the recipient's language). A text is a subject, a heading
@@ -1077,7 +1132,7 @@ bun run preview
 - **Two triggers, one path:** the team's `sendOpenEmails` (`sendOpenEmailsInBackground`, one at a
   time per conference, any kinds) and the `send-emails` job, which runs the sweep itself every few
   minutes, for every conference with a kind switched to automatic, reminders included; both go through `sendDueEmails`. It keeps to the conference's
-  `emailsPerSecond` (the "sending speed" on the e-mail tab, `setConferenceEmailsPerSecond`, empty
+  `emailsPerSecond` (the "sending speed" on the e-mail page, `setConferenceEmailsPerSecond`, empty
   for no limit): `emailPacing.ts` spaces the sends, reserving each slot in Redis (a Lua script on
   Redis's clock, `email-pace:<conferenceId>`) so every sweep on every instance shares the pace,
   in memory without Redis or while it is unreachable; a paced round is cut to a minute's worth. The app renders the mails (one template, `NotificationEmail.svelte` on
@@ -1228,8 +1283,9 @@ bun run preview
   inserts them, the dev seed again after its reset; `presetViews.test.ts` fails when no migration
   inserts a preset as the list has it. A new preset is an entry there and a migration of its own.
 - **A resolver that reads through an ability, writes, then reads again calls
-  `refreshAbilities(ctx.abilities)`** before the second read: rumble resolves relational rules
-  once per request, and the written row is not in that snapshot (the view mutations do).
+  `await refreshCallerAbilities(ctx)`** before the second read: rumble resolves relational rules,
+  and the rules read the caller's facts, once per root field, and the written row is not in that
+  snapshot (the view mutations and every registration mutation answering with its row do).
 
 #### 14. The CHASE link
 
@@ -1255,12 +1311,20 @@ bun run preview
   client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`). It
   keeps chase's tables of each conference in memory (`liveTable.ts`: a live query per page of
   1000, so a change answers with the rows of the one table it touched, and nothing is read again)
-  and works out from them the presence into `chase_presence` (the attendance import page) and the
-  adopted resolutions, rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
+  and works out from them the adopted resolutions, rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
   not deletable while linked; only the texts to render are read). **A list hears changes to the
   rows it shows, not of a row coming into its filter**: a table filtered by a column that changes
   (final papers) is asked again when another table names a row it lacks. The worker starts from
-  the `init` hook; chase's worker works the same way the other way round.
+  the `init` hook; chase's worker works the same way the other way round. **Presence is not
+  copied**: the attendance import page's `chasePresence` query asks chase's own queries when it
+  is called (`fetchChasePresence`, `chaseLink/presenceMirror.ts`).
+- **"Sync now"** (`chaseLink/linkSync.ts`): `requestLinkSync` (system admins and the linked
+  CHASE; false while unlinked; CHASE has the same mutation) sends the `linkSyncRequested`
+  instance signal (`instanceSignals` in `rumble.ts`, over the subscriptions' Redis), and the
+  instance holding the worker reads everything again as on a reconnect, at most once per
+  `SYNC_SPACING_MS`. `requestRemoteLinkSync` (system admins only, so nothing bounces) calls CHASE's
+  `requestLinkSync` with the link token; CHASE away is a CONFLICT that leaves the sync here alone.
+  `ChaseSyncButton` asks both, on the link page and, for system admins, on the team's CHASE card.
 - **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
   the API: the dashboard's CHASE card, the
   `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
@@ -1268,6 +1332,190 @@ bun run preview
   chase), naming the person, the conference, an expiry and the card number on the participant
   row (`nsaCardNumber`); `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts` prints them. Chase's
   scanner checks them, and the `live` nametags, against `signedCodeKeys`.
+
+#### 15. Messages
+
+- **People of a conference write each other inside the app** (`#api/handlers/chat/`, tables in
+  `schema/messages.ts`), once the conference switched it on (`conference.messagingEnabled`, a
+  feature switch of `updateConference`). A `chat` is `DIRECT` (two seated participants), `DELEGATION`
+  (a delegation's group) or `TEAM` (one participant and a team inbox); `chatMessage` is append-only.
+  Delegation members and single participants take part, supervisors do not.
+- **Participants know each other by role, never by name.** A `ChatContact` (`chatContacts.ts`) is a
+  seated person as role, committee and, among several sharing both, a number (`numberContacts`).
+  A message names its participant author only by `authorParticipantId`; `authorName` is filled
+  where the reader may know it: a team member writing from an inbox, a member of the reader's own
+  delegation group, anybody for participant care. `chat.people` (names and accounts) answers
+  participant care only. Never expose a user row through a chat relation.
+- **Team inboxes are shared** (`chat.inbox`): `PARTICIPANT_CARE`, one per conference, answered by
+  the participant care roles; `CHAIR` and `CONSULTANT`, one per committee, answered by whoever holds
+  that **committee function** (`teamFunction`, `#api/handlers/teamFunction/`, handed out by
+  `manageTeam` on the team members page; in the caller's facts as `teamFunctions`); and
+  `TRUSTED_PERSON`, answered by the conference's trusted persons (see below). An inbox reads
+  as one (`chat.teamReadAt`); a person's reading is `chatRead`. An inbox files a settled chat in
+  its **archive** (`chat.teamArchivedAt`, `setChatArchived`, for whoever answers the inbox): that
+  reads it, the list hides it until asked, and the next message from either side empties the
+  column (`sendMessage`), so the chat is back. The participant is not told (`chat.archived` and
+  `teamArchivedAt` answer the team side only). `inboxReaches`
+  (`#lib/helpers/chat.ts`) says which inbox and person write each other: participant care anybody
+  with a registration, a committee's inboxes the people seated there and those seated without a
+  committee.
+- **What is written to the trusted persons stays with them.** A trusted person is a team function
+  without a committee (`teamFunction.kind = 'TRUSTED_PERSON'`, the switch on top of the functions
+  dialog). Participants reach them at any time while messaging is on: all of them together (a
+  `TRUSTED_PERSON` chat without `trustedUserId`) or one of them by full name (`trustedUserId`;
+  `chatInboxes` names each by their function's id, `trustedPersonId`, never by account, and
+  `chat.trustedPersonName` is the label). The shared chat is read by every trusted person of the
+  conference, a personal one by that person alone (`trustedChats`, `holdsTrustedInbox`): not by
+  participant care, not by a system admin (`adminChats` leaves the inbox out), not by an assistant
+  (`callerUserId`). Nobody learns the participant's name there, participant care included
+  (`knowsPeopleOf`), and a team chat cannot be reported. `chat.trustedUserId` has no relation on
+  purpose and answers only its own person. Anything new that reads chats has to keep this.
+- **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
+  inbox; participant care a chat between participants only while a report is open
+  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved:
+  `resolveChatReports` settles all of a chat's at once, with an internal note,
+  `chatReport.resolutionNote`). There it gets everybody of the chat by role and name
+  (`chat.contacts`, `chat.people`), the members of a delegation's group included, each with the
+  settled reports there were before about their chats (`earlierReports`). A system
+  admin reads what the team reads, never a private chat. `chatSide` answers how the caller relates
+  to a chat (`PARTICIPANT`, `TEAM`, `REVIEW`); `REVIEW` never writes.
+- **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages
+  through `chat.writeRefusal`): nobody while messaging is off; participants each other and their
+  delegation only once the roles are released, while both hold a seat, neither blocked the other
+  (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
+  participant care). The team is always reached.
+- **A participant agrees to the terms before their first message.** The terms of the message
+  service are the app's, one YAML file per version with every text in both languages
+  (`#api/handlers/messagingTerms/terms/v<version>.yaml`, read by `terms.ts` and checked by the zod
+  schema in `messagingTermsDocument.ts`): sections with an id, an icon, a title, a one-sentence
+  `summary`, the paragraphs and an optional `callout`, plus the `confirmations` to tick.
+  `messagingTerms` answers them in the caller's locale with a `contentHash` of exactly that text.
+  `sendChatMessage` refuses a party without an acceptance that holds with `TERMS_NOT_ACCEPTED`
+  (`assertAcceptedTerms`); the composer then shows `MessagingTermsModal`, and
+  `acceptMessagingTerms` takes the version, revision and hash the reader was shown and every
+  confirmation (INVALID_INPUT otherwise) and adds a row to `messaging_terms_acceptance` (version,
+  revision, locale, hash, confirmations; one per account, for every conference; never changed). An acceptance
+  holds for the current version with every confirmation it asks for (`acceptanceHolds`). The team
+  writes without. **Raise `version` (in a new file, keeping the old one) when the terms change in
+  meaning**, and everybody is asked again; raise `revision` for wording only. `terms/revisions.json`
+  pins each revision's hash, so `terms.test.ts` fails on a text changed without either.
+- **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
+  "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
+  read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
+  that message, without the text. A participant turns it off for themselves
+  (`user.messageNotificationEmails`); the team chooses per inbox, and hears on Slack too (see
+  "Team notifications").
+- **The pages** are `dashboard/[conferenceId]/messages` (participants) and `team/messages` (the
+  inboxes the caller answers, and the reports for participant care), both built from
+  `#lib/components/chat/` (see CLAUDE-UI.md). `WriteToDelegateButton` opens the chat of a team
+  inbox with a participant from wherever the team meets them (a paper, the paper tables) and
+  attaches the paper to the first message. `e2e/authorization/messages.spec.ts` pins the rules
+  down, `e2e/messages/` the flows; the dev seed's `seed-dev/messages.ts` has every state.
+
+#### 16. Announcements
+
+- **The team tells its conference things through announcements** (`#api/handlers/announcement/`,
+  tables in `schema/announcements.ts`): any number, each with a title, a Markdown text, an
+  importance (`NORMAL`, `IMPORTANT`, `URGENT`), an optional signature and attachments
+  (`announcement_attachment`, files of the kind `announcement`/`attachment`). They replace the one
+  text a conference had (`conference.info`, which the `announcements` migration turned into each
+  conference's first, pinned announcement).
+- **A life in three stored states** (`announcement.status`): `DRAFT`, `PUBLISHED`, `ARCHIVED`.
+  Scheduling is not a state: publishing sets `publishAt`, ahead for a scheduled one, and
+  `visibleUntil` ends it. `announcementState` (`#lib/helpers/announcements`) derives what the team
+  sees (`SCHEDULED`, `EXPIRED`) from the clock, `isOut` whether readers get it. Nothing in the app
+  runs on a timer: a scheduled announcement is readable from its time on because the feed compares
+  the clock, and the `send-emails` job tells open pages (`announceReleasedAnnouncements`, once per
+  announcement, `releaseAnnounced`). Editing the title or text of one that is out sets `editedAt`,
+  which readers see as "updated".
+- **An audience is any number of blocks, and matching one is enough** (`announcement_audience`,
+  `audienceMatches` / `inAudience`): kinds of participants, applicants without a seat, the seated,
+  the waiting list, a committee, a role, a survey option, open payment or paperwork, minors,
+  adults, and the team or one team role. The team is only ever in a `TEAM` block. **One pure
+  rule, one loader:** `audienceSubjects.ts` turns the people of a conference into
+  `AudienceSubject`s, which the feed (one person), the recipient counts and the mails all match
+  against, so they cannot disagree. **Everything about a seat is empty until the assignment is
+  released** (`participantSubjects`), so no announcement tells anybody their seat early; a new
+  audience kind that depends on a seat has to follow that. **"Everyone" narrows with the
+  conference** (`AudienceSubject.everyone`, `everyoneIsSeated`): every participant and everybody
+  waiting while people register, and from `PREPARATION` on with the assignment released only who
+  holds a seat and the supervisors of somebody who does, so a rejected applicant or somebody
+  still waiting is not told what is meant for the people who come. Before the release it stays
+  everybody, or getting an announcement would tell the seats. That a block's committee, role or
+  survey option is the conference's is the database's (`announcement_audience_same_conference`).
+- **Readers never read the table.** The rows (drafts, schedules, audiences, authors) are their
+  editors': the conference's content roles (`editConferenceContent`) and system admins, through
+  the abilities. Everybody else gets `announcementFeed(conferenceId)`, which answers what is out
+  for the caller's own part (`feedReader`: nobody's for an AI assistant, which works on the rows
+  instead: every mutation but deleting is an MCP tool, and what changes what readers get or
+  mails them previews first, `outward`) as plain
+  `AnnouncementFeedItem`s with their attachments' URLs, pinned first, then urgent, then newest
+  (`compareFeed`). It is a live field (`smartSubscription`): publishing and taking back announce
+  `created()` / `removed()` on the announcement pubsub, a change the row's `updated(id)`.
+- **Reading is per person** (`announcement_read`, `markAnnouncementsRead`, only for what is in
+  the reader's feed) and announces nothing, or every read would make every open feed ask again.
+  The pages keep what was read in this browser (`#lib/state/announcementReads.svelte.ts`), since
+  a feed that has had a live update no longer follows the mutation's answer. The team's list
+  shows `readCount` of `recipientCount` (`announcementReach`, once per request and conference).
+- **Mails are an automatic kind without a switch** (`ANNOUNCEMENT`, `ALWAYS_AUTOMATIC_KINDS`):
+  "notify by mail" on the announcement is the decision. `loadAnnouncementMails` owes the mail to
+  everybody in the audience while the announcement is out and fresh (`owesMail`,
+  `ANNOUNCEMENT_MAIL_HOURS` from `mailSince`), keyed by announcement and `mailRevision`; "notify
+  again" raises the revision and restarts the window. Publishing starts the sweep right away
+  (`sendOpenEmailsInBackground`), the job covers scheduled ones. The mail carries the text as
+  blocks (`announcementBlocks.ts`: headings, paragraphs, lists, http links; never HTML), the
+  signature and the attachments' names. `sendAnnouncementTestMail` sends it to the editor alone.
+- **The pages**: `team/announcement` (list, `AnnouncementEditor` with `AudiencePicker` and its
+  live recipient count, `PublishDialog`), the dashboard's `AnnouncementFeed` (pinned, unread and
+  the newest), `dashboard/[conferenceId]/announcements` (all of them) and `UrgentAnnouncementBar`
+  in the header, shown on every page of the conference while an urgent one is unread.
+  `e2e/authorization/announcements.spec.ts` pins the rules down, `e2e/announcements/` the flows;
+  the dev seed's `seed-dev/announcements.ts` has every state.
+
+#### 17. Team notifications
+
+- **Each team member decides how they hear of what waits for them** (`#api/handlers/notification/`,
+  tables in `schema/notifications.ts`): per conference, per **topic** and per **channel** (`EMAIL`,
+  `SLACK`). The topics are the inboxes they answer (`PARTICIPANT_CARE`; `COMMITTEE_INBOX`, one per
+  chair or consultant function they hold; `TRUSTED_SHARED` and `TRUSTED_PERSONAL`) and, for
+  participant care, `CHAT_REPORT`. `#lib/helpers/teamNotifications` is the one pure rule the page,
+  the mails and the Slack messages share: `topicsOf` (what a member is offered), `topicOfInbox`
+  (under which topic an inbox tells them, null when they do not answer it) and `wantsNotification`.
+  A new topic is an enum value, a case there and a label (`teamNotificationLabels.ts`).
+- **Only choices are stored** (`notificationPreference`, anchored on the team member, a committee
+  inbox on the member's own function by a composite key). Without a row the default holds: both
+  channels on, mail off for whoever switched `user.messageNotificationEmails` off before. That
+  switch stays the participants' own, on their messages page.
+- **The notification tables have no relations and no abilities, on purpose.** rumble exposes every
+  table a relation names, and neither the choices nor the workspaces with their bot tokens belong
+  in the schema. `notificationStore.ts` reads them; the API answers plain objects
+  (`myNotificationSettings`, `mySlackConnection`, `slackWorkspaces`, `conferenceSlackWorkspace`),
+  live through the tables' pubsubs (a bare `updated()` there: these lists listen for any change).
+  The settings are personal: `assertOwnNotifications` refuses an AI assistant.
+- **Slack workspaces are the system admins'** (`slackWorkspace`, page `dashboard/slack-workspaces`):
+  a name and a bot token (scopes `chat:write`, `users:read`, `users:read.email`), checked with
+  `auth.test` and stored encrypted (`slackToken.ts`, AES-GCM under a key derived from
+  `CERTIFICATE_SECRET`). A token is written, never answered. **A conference picks one**
+  (`conferenceSlackWorkspace`, `setConferenceSlackWorkspace`, project management, the card on the
+  team's e-mail page), so one workspace serves every conference of an organizer.
+- **People are found by their account's address, with nothing to connect** (`slackUsers.ts`,
+  `users.lookupByEmail`). The answer is kept in `slackUserLookup` (a month when found, an hour
+  when not, asked again when the address changed). Somebody not in the workspace gets no Slack
+  message and the settings page says so.
+- **Slack tells at once, mail after the wait.** `sendMessage` and `reportChat` call
+  `tellInboxOnSlack` / `tellReportOnSlack` (`slackNotifications.ts`) after their commit, in the
+  background: a direct message to everybody who answers the inbox (or cares for participants) and
+  left Slack on. It is the one thing that is sent because something happened. An inbox tells a
+  member once until it is read (`slackNotification`, claimed under an advisory lock; the claim is
+  taken back when the message did not go out). The mails stay state: `UNREAD_MESSAGES` now leaves
+  out the inboxes a member switched the mail off for (`wantsInboxMail`), and `CHAT_REPORTED` is
+  owed to participant care per open report (`loadOpenReportsOfTeam`). Both are ordinary kinds the
+  conference switches to automatic.
+- **Like the mails, Slack notifies and does not relay**: the inbox, the conference and a link,
+  never a word of the message or who wrote it. Anything new that tells the team has to keep that,
+  for the trusted persons' chats above all.
+- `SLACK_API_URL` points the calls at a stand-in; only tests set it.
+  `e2e/authorization/notifications.spec.ts` pins the rules down.
 
 ### Logging
 
@@ -1405,7 +1653,8 @@ Required variables (see `.env.example`):
 - `OIDC_ROLE_CLAIM` - claim name or dot path of the provider's role/group names (any provider's shape;
   `#api/services/oidc/roleClaims.ts`, falling back to the userinfo endpoint), `OIDC_ROLE_MAP` (JSON) maps
   them onto `admin` / `member` / `service_user`
-- `CERTIFICATE_SECRET` - Secret for signing participation certificates
+- `CERTIFICATE_SECRET` - Secret for signing participation certificates; the Slack bot tokens are
+  encrypted under a key derived from it, so changing it means entering them again
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
 - OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL` (the full `…/v1/traces` URL), `OTEL_SERVICE_NAME`,
@@ -1452,12 +1701,17 @@ Required variables (see `.env.example`):
 ## Git Hooks (Lefthook)
 
 **Pre-commit**: Auto-format staged files with Prettier, then run `fallow audit` on the working tree
-**Pre-push**: Run tests, lint and format-check pushed files, and run `fallow audit` against the branch base
+**Pre-push**: The same checks as CI, made cheap: lint (`eslint`, cached by content) and the format check look only at the files the push changes, the tests run with `vitest run --sinceLastRun` (the tests whose recorded dependencies changed since they last ran, and those that failed), the type check is `bun run check`, which is incremental, and the i18n check and `fallow audit` against the branch base run as before. A commit made with `--no-verify` is still caught by the push that carries it. What the shortcuts cannot see (an eslint or prettier upgrade changing the verdict on untouched files) is CI's to catch, which checks everything without a cache. The caches are gitignored and safe to delete when a result looks stale: `.eslintcache`, `.svelte-kit/.svelte-check`, `node_modules/.vitest-cache`.
 
 The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
 
 ## Performance Notes
 
+- **Permission rules are id lists, not relation chains** (`authHelper/callerFacts.ts`). The
+  caller's facts take a handful of small queries per root field (`RefreshCallerFactsPlugin` loads
+  them again, `refreshCallerAbilities` after a write); rumble evaluates a rule once per request, so
+  a `liveRule` answers with a filter rumble reads again whenever it prepares one
+  (`liveRule.test.ts` pins that down).
 - **Postgres JIT is off** for the app's connections (`-c jit=off` in `src/api/db/db.ts`). rumble's
   ability and mask SQL is costed far above `jit_above_cost`, and compiling it took seconds per
   statement (a delegation card: 6.3 s of 6.7 s).
@@ -1618,6 +1872,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   not be - schema building fails every `instanceof` check across two copies.
 - **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
   `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
+  `bun run check` passes `--tsgo`, so svelte-check hands the type checking to TypeScript 7 too: on
+  TypeScript 6 it ran out of memory on this project. Types superforms takes (`defaults`,
+  `superForm`) are `type` aliases, not interfaces, which TypeScript 7 does not take as a
+  `Record<string, unknown>`.
 - **OpenTelemetry 3** has no `sdk-trace-node`: `#lib/tracing` builds a `TracerProvider` from
   `@opentelemetry/sdk-trace` and registers the async-hooks context manager and the W3C propagators
   itself, which `NodeTracerProvider.register()` used to do. The server (`src/instrumentation.server.ts`)
@@ -1647,27 +1905,73 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Since 0.30.0 `subscribe`
   answers the unsubscribe function (it answered `{ unsubscribe }` while typed as one), result
   types carry the auto included `id`, a live query started before its first answer asks once, and
-  `onError` hears the updates a live result skips (the CHASE link reports them). Keep rumble at
-  ≥ 0.30.0.
+  `onError` hears the updates a live result skips (the CHASE link reports them). Since 0.33.0 a
+  list's `search` is an input object per table, `{ term, fields? }` (`<Table>SearchInputArgument`,
+  `fields` from `<Table>SearchFieldEnum`), never a bare string. Keep rumble at ≥ 0.33.0, on
+  graphql-yoga 6 and `@graphql-yoga/redis-event-target` 4.
+
+- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.2.0 still logs the adapter's steps with the
+  colour `grey`, which Node 25's `styleText` refuses, failing `vite build` after the build itself.
+  The patch says `gray`. Drop it once a release does.
+- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 9): until
+  mount it replaces `console.warn` and assumes a string, which broke on Svelte's own warnings.
+- **Paraglide stays on 2.** Paraglide 3 compiles messages into virtual modules only its Vite plugin
+  provides, and the jobs bundle, the seed and the Bun scripts import messages outside Vite; the unit
+  tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
+  such code.
+- **devalue is not overridden.** SvelteKit and superforms need devalue 5, rumble 6; one override
+  for both breaks one of them, so each resolves its own.
+- **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
 
-- **graphql-sse is patched** (`lib/handler.*`, `lib/client.*`, the compiled files both bundles
-  inline) for two leaks upstream has not released fixes for. The handler disposes a stream
-  reserved with `PUT` that no `GET` connects to within `reservationTimeout` (30 s; issue #123):
-  it kept its subscriptions and their queued results forever, ~330 KB each. The client aborts its
-  event stream when an operation's request fails instead of opening a second one beside it (issue
-  #135, PR #136 ported). `src/api/sseReservations.test.ts` and `src/lib/api/sseClient.test.ts`
-  fail without the patch; drop it once a release carries both fixes.
-
 ## Development Workflow
 
-- Never use the git commit command after a task is finished.
+- **Local sessions:** never use the git commit command after a task is finished; the person
+  reviews and commits themselves.
+- **Cloud sessions** (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): the container is thrown
+  away, so work only survives as commits on the session's branch, and the PR is how it gets
+  reviewed. This standing instruction is the explicit request to open one; no need to ask first.
+  - **One PR per branch**, never one per step. Commit and push each step as it is done.
+  - **A step is done** (a coherent, type-checked part of the feature, `bun run check` and the
+    affected `bun test`s passing, but the feature is not finished): open the PR as a **draft**
+    if there is none yet, otherwise push to it and update its description. The description
+    lists what is done and what is still open, so a reviewer can tell how far it got.
+  - **The feature is done** (everything asked for, with its tests, the manual and CLAUDE.md /
+    CLAUDE-UI.md updated where they apply): mark the PR **ready for review**, or open it ready
+    if no draft exists.
+  - Title and label as in "Pull Requests" below, set when opening; the body in English: what
+    changed and why, how it was verified, what is left.
+  - Never merge it, and stop pushing once the person says the PR is theirs to finish.
 
-### PR Labels
+### Releasing
 
-When creating pull requests, always apply the appropriate `PR: *` label based on the conventional commit type in the PR title:
+A release is a version tag, made with `npm version` (as in CHASE) on a clean `main`:
+
+```bash
+npm version patch            # or minor / major: bumps package.json, commits "x.y.z", tags vx.y.z
+git push --follow-tags       # the commit and its tag together
+```
+
+The tag push runs the whole CI, publishes the images as `x.y.z`, `x.y` and `x` (ghcr.io and
+DockerHub, app and jobs), uploads the sourcemaps to Bugsink, triggers the Dokploy deploy and
+creates the GitHub release (`.github/actions/release-notes` renders its body). `package.json`'s
+`version` is the current release; never tag by hand.
+
+### Pull Requests
+
+Every PR needs a conventional title **and** a label; the `PR Lint` workflow
+(`.github/workflows/`, `pr-lint`) fails the PR until both are there and says so in a comment.
+
+**Title**: `<type> (<scope>): <description>`, like a commit (see "Commit Conventions"); the scope
+is optional, the space before it is the house style. Allowed types: `feat`, `fix`, `style`,
+`refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `deps`. Examples:
+`feat (Assignment): required applications`, `fix (Emails): reminder sent twice`,
+`docs: cloud session PR workflow`.
+
+**Label**: set it when opening the PR (not afterwards: the lint has then already failed once),
+chosen from the title's type:
 
 | Commit prefix              | Label                |
 | -------------------------- | -------------------- |

@@ -14,16 +14,39 @@ import {
 	registerSingleParticipantAbilities
 } from './singleParticipantPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { byParticipantCareOf } from '#api/services/authHelper/rules';
 import { singleParticipantPubsub } from '#api/pubsub';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
+import { refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
+import {
+	APPLICATION_BLOCKERS_DESCRIPTION,
+	ApplicationBlockerRef,
+	resolveApplicationBlockers
+} from '#api/handlers/plausibility/plausibility';
+import { singleParticipantApplicationPeople } from '#api/services/registration/applicationReadiness';
 
 registerSingleParticipantAbilities();
 
-const SingleParticipantRef = object({ table: 'singleParticipant' });
+const SingleParticipantRef = object({
+	table: 'singleParticipant',
+	adjust: (t) => ({
+		applicationBlockers: t.field({
+			type: [ApplicationBlockerRef],
+			description: APPLICATION_BLOCKERS_DESCRIPTION,
+			resolve: resolveApplicationBlockers((singleParticipantId) =>
+				singleParticipantApplicationPeople({ singleParticipantId })
+			)
+		})
+	})
+});
 query({ table: 'singleParticipant' });
 
-/** The single participant `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+/**
+ * The single participant `id` as far as the caller may read it once the mutation has written it
+ * (`refreshCallerAbilities`), for a `drizzleField` to answer with.
+ */
 async function readableSingleParticipant({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await refreshCallerAbilities(ctx);
 	return (await ctx.abilities.singleParticipant.filter('read')).merge({ where: { id } }).query
 		.single;
 }
@@ -53,7 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateSingleParticipant: t.drizzleField({
 		description:
-			"Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window.",
+			"Changes a single participant's application in one go: the texts, the roles applied for and whether it is sent in; arguments left out stay as they are. Sending it in is refused with CONFLICT unless it has enough roles and both texts after this update, within the registration window, and the plausibility checks find nothing about the person (`applicationBlockers`) - which participant care may override.",
 		type: SingleParticipantRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -74,8 +97,11 @@ schemaBuilder.mutationFields((t) => ({
 			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateSingleParticipant({ ctx, id: args.id });
-			await updateSingleParticipantApplication(args);
+			const { conferenceId } = await assertCanUpdateSingleParticipant({ ctx, id: args.id });
+			await updateSingleParticipantApplication({
+				...args,
+				byParticipantCare: await byParticipantCareOf({ ctx, conferenceId })
+			});
 
 			return db.query.singleParticipant
 				.findFirst(query(await readableSingleParticipant({ ctx, id: args.id })))

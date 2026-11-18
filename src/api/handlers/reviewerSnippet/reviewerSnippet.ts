@@ -1,4 +1,5 @@
 import { db } from '#api/db/db';
+import { editorDocumentSchema } from '#api/handlers/paper/paperService';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
@@ -27,7 +28,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: ReviewerSnippetRef,
 		args: {
 			name: t.arg.string({ required: true }).validate(snippetNameSchema),
-			content: t.arg({ type: 'JSON', required: true })
+			content: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const { callerId } = await assertCanCreateReviewerSnippet(ctx);
@@ -50,7 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			id: t.arg.id({ required: true }),
 			name: t.arg.string().validate(snippetNameSchema.nullish()),
-			content: t.arg({ type: 'JSON' })
+			content: t.arg({ type: 'JSON' }).validate(editorDocumentSchema.nullish())
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateReviewerSnippet({ ctx, id: args.id });

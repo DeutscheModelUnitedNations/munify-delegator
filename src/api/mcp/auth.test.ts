@@ -14,13 +14,8 @@ vi.mock('$app/env/public', () => ({
 	PUBLIC_OIDC_AUTHORITY: 'https://idp.example/oidc/.well-known/openid-configuration'
 }));
 
-const {
-	discoveryUrl,
-	isMcpEndpoint,
-	protectedResourceMetadata,
-	resourceOfMetadataPath,
-	verifyMcpAccessToken
-} = await import('./auth');
+const { isMcpEndpoint, protectedResourceMetadata, resourceOfMetadataPath, verifyMcpAccessToken } =
+	await import('./auth');
 
 let privateKey: CryptoKey;
 const realFetch = globalThis.fetch;
@@ -128,26 +123,6 @@ describe('resourceOfMetadataPath', () => {
 
 	it('answers for nothing else', () => {
 		expect(resourceOfMetadataPath('api/graphql')).toBeUndefined();
-	});
-});
-
-describe('discoveryUrl', () => {
-	it('appends the discovery path to an issuer, as the sign-in does', () => {
-		expect(discoveryUrl('https://idp.example/oidc').href).toBe(
-			'https://idp.example/oidc/.well-known/openid-configuration'
-		);
-		expect(discoveryUrl('https://idp.example/oidc/').href).toBe(
-			'https://idp.example/oidc/.well-known/openid-configuration'
-		);
-		expect(discoveryUrl('https://idp.example').href).toBe(
-			'https://idp.example/.well-known/openid-configuration'
-		);
-	});
-
-	it('keeps a discovery document as it is', () => {
-		expect(discoveryUrl('https://idp.example/oidc/.well-known/openid-configuration').href).toBe(
-			'https://idp.example/oidc/.well-known/openid-configuration'
-		);
 	});
 });
 

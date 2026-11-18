@@ -17,6 +17,16 @@
 	import ReviewStatusPicker from './ReviewStatusPicker.svelte';
 	import { hasTextContent } from '../tiptapText';
 	import { unlockedPiece, type UnlockedPiece } from './unlockedPiece';
+	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
+	import ReviewAnonymityToggle from './ReviewAnonymityToggle.svelte';
+	import {
+		anonymityArgs,
+		DEFAULT_REVIEW_ANONYMITY,
+		reviewAnonymityComplete,
+		reviewAnonymityName,
+		storedReviewAnonymity,
+		type ReviewAnonymity
+	} from './reviewAnonymity';
 
 	interface Props {
 		paperId: string;
@@ -60,6 +70,23 @@
 	let selectedStatus = $state<PaperstatusEnum>(untrack(() => currentStatus));
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
+
+	// Whether to publish under another name instead of the reviewer's, remembered across reviews.
+	const anonymityStore = createPersistedState<ReviewAnonymity>({
+		key: 'paperReviewAnonymity',
+		initial: DEFAULT_REVIEW_ANONYMITY
+	});
+	const anonymity = $derived(storedReviewAnonymity(anonymityStore.current));
+	const anonymityComplete = $derived(reviewAnonymityComplete(anonymity));
+
+	// Who will be told, and under which name when the review goes out anonymously.
+	const submissionNotice = $derived.by(() => {
+		const author = authorName || m.theAuthor();
+		const notified = m.reviewSubmissionNotification({ author });
+		const name = reviewAnonymityName(anonymity);
+		if (!name) return notified;
+		return `${notified} ${m.reviewSubmissionAnonymousNotice({ author, name })}`;
+	});
 
 	// The page re-creates this component per paper, so the draft key is fixed for its lifetime.
 	const draft = createDraftAutosave<ReviewDraft, JSONContent>({
@@ -133,7 +160,12 @@
 		isSubmitting = true;
 		try {
 			const promise = client.mutate.createPaperReview({
-				__args: { paperId, comments: $reviewComments, newStatus: selectedStatus },
+				__args: {
+					paperId,
+					comments: $reviewComments,
+					newStatus: selectedStatus,
+					...anonymityArgs(anonymity)
+				},
 				pieceUnlocked: true,
 				unlockedPieceData: {
 					flagId: true,
@@ -222,15 +254,24 @@
 		<!-- Status Selector -->
 		<ReviewStatusPicker transitions={availableTransitions} bind:selected={selectedStatus} />
 
-		<!-- Submit Button -->
-		<button class="btn btn-primary" onclick={openConfirmModal} disabled={isSubmitting}>
-			{#if isSubmitting}
-				<span class="loading loading-spinner loading-sm"></span>
-			{:else}
-				<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
-			{/if}
-			{m.submitReview()}
-		</button>
+		<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+			<ReviewAnonymityToggle
+				bind:choice={() => anonymity, (next) => (anonymityStore.current = next)}
+			/>
+
+			<button
+				class="btn btn-primary grow"
+				onclick={openConfirmModal}
+				disabled={isSubmitting || !anonymityComplete}
+			>
+				{#if isSubmitting}
+					<span class="loading loading-spinner loading-sm"></span>
+				{:else}
+					<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
+				{/if}
+				{m.submitReview()}
+			</button>
+		</div>
 	{/if}
 </div>
 
@@ -241,9 +282,7 @@
 			<i aria-hidden="true" class="ph-duotone ph-warning"></i>
 			<span>{m.reviewSubmissionWarning()}</span>
 		</div>
-		<p class="text-sm text-base-content/70">
-			{m.reviewSubmissionNotification({ author: authorName || m.theAuthor() })}
-		</p>
+		<p class="text-sm text-base-content/70">{submissionNotice}</p>
 	</div>
 
 	{#snippet action()}
