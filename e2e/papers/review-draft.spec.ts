@@ -166,7 +166,10 @@ test.describe('review drafts in the editor', () => {
 		});
 		await page.getByRole('button', { name: E2E_DRAFTS_COMMITTEE_NAME, exact: false }).click();
 		await page.getByRole('button', { name: E2E_DRAFTS_AGENDA_ITEM_TITLE, exact: false }).click();
-		await expect(page.getByTestId('review-draft-marker')).toHaveCount(1, { timeout: 30_000 });
+		// other specs leave drafts on the conference's other papers: look at this paper's row
+		await expect(
+			page.locator(`tr:has(a[href$="/paperhub/${paperId}"])`).getByTestId('review-draft-marker')
+		).toHaveCount(1, { timeout: 30_000 });
 
 		await openPaper(page, paperId);
 		const review = page.locator('#review');

@@ -17,6 +17,7 @@ import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationM
 import { makeSeedTeamMember } from '../../src/api/db/seed-data/teamMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertCommittee, upsertConference } from './conference';
+import { seatNations, upsertNationRole } from './conferenceRole';
 import { upsertParticipant } from './participant';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 
@@ -101,7 +102,8 @@ async function seedConference(
 		paperIds
 	}: { id: string; title: string; mcpEnabled: boolean; paperIds: readonly string[] }
 ) {
-	await upsertConference(db, { id, title, state: 'PREPARATION', nations: {} });
+	// the paper views draw the delegation's flag, so it holds Germany's seat
+	await upsertConference(db, { id, title, state: 'PREPARATION', nations: { DEU: 'DE' } });
 	await db
 		.update(schema.conference)
 		.set({ mcpEnabled, isOpenPaperSubmission: true })
@@ -149,6 +151,11 @@ async function seedConference(
 		.insert(schema.committeeAgendaItem)
 		.values(agendaItem)
 		.onConflictDoUpdate({ target: schema.committeeAgendaItem.id, set: agendaItem });
+	await seatNations(db, committee, ['DEU']);
+	await db
+		.update(schema.delegation)
+		.set({ assignedRoleId: await upsertNationRole(db, id, 'DEU') })
+		.where(eq(schema.delegation.id, delegation.id));
 
 	// The papers as a run should find them: submitted, one version, no review, no draft
 	await db
