@@ -21,7 +21,7 @@ import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationM
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
 import { resetTeam } from './teamMember';
-import { MESSAGING_TERMS_VERSION } from '../../src/lib/helpers/messagingTerms';
+import { seedTermsAcceptances } from './messagingTerms';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 import { upsertConference, upsertGvAndSr, upsertSeatedDelegations } from './conference';
 
@@ -125,15 +125,12 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 			givenName: person.given,
 			familyName: person.family
 		})),
-		// everybody but Anna has agreed to the terms of the message service; she does in the specs
 		...Object.values(fixture.delegates).map((person) => ({
 			...makeSeedUser(),
 			...COMPLETE_PROFILE,
 			id: person.id,
 			givenName: person.given,
-			familyName: person.family,
-			messagingTermsVersion: person.given === 'Anna' ? null : MESSAGING_TERMS_VERSION,
-			messagingTermsAcceptedAt: person.given === 'Anna' ? null : new Date()
+			familyName: person.family
 		})),
 		{
 			...makeSeedUser(),
@@ -143,6 +140,12 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 			familyName: 'Supervisor'
 		}
 	]);
+	// everybody but Anna has agreed to the terms of the message service; she does in the specs
+	const delegates = Object.values(fixture.delegates);
+	await seedTermsAcceptances(db, {
+		agreed: delegates.filter((person) => person.given !== 'Anna').map((person) => person.id),
+		others: delegates.filter((person) => person.given === 'Anna').map((person) => person.id)
+	});
 
 	// what a run left: chats (their messages, reads and reports go along), blocks, functions
 	await db.delete(schema.chat).where(eq(schema.chat.conferenceId, conferenceId));

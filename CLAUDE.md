@@ -1396,13 +1396,20 @@ bun run preview
   (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
   participant care). The team is always reached.
 - **A participant agrees to the terms before their first message.** The terms of the message
-  service are the app's, in both languages (`messagingTermsSections`, `#lib/helpers/messagingTerms.ts`,
-  `chatTerms…` messages): conduct, who reads along (reports, the team inboxes, the trusted persons
-  as the exception), blocking, consequences. `sendChatMessage` refuses a party who has not accepted
-  `MESSAGING_TERMS_VERSION` with `TERMS_NOT_ACCEPTED` (`assertAcceptedTerms`); the composer then
-  shows `MessagingTermsModal`, `acceptMessagingTerms` stores the version on the account
-  (`user.messagingTermsVersion`, once for every conference) and the message goes out. The team
-  writes without. **Raise the version when the terms change in meaning**, and everybody is asked again.
+  service are the app's, one YAML file per version with every text in both languages
+  (`#api/handlers/messagingTerms/terms/v<version>.yaml`, read by `terms.ts` and checked by the zod
+  schema in `messagingTermsDocument.ts`): sections with an id, an icon, a title, a one-sentence
+  `summary`, the paragraphs and an optional `callout`, plus the `confirmations` to tick.
+  `messagingTerms` answers them in the caller's locale with a `contentHash` of exactly that text.
+  `sendChatMessage` refuses a party without an acceptance that holds with `TERMS_NOT_ACCEPTED`
+  (`assertAcceptedTerms`); the composer then shows `MessagingTermsModal`, and
+  `acceptMessagingTerms` takes the version, revision and hash the reader was shown and every
+  confirmation (INVALID_INPUT otherwise) and adds a row to `messaging_terms_acceptance` (version,
+  revision, locale, hash, confirmations; one per account, for every conference; never changed). An acceptance
+  holds for the current version with every confirmation it asks for (`acceptanceHolds`). The team
+  writes without. **Raise `version` (in a new file, keeping the old one) when the terms change in
+  meaning**, and everybody is asked again; raise `revision` for wording only. `terms/revisions.json`
+  pins each revision's hash, so `terms.test.ts` fails on a text changed without either.
 - **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
   "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
@@ -1933,7 +1940,22 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 
 ## Development Workflow
 
-- Never use the git commit command after a task is finished.
+- **Local sessions:** never use the git commit command after a task is finished; the person
+  reviews and commits themselves.
+- **Cloud sessions** (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): the container is thrown
+  away, so work only survives as commits on the session's branch, and the PR is how it gets
+  reviewed. This standing instruction is the explicit request to open one; no need to ask first.
+  - **One PR per branch**, never one per step. Commit and push each step as it is done.
+  - **A step is done** (a coherent, type-checked part of the feature, `bun run check` and the
+    affected `bun test`s passing, but the feature is not finished): open the PR as a **draft**
+    if there is none yet, otherwise push to it and update its description. The description
+    lists what is done and what is still open, so a reviewer can tell how far it got.
+  - **The feature is done** (everything asked for, with its tests, the manual and CLAUDE.md /
+    CLAUDE-UI.md updated where they apply): mark the PR **ready for review**, or open it ready
+    if no draft exists.
+  - Title and label as in "Pull Requests" below, set when opening; the body in English: what
+    changed and why, how it was verified, what is left.
+  - Never merge it, and stop pushing once the person says the PR is theirs to finish.
 
 ### Releasing
 
@@ -1949,9 +1971,19 @@ DockerHub, app and jobs), uploads the sourcemaps to Bugsink, triggers the Dokplo
 creates the GitHub release (`.github/actions/release-notes` renders its body). `package.json`'s
 `version` is the current release; never tag by hand.
 
-### PR Labels
+### Pull Requests
 
-When creating pull requests, always apply the appropriate `PR: *` label based on the conventional commit type in the PR title:
+Every PR needs a conventional title **and** a label; the `PR Lint` workflow
+(`.github/workflows/`, `pr-lint`) fails the PR until both are there and says so in a comment.
+
+**Title**: `<type> (<scope>): <description>`, like a commit (see "Commit Conventions"); the scope
+is optional, the space before it is the house style. Allowed types: `feat`, `fix`, `style`,
+`refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `deps`. Examples:
+`feat (Assignment): required applications`, `fix (Emails): reminder sent twice`,
+`docs: cloud session PR workflow`.
+
+**Label**: set it when opening the PR (not afterwards: the lint has then already failed once),
+chosen from the title's type:
 
 | Commit prefix              | Label                |
 | -------------------------- | -------------------- |

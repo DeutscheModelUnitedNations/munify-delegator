@@ -7,7 +7,6 @@ import { isSystemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
 import { messagePreview, type ChatInbox } from '#lib/helpers/chat';
-import { messagingTermsVersionSchema } from '#lib/helpers/messagingTerms';
 import { conferenceContacts, type Contact } from './chatContacts';
 import {
 	assertCanListContacts,
@@ -28,7 +27,6 @@ import {
 } from './chatPermissions';
 import {
 	chatWriteRefusal,
-	acceptMessagingTerms,
 	hasBlocked,
 	inboxesReaching,
 	lastMessageOf,
@@ -640,19 +638,6 @@ schemaBuilder.mutationFields((t) => ({
 				participantId: args.participantId,
 				suspended: args.suspended
 			});
-			return true;
-		}
-	}),
-
-	acceptMessagingTerms: t.field({
-		description:
-			"The caller accepts the message service's terms, which a participant has to before they write. `version` is the one they were shown (`MESSAGING_TERMS_VERSION`); INVALID_INPUT for any other, so nobody accepts a text they have not seen.",
-		type: 'Boolean',
-		args: {
-			version: t.arg.int({ required: true }).validate(messagingTermsVersionSchema)
-		},
-		resolve: async (_root, _args, ctx) => {
-			await acceptMessagingTerms(ctx.mustBeLoggedIn().sub);
 			return true;
 		}
 	}),

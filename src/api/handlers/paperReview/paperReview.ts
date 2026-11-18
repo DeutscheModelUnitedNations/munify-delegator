@@ -1,4 +1,5 @@
 import { enum_, object, schemaBuilder } from '#api/rumble';
+import { editorDocumentSchema } from '#api/handlers/paper/paperService';
 import {
 	createPaperReview,
 	reviewAnonymityArgsSchema,
@@ -48,7 +49,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: CreatePaperReviewResult,
 		args: {
 			paperId: t.arg.id({ required: true }),
-			comments: t.arg({ type: 'JSON', required: true }),
+			comments: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema),
 			newStatus: t
 				.arg({
 					type: paperStatusEnum,

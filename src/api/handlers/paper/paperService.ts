@@ -7,6 +7,7 @@ import type { InferSelectModel } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors';
 import { paperPubsub, paperVersionPubsub } from '#api/pubsub';
+import { jsonDocument } from '#api/services/argSchemas';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
@@ -19,6 +20,17 @@ export const authorStatusSchema = z.enum(['DRAFT', 'SUBMITTED', 'REVISED'], {
 	error: () => m.paperStatusOnlyThroughReview()
 });
 export type AuthorStatus = z.output<typeof authorStatusSchema>;
+
+/**
+ * The document a paper version, a review or a reviewer snippet holds: a TipTap document or a
+ * resolution, always stored as the JSON object itself. A client sending it as a JSON string gets it
+ * parsed, never stored as a string, which the editor would show as raw JSON text.
+ */
+export const editorDocumentSchema = jsonDocument({
+	schema: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]),
+	malformed: () => m.paperDocumentMalformed(),
+	invalid: (details) => m.paperDocumentInvalid({ details })
+});
 
 /** A new paper is a draft or goes straight out; REVISED answers a review, and it has had none. */
 export const newPaperStatusSchema = z.enum(['DRAFT', 'SUBMITTED'], {
