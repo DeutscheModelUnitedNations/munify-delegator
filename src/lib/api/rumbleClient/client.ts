@@ -3498,6 +3498,12 @@ export type Mutation = {
     chatId: ID,
     paperId?: ID | null | undefined
   }) => Chatmessage,
+  sendNotificationTest: (p: {
+    channel: NotificationchannelEnum,
+    conferenceId: ID,
+    teamFunctionId?: ID | null | undefined,
+    topic: NotificationtopicEnum
+  }) => NotificationTestResult,
   sendOpenEmails: (p: {
     conferenceId: ID,
     kinds: EmailkindEnum[]
@@ -4027,6 +4033,8 @@ export type NotificationSetting = {
   teamFunctionId: ID | null,
   topic: NotificationtopicEnum    
 };
+		
+export type NotificationTestResult = "NOT_FOUND" | "SENT" | "UNAVAILABLE";
 		
 export type NotificationchannelEnum = "EMAIL" | "SLACK";
 		

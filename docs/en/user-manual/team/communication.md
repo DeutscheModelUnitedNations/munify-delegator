@@ -173,6 +173,8 @@ Chairs and committee consultants also hear of every paper submitted in their com
 
 Slack finds you by the email address of your DELEGATOR account. You do not have to connect anything. The **Notifications** page shows for each conference whether Slack reaches you, and **Send a test message** sends you one to try. If you are signed in to the workspace with another address, Slack does not find you and you only get emails.
 
+To try a notification, click the paper plane next to its email or Slack switch. You get it exactly as it would arrive, in your conference's words and marked as a test, even while the switch is off. For a committee's papers the test describes a sample paper on the committee's first agenda item.
+
 Participants only get the email. They switch it off for themselves below their chats with **Email about unread messages**.
 
 ## Emails {#emails}

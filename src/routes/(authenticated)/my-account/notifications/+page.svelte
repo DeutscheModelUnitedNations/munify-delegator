@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { dev } from '$app/env';
-	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
-	import { notificationTopicLabel } from '#lib/helpers/teamNotificationLabels';
-	import type { NotificationChannel, NotificationTopic } from '#lib/helpers/teamNotifications';
 	import SlackConnectionNote from './SlackConnectionNote.svelte';
+	import NotificationTable from './NotificationTable.svelte';
 
 	/**
 	 * The caller's notification settings: per conference they are on the team of, what mail and
@@ -29,38 +27,6 @@
 			}
 		})
 	);
-
-	const rowKey = (setting: { topic: string; teamFunctionId?: string | null }) =>
-		`${setting.topic}:${setting.teamFunctionId ?? ''}`;
-
-	/** Saves a switch; one that could not be saved goes back to where it was. */
-	async function setChannel({
-		conferenceId,
-		key,
-		channel,
-		input
-	}: {
-		conferenceId: string;
-		key: { topic: NotificationTopic; teamFunctionId?: string | null };
-		channel: NotificationChannel;
-		input: HTMLInputElement;
-	}) {
-		const enabled = input.checked;
-		try {
-			await client.mutate.setNotificationPreference({
-				__args: {
-					conferenceId,
-					topic: key.topic,
-					teamFunctionId: key.teamFunctionId ?? null,
-					channel,
-					enabled
-				}
-			});
-		} catch {
-			toast.error(m.notificationSaveFailed());
-			input.checked = !enabled;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -93,62 +59,11 @@
 			{#if conference.settings.length === 0}
 				<p class="text-base-content/70 text-sm">{m.notificationsNoTopics()}</p>
 			{:else}
-				<div class="overflow-x-auto">
-					<table class="table">
-						<thead>
-							<tr>
-								<th scope="col">{m.notificationsTopic()}</th>
-								<th scope="col" class="w-20 text-center">{m.notificationsChannelEmail()}</th>
-								<th scope="col" class="w-20 text-center">{m.notificationsChannelSlack()}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each conference.settings as setting (setting.id)}
-								{@const label = notificationTopicLabel(setting)}
-								<tr data-testid="notification-row" data-topic={rowKey(setting)}>
-									<th scope="row" class="font-normal">
-										<span class="font-medium">{label}</span>
-										{#if setting.committeeName}
-											<span class="text-base-content/70 block text-xs">
-												{setting.committeeName}
-											</span>
-										{/if}
-									</th>
-									<td class="text-center">
-										<input
-											type="checkbox"
-											class="toggle toggle-primary toggle-sm"
-											aria-label={m.notificationsToggleEmail({ topic: label })}
-											checked={setting.email}
-											onchange={(event) =>
-												setChannel({
-													conferenceId: conference.conferenceId,
-													key: setting,
-													channel: 'EMAIL',
-													input: event.currentTarget
-												})}
-										/>
-									</td>
-									<td class="text-center">
-										<input
-											type="checkbox"
-											class="toggle toggle-primary toggle-sm"
-											aria-label={m.notificationsToggleSlack({ topic: label })}
-											checked={setting.slack}
-											onchange={(event) =>
-												setChannel({
-													conferenceId: conference.conferenceId,
-													key: setting,
-													channel: 'SLACK',
-													input: event.currentTarget
-												})}
-										/>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+				<NotificationTable
+					conferenceId={conference.conferenceId}
+					hasSlackWorkspace={Boolean(conference.slackWorkspaceName)}
+					settings={conference.settings}
+				/>
 			{/if}
 
 			<svelte:boundary>
