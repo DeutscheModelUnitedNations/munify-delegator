@@ -203,7 +203,12 @@
 	});
 	// Leaving the paper saves what is pending rather than dropping it; closing or reloading the
 	// page, where no save can be waited for, asks first while something is not stored yet.
-	onDestroy(() => void saver.flush());
+	// The page is gone by the time that save answers, so a failure is told in a toast.
+	onDestroy(() => {
+		void saver.flush().then(() => {
+			if (saver.state === 'failed') toast.error(m.reviewDraftSaveFailed());
+		});
+	});
 	function warnUnsaved(event: BeforeUnloadEvent) {
 		if (!saver.dirty && saver.state !== 'saving') return;
 		void saver.flush();

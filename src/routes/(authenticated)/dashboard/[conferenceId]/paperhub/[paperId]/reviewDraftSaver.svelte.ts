@@ -91,6 +91,8 @@ export function createDraftSaver({
 		/** The editor changed: save it after a moment. */
 		edited(editor: EditorState) {
 			latest = editor;
+			// "saved" would claim the new edit is stored; a running save still shows as such
+			if (state !== 'saving' && pending()) state = 'idle';
 			if (!paused) schedule();
 		},
 		/** Saves what is pending now, without waiting for the moment to pass. */

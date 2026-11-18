@@ -57,6 +57,18 @@ describe('createDraftSaver', () => {
 		expect(saver.dirty).toBe(false);
 	});
 
+	it('stops showing "saved" once the editor changes again', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save });
+		saver.edited(editor('A'));
+		await vi.advanceTimersByTimeAsync(1500);
+		calls[0]?.answer();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(saver.state).toBe('saved');
+		saver.edited(editor('AB'));
+		expect(saver.state).toBe('idle');
+	});
+
 	it('saves what is pending at once on flush', async () => {
 		const { save, calls } = controlledSave();
 		const saver = createDraftSaver({ save });
