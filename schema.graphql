@@ -4221,6 +4221,17 @@ type Mutation {
   """
   deletePaper(id: ID!): Boolean!
 
+  """
+  Deletes the caller's review draft of a paper; false when there was none. For whoever may review the paper (NOT_FOUND otherwise).
+  """
+  deletePaperReviewDraft(
+    """
+    Replaces a draft the reviewer changed in the app, which is refused with CONFLICT otherwise. Set it only after the reviewer said their changes may go.
+    """
+    overwriteAppEdits: Boolean
+    paperId: ID!
+  ): Boolean!
+
   """Deletes a place; schedule entries at it stay, without a place."""
   deletePlace(id: ID!): Boolean!
 
@@ -4528,6 +4539,11 @@ type Mutation {
   Gives the supervisor a new connection code: the supervisor, or participant care. The old one stops working; people already connected stay so.
   """
   rotateSupervisorConnectionCode(id: ID!): Conferencesupervisor!
+
+  """
+  Saves the caller's review draft of a paper as the review editor holds it, creating it on the first change; a draft written by an assistant keeps the version it was written for. For whoever may review the paper (NOT_FOUND otherwise), CONFLICT for a paper that is still a draft.
+  """
+  savePaperReviewDraft(comments: JSON!, paperId: ID!, statusAfter: PaperstatusEnum!): Paperreviewdraft!
 
   """
   Compares everyone taking part in the conference with the accounts of earlier conferences and those with a care note, and stores the pairs found: new ones open, known ones with a fresh score but their decision kept. Answers how many pairs the scan found.
@@ -5279,6 +5295,23 @@ type Mutation {
   ): Conferenceparticipant!
 
   """
+  Writes the caller's review draft of a paper, replacing the one there is: a review prepared for the reviewer, who reads it in the review editor, changes it and sends it there. A draft is the reviewer's alone. It does not reach the paper's authors, sends no mail, changes no status and counts as no review; it can only be sent in the app. `content` is Markdown: paragraphs, **bold**, *italic*, lists, `##` headings and `> quotes`. A quote is taken literally, one paragraph each, and should be the paper's exact words so that "Find in paper" finds it; the answer lists those it would not find. For whoever may review the paper (NOT_FOUND otherwise), CONFLICT for a paper that is still a draft.
+  """
+  upsertPaperReviewDraft(
+    """The review as Markdown."""
+    content: String!
+
+    """
+    Replaces a draft the reviewer changed in the app, which is refused with CONFLICT otherwise. Set it only after the reviewer said their changes may go.
+    """
+    overwriteAppEdits: Boolean
+    paperId: ID!
+
+    """The verdict to propose: ACCEPTED or CHANGES_REQUESTED."""
+    statusAfter: PaperstatusEnum!
+  ): SavedPaperReviewDraft!
+
+  """
   Picks the option as the answer to its question, replacing an earlier answer. Participants answer for themselves only (FORBIDDEN otherwise) and are refused a full option and an answer past the deadline (CONFLICT); participant care answers for anybody in its conference, past both. NOT_FOUND for an option the caller cannot read, e.g. of a hidden question.
   """
   upsertSurveyAnswer(
@@ -5626,6 +5659,35 @@ enum PaperreviewanonymousasEnum {
   CUSTOM
   RESEARCH_SERVICE
   SECRETARIAT
+}
+
+type Paperreviewdraft {
+  comments: JSON!
+  createdAt: DateTime!
+  id: ID!
+  lastEditedVia: PaperreviewdraftoriginEnum!
+  origin: PaperreviewdraftoriginEnum!
+
+  """Get the papers related to this paperReviewDraft"""
+  paper(orderBy: PaperOrderInputArgument, where: PaperWhereInputArgument): Paper!
+  paperId: ID!
+
+  """Get the paperVersions related to this paperReviewDraft"""
+  paperVersion(orderBy: PaperversionOrderInputArgument, where: PaperversionWhereInputArgument): Paperversion!
+  paperVersionId: ID!
+  reviewerId: ID!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  statusAfter: PaperstatusEnum!
+  updatedAt: DateTime!
+}
+
+enum PaperreviewdraftoriginEnum {
+  MCP
+  UI
 }
 
 enum PaperstatusEnum {
@@ -6451,6 +6513,14 @@ type Query {
   myOIDCRoles: [OIDCRolesEnum!]!
 
   """
+  The caller's own review draft of a paper, null when there is none. Nobody reads another's draft.
+  """
+  myPaperReviewDraft(paperId: ID!): Paperreviewdraft
+
+  """The caller's own review drafts of a conference's papers, newest first."""
+  myPaperReviewDrafts(conferenceId: ID!): [Paperreviewdraft!]!
+
+  """
   The caller's own review counts. Null rather than an error when they are not on the conference's paper team.
   """
   myReviewStats(conferenceId: ID!): MyReviewStats
@@ -7039,6 +7109,21 @@ input RoleapplicationWhereInputArgument {
   role: ConferenceroleWhereInputArgument
   roleId: IDWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
+}
+
+type SavedPaperReviewDraft {
+  draftId: String!
+
+  """Opens the paper with the draft in the reviewer's review editor."""
+  link: String!
+
+  """The version of the paper the draft was written for."""
+  paperVersion: Int!
+
+  """
+  The quotes (`>` lines) that do not stand word for word in one paragraph of that version, so "Find in paper" will not find them. A warning: the draft is saved all the same.
+  """
+  unmatchedQuotes: [String!]!
 }
 
 """

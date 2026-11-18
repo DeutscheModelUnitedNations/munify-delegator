@@ -41,7 +41,7 @@ describe('mutationToolsOf', () => {
 	const schema = schemaWith({
 		createCommittee: {
 			type: Committee,
-			extensions: mcpTool({ textArguments: ['name'] }),
+			extensions: mcpTool({ textArguments: ['name'], idempotent: true }),
 			args: {
 				conferenceId: { type: new GraphQLNonNull(GraphQLID) },
 				name: { type: new GraphQLNonNull(GraphQLString) },
@@ -135,7 +135,8 @@ describe('mutationToolsOf', () => {
 			arguments: { stage: 'ACTIVE' }
 		});
 		expect(toolAnnotations(stage)).toMatchObject({ openWorldHint: true, destructiveHint: false });
-		expect(toolAnnotations(create)).toMatchObject({ openWorldHint: false });
+		expect(toolAnnotations(create)).toMatchObject({ openWorldHint: false, idempotentHint: true });
+		expect(toolAnnotations(stage)).toMatchObject({ idempotentHint: false });
 	});
 
 	it('builds the mutation from the exposed arguments, with the tool’s conference', () => {

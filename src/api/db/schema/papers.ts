@@ -112,6 +112,48 @@ export const paperReview = snakeCase.table(
 	]
 );
 
+/** Where a review draft was written: by an AI assistant over MCP, or by the reviewer in the app. */
+export const paperReviewDraftOrigin = pgEnum('paper_review_draft_origin', ['MCP', 'UI']);
+
+/**
+ * A review not sent yet: at most one per paper and reviewer, read only by its reviewer. It never
+ * reaches the paper's authors, changes no status and counts as no review; submitting the review
+ * (`createPaperReview`) deletes it.
+ */
+export const paperReviewDraft = snakeCase.table(
+	'paper_review_draft',
+	{
+		...defaultIdAndTimestamps,
+		paperId: text()
+			.notNull()
+			.references(() => paper.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		reviewerId: userRef('cascade'),
+		/** The version the draft was written for; a newer one makes it stale. */
+		paperVersionId: text()
+			.notNull()
+			.references(() => paperVersion.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		/** The review editor's document, as a review's `comments`. */
+		comments: jsonb().notNull(),
+		statusAfter: paperStatus().notNull(),
+		/** Who wrote the draft as it was created (or replaced by an assistant). */
+		origin: paperReviewDraftOrigin().notNull(),
+		/** Who changed it last: an assistant may not silently replace what the reviewer wrote. */
+		lastEditedVia: paperReviewDraftOrigin().notNull()
+	},
+	(table) => [
+		uniqueIndex('paper_review_draft_paper_id_reviewer_id_key').using(
+			'btree',
+			table.paperId.asc().nullsLast(),
+			table.reviewerId.asc().nullsLast()
+		),
+		index('paper_review_draft_reviewer_id_idx').using('btree', table.reviewerId.asc().nullsLast()),
+		check(
+			'paper_review_draft_status_after_verdict',
+			sql`${table.statusAfter}::text in ('CHANGES_REQUESTED', 'ACCEPTED')`
+		)
+	]
+);
+
 export const reviewerSnippet = snakeCase.table(
 	'reviewer_snippet',
 	{

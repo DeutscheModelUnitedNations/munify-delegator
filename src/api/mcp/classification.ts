@@ -643,6 +643,25 @@ const FIELDS: Record<string, TypeClassification> = {
 		// What a reviewer wrote to a participant, and the name they signed with (may be a person's).
 		redacted: ['comments', 'anonymousName']
 	},
+	Paperreviewdraft: {
+		// Only the caller's own drafts are readable (`paperReviewDraftPermissions.ts`): what the
+		// assistant wrote about a paper, which the reviewer may have edited. About the paper, whose
+		// text the assistant reads anyway, never about a person.
+		visible: [
+			...ROW,
+			'comments',
+			'lastEditedVia',
+			'origin',
+			'paperId',
+			'paperVersionId',
+			'reviewerId',
+			'statusAfter'
+		]
+	},
+	SavedPaperReviewDraft: {
+		// The quotes are the paper's words, which `Paperversion.content` shows as well.
+		visible: ['draftId', 'link', 'paperVersion', 'unmatchedQuotes']
+	},
 	Reviewersnippet: {
 		visible: [...ROW, 'name', 'userId'],
 		redacted: ['content']

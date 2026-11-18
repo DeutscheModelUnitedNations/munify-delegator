@@ -550,6 +550,18 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: true
 		})
 	},
+	paperReviewDraft: {
+		paper: r.one.paper({
+			from: r.paperReviewDraft.paperId,
+			to: r.paper.id,
+			optional: false
+		}),
+		paperVersion: r.one.paperVersion({
+			from: r.paperReviewDraft.paperVersionId,
+			to: r.paperVersion.id,
+			optional: false
+		})
+	},
 	paperVersion: {
 		paper: r.one.paper({
 			from: r.paperVersion.paperId,
