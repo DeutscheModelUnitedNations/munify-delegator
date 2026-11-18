@@ -62,9 +62,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'locale',
 			'wantsJoinTeamInformation',
 			'wantsToReceiveGeneralInformation',
-			'messageNotificationEmails',
-			'messagingTermsVersion',
-			'messagingTermsAcceptedAt'
+			'messageNotificationEmails'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
@@ -246,6 +244,14 @@ const FIELDS: Record<string, TypeClassification> = {
 		],
 		redacted: ['personName']
 	},
+	// The message service's terms: the app's text, about nobody.
+	MessagingTerms: {
+		visible: ['id', 'version', 'revision', 'locale', 'contentHash', 'intro']
+	},
+	MessagingTermsSection: {
+		visible: ['id', 'key', 'icon', 'title', 'summary', 'paragraphs', 'callout']
+	},
+	MessagingTermsConfirmation: { visible: ['id', 'key', 'text'] },
 	// Somebody's own notification choices; an assistant is refused them (`assertOwnNotifications`).
 	// Nothing here is about a person: a conference, an inbox, two switches.
 	ConferenceNotificationSettings: {

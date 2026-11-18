@@ -1385,13 +1385,20 @@ bun run preview
   (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
   participant care). The team is always reached.
 - **A participant agrees to the terms before their first message.** The terms of the message
-  service are the app's, in both languages (`messagingTermsSections`, `#lib/helpers/messagingTerms.ts`,
-  `chatTerms…` messages): conduct, who reads along (reports, the team inboxes, the trusted persons
-  as the exception), blocking, consequences. `sendChatMessage` refuses a party who has not accepted
-  `MESSAGING_TERMS_VERSION` with `TERMS_NOT_ACCEPTED` (`assertAcceptedTerms`); the composer then
-  shows `MessagingTermsModal`, `acceptMessagingTerms` stores the version on the account
-  (`user.messagingTermsVersion`, once for every conference) and the message goes out. The team
-  writes without. **Raise the version when the terms change in meaning**, and everybody is asked again.
+  service are the app's, one YAML file per version with every text in both languages
+  (`#api/handlers/messagingTerms/terms/v<version>.yaml`, read by `terms.ts` and checked by the zod
+  schema in `messagingTermsDocument.ts`): sections with an id, an icon, a title, a one-sentence
+  `summary`, the paragraphs and an optional `callout`, plus the `confirmations` to tick.
+  `messagingTerms` answers them in the caller's locale with a `contentHash` of exactly that text.
+  `sendChatMessage` refuses a party without an acceptance that holds with `TERMS_NOT_ACCEPTED`
+  (`assertAcceptedTerms`); the composer then shows `MessagingTermsModal`, and
+  `acceptMessagingTerms` takes the version, revision and hash the reader was shown and every
+  confirmation (INVALID_INPUT otherwise) and adds a row to `messaging_terms_acceptance` (version,
+  revision, locale, hash, confirmations; one per account, for every conference; never changed). An acceptance
+  holds for the current version with every confirmation it asks for (`acceptanceHolds`). The team
+  writes without. **Raise `version` (in a new file, keeping the old one) when the terms change in
+  meaning**, and everybody is asked again; raise `revision` for wording only. `terms/revisions.json`
+  pins each revision's hash, so `terms.test.ts` fails on a text changed without either.
 - **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
   "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by

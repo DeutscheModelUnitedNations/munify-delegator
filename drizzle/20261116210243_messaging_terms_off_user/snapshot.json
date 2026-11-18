@@ -1,0 +1,57 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "735477cf-2cca-4ccf-8992-879fb0a2e9c7",
+  "prevIds": [
+    "43442ec1-e811-443c-af82-c0e2a33e1067"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "messaging_terms_version"
+      ],
+      "writes": [
+        "s|col|public.user.messaging_terms_version",
+        "n|col|public.user.messaging_terms_version",
+        "e|col|public.user.messaging_terms_version"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "messaging_terms_accepted_at"
+      ],
+      "writes": [
+        "s|col|public.user.messaging_terms_accepted_at",
+        "n|col|public.user.messaging_terms_accepted_at",
+        "e|col|public.user.messaging_terms_accepted_at"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"messaging_terms_version\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"messaging_terms_accepted_at\"]"
+    }
+  ]
+}

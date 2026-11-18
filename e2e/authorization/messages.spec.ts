@@ -2,7 +2,6 @@ import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import { messagesFixture } from '../seed/messages';
 import { E2E_SEATS_GV_ID } from '../seed/seats';
-import { MESSAGING_TERMS_VERSION } from '../../src/lib/helpers/messagingTerms';
 
 // The chats (`src/api/handlers/chat/`): a chat is read by its parties and, for a team chat, by
 // whoever answers its inbox; participants know each other by role only; participant care reads a
@@ -88,7 +87,16 @@ type MessageRow = {
 	teamAuthorUserId: string | null;
 };
 
-const ACCEPT_TERMS = `mutation ($version: Int!) { acceptMessagingTerms(version: $version) }`;
+const TERMS = `query { messagingTerms { version revision contentHash confirmations { key } } }`;
+const ACCEPT_TERMS = `mutation ($version: Int!, $revision: Int!, $contentHash: String!, $confirmationIds: [String!]!) {
+	acceptMessagingTerms(version: $version, revision: $revision, contentHash: $contentHash, confirmationIds: $confirmationIds)
+}`;
+interface TermsRow {
+	version: number;
+	revision: number;
+	contentHash: string;
+	confirmations: { key: string }[];
+}
 
 const chatsOf = async (page: Page) =>
 	(await gql<{ chats: ChatRow[] }>(page, CHATS, { c: CONFERENCE })).data?.chats ?? [];
@@ -150,15 +158,26 @@ test('two delegates write each other and know each other by role only', async ({
 		'TERMS_NOT_ACCEPTED'
 	);
 	expect(await messagesOf(carlaPage, chat.annaCarla)).toEqual([]);
-	expect(codeOf(await gql(annaPage, ACCEPT_TERMS, { version: MESSAGING_TERMS_VERSION + 1 }))).toBe(
-		'INVALID_INPUT'
-	);
+	const terms = (await gql<{ messagingTerms: TermsRow }>(annaPage, TERMS)).data?.messagingTerms;
+	if (!terms) throw new Error('The terms of the message service did not load');
+	const shown = {
+		version: terms.version,
+		revision: terms.revision,
+		contentHash: terms.contentHash,
+		confirmationIds: terms.confirmations.map((confirmation) => confirmation.key)
+	};
+	// another version, another text or a statement left unticked is no agreement
+	for (const wrong of [
+		{ ...shown, version: shown.version + 1 },
+		{ ...shown, contentHash: 'not-what-she-was-shown' },
+		{ ...shown, confirmationIds: shown.confirmationIds.slice(1) }
+	]) {
+		expect(codeOf(await gql(annaPage, ACCEPT_TERMS, wrong))).toBe('INVALID_INPUT');
+	}
 	expect(codeOf(await send(annaPage, chat.annaCarla, 'Hallo Frankreich!'))).toBe(
 		'TERMS_NOT_ACCEPTED'
 	);
-	expect(
-		(await gql(annaPage, ACCEPT_TERMS, { version: MESSAGING_TERMS_VERSION })).errors
-	).toBeUndefined();
+	expect((await gql(annaPage, ACCEPT_TERMS, shown)).errors).toBeUndefined();
 
 	expect((await send(annaPage, chat.annaCarla, 'Hallo Frankreich!')).errors).toBeUndefined();
 	expect((await send(carlaPage, chat.annaCarla, 'Hallo Deutschland!')).errors).toBeUndefined();

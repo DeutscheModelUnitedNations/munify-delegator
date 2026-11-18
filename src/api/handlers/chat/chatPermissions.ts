@@ -19,7 +19,8 @@ import { callerUserId } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import type { ChatInbox, ChatSide } from '#lib/helpers/chat';
-import { hasAcceptedTerms, type ChatRow } from './chatService';
+import { hasAcceptedTerms } from '#api/handlers/messagingTerms/messagingTermsService';
+import type { ChatRow } from './chatService';
 
 /**
  * Who reads which chat. A chat is read by its parties: the two people of a direct chat, the

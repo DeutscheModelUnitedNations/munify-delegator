@@ -39,6 +39,7 @@ import './plausibility/plausibility';
 import './school/school';
 import './schoolSuggestion/schoolSuggestion';
 import './mcpAuditEntry/mcpAuditEntry';
+import './messagingTerms/messagingTerms';
 import './scanLookup/scanLookup';
 import './signedCode/signedCode';
 import './nsaCard/nsaCard';

@@ -124,7 +124,7 @@ Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen
 
 In Einzelchats und Delegationsgruppen sehen sich Teilnehmende nur mit ihrer Rolle. Das Team liest diese Chats nicht, außer nach einer Meldung. Verliert eine Person ihren Platz, kann in ihren Einzelchats niemand mehr schreiben.
 
-Vor ihrer ersten Nachricht stimmen Teilnehmende den **Nutzungsbedingungen der Nachrichten** zu. Sie regeln den respektvollen Umgang, erklären, wer mitliest, und gelten einmal für ihr Konto. Das Team schreibt ohne Zustimmung.
+Vor ihrer ersten Nachricht stimmen Teilnehmende den **Nutzungsbedingungen der Nachrichten** zu. Sie regeln den respektvollen Umgang, erklären, wer mitliest, und gelten einmal für ihr Konto. Teilnehmende bestätigen jeden Punkt einzeln und danach zwei Aussagen, darunter, dass ein Missbrauch zum Ausschluss von der Konferenz führen kann. Das Team schreibt ohne Zustimmung.
 
 ### Antworten und neue Chats
 
