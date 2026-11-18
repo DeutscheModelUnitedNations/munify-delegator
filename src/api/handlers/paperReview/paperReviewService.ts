@@ -23,12 +23,17 @@ export const reviewVerdictSchema = z.enum(['CHANGES_REQUESTED', 'ACCEPTED'], {
 	error: (issue) => m.reviewInvalidStatus({ status: String(issue.input) })
 });
 
-/** The name a reviewer types to publish a review under (`anonymousAs: CUSTOM`). */
+/**
+ * The name a reviewer types to publish a review under (`anonymousAs: CUSTOM`). The argument's
+ * validator runs when the argument is left out too, so it lets an absent name through;
+ * whether one is needed is `reviewAnonymityArgsSchema`'s to say.
+ */
 export const reviewAnonymousNameSchema = z
 	.string()
 	.trim()
 	.min(1, { error: () => m.reviewAnonymousNameRequired() })
-	.max(80, { error: () => m.reviewAnonymousNameTooLong({ max: 80 }) });
+	.max(80, { error: () => m.reviewAnonymousNameTooLong({ max: 80 }) })
+	.nullish();
 
 /** A typed name comes with `CUSTOM` and only with it. */
 export const reviewAnonymityArgsSchema = z
