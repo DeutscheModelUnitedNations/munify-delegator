@@ -71,8 +71,19 @@ function isResolution(content: Record<string, unknown>) {
 	return Array.isArray(content.preamble) && Array.isArray(content.operative);
 }
 
+/** A document as stored, or as a JSON string, which older rows hold. */
+function parsed(content: unknown): unknown {
+	if (typeof content !== 'string') return content;
+	try {
+		return JSON.parse(content);
+	} catch {
+		return undefined;
+	}
+}
+
 /** The texts the finder searches in a paper version's content, whitespace collapsed. */
-export function paperBlocks(content: unknown): string[] {
+export function paperBlocks(stored: unknown): string[] {
+	const content = parsed(stored);
 	if (!isRecord(content)) return [];
 	const blocks = isResolution(content)
 		? resolutionBlocks([content.preamble, content.operative])

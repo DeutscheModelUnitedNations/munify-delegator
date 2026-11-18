@@ -1517,6 +1517,33 @@ bun run preview
 - `SLACK_API_URL` points the calls at a stand-in; only tests set it.
   `e2e/authorization/notifications.spec.ts` pins the rules down.
 
+#### 18. Review drafts
+
+- **An AI assistant prepares a paper review, the reviewer sends it** (`#api/handlers/paperReviewDraft/`,
+  `paper_review_draft` in `schema/papers.ts`): at most one draft per paper and reviewer, holding
+  the review editor's document, the proposed verdict (`CHANGES_REQUESTED` / `ACCEPTED`), the
+  version it was written for, who created it (`origin`) and who changed it last (`lastEditedVia`,
+  `MCP` / `UI`). A separate table on purpose: a draft reaches no author, sends no mail, changes no
+  status and counts as no review, so nothing reading `paper_review` sees it. `createPaperReview`
+  deletes the reviewer's draft of the paper in its transaction.
+- **Only its reviewer reads it**, not project management and not a system admin
+  (`paperReviewDraftPermissions.ts`: `reviewerId` plus `paperOfTeamConference`, by the session's
+  user rather than `callerUserId`, so an assistant reads its own drafts in the conference of its
+  tool call). Writing and deleting check `assertCanReviewPaper`, as sending does.
+- **Over MCP**: `upsertPaperReviewDraft` takes Markdown (`reviewMarkdown.ts`, pure, quotes taken
+  literally, one per paragraph, as `BlockquoteWithFind` searches a quote's whole text in one
+  block) and answers a link (`#review` on the paper) and the quotes the latest version lacks word
+  for word (`quoteCheck.ts`, mirroring `#lib/helpers/citeNavigation`); `deletePaperReviewDraft`.
+  Once the reviewer edited a draft in the app, both answer CONFLICT unless `overwriteAppEdits`
+  (`replacesAppEdits`). No mutation that sends a review or sets a status is an MCP tool; keep it
+  so. `mcpTool({ idempotent: true })` sets the `idempotentHint`.
+- **In the app** `PaperReviewSection.svelte` fills the editor from `myPaperReviewDraft` (seeded once),
+  saves edits as the draft (`savePaperReviewDraft`, debounced; it replaced the browser-only
+  autosave), names who wrote it, warns when the paper has a newer version, offers to load a draft
+  an assistant rewrote meanwhile (`reviewDraft.ts`) and discards it. The paper hub marks papers with
+  a draft (`myPaperReviewDrafts`). Both queries are live (`smartSubscription`, created/removed).
+  `e2e/authorization/review-drafts.spec.ts` and `e2e/papers/review-draft.spec.ts` pin it down.
+
 ### Logging
 
 - **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after

@@ -62,6 +62,11 @@ describe('unmatchedQuotes', () => {
 		]);
 	});
 
+	it('reads a document stored as a JSON string', () => {
+		const review = markdownToReviewDocument('> Zweiter Absatz.');
+		expect(unmatchedQuotes({ review, paperContent: JSON.stringify(paper) })).toEqual([]);
+	});
+
 	it('searches the clauses of a resolution', () => {
 		const resolution = {
 			committeeName: 'GV',
