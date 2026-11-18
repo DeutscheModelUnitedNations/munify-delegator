@@ -205,4 +205,65 @@ test.describe('review drafts in the editor', () => {
 			{ status: 'SUBMITTED' }
 		]);
 	});
+
+	test('a browser draft that cannot be saved is discarded for good', async ({ page }) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		const key = `reviewDraft_${paperId}`;
+		const text = 'Ein Entwurf aus dem Browser.';
+
+		await loginAs(page, fixedTestUser(E2E_DRAFTS_PEOPLE.reviewer), {
+			startUrl: `/dashboard/${C}/paperhub/${paperId}#review`
+		});
+		await waitForHydration(page);
+		// a review kept the way the editor kept it before drafts were stored on the server
+		await page.evaluate(
+			({ key, text }) =>
+				localStorage.setItem(
+					key,
+					JSON.stringify({
+						comments: {
+							type: 'doc',
+							content: [{ type: 'paragraph', content: [{ type: 'text', text }] }]
+						},
+						selectedStatus: 'CHANGES_REQUESTED',
+						savedAt: Date.now()
+					})
+				),
+			{ key, text }
+		);
+
+		// every attempt to store it on the server fails
+		let failedSaves = 0;
+		await page.route('**/api/graphql**', async (route) => {
+			if (!route.request().postData()?.includes('savePaperReviewDraft')) return route.fallback();
+			failedSaves++;
+			await route.fulfill({ status: 500, body: 'refused' });
+		});
+		await page.reload();
+		await waitForHydration(page);
+		const review = page.locator('#review');
+		await expect(review.locator('.ProseMirror')).toContainText(text, { timeout: 30_000 });
+		await expect.poll(() => failedSaves, { timeout: 15_000 }).toBeGreaterThan(0);
+		// a save that failed leaves the browser's copy in place
+		expect(await page.evaluate((key) => localStorage.getItem(key), key)).not.toBeNull();
+
+		await review.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ }).click();
+		await page
+			.locator('.modal-action')
+			.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ })
+			.click();
+		await expect(review.locator('.ProseMirror')).not.toContainText(text);
+		await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
+
+		// and it does not come back
+		await page.unroute('**/api/graphql**');
+		await page.reload();
+		await waitForHydration(page);
+		await expect(review.locator('.ProseMirror')).toBeVisible({ timeout: 30_000 });
+		await expect(review.locator('.ProseMirror')).not.toContainText(text);
+		expect(await sql('SELECT id FROM paper_review_draft WHERE paper_id = $1', [paperId])).toEqual(
+			[]
+		);
+	});
 });
