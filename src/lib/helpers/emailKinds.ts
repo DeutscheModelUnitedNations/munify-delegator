@@ -43,6 +43,9 @@ export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 export const isAlwaysSent = (kind: string): kind is AlwaysSentKind =>
 	ALWAYS_SENT_KINDS.some((always) => always === kind);
 
+/** The one sent where it happens without anybody sending it: when a paper is submitted. */
+export const isSentOnSubmission = (kind: string) => kind === 'PAPER_SUBMITTED';
+
 /**
  * The automatic mails without a switch, which the sweeps always send: an announcement's mail,
  * which the team decides on per announcement ("notify by mail").

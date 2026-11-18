@@ -6,8 +6,9 @@ import { paperNotificationsFixture as fixture } from '../seed/paperNotifications
 // A paper handed in on an agenda item tells the committee's chairs and consultants on the paper
 // team right away (`announcePaperSubmission`): a PAPER_SUBMITTED mail each, logged as sent by hand
 // without a sender, and a Slack message (no workspace here, so only the mails show). Each
-// submitted version tells again, a draft never. The specs build on each other's papers, so they
-// run in order (the fixture, e2e/seed/paperNotifications.ts, starts every run without any).
+// submitted version tells again, a draft never. The specs build on each other's paper, so they
+// run in order. Mails are matched to the version they are about (`subjectKey`), so a retry, which
+// runs the group again on the same database, finds only its own.
 test.describe.configure({ mode: 'serial', timeout: 90_000 });
 
 type GraphQLResult<T = Record<string, unknown>> = {
@@ -44,6 +45,7 @@ const CREATE = `mutation ($d: ID!, $i: ID!, $content: JSON!, $status: Paperstatu
 const UPDATE = `mutation ($id: ID!, $content: JSON!, $status: PaperstatusEnum) {
 	updatePaper(paperId: $id, content: $content, status: $status) { id }
 }`;
+const VERSIONS = `query ($id: ID!) { paper(id: $id) { versions { id version } } }`;
 const LOG = `query ($c: ID!) {
 	emailLogs(where: { conferenceId: { eq: $c }, kind: PAPER_SUBMITTED }) {
 		userId subjectKey trigger sentById
@@ -61,12 +63,38 @@ async function paperMails(page: Page) {
 
 const recipientsOf = (rows: LogRow[]) => [...new Set(rows.map((row) => row.userId))].sort();
 
+/** The mails about one version. */
+const mailsAbout = async (versionId: string) =>
+	(await paperMails(carePage)).filter((row) => row.subjectKey === versionId);
+
+/** The id of the paper's newest version, as its author reads it. */
+async function newestVersion(page: Page, paperId: string) {
+	type Versions = { paper: { versions: { id: string; version: number }[] } };
+	const result = await gql<Versions>(page, VERSIONS, { id: paperId });
+	expect(result.errors, JSON.stringify(result)).toBeUndefined();
+	const versions = result.data?.paper.versions ?? [];
+	const newest = versions.toSorted((a, b) => b.version - a.version)[0];
+	expect(newest, JSON.stringify(result)).toBeDefined();
+	return newest?.id ?? '';
+}
+
+/** Saves the paper again with `status`; answers the version it wrote. */
+async function save(status: 'DRAFT' | 'SUBMITTED', text: string) {
+	const saved = await gql(author, UPDATE, { id: paperId, content: content(text), status });
+	expect(saved.errors, JSON.stringify(saved)).toBeUndefined();
+	return newestVersion(author, paperId);
+}
+
+/** The mails go out in the background: give a draft the time a submission's would take. */
+const settle = () => carePage.waitForTimeout(3_000);
+
 const { chair, consultant, care } = fixture.team;
 const told = [chair.id, consultant.id].sort();
 
 let author: Page;
 let carePage: Page;
 let paperId: string;
+let draftVersionId: string;
 
 test.beforeAll(async ({ browser }) => {
 	author = await signedIn(browser, fixture.author.id);
@@ -83,66 +111,51 @@ test('a draft tells nobody', async () => {
 	expect(created.errors, JSON.stringify(created)).toBeUndefined();
 	paperId = created.data?.createPaper.id ?? '';
 	expect(paperId).not.toBe('');
+	draftVersionId = await newestVersion(author, paperId);
 
-	// the mails go out in the background: give them the time a submission's would take
-	await author.waitForTimeout(3_000);
-	expect(await paperMails(carePage)).toEqual([]);
+	await settle();
+	expect(await mailsAbout(draftVersionId)).toEqual([]);
 });
 
 test("submitting tells the committee's chairs and consultants on the paper team, without a sender", async () => {
-	const submitted = await gql(author, UPDATE, {
-		id: paperId,
-		content: content('The submitted committee notification paper.'),
-		status: 'SUBMITTED'
-	});
-	expect(submitted.errors, JSON.stringify(submitted)).toBeUndefined();
+	const submitted = await save('SUBMITTED', 'The submitted committee notification paper.');
 
 	// not the member chairing the GV, not the SR's chair, not who switched the mail off
 	await expect
-		.poll(async () => recipientsOf(await paperMails(carePage)), { timeout: 20_000 })
+		.poll(async () => recipientsOf(await mailsAbout(submitted)), { timeout: 20_000 })
 		.toEqual(told);
-	const rows = await paperMails(carePage);
+	const rows = await mailsAbout(submitted);
 	expect(rows).toHaveLength(2);
 	expect(rows.every((row) => row.trigger === 'MANUAL' && row.sentById === null)).toBe(true);
-	// one version, named by its id
-	expect(new Set(rows.map((row) => row.subjectKey)).size).toBe(1);
+	// the draft before it still told nobody
+	expect(await mailsAbout(draftVersionId)).toEqual([]);
 });
 
 test('each further submitted version tells again, a draft save does not', async () => {
-	const draft = await gql(author, UPDATE, {
-		id: paperId,
-		content: content('A second draft.'),
-		status: 'DRAFT'
-	});
-	expect(draft.errors, JSON.stringify(draft)).toBeUndefined();
-	await author.waitForTimeout(3_000);
-	expect(await paperMails(carePage)).toHaveLength(2);
+	const draft = await save('DRAFT', 'A second draft.');
+	await settle();
+	expect(await mailsAbout(draft)).toEqual([]);
 
-	const resubmitted = await gql(author, UPDATE, {
-		id: paperId,
-		content: content('The resubmitted committee notification paper.'),
-		status: 'SUBMITTED'
-	});
-	expect(resubmitted.errors, JSON.stringify(resubmitted)).toBeUndefined();
-	await expect.poll(async () => (await paperMails(carePage)).length, { timeout: 20_000 }).toBe(4);
-	const rows = await paperMails(carePage);
-	expect(new Set(rows.map((row) => row.subjectKey)).size).toBe(2);
-	expect(recipientsOf(rows)).toEqual(told);
+	const resubmitted = await save('SUBMITTED', 'The resubmitted committee notification paper.');
+	await expect
+		.poll(async () => recipientsOf(await mailsAbout(resubmitted)), { timeout: 20_000 })
+		.toEqual(told);
+	expect(await mailsAbout(resubmitted)).toHaveLength(2);
 });
 
 test("a paper in another committee tells that committee's chair", async ({ browser }) => {
 	const srAuthor = await signedIn(browser, fixture.srAuthor.id);
-	const created = await gql(srAuthor, CREATE, {
+	const created = await gql<{ createPaper: { id: string } }>(srAuthor, CREATE, {
 		d: fixture.delegationId,
 		i: fixture.srAgendaItemId,
 		content: content('A paper for the Sicherheitsrat.'),
 		status: 'SUBMITTED'
 	});
 	expect(created.errors, JSON.stringify(created)).toBeUndefined();
-	await expect.poll(async () => (await paperMails(carePage)).length, { timeout: 20_000 }).toBe(5);
-	const rows = await paperMails(carePage);
-	expect(rows.filter((row) => row.userId === fixture.team.srChair.id)).toHaveLength(1);
-	expect(rows.filter((row) => told.includes(row.userId))).toHaveLength(4);
+	const version = await newestVersion(srAuthor, created.data?.createPaper.id ?? '');
+	await expect
+		.poll(async () => recipientsOf(await mailsAbout(version)), { timeout: 20_000 })
+		.toEqual([fixture.team.srChair.id]);
 });
 
 test('the notification settings offer the papers to chairs and consultants on the paper team only', async ({

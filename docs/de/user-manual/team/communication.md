@@ -167,7 +167,7 @@ Eine Benachrichtigung nennt nur das Postfach und führt in die App. Der Text ein
 
 Vorsitz und Gremienberatung erfahren außerdem von jedem Papier, das in ihrem Gremium eingereicht wird, sofern ihre Teamrolle Papiere lesen darf (siehe [Wer von neuen Papieren erfährt](./paper-hub#committee-notification)). Slack und die E-Mail **Papier im Gremium eingereicht** melden sich sofort, ohne Schalter auf der Seite [E-Mails](#emails).
 
-**Für dich einstellen:** Im Menü hinter deinen Initialen oben rechts öffnest du **Benachrichtigungen**. Der Eintrag erscheint, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, je Gremium **Papiere Vorsitz** oder **Papiere Gremienberatung**, wenn deine Teamrolle Papiere lesen darf, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an.
+**Für dich einstellen:** Im Menü hinter deinen Initialen oben rechts öffnest du **Benachrichtigungen**. Der Eintrag erscheint, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, je Gremium **Papiere Vorsitz** oder **Papiere Gremienberatung**, wenn deine Teamrolle Papiere lesen darf, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an. Hattest du **E-Mail bei ungelesenen Nachrichten** schon vorher ausgeschaltet, beginnt **E-Mail** in allen Zeilen ausgeschaltet, auch bei den Papieren. Schalte sie in der Zeile ein, in der du sie haben willst. Slack ist auch dann an.
 
 **Slack einrichten:** Die Projektleitung wählt auf der Seite [E-Mails](#emails) unter **Slack-Workspace** den Workspace der Konferenz aus. Zur Auswahl stehen die Workspaces, die die Administration des Systems eingetragen hat (siehe [Slack-Workspaces](./overview#slack-workspaces)). Ohne Workspace gibt es für die Konferenz keine Slack-Nachrichten.
 
@@ -194,7 +194,7 @@ Steht auf einer Karte etwa **3 offen**, müssten drei Personen diese E-Mail gera
 Übersprungene E-Mails lassen sich nicht wieder öffnen. Brauchst du eine davon doch, schick sie der Person von Hand aus ihrer [Teilnehmendenkarte](./participants#user-card).
 :::
 
-Schlägt eine E-Mail fehl, versucht DELEGATOR sie bis zu dreimal.
+Schlägt eine E-Mail fehl, versucht DELEGATOR sie bis zu dreimal. Das gilt nicht für die E-Mails, die direkt bei einer Aktion rausgehen (**Einladung ins Team**, **Zugangsausweis gefunden** und **Papier im Gremium eingereicht**). Schlägt eine davon fehl, steht sie als fehlgeschlagen im [Protokoll](#emails).
 
 ### Automatisch verschicken
 
@@ -206,7 +206,7 @@ Mit **Automatisch verschicken** geht eine Art regelmäßig von selbst raus. Eine
 
 Die Schalter und die Versandgeschwindigkeit wirken erst mit dem Speichern, wie bei den [Einstellungen](./configuration#saving). Texte und Fußzeile speichern in ihren eigenen Fenstern sofort.
 
-Vier Arten haben keinen Schalter. **Ankündigung** trägt **Wird je Ankündigung entschieden** und geht automatisch raus, wenn eine Ankündigung per E-Mail benachrichtigt. **Einladung ins Team** und **Zugangsausweis gefunden** tragen **Wird von Hand verschickt** und gehen immer raus, wenn jemand die Aktion auslöst: die Einladung beim Einladen einer Person ohne Konto im [Teammanagement](./overview#team-management) und bei jedem erneuten Verschicken, der gefundene Ausweis bei jedem Klick auf **Ausweis gefunden** in der Teilnehmendenkarte. **Papier im Gremium eingereicht** geht sofort raus, wenn eine Delegation eine Version einreicht. Ob Vorsitz und Gremienberatung sie bekommen, stellen sie unter **Benachrichtigungen** selbst ein (siehe [Benachrichtigungen](#notifications)).
+Vier Arten haben keinen Schalter. **Ankündigung** trägt **Wird je Ankündigung entschieden** und geht automatisch raus, wenn eine Ankündigung per E-Mail benachrichtigt. **Einladung ins Team** und **Zugangsausweis gefunden** tragen **Wird von Hand verschickt** und gehen immer raus, wenn jemand die Aktion auslöst: die Einladung beim Einladen einer Person ohne Konto im [Teammanagement](./overview#team-management) und bei jedem erneuten Verschicken, der gefundene Ausweis bei jedem Klick auf **Ausweis gefunden** in der Teilnehmendenkarte. **Papier im Gremium eingereicht** trägt **Wird beim Einreichen verschickt** und geht sofort raus, wenn eine Delegation eine Version eines Papiers zu einem Tagesordnungspunkt einreicht. Ob Vorsitz und Gremienberatung sie bekommen, stellen sie unter **Benachrichtigungen** selbst ein (siehe [Benachrichtigungen](#notifications)).
 
 ### Alle Arten im Überblick
 

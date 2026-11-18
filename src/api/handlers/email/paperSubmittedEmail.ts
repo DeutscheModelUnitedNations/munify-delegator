@@ -46,16 +46,27 @@ export interface SubmittedPaper {
 export const submittedPaperUrl = ({ origin, paper }: { origin: string; paper: SubmittedPaper }) =>
 	`${origin}/dashboard/${paper.conferenceId}/paperhub/${paper.paperId}`;
 
-/** The placeholders of the mail and the Slack message, in the locale they are rendered in. */
-export const paperSubmissionValues = (paper: SubmittedPaper) => ({
-	conference: paper.conferenceTitle,
-	committee: paper.committeeAbbreviation,
-	paper: paper.agendaItem,
-	paperType: translatePaperType(paper.type),
-	delegation: paper.role ? roleName(paper.role) : '',
-	version: String(paper.version),
-	status: translatePaperStatus(paper.status)
-});
+/**
+ * The placeholders of the mail and the Slack message, in the locale they are rendered in. What the
+ * team wrote goes through `escape` (the Slack message escapes its control characters).
+ */
+export function paperSubmissionValues({
+	paper,
+	escape = (text) => text
+}: {
+	paper: SubmittedPaper;
+	escape?: (text: string) => string;
+}) {
+	return {
+		conference: escape(paper.conferenceTitle),
+		committee: escape(paper.committeeAbbreviation),
+		paper: escape(paper.agendaItem),
+		paperType: translatePaperType(paper.type),
+		delegation: escape((paper.role && roleName(paper.role)) || m.emailPaperSubmittedUnknownRole()),
+		version: String(paper.version),
+		status: translatePaperStatus(paper.status)
+	};
+}
 
 /** Renders the mail to `recipient` in their language and the conference's own words. */
 export function renderPaperSubmittedEmail({
@@ -74,7 +85,7 @@ export function renderPaperSubmittedEmail({
 		recipient,
 		conferenceTitle: paper.conferenceTitle,
 		wording,
-		values: () => paperSubmissionValues(paper),
+		values: () => paperSubmissionValues({ paper }),
 		button: () => ({
 			label: m.emailAutoPaperSubmittedButton(),
 			url: submittedPaperUrl({ origin, paper })

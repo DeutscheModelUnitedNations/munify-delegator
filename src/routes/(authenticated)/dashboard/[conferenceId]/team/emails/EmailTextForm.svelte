@@ -103,7 +103,7 @@
 		await fetchEmailPreview({ conferenceId, kind, locale, draft: true, ...draft.current })
 	);
 
-	const placeholderHint: Record<EmailPlaceholder, () => string> = {
+	const placeholderHint: Record<EmailPlaceholder, () => string> = $derived({
 		name: m.emailPlaceholderName,
 		conference: m.emailPlaceholderConference,
 		seat: m.emailPlaceholderSeat,
@@ -112,7 +112,7 @@
 		item: m.emailPlaceholderItem,
 		list: m.emailPlaceholderList,
 		delegationHint: m.emailPlaceholderDelegationHint,
-		paper: m.emailPlaceholderPaper,
+		paper: kind === 'PAPER_SUBMITTED' ? m.emailPlaceholderAgendaItem : m.emailPlaceholderPaper,
 		reviewer: m.emailPlaceholderReviewer,
 		status: m.emailPlaceholderStatus,
 		role: m.emailPlaceholderRole,
@@ -129,7 +129,7 @@
 		paperType: m.emailPlaceholderPaperType,
 		delegation: m.emailPlaceholderDelegation,
 		version: m.emailPlaceholderVersion
-	};
+	});
 </script>
 
 <EmailEditorLayout {form} {preview}>

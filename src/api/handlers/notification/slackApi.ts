@@ -10,6 +10,13 @@ import { SLACK_API_URL } from '$app/env/private';
 
 const TIMEOUT_MS = 10_000;
 
+/**
+ * Text the team wrote (a title, an agenda item) as Slack shows it literally: `&`, `<` and `>`
+ * would otherwise start an entity, a link or a mention.
+ */
+export const slackEscape = (text: string) =>
+	text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
 const answerSchema = z.looseObject({ ok: z.boolean(), error: z.string().optional() });
 
 /** Slack refused a call; `code` is its error string (`invalid_auth`, `users_not_found`, …). */

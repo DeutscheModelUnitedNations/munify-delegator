@@ -12,11 +12,22 @@ import { tellPaperOnSlack } from '#api/handlers/notification/slackNotifications'
  * committee: an introduction paper tells nobody.
  */
 
-/** The submitted version `versionId` as its notifications describe it; undefined without a committee. */
-async function loadSubmittedPaper(versionId: string): Promise<SubmittedPaper | undefined> {
+type PaperStatus = SubmittedPaper['status'];
+
+/**
+ * The submitted version `versionId` as its notifications describe it, with the `status` it was
+ * saved with (a review may have changed the row since); undefined without a committee.
+ */
+async function loadSubmittedPaper({
+	versionId,
+	status
+}: {
+	versionId: string;
+	status: PaperStatus;
+}): Promise<SubmittedPaper | undefined> {
 	const version = await db.query.paperVersion.findFirst({
 		where: { id: versionId },
-		columns: { id: true, version: true, status: true },
+		columns: { id: true, version: true },
 		with: {
 			paper: {
 				columns: { id: true, type: true },
@@ -51,14 +62,21 @@ async function loadSubmittedPaper(versionId: string): Promise<SubmittedPaper | u
 		committeeAbbreviation: committee.abbreviation,
 		agendaItem: paper.agendaItem.title,
 		type: paper.type,
-		status: version.status,
+		status,
 		version: version.version,
 		role: paper.delegation.assignedRole ?? null
 	};
 }
 
-async function announce({ versionId, origin }: { versionId: string; origin: string }) {
-	const paper = await loadSubmittedPaper(versionId);
+interface Submission {
+	versionId: string;
+	/** The status the version was saved with: SUBMITTED, or REVISED after a review. */
+	status: PaperStatus;
+	origin: string;
+}
+
+async function announce({ versionId, status, origin }: Submission) {
+	const paper = await loadSubmittedPaper({ versionId, status });
 	if (!paper) return;
 	tellPaperOnSlack({ paper, origin });
 	await sendPaperSubmittedEmails({ paper, origin });
@@ -68,7 +86,7 @@ async function announce({ versionId, origin }: { versionId: string; origin: stri
  * Tells the committee of a submitted version, in the background after it was saved: the paper is
  * submitted whether or not anybody hears of it.
  */
-export function announcePaperSubmission(args: { versionId: string; origin: string }) {
+export function announcePaperSubmission(args: Submission) {
 	void announce(args).catch((error: unknown) =>
 		logger.error('Telling the committee of a submitted paper failed', error)
 	);

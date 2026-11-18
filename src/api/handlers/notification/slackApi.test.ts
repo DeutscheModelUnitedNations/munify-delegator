@@ -3,13 +3,20 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('$app/env/private', () => ({ SLACK_API_URL: 'https://slack.test/api' }));
 
-const { SlackApiError, sendSlackDirectMessage, slackUserIdOfEmail, slackWorkspaceOf } =
+const { SlackApiError, sendSlackDirectMessage, slackEscape, slackUserIdOfEmail, slackWorkspaceOf } =
 	await import('./slackApi');
 
 const answer = (body: unknown, status = 200) =>
 	vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(body, { status }));
 
 afterEach(() => vi.restoreAllMocks());
+
+describe('slackEscape', () => {
+	test("escapes Slack's control characters and nothing else", () => {
+		expect(slackEscape('Klima <2°C> & "mehr"')).toBe('Klima &lt;2°C&gt; &amp; "mehr"');
+		expect(slackEscape('&lt;')).toBe('&amp;lt;');
+	});
+});
 
 describe('the Slack calls', () => {
 	test('ask with the bot token as bearer and form parameters', async () => {

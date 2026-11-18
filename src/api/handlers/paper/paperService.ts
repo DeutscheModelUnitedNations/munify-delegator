@@ -147,7 +147,9 @@ export async function createPaper({
 	});
 	paperPubsub.created();
 	paperVersionPubsub.created();
-	if (handsVersionIn(newPaper.status)) announcePaperSubmission({ versionId, origin });
+	if (handsVersionIn(newPaper.status)) {
+		announcePaperSubmission({ versionId, status: newPaper.status, origin });
+	}
 	return paperId;
 }
 
@@ -167,7 +169,7 @@ export async function updatePaper({
 	status: AuthorStatus | null | undefined;
 	origin: string;
 }) {
-	const versionId = await db.transaction(async (tx) => {
+	const { versionId, status } = await db.transaction(async (tx) => {
 		const paper = await tx.query.paper
 			.findFirst({
 				where: { id: paperId },
@@ -197,11 +199,11 @@ export async function updatePaper({
 			.values({ paperId, content, status, version: paper.versions.length + 1 })
 			.returning({ id: schema.paperVersion.id })
 			.then(assertFirstEntryExists);
-		return version.id;
+		return { versionId: version.id, status };
 	});
 	paperPubsub.updated(paperId);
 	paperVersionPubsub.created();
-	if (handsVersionIn(requestedStatus)) announcePaperSubmission({ versionId, origin });
+	if (handsVersionIn(requestedStatus)) announcePaperSubmission({ versionId, status, origin });
 }
 
 type CommitteeRow = InferSelectModel<typeof schema.committee>;

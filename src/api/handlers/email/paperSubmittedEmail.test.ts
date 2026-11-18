@@ -89,7 +89,7 @@ const noWording = { texts: [], footers: [] };
 
 describe('paperSubmissionValues', () => {
 	test('names the committee, agenda item, type, role, version and status, in the locale', () => {
-		expect(inLocale('de', () => paperSubmissionValues(paper))).toEqual({
+		expect(inLocale('de', () => paperSubmissionValues({ paper }))).toEqual({
 			conference: 'MUN-SH 2027',
 			committee: 'GV',
 			paper: 'Klimaschutz',
@@ -98,7 +98,7 @@ describe('paperSubmissionValues', () => {
 			version: '2',
 			status: 'Überarbeitet'
 		});
-		expect(inLocale('en', () => paperSubmissionValues(paper)).delegation).toBe('France');
+		expect(inLocale('en', () => paperSubmissionValues({ paper })).delegation).toBe('France');
 	});
 
 	test('names a non-state actor by its own name', () => {
@@ -108,9 +108,32 @@ describe('paperSubmissionValues', () => {
 			name: 'Greenpeace',
 			nationAlpha3Code: null
 		};
-		expect(inLocale('de', () => paperSubmissionValues({ ...paper, role: nsa })).delegation).toBe(
-			'Greenpeace'
+		expect(
+			inLocale('de', () => paperSubmissionValues({ paper: { ...paper, role: nsa } })).delegation
+		).toBe('Greenpeace');
+	});
+});
+
+describe('paperSubmissionValues with an escape', () => {
+	test('passes what the team wrote through the escape, and only that', () => {
+		const slack = (text: string) => `[${text}]`;
+		const values = inLocale('de', () =>
+			paperSubmissionValues({
+				paper: { ...paper, agendaItem: 'Klima <2°C> & mehr', committeeAbbreviation: 'G&V' },
+				escape: slack
+			})
 		);
+		expect(values.paper).toBe('[Klima <2°C> & mehr]');
+		expect(values.committee).toBe('[G&V]');
+		expect(values.delegation).toBe('[Frankreich]');
+		expect(values.version).toBe('2');
+		expect(values.paperType).toBe('Positionspapier');
+	});
+
+	test('names a delegation without a role as such', () => {
+		expect(
+			inLocale('de', () => paperSubmissionValues({ paper: { ...paper, role: null } })).delegation
+		).toBe('einer Delegation ohne Rolle');
 	});
 });
 

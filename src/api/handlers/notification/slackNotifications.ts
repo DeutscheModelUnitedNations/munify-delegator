@@ -14,7 +14,7 @@ import {
 } from '#lib/helpers/teamNotifications';
 import { notificationTopicLabel } from '#lib/helpers/teamNotificationLabels';
 import { preferencesOfMembers, workspaceOfConference } from './notificationStore';
-import { sendSlackDirectMessage } from './slackApi';
+import { sendSlackDirectMessage, slackEscape } from './slackApi';
 import { decryptSlackToken } from './slackToken';
 import { slackUserOf } from './slackUsers';
 import {
@@ -265,7 +265,7 @@ async function tellPaper({ paper, origin }: { paper: SubmittedPaper; origin: str
 					subjectId: paper.versionId,
 					oncePerSubject: true,
 					text: () =>
-						`${m.slackPaperSubmitted(paperSubmissionValues(paper))}\n${slackLink({ url, label: m.slackOpenPaper() })}`
+						`${m.slackPaperSubmitted(paperSubmissionValues({ paper, escape: slackEscape }))}\n${slackLink({ url, label: m.slackOpenPaper() })}`
 				})
 			)
 	);

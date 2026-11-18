@@ -167,7 +167,7 @@ A notification only names the inbox and leads into the app. The text of a messag
 
 Chairs and committee consultants also hear of every paper submitted in their committee, as long as their team role may read papers (see [Who hears of new papers](./paper-hub#committee-notification)). Slack and the email **Paper submitted in a committee** tell them right away, without a switch on the [Emails](#emails) page.
 
-**Setting it up for yourself:** In the menu behind your initials at the top right, open **Notifications**. The entry appears once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on.
+**Setting it up for yourself:** In the menu behind your initials at the top right, open **Notifications**. The entry appears once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
 
 **Setting up Slack:** Project management picks the conference's workspace on the [Emails](#emails) page under **Slack workspace**. The choices are the workspaces the system's administration has added (see [Slack workspaces](./overview#slack-workspaces)). Without a workspace the conference sends no Slack messages.
 
@@ -194,7 +194,7 @@ When a card shows, say, **3 open**, three people should get this email right now
 Skipped emails cannot be reopened. If you do need one of them, send it to the person by hand from their [user card](./participants#user-card).
 :::
 
-When an email fails, DELEGATOR tries it up to three times.
+When an email fails, DELEGATOR tries it up to three times. That does not apply to the emails that go out right at an action (**Team invitation**, **Badge found** and **Paper submitted in a committee**). If one of those fails, it shows as failed in the [log](#emails).
 
 ### Sending automatically
 
@@ -206,7 +206,7 @@ With **Send automatically** a kind goes out on its own regularly. A new conferen
 
 The switches and the sending speed only take effect when you save, as in the [settings](./configuration#saving). Texts and the footer save right away in their own windows.
 
-Four kinds have no switch. **Announcement** carries **Decided per announcement** and goes out automatically when an announcement notifies by mail. **Team invitation** and **Badge found** carry **Sent by hand** and always go out when someone triggers the action: the invitation when a person without an account is invited in [Team Management](./overview#team-management) and whenever it is sent again, the found badge on every press of **Badge found** in the user card. **Paper submitted in a committee** goes out right away whenever a delegation submits a version. Chairs and consultants decide for themselves under **Notifications** whether they get it (see [Notifications](#notifications)).
+Four kinds have no switch. **Announcement** carries **Decided per announcement** and goes out automatically when an announcement notifies by mail. **Team invitation** and **Badge found** carry **Sent by hand** and always go out when someone triggers the action: the invitation when a person without an account is invited in [Team Management](./overview#team-management) and whenever it is sent again, the found badge on every press of **Badge found** in the user card. **Paper submitted in a committee** carries **Sent on submission** and goes out right away whenever a delegation submits a version of a paper on an agenda item. Chairs and consultants decide for themselves under **Notifications** whether they get it (see [Notifications](#notifications)).
 
 ### All kinds at a glance
 
