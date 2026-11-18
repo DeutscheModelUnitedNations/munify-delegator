@@ -114,6 +114,32 @@ describe('createDraftSaver', () => {
 		expect(calls).toHaveLength(1);
 	});
 
+	it('waits while a rewrite elsewhere is undecided, and replaces it once acknowledged', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save });
+		saver.loaded({ editor: editor('A'), updatedAt: '2026-11-18T10:00:00.000Z' });
+		await saver.settle();
+		saver.edited(editor('AB'));
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(calls).toHaveLength(0);
+		saver.acknowledge('2026-11-18T11:00:00.000Z');
+		expect(saver.knownUpdatedAt).toBe(Date.parse('2026-11-18T11:00:00.000Z'));
+		saver.resume();
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls.map((call) => call.text)).toEqual(['AB']);
+	});
+
+	it('writes the unchanged editor once a rewrite elsewhere is acknowledged', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save });
+		saver.loaded({ editor: editor('A'), updatedAt: '2026-11-18T10:00:00.000Z' });
+		await saver.settle();
+		saver.acknowledge('2026-11-18T11:00:00.000Z');
+		saver.resume();
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls.map((call) => call.text)).toEqual(['A']);
+	});
+
 	it('does not save what it loaded, nor an empty editor', async () => {
 		const { save } = controlledSave();
 		const saver = createDraftSaver({ save });

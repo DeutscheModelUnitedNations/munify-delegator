@@ -10,9 +10,10 @@
 		staleWarning: string | undefined;
 		assistantChanged: boolean;
 		onLoadNew: () => void;
+		onKeepMine: () => void;
 	}
 
-	let { notice, staleWarning, assistantChanged, onLoadNew }: Props = $props();
+	let { notice, staleWarning, assistantChanged, onLoadNew, onKeepMine }: Props = $props();
 </script>
 
 {#if notice.length > 0}
@@ -36,6 +37,9 @@
 	<div class="alert alert-warning">
 		<i aria-hidden="true" class="ph-duotone ph-robot"></i>
 		<span>{m.reviewDraftChangedByAssistant()}</span>
-		<button class="btn btn-sm" onclick={onLoadNew}>{m.reviewDraftLoadNew()}</button>
+		<div class="flex flex-wrap gap-2">
+			<button class="btn btn-sm" onclick={onLoadNew}>{m.reviewDraftLoadNew()}</button>
+			<button class="btn btn-sm btn-ghost" onclick={onKeepMine}>{m.reviewDraftKeepMine()}</button>
+		</div>
 	</div>
 {/if}

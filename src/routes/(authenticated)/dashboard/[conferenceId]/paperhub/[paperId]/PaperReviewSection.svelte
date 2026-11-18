@@ -101,18 +101,28 @@
 		...DRAFT_SELECTION
 	});
 	// Without a draft on the server, an unsent review the editor kept in this browser before
-	// drafts were stored there is taken over once, and saved as the draft right after.
-	const legacyDraft = initialDraft ? undefined : takeLegacyDraft(untrack(() => paperId));
+	// drafts were stored there is taken over, and saved as the draft right after. The browser keeps
+	// it until the server has it (or the reviewer discards or sends the review).
+	const legacyKey = legacyDraftKey(untrack(() => paperId));
+	const legacyDraft = initialDraft ? undefined : readLegacyDraft();
 
-	/** The review this browser kept for the paper the old way, removed from where it was. */
-	function takeLegacyDraft(id: string) {
+	/** The review this browser kept for the paper the old way, if any. */
+	function readLegacyDraft() {
 		if (!browser) return undefined;
 		try {
-			const legacy = legacyBrowserDraft(localStorage.getItem(legacyDraftKey(id)));
-			localStorage.removeItem(legacyDraftKey(id));
-			return legacy;
+			return legacyBrowserDraft(localStorage.getItem(legacyKey));
 		} catch {
 			return undefined;
+		}
+	}
+
+	/** Forgets the review this browser kept the old way, once it is no longer needed. */
+	function dropLegacyDraft() {
+		if (!legacyDraft) return;
+		try {
+			localStorage.removeItem(legacyKey);
+		} catch {
+			// nothing to forget where storage is blocked
 		}
 	}
 
@@ -145,7 +155,10 @@
 			});
 			return { updatedAt: saved.updatedAt, version: saved.paperVersion.version };
 		},
-		onSaved: (saved) => (editorVersion ??= saved.version)
+		onSaved: (saved) => {
+			editorVersion ??= saved.version;
+			dropLegacyDraft();
+		}
 	});
 	if (initialDraft) {
 		saver.loaded({
@@ -197,6 +210,17 @@
 		return `${notified} ${m.reviewSubmissionAnonymousNotice({ author, name })}`;
 	});
 
+	// While an assistant's rewrite waits for the reviewer's choice, saving would replace it.
+	$effect(() => {
+		if (assistantChangedDraft) void saver.settle();
+	});
+
+	/** Keeps the editor's version: the assistant's rewrite is replaced with the next save. */
+	function keepMine() {
+		if (storedUpdatedAt !== undefined) saver.acknowledge(storedUpdatedAt);
+		saver.resume();
+	}
+
 	// Saves the draft a moment after the reviewer stops typing or picks another status.
 	$effect(() => {
 		saver.edited({ comments: $reviewComments, status: selectedStatus });
@@ -234,6 +258,7 @@
 			editor: { comments: latest.comments, status: latest.statusAfter },
 			updatedAt: latest.updatedAt
 		});
+		saver.resume();
 		editorKey++;
 	}
 
@@ -256,6 +281,7 @@
 	}
 
 	function resetEditor() {
+		dropLegacyDraft();
 		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, saver.knownUpdatedAt ?? 0);
 		reviewComments.set(getEmptyTipTapDocument());
 		editorVersion = undefined;
@@ -381,6 +407,7 @@
 		{staleWarning}
 		assistantChanged={assistantChangedDraft}
 		onLoadNew={loadStoredDraft}
+		onKeepMine={keepMine}
 	/>
 
 	{#if reviewed}

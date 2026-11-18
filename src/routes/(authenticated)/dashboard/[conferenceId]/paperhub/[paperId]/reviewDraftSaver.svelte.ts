@@ -118,6 +118,14 @@ export function createDraftSaver({
 			savedSnapshot = JSON.stringify(editor);
 			knownUpdatedAt = timeOf(updatedAt);
 		},
+		/**
+		 * The draft stored elsewhere is known now and the editor's content replaces it: the next
+		 * save writes the editor, even unchanged since it was loaded.
+		 */
+		acknowledge(updatedAt: Date | string | number) {
+			knownUpdatedAt = typeof updatedAt === 'number' ? updatedAt : timeOf(updatedAt);
+			savedSnapshot = undefined;
+		},
 		/** The draft is gone (discarded or sent): forget it. */
 		reset() {
 			clearTimeout(timer);
