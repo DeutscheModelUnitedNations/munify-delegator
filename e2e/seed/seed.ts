@@ -43,6 +43,7 @@ import { seedLateSupervisor } from './lateSupervisor';
 import { seedMakeSupervisor } from './makeSupervisor';
 import { seedSchools } from './schools';
 import { seedConferencePapers } from './conferencePapers';
+import { seedWorkingPapers } from './workingPapers';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -645,6 +646,13 @@ export default async function seed() {
 		.insert(schema.paperVersion)
 		.values(draftPaperVersion)
 		.onConflictDoUpdate({ target: schema.paperVersion.id, set: draftPaperVersion });
+
+	// --- working paper fixtures: drafts for working-paper.spec.ts to open in the resolution editor ---
+	await seedWorkingPapers(db, {
+		authorParticipantId: paperDelegationMember.conferenceParticipantId,
+		delegationId: paperDelegation.id,
+		agendaItemId: E2E_AGENDA_ITEM_ID
+	});
 
 	// --- second conference, already in PREPARATION, with one assigned participant ---
 	const prepConference = {
