@@ -15,7 +15,15 @@
 	import ReviewStatusPicker from './ReviewStatusPicker.svelte';
 	import { hasTextContent } from '../tiptapText';
 	import { unlockedPiece, type UnlockedPiece } from './unlockedPiece';
-	import { changedElsewhere, draftNotice, staleDraftWarning } from './reviewDraft';
+	import {
+		changedElsewhere,
+		draftNotice,
+		draftSnapshotToSave,
+		staleDraftWarning,
+		type DraftSaveState
+	} from './reviewDraft';
+	import ReviewDraftNotices from './ReviewDraftNotices.svelte';
+	import ReviewDraftFooter from './ReviewDraftFooter.svelte';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import ReviewAnonymityToggle from './ReviewAnonymityToggle.svelte';
 	import {
@@ -111,7 +119,7 @@
 	let knownUpdatedAt = $state<number | undefined>(
 		initialDraft ? new Date(initialDraft.updatedAt).getTime() : undefined
 	);
-	let saveState = $state<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+	let saveState = $state<DraftSaveState>('idle');
 	let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const notice = $derived(
@@ -159,14 +167,15 @@
 
 	/** Saves the editor's content as the draft, unless it is empty or stored already. */
 	async function saveDraft(comments: JSONContent, status: PaperstatusEnum) {
-		if (!hasTextContent(comments) || isSubmitting) return;
-		if (status !== 'CHANGES_REQUESTED' && status !== 'ACCEPTED') return;
-		const snapshot = JSON.stringify({ comments, status });
-		if (snapshot === savedSnapshot) return;
+		const toSave = isSubmitting
+			? undefined
+			: draftSnapshotToSave({ comments, status, savedSnapshot });
+		if (!toSave) return;
+		const snapshot = toSave.snapshot;
 		saveState = 'saving';
 		try {
 			const saved = await client.mutate.savePaperReviewDraft({
-				__args: { paperId, comments, statusAfter: status },
+				__args: { paperId, comments, statusAfter: toSave.status },
 				updatedAt: true
 			});
 			savedSnapshot = snapshot;
@@ -332,30 +341,12 @@
 <div id="review" class="card bg-base-200 p-4 flex flex-col gap-4 scroll-mt-20">
 	<h2 class="text-lg font-bold">{m.addReview()}</h2>
 
-	{#if notice.length > 0}
-		<div class="alert alert-info" data-testid="review-draft-notice">
-			<i aria-hidden="true" class="ph-duotone ph-note-pencil"></i>
-			<div class="flex flex-col gap-1">
-				{#each notice as line (line)}
-					<span>{line}</span>
-				{/each}
-				<span class="text-sm">{m.reviewDraftOnlyYou()}</span>
-			</div>
-		</div>
-	{/if}
-	{#if staleWarning}
-		<div class="alert alert-warning" role="alert" data-testid="review-draft-stale">
-			<i aria-hidden="true" class="ph-duotone ph-warning"></i>
-			<span>{staleWarning}</span>
-		</div>
-	{/if}
-	{#if assistantChangedDraft}
-		<div class="alert alert-warning">
-			<i aria-hidden="true" class="ph-duotone ph-robot"></i>
-			<span>{m.reviewDraftChangedByAssistant()}</span>
-			<button class="btn btn-sm" onclick={loadStoredDraft}>{m.reviewDraftLoadNew()}</button>
-		</div>
-	{/if}
+	<ReviewDraftNotices
+		{notice}
+		{staleWarning}
+		assistantChanged={assistantChangedDraft}
+		onLoadNew={loadStoredDraft}
+	/>
 
 	{#if reviewed}
 		<!-- Options after review has been saved -->
@@ -416,27 +407,12 @@
 			</button>
 		</div>
 
-		<div class="flex flex-wrap items-center justify-between gap-2 text-sm">
-			<span class="text-base-content/60" aria-live="polite">
-				{#if saveState === 'saving'}
-					{m.reviewDraftSaving()}
-				{:else if saveState === 'saved'}
-					{m.reviewDraftSaved()}
-				{:else if saveState === 'failed'}
-					<span class="text-error">{m.reviewDraftSaveFailed()}</span>
-				{/if}
-			</span>
-			{#if hasDraft}
-				<button
-					class="btn btn-ghost btn-sm text-error"
-					onclick={() => (showDiscardModal = true)}
-					disabled={isSubmitting}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-					{m.reviewDraftDiscard()}
-				</button>
-			{/if}
-		</div>
+		<ReviewDraftFooter
+			{saveState}
+			{hasDraft}
+			disabled={isSubmitting}
+			onDiscard={() => (showDiscardModal = true)}
+		/>
 	{/if}
 </div>
 

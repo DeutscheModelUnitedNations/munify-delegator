@@ -1,5 +1,7 @@
 import { m } from '#lib/paraglide/messages';
 import { getLocale } from '#lib/paraglide/runtime';
+import type { JSONContent } from '@tiptap/core';
+import { hasTextContent } from '../tiptapText';
 
 /**
  * What the review editor says about the reviewer's draft (`paperReviewDraft`): who wrote it and
@@ -59,4 +61,32 @@ export function changedElsewhere({
 }) {
 	if (!draft || draft.lastEditedVia !== 'MCP') return false;
 	return new Date(draft.updatedAt).getTime() !== knownUpdatedAt;
+}
+
+/** Where saving the draft stands, shown below the editor. */
+export type DraftSaveState = 'idle' | 'saving' | 'saved' | 'failed';
+
+const VERDICTS = ['CHANGES_REQUESTED', 'ACCEPTED'] as const;
+
+/** Whether a status is one a review can give, the only ones a draft proposes. */
+function isVerdict(status: string): status is (typeof VERDICTS)[number] {
+	return VERDICTS.some((verdict) => verdict === status);
+}
+
+/**
+ * What autosave should store, or undefined when there is nothing to: an empty editor, a status
+ * that is no verdict, or exactly what was stored last (`savedSnapshot`).
+ */
+export function draftSnapshotToSave({
+	comments,
+	status,
+	savedSnapshot
+}: {
+	comments: JSONContent;
+	status: string;
+	savedSnapshot: string | undefined;
+}) {
+	if (!hasTextContent(comments) || !isVerdict(status)) return undefined;
+	const snapshot = JSON.stringify({ comments, status });
+	return snapshot === savedSnapshot ? undefined : { snapshot, status };
 }

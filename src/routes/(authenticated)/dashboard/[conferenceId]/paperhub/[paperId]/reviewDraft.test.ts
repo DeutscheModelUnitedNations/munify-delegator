@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { changedElsewhere, draftNotice, staleDraftWarning } from './reviewDraft';
+import {
+	changedElsewhere,
+	draftNotice,
+	draftSnapshotToSave,
+	staleDraftWarning
+} from './reviewDraft';
 
 const created = '2026-11-18T09:00:00.000Z';
 const updated = '2026-11-18T10:30:00.000Z';
@@ -59,5 +64,44 @@ describe('changedElsewhere', () => {
 			changedElsewhere({ draft: { lastEditedVia: 'UI', updatedAt: updated }, knownUpdatedAt: 0 })
 		).toBe(false);
 		expect(changedElsewhere({ draft: null, knownUpdatedAt: 0 })).toBe(false);
+	});
+});
+
+describe('draftSnapshotToSave', () => {
+	const text = {
+		type: 'doc',
+		content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Gut.' }] }]
+	};
+
+	it('saves text with a verdict once', () => {
+		const first = draftSnapshotToSave({
+			comments: text,
+			status: 'ACCEPTED',
+			savedSnapshot: undefined
+		});
+		expect(first?.status).toBe('ACCEPTED');
+		expect(
+			draftSnapshotToSave({ comments: text, status: 'ACCEPTED', savedSnapshot: first?.snapshot })
+		).toBeUndefined();
+		expect(
+			draftSnapshotToSave({
+				comments: text,
+				status: 'CHANGES_REQUESTED',
+				savedSnapshot: first?.snapshot
+			})
+		).toBeDefined();
+	});
+
+	it('saves neither an empty editor nor a status that is no verdict', () => {
+		expect(
+			draftSnapshotToSave({
+				comments: { type: 'doc', content: [{ type: 'paragraph' }] },
+				status: 'ACCEPTED',
+				savedSnapshot: undefined
+			})
+		).toBeUndefined();
+		expect(
+			draftSnapshotToSave({ comments: text, status: 'SUBMITTED', savedSnapshot: undefined })
+		).toBeUndefined();
 	});
 });
