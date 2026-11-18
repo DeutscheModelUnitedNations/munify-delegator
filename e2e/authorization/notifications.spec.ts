@@ -259,5 +259,5 @@ test('a member without an inbox is told there is nothing to set up', async ({ br
 	await page.goto('/my-account/notifications');
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
 	await expect(section.getByTestId('notification-row')).toHaveCount(0);
-	await expect(section).toContainText('betreust du kein Postfach');
+	await expect(section).toContainText('nichts einzustellen');
 });

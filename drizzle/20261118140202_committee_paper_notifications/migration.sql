@@ -1,0 +1,3 @@
+ALTER TYPE "email_kind" ADD VALUE 'PAPER_SUBMITTED';--> statement-breakpoint
+ALTER TYPE "notification_topic" ADD VALUE 'COMMITTEE_PAPERS';--> statement-breakpoint
+ALTER TABLE "notification_preference" DROP CONSTRAINT "notification_preference_function_check", ADD CONSTRAINT "notification_preference_function_check" CHECK (("topic"::text in ('COMMITTEE_INBOX', 'COMMITTEE_PAPERS')) = ("team_function_id" is not null));

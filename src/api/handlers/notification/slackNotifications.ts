@@ -8,21 +8,29 @@ import {
 	inboxKey,
 	topicOfInbox,
 	wantsNotification,
+	wantsPaperNotification,
 	type NotifiedInbox,
 	type TopicKey
 } from '#lib/helpers/teamNotifications';
 import { notificationTopicLabel } from '#lib/helpers/teamNotificationLabels';
 import { preferencesOfMembers, workspaceOfConference } from './notificationStore';
-import { sendSlackDirectMessage } from './slackApi';
+import { sendSlackDirectMessage, slackEscape } from './slackApi';
 import { decryptSlackToken } from './slackToken';
 import { slackUserOf } from './slackUsers';
+import {
+	paperSubmissionValues,
+	submittedPaperUrl,
+	type SubmittedPaper
+} from '#api/handlers/email/paperSubmittedEmail';
 
 /**
  * The direct messages Slack carries to the team, right when something arrives: a participant's
- * message in an inbox, to everybody answering it, and a report, to participant care. Each goes
+ * message in an inbox, to everybody answering it, a report, to participant care, and a submitted
+ * paper, to its committee's chairs and consultants on the paper team. Each goes
  * to whoever left Slack on for that topic (`notificationPreference`), in the workspace their
  * conference picked, found there by their account's address. Like the mails they notify and do
- * not relay: which inbox, and a link, never a word of the message or who wrote it.
+ * not relay: which inbox, and a link, never a word of the message or who wrote it; for a paper
+ * where it was submitted and by which role, never its author or text.
  *
  * An inbox tells a member once until it is read: the next message there is silent while the one
  * they were told about still waits (`slackNotification`).
@@ -230,6 +238,39 @@ async function tellReport({
 	);
 }
 
+/**
+ * Tells the committee's chairs and consultants on the paper team of a submitted version of a
+ * paper. Each version tells once (`paper:<id>`, by the version).
+ */
+async function tellPaper({ paper, origin }: { paper: SubmittedPaper; origin: string }) {
+	const recipients = await loadRecipients(paper.conferenceId);
+	if (!recipients) return;
+	const url = submittedPaperUrl({ origin, paper });
+	await Promise.all(
+		recipients.members
+			.filter((member) =>
+				wantsPaperNotification({
+					member,
+					committeeId: paper.committeeId,
+					preferences: member.preferences,
+					channel: 'SLACK',
+					mailByDefault: true
+				})
+			)
+			.map((member) =>
+				tell({
+					recipients,
+					member,
+					key: `paper:${paper.paperId}`,
+					subjectId: paper.versionId,
+					oncePerSubject: true,
+					text: () =>
+						`${m.slackPaperSubmitted(paperSubmissionValues({ paper, escape: slackEscape }))}\n${slackLink({ url, label: m.slackOpenPaper() })}`
+				})
+			)
+	);
+}
+
 /** Runs in the background: what was written is written, whether or not Slack hears of it. */
 function inBackground({ work, failure }: { work: Promise<void>; failure: string }) {
 	void work.catch((error: unknown) => logger.error(failure, error));
@@ -263,4 +304,8 @@ export function tellInboxOnSlack({
 
 export function tellReportOnSlack(args: Parameters<typeof tellReport>[0]) {
 	inBackground({ work: tellReport(args), failure: 'Telling a report on Slack failed' });
+}
+
+export function tellPaperOnSlack(args: Parameters<typeof tellPaper>[0]) {
+	inBackground({ work: tellPaper(args), failure: 'Telling a submitted paper on Slack failed' });
 }

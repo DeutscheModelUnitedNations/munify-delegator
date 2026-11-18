@@ -31,6 +31,14 @@ Every team role except **Member** reads and reviews papers: **Reviewer**, **Proj
 
 With these roles you read every paper of the conference with every version and all feedback. Only project management may delete (see [Editing and deleting papers](#editing-and-deleting)).
 
+## Who hears of new papers {#committee-notification}
+
+When a delegation submits a paper on an agenda item, or submits a revised version again, the committee's chairs and consultants hear of it right away by email and on Slack. Slack messages only come when the conference has a Slack workspace (see [Setting up Slack](./communication#notifications)). That is everybody who holds the chair or consultant function in the committee and whose team role may read papers. With the role **Member** you get no notification. Introduction papers without an agenda item tell nobody.
+
+The notification names the committee, the agenda item, the type of paper, the version, its status and the delegation's role. The status is **Submitted** as long as the paper has had no feedback, **Revised** after that. A link leads to the paper. Who wrote it and its text are never in it. Every submitted version tells again, a draft does not.
+
+Whether you get it by email, on Slack or not at all you set under **Notifications** in your menu, per committee and function (see [Notifications](./communication#notifications)). Participant care adapts the text of the email **Paper submitted in a committee** on the [Emails](./communication#emails) page.
+
 ## Opening submission {#opening-submission}
 
 Whether delegations may write papers is decided by the **Paper Submission Open** switch in the [settings](./configuration#stages). Project management, participant care and the content lead set it.

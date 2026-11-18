@@ -9,11 +9,14 @@ vi.mock('#api/pubsub', () => ({
 		removed: () => undefined
 	}
 }));
+// Telling the committee is paperSubmissionNotice's, which reaches the mail and Slack
+vi.mock('./paperSubmissionNotice', () => ({ announcePaperSubmission: () => undefined }));
 import type * as schema from '#api/db/schema/index';
 import {
 	authorStatusSchema,
 	editorDocumentSchema,
 	groupPapersByCommittee,
+	handsVersionIn,
 	newPaperRows,
 	newPaperStatusSchema,
 	paperSubmissionChanges,
@@ -286,5 +289,18 @@ describe('editorDocumentSchema', () => {
 		expect(editorDocumentSchema.safeParse('{"type":').success).toBe(false);
 		expect(editorDocumentSchema.safeParse('"text"').success).toBe(false);
 		expect(editorDocumentSchema.safeParse(42).success).toBe(false);
+	});
+});
+
+describe('handsVersionIn', () => {
+	test('is a submission or resubmission by the author', () => {
+		expect(handsVersionIn('SUBMITTED')).toBe(true);
+		expect(handsVersionIn('REVISED')).toBe(true);
+	});
+
+	test('is no draft and no edit keeping the status', () => {
+		expect(handsVersionIn('DRAFT')).toBe(false);
+		expect(handsVersionIn(undefined)).toBe(false);
+		expect(handsVersionIn(null)).toBe(false);
 	});
 });

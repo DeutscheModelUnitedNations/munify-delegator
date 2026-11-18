@@ -194,6 +194,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		recipients: m.emailKindAnnouncementRecipients(),
 		content: m.emailKindAnnouncementContent()
 	}),
+	PAPER_SUBMITTED: () => ({
+		title: m.emailKindPaperSubmittedTitle(),
+		trigger: m.emailKindPaperSubmittedTrigger(),
+		recipients: m.emailKindPaperSubmittedRecipients(),
+		content: m.emailKindPaperSubmittedContent()
+	}),
 	BADGE_FOUND: () => ({
 		title: m.emailKindBadgeFoundTitle(),
 		trigger: m.emailKindBadgeFoundTrigger(),

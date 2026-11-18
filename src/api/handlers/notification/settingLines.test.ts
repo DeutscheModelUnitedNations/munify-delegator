@@ -39,6 +39,16 @@ describe('settingLines', () => {
 				email: true,
 				slack: true
 			},
+			{
+				id: 'tm1:COMMITTEE_PAPERS:f-ga',
+				topic: 'COMMITTEE_PAPERS',
+				teamFunctionId: 'f-ga',
+				functionKind: 'CHAIR',
+				committeeAbbreviation: 'GA',
+				committeeName: 'Generalversammlung',
+				email: true,
+				slack: true
+			},
 			expect.objectContaining({ id: 'tm1:CHAT_REPORT:', topic: 'CHAT_REPORT' })
 		]);
 	});
@@ -55,6 +65,7 @@ describe('settingLines', () => {
 		expect(lines.map(({ topic, email, slack }) => ({ topic, email, slack }))).toEqual([
 			{ topic: 'PARTICIPANT_CARE', email: true, slack: true },
 			{ topic: 'COMMITTEE_INBOX', email: true, slack: false },
+			{ topic: 'COMMITTEE_PAPERS', email: true, slack: true },
 			{ topic: 'CHAT_REPORT', email: false, slack: true }
 		]);
 	});
