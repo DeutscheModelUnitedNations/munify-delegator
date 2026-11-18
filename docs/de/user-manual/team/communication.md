@@ -173,6 +173,8 @@ Vorsitz und Gremienberatung erfahren außerdem von jedem Papier, das in ihrem Gr
 
 Slack findet dich über die E-Mail-Adresse deines DELEGATOR-Kontos. Du musst nichts verbinden. Die Seite **Benachrichtigungen** zeigt je Konferenz, ob Slack dich erreicht, und schickt dir mit **Testnachricht senden** eine Nachricht zur Probe. Bist du im Workspace mit einer anderen Adresse angemeldet, findet Slack dich nicht und du bekommst nur E-Mails.
 
+Um eine Benachrichtigung auszuprobieren, klickst du in ihrer Zeile auf den Papierflieger neben dem Schalter für E-Mail oder Slack. Du bekommst sie dann genau so, wie sie sonst ankommt, mit dem Text deiner Konferenz und als Test markiert, auch wenn der Schalter aus ist. Für die Papiere eines Gremiums beschreibt die Probe ein Beispielpapier zum ersten Thema des Gremiums.
+
 Teilnehmende bekommen nur die E-Mail. Sie schalten sie unter ihren Chats mit **E-Mail bei ungelesenen Nachrichten** für sich ab.
 
 ## E-Mails {#emails}
