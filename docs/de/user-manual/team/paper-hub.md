@@ -31,6 +31,14 @@ Papiere lesen und begutachten alle Team-Rollen außer **Mitglied**: **Bewerter\*
 
 Mit diesen Rollen liest du alle Papiere der Konferenz mit allen Versionen und allem Feedback. Löschen darf nur die Projektleitung (siehe [Papiere bearbeiten und löschen](#editing-and-deleting)).
 
+## Wer von neuen Papieren erfährt {#committee-notification}
+
+Reicht eine Delegation ein Papier zu einem Tagesordnungspunkt ein oder eine überarbeitete Version erneut, erfahren es Vorsitz und Gremienberatung dieses Gremiums sofort per E-Mail und per Slack. Slack-Nachrichten gibt es nur, wenn die Konferenz einen Slack-Workspace hat (siehe [Slack einrichten](./communication#notifications)). Das gilt für alle, die im Gremium die Funktion **Vorsitz** oder **Gremienberatung** haben und deren Teamrolle Papiere lesen darf. Mit der Rolle **Mitglied** bekommst du keine Benachrichtigung. Vorstellungspapiere ohne Tagesordnungspunkt melden sich bei niemandem.
+
+Die Benachrichtigung nennt Gremium, Tagesordnungspunkt, Art des Papiers, Version, Status und die Rolle der Delegation. Der Status ist **Eingereicht**, solange das Papier noch kein Feedback hat, danach **Überarbeitet**. Ein Link führt zum Papier. Wer es verfasst hat und der Text stehen nie darin. Jede eingereichte Version meldet sich neu, ein Entwurf nicht.
+
+Ob du sie per E-Mail, per Slack oder gar nicht bekommst, stellst du unter **Benachrichtigungen** in deinem Menü ein, je Gremium und Funktion (siehe [Benachrichtigungen](./communication#notifications)). Den Text der E-Mail **Papier im Gremium eingereicht** passt die Teilnehmendenbetreuung auf der Seite [E-Mails](./communication#emails) an.
+
 ## Die Einreichung öffnen {#opening-submission}
 
 Ob Delegationen Papiere schreiben dürfen, entscheidet der Schalter **Papier-Einreichung geöffnet** in den [Einstellungen](./configuration#stages). Ihn stellen die Projektleitung, die Teilnehmendenbetreuung und die Leitung Inhalt.

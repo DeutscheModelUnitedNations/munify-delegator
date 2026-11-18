@@ -15,11 +15,18 @@ import pg from 'pg';
 
 const DATABASE_URL =
 	process.env.DOCS_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/delegator_docs';
-const BASE_URL = 'http://localhost:5173';
+const BASE_URL = 'https://localhost:5173';
 const filter = process.argv[2];
-// Everything below must hit the docs database, never the dev database from .env. Plain HTTP
-// (`DEV_HTTP`, vite.config.ts): the capture kit's requests would refuse the dev certificate.
-const env = { ...process.env, DATABASE_URL, DEV_HTTP: '1' };
+// Everything below must hit the docs database, never the dev database from .env. Served over
+// HTTPS, never `DEV_HTTP`: the pages hold one connection per live query (server-sent events), and
+// over HTTP/1.1 a browser opens six per host, so on a page with more live queries than that every
+// later request waited forever (the assignment's pool never loaded). HTTP/2 multiplexes them, as
+// in production and the e2e suite.
+const env = { ...process.env, DATABASE_URL };
+delete env.DEV_HTTP;
+// The dev certificate is self-signed. This process only talks to the dev server it starts (the
+// kit's `waitForServer`, the warm-up below), and the server's own `env` above stays verifying.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const { capture } = await import('./capture');
 
 async function ensureDatabase() {

@@ -39,6 +39,7 @@ import { seedMcp } from './mcp';
 import { seedReviewDrafts } from './reviewDrafts';
 import { seedMessages } from './messages';
 import { seedNotifications } from './notifications';
+import { seedPaperNotifications } from './paperNotifications';
 import { seedAnnouncements } from './announcements';
 import { seedLateSupervisor } from './lateSupervisor';
 import { seedMakeSupervisor } from './makeSupervisor';
@@ -1056,6 +1057,7 @@ export default async function seed() {
 	await seedReviewDrafts(db);
 	await seedMessages(db);
 	await seedNotifications(db);
+	await seedPaperNotifications(db);
 	await seedAnnouncements(db);
 	await seedConferencePapers(db);
 	await seedSchools(db, { otherConferenceId: E2E_PREP_CONFERENCE_ID });

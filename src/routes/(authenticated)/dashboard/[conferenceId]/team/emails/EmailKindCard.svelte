@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
-	import { hasNoSwitch, isAlwaysAutomatic } from '#lib/helpers/emailKinds';
+	import { hasNoSwitch, isAlwaysAutomatic, isSentOnSubmission } from '#lib/helpers/emailKinds';
 	import { emailKindTexts } from '#lib/helpers/emailKindTexts';
 
 	/**
@@ -47,6 +47,13 @@
 		{ icon: 'ph-envelope-open', label: m.emailSettingsContent(), text: texts.content }
 	]);
 	const logged = $derived(counts ? counts.sent + counts.failed + counts.skipped : 0);
+	/** Why a kind has no switch: decided per announcement, sent on submission, or by hand. */
+	const noSwitchBadge = $derived.by(() => {
+		if (!hasNoSwitch(kind)) return undefined;
+		if (isAlwaysAutomatic(kind)) return m.emailKindAlwaysAutomaticBadge();
+		if (isSentOnSubmission(kind)) return m.emailKindSentOnSubmissionBadge();
+		return m.emailKindAlwaysSentBadge();
+	});
 </script>
 
 <div
@@ -56,10 +63,8 @@
 >
 	<div class="flex flex-wrap items-center gap-3">
 		<span class="font-semibold">{texts.title}</span>
-		{#if hasNoSwitch(kind)}
-			<span class="badge badge-neutral badge-soft badge-sm">
-				{isAlwaysAutomatic(kind) ? m.emailKindAlwaysAutomaticBadge() : m.emailKindAlwaysSentBadge()}
-			</span>
+		{#if noSwitchBadge}
+			<span class="badge badge-neutral badge-soft badge-sm">{noSwitchBadge}</span>
 		{/if}
 		{#if customized}
 			<span class="badge badge-primary badge-soft badge-sm">{m.emailTextCustomized()}</span>

@@ -72,7 +72,7 @@ const listed = (names: readonly string[]) =>
 	new Intl.ListFormat(getLocale(), { style: 'long', type: 'conjunction' }).format(names);
 
 /** A role as the recipient reads it: the nation's name in their language, or the role's own. */
-function roleName(role: SnapshotRole) {
+export function roleName(role: SnapshotRole) {
 	return role.nationAlpha3Code
 		? getFullTranslatedCountryNameFromISO3Code(role.nationAlpha3Code)
 		: (role.name ?? '');

@@ -105,7 +105,8 @@ schemaBuilder.mutationFields((t) => ({
 					type: args.type,
 					content: args.content,
 					status: args.status
-				}
+				},
+				origin: ctx.requestUrl().origin
 			});
 
 			return db.query.paper
@@ -131,7 +132,12 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdatePaper({ ctx, paperId: args.paperId, status: args.status });
-			await updatePaper({ paperId: args.paperId, content: args.content, status: args.status });
+			await updatePaper({
+				paperId: args.paperId,
+				content: args.content,
+				status: args.status,
+				origin: ctx.requestUrl().origin
+			});
 
 			return db.query.paper
 				.findFirst(query(await readablePaper({ ctx, id: args.paperId })))

@@ -1127,8 +1127,19 @@ bun run preview
   at participant care; the "Badge found" button next to the access card number in the user card
   (`notifyBadgeFound`, `#api/handlers/email/badgeFoundEmail.ts`) sends `BADGE_FOUND` right away.
   Nothing about the badge is stored, so it is in `ALWAYS_SENT_KINDS` too: every press sends it
-  again, logged as sent by hand with the time as `subjectKey`. Everything else, the team welcome
-  included, is an automatic mail.
+  again, logged as sent by hand with the time as `subjectKey`.
+- **A submitted paper is the third.** Handing a version in on an agenda item (`handsVersionIn`:
+  `createPaper` / `updatePaper` with `SUBMITTED`, a resubmission becomes `REVISED`) tells the
+  committee's chairs and consultants on the paper team right away (`announcePaperSubmission`,
+  `#api/handlers/paper/paperSubmissionNotice.ts`, in the background after the commit):
+  `PAPER_SUBMITTED` (`#api/handlers/email/paperSubmittedEmail.ts`, in `ALWAYS_SENT_KINDS`, logged
+  as sent by hand without `sentById`, the version as `subjectKey`) and a Slack message
+  (`tellPaperOnSlack`, once per version). Whether a member gets either is their own choice under the
+  `COMMITTEE_PAPERS` topic (see "Team notifications"), never a conference switch. Both name the
+  committee, agenda item, type, version, status and the delegation's role, never the author or the
+  text. Introduction papers reach no committee and tell nobody. Mails sent where they happen render
+  through `renderNoticeEmail` (`emailDelivery.ts`). Everything else, the team welcome included, is
+  an automatic mail.
 - **Two triggers, one path:** the team's `sendOpenEmails` (`sendOpenEmailsInBackground`, one at a
   time per conference, any kinds) and the `send-emails` job, which runs the sweep itself every few
   minutes, for every conference with a kind switched to automatic, reminders included; both go through `sendDueEmails`. It keeps to the conference's
@@ -1477,13 +1488,16 @@ bun run preview
 - **Each team member decides how they hear of what waits for them** (`#api/handlers/notification/`,
   tables in `schema/notifications.ts`): per conference, per **topic** and per **channel** (`EMAIL`,
   `SLACK`). The topics are the inboxes they answer (`PARTICIPANT_CARE`; `COMMITTEE_INBOX`, one per
-  chair or consultant function they hold; `TRUSTED_SHARED` and `TRUSTED_PERSONAL`) and, for
-  participant care, `CHAT_REPORT`. `#lib/helpers/teamNotifications` is the one pure rule the page,
-  the mails and the Slack messages share: `topicsOf` (what a member is offered), `topicOfInbox`
-  (under which topic an inbox tells them, null when they do not answer it) and `wantsNotification`.
+  chair or consultant function they hold; `TRUSTED_SHARED` and `TRUSTED_PERSONAL`), for
+  participant care `CHAT_REPORT`, and `COMMITTEE_PAPERS`, one per chair or consultant function, for
+  whoever of them holds a team role that may read papers (`PAPER_ROLES`): the papers submitted in
+  that committee. `#lib/helpers/teamNotifications` is the one pure rule the page, the mails and the
+  Slack messages share: `topicsOf` (what a member is offered), `topicOfInbox` (under which topic an
+  inbox tells them, null when they do not answer it), `paperTopicsOf` / `wantsPaperNotification`
+  (a paper in a committee; two functions there tell once) and `wantsNotification`.
   A new topic is an enum value, a case there and a label (`teamNotificationLabels.ts`).
 - **Only choices are stored** (`notificationPreference`, anchored on the team member, a committee
-  inbox on the member's own function by a composite key). Without a row the default holds: both
+  inbox or its papers on the member's own function by a composite key). Without a row the default holds: both
   channels on, mail off for whoever switched `user.messageNotificationEmails` off before. That
   switch stays the participants' own, on their messages page.
 - **The notification tables have no relations and no abilities, on purpose.** rumble exposes every
@@ -1505,14 +1519,16 @@ bun run preview
 - **Slack tells at once, mail after the wait.** `sendMessage` and `reportChat` call
   `tellInboxOnSlack` / `tellReportOnSlack` (`slackNotifications.ts`) after their commit, in the
   background: a direct message to everybody who answers the inbox (or cares for participants) and
-  left Slack on. It is the one thing that is sent because something happened. An inbox tells a
+  left Slack on. It and a submitted paper (both channels at once, see "Automatic emails") are the
+  only things sent because something happened. An inbox tells a
   member once until it is read (`slackNotification`, claimed under an advisory lock; the claim is
   taken back when the message did not go out). The mails stay state: `UNREAD_MESSAGES` now leaves
   out the inboxes a member switched the mail off for (`wantsInboxMail`), and `CHAT_REPORTED` is
   owed to participant care per open report (`loadOpenReportsOfTeam`). Both are ordinary kinds the
   conference switches to automatic.
 - **Like the mails, Slack notifies and does not relay**: the inbox, the conference and a link,
-  never a word of the message or who wrote it. Anything new that tells the team has to keep that,
+  never a word of the message or who wrote it; for a submitted paper where and by which role,
+  never its author or text. Anything new that tells the team has to keep that,
   for the trusted persons' chats above all.
 - `SLACK_API_URL` points the calls at a stand-in; only tests set it.
   `e2e/authorization/notifications.spec.ts` pins the rules down.

@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
 	hearsOfReports,
 	inboxKey,
+	paperTopicsOf,
 	topicOfInbox,
 	topicsOf,
 	wantsNotification,
+	wantsPaperNotification,
 	type NotifiedInbox,
 	type NotifiedMember,
 	type StoredPreference
@@ -59,6 +61,15 @@ describe('topicsOf', () => {
 		]);
 	});
 
+	it('adds the papers of each committee function for the paper team', () => {
+		expect(topicsOf({ ...chair, role: 'REVIEWER' })).toEqual([
+			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-chair-ga' },
+			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-consult-sc' },
+			{ topic: 'COMMITTEE_PAPERS', teamFunctionId: 'f-chair-ga' },
+			{ topic: 'COMMITTEE_PAPERS', teamFunctionId: 'f-consult-sc' }
+		]);
+	});
+
 	it('gives nothing to a member who answers no inbox', () => {
 		expect(topicsOf(plain)).toEqual([]);
 	});
@@ -69,6 +80,8 @@ describe('topicsOf', () => {
 			'PARTICIPANT_CARE',
 			'COMMITTEE_INBOX',
 			'COMMITTEE_INBOX',
+			'COMMITTEE_PAPERS',
+			'COMMITTEE_PAPERS',
 			'TRUSTED_SHARED',
 			'TRUSTED_PERSONAL',
 			'CHAT_REPORT'
@@ -193,5 +206,134 @@ describe('inboxKey', () => {
 			{ ...sharedTrust, trustedUserId: 'u-trusted' }
 		].map(inboxKey);
 		expect(new Set(keys).size).toBe(keys.length);
+	});
+});
+
+describe('paperTopicsOf', () => {
+	const reviewingChair: NotifiedMember = { ...chair, role: 'REVIEWER' };
+
+	it('tells a chair or consultant on the paper team of their own committee', () => {
+		expect(paperTopicsOf({ member: reviewingChair, committeeId: 'ga' })).toEqual([
+			{ topic: 'COMMITTEE_PAPERS', teamFunctionId: 'f-chair-ga' }
+		]);
+		expect(paperTopicsOf({ member: reviewingChair, committeeId: 'sc' })).toEqual([
+			{ topic: 'COMMITTEE_PAPERS', teamFunctionId: 'f-consult-sc' }
+		]);
+	});
+
+	it('tells every role that may read papers', () => {
+		for (const role of [
+			'REVIEWER',
+			'PROJECT_MANAGEMENT',
+			'PARTICIPANT_CARE',
+			'TEAM_COORDINATOR',
+			'CONTENT_LEAD'
+		]) {
+			expect(paperTopicsOf({ member: { ...chair, role }, committeeId: 'ga' })).toHaveLength(1);
+		}
+	});
+
+	it('tells nobody whose role may not read papers', () => {
+		expect(paperTopicsOf({ member: chair, committeeId: 'ga' })).toEqual([]);
+	});
+
+	it('tells nobody of another committee, and no trusted person', () => {
+		expect(paperTopicsOf({ member: reviewingChair, committeeId: 'hrc' })).toEqual([]);
+		expect(paperTopicsOf({ member: { ...trusted, role: 'REVIEWER' }, committeeId: 'ga' })).toEqual(
+			[]
+		);
+		expect(paperTopicsOf({ member: { ...lead, functions: [] }, committeeId: 'ga' })).toEqual([]);
+	});
+
+	it('gives both functions of somebody chairing and consulting one committee', () => {
+		const twice: NotifiedMember = {
+			...reviewingChair,
+			functions: [
+				{ id: 'f-chair-ga', committeeId: 'ga', kind: 'CHAIR' },
+				{ id: 'f-consult-ga', committeeId: 'ga', kind: 'CONSULTANT' }
+			]
+		};
+		expect(paperTopicsOf({ member: twice, committeeId: 'ga' })).toHaveLength(2);
+	});
+});
+
+describe('wantsPaperNotification', () => {
+	const twice: NotifiedMember = {
+		userId: 'u-twice',
+		role: 'REVIEWER',
+		functions: [
+			{ id: 'f-chair-ga', committeeId: 'ga', kind: 'CHAIR' },
+			{ id: 'f-consult-ga', committeeId: 'ga', kind: 'CONSULTANT' }
+		]
+	};
+	const off = (teamFunctionId: string, channel: 'EMAIL' | 'SLACK'): StoredPreference => ({
+		topic: 'COMMITTEE_PAPERS',
+		teamFunctionId,
+		channel,
+		enabled: false
+	});
+
+	it('is on by default on both channels', () => {
+		for (const channel of ['EMAIL', 'SLACK'] as const) {
+			expect(
+				wantsPaperNotification({
+					member: twice,
+					committeeId: 'ga',
+					preferences: [],
+					channel,
+					mailByDefault: true
+				})
+			).toBe(true);
+		}
+	});
+
+	it('starts mail off for somebody who switched the message mails off', () => {
+		expect(
+			wantsPaperNotification({
+				member: twice,
+				committeeId: 'ga',
+				preferences: [],
+				channel: 'EMAIL',
+				mailByDefault: false
+			})
+		).toBe(false);
+	});
+
+	it('follows the stored choice per channel', () => {
+		const preferences = [off('f-chair-ga', 'SLACK'), off('f-consult-ga', 'SLACK')];
+		const wants = (channel: 'EMAIL' | 'SLACK') =>
+			wantsPaperNotification({
+				member: twice,
+				committeeId: 'ga',
+				preferences,
+				channel,
+				mailByDefault: true
+			});
+		expect(wants('SLACK')).toBe(false);
+		expect(wants('EMAIL')).toBe(true);
+	});
+
+	it('tells somebody with two functions there when either wants it', () => {
+		expect(
+			wantsPaperNotification({
+				member: twice,
+				committeeId: 'ga',
+				preferences: [off('f-chair-ga', 'EMAIL')],
+				channel: 'EMAIL',
+				mailByDefault: true
+			})
+		).toBe(true);
+	});
+
+	it('is false for a member the committee does not concern', () => {
+		expect(
+			wantsPaperNotification({
+				member: { ...twice, role: 'MEMBER' },
+				committeeId: 'ga',
+				preferences: [],
+				channel: 'SLACK',
+				mailByDefault: true
+			})
+		).toBe(false);
 	});
 });
