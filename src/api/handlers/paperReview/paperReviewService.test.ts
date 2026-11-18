@@ -15,6 +15,11 @@ describe('reviewAnonymousNameSchema', () => {
 		expect(reviewAnonymousNameSchema.safeParse('   ').success).toBe(false);
 		expect(reviewAnonymousNameSchema.safeParse('x'.repeat(81)).success).toBe(false);
 	});
+
+	test('lets an absent name through, as a review without one sends', () => {
+		expect(reviewAnonymousNameSchema.safeParse(undefined).success).toBe(true);
+		expect(reviewAnonymousNameSchema.safeParse(null).success).toBe(true);
+	});
 });
 
 describe('reviewAnonymityArgsSchema', () => {
