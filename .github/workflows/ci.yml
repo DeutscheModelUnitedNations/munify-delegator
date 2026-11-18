@@ -311,8 +311,10 @@ jobs:
       # from measured coverage rather than estimated (FALLOW_COVERAGE below).
       - run: bun run coverage
       # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
-      # with write permissions on every PR.
-      - uses: fallow-rs/fallow@a6956af63dd896d6106a7d28361585e0ff1c250b # v3.39.0
+      # with write permissions on every PR. Bump it with the `fallow` devDependency:
+      # the action verifies the installed CLI with its own scripts, and v3.39.0's
+      # could not find the binary of fallow 3.43, whose packages declare their libc.
+      - uses: fallow-rs/fallow@8cc305d74aeb77b7ab316388f8ab41cce20a394f # v3.43.1
         env:
           FALLOW_COVERAGE: coverage/coverage-final.json
         with:
