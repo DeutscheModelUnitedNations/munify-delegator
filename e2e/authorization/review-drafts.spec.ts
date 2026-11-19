@@ -7,7 +7,8 @@ import {
 	E2E_DRAFTS_OFF_CONFERENCE_ID,
 	E2E_DRAFTS_PAPER_IDS,
 	E2E_DRAFTS_PAPER_SENTENCE,
-	E2E_DRAFTS_PEOPLE
+	E2E_DRAFTS_PEOPLE,
+	firstVersionId
 } from '../seed/reviewDrafts';
 
 // Review drafts (src/api/handlers/paperReviewDraft/): an AI assistant writes one over MCP, and it
@@ -168,25 +169,51 @@ test.describe('review drafts over MCP', () => {
 		expect(isError).toBe(true);
 	});
 
-	test('every write moves the draft revision past the stored one', async ({ request }) => {
-		await upsert(request, tokens.reviewer);
-		// a stored revision ahead of the server's clock: a write that took only its own clock would
-		// land on or before it, and the editor's revision check could not tell the two apart
-		await query(
-			"UPDATE paper_review_draft SET updated_at = now()::timestamp(3) + interval '1 hour' WHERE paper_id = $1",
-			[PAPER]
-		);
-		const [{ stored }] = await query<{ stored: string }>(
-			'SELECT updated_at::text AS stored FROM paper_review_draft WHERE paper_id = $1',
-			[PAPER]
-		);
-		const { isError } = await upsert(request, tokens.reviewer);
-		expect(isError).toBe(false);
-		expect(
-			await query<{ later: boolean }>(
-				'SELECT updated_at > $2::timestamp(3) AS later FROM paper_review_draft WHERE paper_id = $1',
-				[PAPER, stored]
-			)
-		).toEqual([{ later: true }]);
+	test('a first write that meets another first write still moves the revision past it', async ({
+		request
+	}) => {
+		await query('DELETE FROM paper_review_draft WHERE paper_id = $1', [PAPER]);
+		// Another first write, not committed yet: the server's lock finds no draft, and its insert
+		// waits on this row. Its revision is ahead of the server's clock, so a write that only took
+		// its own clock would land on or before it.
+		const other = new pg.Client({ connectionString: process.env.DATABASE_URL });
+		await other.connect();
+		try {
+			await other.query('BEGIN');
+			await other.query(
+				`INSERT INTO paper_review_draft (id, paper_id, reviewer_id, paper_version_id, comments,
+					status_after, origin, last_edited_via, created_at, updated_at)
+				 VALUES ('e2e-first-write-race', $1, $2, $3, '{"type":"doc","content":[]}', 'ACCEPTED',
+					'MCP', 'MCP', now(), now()::timestamp(3) + interval '1 hour')`,
+				[PAPER, E2E_DRAFTS_PEOPLE.reviewer, firstVersionId(PAPER)]
+			);
+			const write = upsert(request, tokens.reviewer);
+			// wait until the server's insert is blocked on that row
+			await expect
+				.poll(
+					async () =>
+						(
+							await query<{ waiting: number }>(
+								"SELECT count(*)::int AS waiting FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query ILIKE 'insert into \"paper_review_draft\"%'",
+								[]
+							)
+						)[0]?.waiting,
+					{ timeout: 15_000 }
+				)
+				.toBeGreaterThanOrEqual(1);
+			await other.query('COMMIT');
+
+			const { isError } = await write;
+			expect(isError).toBe(false);
+			expect(
+				await query<{ later: boolean }>(
+					"SELECT updated_at > now()::timestamp(3) + interval '59 minutes' AS later FROM paper_review_draft WHERE paper_id = $1",
+					[PAPER]
+				)
+			).toEqual([{ later: true }]);
+		} finally {
+			await other.query('ROLLBACK').catch(() => undefined);
+			await other.end();
+		}
 	});
 });
