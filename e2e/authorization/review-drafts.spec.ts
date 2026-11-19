@@ -180,11 +180,12 @@ test.describe('review drafts over MCP', () => {
 		await other.connect();
 		try {
 			await other.query('BEGIN');
-			await other.query(
+			const inserted = await other.query<{ stored: string }>(
 				`INSERT INTO paper_review_draft (id, paper_id, reviewer_id, paper_version_id, comments,
 					status_after, origin, last_edited_via, created_at, updated_at)
 				 VALUES ('e2e-first-write-race', $1, $2, $3, '{"type":"doc","content":[]}', 'ACCEPTED',
-					'MCP', 'MCP', now(), now()::timestamp(3) + interval '1 hour')`,
+					'MCP', 'MCP', now(), now()::timestamp(3) + interval '1 hour')
+				 RETURNING updated_at::text AS stored`,
 				[PAPER, E2E_DRAFTS_PEOPLE.reviewer, firstVersionId(PAPER)]
 			);
 			const write = upsert(request, tokens.reviewer);
@@ -207,8 +208,8 @@ test.describe('review drafts over MCP', () => {
 			expect(isError).toBe(false);
 			expect(
 				await query<{ later: boolean }>(
-					"SELECT updated_at > now()::timestamp(3) + interval '59 minutes' AS later FROM paper_review_draft WHERE paper_id = $1",
-					[PAPER]
+					'SELECT updated_at > $2::timestamp(3) AS later FROM paper_review_draft WHERE paper_id = $1',
+					[PAPER, inserted.rows[0]?.stored]
 				)
 			).toEqual([{ later: true }]);
 		} finally {
