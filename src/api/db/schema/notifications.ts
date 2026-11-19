@@ -27,14 +27,16 @@ export const notificationChannel = pgEnum('notification_channel', ['EMAIL', 'SLA
 /**
  * What a team member can be told about: the inboxes they answer (participant care; a committee's
  * chairs or consultants, one per function they hold; the trusted persons together, and the chats
- * written to them alone) and, for participant care, a chat being reported.
+ * written to them alone), for participant care a chat being reported, and for a committee's chairs
+ * and consultants on the paper team the papers submitted there (one per function they hold).
  */
 export const notificationTopic = pgEnum('notification_topic', [
 	'PARTICIPANT_CARE',
 	'COMMITTEE_INBOX',
 	'TRUSTED_SHARED',
 	'TRUSTED_PERSONAL',
-	'CHAT_REPORT'
+	'CHAT_REPORT',
+	'COMMITTEE_PAPERS'
 ]);
 
 /**
@@ -67,8 +69,8 @@ export const conferenceSlackWorkspace = snakeCase.table('conference_slack_worksp
 
 /**
  * A team member's choice for one topic and channel. Only choices are stored: without a row the
- * default holds (`#lib/helpers/teamNotifications`). A committee inbox is the member's function
- * there, which the composite key keeps theirs.
+ * default holds (`#lib/helpers/teamNotifications`). A committee's inbox and papers are the
+ * member's function there, which the composite key keeps theirs.
  */
 export const notificationPreference = snakeCase.table(
 	'notification_preference',
@@ -78,7 +80,10 @@ export const notificationPreference = snakeCase.table(
 			.notNull()
 			.references(() => teamMember.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		topic: notificationTopic().notNull(),
-		/** `COMMITTEE_INBOX`: the member's function of that committee; empty for every other topic. */
+		/**
+		 * `COMMITTEE_INBOX` and `COMMITTEE_PAPERS`: the member's function of that committee; empty for
+		 * every other topic.
+		 */
 		teamFunctionId: text(),
 		channel: notificationChannel().notNull(),
 		enabled: boolean().notNull()
@@ -94,9 +99,10 @@ export const notificationPreference = snakeCase.table(
 		})
 			.onDelete('cascade')
 			.onUpdate('cascade'),
+		// compared as text: a value added to the enum cannot be used in the migration adding it
 		check(
 			'notification_preference_function_check',
-			sql`(${table.topic} = 'COMMITTEE_INBOX') = (${table.teamFunctionId} is not null)`
+			sql`(${table.topic}::text in ('COMMITTEE_INBOX', 'COMMITTEE_PAPERS')) = (${table.teamFunctionId} is not null)`
 		)
 	]
 );
@@ -128,8 +134,8 @@ export const slackUserLookup = snakeCase.table(
 
 /**
  * A direct message the app sent a team member, so an inbox tells them once until it is read
- * (`slackNotifications.ts`). `subjectId` is the chat message (or report) that set it off; no
- * foreign key, since a log row that outlives its message only means the next one tells again.
+ * (`slackNotifications.ts`). `subjectId` is the chat message (report, paper version) that set it
+ * off; no foreign key, since a log row that outlives its message only means the next one tells again.
  */
 export const slackNotification = snakeCase.table(
 	'slack_notification',
@@ -138,7 +144,10 @@ export const slackNotification = snakeCase.table(
 		teamMemberId: text()
 			.notNull()
 			.references(() => teamMember.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		/** The inbox (`inboxKey` in `#lib/helpers/teamNotifications`), or `report` for a report. */
+		/**
+		 * The inbox (`inboxKey` in `#lib/helpers/teamNotifications`), `report` for a report, or
+		 * `paper:<id>` for a submitted version of a paper.
+		 */
 		inboxKey: text().notNull(),
 		subjectId: text().notNull()
 	},

@@ -1,11 +1,11 @@
 import { db } from '#api/db/db';
-import { renderEmail, NotificationEmail } from './templates/index';
-import { localeOfUser, runWithLocale } from '#api/services/requestLocale';
-import type { Locale } from '#lib/paraglide/runtime';
 import type { SnapshotUser } from './dueEmails';
-import { recipientName } from './emailContent';
-import { emailFooterParagraphs, fillEmailText, resolveEmailText } from './emailText';
-import { loadWording, sendByHand, wordingIn, type ConferenceWording } from './emailDelivery';
+import {
+	loadWording,
+	renderNoticeEmail,
+	sendByHand,
+	type ConferenceWording
+} from './emailDelivery';
 
 /**
  * Tells someone that the badge they lost was handed in to participant care. Nothing about it is
@@ -26,29 +26,7 @@ export function renderBadgeFoundEmail({
 	conferenceTitle: string;
 	wording: ConferenceWording;
 }) {
-	const locale: Locale = localeOfUser(recipient.locale);
-	return runWithLocale({
-		locale,
-		fn: async () => {
-			const { own, footer } = wordingIn({ wording, kind: KIND, locale });
-			const filled = fillEmailText({
-				text: resolveEmailText({ kind: KIND, locale, override: own }),
-				values: { name: recipientName(recipient), conference: conferenceTitle }
-			});
-			const { html, text } = await renderEmail({
-				component: NotificationEmail,
-				props: {
-					heading: filled.heading,
-					recipientName: recipientName(recipient),
-					paragraphs: filled.paragraphs,
-					closing: filled.closing,
-					conferenceTitle,
-					conferenceFooter: emailFooterParagraphs({ footer, conferenceTitle })
-				}
-			});
-			return { subject: filled.subject, html, text };
-		}
-	});
+	return renderNoticeEmail({ kind: KIND, recipient, conferenceTitle, wording });
 }
 
 /**

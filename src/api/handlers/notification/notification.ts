@@ -31,6 +31,7 @@ import {
 	type ConferenceNotificationSettings
 } from './notificationService';
 import type { NotificationSetting } from './settingLines';
+import { sendNotificationTest, type NotificationTestResult } from './notificationTest';
 
 /**
  * How the team hears of what waits for it: each member's settings per topic and channel, and the
@@ -48,6 +49,16 @@ const slackConnectionEnum = schemaBuilder.enumType('SlackConnection', {
 	description:
 		"How somebody is known in a Slack workspace: `CONNECTED` when their account's address is a member's there, `NOT_FOUND` when it is nobody's, `UNAVAILABLE` when Slack could not be asked.",
 	values: SLACK_CONNECTIONS
+});
+
+const NOTIFICATION_TEST_RESULTS = ['SENT', 'NOT_FOUND', 'UNAVAILABLE'] as const satisfies readonly [
+	NotificationTestResult,
+	...NotificationTestResult[]
+];
+const notificationTestResultEnum = schemaBuilder.enumType('NotificationTestResult', {
+	description:
+		"How a test notification went: `SENT`, `NOT_FOUND` when Slack knows nobody by the account's address, `UNAVAILABLE` when the mail service or Slack refused it.",
+	values: NOTIFICATION_TEST_RESULTS
 });
 
 const NotificationSettingRef = schemaBuilder.objectRef<NotificationSetting>('NotificationSetting');
@@ -245,6 +256,28 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const member = await assertOwnTeamMember({ ctx, conferenceId: args.conferenceId });
 			return sendSlackTestMessage({ conferenceId: args.conferenceId, userId: member.userId });
+		}
+	}),
+
+	sendNotificationTest: t.field({
+		description:
+			'Sends the caller a test of one of their notifications (a topic of `myNotificationSettings`) by mail or Slack, as the real one reads, marked as a test and whatever its switch says. NOT_FOUND when they are not on that team, INVALID_INPUT for a topic that is not theirs, CONFLICT for Slack while the conference has no workspace.',
+		type: notificationTestResultEnum,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			topic: t.arg({ type: notificationTopicEnum, required: true }),
+			teamFunctionId: t.arg.id({ description: "For a committee's inbox or papers: the function." }),
+			channel: t.arg({ type: notificationChannelEnum, required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const member = await assertOwnTeamMember({ ctx, conferenceId: args.conferenceId });
+			return sendNotificationTest({
+				member,
+				conferenceId: args.conferenceId,
+				key: { topic: args.topic, teamFunctionId: args.teamFunctionId ?? null },
+				channel: args.channel,
+				origin: ctx.requestUrl().origin
+			});
 		}
 	}),
 

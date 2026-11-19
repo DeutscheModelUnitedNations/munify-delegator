@@ -347,16 +347,33 @@ export async function sendSlackTestMessage({
 	if (!workspace || !conference || !user) {
 		throw apiError({ code: 'CONFLICT', message: m.slackNoWorkspace() });
 	}
+	return sendSlackTo({
+		workspace,
+		user,
+		text: () => m.slackTestMessage({ conference: conference.title })
+	});
+}
+
+/**
+ * Sends `user` a direct message in `workspace`, `text` asked for in their language, and answers
+ * how it went: `NOT_FOUND` when their address is nobody's there, `UNAVAILABLE` when Slack refused.
+ */
+export async function sendSlackTo({
+	workspace,
+	user,
+	text
+}: {
+	workspace: NonNullable<Awaited<ReturnType<typeof workspaceOfConference>>>;
+	user: { id: string; email: string; locale: string | null };
+	text: () => string;
+}): Promise<SlackConnection> {
 	const { connection, slackUserId } = await slackUserOf({ workspace, user });
 	if (!slackUserId) return connection;
 	try {
 		await sendSlackDirectMessage({
 			token: await decryptSlackToken(workspace.botTokenCiphertext),
 			slackUserId,
-			text: runWithLocale({
-				locale: localeOfUser(user.locale),
-				fn: () => m.slackTestMessage({ conference: conference.title })
-			})
+			text: runWithLocale({ locale: localeOfUser(user.locale), fn: text })
 		});
 	} catch (error) {
 		if (error instanceof SlackApiError) return 'UNAVAILABLE';

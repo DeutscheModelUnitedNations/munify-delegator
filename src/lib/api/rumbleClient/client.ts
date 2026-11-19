@@ -2629,7 +2629,7 @@ export type EmailStatusResult = {
   status: TeamInvitationEmailStatus    
 };
 		
-export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "CHAT_REPORTED" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "CHAT_REPORTED" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAPER_SUBMITTED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -3498,6 +3498,12 @@ export type Mutation = {
     chatId: ID,
     paperId?: ID | null | undefined
   }) => Chatmessage,
+  sendNotificationTest: (p: {
+    channel: NotificationchannelEnum,
+    conferenceId: ID,
+    teamFunctionId?: ID | null | undefined,
+    topic: NotificationtopicEnum
+  }) => NotificationTestResult,
   sendOpenEmails: (p: {
     conferenceId: ID,
     kinds: EmailkindEnum[]
@@ -4032,9 +4038,11 @@ export type NotificationSetting = {
   topic: NotificationtopicEnum    
 };
 		
+export type NotificationTestResult = "NOT_FOUND" | "SENT" | "UNAVAILABLE";
+		
 export type NotificationchannelEnum = "EMAIL" | "SLACK";
 		
-export type NotificationtopicEnum = "CHAT_REPORT" | "COMMITTEE_INBOX" | "PARTICIPANT_CARE" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
+export type NotificationtopicEnum = "CHAT_REPORT" | "COMMITTEE_INBOX" | "COMMITTEE_PAPERS" | "PARTICIPANT_CARE" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
 		
 export type NsaCard = {
   cardNumber: Int,

@@ -4,13 +4,15 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { notificationTopicLabel } from '#lib/helpers/teamNotificationLabels';
-	import type { NotificationChannel, NotificationTopic } from '#lib/helpers/teamNotifications';
+	import type { NotificationTopic } from '#lib/helpers/teamNotifications';
+	import NotificationChannelCell from './NotificationChannelCell.svelte';
 	import SlackConnectionNote from './SlackConnectionNote.svelte';
 
 	/**
-	 * The caller's notification settings as one matrix: per conference they are on the team of
-	 * (a row group, with whether Slack reaches them there), what mail and Slack tell them about. A switch saves right away, as do the buttons switching a whole conference or everything; the list is live, so a function handed
-	 * out or a workspace picked meanwhile shows up.
+	 * The caller's notification settings as one matrix: per conference they are on the team of (a
+	 * row group, with whether Slack reaches them there), what mail and Slack tell them about, each
+	 * with a test. A switch saves right away, as do the buttons switching a whole conference or
+	 * everything; the list is live, so a function handed out or a workspace picked meanwhile shows up.
 	 */
 
 	const conferences = $derived(
@@ -32,35 +34,10 @@
 
 	const rowKey = (setting: { topic: string; teamFunctionId?: string | null }) =>
 		`${setting.topic}:${setting.teamFunctionId ?? ''}`;
-
-	/** Saves a switch; one that could not be saved goes back to where it was. */
-	async function setChannel({
-		conferenceId,
-		key,
-		channel,
-		input
-	}: {
-		conferenceId: string;
-		key: { topic: NotificationTopic; teamFunctionId?: string | null };
-		channel: NotificationChannel;
-		input: HTMLInputElement;
-	}) {
-		const enabled = input.checked;
-		try {
-			await client.mutate.setNotificationPreference({
-				__args: {
-					conferenceId,
-					topic: key.topic,
-					teamFunctionId: key.teamFunctionId ?? null,
-					channel,
-					enabled
-				}
-			});
-		} catch {
-			toast.error(m.notificationSaveFailed());
-			input.checked = !enabled;
-		}
-	}
+	const keyOf = (setting: { topic: NotificationTopic; teamFunctionId?: string | null }) => ({
+		topic: setting.topic,
+		teamFunctionId: setting.teamFunctionId ?? null
+	});
 
 	type Settings = (typeof conferences)[number]['settings'];
 
@@ -152,8 +129,8 @@
 				<thead>
 					<tr>
 						<th scope="col">{m.notificationsTopic()}</th>
-						<th scope="col" class="w-20 text-center">{m.notificationsChannelEmail()}</th>
-						<th scope="col" class="w-20 text-center">{m.notificationsChannelSlack()}</th>
+						<th scope="col" class="w-28 text-center">{m.notificationsChannelEmail()}</th>
+						<th scope="col" class="w-28 text-center">{m.notificationsChannelSlack()}</th>
 					</tr>
 				</thead>
 				{#each conferences as conference (conference.conferenceId)}
@@ -199,36 +176,23 @@
 										</span>
 									{/if}
 								</th>
-								<td class="text-center">
-									<input
-										type="checkbox"
-										class="toggle toggle-primary toggle-sm"
-										aria-label={m.notificationsToggleEmail({ topic: label })}
-										checked={setting.email}
-										onchange={(event) =>
-											setChannel({
-												conferenceId: conference.conferenceId,
-												key: setting,
-												channel: 'EMAIL',
-												input: event.currentTarget
-											})}
-									/>
-								</td>
-								<td class="text-center">
-									<input
-										type="checkbox"
-										class="toggle toggle-primary toggle-sm"
-										aria-label={m.notificationsToggleSlack({ topic: label })}
-										checked={setting.slack}
-										onchange={(event) =>
-											setChannel({
-												conferenceId: conference.conferenceId,
-												key: setting,
-												channel: 'SLACK',
-												input: event.currentTarget
-											})}
-									/>
-								</td>
+								<NotificationChannelCell
+									conferenceId={conference.conferenceId}
+									key={keyOf(setting)}
+									channel="EMAIL"
+									{label}
+									checked={setting.email}
+								/>
+								<NotificationChannelCell
+									conferenceId={conference.conferenceId}
+									key={keyOf(setting)}
+									channel="SLACK"
+									{label}
+									checked={setting.slack}
+									testUnavailable={conference.slackWorkspaceName
+										? undefined
+										: m.notificationsTestNoWorkspace()}
+								/>
 							</tr>
 						{:else}
 							<tr>
@@ -241,6 +205,10 @@
 				{/each}
 			</table>
 		</div>
+	{/if}
+
+	{#if allSettings.length > 0}
+		<p class="text-base-content/70 text-xs">{m.notificationsTestNote()}</p>
 	{/if}
 
 	<p class="text-base-content/70 text-sm">{m.notificationsContentNote()}</p>

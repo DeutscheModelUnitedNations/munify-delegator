@@ -8,7 +8,7 @@ export function notificationTopicLabel({
 	committeeAbbreviation
 }: {
 	topic: NotificationTopic;
-	/** `COMMITTEE_INBOX`: the function whose inbox it is, and its committee. */
+	/** `COMMITTEE_INBOX` / `COMMITTEE_PAPERS`: the function whose topic it is, and its committee. */
 	functionKind?: string | null;
 	committeeAbbreviation?: string | null;
 }) {
@@ -25,5 +25,12 @@ export function notificationTopicLabel({
 			return m.notificationTopicTrustedPersonal();
 		case 'CHAT_REPORT':
 			return m.notificationTopicChatReport();
+		case 'COMMITTEE_PAPERS': {
+			const papers =
+				functionKind === 'CONSULTANT'
+					? m.notificationTopicConsultantPapers()
+					: m.notificationTopicChairPapers();
+			return committeeAbbreviation ? `${papers} ${committeeAbbreviation}` : papers;
+		}
 	}
 }

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import dmunLogo from '#assets/logo/dmun-lang.svg';
-	import dmunLogoDark from '#assets/logo/dmun-lang-darkmode.svg';
+	import { dmunLogoUrl } from '#lib/helpers/dmunLogo';
 	import { PUBLIC_SHA, PUBLIC_VERSION } from '$app/env/public';
 	import ContrastToggle from '#lib/components/ContrastToggle.svelte';
 	import LanguageSwitcher from '#lib/components/LanguageSwitcher.svelte';
@@ -47,12 +46,12 @@
 			<p>{m.aServiceBy()}</p>
 			<a href="https://dmun.de" target="_blank" class="transition-all duration-300 hover:scale-105">
 				<img
-					src={dmunLogo}
+					src={dmunLogoUrl('dmun-lang.svg')}
 					alt="DMUN – Deutsche Model United Nations e.V."
 					class="w-60 dark:hidden"
 				/>
 				<img
-					src={dmunLogoDark}
+					src={dmunLogoUrl('dmun-lang-darkmode.svg')}
 					alt="DMUN – Deutsche Model United Nations e.V."
 					class="hidden w-60 dark:block"
 				/>

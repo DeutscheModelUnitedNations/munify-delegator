@@ -175,6 +175,56 @@ test('nobody chooses for a topic that is not theirs', async ({ browser }) => {
 	expect((await settingsOf(chairPage))?.settings[0]).toMatchObject({ email: false, slack: true });
 });
 
+const TEST = `mutation ($c: ID!, $topic: NotificationtopicEnum!, $fn: ID, $channel: NotificationchannelEnum!) {
+	sendNotificationTest(conferenceId: $c, topic: $topic, teamFunctionId: $fn, channel: $channel)
+}`;
+const TEST_LOGS = `query ($c: ID!, $u: ID!) {
+	emailLogs(where: { conferenceId: { eq: $c }, userId: { eq: $u } }) { kind trigger subjectKey }
+}`;
+
+test('a test notification goes to the caller alone, for their own topics', async ({ browser }) => {
+	const carePage = await signedIn(browser, care.id);
+	// mailed the way the real one is, logged as sent by hand; whether SMTP takes it does not matter
+	const mailed = await gql<{ sendNotificationTest: string }>(carePage, TEST, {
+		c: CONFERENCE,
+		topic: 'CHAT_REPORT',
+		channel: 'EMAIL'
+	});
+	expect(mailed.errors).toBeUndefined();
+	expect(['SENT', 'UNAVAILABLE']).toContain(mailed.data?.sendNotificationTest);
+	const logs = await gql<{ emailLogs: { kind: string; trigger: string; subjectKey: string }[] }>(
+		carePage,
+		TEST_LOGS,
+		{ c: CONFERENCE, u: care.id }
+	);
+	expect(logs.data?.emailLogs).toContainEqual({
+		kind: 'CHAT_REPORTED',
+		trigger: 'MANUAL',
+		subjectKey: expect.stringMatching(/^test:CHAT_REPORT:/)
+	});
+
+	// no workspace is picked yet
+	const slack = await gql(carePage, TEST, {
+		c: CONFERENCE,
+		topic: 'PARTICIPANT_CARE',
+		channel: 'SLACK'
+	});
+	expect(codeOf(slack)).toBe('CONFLICT');
+
+	// nobody tests somebody else's topic, and somebody on no team nothing
+	const borrowed = await gql(carePage, TEST, {
+		c: CONFERENCE,
+		topic: 'COMMITTEE_INBOX',
+		fn: fixture.chairFunctionId,
+		channel: 'EMAIL'
+	});
+	expect(codeOf(borrowed)).toBe('INVALID_INPUT');
+	const outsider = await signedIn(browser, fixture.outsiderId);
+	expect(
+		codeOf(await gql(outsider, TEST, { c: CONFERENCE, topic: 'CHAT_REPORT', channel: 'EMAIL' }))
+	).toBe('NOT_FOUND');
+});
+
 const WORKSPACES = `query ($c: ID) { slackWorkspaces(conferenceId: $c) { id name conferenceCount } }`;
 const PICK = `mutation ($c: ID!, $w: ID) { setConferenceSlackWorkspace(conferenceId: $c, slackWorkspaceId: $w) }`;
 
@@ -249,6 +299,15 @@ test('the page lists the topics and a switch saves', async ({ browser }) => {
 		.poll(async () => (await settingsOf(page))?.settings[0])
 		.toMatchObject({ topic: 'PARTICIPANT_CARE', email: false, slack: true });
 
+	// each line sends a test of itself, by mail whatever the switch says
+	const careRow = section.getByTestId('notification-row').first();
+	const testMail = careRow.getByRole('button', {
+		name: 'Test-Mail für Teilnehmendenbetreuung an mich senden'
+	});
+	await expect(testMail).toBeEnabled();
+	await testMail.click();
+	await expect(page.getByText(/Test-Mail/)).toBeVisible();
+
 	// the choice is still there after a reload
 	await page.reload();
 	await expect(
@@ -285,5 +344,5 @@ test('a member without an inbox is told there is nothing to set up', async ({ br
 	await page.goto('/my-account/notifications');
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
 	await expect(section.getByTestId('notification-row')).toHaveCount(0);
-	await expect(section).toContainText('betreust du kein Postfach');
+	await expect(section).toContainText('nichts einzustellen');
 });

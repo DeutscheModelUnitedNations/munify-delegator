@@ -6,8 +6,13 @@ import { getLocale, toLocale, type Locale } from '#lib/paraglide/runtime';
 import { renderEmail, NotificationEmail } from './templates/index';
 import { emailLogPubsub } from '#api/pubsub';
 import { whereRows } from '#api/db/whereRows';
-import { emailFooterParagraphs } from './emailText';
-import type { DueEmail, EmailKind, EmailSnapshot } from './dueEmails';
+import {
+	emailFooterParagraphs,
+	fillEmailText,
+	resolveEmailText,
+	type EmailPlaceholderValues
+} from './emailText';
+import type { DueEmail, EmailKind, EmailSnapshot, SnapshotUser } from './dueEmails';
 import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
 import type { EmailBundle } from './emailBundles';
 
@@ -100,6 +105,52 @@ export function renderAutomaticEmail({
 	});
 }
 
+/**
+ * Renders a mail sent where something happens (a found badge, a submitted paper) in the
+ * recipient's language and the conference's own words. `values` and `button` are asked for in that
+ * language.
+ */
+export function renderNoticeEmail({
+	kind,
+	recipient,
+	conferenceTitle,
+	wording,
+	values = () => ({}),
+	button
+}: {
+	kind: EmailKind;
+	recipient: SnapshotUser;
+	conferenceTitle: string;
+	wording: ConferenceWording;
+	values?: () => EmailPlaceholderValues;
+	button?: () => { label: string; url: string };
+}): Promise<RenderedEmail> {
+	const locale = localeOfUser(recipient.locale);
+	return runWithLocale({
+		locale,
+		fn: async () => {
+			const { own, footer } = wordingIn({ wording, kind, locale });
+			const filled = fillEmailText({
+				text: resolveEmailText({ kind, locale, override: own }),
+				values: { name: recipientName(recipient), conference: conferenceTitle, ...values() }
+			});
+			const { html, text } = await renderEmail({
+				component: NotificationEmail,
+				props: {
+					heading: filled.heading,
+					recipientName: recipientName(recipient),
+					paragraphs: filled.paragraphs,
+					closing: filled.closing,
+					button: button?.(),
+					conferenceTitle,
+					conferenceFooter: emailFooterParagraphs({ footer, conferenceTitle })
+				}
+			});
+			return { subject: filled.subject, html, text };
+		}
+	});
+}
+
 /** Why the mail service did not send a mail; `undefined` when it did. */
 export function sendingError(result: { success: boolean; error?: string }) {
 	return result.success ? undefined : (result.error ?? 'unknown error');
@@ -165,7 +216,8 @@ export async function sendByHand({
 	userId: string | null;
 	subjectKey: string;
 	to: string;
-	sentById: string;
+	/** None for a mail the app sends where something happens (a paper submitted). */
+	sentById: string | null;
 	render: () => Promise<RenderedEmail>;
 }) {
 	const row = await db

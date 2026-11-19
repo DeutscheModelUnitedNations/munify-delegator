@@ -3,9 +3,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { resolve } from '$app/paths';
 	import { reveal } from '#lib/attachments/reveal';
-	import SHLogo from '#assets/logo/mun-sh_logo.png';
-	import BWLogo from '#assets/logo/munbw_logo.png';
-	import zweig from '#assets/logo/dmun-zweig-halbtransparent.svg';
+	import { dmunLogoUrl } from '#lib/helpers/dmunLogo';
 	import UdteamUp from '#assets/undraw/team-up.svg';
 	import UdQuestion from '#assets/undraw/question.svg';
 	import world from '#assets/undraw/world.svg';
@@ -24,7 +22,8 @@
 		date: 'März / April',
 		lang: 'Deutsch',
 		website: 'https://mun-sh.de',
-		logo: SHLogo
+		logo: dmunLogoUrl('mun-sh.svg'),
+		logoDark: dmunLogoUrl('mun-sh-darkmode.svg')
 	};
 
 	const munBw = {
@@ -34,7 +33,8 @@
 		date: 'Mai / Juni',
 		lang: 'Deutsch',
 		website: 'https://munbw.de',
-		logo: BWLogo
+		logo: dmunLogoUrl('munbw.svg'),
+		logoDark: dmunLogoUrl('munbw-darkmode.svg')
 	};
 
 	const conferences = [munSh, munBw];
@@ -167,7 +167,12 @@
 						{@attach reveal}
 					>
 						<figure class="bg-base-200 flex h-60 items-center justify-center p-6">
-							<img src={conference.logo} alt={conference.name} class="h-full" />
+							<img src={conference.logo} alt={conference.name} class="h-full dark:hidden" />
+							<img
+								src={conference.logoDark}
+								alt={conference.name}
+								class="hidden h-full dark:block"
+							/>
 						</figure>
 						<div class="card-body">
 							<h3 class="text-primary text-xl leading-none font-light">{conference.name}</h3>
@@ -188,7 +193,7 @@
 
 		<section class="bg-neutral text-neutral-content relative overflow-hidden">
 			<img
-				src={zweig}
+				src={dmunLogoUrl('dmun-zweig-halbtransparent.svg')}
 				alt=""
 				aria-hidden="true"
 				class="pointer-events-none absolute -top-[8%] -left-[6%] w-[44%] select-none dark:hidden"

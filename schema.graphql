@@ -3146,6 +3146,7 @@ enum EmailkindEnum {
   OPEN_ISSUES_REMINDER
   PAPERWORK_PROBLEM
   PAPER_REVIEWED
+  PAPER_SUBMITTED
   PAYMENT_RECEIVED
   PAYMENT_UNLOCKED
   PHONE_READY_REMINDER
@@ -4550,6 +4551,18 @@ type Mutation {
   sendChatMessage(body: String!, chatId: ID!, paperId: ID): Chatmessage!
 
   """
+  Sends the caller a test of one of their notifications (a topic of `myNotificationSettings`) by mail or Slack, as the real one reads, marked as a test and whatever its switch says. NOT_FOUND when they are not on that team, INVALID_INPUT for a topic that is not theirs, CONFLICT for Slack while the conference has no workspace.
+  """
+  sendNotificationTest(
+    channel: NotificationchannelEnum!
+    conferenceId: ID!
+
+    """For a committee's inbox or papers: the function."""
+    teamFunctionId: ID
+    topic: NotificationtopicEnum!
+  ): NotificationTestResult!
+
+  """
   Sends everything of `kinds` the conference owes right now and has not sent, switched to automatic or not, in the background. Answers how many mails that is.
   """
   sendOpenEmails(conferenceId: ID!, kinds: [EmailkindEnum!]!): Int!
@@ -5397,6 +5410,15 @@ type NotificationSetting {
   topic: NotificationtopicEnum!
 }
 
+"""
+How a test notification went: `SENT`, `NOT_FOUND` when Slack knows nobody by the account's address, `UNAVAILABLE` when the mail service or Slack refused it.
+"""
+enum NotificationTestResult {
+  NOT_FOUND
+  SENT
+  UNAVAILABLE
+}
+
 enum NotificationchannelEnum {
   EMAIL
   SLACK
@@ -5405,6 +5427,7 @@ enum NotificationchannelEnum {
 enum NotificationtopicEnum {
   CHAT_REPORT
   COMMITTEE_INBOX
+  COMMITTEE_PAPERS
   PARTICIPANT_CARE
   TRUSTED_PERSONAL
   TRUSTED_SHARED
