@@ -1,12 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import * as schema from '#api/db/schema/index';
 import {
+	addAudience,
 	announcementState,
+	audienceCovers,
 	AUDIENCE_KINDS,
 	audienceInput,
 	audienceMatches,
 	audienceSchema,
 	compareFeed,
+	coveringAudience,
 	dashboardFeed,
 	inAudience,
 	normalizeAudiences,
@@ -138,6 +141,89 @@ describe('normalizeAudiences', () => {
 			{ kind: 'TEAM', committeeId: null, roleId: null, surveyOptionId: null, teamRole: null },
 			{ kind: 'TEAM', committeeId: null, roleId: null, surveyOptionId: null, teamRole: 'REVIEWER' }
 		]);
+	});
+});
+
+describe('audienceCovers', () => {
+	const covers = (outer: Audience, inner: Audience) => audienceCovers({ outer, inner });
+	const ga: Audience = { kind: 'COMMITTEE', committeeId: 'ga' };
+
+	test('everyone and the seated take in what needs a seat', () => {
+		for (const inner of [
+			ga,
+			{ kind: 'ROLE', roleId: 'fra' },
+			{ kind: 'PAYMENT_OPEN' },
+			{ kind: 'PAPERWORK_OPEN' }
+		] satisfies Audience[]) {
+			expect(covers({ kind: 'EVERYONE' }, inner)).toBe(true);
+			expect(covers({ kind: 'SEATED' }, inner)).toBe(true);
+		}
+		expect(covers({ kind: 'EVERYONE' }, { kind: 'SEATED' })).toBe(true);
+		expect(covers({ kind: 'DELEGATES' }, ga)).toBe(true);
+	});
+
+	test('nothing that may fall outside once the seats are settled', () => {
+		// without a seat a delegate, a supervisor, someone waiting or a survey answer leaves "everyone"
+		for (const kind of [
+			'DELEGATES',
+			'SINGLE_PARTICIPANTS',
+			'SUPERVISORS',
+			'APPLICANTS',
+			'WAITING_LIST',
+			'MINORS',
+			'ADULTS'
+		] as const)
+			expect(covers({ kind: 'EVERYONE' }, { kind })).toBe(false);
+		expect(covers({ kind: 'EVERYONE' }, { kind: 'SURVEY_OPTION', surveyOptionId: 'x' })).toBe(
+			false
+		);
+		// a single participant holds a role too
+		expect(covers({ kind: 'DELEGATES' }, { kind: 'ROLE', roleId: 'fra' })).toBe(false);
+		expect(covers({ kind: 'EVERYONE' }, { kind: 'TEAM' })).toBe(false);
+		expect(covers(ga, { kind: 'EVERYONE' })).toBe(false);
+	});
+
+	test('the whole team takes in each team role, a role not the team', () => {
+		const reviewers: Audience = { kind: 'TEAM', teamRole: 'REVIEWER' };
+		expect(covers({ kind: 'TEAM' }, reviewers)).toBe(true);
+		expect(covers(reviewers, { kind: 'TEAM' })).toBe(false);
+		expect(covers(reviewers, { kind: 'TEAM', teamRole: 'MEMBER' })).toBe(false);
+	});
+
+	test('agrees with who the blocks match', () => {
+		// every person a covered block can match: seated, in a committee, with a role, owing things
+		const seatedPeople = [
+			subject({ seated: true, committeeId: 'ga', roleId: 'fra', paymentOpen: true }),
+			subject({ seated: true, everyone: true, roleId: 'fra', part: 'SINGLE' }),
+			subject({ seated: true, part: 'SUPERVISOR', paperworkOpen: true })
+		];
+		for (const person of seatedPeople)
+			for (const inner of [ga, { kind: 'ROLE', roleId: 'fra' }] satisfies Audience[])
+				if (audienceMatches({ subject: person, audience: inner }))
+					expect(audienceMatches({ subject: person, audience: { kind: 'EVERYONE' } })).toBe(true);
+	});
+});
+
+describe('addAudience', () => {
+	test('drops the blocks the new one covers and says which', () => {
+		const ga: Audience = { kind: 'COMMITTEE', committeeId: 'ga' };
+		const supervisors: Audience = { kind: 'SUPERVISORS' };
+		const { audiences, removed } = addAudience({
+			audience: { kind: 'EVERYONE' },
+			audiences: [ga, supervisors]
+		});
+		expect(removed).toEqual([ga]);
+		expect(audiences.map((audience) => audience.kind)).toEqual(['SUPERVISORS', 'EVERYONE']);
+	});
+
+	test('names the block that already covers one', () => {
+		const picked: Audience[] = [{ kind: 'DELEGATES' }];
+		expect(
+			coveringAudience({ audience: { kind: 'COMMITTEE', committeeId: 'ga' }, audiences: picked })
+		).toBe(picked[0]);
+		expect(coveringAudience({ audience: { kind: 'ROLE', roleId: 'fra' }, audiences: picked })).toBe(
+			undefined
+		);
 	});
 });
 

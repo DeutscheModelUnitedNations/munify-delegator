@@ -1,9 +1,10 @@
 <!--
 	@component
-	The messages of a thread, by day: the caller's side on the right, the other on the left, with
-	the author's line where a side has more than one voice (`threadMessages.ts`), a line above the
-	first message the reader had not read yet and, for participant care, one where the chat was
-	reported.
+	The messages of a thread, by day: the caller's side on the right, the other on the left, what
+	one author writes in a row in one bubble, with the author's name where a side has more than one
+	voice (`threadMessages.ts`), a line above the first message the reader had not read yet and,
+	for participant care, each report where in the conversation it was filed. Participant care
+	reviewing a chat between participants may hide what participants wrote (`HideMessagesModal`).
 -->
 <script lang="ts">
 	import type { ChatSide } from '#lib/helpers/chat';
@@ -11,12 +12,14 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import ChatBubble from './ChatBubble.svelte';
 	import HideMessagesModal from './HideMessagesModal.svelte';
-	import { hiddenState, type HideTarget } from './hiddenMessages';
+	import type { HideTarget } from './hiddenMessages';
 	import { dayLabel, groupByDay } from './chatTime';
 	import {
 		bubblesOf,
-		firstMessageAfter,
+		placeReports,
+		runsOf,
 		type ThreadChat,
+		type ThreadReport,
 		type ThreadMessage
 	} from './threadMessages';
 
@@ -36,8 +39,8 @@
 		conferenceId: string;
 		/** The first message the reader had not read when they opened the chat: a line marks it */
 		unreadFromId?: string;
-		/** A reported chat: when its first open report came in; a line marks that moment */
-		reportedAt?: Date | string | null;
+		/** A reported chat's open reports, for participant care: each shows where it was filed */
+		reports?: readonly ThreadReport[];
 		/** Participant care reviewing the chat may hide what participants wrote */
 		canHide?: boolean;
 	}
@@ -48,61 +51,63 @@
 		side,
 		conferenceId,
 		unreadFromId,
-		reportedAt = null,
+		reports = [],
 		canHide = false
 	}: Props = $props();
 
 	let hideOpen = $state(false);
 	let hideTarget = $state<HideTarget>({ kind: 'message', messageId: '' });
-	/** What hides a message, where the reader may: a participant's message not hidden yet. */
-	function hideOf(message: Message) {
-		if (!canHide || message.fromTeam || hiddenState(message) !== 'visible') return undefined;
-		return () => {
-			hideTarget = { kind: 'message', messageId: message.id };
+	/** What hides a message of a run, where the reader may: what a participant wrote. */
+	function hideOf(run: { messages: readonly Message[] }) {
+		if (!canHide || run.messages.some((message) => message.fromTeam)) return undefined;
+		return (messageId: string) => {
+			hideTarget = { kind: 'message', messageId };
 			hideOpen = true;
 		};
 	}
-	const reportedBeforeId = $derived(
-		reportedAt ? firstMessageAfter({ messages, at: reportedAt }) : undefined
-	);
-	const reportedTime = $derived(
-		reportedAt
-			? new Date(reportedAt).toLocaleString(getLocale(), {
-					dateStyle: 'medium',
-					timeStyle: 'short'
-				})
-			: ''
-	);
 
+	const placed = $derived(placeReports({ messages, reports }));
 	const now = new Date();
 	const days = $derived(
 		groupByDay(messages).map((day) => ({
 			day: day.day,
-			bubbles: bubblesOf({ messages: day.messages, side, chat })
+			runs: runsOf({
+				bubbles: bubblesOf({ messages: day.messages, side, chat }),
+				breaksBefore: [unreadFromId, ...placed.above.keys()]
+			})
 		}))
 	);
+
+	const dateTime = (date: Date | string) =>
+		new Date(date).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
-{#snippet reportedLine()}
-	<div
-		class="text-error my-3 flex items-center gap-3 text-xs font-semibold"
-		role="separator"
-		data-testid="chat-reported-divider"
-	>
-		<span class="bg-error/50 h-px flex-1"></span>
-		{m.chatReportedAtDivider({ time: reportedTime })}
-		<span class="bg-error/50 h-px flex-1"></span>
-	</div>
+{#snippet reportNotes(filed: readonly ThreadReport[])}
+	{#each filed as report (report.id)}
+		<div class="my-3 flex items-center gap-3" role="note" data-testid="chat-case-report">
+			<span class="bg-error/40 h-px flex-1"></span>
+			<div class="bg-error/10 border-error/40 max-w-md rounded-box border px-4 py-2.5 text-sm">
+				<p class="text-error flex items-center gap-1.5 text-xs font-semibold">
+					<i aria-hidden="true" class="ph-duotone ph-flag"></i>
+					{m.chatReportedBy({ name: report.reporterName ?? '–' })} · {dateTime(report.createdAt)}
+				</p>
+				<p class="mt-1 whitespace-pre-wrap">{report.reason}</p>
+			</div>
+			<span class="bg-error/40 h-px flex-1"></span>
+		</div>
+	{/each}
 {/snippet}
 
 {#each days as day (day.day.getTime())}
+	{@const firstKey = day.runs[0]?.key}
+	{#if firstKey}{@render reportNotes(placed.above.get(firstKey)?.beforeDay ?? [])}{/if}
 	<div class="text-base-content/60 my-3 flex items-center gap-3 text-xs" role="separator">
-		<span class="bg-base-300 h-px flex-1"></span>
+		<span class="bg-base-content/10 h-px flex-1"></span>
 		{dayLabel({ date: day.day, now, locale: getLocale() })}
-		<span class="bg-base-300 h-px flex-1"></span>
+		<span class="bg-base-content/10 h-px flex-1"></span>
 	</div>
-	{#each day.bubbles as { message, own, author, continues } (message.id)}
-		{#if message.id === unreadFromId}
+	{#each day.runs as run (run.key)}
+		{#if run.key === unreadFromId}
 			<div
 				class="text-primary my-3 flex items-center gap-3 text-xs font-semibold"
 				role="separator"
@@ -114,10 +119,17 @@
 				<span class="bg-primary/50 h-px flex-1"></span>
 			</div>
 		{/if}
-		{#if message.id === reportedBeforeId}{@render reportedLine()}{/if}
-		<ChatBubble {message} {own} {author} {continues} {conferenceId} onHide={hideOf(message)} />
+		{@render reportNotes(placed.above.get(run.key)?.inDay ?? [])}
+		<ChatBubble
+			messages={run.messages}
+			own={run.own}
+			author={run.author}
+			continues={run.continues}
+			{conferenceId}
+			onHide={hideOf(run)}
+		/>
 	{/each}
 {/each}
-{#if reportedAt && !reportedBeforeId && messages.length > 0}{@render reportedLine()}{/if}
+{@render reportNotes(placed.after)}
 
 <HideMessagesModal bind:open={hideOpen} target={hideTarget} />

@@ -21,7 +21,10 @@
 
 	let { options, selected, onSelect, label, titleOf, chip }: Props = $props();
 
-	const look = (pressed: boolean) => ['btn btn-xs', pressed ? 'btn-primary' : 'btn-ghost'];
+	const look = (pressed: boolean) => [
+		'btn btn-sm font-medium',
+		pressed ? 'btn-primary' : 'btn-ghost bg-base-content/5 hover:bg-base-content/10'
+	];
 </script>
 
 <div class="flex flex-wrap gap-1.5" role="group" aria-label={label}>

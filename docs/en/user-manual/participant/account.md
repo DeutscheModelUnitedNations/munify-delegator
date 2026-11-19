@@ -65,7 +65,7 @@ You cannot delete your account yourself. If you would like to have it deleted in
 
 - **Your conferences** come first: every conference you take part in that is not over yet. Each card shows your part there.
 - The others follow, grouped by their stage: **Active Conferences**, **Registration open**, **In preparation**, **Upcoming Conferences** and **Past Conferences**. Past conferences are always listed here, including the ones you took part in.
-- Each card names the dates, the place and the **Conference Language**. If you can apply or join the waiting list, it says **Sign up**, otherwise **Go to Dashboard**.
+- Each card names the dates, the place and the **Conference Language**. If you can apply or join the waiting list, it says **Sign up**, otherwise **Go to overview**.
 
 ## Without signing in {#without-signing-in}
 

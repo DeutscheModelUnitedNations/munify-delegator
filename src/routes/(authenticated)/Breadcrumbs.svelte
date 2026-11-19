@@ -48,6 +48,9 @@ import path via the parameter! The home link is the wordmark in the header, so t
 	{#snippet pathSnippet(pathSegment: PathSegmentType)}
 		{#if pathSegment.key === 'conferenceId' && pathSegment.isParameter}
 			<ConferenceSwitcher conferenceId={pathSegment.value} />
+		{:else if !pathSegment.isParameter && String(pathSegment.key) === 'team'}
+			<!-- a folder without a page of its own; the side navigation says where in the team area one is -->
+			<span class="crumb-hidden"></span>
 		{:else}
 			{@const breadcrumb = getBreadcrumb(pathSegment)}
 			{#snippet label()}
@@ -83,6 +86,10 @@ import path via the parameter! The home link is the wordmark in the header, so t
 </Breadcrumbs>
 
 <style>
+	:global(.breadcrumbs li:has(> .crumb-hidden)) {
+		display: none;
+	}
+
 	/* Phones show the trail as icons and spell out only the page they are on */
 	@media (width < 40rem) {
 		:global(.breadcrumbs li:not(:last-child)) .crumb-label {

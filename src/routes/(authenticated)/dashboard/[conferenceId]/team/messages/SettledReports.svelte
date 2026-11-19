@@ -43,7 +43,7 @@
 		</summary>
 		<ul class="mt-2 flex flex-col gap-2">
 			{#each reports as report (report.id)}
-				<li class="border-base-300 rounded-box border p-3">
+				<li class="bg-base-200 rounded-box p-3">
 					<p class="whitespace-pre-wrap">{report.reason}</p>
 					<p class="text-base-content/60 mt-1 text-xs">
 						{m.chatReportedBy({ name: report.reporterName ?? '–' })} · {dateTime(report.createdAt)}
@@ -52,7 +52,7 @@
 						<HiddenMessagesRecord messages={report.hiddenMessages} />
 					{/if}
 					{#if report.resolutionNote}
-						<p class="bg-base-200 mt-2 rounded-field p-2 whitespace-pre-wrap">
+						<p class="bg-base-100 mt-2 rounded-field p-2 whitespace-pre-wrap">
 							<span class="font-medium">{m.chatCaseNote()}:</span>
 							{report.resolutionNote}
 						</p>

@@ -129,6 +129,39 @@ export async function setNotificationPreference({
 	if (row) notificationPreferencePubsub.updated();
 }
 
+/** Switches every topic of the members on or off, by mail and Slack alike. */
+export async function setAllNotificationPreferences({
+	members,
+	enabled
+}: {
+	members: readonly (NotifiedMember & { id: string })[];
+	enabled: boolean;
+}) {
+	const channels: NotificationChannel[] = ['EMAIL', 'SLACK'];
+	const values = members.flatMap((member) =>
+		topicsOf(member).flatMap(({ topic, teamFunctionId }) =>
+			channels.map((channel) => ({
+				teamMemberId: member.id,
+				topic,
+				teamFunctionId,
+				channel,
+				enabled
+			}))
+		)
+	);
+	if (values.length === 0) return;
+
+	const table = schema.notificationPreference;
+	await db
+		.insert(table)
+		.values(values)
+		.onConflictDoUpdate({
+			target: [table.teamMemberId, table.topic, table.teamFunctionId, table.channel],
+			set: { enabled, updatedAt: new Date() }
+		});
+	notificationPreferencePubsub.updated();
+}
+
 /** The workspaces there are, without their tokens, each with how many conferences picked it. */
 export async function listSlackWorkspaces() {
 	const [workspaces, links] = await Promise.all([

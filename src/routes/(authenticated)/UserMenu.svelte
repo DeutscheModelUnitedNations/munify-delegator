@@ -6,7 +6,10 @@
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { m } from '#lib/paraglide/messages';
 
-	/** The header's account menu: who is signed in, the account, language, feedback and logout. */
+	/**
+	 * The header's account menu: who is signed in, the account (with its notifications), the
+	 * conferences, the system administration for admins, language, feedback and logout.
+	 */
 
 	const user = await getOptionalCurrentUser();
 
@@ -16,21 +19,12 @@
 		(user?.email?.[0] ?? '?').toUpperCase();
 
 	let logoutUrl = $state<string>();
-	/** Whether the caller is on a conference's team, which is who has notifications to set up. */
-	let onTeam = $state(false);
 
 	$effect(() => {
 		if (!user) return;
 		void client.query.logoutUrl().then((url) => {
 			logoutUrl = String(url);
 		});
-		void client.query
-			.myNotificationSettings({ conferenceId: true })
-			.then((conferences) => {
-				onTeam = conferences.length > 0;
-			})
-			// an impersonated or expired session: the entry just stays away
-			.catch(() => undefined);
 	});
 </script>
 
@@ -77,16 +71,39 @@
 			<ul class="menu w-full p-2">
 				<li>
 					<a href={resolve('dashboard')}>
-						<i aria-hidden="true" class="ph-duotone ph-gauge w-4"></i>
-						{m.dashboard()}
+						<i aria-hidden="true" class="ph-duotone ph-squares-four w-4"></i>
+						{m.conferences()}
 					</a>
 				</li>
-				{#if onTeam}
-					<li>
-						<a href={resolve('my-account/notifications')} data-testid="user-menu-notifications">
-							<i aria-hidden="true" class="ph-duotone ph-bell w-4"></i>
-							{m.notifications()}
-						</a>
+				{#if user.isAdmin}
+					<!-- What concerns the whole instance rather than one conference -->
+					<li data-testid="user-menu-administration">
+						<details>
+							<summary>
+								<i aria-hidden="true" class="ph-duotone ph-shield-star w-4"></i>
+								{m.administration()}
+							</summary>
+							<ul>
+								<li>
+									<a href={resolve('dashboard/create')}>
+										<i aria-hidden="true" class="ph-duotone ph-plus w-4"></i>
+										{m.seedConference()}
+									</a>
+								</li>
+								<li>
+									<a href={resolve('dashboard/chase-link')}>
+										<i aria-hidden="true" class="ph-duotone ph-link w-4"></i>
+										{m.chaseLinkTitle()}
+									</a>
+								</li>
+								<li>
+									<a href={resolve('dashboard/slack-workspaces')}>
+										<i aria-hidden="true" class="ph-duotone ph-slack-logo w-4"></i>
+										{m.slackWorkspaces()}
+									</a>
+								</li>
+							</ul>
+						</details>
 					</li>
 				{/if}
 				{#if PUBLIC_FEEDBACK_URL}

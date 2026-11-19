@@ -1,229 +1,132 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code in this repository. UI conventions are in [CLAUDE-UI.md](./CLAUDE-UI.md);
+the domain areas are documented in `docs/architecture/` (index below) — **read the matching file
+before working in that area**.
 
 ## Project Overview
 
-MUNify DELEGATOR is a SvelteKit-based application for managing Model United Nations conference registration, delegation assignment, and organizational matters. Built with Svelte 5, TypeScript, Drizzle ORM, and GraphQL (via [rumble](https://github.com/m1212e/rumble)), it's designed for DMUN e.V. but can be adapted for other MUN conferences.
+MUNify DELEGATOR: SvelteKit app for Model United Nations conference registration, delegation
+assignment and organisation, built for DMUN e.V. It shares stack and structure with the sibling
+project MUNify CHASE: when something is not answered here, how chase does it is the intended answer.
 
-It shares its stack, and much of its structure, with the sibling project MUNify CHASE. When a question is not answered here, how chase does it is the intended answer.
+**Stack:** SvelteKit + Svelte 5 (runes, `experimental.async`), TailwindCSS 4 + DaisyUI, PostgreSQL
+via Drizzle ORM (relational API, drizzle-kit migrations), GraphQL via
+[rumble](https://github.com/m1212e/rumble) (Pothos + graphql-yoga + drizzle + ability layer) with a
+generated typed client over urql, OIDC auth (Logto; oidc-mock locally), Paraglide-JS i18n (default
+German), Bun as package manager/runtime, OpenTelemetry, pino logging.
 
-## Tech Stack Core
-
-- **Frontend**: SvelteKit with Svelte 5 (runes mode), TailwindCSS 4, DaisyUI
-- **Backend**: Node.js with SvelteKit server routes
-- **Database**: PostgreSQL via Drizzle ORM (relational API), migrations through drizzle-kit
-- **GraphQL**: rumble (Pothos + graphql-yoga + drizzle, with its own ability layer) on the server; a generated typed client over urql on the frontend
-- **Auth**: OpenID Connect (OIDC) - recommended provider: Logto
-- **i18n**: Paraglide-JS for internationalization (default locale: German)
-- **Runtime**: Bun (package manager and development runtime)
-- **Observability**: OpenTelemetry tracing support
-
-## Development Commands
-
-### Setup & Running
+## Commands
 
 ```bash
-# Install dependencies
 bun install
+bun run dev              # Docker (Postgres, RustFS S3 bucket, …) + dev server
+bun run dev:docker / dev:server
+bunx lefthook install    # git hooks
 
-# Start development (Docker + dev server)
-bun run dev
-
-# Separate commands
-bun run dev:docker    # Start Docker containers (PostgreSQL, the RustFS S3 bucket, etc.)
-bun run dev:server    # Start Vite dev server only
-
-# Install git hooks (lefthook)
-bunx lefthook install
-```
-
-The dev server and `vite preview` (the e2e server) serve **HTTPS** on https://localhost:5173 /
-:4173 with a self-signed certificate (`@vitejs/plugin-basic-ssl`), so the browser talks HTTP/2 as
-to production (see "Subscriptions" below); accept the browser's warning once. `DEV_HTTP=1` serves
-plain HTTP instead, for clients that refuse the certificate: an MCP client (`docs/mcp.md`) or a
-linked local chase (`docs/plans/chase-link.md`). The e2e suite follows it.
-
-### Database Operations
-
-```bash
-# Write a migration for the current schema (src/api/db/schema/)
-bun run db:generate
-
-# Apply pending migrations
-bun run db:migrate
-
-# Push the schema without writing a migration (throwaway databases only)
-bun run db:push
-
-# Drop every table and enum (WARNING: deletes all data)
-bun run db:reset
-
-# Wipe and refill the dev database and the bucket: every conference stage, persona accounts, crowd
-bun run db:seed:dev
-
-# Rewrite oidc-mock.yaml's users from src/api/db/seed-data/devAccounts.ts
-bun run dev:accounts
-
-# Recreate the container from scratch and migrate it
-bun run db:nuke
-
-# Database GUI
+bun run db:generate      # write a migration for src/api/db/schema/
+bun run db:migrate       # apply migrations
+bun run db:push          # push schema without migration (throwaway DBs only)
+bun run db:reset         # drop every table and enum
+bun run db:seed:dev      # wipe + refill dev DB and bucket (all stages, personas, crowd)
+bun run dev:accounts     # rewrite oidc-mock.yaml users from seed-data/devAccounts.ts
+bun run db:nuke          # recreate the container and migrate
 bun run db:studio
-```
 
-### Code Quality
-
-```bash
-# Format code
 bun run format
+bun run check            # PREFERRED type check (svelte-check --tsgo, incremental)
+bun run typecheck        # tsc only (TypeScript 7)
+bun run lint             # slow (~2 min uncached); pre-push lints pushed files
+bun run fallow / fallow:audit / fallow:health
+bun test / test:watch / coverage
+bun run test:e2e:coverage
 
-# Type checking (PREFERRED for development - fast feedback)
-bun run check          # Single run - use this to verify changes (incremental: cached in .svelte-kit/.svelte-check)
-bun run check:watch    # Watch mode
-bun run typecheck      # TypeScript only (tsc is TypeScript 7, installed as @typescript/native)
-
-# Lint (slow - the pushed files are linted on git push via lefthook)
-bun run lint           # Only run manually when specifically needed
-
-# Codebase analysis (fallow: dead code, cycles, duplication, complexity)
-bun run fallow         # Full report
-bun run fallow:audit   # Only what changed against the branch base
-bun run fallow:health  # Health score with letter grade
-
-# Testing
-bun test               # Run tests once
-bun run test:watch     # Watch mode
-bun run coverage       # Unit tests with coverage (coverage/unit)
-bun run test:e2e:coverage  # e2e suite with server + browser coverage (coverage/e2e-*)
-```
-
-**Coverage feeds fallow's CRAP scores.** Both coverage commands end in `scripts/mergeCoverage.ts`,
-which merges whatever reports exist into `coverage/coverage-final.json` (and an HTML report in
-`coverage/report/`); the `fallow*` scripts, the lefthook hooks and the CI fallow job pass that file
-to fallow, which otherwise only estimates coverage. The e2e run records the browser through the
-`page` fixture in `e2e/support/test.ts` (specs import `test` from there, not from
-`@playwright/test`), and the server through `NODE_V8_COVERAGE`, which `scripts/serverCoverage.ts`
-maps back to the sources: Vite's module runner evaluates modules with `new AsyncFunction`, which
-Node keeps no source map for, so c8 cannot. Generated code (Paraglide, the rumble client) is left
-out by `scripts/coverageScope.ts`. CI scores with unit coverage only.
-
-**Note:** Prefer `bun run check` over `bun run lint` during development. Linting the whole repo is slow (~2 min without its cache); the lefthook pre-push hook lints the pushed files. Use `bun run check` for quick type-checking feedback.
-
-### i18n (Internationalization)
-
-```bash
-# Check for missing/unused translations
-bun run i18n:check
-
-# Validate translation project
-bun run i18n:validate
-
-# Auto-translate missing keys
-bun run i18n:translate
-
-# Add new translation key interactively
-bun run add-translation
-```
-
-### Building
-
-```bash
-# Production build (app, then the compute worker threads in build/compute via tsdown, then nothing else: the jobs image builds itself with `bun run build:jobs`)
-bun run build
-
-# Preview production build
+bun run i18n:check / i18n:validate / i18n:translate / add-translation
+bun run build            # app + compute workers (tsdown); jobs image: bun run build:jobs
 bun run preview
 ```
 
-## Architecture
+- Dev server and `vite preview` (e2e) serve **HTTPS** (self-signed, `@vitejs/plugin-basic-ssl`) on
+  :5173 / :4173 so the browser talks HTTP/2 like production. `DEV_HTTP=1` serves plain HTTP (for MCP
+  clients, a linked local chase); the e2e suite follows it.
+- **Coverage feeds fallow's CRAP scores**: both coverage commands end in `scripts/mergeCoverage.ts`
+  → `coverage/coverage-final.json`, which the fallow scripts, hooks and CI pass to fallow. e2e
+  records the browser via the `page` fixture in `e2e/support/test.ts` (specs import `test` from
+  there, not `@playwright/test`) and the server via `NODE_V8_COVERAGE` mapped by
+  `scripts/serverCoverage.ts` (Vite's module runner keeps no source maps for c8). Generated code is
+  excluded by `scripts/coverageScope.ts`. CI scores unit coverage only.
+- **If `bun run check` eats all memory** (TS7 grows without bound), a type a changed file exports
+  cannot be named in a declaration: incremental TS7 emits `.d.ts` signatures for changed files and
+  inlines unnamed types. The generated rumble client did this until rumble 0.33.3 exported its
+  `make…` return types. Exported values with huge inferred types need an annotation
+  or an exported type. A run is ~4 GB / ~10 s.
 
-### Directory Structure
+## Directory Structure
 
-- **`src/routes/`** - SvelteKit routes (filesystem-based routing)
-  - `(authenticated)/` - Protected routes requiring authentication
-    - `dashboard/[conferenceId]/` - A conference's dashboard and everything around it
-      - `team/` - **Every team-facing page** (settings, tables, assignment, workflows, team members,
-        messages, announcements, scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
-        entry (`stages/TeamMember/TeamMemberDashboard.svelte`) is one card that opens the first page
-        the caller may open, next to the conference's resource links.
-        The assignment lives in `team/assignment/`. See "Team area" below.
-      - `paperhub/` - Stays outside `team/`: participants and supervisors use it too
-    - `dashboard/create/` - Creating a conference from a seeding JSON (system admins)
-    - `registration/` - User registration flows
-  - `api/graphql/` - GraphQL API endpoint
-  - `auth/` - OIDC authentication callbacks
-  - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
-  - `id/` - Where a signed code's link leads (see "Signed codes")
+- `src/routes/` — SvelteKit routes
+  - `(authenticated)/` — protected routes
+    - `dashboard/` — pages about no one conference: conference list, system administration
+      (`create/`, `chase-link/`, `slack-workspaces/`, via the account menu)
+    - `dashboard/[conferenceId]/` — a conference's overview and everything around it, inside
+      `ConferenceShell.svelte` (`+layout@(authenticated).svelte`)
+      - `team/` — **every team-facing page**, one guard, one navigation (see "Team area"). No page at
+        `team/` itself; the overview (`stages/TeamMember/TeamMemberDashboard.svelte`) is home.
+      - `paperhub/` — outside `team/`, participants and supervisors use it too
+    - `registration/` — registration flows
+  - `api/graphql/` — GraphQL endpoint; `auth/` — OIDC callbacks; `seats/`, `vc/`,
+    `validateCertificate/` — public; `id/` — target of signed-code links
+- `src/api/` — backend
+  - `handlers/<entity>/` — one directory per entity, three files (after avv): `<entity>.ts` GraphQL
+    layer, `<entity>Permissions.ts` **all** authorization (`register<Entity>Abilities()` + every
+    `assertCan…`/`can…`), `<entity>Service.ts` business logic (no schema, no abilities, **never
+    checks permissions**). `register.ts` imports them all — the one place a new handler is listed.
+  - `rumble.ts` — rumble instance, schema/ability builders, yoga factory, client generator
+  - `context.ts` — request context (OIDC data, `mustBeLoggedIn`, `hasRole`)
+  - `db/` — `schema/` (one file per app part, `index.ts` exports all, `columns.ts` shared helpers),
+    `relations.ts`, `db.ts`, `reset.ts`, `seedDev.ts` (+ `seed-dev/`), faker factories in `seed-data/`
+  - `graphql.remote.ts` — remote functions executing the schema in-process (SSR)
+  - `services/` — logic shared by several handlers/routes (index: `services/README.md`), and
+    `authHelper/`, the authorization building blocks. Never check permissions either.
+- `src/lib/` — code shared by several frontend parts or by frontend and API. Backend-only code
+  lives in `src/api/`, single-page-area code beside its route. Split partially shared modules
+  (`#lib/assignment/weights` vs `#api/handlers/assignment/autoAssign`).
+  - `api/client.ts` urql client; `api/rumbleClient/` **generated, never edit**; `components/`;
+    `services/`; `schemata/` (zod); `dataGrid/` (table model); `paraglide/` (generated)
+- `src/env.ts` — every environment variable, declared and validated by SvelteKit 3's explicit env.
+  Import by name from `$app/env/private` (server) or `$app/env/public`. `$env/*` is off. Missing or
+  malformed values stop start-up with one report. Vars needed at runtime but not during `vite build`
+  use `requiredAtRuntime`. Tests mock the module (`vi.mock('$app/env/private', …)`).
+- `src/jobs/` — one-shot jobs of the `delegator-jobs` CLI, own image (see
+  `docs/architecture/jobs.md`). Validates its own env in `config.ts`; app code it calls reads
+  `$app/env/*`, answered from `process.env` (`appEnv.ts`).
+- `drizzle/` — generated migration history, never edited by hand.
 
-- **`src/api/`** - Backend GraphQL API layer
-  - `handlers/` - One directory per domain entity (`paper/`), so the IDE keeps them sorted, each
-    split three ways after `avv`: `paper/paper.ts` is the GraphQL layer (object reference, queries,
-    mutations), `paper/paperPermissions.ts` **all** of the entity's authorization (its abilities in
-    `registerPaperAbilities()` and every `assertCan…` / `can…` check a resolver runs), and
-    `paper/paperService.ts` the business logic, which holds no schema, ability or query definitions
-    and **never checks permissions**. `register.ts` is the only file beside the directories. It
-    imports them all and is the single place a new handler has to be listed.
-  - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
-    dev-time generator for the typed frontend client.
-  - `context.ts` - Request context (OIDC data plus `mustBeLoggedIn` / `hasRole`)
-  - `db/` - `schema/` (tables, one file per part of the app: `application.ts`, `roles.ts`,
-    `papers.ts`, …; `index.ts` exports them all, `columns.ts` holds the shared column helpers),
-    `relations.ts` (the relational API's graph), `db.ts` (client),
-    `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
-  - `handlers/dataTable/` - The table engine behind the team's tables (see "Data tables")
-  - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
-    is how server-side loads reach the API without an HTTP round trip
-  - `services/` - Business logic shared by several handlers or routes, and `authHelper/`, the
-    authorization building blocks every `*Permissions.ts` composes from (after chase);
-    `services/README.md` indexes them. Like handler services, these never check permissions.
+## Architecture docs (`docs/architecture/`)
 
-- **`src/lib/`** - Code shared by several parts of the frontend, or by the frontend and the API.
-  What only the backend uses lives in `src/api/` (the matching, the mail text filling); what only
-  one page area uses lives beside it under `src/routes/` (`team/assignment/boardState.ts`,
-  `team/seat-planning/seatHints.ts`). When only part of a module is shared, split it
-  (`#lib/assignment/weights` and `#api/handlers/assignment/autoAssign`).
-  - `api/client.ts` - The urql client and its exchanges
-  - `api/rumbleClient/` - **Generated**, do not edit. Written by `clientCreator` whenever the dev
-    server starts; the typed surface every query and mutation in the app goes through.
-  - `components/` - Reusable Svelte components
-  - `services/` - Frontend utility functions
-  - `schemata/` - Zod validation schemas
-  - `dataGrid/` - The data tables' shared model (state, operators, grouping, views), used by the
-    grid components and the API's table engine alike
-  - `paraglide/` - Generated i18n code
+| File                     | Covers                                                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assignment.md`          | Roles, draft/apply/release, board, required applications, release masking                                                                       |
+| `schools.md`             | Schools, school choice, visibility, school rules (groups, foreign schools)                                                                      |
+| `emails.md`              | Automatic emails: `dueEmails`, snapshot paging, sweep, log, texts, footers, pacing                                                              |
+| `messages.md`            | Chats, inboxes, trusted persons, reports, hiding messages, write rules, messaging terms                                                         |
+| `announcements.md`       | Announcement states, audiences, feed, reads, mails                                                                                              |
+| `team-notifications.md`  | Per-topic/channel team notifications, Slack workspaces                                                                                          |
+| `data-tables.md`         | DataGrid model, table engine sources, saved views, presets                                                                                      |
+| `chase-link.md`          | Link to MUNify CHASE, link worker, sync, NSA cards (plan: `docs/plans/chase-link.md`)                                                           |
+| `mcp-server.md`          | `/mcp` for AI assistants: auth, confinement, classification/redaction, tools                                                                    |
+| `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                         |
+| `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates |
+| `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                    |
+| `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                              |
+| `user-manual.md`         | `/docs` manual, help links, tours, generated screenshots                                                                                        |
+| `jobs.md`                | Job CLI, schedule and required variables per job                                                                                                |
+| `dependencies.md`        | **Read before upgrading anything**: pinned/patched packages and why                                                                             |
 
-- **`src/env.ts`** - Every environment variable, declared and validated by SvelteKit (3's
-  explicit environment variables). Import them by name:
-  `import { DATABASE_URL } from '$app/env/private'` (server only) or `'$app/env/public'`
-  (`public: true`, also the browser). A missing or malformed value stops the app at start-up
-  (or build) with one report listing every problem. `$env/*` is switched off. A variable that is
-  required at runtime but not during `vite build` goes through `requiredAtRuntime` there. A test
-  that needs one mocks the module (`vi.mock('$app/env/private', …)`): nothing fills them in
-  under vitest. `src/jobs/` runs outside SvelteKit and validates its own variables with zod in `src/jobs/config.ts`; app code a job calls reads `$app/env/*` as usual, which the jobs bundle answers from `process.env` through the same schemas (`src/jobs/appEnv.ts`).
+## GraphQL API (rumble)
 
-- **`src/jobs/`** - One-shot jobs behind the `delegator-jobs` CLI (`cli.ts`, one file per job, after
-  avv), built by `bun run build:jobs` into `jobsOut/` and shipped as its own image
-  (`Dockerfile.jobs`). Run by an external scheduler; `bun run jobs <command>` builds the bundle
-  and runs one locally. Jobs-only code lives here, not in `src/api`; a job may call the app's
-  services directly (`send-emails` does), since `tsdown.jobs.config.ts` builds what Vite would
-  for them: Svelte components and runes modules, `?raw`, Paraglide, and `$app/env/*` read from
-  `process.env` (`appEnv.ts`). The bundle keeps only the variables a job reads, so each needs only
-  its own; `db.ts` is the jobs' own client for the jobs that need nothing but `DATABASE_URL`.
-  - `refresh-statistics.ts` - Recomputes the statistics materialized views (every few minutes)
-  - `mailSync/` + `apis/listmonk/` - Mail list synchronisation with Listmonk (`mail-sync`)
-  - `invitationCleanup.ts` - Deletes team member invitations long after they expired
-  - `fileCleanup.ts` - Deletes stored files nothing uses any more, and bucket objects without a row
-  - `sendEmails.ts` - Sends the automatic mails that are due, through the app's `sendDueEmails`
-
-- **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
-
-### Key Architectural Patterns
-
-#### 1. GraphQL API Layer (rumble)
-
-- **Code-first**, one directory per entity under `src/api/handlers/`, in three files (after avv's
-  `ticket/`). The permissions file declares the abilities and the checks:
+- **Code-first, three files per entity.** The permissions file declares abilities and checks; the
+  handler calls `register<Entity>Abilities()` first, then declares object ref, queries and
+  mutations; each resolver runs its permission checks, then calls the service.
 
   ```ts
   // committeePermissions.ts
@@ -240,286 +143,157 @@ bun run preview
   }) {
   	return assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' });
   }
-  ```
-
-  The handler registers them first, then declares its object reference, queries and mutations;
-  each resolver runs its permission checks, then calls the service:
-
-  ```ts
   // committee.ts
   registerCommitteeAbilities();
   export const CommitteeRef = object({ table: 'committee' });
-  query({ table: 'committee' }); // generates `committee(id)` and `committees(where, limit, …)`
+  query({ table: 'committee' }); // committee(id), committees(where, limit, …)
   ```
 
-- **Services never check permissions** - neither `<entity>Service.ts` nor anything in
-  `src/api/services/`. No `ctx.abilities`, no `assertTeamPermission`, no role or ownership comparison:
-  they take the caller's id, or the rows and ids the permissions file already authorized, as
-  plain arguments. Checks about _what_ (a stage, a size limit, uniqueness) stay in the service;
-  checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
-  query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
-  check. `authHelper/` holds only building blocks that are not about one entity, in three modules:
-  `callerFacts.ts` loads what the rules know about the caller (team roles, own registrations, the
-  people around them) once per root field and turns rules built from it into `.when()` rules
-  (`liveRule` / `liveWhere`), `rules.ts` says who may do what (`systemAdmin`, the team and
-  participant filters, `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
-  `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
-  row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
-  reach - `assertAllowed` (check only) and `updateIfAllowed` / `deleteIfAllowed` (one statement). A row is re-read after a write with
-  `(await ctx.abilities.x.filter('read')).merge({ where: { id } }).query.single`. A check used once
-  stays private in its permissions file; one about a single entity that others need (a calendar
-  day's `calendarConference` and `assertCanManageCalendarDay`, a survey question's check,
-  `assertCanGrantTeamRole` for team roles) is exported from that entity's permissions file. Permission
-  functions take `ApiContext` (`#api/rumble`), which carries `abilities`.
+- **Services never check permissions** (handler services and `src/api/services/` alike): no
+  `ctx.abilities`, no `assertTeamPermission`, no role/ownership comparison. They take the caller's
+  id or already-authorized rows/ids as plain arguments. Checks about _what_ (stage, size limit,
+  uniqueness) stay in the service; checks about _who_ go in `<entity>Permissions.ts`. Applying the
+  `read` ability to shape a query's result stays in the GraphQL layer; every other `ctx.abilities`
+  use is a permission check. Permission functions take `ApiContext` (`#api/rumble`).
+- **`authHelper/`** holds only cross-entity building blocks:
+  - `callerFacts.ts` — loads the caller's facts (team roles, own registrations, people around them)
+    once per root field; `liveRule` / `liveWhere` turn rules built from them into `.when()` rules.
+  - `rules.ts` — who may do what: `systemAdmin`, team/participant filters, `teamConference`,
+    `assertTeamPermission`, `hasPartIn`, release masks, `participantIdsOf`.
+  - `utils.ts` — `grantWhere`, `callerUserId`, and row helpers that go through the caller's ability
+    and answer NOT_FOUND when it doesn't reach: `assertAllowed`, `updateIfAllowed`,
+    `deleteIfAllowed`. Re-read a row after a write with
+    `(await ctx.abilities.x.filter('read')).merge({ where: { id } }).query.single`.
+  - A check used once stays private in its permissions file; a check about one entity others need
+    (`calendarConference`, `assertCanManageCalendarDay`, `assertCanGrantTeamRole`) is exported from
+    that entity's permissions file.
+- **Arguments are validated by zod schemas on the arguments**, never by hand
+  (`@pothos/plugin-validation`): `t.arg.int().validate(schema)` for one, `validate: schema` on the
+  field for several, `args: t.validate({ … }, schema)` with a `transform`. A field-level schema's
+  output _replaces_ `args`, so use `z.looseObject` (or `.loose()`): a strict one strips unnamed args.
+  Word issues with lazy messages (`{ error: () => m.x() }`) → `INVALID_INPUT`. Whole-document JSON
+  args go through `jsonDocument` (`#api/services/argSchemas`). Keep schemas in the service (or
+  `#lib/schemata/` when a form shares it) so they are unit tested. Only DB-dependent checks stay in
+  code.
+- **Every write publishes, from the service that writes, after commit.** Pubsubs live in
+  `src/api/pubsub.ts` (one per table); never create one in a handler or publish from a resolver.
+  After `await db.transaction(...)`, publish (`committeePubsub.updated(id)` / `created()` /
+  `removed()`); if what to announce is only known inside, return it from the transaction. A helper
+  given a `tx` publishes right after its write. Publish for **every** table a write touches
+  (deleting a delegation announces its members). Announce by id (`updated(ids)` for bulk via
+  `.returning({ id })`); a bare `updated()` reaches nobody (rows listen on their id, lists on
+  `created`/`removed`). Only writes a resolver makes itself (`updateIfAllowed`/`deleteIfAllowed`)
+  publish in the resolver.
+- **Updates are granular, never set-replacements.** `update…` takes every field but the key as
+  optional and writes only given ones; `null` clears a nullable column and keeps a non-null one
+  (`args.x ?? undefined`). Upserts created on first change put only given fields + `updatedAt` in
+  the conflict `set`. Cross-field rules are checked on the written row inside the transaction.
+  Values meaningful only whole (address, document layout) stay one argument. Clients send only
+  what changed.
+- **Authorization = ability filters** (drizzle filters that compose into queries):
+  `ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where`. Enforced by
+  `e2e/authorization/`:
+  - Rules compose from helpers (`isTeamMemberOfConference({ ...args, roles })`, `isOwnUser`,
+    `isParticipantOfConference`, `isCaredForUser`, …) wrapped in `liveWhere` (`liveRule` with
+    `columns`). A helper returns `undefined` for "grants nothing" (decided by context alone, never
+    the facts) and never throws. Every table also gets `.allow([...]).when(systemAdmin)` (no global
+    wildcard).
+  - **Rules filter on the table's own columns** with ids from the caller's facts
+    (`{ conferenceId: { in: ids } }`), never relation chains: rumble evaluates all relational rules
+    of a table as nested `exists` in one statement, and the user table's 101 killed Postgres. One
+    hop via `hop(filter, (participant) => ({ participant }))` (`NOTHING` for an empty list). An
+    empty id list matches nothing (`1 = 0`). `relationalRules.test.ts` guards user/delegation.
+  - Updates/deletes go through the row's own ability; load the row through it first when needed.
+  - **Team checks are team permissions** (`TEAM_PERMISSIONS` in `#lib/helpers/teamRoles.ts`:
+    `manageParticipants`, `planSeats`, `reviewPapers`, …, granted per `rolesWithTeamPermission`).
+    Put `teamConference({ ctx, permission })` into the query that loads the row
+    (`{ id, conference: await teamConference(...) }`); creates without a row use
+    `assertTeamPermission({ ctx, conferenceId, permission })` (`hasTeamPermission` non-throwing).
+    System admins always pass. Never compare roles by hand — add a team permission.
+  - **Every id an argument names must belong where the row goes.** Anchor the row in the conference
+    the resolver authorized; that other ids are of the same conference and roles of the right kind
+    is the database's job (triggers, see Database) — don't look them up first. A `userId` is still
+    resolved to the person's row in the authorized conference (`participantIdsOf`).
+  - **A rule's `columns` mask the rows that rule matched** (rumble ≥ 0.25), so per-reader visibility
+    is just rules (user table: reviewers names only, co-delegates names+email, care team care notes,
+    …; conference payment/postal details; `entryCode`, `connectionCode`, invitation `token`).
+    **A masked non-null column cannot be selected** — the query errors for a masked reader; only
+    select it where the reader may see it.
+- Endpoint `src/routes/api/graphql/+server.ts`; `src/api/yoga.ts` is the one yoga instance (shared
+  with SSR). New fields need a **dev server restart** (schema built at module init; the client is
+  regenerated on start).
+- **Subscriptions are yoga's SSE** on `/api/graphql` (urql `fetchSubscriptions`), fanned out via
+  Redis; one streaming response each. HTTP/1.1 allows 6 per host, so production must stay HTTP/2
+  (dev/e2e get it from HTTPS; mind the six under `DEV_HTTP=1`).
+- `/api/graphql` sends no CORS headers (rumble default `cors: false`): same-origin only.
 
-- **Arguments are checked by zod schemas on the arguments, never by hand in a resolver or service.**
-  rumble installs `@pothos/plugin-validation`: one argument with `t.arg.int().validate(schema)`,
-  several together with `validate: schema` on the field, and `args: t.validate({ … }, schema)`
-  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). What a
-  field-level schema returns _replaces_ the resolver's `args`, so it is a `z.looseObject` (or
-  `.loose()` where a form shares a plain `z.object`): a strict one strips every argument it does
-  not name, and the resolver gets `conferenceId: undefined`. Word each issue
-  with a lazy `m.…()` (`{ error: () => m.x() }`): a failure becomes an `INVALID_INPUT` error with
-  those messages (`validation.validationError` in `rumble.ts`). A JSON argument holding a whole
-  document goes through `jsonDocument` (`#api/services/argSchemas`). Keep the schema in the
-  service (or `#lib/schemata/` when a form shares it) so it is unit tested. Only checks that need
-  the database stay in code.
-- **Every write publishes, from the service that writes, once it has committed** (after avv).
-  Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every service that writes
-  it. Never create one in a handler, and never publish from a resolver: the code that writes a row
-  announces it, right next to the write, so a helper called from several services (the
-  role application tidying, `resolveSchoolChoice`) announces for all of them. A service that opens
-  a `db.transaction` publishes after awaiting it, so subscribers hear of the change only once the
-  rows are there to read, and never of a rolled back one; when what to announce is only known
-  inside, the transaction returns it:
+## Frontend Data Fetching
 
-  ```ts
-  import { committeePubsub } from '#api/pubsub';
-  // …
-  await db.transaction(async (tx) => {
-  	await tx.update(schema.committee).set(data).where(/* … */);
-  });
-  committeePubsub.updated(id); // or created() / removed()
-  ```
-
-  A helper handed a `tx` cannot see the commit, so it publishes right after its write, inside the
-  transaction. A single statement outside a transaction publishes directly after it is awaited.
-  Publish for **every** table a write touches, not just its own —
-  deleting a delegation has to announce its members too, or a subscriber watching members never
-  hears about it. Announce changed rows by id: `updated(id)`, or `updated(ids)` for a bulk write
-  (`.returning({ id })`). A bare `updated()` reaches nobody: rows listen on their own id, lists
-  only on `created()` / `removed()`. A service returns nothing just so its caller knows what to announce. Only a
-  write a resolver makes itself (`updateIfAllowed` / `deleteIfAllowed`) publishes in the resolver,
-  right after it.
-
-- **Updates are granular, never set-replacements.** An `update…` mutation takes every field but
-  the key as optional and writes only the ones given, so two people editing the same row do not
-  undo each other's fields: left out keeps the value, `null` clears a nullable column and keeps a
-  non-null one (`args.x ?? undefined`). A row created on its first change (a review, the weights)
-  is an upsert whose conflict `set` holds only the given fields plus `updatedAt`. A rule across
-  several fields (never required _and_ excluded) is checked on the row as written, inside the
-  transaction, not on the arguments. A value that is only meaningful whole (an address, a
-  document layout) stays one argument. The client sends only what changed
-  (`upsertAssignmentReview` from the sighting).
-
-- **Authorization** lives in those `abilityBuilder` calls. An ability is a drizzle filter, so it
-  composes into a query rather than being checked after the fact:
-
-  ```ts
-  ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where;
-  ```
-
-  `services/authHelper/` is the one place authorization is built from. Rules of thumb, all of them enforced by `e2e/authorization/`:
-
-  - **Rules compose from the helpers** (`isTeamMemberOfConference({ ...args, roles })`, `isOwnUser`,
-    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `liveWhere(...)` (`liveRule` for
-    one with `columns`), which hands them the request and the caller's facts (`callerFacts`). A
-    helper returns `undefined` for "grants nothing" - decided by the context alone (anonymous, an
-    assistant), never by the facts - and never throws. Every table also gets
-    `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
-  - **Rules filter on the table's own columns** - `{ id: { in: ids } }`, `{ conferenceId: { in: ids } }` -
-    with the ids from the caller's facts, not on chains of relations: rumble looks every
-    relational rule of a table up in one statement per root field, as nested `exists`, and
-    planning the user table's (101 of them) killed Postgres. A row without the column nests one
-    hop with `hop(filter, (participant) => ({ participant }))`, which is `NOTHING` (no hop) for an
-    empty list. An empty id list matches no row (`1 = 0`), never every row.
-    `relationalRules.test.ts` keeps the user and delegation rules free of relations.
-  - **Updates and deletes go through the row's own ability** (`updateIfAllowed`, `deleteIfAllowed`,
-    or `filter('update').merge({ where:
-{ id } })`). Load the row through it first when the resolver needs the row anyway.
-  - **Team checks are team permissions** (`TEAM_PERMISSIONS` in `#lib/helpers/teamRoles.ts`,
-    shared with the team pages: `manageParticipants`, `planSeats`, `reviewPapers`, …, each
-    granted to the roles `rolesWithTeamPermission` names). `teamConference({ ctx, permission })` is the
-    filter on the conference: put it into the query that loads the row anyway
-    (`{ id, conference: await teamConference({ ctx, permission: 'manageParticipants' }) }`), so a caller who may not
-    finds nothing. A create with no row to load checks the parent conference with
-    `assertTeamPermission({ ctx, conferenceId, permission })` (`hasTeamPermission` is the
-    non-throwing form; both answer from the caller's facts). A system admin always passes. Never compare a
-    caller's roles by hand: a new kind of check is a new team permission.
-  - **Every id an argument names has to belong where the row goes**: a track to its day, a
-    place, role, committee or nation to the conference, a `userId` to the caller unless the
-    caller is participant care. The resolver anchors the row in the conference it authorized (the
-    `conferenceId` it checked, or a parent loaded through the ability); that the other ids are of
-    the same conference, and roles of the right kind, is the database's (see "The database keeps
-    rows inside one conference") - do not look them up first. A `userId` is still resolved to the
-    person's row in the authorized conference (`participantIdsOf`), which is a lookup, not a check.
-  - **A rule's `columns` apply to the rows that rule matched** (rumble ≥ 0.25 masks per row), so
-    visibility that depends on how the reader relates to a row is a rule like any other: the user
-    table (paper reviewers read names only; co-delegates names and email; students their supervisors' name and
-    email; supervisors and the care team contact details; teammates the phone number, team admins
-    everything but the care notes; nobody but the care team the care notes of participants, and
-    nobody those of the team), the conference (payment
-    and postal details for people with a part in it, team links for the team), a delegation's
-    `entryCode`, a supervisor's `connectionCode`, an invitation's `token`. **A masked non-null
-    column cannot be selected:** the GraphQL type stays non-null, so a reader who is masked and
-    asks for it gets an error for the whole query - not selecting it never throws. Only select
-    such a column where the reader may see it.
-
-- The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
-  instance it and the SSR remote function share. Adding fields needs a **dev server restart**: the
-  schema builder is populated at module init.
-- **Subscriptions use yoga's built-in server-sent events** on `/api/graphql` (urql's
-  `fetchSubscriptions` in `src/lib/api/client.ts`): one streaming response per subscription, no
-  plugin, no extra route, no sticky sessions; the events fan out through Redis. Each subscription
-  holds a connection, and over HTTP/1.1 a browser allows six per host, so a page with six live
-  queries would queue every later request there. Production is served over HTTP/2, which
-  multiplexes them; keep it that way. Dev and e2e get HTTP/2 from the HTTPS dev server (above);
-  under `DEV_HTTP=1` mind the six.
-
-#### 2. Frontend Data Fetching (generated rumble client)
-
-- Every operation goes through the generated client, which takes a selection object rather than a
-  GraphQL document:
+- **Everything goes through the generated client** with selection objects:
 
   ```ts
   import { client } from '#lib/api/rumbleClient/client';
-
-  const conference = await client.query.conference({
-  	__args: { id: conferenceId },
-  	id: true,
-  	title: true,
-  	committees: { id: true, abbreviation: true }
-  });
-
-  await client.mutate.updateCommittee({ __args: { id, name }, id: true, name: true });
-  ```
-
-  Mutations returning a scalar have no selection to describe; wrap them for `toast.promise` with
-  `Promise.resolve(client.mutate.deleteX({ __args: { id } }))`.
-
-- **Where to fetch**: in the component, at the top of `<script>`, not in a `load`. This is chase's
-  idiom and what `compilerOptions.experimental.async` is for:
-
-  ```ts
   const delegations = $derived(
   	await client.liveQuery.delegations({
-  		__args: { where: { conferenceId: { eq: data.conferenceId } } },
-  		id: true,
+  		__args: { where: { conferenceId: { eq: conferenceId } } },
   		school: true
   	})
   );
+  await client.mutate.updateCommittee({ __args: { id, name }, name: true });
   ```
 
-  Use `$derived(await …)` whenever the query depends on a route param or other reactive value — a
-  bare top-level `await` runs **once**, so the page would keep showing the conference you navigated
-  away from. svelte-check flags the bare form with `state_referenced_locally`; that warning is a
-  real bug, not noise. A plain `await` is right only for something seeded once, such as the initial
-  value of a form field.
+  Scalar-returning mutations for `toast.promise`: `Promise.resolve(client.mutate.deleteX({ __args: { id } }))`.
 
-- **A layout shows the next page's skeleton, not the old page, while that page's first data
-  loads.** An `await` outside any boundary holds the whole update back, so a client-side
-  navigation would keep the old page on screen until the new one has its data. The layouts that
-  render pages wrap them in `PageBoundary` (`#lib/components/navigation/`), a
-  `<svelte:boundary>` with a skeleton as `pending` snippet, keyed by the pathname so every
-  navigation creates a fresh one (a settled boundary never shows `pending` again). The snippet is
-  only passed in the browser: on the server a boundary with `pending` renders nothing else, and a
-  full load still arrives with its content. A page whose fetch fails shows a retry
-  (`LoadError`) in its boundary, logged as a warning when the API was not reached: past a failed
-  `await`, Svelte still runs the template against script variables that were never assigned, so
-  the error must not escape the boundary. A section that keeps a frame across its pages (the
-  assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
-  outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
-  registry names each page's `skeleton`, drawn after that page (`#lib/data/teamSkeletons`); `NavigationProgress` draws the bar along the top
-  edge while a navigation loads, and `enableViewTransitionApi` (`#lib/helpers/viewTransitionApi.svelte`,
-  after chase) cross-fades the pages. See "Navigation" in CLAUDE-UI.md.
-- **Each component fetches what it renders, and nothing more.** A page fetches only what decides
-  _which_ sections to show (often just ids), and hands each section the ids it needs; the section
-  queries its own fields. Never fetch a large tree at the top and prop-drill it down: every
-  component then re-renders on every change anywhere in it, and nobody can tell which field is
-  still used. `fetchMyParticipation` is the model: it only answers who the caller is in a
-  conference (role, ids, a few discriminating fields), and the dashboard stages fetch the rest.
-  Small overlapping queries are cheap: they share one normalized cache record per entity.
+- **Fetch in the component**, top of `<script>`, not in a `load`. Use `$derived(await …)` whenever
+  the query depends on a param or reactive value; a bare top-level `await` runs **once**
+  (svelte-check's `state_referenced_locally` there is a real bug). Plain `await` only for one-time
+  seeds (initial form values).
+- **`liveQuery` wherever a result is displayed**; `query` only for one-shot reads in handlers.
+  After a mutation you normally do nothing — the write publishes and live queries refresh.
+  `invalidateAll()` is only for load data (almost none exists). Non-live components re-call their
+  fetch; children notify parents via callbacks (`onUpdate`, `onSaved`).
+- **Each component fetches what it renders, nothing more.** Pages fetch only what decides which
+  sections show (often ids) and pass ids down; sections query their own fields. Never prop-drill a
+  big tree. Model: `fetchMyParticipation`. Small overlapping queries share normalized cache records.
+  - **Never select `id`**: the client adds it (`autoIncludeIdField`); graphcache needs it to
+    normalize. Types keyed otherwise (nation by `alpha3Code`) go in `customKeyFields`
+    (`#lib/api/cacheKeys.ts`) and that field must be selected.
+  - **Key queries by primitives**: pull ids out first
+    (`const delegationId = $derived(member.delegation.id)`); never read a live result inside the
+    `$derived` that issues a query, and read fields of a fresh result in a second `$derived`.
+  - **Every property read of a live result is a subscription** (one render effect per read).
+    Pages computing over many live rows copy each result once (`#lib/api/liveSnapshot`) in its own
+    `$derived` and compute over copies; `memoizeLast` skips repeated work. Don't read live results
+    in an `$effect` there (trips Svelte's "Batch has scheduled effects").
+  - Several queries in one component: `Promise.all` in one `$derived(await …)`. A shared fetch
+    function + result type module is fine when several components share a shape.
+- **A layout shows the next page's skeleton while its first data loads.** Page-rendering layouts
+  wrap pages in `PageBoundary` (`#lib/components/navigation/`), keyed by pathname, `pending` only in
+  the browser. Fetch failures show `LoadError` (retry) inside the boundary — errors must not escape
+  it (Svelte runs the template against unassigned variables). Sections with a persistent frame stop
+  the outer key via `boundaryKey`. Team route skeletons: `#lib/data/teamSkeletons`. Details:
+  "Navigation" in CLAUDE-UI.md.
+- **`load` is only for** redirect/403 guards, page options (`ssr = false`), and pre-render cookie
+  work (`auth/accept-invitation`; also the manual's markdown loads). No form-action loads. Guards
+  return nothing. Never return generated-client results from `load` (unserializable proxies).
+- **Route params come from the `params` prop**, never `page.params` (`page` is written in a batch
+  that stays pending during first async work; a live update in that window makes derived re-runs
+  see `params = {}`). Read through a primitive `$derived` (`const conferenceId = $derived(params.conferenceId)`)
+  before awaited deriveds use it, layouts too. Name it `routeParams` where `params` is taken by
+  `sveltekit-search-params`. Pages under a pathname-keyed `PageBoundary` (team pages) read once:
+  `untrack(() => params.conferenceId)`.
+- **Global state in `#lib/state/*.svelte.ts`** (`getCurrentUser()`, `fetchMyParticipation(conferenceId)`).
+  Cache singletons **only in the browser** — server module state is shared across requests. For the
+  same reason SSR operations are `network-only` (see `requestPolicy` in `src/lib/api/client.ts`).
+- **SSR** goes through `src/api/graphql.remote.ts` (schema executed in-process; `ssrExchange` routes
+  there when `!browser`). Must stay a remote function (stubbed in the browser; needs
+  `experimental.remoteFunctions`). It refuses HTTP calls (`event.isRemoteRequest`), since remote
+  `query`s are GET endpoints that would bypass yoga, armor and masking.
 
-  - **You never need to select `id`.** The generated client adds it to every selection of a type
-    that has one (`autoIncludeIdField` in `src/api/handlers/register.ts`), because graphcache
-    cannot normalize a selection without it - it stores it embedded, overwrites the link other
-    queries of the same field hold, and their next read comes back `undefined`. A type keyed by
-    something else (a nation, by `alpha3Code`) belongs in `customKeyFields` in
-    `#lib/api/cacheKeys.ts`, and then that field has to be selected.
-  - **Key a query by primitives, never by reading through another live result inside the same
-    `$derived`.** Reading a field of a live result subscribes the reading `$derived` to that
-    result's updates, so a `$derived` that also issues a query would issue it again on every update.
-    Pull the id out first (`const delegationId = $derived(member.delegation.id)`) and query with
-    that; likewise read fields of a fresh result in a second `$derived`, not in the one that awaited
-    it. (rumble only announces updates whose data actually changed, which stops the resulting
-    loops, but the extra queries are still waste.)
-  - **Every property read of a live result is a subscription.** rumble's result proxy calls Svelte's
-    `createSubscriber` on each read, and each call creates a render effect; a `$derived` that walks
-    a live array row by row creates one per row, and renews them all every time it runs. A page
-    that computes over many live rows reads each result once into a plain copy
-    (`#lib/api/liveSnapshot`, which uses `slice`, a single read) in its own `$derived`, and
-    computes over the copies; `memoizeLast` (`#lib/helpers/memoizeLast`) then skips the work when
-    a derived runs again over the same copies. On the assignment board this took a tab switch
-    from ~45 board computations and a 0.5 s stall to 2 and ~0.1 s. Do not read live results in an
-    `$effect` there instead: during the page's first async work that trips Svelte's "Batch has
-    scheduled effects" invariant.
-  - When a component needs several queries, run them with `Promise.all` in one
-    `$derived(await …)`. A module that exports a fetch function and its result type is still right
-    when several components share a shape (`conferenceParticipants.ts`).
+## Forms
 
-- **`load` functions are for three things only**: redirect and 403 guards, page options like
-  `ssr = false`, and cookie work that has to happen before anything renders — of which only
-  `auth/accept-invitation` is left (and the user manual's server loads, which serve markdown
-  bundled into the build, not API data; see "User manual, help and tours"). There are **no
-  form-action loads any more**; every form submits
-  through a mutation (see Forms below). Everything else fetches in the component, and a guard
-  returns nothing — route parameters come from the `params` prop, not from load data. A `load` must
-  never return what the generated client gave it: those are subscribeable proxies, and `load` data
-  has to be serialized into the page.
-- **Route parameters come from the `params` prop**, never from `page.params`:
-
-  ```ts
-  let { params }: PageProps = $props(); // LayoutProps in a layout
-  const conference = $derived(await fetchConference(params.conferenceId));
-  ```
-
-  `page` from `$app/state` is `$state` that SvelteKit writes when it hydrates, and that write sits
-  in a batch that stays pending until the page's first async work settles. A live-query update
-  landing in that window starts a second batch, and Svelte shows a later batch the _previous_
-  value of anything a pending batch wrote — so an async derived re-run there reads the placeholder
-  `page`, `params` is `{}`, and that result is the one that sticks. The page renders as if the
-  conference did not exist. The prop is handed to the component rather than written in a batch,
-  so it does not have this problem. Name it `routeParams` where the page already has a `params`
-  (a `sveltekit-search-params` object). Read it through a primitive `$derived`
-  (`const conferenceId = $derived(params.conferenceId)`) before an awaited derived uses it, in
-  layouts too: every navigation, a query-only one included, hands over a fresh `params` object,
-  and an awaited derived reading `params.x` directly asks for everything again each time.
-  A page under a `PageBoundary` keyed by its pathname (the team pages) never changes params, so it
-  reads them once, `untrack(() => params.conferenceId)`: even through a `$derived`, a re-run inside
-  a pending batch (hydration, a table writing its URL state) can still see the prop as `{}` and
-  ask for conference `''` (the participants, waiting-list and members tables did).
-
-- **Global state lives in `#lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
-  signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
-  Cache such a singleton **only in the browser**: module state on the server is shared by every
-  request the process serves, so caching there hands one visitor's identity to the next. For the
-  same reason the urql client answers server-side operations `network-only` — see the comment on
-  `requestPolicy` in `src/lib/api/client.ts`.
-
-#### Forms
-
-- **Every form is a superforms SPA form that submits through a mutation.** There are no form
-  actions and no `superValidate` on the server. The shape is always the same:
+- **Every form is a superforms SPA form submitting through a mutation** — no form actions, no
+  server `superValidate`:
 
   ```ts
   const form = superForm(defaults(initialValues, zod4Client(schema)), {
@@ -530,1495 +304,274 @@ bun run preview
   	onError: (e) => toast.error(e.result.error.message),
   	async onUpdate({ form: validated }) {
   		if (!validated.valid) return;
-  		const promise = client.mutate.updateX({ __args: { ...validated.data, id }, id: true });
+  		const promise = client.mutate.updateX({ __args: { ...validated.data, id } });
   		toast.promise(promise, genericPromiseToastMessages);
   		await promise;
   	}
   });
   ```
 
-  `onUpdate` is the place for the mutation — it runs after validation, unlike `onSubmit`. Seed
-  `initialValues` from a **plain `await`**, not `$derived(await …)`: re-reading the row while
-  someone is typing would discard their edits. Build the object field by field rather than
-  spreading a query result: the generated client returns a subscribeable proxy, and spreading it
-  drags `subscribe` along and widens every field to `unknown`. Where the initial values need
-  massaging, put that in a helper (`#lib/api/userFormValues.ts`) so two forms on the same table
-  cannot drift.
-
-- **Fields are [Formsnap](https://formsnap.dev) components underneath.** The `Form*` wrappers in
-  `#lib/components/form/` own the styling and pass `name`/`label`/`description` through to
-  Formsnap's `Field`/`Control`/`Label`/`Description`/`FieldErrors`, which generate the ids and wire
-  `for`, `aria-describedby`, `aria-invalid` and the `aria-live` error region. Spread the `props`
-  the `Control` snippet hands you onto the input and never set `id`/`name` by hand. A field
-  component is generic over `N extends FormPath<A> & keyof A`, so a misspelled field name is a
-  compile error; for a typed `bind:` (a boolean or a `Date`) reach for `formFieldProxy`, which is
-  what keeps those bindings type-safe without a cast.
-- **Uploads** go through `fileProxy`, then `uploadFile` (`#lib/api/uploadFile`), which puts the file
-  straight into the S3 bucket and returns its id for the mutation (`logoFileId`, …). An untouched
-  field must yield `undefined` so the stored file survives; `null` removes it. See "Files" below.
-- **Personal data goes in through rumble's scalars**: `PersonName`, `EmailAddress`,
-  `PhoneNumber` (stored as E.164), `Date` for a calendar day and `AddressInput` for an address
-  (validated against libaddressinput's metadata, alpha-2 country codes; the user table keeps
-  alpha-3, `#lib/helpers/countryCodes` converts). Values that arrive some other way, such as
-  OIDC claims in `upsertSelf.ts`, go through rumble's exported `normalizePersonName` /
-  `normalizeEmailAddress` / `parsePhoneNumber`. The account forms check the same rules first:
-  `isPersonName`, and `addressRules`/`addressIssues` for which of postal code, city and region
-  (`AddressRegionField`) a country uses. A `Date` value is UTC midnight on the wire; a date picker
-  yields local midnight, so convert with `#lib/helpers/calendarDay` (`toUpdateUserArgs` does).
-- **Regeneration** happens on dev server start, so a handler change is only visible to the
-  frontend after a restart. `src/lib/api/rumbleClient/` is generated and committed; never edit it.
-- **SSR** goes through `src/api/graphql.remote.ts`, which executes the schema in-process.
-  `ssrExchange` in `src/lib/api/client.ts` routes there whenever `browser` is false, which is why
-  server-side fetching works without the app being able to fetch its own relative URL. It has to
-  stay a remote function: `client.ts` is shared with the browser, and only a remote import is
-  stubbed out there. Needs `experimental.remoteFunctions` in the `sveltekit()` options in
-  `vite.config.ts`. It refuses HTTP calls (`event.isRemoteRequest`): SvelteKit serves every
-  `query` remote function as a `GET` endpoint, which would otherwise execute any document a
-  browser sends with the visitor's cookies, past yoga, armor and the error masking. `/api/graphql`
-  sends no CORS headers (`cors: false`, rumble's default since 0.26.3, so `yoga.ts` leaves it out): the API is same-origin only, and yoga's default reflects
-  any origin with credentials.
-- **Files live in an S3 bucket** (any S3-compatible service, through
-  [s3mini](https://code.nolog.cz/thinking.tools/s3mini); locally RustFS from
-  `dev.docker-compose.yml`, console on http://localhost:9101). A row holds the id of a
-  `stored_file` (`conference.logoFileId`, `place.sitePlanFileId`, `resolution.fileId`, …), which
-  knows the object's key, type, size and name. All of it lives in the table's handler,
-  `#api/handlers/storedFile/`: `FILE_SOURCES` (`fileSources.ts`) lists every file - its column,
-  who may upload it, the allowed types and the size limit; `storedFilePermissions.ts` holds the
-  checks, `storedFileService.ts` the uploads and download URLs, and `storageClient.ts` the s3mini
-  wrapper the jobs and the seed build their own bucket from.
-  - **Upload:** `requestFileUpload` checks the caller's team role, type and size, records the file
-    and answers with it (the `StoredFile` object); its `uploadUrl` is a presigned PUT URL with type
-    and length signed in, null once something has arrived, so a stored file never changes. The
-    browser PUTs the bytes there; the mutation saving the row takes the id, `assertCanClaimFile` checks that the caller
-    uploaded it, for that field of that conference, and `ensureUploadComplete` that it arrived in
-    full.
-  - **Download:** rows never resolve a file themselves; readers select the relation
-    (`conference.logoFile { url }`, `contractFile`, `place.sitePlanFile`, `resolution.file`, …)
-    and read `id` / `url` from the `StoredFile`, whose `url` is a presigned GET URL of the bucket.
-    There is no app route in between, and two checks guard the URL: the holding row's file id
-    column mask (a relation behind a masked id resolves to nothing; `e2e/authorization/api-abilities.spec.ts`
-    pins it for a template), and the `storedFile` read rules, which follow the row holding the file
-    through reverse relations (`imageOf`, `contractOf`, `sitePlanOf`, `resolutionOf`, …): pictures
-    wherever the conference is readable, templates and resolutions for the people with a part in
-    the conference, site plans for whoever reads the conference's schedule (the team, participants
-    once `showCalendar` is on), an unclaimed file for its uploader only. There is no
-    query listing files, and `uploadedById` is masked for all but the uploader. A URL is reused for
-    six hours and valid for twelve, so browsers cache the (immutable) object and live queries do
-    not see a new URL on every refetch. Browsers talk to the bucket directly: it needs CORS (GET
-    and PUT from the app's origin), and an image drawn onto a canvas is loaded with
-    `crossOrigin = 'anonymous'`. The resolution header's emblem is still embedded as a data URL
-    (`fetchFileAsDataURL`, `paperhub/conferenceHeaderInfo.ts`) for the editor and `/api/pdf`.
-  - **Cleanup is garbage collection:** no mutation or cascade deletes a file, and a file names no
-    conference. The `file-cleanup` job collects every `stored_file` nothing points at, found
-    through the schema's foreign keys to it (`fileReferenceColumns`), so **a file id kept in
-    anything but a `fileRef()` column looks unused and gets deleted**. It works a page at a time:
-    locks the rows, deletes their objects from the bucket, then the rows. Objects without a row
-    go too.
-  - A new file is a `fileRef()` column, a relation to `storedFile` in `relations.ts` and its
-    reverse on `storedFile`, a read rule in `storedFilePermissions.ts`, an entry in
-    `FILE_SOURCES`, `assertCanClaimFile` + `ensureUploadComplete` in the mutations that set it,
-    and a target in `uploadFile`. A field that has to stay private needs its id column masked.
-- **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
-  mutation publishes to the tables it writes, so open queries are told to refresh themselves. Fetch
-  with `liveQuery`, not `query`, anywhere a component displays the result — `query` is for one-shot
-  reads inside an event handler and for `load` functions, which are not reactive either way.
-- **`invalidateAll()` is for load data only**, and almost nothing returns load data any more. It
-  does nothing for a component's own fetch, so do not reach for it there; a component that cannot be live refreshes by calling its own fetch function again, and a
-  child component tells its parent through a callback (`onUpdate`, `onSaved`) rather than
-  invalidating the world.
-
-#### 3. Authentication & Authorization
-
-- **OIDC flow** via [`@m1212e/sveltekit-oidc`](https://github.com/m1212e/sveltekit-oidc), the same
-  library chase uses. `src/api/services/oidc/OIDC.ts` builds the instance; its `handle` hook (wired up in
-  `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
-  `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
-  session on `event.locals.oidc`. There is no auth code in route loads. Every guard that decides
-  by path (`authenticatedRoutes`, `isPublicRoute`) looks at
-  `routePath(event.url)`: Paraglide prefixes non-default locales (`/en/…`) and `event.url` keeps
-  the prefix, so matching `event.url.pathname` would miss every English URL. A redirect target
-  that comes from the request (`/login?next=`) goes through `sameSitePath`
-  (`#api/services/sameSitePath.ts`), which resolves it like a browser would; `startsWith('/')`
-  alone lets `/\evil.example` through.
-- **Locally, the provider is [oidc-mock](https://github.com/strehk/oidc-mock)**, started by the
-  `oidcMock()` plugin in `vite.config.ts` whenever `vite dev` runs - no container. Its users live
-  in `oidc-mock.yaml` (edits apply on the next login), its login page is served on the app's own
-  origin under `/oidc`, and `PUBLIC_OIDC_AUTHORITY` points at
-  `http://127.0.0.1:8090/oidc/.well-known/openid-configuration`. The e2e suite signs in through the
-  login page's custom-claims form.
-- **Dev accounts and the dev seed belong together.** `src/api/db/seed-data/devAccounts.ts` lists
-  every account on the login page; `bun run dev:accounts` writes them into `oidc-mock.yaml`
-  (never edit its `users` by hand - `devAccounts.test.ts` fails on drift), and
-  `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Ten
-  conferences cover the stages (`seed-dev/plans.ts`: pre, registration open / in its grace period
-  / closed, preparation with everything and with nothing unlocked, active, post, a second small
-  one, and another organizer's past conference without any dev team member). The closed one
-  carries an assignment draft in progress; the locked one has seats handed out but not released,
-  so its participants see "assignment in progress". Team personas
-  hold one team role everywhere; `[Registration]` personas cover the application steps;
-  `[Participant]` personas keep one role (head delegate, minor, supervisor, rejected, …) across
-  preparation, active and post, so one login tours the stages. The seed prints the conference ids,
-  join codes and invitation links at the end. A new state the UI branches on gets a persona or a
-  conference flag here, so it stays reachable with one click.
-- **Login-time user upsert** lives in `src/api/services/account/upsertSelf.ts`, passed to the library as
-  `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
-  invitation (`claimPendingInvitation`, `#api/handlers/teamMemberInvitation/pendingInvitation`,
-  which marks it used conditionally so a link joins one person once, and only for the account whose
-  email is the invited address), and redirects to `/auth/email-conflict`, `/my-account` or, for an
-  invitation sent to another address, `/auth/error?type=invitation_other_email` when it has to.
-- **Impersonation** is a delegated session the OIDC library keeps next to the caller's own
-  (`OIDC.startImpersonation`). `startImpersonation` gets a subject token for the target from
-  Logto's Management API (M2M credentials `OIDC_M2M_*`; oidc-mock serves the same endpoint, any
-  values work locally) and exchanges it (RFC 8693) with the caller's access token as actor, so the
-  issued token names them in `act`; `#api/handlers/user/impersonation.ts` does both. Logto takes
-  only an opaque token with the `openid` scope as the actor's, and with `OIDC_RESOURCE` the
-  session's access token is a JWT for that resource, so `actorAccessTokenOf`
-  (`#api/services/oidc/actorToken.ts`) trades the session's refresh token for a token set without
-  a resource first, keeping a rotated refresh token in the session cookie. That refresh token
-  exists only because the sign-in sends `prompt: 'consent'` (`OIDC.ts`): Logto ignores
-  `offline_access` without it (OIDC Core §11). The library
-  accepts it only as long as its actor is the signed-in session, never refreshes it, and drops it
-  on sign out. Who may act as whom is `impersonatableBy` (`userPermissions.ts`): admins anybody but
-  themselves, participant care and project management the participants of their conferences, never
-  anybody on a team. `impersonationHandle` (`userPermissions.ts`, run from `hooks.server.ts`) checks it again on every request and
-  loads the target's identity from their row, since the exchanged token may carry only `sub`. While
-  impersonating, `ctx.oidc.user` is the target, `ctx.oidc.impersonator` the caller, and the system
-  roles are only those both hold. `e2e/authorization/impersonation.spec.ts` pins it down.
-- User context injected into the GraphQL context via `src/api/context.ts`, which reads
-  `event.locals.oidc`
-- **rumble abilities** define fine-grained permissions per entity:
-  - Actions: `read`, `update`, `delete` (declared in `src/api/rumble.ts`); impersonation, when it
-    is redesigned, brings its own
-  - Each entity's abilities live in its `<entity>Permissions.ts`
-- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. The role lists live
-  in `#lib/helpers/teamRoles.ts`, shared by the API (`authHelper/rules.ts` re-exports them) and the UI.
-  A team keeps at least one `PROJECT_MANAGEMENT` member: demoting or removing the last one answers
-  `CONFLICT` (`teamMemberService.ts`, under a lock on the conference); only a system admin may.
-  `CONTENT_LEAD` reaches the seat planning, the committees and the conference's content (links,
-  postal address, templates, status, resolutions) next to the scanner and the settings.
-
-- **Team area.** Everything a conference's team works in is under `dashboard/[conferenceId]/team/`,
-  behind **one guard** (`team/+layout.ts`) and **one registry** (`#lib/data/teamRoutes.ts`): each
-  entry holds the path, title, icon, section, command palette keywords and the roles that may open
-  it. The side navigation (`team/TeamShell.svelte`), the dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`: one card that opens the first page the caller may open, plus the conference's resource links), the command palette and the guard are all
-  generated from it, so they cannot disagree. What a caller may open comes from `TeamAccess`
-  (`#lib/helpers/teamAccess.ts`: every role they hold, plus the admin flag; fetch it with
-  `fetchTeamAccess`). The page-level predicates (`canEditConference`, `canEditCommittees`, …) take
-  that and mirror the API's abilities. There are no redirect stubs: a path that is not a page is a
-  404, a page the caller may not open a 403. Folder names are kebab-case.
-
-#### 4. Internationalization
-
-- **Paraglide-JS** with `url` and `baseLocale` strategy
-- Source translations in `messages/` directory
-- Use `$t()` function in components for translated strings
-- Generate translations via Inlang CLI
-- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`#api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError({ code, message: m.…() })` (`#api/services/errors.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode({ err, code })` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
-- **German addresses the reader informally**: always "du" / "dein" (lowercase mid-sentence), never "Sie" / "Ihr"; a sentence speaking to a whole group (a delegation deciding together) uses plural "ihr" / "euch", in the UI and the mails alike; imperatives are du-imperatives ("Wähle", "Lade … hoch").
-- **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
-
-#### 5. Database Patterns
-
-- **Drizzle ORM** with PostgreSQL, using the relational API (`db.query.x.findMany({ where, with })`)
-  and `defineRelations` in `src/api/db/relations.ts`. Columns are camelCase in TypeScript and
-  snake_case in the database; `snakeCase.table` does the mapping.
-- Row and insert shapes come from Drizzle itself (`typeof schema.conference.$inferSelect`,
-  `typeof schema.conference.$inferInsert`, with `import type * as schema from '#api/db/schema/index'`)
-  rather than from a generated client
-- Models: `Conference`, `Delegation`, `Committee`, `DelegationMember`, `SingleParticipant`, etc.
-- **A person's part in a conference is one `conferenceParticipant` row** (per user and conference),
-  created by `ensureConferenceParticipant` the first time they register there - as delegate, single
-  participant or supervisor - and kept while they take part. It holds what is about the person
-  (payment, postal documents, attendance, access card); `delegationMember`, `singleParticipant` and
-  `conferenceSupervisor` point at it (`conferenceParticipantId`). **Supervision links people**
-  (`supervision`: supervisor → `conferenceParticipant`), so it survives whatever happens to the
-  registration; `delegationMember.supervisors`, `singleParticipant.supervisors` and
-  `conferenceSupervisor.supervisedDelegationMembers` / `supervisedSingleParticipants` read it
-  through the participant row. A rule that relates a supervisor to someone goes through these
-  relations, never through `user`, which would match the person's part in another conference.
-- **No row says which conference it is in twice.** Whatever is about a person in a conference
-  points at their `conferenceParticipant`: delegation members, single participants, supervisors,
-  paper authors (`paper.authorParticipantId`), payers (`paymentTransaction.payerParticipantId`), the
-  people a payment covers and survey answers. None of these rows has its own `conferenceId` or
-  `userId`; the relations `user` and `conference` on them run through the participant row (or the
-  delegation, for papers), so filter with `conference: { id: { eq } }` / `user: { id: { eq } }`
-  in the client and `participant: { conferenceId, userId }` in server code. Team-side actors
-  (reviewer, scanner, inviter, search history) stay plain `user` references: a system admin acts
-  without a team row. The team and the waiting list have no participant row. Removing someone's
-  participation keeps their participant row while papers or payments name it.
-- **The database keeps rows inside one conference.** A row whose parents reach a conference by two
-  ways (a member: delegation and person; a paper: delegation, author and agenda item; an answer:
-  question and person; …) must reach the same one: deferred constraint triggers check it at
-  commit (`assert_same_conference`, 18 tables, in the `conference_anchor` migration), so an
-  application step may write in any order within its transaction. A `conference_id` a row keeps
-  cannot change (`conference_id_is_immutable`); rewriting the same value passes. A row that
-  reaches its conference through a link of its own and is named by other rows (a track's day, a
-  survey option's question, an agenda item's committee, a delegation member's, single participant's,
-  supervisor's or payment's participant row) may change that link within the conference, never out of it
-  (`reached_conference_is_immutable`, in the `conference_reach_unchanged` migration), or it would
-  carry the rows naming it along past their checks. None of this is
-  drizzle-managed: a new table with two such parents gets its trigger in its migration, as does a
-  new link of that kind, and `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
-  Likewise a role's kind (`conference_role_kind` migration): delegations, role applications and
-  assignment units name nations or non-state actors, single participants, their wishes and planned
-  roles custom roles, committees seat nations, and a role's kind never changes. A refused write
-  reaches the client as the input error it is: the triggers raise `check_violation` with a
-  constraint name, and `databaseRuleError` (`#api/services/errors.ts`, run by a plugin in `yoga.ts`
-  ahead of the error masking) answers the known ones (`…_same_conference`, `…_immutable`,
-  `…_role_kind`, `calendar_entry_track_runs_on_day`, `one_part_per_conference`) with a code and an
-  `m.…()` message. A new trigger raises under a name that list matches.
-- **A person takes part in a conference in one way only**: delegation member, single participant,
-  supervisor or team. The flows refuse a second part up front (`fetchParticipationsAndTeamMembership`,
-  `#api/services/registration/participation.ts`, the team invitations included), and deferred
-  constraint triggers (`assert_one_part`, in the `one_part_per_conference` migration) refuse it at
-  commit, under an advisory lock so two concurrent registrations cannot both pass. A step swapping
-  one part for another does both writes in one transaction. `e2e/authorization/one-part.spec.ts`.
-- **Calendar tracks are the conference's**: a track runs on the days `calendar_day_to_calendar_track`
-  links (`calendarDay.tracks`), and is for the committees and roles it names, which is how a
-  participant's dashboard finds their track. Rows reference tracks by id, never by name; deferred
-  triggers (`conference_calendar_tracks` migration) keep an entry on its day's tracks.
-- **Calendar entries can be for some survey choices only**: `calendarEntry.surveyOptions`
-  (`calendar_entry_to_survey_option`) limits an entry to those who picked any one of them (and the
-  conference's team); without any it is for everybody. An option an entry names cannot be deleted
-  (`restrict`), since that would widen the entry's audience. The `read` rules in `calendarEntryPermissions.ts` do it, so every calendar query
-  follows. **Survey options fill under a row lock** (`surveyAnswerService.ts`): a participant is
-  refused a full option, and `distributeUnansweredSurvey` hands everyone seated who has not answered
-  the least full option with room (`surveyDistribution.ts`).
-- **Scanner sessions can expect a survey choice the same way**: a checking session (not one that
-  only records) names survey options (`attendance_session_to_survey_option`, set when it starts),
-  and `scanLookup`, given the session, answers the titles when the scanned person picked none of
-  them; the scanner shows that as an open point (`surveyOptionMissing`). The titles come with the
-  lookup because only participant care reads the survey itself.
-- **The entrance check is the server's.** `scanIssues` (`#api/handlers/scanLookup/scanCheck.ts`)
-  decides what is open; `scanLookup` answers it as `issues`, `checkPassed` and `mayRecordAnyway`
-  (with `asScan`, an earlier scan in the session is open too), `createAttendanceEntry` stores the
-  verdict it reaches itself (`null` in a session that only records), and the check-in page reads
-  `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
-- **Age limits are the conference's** (`participantMinAge`, `participantMaxAge`, `supervisorMinAge`,
-  inclusive, measured on the first conference day; empty switches one off).
-  `ageIssue` / `ageBands` (`#lib/helpers/plausibilityRules`) are the one rule, which the
-  plausibility page lists people by and `myAgeNotice` answers the caller with; `AgeNotice`
-  (`#lib/components/registration/`) shows it in the apply flow, on the waiting list and on the
-  dashboard. Registering and joining a delegation are never refused by age, but an application
-  cannot be sent while one of its people is outside the limits, nor can a supervisor below theirs
-  confirm attending in person (`assertNoApplicationBlockers`,
-  `#api/services/registration/applicationReadiness.ts`); participant care can confirm it anyway.
-- Supervisor connection codes are unique across all conferences.
-- Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
-- Payment tracking via `PaymentTransaction` model
-- Paper submission system with versioning and reviews
-- **Seats from the waiting list are dated**: seating a user who has a waiting list entry
-  (`markSeatedFromWaitingList`, called by `createAppliedDelegationMember` /
-  `createAppliedSingleParticipant`) sets the entry's `assignedAt` and hands its school to the new
-  registration; that is the only way an entry is marked seated. The participants table shows
-  waiting people as `WAITING_LIST` rows and everybody's `waitingListSince` /
-  `seatedFromWaitingListAt`. Placing someone into a delegation clears their other registration
-  first, a membership as if they had left (a new head delegate, an empty delegation deleted), and
-  is refused (`CONFLICT`) when the role has no seat left or the committee already seats as many of
-  the delegation as it may (`placementRules.ts`). A delegation wishes only for roles that seat all
-  its members (`assertRoleSeatsDelegation`; `tidyRoleApplications` drops wishes it outgrows).
-- **Withdrawing an application**: applicants only change their own until they apply; participant
-  care takes a delegation's or a single participant's application back at any stage.
-- **The team places the generated parts on its own templates.** `#lib/helpers/documentLayout.ts`
-  declares, per document (`certificate`, `contract`, `guardianConsent`, `mediaConsent`), the
-  elements the generator draws - texts (a point and a font size), boxes and square codes - with
-  defaults where they always were. Positions are fractions of the page from the top left, stored
-  per document in `conference.documentLayouts` (members-only like the templates; written through
-  `setDocumentLayout`, conference content roles), and each element falls back to its default on its
-  own. `pdfGenerator.ts` draws from the resolved layout; the document settings open
-  `DocumentLayoutEditor.svelte` for any of them: pdf.js (`pdfjs-dist`, loaded on demand) draws the
-  template's first page, the elements are dragged and resized on it, and the test print uses the
-  unsaved layout. A new placed field is an element in `DOCUMENT_ELEMENTS` plus a label and sample in
-  `team/configuration/sections/layoutElements.ts`. Certificates get no fold marks; letters keep them.
-- **Certificates list the check-in sessions the holder was at**: `getCertificate` returns the
-  names of the conference's scanner sessions the holder was scanned at (`certificateSessions`) and
-  signs them into the optional `a` claim (a list of names), so the PDF and `/validateCertificate`
-  show the same list. A certificate never mentions a session someone missed, not even in its
-  signed data. Participant care takes a session
-  off the certificates on the scanner page (`attendanceSession.showOnCertificate`, set by
-  `setAttendanceSessionOnCertificate`).
-- **A scanner session's name is unique in its conference**, ignoring case
-  (`attendance_session_conference_id_occasion_key`): several devices scanning for the same occasion
-  join one session rather than starting their own. Starting or renaming to a taken name answers
-  `CONFLICT`; the scanner sends the first device back to the form, and a session started offline
-  under a taken name keeps its scans until it is renamed, then sends them. An ended session is
-  scanned in again by reopening it (`reopenAttendanceSession`, the "Reopen" button in the session
-  table), never by starting a new one of the same name; its earlier scans stay.
-
-#### 6. Assignment
-
-- **A role is one row of `conference_role`**: a nation, a non-state actor or a custom role for
-  single participants (`kind`). Everything naming a role - `delegation.assignedRoleId`,
-  `singleParticipant.assignedRoleId`, `roleApplication.roleId`, the single participants' wishes,
-  the draft's `roleId`s - is one foreign key to it, which also ties the role to its conference.
-  Nations are global reference data; a conference offers one while a committee seats it
-  (`committee_to_role`), and `setCommitteeNationSeat` keeps the nation's role row with its seats.
-  A nation row carries only `nationAlpha3Code`; `#lib/helpers/conferenceRole` counts a role's seats
-  (`roleSeats`) and splits a selected role into its nation or non-state actor (`splitRole`).
-
-- **Draft, apply, release - three separate things.** The team plans in draft tables
-  (`assignmentReview`, `assignmentUnit` + `assignmentUnitMember`, `assignmentSingleRole`,
-  `assignmentWeights`) that hold only _changes_ on top of the live registrations: a delegation
-  without a unit keeps what it has; a unit without members is "this whole delegation gets that
-  role"; units with members are the parts of a split; a unit with a `sourceSingleParticipantId`
-  turns a single participant into a delegation. Every row cascades with the registration it points
-  at, so withdrawn applications drop out on their own.
-- **One pure model, used on both sides.** `#lib/assignment/state.ts` turns live rows + draft into
-  `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
-  dissolved delegations, the errors that block it), `weights.ts` what the weights make a seat
-  cost. The board in `team/assignment/` and `applyAssignment`
-  (`src/api/handlers/assignment/applyDraft.ts`) both go through them, so the preview is what gets
-  written. The Hungarian matching runs only on the server (`#api/handlers/assignment/autoAssign`,
-  only roles with _exactly_ as many free seats as the group has members; the singles' on a worker
-  thread, `matching.worker.ts`). Applying moves `delegationMember` rows instead
-  of re-creating them and clears the draft (ratings and weights stay); supervision and statuses
-  hang on the person's `conferenceParticipant`, so they survive either way.
-- **The tabs never read a whole conference, and the backend does the sorting.** A conference can
-  hold more applications than a list query returns (1000). `team/assignment/board.ts` reads
-  the draft with the applications it touches (each unit and planned single role brings its source
-  row and review), the applications that hold a role (`fetchSeatedApplications`), and joins them
-  with `seatedFrom`: enough for the roles, the seat counts and the plan of applying. Nothing is
-  asked for by the draft's ids, so a move arrives as one live update; a query keyed by them kept
-  the page's update pending after every move, and a second move in that window left a card
-  stranded in the pool. The delegation pool is asked for exactly as shown: filtered by
-  `delegation.memberCount` (kept by a trigger on `delegation_member`), the role and the exclusion,
-  and a search, in tiers (`tieredPage`): pinned (required) ones first, then the rated ones, each by
-  rating (read through `assignmentReviews`), then the rest by id, a page
-  at a time (`PoolPages`, loaded imperatively; `PoolList` asks for the next page as it scrolls).
-  The size tabs come from per-size `delegationsCount`s that ignore the draft
-  (`poolCountsBesidesDraft` takes the touched delegations out). Pages are copied out of the query
-  results once and never re-read.
-- **Required applications.** The sighting marks an application as one that must get a seat
-  (`assignmentReview.required`, never together with `disqualified`). The automatic distribution
-  (`autoAssign` / `autoAssignSingles`) seats it before everyone else whenever a role fits
-  (`boostRequired`: a row bonus larger than the rest of the matrix can differ, so its choice of
-  role still follows its wishes). The summary checks every required application of the conference,
-  not only those on the board (`requiredWithoutSeat`, `team/assignment/finish/seatChecks.ts`), and warns
-  on the page and in the apply dialog; it also warns when applying would leave no seat free
-  (`seatOccupancy`), since a few free seats are what the waiting list fills later. Both only warn.
-- **The board keeps its size and filter out of SvelteKit's navigation.** `delegations/+page.svelte`
-  holds them as state and mirrors them into the URL with a shallow `goto` on the next task: a
-  navigation or a `page` write landing while the board's async loads are pending trips Svelte's
-  "Batch has scheduled effects" invariant (5.57.1).
-- **Release is only visibility.** `conference.assignmentReleased` decides whether participants
-  and supervisors see roles. `setAssignmentReleased` sets it, from the release card on the
-  assignment's finish tab (`ReleaseDialog.svelte`), and sends nothing: the page then offers the
-  result mails (`ASSIGNMENT_KINDS`) through `EmailPrompt`, as it does after applying a released
-  assignment. Until then their read rules mask the delegation's and the single
-  participant's `assignedRoleId` and the member's `assignedCommitteeId`
-  (`src/api/services/authHelper/rules.ts`, two rules per participant-side ability:
-  `maskedUntilRelease` for every row, and one for the rows of released conferences, `releasedIds`). Nothing but those rules is needed: rumble ≥ 0.26
-  follows the masks. A relation backed by a masked key (`assignedRole`, `assignedCommittee`, …)
-  resolves to nothing, the relations pointing back (`conferenceRole.assignedDelegations`,
-  `committee.delegationMembers`, …) list only rows exposing their key, and `where` / `orderBy`
-  arguments only match rows exposing the column they name - so a participant cannot find a role
-  by filtering or sorting either. Do not hand-write any of this in a handler. The dashboard shows
-  `AssignmentPending` instead of a rejection, and the mail sync keeps role lists back. Anything new
-  that reveals a role to participants has to respect the flag; `e2e/authorization/assignment-release.spec.ts`
-  checks the known paths.
-- **What the seated share goes by `seatedConferenceIds`** (`authHelper/rules.ts`): the conferences
-  that have released their assignment and in which the caller's delegation, the caller as single
-  participant or someone they supervise holds a role. The paper hub's "conference papers" are
-  that: every submitted paper of the conference, of each only the latest submitted version
-  (`isLatestSubmittedVersion`), without its status (the reviewers' verdict) and author, and of the
-  delegation that wrote it only which role it holds. Drafts, earlier versions and reviews stay with
-  the author, the delegation, its supervisors and the paper team.
-  `e2e/authorization/conference-papers.spec.ts` pins it down.
-
-#### 7. Possible duplicate accounts
-
-- **Why:** someone with a care note (`user.globalNotes`) who signs up again with a new account
-  would shed it. The plausibility page lists accounts that may belong to the same person as an
-  account from before, for participant care to decide (`OPEN` / `CONFIRMED` / `DISMISSED`).
-- **Matching** is pure, in `#api/handlers/possibleDuplicate/duplicateMatching.ts`: names are transliterated to Latin
-  letters (`any-ascii`, any script) and compared per part with Jaro-Winkler; birthday, email local
-  part, phone, emergency numbers and address add weights, none of them enough alone. Only accounts
-  sharing a blocking key are compared. `possibleDuplicateService.ts` loads the accounts and stores the
-  pairs: the pool is everyone who attended a conference that is over or has a care note; a
-  conference scan (button on the page) and every profile change (`updateUser`,
-  `updateUsersIdentityInfo`) compare against it, a chunk at a time so the event loop keeps
-  turning. A re-scan refreshes scores but never a decision.
-- **Visibility:** the pair is readable by whoever manages one of its accounts; a user read rule
-  lets participant care read the _other_ account's identity and care notes (no contact details)
-  while the pair is open or confirmed; once it is dismissed the name stays (the page lists dismissed pairs, so a dismissal can be undone) and the notes are withheld. `e2e/authorization/possible-duplicates.spec.ts` pins it
-  down.
-- **Confirmed means the notes follow the person.** The user card shows the care notes of accounts
-  confirmed to be the same person (`LinkedAccountNotes`), and the sighting's red warning counts them
-  with the person's own (`careNotesOf` in `#lib/helpers/linkedNotes`; select
-  `confirmedLinkedAccounts` wherever a note is shown). An open pair is only a suspicion and carries
-  nothing over.
-- **Confirmations are transitive, and stored that way.** A is B and B is C makes A and C a pair
-  too: `decidePossibleDuplicate` pairs every account of a person with every other one
-  (`reconcileLinks`, `possibleDuplicate/sameLinks.ts`), marking the pairs nobody decided
-  `inferred`, and takes them back when a decided one is reopened or dismissed (a pair only the
-  links made is deleted, one the matcher found goes back to open). So one account's confirmed
-  pairs are always the whole person, and the notes, read rules, the badge and the "Konferenzen"
-  tab (the linked accounts' conferences) need no chain walking. A confirmation that would make one
-  person of a dismissed pair answers `CONFLICT`. The plausibility page lists open pairs, then the
-  confirmed ones, then the dismissed.
-- **The dev seed replays the ways a returning person's data can differ**
-  (`seed-dev/duplicateScenarios.ts`, one scenario per case): spelling, umlauts, name order, a
-  dropped second given name, typos, another script, an email variant, a nickname with a reformatted
-  phone, the parents' number, a new family name in the same household, and the limits - what is not
-  found (a new name and address with only the parents' number kept), siblings, a shared birthday,
-  a common name - plus every decision state (open, confirmed, dismissed, and pairs gone stale after
-  a profile correction), an account with three generations, a note-only earlier account (waiting
-  list), and a returning supervisor. The stored pairs are what the matcher finds for the scenario
-  accounts, so `duplicates.test.ts` fails when the matcher and the seed drift apart. The earlier
-  accounts took part in "Seed 8 · Post" or in "Seed 10 · Other organizers", where no dev team
-  member is on the team: there participant care reads them only through the pair. The new ones
-  are in "Seed 2" - sign in as `dev-team-care` and open its plausibility page.
-
-#### 8. Schools
-
-- **A school is one row of `school`, shared by every conference** (`schema/schools.ts`), and
-  **only people have one**: a person's own school in a conference is
-  `conferenceParticipant.schoolId`; someone on the waiting list, who has no participant row yet,
-  has `waitingListEntry.schoolId` (both `schoolRef()`, `set null` on delete). Delegations, single
-  participants and supervisors keep no school. Every mutation that sets one takes the pair
-  `schoolId` / `schoolName` (`SchoolChoice`): an existing school, or a name that
-  `resolveSchoolChoice` (`#api/handlers/school/schoolService.ts`) finds (ignoring case and
-  spacing) or creates. Both left out keeps the school, both `null` removes it - **a school is
-  always optional**, so `applicationTextsComplete` does not ask for one.
-- **Where it is set:** applying stores the school the applicant names on their participant row
-  (`createDelegation`, `createSingleParticipant`, `createConferenceSupervisor`); joining a
-  delegation (`createDelegationMember`) takes the newcomer's own, which the join form fills in
-  with the head delegate's (`previewDelegation.headDelegateSchoolId`). Seating someone from the
-  waiting list carries the entry's school over. Afterwards `setParticipantSchool` changes it:
-  without an `id` the caller's own (`MySchool.svelte` on the dashboard stages, apart from the
-  application texts: every member of a delegation names theirs), with one participant care
-  correcting anyone's (`ParticipantSchoolSection` in the user card). The assignment never
-  changes it: a delegation merged from several schools keeps each person's.
-- **Reading it:** `conferenceParticipant.school`, and for whoever can read a registration
-  `delegationMember.school`, `singleParticipant.school` and `conferenceSupervisor.school`, read
-  relations through the participant row (only participant care reads participant rows
-  themselves). A delegation's schools are its members': `delegationSchoolsLabel` /
-  `distinctSchoolNames` (`#lib/helpers/delegationSchools.ts`), most common first.
-- **Visibility:** everybody reads a school's name and place (applicants pick from
-  `searchSchools`); address, contact and the team's `notes` are masked except for participant
-  care and project management of any conference, who read every school in full, and
-  `schoolMetrics` (per conference: registered, applied, seated, attended, from the waiting list)
-  across every conference: how long a school has been with us is the point. Only those of a
-  conference where someone has it as their own (or waits with it) edit it (`updateSchool`,
-  `canUpdateSchool` for the page) and merge duplicates (`mergeSchools`, which repoints the
-  participant rows and waiting list entries of all conferences and deletes the sources).
-  The team's schools page (the `schools` table of the table engine, see "Data tables") and the
-  command palette list every school; only the people list on a school's page is the conference's.
-- **School rules** (`team/assignment/schoolRules.ts`, pure; they only warn, never block):
-  - **Decided together:** the applied students of one supervisor from one school are a group
-    (the `collectiveGroups` query, `#api/handlers/collectiveGroup/`, worked out on the server so
-    no list cap cuts it short, and not live; someone with two supervisors is in two groups,
-    without one in none). A delegation is decided on whole, so one supervised member brings in
-    every member of it from the same school: linking only the head delegates does not keep a
-    school's delegations under the limit. It answers ids only: the supervisors' names come from a live query of
-    the groups shown (`fetchSupervisorNames`), behind the user read rules. Up to `conference.maxCollectiveGroupSize` (default 16, null switches it off) they all get
-    a seat or none: the board, the summary and the apply dialog warn about a group the plan seats
-    only partly, or the sighting excluded only partly (`collectiveGroupProblems`). Bigger groups
-    get nothing special, and the automatic distribution ignores the rule.
-  - **Guaranteed seats abroad:** `school.isForeignSchool` (set by participant care on the school's
-    page) marks an Auslandsschule. Its people in applications marked required count against
-    `conference.maxGuaranteedSeatsPerForeignSchool` (default 12, null for none), each for their
-    own school (`guaranteedSeatsAbroad`); the sighting card shows the count as it marks, the board
-    and summary warn past it. All Auslandsschulen together count against
-    `conference.maxForeignGuaranteedSeatsPercent` (default 20, null for none) of the conference's
-    seats (`conferenceCapacity`, every role's; `guaranteeShare`), warned about the same way.
-  - **Mixed results** (not a rule, a quiet note on the summary only): a school some of whose
-    applicants the plan seats and others not (`mixedSchoolOutcomes`, `team/assignment/finish/schoolOutcomes.ts`,
-    from the `schoolApplicants` query beside `collectiveGroups`).
-  - `fetchSchoolRules` (`team/assignment/board.ts`) is the data for both, `SchoolRuleWarnings`
-    and the sighting's `SchoolRuleNotes` show them. `schoolMetrics`, the schools page and the
-    statistics (`statistics_schools`, delegation members and single participants per school) count
-    people too.
-- The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools of the people in a
-  conference's applications; a suggestion's variants point at schools, and merging goes through
-  `mergeSchools`. The sighting's school filter matches an application when any of its people has
-  that school.
-
-#### 9. Automatic emails
-
-- **Everything about mails lives in `#api/handlers/email/`**, sending (`mailTransport.ts`) and the
-  templates (`templates/`) included. The resolvers call `emailService.ts`, whose header lists the
-  focused modules beside it: the sweep, the settings (switches, texts, footers), the preview, a
-  person's mails, the mails sent where they happen, and rendering one mail.
-- **Every mail follows from state, not from an event.** `dueEmails` (`#api/handlers/email/`) is
-  pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
-  conference owes - during registration the head delegate's entry code, a welcome to whoever joins
-  a delegation, word to its earlier members of each newcomer (all only while the delegation has not
-  applied), a confirmation of the application (until the release) and of the waiting list entry,
-  then acceptances and rejections once the assignment is released, seats from the
-  waiting list, postal/payment unlocked, received or with a problem, the reminders before the
-  application deadline and the conference, a reminder to everyone seated who has not answered a
-  published survey before its deadline (`SURVEY_REMINDER`, keyed by survey and deadline, so a
-  moved deadline reminds again), certificates, students linked to a supervisor (and the student told of the supervisor), a new
-  survey to everyone seated who has not answered it, and
-  each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
-  reviewer), and a welcome to everyone who joins the team (`TEAM_WELCOME`, keyed by the membership,
-  to a `team` member rather than a participant: a `DueEmail` is addressed to its `recipient`, and
-  carries `person` or `teamMember`). The rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
-  there; the e-mail page explains them in the same words.
-- **Nothing sends because something happened.** A mutation only changes what `dueEmails` owes;
-  the mails go out when the team sends them (`sendOpenEmails`, per kind, in the background) or, for
-  the kinds switched to automatic, when the `send-emails` job runs. A team action that makes mails
-  due offers them right after: `createEmailPrompt` + `EmailPrompt` (`#lib/components/email/`) ask
-  `openEmailCounts` for the kinds the action can make due (`ASSIGNMENT_KINDS` after releasing or
-  applying, `settingsEmailKinds` after saving the conference settings) and show "send now" or
-  "later" to whoever may manage the mails. Later is the e-mail page, where every kind shows what
-  it owes with "send now" and "skip" (`skipOpenEmails`, marks them `SKIPPED`). Changes to one
-  person (a status, a review, a supervisor link) prompt nothing: their mails wait on the e-mail
-  page, in the user card, or for the job.
-- **A conference is read a page at a time** (`emailSnapshot.ts`): participants, then the waiting
-  list, then the team, 500 rows a page by `(conference_id, id)`, each page with only the people
-  around it the asked-for kinds read (`neighbours`: students always, co-members and supervisors
-  only for the kinds about them) and only its own reviews and survey answers. `dueEmails` works
-  out mails for a page's `people` alone, never its neighbours. `sendDueEmails` answers a cursor
-  to go on from; the user card reads one person (`loadUserSnapshot`). A page holds only rows that
-  may be owed a mail: `emailCandidates.ts` has a SQL predicate per kind (a superset of its rule,
-  never a subset, minus what the log closed), and what depends on the conference alone gates a
-  kind in TypeScript. **A change to a rule in `dueEmails` needs the same change there**, or the
-  sweep stops reading the people it now owes.
-- **`emailLog` makes each automatic mail happen once.** The sweep (`emailSweep.ts`) claims a mail
-  by writing its row, unique per conference, kind, person and `subjectKey` among the `AUTOMATIC`
-  rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
-  and instances never double-send; failures are retried three times, a claim left by a dead
-  process frees up after 15 minutes. Every row (sent, failed, skipped, by hand) is shown in the log.
-- **One mail per recipient and kind and sweep** for the kinds a person can owe several of
-  (`BUNDLED_KINDS` in `#lib/helpers/emailKinds.ts`: students, members, supervisors linked,
-  paperwork problems, surveys of one deadline). `bundleEmails` (`emailBundles.ts`) groups them;
-  each keeps its own log row, all settled by the one delivery, and the text names them all
-  (`Intl.ListFormat` into the kind's placeholder), so those texts are worded to read right for one
-  name or several.
-- **Every mail goes out one way** (`emailDelivery.ts`): rendered in the recipient's language and
-  the conference's words (`loadWording`, `wordingIn`), its log row written first and settled by
-  `deliver`. A mail the team sends by hand (`sendByHand`) is a `MANUAL` row of its own with
-  `sentById`, so it can be sent any number of times.
-- **The team sends a person's mails by hand from the user card** (`OwedEmails.svelte` in the
-  formalities tab, participant care): `personEmails` lists what `dueEmails` says the person is owed
-  right now, switched on or not, with the latest try; `sendPersonEmail` sends one of them, and
-  refuses anything the person is not owed. With `anyTimeBefore`, `dueEmails` owes the reminders
-  (`isReminder`) any time before their date rather than only in their window, as long as what they
-  remind of still holds. A mail sent by hand counts as sent for the sweep (`stillOpen`), except a
-  reminder: sending one early leaves the automatic one due.
-- **Automatic per conference and kind, off by default** (`conferenceEmailSetting`, the "send
-  automatically" switch), on the team's e-mail page (`team/emails/`, under "Kommunikation",
-  participant care: `canManageEmails`; the settings' old `?tab=emails` links redirect there). The
-  switches and the pace wait for the page's save button (`emailChanges.svelte.ts`) and show up in
-  its change preview (the settings' `ConfigSave`); confirming saves them through their own mutations. Switching a kind on asks whether
-  the people it already applies to get it with the next run (`notifyExisting`) or are marked `SKIPPED`.
-- **The texts are the conference's to change** (`conferenceEmailText`, unique per conference, kind
-  and locale, since a mail goes out in the recipient's language). A text is a subject, a heading
-  and a body with `{placeholders}`; `#lib/helpers/emailTemplates.ts` holds the defaults (built
-  from the `emailAuto…` messages), which placeholders each kind offers; the API fills them in
-  (`fillEmailText`, `#api/handlers/email/emailText.ts`). Only changed fields are stored: an empty one falls back to the
-  default, and a field saved unchanged is stored as none so it follows when the default improves.
-  The greeting and the button stay fixed; `{list}` alone in a paragraph places a kind's list.
-  `emailPreview` renders a draft (`draft: true`) in any locale, which is the editor's preview.
-- **One footer under every mail** (`conferenceEmailFooter`, per conference and locale,
-  `setConferenceEmailFooter`): paragraphs with `{conference}` (`emailFooterParagraphs`), drawn by
-  `EmailLayout` above the fixed small print in the automatic and the team mails alike. A language
-  without one gets none; `emailPreview` takes a draft `footer`, which is the footer editor's preview.
-- **The team invitation shares the texts, not the switch.** Its link carries a token only the
-  inviting request knows (the database keeps the hash), so `TEAM_INVITATION` (`ALWAYS_SENT_KINDS` in
-  `#lib/helpers/emailKinds.ts`) is sent by hand where it happens (`#api/handlers/email/teamInvitationEmail.ts`)
-  and always goes out; the page lists it without a switch so its text can be changed like any other, and
-  `setConferenceEmailEnabled` refuses it. `dueEmails` never owes it. It is logged like every mail
-  sent by hand, without a `userId` (the invitee may have no account): the row holds the address,
-  the invitation's id as `subjectKey` and the inviter as `sentById`.
-- **A found badge is the other mail sent where it happens.** People lose their badges, which end up
-  at participant care; the "Badge found" button next to the access card number in the user card
-  (`notifyBadgeFound`, `#api/handlers/email/badgeFoundEmail.ts`) sends `BADGE_FOUND` right away.
-  Nothing about the badge is stored, so it is in `ALWAYS_SENT_KINDS` too: every press sends it
-  again, logged as sent by hand with the time as `subjectKey`.
-- **A submitted paper is the third.** Handing a version in on an agenda item (`handsVersionIn`:
-  `createPaper` / `updatePaper` with `SUBMITTED`, a resubmission becomes `REVISED`) tells the
-  committee's chairs and consultants on the paper team right away (`announcePaperSubmission`,
-  `#api/handlers/paper/paperSubmissionNotice.ts`, in the background after the commit):
-  `PAPER_SUBMITTED` (`#api/handlers/email/paperSubmittedEmail.ts`, in `ALWAYS_SENT_KINDS`, logged
-  as sent by hand without `sentById`, the version as `subjectKey`) and a Slack message
-  (`tellPaperOnSlack`, once per version). Whether a member gets either is their own choice under the
-  `COMMITTEE_PAPERS` topic (see "Team notifications"), never a conference switch. Both name the
-  committee, agenda item, type, version, status and the delegation's role, never the author or the
-  text. Introduction papers reach no committee and tell nobody. Mails sent where they happen render
-  through `renderNoticeEmail` (`emailDelivery.ts`). Everything else, the team welcome included, is
-  an automatic mail.
-- **Two triggers, one path:** the team's `sendOpenEmails` (`sendOpenEmailsInBackground`, one at a
-  time per conference, any kinds) and the `send-emails` job, which runs the sweep itself every few
-  minutes, for every conference with a kind switched to automatic, reminders included; both go through `sendDueEmails`. It keeps to the conference's
-  `emailsPerSecond` (the "sending speed" on the e-mail page, `setConferenceEmailsPerSecond`, empty
-  for no limit): `emailPacing.ts` spaces the sends, reserving each slot in Redis (a Lua script on
-  Redis's clock, `email-pace:<conferenceId>`) so every sweep on every instance shares the pace,
-  in memory without Redis or while it is unreachable; a paced round is cut to a minute's worth. The app renders the mails (one template, `NotificationEmail.svelte` on
-  `#api/handlers/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`, which
-  reads its colours, radius and font from the corporate identity's CSS (`?raw`; vitest lets those
-  files through with `test.css.include`); values per kind in
-  `emailContent.ts`) in the recipient's locale; links use the origin of the request that
-  started the sending, or the job's `APP_URL`.
-
-#### 10. Background Tasks and Jobs
-
-- **Jobs** (`src/jobs/`) are one-shot commands of the `delegator-jobs` CLI (citty), run by a
-  scheduler outside the app (a cron job, a Dokploy schedule); nothing inside the app runs on a
-  timer. The jobs image idles (`sleep infinity`) so the scheduler can exec `delegator-jobs <command>`
-  into it; a one-off run is `docker run --rm <image> delegator-jobs <command>`. A new job is a file with a `run…` function and a sub-command in `cli.ts` that imports it
-  when it runs. Schedule:
-  - `refresh-statistics` - every few minutes. The app only reads the views; without the job they
-    go stale (`bun run db:seed:dev` refreshes them once).
-  - `mail-sync` - every 15 minutes; needs `LISTMONK_API_URL`, `LISTMONK_API_USER`,
-    `LISTMONK_API_KEY`
-  - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
-  - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
-    `--dry-run`; needs the `S3_*` variables
-  - `send-emails` - every few minutes; sends what is due of the kinds switched to automatic.
-    Needs `DATABASE_URL`, the app's `SMTP_*`, `REDIS_URL` when the app has one (the shared
-    sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
-    the mails link to
-
-#### 11. User manual, help and tours
-
-- **The manual is markdown in the repository**: `docs/de/` and `docs/en/` (`docs/review/` holds
-  internal notes and is not part of it), served publicly at `/docs` (`src/routes/docs/`) in the
-  landing page's frame. A page needs a `title` in its frontmatter; the sidebar order lives in
-  `#lib/docs/nav.ts`. A page missing in English falls back to German with a notice. Links between
-  pages are relative (`./dashboard#payment`) and keep the reader's locale prefix; a section other
-  pages or the help map link to carries an explicit id in both languages
-  (`## Zahlung {#payment}`), so German and English headings share it.
-- **Everything generic is MUNify CHASE's, shared through `@deutschemodelunitednations/docs-kit`**
-  (repository `munify-docs-kit`): the markdown renderer (admonitions as `:::tip Title … :::`,
-  `{#id}` headings, `shot:` screenshots), the docs layout and page components, the help
-  dropdown, the driver.js tour runner, the guard tests and the screenshot capture. What is
-  DELEGATOR's lives in `src/lib/docs/` and `scripts/docs-screenshots/`. Improve the kit rather
-  than working around it here: a GitHub release `v<version>` of `munify-docs-kit` publishes it to
-  npm, then bump it here and in CHASE.
-- **Every route can point at its manual page.** `routeHelp.ts` maps `RouteId`s to a page and
-  section (`'user-manual/team/assignment#sighting'`) and optionally a tour, so a renamed route
-  breaks the typecheck. `helpForRoute` (`#lib/docs/help.ts`) turns it into a link (the manual's
-  start page for routes without an entry), which the header's help button
-  (`#lib/docs/HelpButton.svelte`), the footer, the team navigation and the command palette
-  (a `manual` result, opened in a new tab) all use. They read `page.route.id` only.
-- **Tours** are `*.tour.ts` files in `#lib/docs/tours/`, anchored on `data-tour="…"` attributes
-  (or the `tourAnchor` prop of `DashboardSection`). A step whose anchor is not on screen is
-  skipped. The conference dashboard picks the registration tour when the registration choice is
-  on screen, the participant tour otherwise. Messages are `tour…` keys.
-- **Screenshots are generated, never taken by hand.** Reference one as
-  `![alt](shot:team/assignment-sighting)` and list it in `scripts/docs-screenshots/shots.ts`
-  (persona, path, optional viewport, wait or clip). `bun run docs:screenshots [id-prefix]` loads
-  the dev seed into a `delegator_docs` database, starts a dev server and captures every shot in
-  German and English, light and dark, into `static/docs-assets/screenshots/` (stop your own dev
-  server first; it needs the dev bucket from `dev:docker`). `DOCS_DATABASE_URL` and
-  `DOCS_SKIP_SEED=1` reuse an already seeded database, `DOCS_CHROMIUM` points at another
-  Chromium. Shots only look, they never change data. The `Docs screenshots` workflow reruns it
-  on main and opens a PR.
-- `src/lib/docs/docs.test.ts` fails on a page missing from the sidebar or a language, broken
-  links or sections, missing or unused screenshots, help targets that do not exist and tour
-  anchors no component defines. **When a feature's UI changes, update its manual page in both
-  languages, keep the `data-tour` anchors and rerun the affected screenshots.** Manual prose:
-  concise, no semicolons or dashes, German in du-form and gender-inclusive like the UI.
-
-#### 12. MCP server for AI assistants
-
-- **Why:** AI gets used anyway; rather than people downloading participant data to paste into
-  one, the team connects an assistant to `/mcp`, which works with the caller's own rights and
-  never hands it personal data. Setup and the tool list: `docs/mcp.md`.
-- **Auth:** OAuth with the OIDC provider as authorization server; `/mcp` is a protected resource
-  (`/.well-known/oauth-protected-resource/mcp`). `#api/mcp/auth` checks the bearer JWT against the
-  provider's keys with `MCP_RESOURCE` as audience; `sub` is the user. Unset `MCP_RESOURCE`, the
-  server is off. Locally, `bun run mcp:token <dev account>` mints a token (oidc-mock has no client
-  registration).
-- **Confinement:** every tool call names a conference; `assertCanUseMcpIn` (`mcpPermissions.ts`)
-  refuses unless it switched MCP on (`conference.mcpEnabled`, `setConferenceMcpEnabled`, project
-  management) and the caller is on its team. The call then runs with `locals.mcp` set, which
-  `#api/context` turns into `ctx.mcp`: no system role applies, `isTeamMemberOf`
-  (`authHelper/rules.ts`) matches only that conference - a system admin as holding every team role
-  there - and `callerUserId` answers nothing, so the rules about the caller's own part (their
-  registration, co-delegates, supervisors) grant nothing: in a conference they are on the team of
-  they take part in no other way, so those could only reach other conferences. Every team rule
-  goes through `isTeamMemberOf` / `teamConference`, so a new one must too.
-- **Privacy is default-deny.** `src/api/mcp/classification.ts` classifies every leaf field of the
-  schema as `visible`, `aggregate` (counts by a redacted attribute: `<5` below five) or `redacted`;
-  `redact.ts` rewrites every answer by it, following the operation's selection. A field not listed
-  reads `[redacted]` and `classification.test.ts` fails - **a new column or object field needs
-  an entry there**. `operationGuard.ts` refuses `where` / `orderBy` / rumble `search` touching a
-  non-visible field, and any free-form argument not in `ALLOWED_FREE_ARGUMENTS`.
-- **Mutations opt in** with `extensions: mcpTool({ … })` next to their definition
-  (`#api/mcp/mcpTool`); `mutationTools.ts` generates the tool from the field: person scalars are
-  never passed, `String` / `JSON` arguments only when `textArguments` declares them to be about
-  things, `outward` / `outwardArguments` make the tool preview until `confirm: true`. A mutation
-  without the marker is unreachable through MCP. Writing notes about people stays in the UI.
-  Saved views opt in as shared views only; the state an assistant writes is checked by
-  `viewStateGuard.ts`, which classifies every column of the team tables like `classification.ts`
-  does fields (a new table column needs an entry there): only visible columns are filtered, sorted
-  or grouped by, and only known column ids, operators and options pass.
-- **Reads** are `graphql_query` (one read-only query, guarded, redacted), `graphql_schema`, and the
-  task tools in `curatedReads.ts` (pure, tested). Every call is written to `mcp_audit_entry`
-  (shown on `team/ai-access`); one about a conference the caller may not use is refused unlogged.
-
-#### 13. Data tables and saved views
-
-- **The team's tables are one `DataGrid`** (`#lib/components/dataGrid/`, see CLAUDE-UI.md), after
-  the member table of the Mitgliedshub: a filter builder (conditions and groups, AND / OR, one
-  level of groups), sorting by several columns, grouping by up to three with collapsible groups,
-  columns to show, move and resize, pages, selection and export, and saved views.
-- **One model, shared** (`#lib/dataGrid/`, pure, unit tested): the state a view and the URL hold
-  (`stateSchema.ts`, checked by zod in the browser and the API alike), the operators per column
-  type (`operators.ts`, `dateConditions.ts` resolving relative dates for both engines), grouping
-  (`grouping.ts`: the text naming a group is the same in the browser and in SQL), the view logic
-  (`views.ts`: which view opens, what the menu offers) and the engine for rows held in the
-  browser (`localEngine.ts`). `conditionCases.ts` are the cases both engines are tested against;
-  the SQL side runs them against a real Postgres when changed (`conditionSql.test.ts` checks the
-  generated SQL).
-- **The table engine** (`#api/handlers/dataTable/`) answers the big tables - participants, waiting
-  list, team members, schools (`DATA_TABLE_KEYS`): `dataTablePage` (one page of row ids, the total,
-  and for `exposeValues` sources the rows' values) and `dataTableGroups` (one level's groups with
-  their counts). A table is a **source** (`sources/`): one `select` with an `id` and a column per
-  column id (`#lib/dataGrid/tables/…` holds their ids and types, shared with the page), and the
-  engine compiles filter, search, sort, group path and buckets against it (`sql/`). **What the
-  caller may not read never leaves the source**: a teammate's address is `null` for whoever may not
-  read it, so filtering or grouping by it reveals nothing. Who opens which table is
-  `DATA_TABLE_PERMISSION` (`dataTablePermissions.ts`), the page's own team permission. A new
-  table is a source, an entry in `DATA_TABLE_KEYS`, `DATA_TABLE_SOURCES` and
-  `DATA_TABLE_PERMISSION`, and its metas in `#lib/dataGrid/tables/`. Incomplete conditions and
-  columns a table does not have count for nothing, in either engine.
-- **Saved views** (`table_view`, `#api/handlers/tableView/`) are personal (`ownerUserId`, only the
-  owner sees them, not even a system admin) or shared (the conference's team reads them), and
-  belong to one conference or, without `conferenceId`, to every one. Shared views of a conference
-  are changed by the team permission `manageTableViews` (project management and participant care),
-  global shared views by system admins only; creating any view of a table needs that table's
-  permission. A shared view can be its conference's (or the global) default
-  (`setTableViewDefault`); everyone can pick their own default (`table_view_default`,
-  `setMyTableViewDefault`), which wins. `copyTableView` publishes a personal view as a shared one
-  or copies a shared one as one's own. A view's state is checked against `tableStateSchema` on
-  write; one that no longer fits opens as the table's base view. A default names a view of its own
-  conference or a global one (`table_view_default_same_conference`), and a view never moves to
-  another conference. `e2e/authorization/table-views.spec.ts` pins it down.
-- **Some global views ship with the app** (`PRESET_TABLE_VIEWS`, `#lib/dataGrid/tables/presetViews.ts`):
-  the participants' "Warteliste" and "Offene Probleme". The `table_view_presets` migration
-  inserts them, the dev seed again after its reset; `presetViews.test.ts` fails when no migration
-  inserts a preset as the list has it. A new preset is an entry there and a migration of its own.
-- **A resolver that reads through an ability, writes, then reads again calls
-  `await refreshCallerAbilities(ctx)`** before the second read: rumble resolves relational rules,
-  and the rules read the caller's facts, once per root field, and the written row is not in that
-  snapshot (the view mutations and every registration mutation answering with its row do).
-
-#### 14. The CHASE link
-
-- **One MUNify CHASE instance can be linked to this one**, system-wide (`docs/plans/chase-link.md`,
-  the same plan as chase's `docs/plans/delegator-link.md`). **The link is configuration**, through
-  the OIDC provider both sign people in at, so a person's id is the same in both: `LINK_REMOTE_URL`,
-  `LINK_REMOTE_RESOURCE` and `LINK_RESOURCE` (or `OIDC_RESOURCE`), with the M2M app
-  (`OIDC_M2M_CLIENT_ID`), which gets tokens for chase's API by client credentials asking for the
-  `delegator` scope (`chaseLink/linkAuth.ts`, copied into chase). There is no pairing; the
-  `dashboard/chase-link` page only shows the state. `instanceLink` holds that state, one row,
-  written at start-up (`syncLinkRow`); removing the configuration ends the link at the next
-  start.
-- **Chase reads through link read rules**, not through dedicated queries: it calls the API with a
-  token in the `x-munify-link-token` header, which `linkHandle` (`hooks.server.ts`) checks once:
-  for this API (`LINK_RESOURCE`), granting the `chase` role by the role claim or as a scope. The
-  context then holds `chase` like any system role (never from a session), `isLinkedChase` is
-  `ctx.hasRole('chase')`, and `linkedChase(grant)`
-  (`authHelper/rules.ts`) grants it rows of mirrored conferences (`MIRRORED_CONFERENCE`, and
-  `RELEASED_MIRRORED_CONFERENCE` for anything about participants) with only the listed columns.
-  A new field chase needs is a column in such a rule.
-- **Delegator reads chase back with its link worker** (`#api/handlers/chaseLink/linkWorker.ts`):
-  one app process at a time (a Postgres advisory lock), live queries through the generated chase
-  client (`chaseLink/chaseClient/`, from chase's `schema.graphql` via `bun run link:client`). It
-  keeps chase's tables of each conference in memory (`liveTable.ts`: a live query per page of
-  1000, so a change answers with the rows of the one table it touched, and nothing is read again)
-  and works out from them the adopted resolutions, rendered here into `resolution` (`resolutionSync.ts`, by `chasePaperId`;
-  not deletable while linked; only the texts to render are read). **A list hears changes to the
-  rows it shows, not of a row coming into its filter**: a table filtered by a column that changes
-  (final papers) is asked again when another table names a row it lacks. The worker starts from
-  the `init` hook; chase's worker works the same way the other way round. **Presence is not
-  copied**: the attendance import page's `chasePresence` query asks chase's own queries when it
-  is called (`fetchChasePresence`, `chaseLink/presenceMirror.ts`).
-- **"Sync now"** (`chaseLink/linkSync.ts`): `requestLinkSync` (system admins and the linked
-  CHASE; false while unlinked; CHASE has the same mutation) sends the `linkSyncRequested`
-  instance signal (`instanceSignals` in `rumble.ts`, over the subscriptions' Redis), and the
-  instance holding the worker reads everything again as on a reconnect, at most once per
-  `SYNC_SPACING_MS`. `requestRemoteLinkSync` (system admins only, so nothing bounces) calls CHASE's
-  `requestLinkSync` with the link token; CHASE away is a CONFLICT that leaves the sync here alone.
-  `ChaseSyncButton` asks both, on the link page and, for system admins, on the team's CHASE card.
-- **What only exists while linked** checks `fetchActiveChaseLink()` in the UI and the link row in
-  the API: the dashboard's CHASE card, the
-  `CHASE_INTRO_REMINDER` mail (`kindApplies`), the fallback files folded under "advanced".
-- **NSA cards** are signed codes of the kind `nsaCard` (`#lib/signedCode/signedCode`, copied into
-  chase), naming the person, the conference, an expiry and the card number on the participant
-  row (`nsaCardNumber`); `nsaCard/` signs them, `#lib/api/nsaCardsPdf.ts` prints them. Chase's
-  scanner checks them, and the `live` nametags, against `signedCodeKeys`.
-
-#### 15. Messages
-
-- **People of a conference write each other inside the app** (`#api/handlers/chat/`, tables in
-  `schema/messages.ts`), once the conference switched it on (`conference.messagingEnabled`, a
-  feature switch of `updateConference`). A `chat` is `DIRECT` (two seated participants), `DELEGATION`
-  (a delegation's group) or `TEAM` (one participant and a team inbox); `chatMessage` is append-only.
-  Delegation members and single participants take part, supervisors do not.
-- **Participants know each other by role, never by name.** A `ChatContact` (`chatContacts.ts`) is a
-  seated person as role, committee and, among several sharing both, a number (`numberContacts`).
-  A message names its participant author only by `authorParticipantId`; `authorName` is filled
-  where the reader may know it: a team member writing from an inbox, a member of the reader's own
-  delegation group, anybody for participant care. `chat.people` (names and accounts) answers
-  participant care only. Never expose a user row through a chat relation.
-- **Team inboxes are shared** (`chat.inbox`): `PARTICIPANT_CARE`, one per conference, answered by
-  the participant care roles; `CHAIR` and `CONSULTANT`, one per committee, answered by whoever holds
-  that **committee function** (`teamFunction`, `#api/handlers/teamFunction/`, handed out by
-  `manageTeam` on the team members page; in the caller's facts as `teamFunctions`); and
-  `TRUSTED_PERSON`, answered by the conference's trusted persons (see below). An inbox reads
-  as one (`chat.teamReadAt`); a person's reading is `chatRead`. An inbox files a settled chat in
-  its **archive** (`chat.teamArchivedAt`, `setChatArchived`, for whoever answers the inbox): that
-  reads it, the list hides it until asked, and the next message from either side empties the
-  column (`sendMessage`), so the chat is back. The participant is not told (`chat.archived` and
-  `teamArchivedAt` answer the team side only). `inboxReaches`
-  (`#lib/helpers/chat.ts`) says which inbox and person write each other: participant care anybody
-  with a registration, a committee's inboxes the people seated there and those seated without a
-  committee.
-- **What is written to the trusted persons stays with them.** A trusted person is a team function
-  without a committee (`teamFunction.kind = 'TRUSTED_PERSON'`, the switch on top of the functions
-  dialog). Participants reach them at any time while messaging is on: all of them together (a
-  `TRUSTED_PERSON` chat without `trustedUserId`) or one of them by full name (`trustedUserId`;
-  `chatInboxes` names each by their function's id, `trustedPersonId`, never by account, and
-  `chat.trustedPersonName` is the label). The shared chat is read by every trusted person of the
-  conference, a personal one by that person alone (`trustedChats`, `holdsTrustedInbox`): not by
-  participant care, not by a system admin (`adminChats` leaves the inbox out), not by an assistant
-  (`callerUserId`). Nobody learns the participant's name there, participant care included
-  (`knowsPeopleOf`), and a team chat cannot be reported. `chat.trustedUserId` has no relation on
-  purpose and answers only its own person. Anything new that reads chats has to keep this.
-- **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
-  inbox; participant care a chat between participants only while a report is open
-  (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved:
-  `resolveChatReports` settles all of a chat's at once, with an internal note,
-  `chatReport.resolutionNote`). There it gets everybody of the chat by role and name
-  (`chat.contacts`, `chat.people`), the members of a delegation's group included, each with the
-  settled reports there were before about their chats (`earlierReports`). A system
-  admin reads what the team reads, never a private chat. `chatSide` answers how the caller relates
-  to a chat (`PARTICIPANT`, `TEAM`, `REVIEW`); `REVIEW` never writes.
-- **Participant care hides messages, it never deletes them.** While a report of a chat between
-  participants is open, participant care (and a system admin) hides one message
-  (`hideChatMessage`) or everything one person wrote into the chat so far (`hideChatMessagesOf`),
-  with a reason for the team (`#api/handlers/chat/chatModeration.ts`). Hiding is final and keeps
-  the text as evidence: `chatMessage.hiddenAt` / `hiddenById` / `hiddenReason` / `hiddenReportId`
-  (the oldest report open then), and the `chat_message_hidden` migration's trigger refuses changing
-  a message's text, unhiding it or hiding in a team chat. The parties' read rule is split in two
-  (`chatPermissions.ts`): their hidden messages come with `body`, `hiddenReason`, `hiddenById` and
-  `hiddenReportId` masked, so they read a placeholder (`ChatBubble`, `lastMessagePreview`) and
-  cannot filter or search by the text either. `body` is a nullable field for that reason. Once
-  the report is settled and the chat private again, participant care reads what was hidden on the
-  report (`chatReport.hiddenMessages`, `SettledReports`); the record goes with the chat when it is
-  deleted. Nobody is notified of a hiding.
-- **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages
-  through `chat.writeRefusal`): nobody while messaging is off; participants each other and their
-  delegation only once the roles are released, while both hold a seat, neither blocked the other
-  (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
-  participant care). The team is always reached.
-- **A participant agrees to the terms before their first message.** The terms of the message
-  service are the app's, one YAML file per version with every text in both languages
-  (`#api/handlers/messagingTerms/terms/v<version>.yaml`, read by `terms.ts` and checked by the zod
-  schema in `messagingTermsDocument.ts`): sections with an id, an icon, a title, a one-sentence
-  `summary`, the paragraphs and an optional `callout`, plus the `confirmations` to tick.
-  `messagingTerms` answers them in the caller's locale with a `contentHash` of exactly that text.
-  `sendChatMessage` refuses a party without an acceptance that holds with `TERMS_NOT_ACCEPTED`
-  (`assertAcceptedTerms`); the composer then shows `MessagingTermsModal`, and
-  `acceptMessagingTerms` takes the version, revision and hash the reader was shown and every
-  confirmation (INVALID_INPUT otherwise) and adds a row to `messaging_terms_acceptance` (version,
-  revision, locale, hash, confirmations; one per account, for every conference; never changed). An acceptance
-  holds for the current version with every confirmation it asks for (`acceptanceHolds`). The team
-  writes without. **Raise `version` (in a new file, keeping the old one) when the terms change in
-  meaning**, and everybody is asked again; raise `revision` for wording only. `terms/revisions.json`
-  pins each revision's hash, so `terms.test.ts` fails on a text changed without either.
-- **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
-  "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
-  read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
-  that message, without the text. A participant turns it off for themselves
-  (`user.messageNotificationEmails`); the team chooses per inbox, and hears on Slack too (see
-  "Team notifications").
-- **The pages** are `dashboard/[conferenceId]/messages` (participants) and `team/messages` (the
-  inboxes the caller answers, and the reports for participant care), both built from
-  `#lib/components/chat/` (see CLAUDE-UI.md). `WriteToDelegateButton` opens the chat of a team
-  inbox with a participant from wherever the team meets them (a paper, the paper tables) and
-  attaches the paper to the first message. `e2e/authorization/messages.spec.ts` pins the rules
-  down, `e2e/messages/` the flows; the dev seed's `seed-dev/messages.ts` has every state.
-
-#### 16. Announcements
-
-- **The team tells its conference things through announcements** (`#api/handlers/announcement/`,
-  tables in `schema/announcements.ts`): any number, each with a title, a Markdown text, an
-  importance (`NORMAL`, `IMPORTANT`, `URGENT`), an optional signature and attachments
-  (`announcement_attachment`, files of the kind `announcement`/`attachment`). They replace the one
-  text a conference had (`conference.info`, which the `announcements` migration turned into each
-  conference's first, pinned announcement).
-- **A life in three stored states** (`announcement.status`): `DRAFT`, `PUBLISHED`, `ARCHIVED`.
-  Scheduling is not a state: publishing sets `publishAt`, ahead for a scheduled one, and
-  `visibleUntil` ends it. `announcementState` (`#lib/helpers/announcements`) derives what the team
-  sees (`SCHEDULED`, `EXPIRED`) from the clock, `isOut` whether readers get it. Nothing in the app
-  runs on a timer: a scheduled announcement is readable from its time on because the feed compares
-  the clock, and the `send-emails` job tells open pages (`announceReleasedAnnouncements`, once per
-  announcement, `releaseAnnounced`). Editing the title or text of one that is out sets `editedAt`,
-  which readers see as "updated".
-- **An audience is any number of blocks, and matching one is enough** (`announcement_audience`,
-  `audienceMatches` / `inAudience`): kinds of participants, applicants without a seat, the seated,
-  the waiting list, a committee, a role, a survey option, open payment or paperwork, minors,
-  adults, and the team or one team role. The team is only ever in a `TEAM` block. **One pure
-  rule, one loader:** `audienceSubjects.ts` turns the people of a conference into
-  `AudienceSubject`s, which the feed (one person), the recipient counts and the mails all match
-  against, so they cannot disagree. **Everything about a seat is empty until the assignment is
-  released** (`participantSubjects`), so no announcement tells anybody their seat early; a new
-  audience kind that depends on a seat has to follow that. **"Everyone" narrows with the
-  conference** (`AudienceSubject.everyone`, `everyoneIsSeated`): every participant and everybody
-  waiting while people register, and from `PREPARATION` on with the assignment released only who
-  holds a seat and the supervisors of somebody who does, so a rejected applicant or somebody
-  still waiting is not told what is meant for the people who come. Before the release it stays
-  everybody, or getting an announcement would tell the seats. That a block's committee, role or
-  survey option is the conference's is the database's (`announcement_audience_same_conference`).
-- **Readers never read the table.** The rows (drafts, schedules, audiences, authors) are their
-  editors': the conference's content roles (`editConferenceContent`) and system admins, through
-  the abilities. Everybody else gets `announcementFeed(conferenceId)`, which answers what is out
-  for the caller's own part (`feedReader`: nobody's for an AI assistant, which works on the rows
-  instead: every mutation but deleting is an MCP tool, and what changes what readers get or
-  mails them previews first, `outward`) as plain
-  `AnnouncementFeedItem`s with their attachments' URLs, pinned first, then urgent, then newest
-  (`compareFeed`). It is a live field (`smartSubscription`): publishing and taking back announce
-  `created()` / `removed()` on the announcement pubsub, a change the row's `updated(id)`.
-- **Reading is per person** (`announcement_read`, `markAnnouncementsRead`, only for what is in
-  the reader's feed) and announces nothing, or every read would make every open feed ask again.
-  The pages keep what was read in this browser (`#lib/state/announcementReads.svelte.ts`), since
-  a feed that has had a live update no longer follows the mutation's answer. The team's list
-  shows `readCount` of `recipientCount` (`announcementReach`, once per request and conference).
-- **Mails are an automatic kind without a switch** (`ANNOUNCEMENT`, `ALWAYS_AUTOMATIC_KINDS`):
-  "notify by mail" on the announcement is the decision. `loadAnnouncementMails` owes the mail to
-  everybody in the audience while the announcement is out and fresh (`owesMail`,
-  `ANNOUNCEMENT_MAIL_HOURS` from `mailSince`), keyed by announcement and `mailRevision`; "notify
-  again" raises the revision and restarts the window. Publishing starts the sweep right away
-  (`sendOpenEmailsInBackground`), the job covers scheduled ones. The mail carries the text as
-  blocks (`announcementBlocks.ts`: headings, paragraphs, lists, http links; never HTML), the
-  signature and the attachments' names. `sendAnnouncementTestMail` sends it to the editor alone.
-- **The pages**: `team/announcement` (list, `AnnouncementEditor` with `AudiencePicker` and its
-  live recipient count, `PublishDialog`), the dashboard's `AnnouncementFeed` (pinned, unread and
-  the newest), `dashboard/[conferenceId]/announcements` (all of them) and `UrgentAnnouncementBar`
-  in the header, shown on every page of the conference while an urgent one is unread.
-  `e2e/authorization/announcements.spec.ts` pins the rules down, `e2e/announcements/` the flows;
-  the dev seed's `seed-dev/announcements.ts` has every state.
-
-#### 17. Team notifications
-
-- **Each team member decides how they hear of what waits for them** (`#api/handlers/notification/`,
-  tables in `schema/notifications.ts`): per conference, per **topic** and per **channel** (`EMAIL`,
-  `SLACK`). The topics are the inboxes they answer (`PARTICIPANT_CARE`; `COMMITTEE_INBOX`, one per
-  chair or consultant function they hold; `TRUSTED_SHARED` and `TRUSTED_PERSONAL`), for
-  participant care `CHAT_REPORT`, and `COMMITTEE_PAPERS`, one per chair or consultant function, for
-  whoever of them holds a team role that may read papers (`PAPER_ROLES`): the papers submitted in
-  that committee. `#lib/helpers/teamNotifications` is the one pure rule the page, the mails and the
-  Slack messages share: `topicsOf` (what a member is offered), `topicOfInbox` (under which topic an
-  inbox tells them, null when they do not answer it), `paperTopicsOf` / `wantsPaperNotification`
-  (a paper in a committee; two functions there tell once) and `wantsNotification`.
-  A new topic is an enum value, a case there and a label (`teamNotificationLabels.ts`).
-- **Only choices are stored** (`notificationPreference`, anchored on the team member, a committee
-  inbox or its papers on the member's own function by a composite key). Without a row the default holds: both
-  channels on, mail off for whoever switched `user.messageNotificationEmails` off before. That
-  switch stays the participants' own, on their messages page.
-- **The notification tables have no relations and no abilities, on purpose.** rumble exposes every
-  table a relation names, and neither the choices nor the workspaces with their bot tokens belong
-  in the schema. `notificationStore.ts` reads them; the API answers plain objects
-  (`myNotificationSettings`, `mySlackConnection`, `slackWorkspaces`, `conferenceSlackWorkspace`),
-  live through the tables' pubsubs (a bare `updated()` there: these lists listen for any change).
-  The settings are personal: `assertOwnNotifications` refuses an AI assistant.
-- **Slack workspaces are the system admins'** (`slackWorkspace`, page `dashboard/slack-workspaces`):
-  a name and a bot token (scopes `chat:write`, `users:read`, `users:read.email`), checked with
-  `auth.test` and stored encrypted (`slackToken.ts`, AES-GCM under a key derived from
-  `CERTIFICATE_SECRET`). A token is written, never answered. **A conference picks one**
-  (`conferenceSlackWorkspace`, `setConferenceSlackWorkspace`, project management, the card on the
-  team's e-mail page), so one workspace serves every conference of an organizer.
-- **People are found by their account's address, with nothing to connect** (`slackUsers.ts`,
-  `users.lookupByEmail`). The answer is kept in `slackUserLookup` (a month when found, an hour
-  when not, asked again when the address changed). Somebody not in the workspace gets no Slack
-  message and the settings page says so.
-- **Slack tells at once, mail after the wait.** `sendMessage` and `reportChat` call
-  `tellInboxOnSlack` / `tellReportOnSlack` (`slackNotifications.ts`) after their commit, in the
-  background: a direct message to everybody who answers the inbox (or cares for participants) and
-  left Slack on. It and a submitted paper (both channels at once, see "Automatic emails") are the
-  only things sent because something happened. An inbox tells a
-  member once until it is read (`slackNotification`, claimed under an advisory lock; the claim is
-  taken back when the message did not go out). The mails stay state: `UNREAD_MESSAGES` now leaves
-  out the inboxes a member switched the mail off for (`wantsInboxMail`), and `CHAT_REPORTED` is
-  owed to participant care per open report (`loadOpenReportsOfTeam`). Both are ordinary kinds the
-  conference switches to automatic.
-- **Like the mails, Slack notifies and does not relay**: the inbox, the conference and a link,
-  never a word of the message or who wrote it; for a submitted paper where and by which role,
-  never its author or text. Anything new that tells the team has to keep that,
-  for the trusted persons' chats above all.
-- **Each line of the settings page sends a test** of itself (`sendNotificationTest`,
-  `notificationTest.ts`), by mail or Slack, to the caller alone, whatever the switch says: the
-  same Slack text (`inboxSlackText` / `reportSlackText` / `paperSlackText`) and the same mail
-  (`UNREAD_MESSAGES`, `CHAT_REPORTED`, a sample `PAPER_SUBMITTED`) rendered the real way, marked as
-  a test and logged as sent by hand with a `test:` key, so it claims nothing the real ones use.
-  A new topic needs its case in `testEmailKind` and the Slack text there.
-- `SLACK_API_URL` points the calls at a stand-in; only tests set it.
-  `e2e/authorization/notifications.spec.ts` pins the rules down; the dev seed's
-  `seed-dev/notifications.ts` has the workspaces (with placeholder tokens), lookups and choices.
-
-### Logging
-
-- **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after
-  avv). It is pino: JSON lines on the server, pretty ones in development (`pino-pretty`), plain
-  `console` in the browser. Call it as `logger.error('Sending the mail failed', error)` - a fixed
-  message, then one value (an error, or an object of fields); put ids into the fields rather than
-  the message. Each line is also added to the active OpenTelemetry span as an event, and an
-  `error` marks the span failed; every line, rumble's included, carries the span's `trace_id` and
-  `span_id`, so Grafana links it from Loki to its trace.
-- **`logger.error` is a Sentry issue**, on the server through `pinoIntegration` (`hooks.server.ts`),
-  in the browser through `forwardErrors` (`hooks.client.ts`: the error the line carries is captured
-  as an exception, its other fields go along as extra; a line without one is a message), so
-  use it for failures someone has to look at; expected outcomes are `warn` or `info`. rumble logs
-  every GraphQL operation through `graphqlLogger`, which is kept out of Sentry because an operation
-  answering with an expected error (not found, invalid input) logs at `error` too.
-- **Never report to Sentry by hand.** Only the hooks (and `sentryDataCollection.ts`) may import
-  `@sentry/sveltekit`; ESLint refuses it anywhere else in `src/`. What an issue should carry goes
-  into the log line's fields - masked where it is personal data, since it ends up in Sentry.
-- In tests, spy on the logger (`vi.spyOn(logger, 'error')`), not on `console`.
-- `console` is left only for output meant to be read as text: `scripts/` and the seed's overview.
-
-### Path Aliases
-
-SvelteKit 3 has no `svelte.config.js`: its options are the `sveltekit()` plugin's, in
-`vite.config.ts`. There are no aliases (SvelteKit 3 deprecates the plugin's `alias`): `#lib`,
-`#api` and `#assets` are subpath imports (`imports` in `package.json`), written **without** the
-`.js` extension (`#lib/helpers/formatNames`, `#api/db/db`; a directory as `…/index`, since Bun
-cannot resolve a bare directory). Two exceptions keep theirs: runes modules (`….svelte.js`,
-Svelte's own convention) and anything that is not a script (`….svelte`, `….svg`).
-
-```
-#lib → src/lib
-#api → src/api
-#assets → src/assets
-```
-
-Each tool needs its own reason to resolve the extensionless form, so a new prefix touches all three:
-
-- **Vite** (dev, build, vitest) maps through `imports` and then completes the extension itself.
-- **TypeScript** applies `imports` literally, so `tsconfig.json` repeats the prefixes as `paths`,
-  which it completes like a relative import.
-- **Bun** (the seed, the reset, `bun run jobs`, `scripts/`) completes nothing past `imports` and
-  calls runtime plugins only for paths it already resolved, so `imports` gives it a `bun`
-  condition that appends `.ts`, plus more specific keys for Paraglide's generated `.js` and
-  `….svelte.js`. tsdown and Vite never see the `bun` condition.
-
-### Important Integrations
-
-- **PDF Generation**: `pdf-lib` with custom fonts for certificates
-- **Barcode/QR**: `@bwip-js/browser`, `@svelte-put/qr`, `barcode-detector`
-- **Rich Text Editor**: TipTap for committee agenda items
-- **Maps**: Leaflet via `sveaflet` for delegation locations
-- **External APIs**: Listmonk email service integration in `src/jobs/apis/`
-- **File storage**: an S3 bucket through `s3mini` (`#api/handlers/storedFile/storageClient.ts`)
-
-### UI Component Patterns
-
-See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation including:
-
-- Form components and `FormFieldset` grouping patterns
-- Modal and Drawer usage
-- Dashboard section layouts
-- DataGrid: columns, sources, views
-- Navigation components (Tabs, NavMenu)
-- Status indicators and badges
-- Color theming and icons
-- Code examples for common patterns
-
-**Accessibility** (vision-impaired participants attend; details in CLAUDE-UI.md): dialogs through
-`Modal`/`Drawer` or `modalFocus` (`#lib/helpers/modalFocus`), one `<main id="main-content">` per
-page for the skip link, `aria-hidden="true"` on every icon
-(`src/lib/icons.test.ts`), names for icon-only controls (tooltips are hover-only), state as
-`aria-pressed` / `aria-selected` / `aria-sort` rather than colour, real `disabled`. The default
-look keeps DMUN's pale semantic colours; the high contrast variant (`#lib/helpers/contrast`,
-`data-contrast="more"`, the footer's toggle or the system's "increase contrast") is what has to
-pass 4.5:1. `e2e/accessibility/` runs axe-core over the public and participant pages.
-
-**Quick reference**:
-
-- **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping
-- **Modals**: Use `Modal` component with `action` snippet for footer buttons
-- **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
-- **Icons**: Use Phosphor duotone (`ph-duotone ph-icon-name`, `ph-fill` for active states), as CHASE does; stored icons are bare Phosphor names (see Icons in CLAUDE-UI.md)
-- **URL State**: Use `sveltekit-search-params` for URL-persisted state (v4: `queryParameters()` returns a
-  reactive object - read and assign `params.x`, no `$` store syntax)
-
-**Maintenance**: When creating new UI components, significantly modifying existing ones (props, usage patterns), or deprecating components, update CLAUDE-UI.md accordingly. Keep documentation in sync with the actual component implementations.
-
-## Commit Conventions
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `style:` - UI/styling changes
-- `refactor:` - Code restructuring without behavior change
-- `perf:` - Performance improvements
-- `docs:` - Documentation updates
-- `test:` - Test updates
-- `chore:` - Maintenance tasks
-- `build:` - Build system changes
-- `ci:` - CI/CD changes
-
-Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement login modal`)
-
-## Testing Strategy
-
-- **Vitest** with jsdom environment
-- Test files: next to the code they test (`foo.ts` → `foo.test.ts`)
-- Coverage provider: v8
-- Run tests before pushing (enforced by lefthook pre-push hook)
-- **New features and behavior changes ship with tests, without being asked:**
-  - **Unit tests** for the logic. Keep decisions in plain functions (`#lib/helpers/`, a handler's
-    service, `src/api/services/`) so they can be tested without the UI or the database.
-  - **End-to-end tests** (Playwright, `e2e/`) for the user-facing flows, including error and empty
-    states. A spec that changes data gets its own fixture in `e2e/seed/` (see `e2e/seed/seats.ts`),
-    registered in `e2e/seed/seed.ts`.
-  - Bug fixes get a test that fails without the fix.
-- **Never run the e2e suite (`bun run test:e2e`, `playwright test`, `test:e2e:coverage`) unless
-  explicitly asked to.** It takes a long time; verify changes with `bun run check` and `bun test`.
-  When asked, it runs against a production build at the lowest CPU priority by default; see
-  `e2e/README.md` for `E2E_SERVER`, `E2E_WORKERS` and `E2E_NICE`.
-
-## Environment Variables
-
-Required variables (see `.env.example`):
-
-- `DATABASE_URL` - PostgreSQL connection string
-- `DATABASE_POOL_SIZE` (optional) - connections each app instance holds open to Postgres (20)
-- `NODE_ENV` - Environment (development/production/test)
-- `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
-- `PUBLIC_OIDC_CLIENT_ID` - OAuth client ID
-- `OIDC_SCOPES` - OAuth scopes (must include `openid`)
-- `OIDC_ROLE_CLAIM` - claim name or dot path of the provider's role/group names (any provider's shape;
-  `#api/services/oidc/roleClaims.ts`, falling back to the userinfo endpoint), `OIDC_ROLE_MAP` (JSON) maps
-  them onto `admin` / `member` / `service_user`
-- `CERTIFICATE_SECRET` - Secret for signing participation certificates; the Slack bot tokens are
-  encrypted under a key derived from it, so changing it means entering them again
-- `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
-  it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
-- OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL` (the full `…/v1/traces` URL), `OTEL_SERVICE_NAME`,
-  `OTEL_TRACES_SAMPLER_ARG` (share of traces kept, 0 to 1)
-- `LOG_LEVEL` (optional): `debug` / `info` / `warn` / `error` / `silent`; defaults to `debug` in
-  development, `warn` otherwise (the e2e server too), `info` for the jobs (`runJob`), `silent` under vitest
-
-## Common Workflows
-
-### Adding a New GraphQL Handler
-
-1. Create `src/api/handlers/<entity>/` with `<entity>.ts` (GraphQL layer),
-   `<entity>Permissions.ts` (`register<Entity>Abilities()` plus the `assertCan…` checks, built from
-   `authHelper/`) and, when there is logic beyond the resolvers, `<entity>Service.ts` (no
-   permission checks)
-2. Import `<entity>.ts` in `src/api/handlers/register.ts`
-3. Call `register<Entity>Abilities()` at the top of `<entity>.ts`
-4. Restart the dev server: it rebuilds the schema and regenerates
-   `src/lib/api/rumbleClient/`
-
-### Adding a Frontend Feature
-
-1. Create/modify components in `src/lib/components/`
-2. Fetch in the component with `$derived(await client.liveQuery.…)`; do not add a `load` function
-   (see "Frontend Data Fetching" for the four cases where one is still right)
-3. Add translations to `messages/` directory
-
-### Database Schema Changes
-
-1. Edit the matching file in `src/api/db/schema/` (a new table goes into the file of its part of
-   the app, and into the exports of `schema/index.ts`), and `src/api/db/relations.ts` if the
-   change adds or removes a relation
-2. Run `bun run db:generate` to write the migration, then `bun run db:migrate` to apply it
-3. Restart the dev server so the schema and the generated client pick the change up
-4. Update `src/api/db/seed-data/` if a new column is required
-5. Test with `bun run db:nuke && bun run db:seed:dev`
-
-### Adding a Background Job
-
-1. Create the job in `src/jobs/` with a `run…` function that uses `./db`
-2. Add a sub-command to `src/jobs/cli.ts` that imports it when it runs
-3. Schedule `delegator-jobs <command>` in whatever runs the image
-
-## Git Hooks (Lefthook)
-
-**Pre-commit**: Auto-format staged files with Prettier, then run `fallow audit` on the working tree
-**Pre-push**: The same checks as CI, made cheap: lint (`eslint`, cached by content) and the format check look only at the files the push changes, the tests run with `vitest run --sinceLastRun` (the tests whose recorded dependencies changed since they last ran, and those that failed), the type check is `bun run check`, which is incremental, and the i18n check and `fallow audit` against the branch base run as before. A commit made with `--no-verify` is still caught by the push that carries it. What the shortcuts cannot see (an eslint or prettier upgrade changing the verdict on untouched files) is CI's to catch, which checks everything without a cache. The caches are gitignored and safe to delete when a result looks stale: `.eslintcache`, `.svelte-kit/.svelte-check`, `node_modules/.vitest-cache`.
-
-The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
-
-## Performance Notes
-
-- **Permission rules are id lists, not relation chains** (`authHelper/callerFacts.ts`). The
-  caller's facts take a handful of small queries per root field (`RefreshCallerFactsPlugin` loads
-  them again, `refreshCallerAbilities` after a write); rumble evaluates a rule once per request, so
-  a `liveRule` answers with a filter rumble reads again whenever it prepares one
-  (`liveRule.test.ts` pins that down).
-- **Postgres JIT is off** for the app's connections (`-c jit=off` in `src/api/db/db.ts`). rumble's
-  ability and mask SQL is costed far above `jit_above_cost`, and compiling it took seconds per
-  statement (a delegation card: 6.3 s of 6.7 s).
-- **The sighting turns cards in the browser.** `sighting/deckWindow.svelte.ts` holds a window of
-  the backend's deck and moves through it without asking; the backend is asked in the background
-  (near the window's edge, after a review) and waited for only on a jump outside it. The next cards
-  and their reviews are read ahead one at a time (`prefetchCards`), and reviews show optimistically
-  (`savedReviews.svelte.ts`).
-
-- Svelte 5 runes mode enabled - use `$state`, `$derived`, `$effect` instead of legacy stores
-- `compilerOptions.experimental.async` is on, so components may `await` at the top level of
-  `<script>`
-- OpenTelemetry tracing for performance monitoring
-- Image optimization: Use WebP format, lazy load images
-- Install dependencies always into the devDependencies section as is best practice for sveltekit projects if not explicitly required at runtime.
-
-## Security Considerations
-
-- OIDC authentication required for all routes in `(authenticated)/`
-- rumble ability filters on all GraphQL queries and mutations
-- **Everything that identifies a participant is a signed code**, except the printed nametags
-  (room for a one-dimensional barcode of the user id only): the digital nametag (`live`, ten
-  minutes, renewed while shown), the application documents (`print`) and the certificates.
-  `#lib/signedCode/signedCode` is the format, shared by both sides: a CWT in a COSE_Sign1, Ed25519,
-  a `kid` per key (`signingKeys.ts` derives them from `CERTIFICATE_SECRET`; rotating appends an
-  id), written in a scanner safe base 32 (no I, O, Y, Z, any case) so a hand scanner types it right
-  on any keyboard layout. A QR code holds it as an uppercase link to `/ID/<code>` (`hooks.ts`
-  reroutes the casing): the camera app opens it, and `/id` sends a certificate to its public check,
-  anyone else to the login first and to a 403 unless their team role reaches the person's page
-  (`idTarget`), without telling them whether the code is genuine. Every scanner checks codes through
-  `acceptance` (`BarcodeScanner`, `QuickScan`, `scanAcceptance.ts`) in the browser, so it works
-  offline; an unsigned QR code is refused everywhere, an unsigned 1D barcode counts only where
-  printed nametags do. `scanLookup` checks the code again (`scannedUserId`). Recording an attendance
-  and setting a postal status take the user id, like any change the team makes by hand. The
-  certificates issued as RS256 JWTs before still verify at `/validateCertificate`, against
-  `getCertificateJWTPublicKeyObject`.
-- Environment secrets must never be committed
-- Drizzle parameterized queries prevent SQL injection
-- GraphQL complexity limits prevent DoS attacks
-- **Lookups by code are rate-limited per account.** A delegation's entry code and a supervisor's
-  connection code are the only check on `previewDelegation`, `createDelegationMember`,
-  `previewConferenceSupervisor` and `connectToConferenceSupervisor`, so each wraps its lookup in
-  `codeGuessLimiter.attempt` (`#api/services/codeGuessLimit.ts`): a lookup throws `codeNotFound()`
-  for a wrong code, and ten of those in ten minutes answer `TOO_MANY_ATTEMPTS`. The counting is
-  `rate-limiter-flexible`'s (`#api/services/failureLimit.ts` only adds counting misses alone):
-  Redis keys that expire, falling back to process memory while Redis is unreachable, never the
-  database. New codes are 8
-  letters (`#lib/helpers/entryCode.ts`); older 6-letter codes still work, and code fields use
-  `createEntryCodeInput` so a 6-letter prefix of a new code is not looked up mid-typing.
+  Mutate in `onUpdate` (runs after validation). Seed `initialValues` from a **plain `await`**
+  (re-reading while typing discards edits) and build it field by field (spreading a result drags
+  `subscribe` along and widens types); shared massaging goes in a helper (`#lib/api/userFormValues.ts`).
+
+- **Fields are Formsnap underneath**: `Form*` wrappers in `#lib/components/form/` own styling and
+  ids/aria wiring. Spread the `Control` snippet's `props` onto the input; never set `id`/`name`.
+  Field components are generic over `N extends FormPath<A> & keyof A`; typed `bind:` (boolean,
+  `Date`) via `formFieldProxy`.
+- **Uploads**: `fileProxy` → `uploadFile` (`#lib/api/uploadFile`) → file id for the mutation. An
+  untouched field yields `undefined` (keeps the file), `null` removes it. See `docs/architecture/files.md`.
+- **Personal data uses rumble's scalars**: `PersonName`, `EmailAddress`, `PhoneNumber` (E.164),
+  `Date` (calendar day, UTC midnight on the wire — convert pickers with `#lib/helpers/calendarDay`),
+  `AddressInput` (libaddressinput, alpha-2; the user table keeps alpha-3, convert with
+  `#lib/helpers/countryCodes`). Other sources (OIDC claims) use `normalizePersonName` /
+  `normalizeEmailAddress` / `parsePhoneNumber`. Forms pre-check with `isPersonName`,
+  `addressRules`/`addressIssues`, `AddressRegionField`.
+
+## Authentication & Authorization
+
+- **OIDC** via `@m1212e/sveltekit-oidc` (as chase). `src/api/services/oidc/OIDC.ts` builds it; its
+  `handle` (in `hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
+  `/auth/logout-callback` (no `+page` files), refreshes tokens, sets `event.locals.oidc`. No auth
+  code in loads. Path guards use `routePath(event.url)` (Paraglide's `/en/` prefix). Redirect
+  targets from requests go through `sameSitePath` (`startsWith('/')` lets `/\evil.example` through).
+- **Locally the provider is oidc-mock**, started by the `oidcMock()` Vite plugin (no container);
+  users in `oidc-mock.yaml`, login page under `/oidc`. The e2e suite signs in via its custom-claims
+  form.
+- **Dev accounts and dev seed belong together.** `seed-data/devAccounts.ts` lists every account;
+  `bun run dev:accounts` writes `oidc-mock.yaml` (never edit its users; `devAccounts.test.ts` fails
+  on drift); `db:seed:dev` gives each a user row (id = `sub`) and a part. Ten conferences cover the
+  stages (`seed-dev/plans.ts`). Team personas hold one team role everywhere; `[Registration]`
+  personas cover application steps; `[Participant]` personas keep one role across preparation,
+  active and post. **A new state the UI branches on gets a persona or conference flag in the seed.**
+- **Login upsert** `src/api/services/account/upsertSelf.ts` (`userLoggedInSuccessfully`): creates/
+  refreshes the row, redeems a pending team invitation (`claimPendingInvitation`, once, only for the
+  invited address), redirects to `/auth/email-conflict`, `/my-account` or
+  `/auth/error?type=invitation_other_email`.
+- **Impersonation** is a delegated session (`OIDC.startImpersonation`): a subject token from Logto's
+  Management API (`OIDC_M2M_*`; oidc-mock serves it locally) exchanged (RFC 8693) with the caller as
+  actor (`#api/handlers/user/impersonation.ts`). Logto wants an opaque `openid` actor token, so
+  `actorAccessTokenOf` (`#api/services/oidc/actorToken.ts`) trades the refresh token for one without
+  resource (the refresh token exists only because sign-in sends `prompt: 'consent'`). Who may:
+  `impersonatableBy` (`userPermissions.ts`) — admins anyone but themselves, participant care and
+  project management their conferences' participants, never team members; re-checked per request by
+  `impersonationHandle`. While impersonating `ctx.oidc.user` is the target, `ctx.oidc.impersonator`
+  the caller, system roles only those both hold. `e2e/authorization/impersonation.spec.ts`.
+- Context: `src/api/context.ts` reads `event.locals.oidc`. Ability actions: `read`, `update`,
+  `delete` (`src/api/rumble.ts`).
+- **Team roles** (`Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, `CONTENT_LEAD`, …) live in
+  `#lib/helpers/teamRoles.ts` (re-exported by `authHelper/rules.ts`). A team keeps at least one
+  `PROJECT_MANAGEMENT` member: removing/demoting the last answers `CONFLICT` (under a conference
+  lock) unless a system admin does it. `CONTENT_LEAD` reaches seat planning, committees, conference
+  content, scanner and settings.
+- **Team area**: everything under `dashboard/[conferenceId]/team/`, one guard (`team/+layout.ts`) and
+  one registry (`#lib/data/teamRoutes.ts`: path, title, icon, section, palette keywords, roles). Side
+  nav (`ConferenceShell.svelte`, `ConferenceNavMenu.svelte`), command palette and guard are generated
+  from it. The menu frames every conference page for team members only (`BackToDashboard` steps aside,
+  `#lib/state/conferenceMenu`). The overview lists what waits (`stages/TeamMember/teamWaiting.ts`) for
+  pages the caller may open. Team pages that edit what participants see link their view
+  (`team/ParticipantViewLink.svelte`, `participantViewOf`). Access comes from `TeamAccess`
+  (`#lib/helpers/teamAccess.ts`, `fetchTeamAccess`); page predicates (`canEditConference`, …) mirror
+  the API. No redirect stubs: non-pages 404, forbidden pages 403. Folder names are kebab-case.
+
+## Internationalization
+
+- Paraglide-JS (`url` + `baseLocale` strategy), sources in `messages/`, used as `m.…()` from
+  `#lib/paraglide/messages`; translate via Inlang CLI / `bun run i18n:translate`.
+- **The API speaks the caller's locale**: the browser sends `x-locale` (`#lib/api/localeHeader.ts`),
+  `hooks.server.ts` runs the request in it (`#api/services/requestLocale.ts`). Every user-facing
+  resolver message is `m.…()`, never a literal. Mails use the recipient's `user.locale`
+  (`localeOfUser`, `runWithLocale`); pass enums, not translated labels. Format dates/numbers with
+  `getLocale()`.
+- **Errors the client recognises carry a code**: `apiError({ code, message: m.…() })`
+  (`#api/services/errors.ts`), read with `hasErrorCode` / `errorCodeOf` (`$lib/api/errorCodes.ts`,
+  closed `ERROR_CODES`). Never branch on message text; `isNetworkError` checks urql's
+  `networkError`. `UNAUTHENTICATED` is handled globally by `loginRedirectExchange`; resolvers just
+  call `mustBeLoggedIn()`.
+- **German is informal**: "du"/"dein" (lowercase mid-sentence), plural "ihr"/"euch" for groups,
+  du-imperatives. **Gender-inclusive**: neutral forms ("Teilnehmende"), otherwise gender asterisk
+  ("Delegationsleiter\*in").
+
+## Database
+
+- Drizzle relational API (`db.query.x.findMany({ where, with })`), `defineRelations` in
+  `src/api/db/relations.ts`; camelCase in TS, snake_case in SQL (`snakeCase.table`). Row/insert
+  types from Drizzle (`typeof schema.conference.$inferSelect` / `$inferInsert`, with
+  `import type * as schema from '#api/db/schema/index'`).
+- **A person's part in a conference is one `conferenceParticipant` row** (per user and conference,
+  `ensureConferenceParticipant` on first registration). It holds payment, postal documents,
+  attendance, access card, school; `delegationMember`, `singleParticipant`, `conferenceSupervisor`
+  point at it (`conferenceParticipantId`). **Supervision links people** (`supervision`: supervisor →
+  participant row), surviving registration changes; supervisor rules go through these relations,
+  never through `user` (which matches other conferences).
+- **No row says which conference it is in twice.** Rows about a person point at their participant
+  row (members, single participants, supervisors, `paper.authorParticipantId`,
+  `paymentTransaction.payerParticipantId`, covered people, survey answers) and have no own
+  `conferenceId`/`userId`; their `user`/`conference` relations run through it. Filter with
+  `conference: { id: { eq } }` / `user: { id: { eq } }` in the client, `participant: { conferenceId, userId }`
+  on the server. Team-side actors (reviewer, scanner, inviter) stay plain `user` refs. Team and
+  waiting list have no participant row. Participant rows survive while papers/payments name them.
+- **The database keeps rows inside one conference** (not drizzle-managed; `db:push` creates none):
+  - deferred `assert_same_conference` triggers (18 tables, `conference_anchor` migration) check that
+    every parent path reaches the same conference at commit;
+  - `conference_id_is_immutable`; `reached_conference_is_immutable` (`conference_reach_unchanged`)
+    lets a link change only within the conference;
+  - role kinds (`conference_role_kind`): delegations/role applications/assignment units name
+    nations or NSAs, single participants and their wishes custom roles, committees seat nations;
+  - **a new table with two conference-reaching parents, or such a new link, gets its trigger in its
+    migration.** Triggers raise `check_violation` with a constraint name; `databaseRuleError`
+    (`#api/services/errors.ts`, plugin in `yoga.ts`) maps known names (`…_same_conference`,
+    `…_immutable`, `…_role_kind`, `calendar_entry_track_runs_on_day`, `one_part_per_conference`) to
+    a code + `m.…()` message — name new triggers to match. `e2e/authorization/same-conference.spec.ts`.
+- **One part per person and conference** (delegation member, single participant, supervisor or
+  team): flows refuse a second part up front (`fetchParticipationsAndTeamMembership`,
+  `#api/services/registration/participation.ts`), deferred `assert_one_part` triggers at commit
+  under an advisory lock. Swapping parts happens in one transaction. `e2e/authorization/one-part.spec.ts`.
+- Conference states: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`.
+  Supervisor connection codes are unique across conferences. Payments: `PaymentTransaction`.
+  Papers are versioned with reviews.
+- Domain specifics (calendar, scanner, age limits, waiting list, certificates, document layouts):
+  `docs/architecture/conference-features.md`.
+
+## Logging
+
+- **Log through `logger` (`#lib/logger`), never `console`** (pino; JSON on the server, pretty in dev,
+  `console` in the browser): `logger.error('Sending the mail failed', error)` — fixed message, one
+  value (error or fields object); ids go in fields. Lines become OTel span events (with
+  `trace_id`/`span_id`); `error` marks the span failed.
+- **`logger.error` is a Sentry issue** (server `pinoIntegration`, browser `forwardErrors` in
+  `hooks.client.ts`) — use it for failures someone must look at; expected outcomes are `warn`/`info`.
+  `graphqlLogger` is kept out of Sentry. **Never report to Sentry by hand**: only the hooks and
+  `sentryDataCollection.ts` import `@sentry/sveltekit` (ESLint enforces). Mask personal data in fields.
+- Tests spy on the logger (`vi.spyOn(logger, 'error')`). `console` only in `scripts/` and the seed
+  overview.
+
+## Path Aliases
+
+No `svelte.config.js` (SvelteKit 3: options live in the `sveltekit()` plugin in `vite.config.ts`),
+no aliases. `#lib`, `#api`, `#assets` are subpath imports (`package.json` `imports`) written
+**without** `.js` (`#lib/helpers/formatNames`; directories as `…/index` for Bun). Exceptions keep
+their extension: runes modules (`….svelte.js`) and non-scripts (`….svelte`, `….svg`). A new prefix
+touches all three resolvers: Vite (`imports`), TypeScript (`paths` in `tsconfig.json`), Bun (a `bun`
+condition in `imports` appending `.ts`, plus keys for Paraglide's `.js` and `….svelte.js`).
+
+## Integrations
+
+PDFs `pdf-lib` (custom fonts); barcodes/QR `@bwip-js/browser`, `@svelte-put/qr`,
+`barcode-detector`; TipTap rich text; Leaflet via `sveaflet`; Listmonk (`src/jobs/apis/`); S3 via
+`s3mini`.
+
+## UI
+
+See **[CLAUDE-UI.md](./CLAUDE-UI.md)** (forms and `FormFieldset`, Modal/Drawer, dashboard sections,
+DataGrid, navigation, badges, theming, icons). Quick rules: wrap related inputs in `FormFieldset`;
+`Modal` with an `action` snippet; DaisyUI semantic classes (`bg-base-*`); Phosphor duotone icons
+(`ph-duotone ph-…`, `ph-fill` for active; stored icons are bare names); URL state via
+`sveltekit-search-params` v4 (`queryParameters()` returns a reactive object, no `$`).
+**Update CLAUDE-UI.md when adding or significantly changing components.**
+
+**Accessibility** (vision-impaired participants attend): dialogs via `Modal`/`Drawer` or
+`modalFocus`; one `<main id="main-content">` per page; `aria-hidden="true"` on every icon
+(`src/lib/icons.test.ts`); names for icon-only controls; state as `aria-pressed`/`aria-selected`/
+`aria-sort`; real `disabled`. The high-contrast variant (`data-contrast="more"`) must pass 4.5:1.
+`e2e/accessibility/` runs axe-core.
 
 ## Type Safety (CRITICAL)
 
-This codebase supports **100% end-to-end type safety** from database to frontend. The type system is your primary defense against bugs—use it properly.
+Drizzle → rumble → generated client give end-to-end types; use them.
 
-### Rules
-
-1. **NEVER use `any`** - The `any` type defeats the purpose of TypeScript. Only use it when absolutely unavoidable (e.g., third-party library limitations), and always add a comment explaining why.
-
-2. **NEVER use type casting (`as Type`)** - Type assertions bypass the compiler's checks. If you feel the need to cast, it indicates a type definition problem that should be fixed at the source.
-
-3. **Trust the generated types** - drizzle and the generated rumble client are accurate. If types don't match your expectations, investigate why rather than casting.
-
-4. **Fix type errors at the source** - When encountering type mismatches:
-   - Check if the selection or the handler's args need updating
-   - Verify `src/api/db/schema/` is correct
-   - Ensure the client has been regenerated (restart `bun run dev`)
-   - Never silence errors with `as any` or `@ts-ignore`
-
-5. **Use type narrowing** - Prefer type guards, discriminated unions, and proper null checks over assertions.
-
-### Why This Matters
-
-- **Drizzle** infers row and insert types from `src/api/db/schema/`
-- **rumble** builds the GraphQL schema from those tables, and its abilities are drizzle filters, so
-  authorization is type-checked too
-- **`clientCreator`** generates the frontend client from the live schema, so a selection that asks
-  for a field the API does not have fails to compile
-- This chain provides compile-time guarantees that data flows correctly through the entire stack
-
-### Exceptions (Rare)
-
-If `any` or casting is truly unavoidable, you MUST:
-
-1. Add a `// TYPE-SAFETY-EXCEPTION:` comment explaining why
-2. Keep the scope as narrow as possible
-3. Consider opening an issue to fix it properly later
+1. **Never `any`** unless truly unavoidable (third-party limits), with a comment.
+2. **Never cast (`as Type`)** — a cast means a type definition problem to fix at the source.
+3. Trust the generated types; if they surprise you, check the selection/args, the schema, or restart
+   the dev server to regenerate the client. Never `as any` / `@ts-ignore`.
+4. Prefer type guards, discriminated unions, null checks.
+5. Unavoidable exceptions: `// TYPE-SAFETY-EXCEPTION:` comment, narrowest scope.
 
 ## Functions Only
 
-This codebase has no classes, except error classes. State and behavior live in functions: a
-`createX(...)` factory returning an object of methods and getters, with private state in the
-closure (`$state` works inside a factory in a `.svelte.ts` file). Export the type as
-`ReturnType<typeof createX>` and share behavior by composition, not inheritance.
+No classes except error classes. Use `createX(...)` factories returning methods/getters with
+private closure state (`$state` works in `.svelte.ts` factories); export
+`type X = ReturnType<typeof createX>`; compose, don't inherit.
 
-**Two or more parameters take one object**, so every call names its arguments:
-`assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' })`, declared as
-`function f({ a, b = 1 }: { a: A; b?: number })`. A single parameter stays positional. The
-exceptions are signatures something else fixes: callbacks a library calls (comparators,
-resolvers, Svelte actions, zod refinements), symmetric `(a, b)` comparisons, type predicates
-(they cannot narrow a destructured parameter), tables of interchangeable functions sharing one
-call shape (the `dueEmails` rules, the participant filter conditions and inputs), and
-`boardState`, whose arguments `memoizeLast` compares one level deep.
+**Two or more parameters take one object** (`assertTeamPermission({ ctx, conferenceId, permission })`,
+declared `function f({ a, b = 1 }: { a: A; b?: number })`); one parameter stays positional.
+Exceptions: library callbacks (comparators, resolvers, Svelte actions, zod refinements), symmetric
+`(a, b)` comparisons, type predicates, tables of interchangeable functions (the `dueEmails` rules,
+participant filter conditions), and `boardState` (`memoizeLast` compares args one level deep).
 
-## MCP Servers
+## Testing
 
-This project uses Model Context Protocol (MCP) servers to enhance AI-assisted development. Configuration is in `.mcp.json`.
+- Vitest (jsdom, v8 coverage); tests sit next to the code (`foo.ts` → `foo.test.ts`).
+- **New features and behaviour changes ship with tests, unasked**: unit tests for logic (keep
+  decisions in plain functions: `#lib/helpers/`, services); Playwright e2e (`e2e/`) for user flows
+  incl. error and empty states — a spec that changes data gets its own fixture in `e2e/seed/`
+  (registered in `e2e/seed/seed.ts`); bug fixes get a test that fails without the fix.
+- **Never run the e2e suite** (`test:e2e`, `playwright test`, `test:e2e:coverage`) unless explicitly
+  asked; verify with `bun run check` and `bun test`. See `e2e/README.md` (`E2E_SERVER`,
+  `E2E_WORKERS`, `E2E_NICE`).
+- Performance: permission rules are id lists (`callerFacts`, reloaded per root field by
+  `RefreshCallerFactsPlugin`; after a write then re-read, call `await refreshCallerAbilities(ctx)`).
+  Postgres JIT is off for app connections (`-c jit=off` in `db.ts`): rumble's SQL cost seconds of JIT.
 
-### Configured Servers
+## Common Workflows
 
-| Server                  | Package/URL                                        | Purpose                                                    |
-| ----------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
-| **svelte**              | `@sveltejs/mcp`                                    | Official Svelte 5 documentation, code validation and fixes |
-| **daisyui-github**      | `gitmcp.io/saadeghi/daisyui`                       | DaisyUI component library documentation                    |
-| **tailwind-github**     | `gitmcp.io/tailwindlabs/tailwindcss`               | TailwindCSS documentation                                  |
-| **github**              | `@anthropic-ai/github-mcp-server`                  | GitHub PRs, issues, code search, workflow management       |
-| **vitest**              | `@djankies/vitest-mcp`                             | Test running with structured output, coverage analysis     |
-| **context7**            | `@upstash/context7-mcp`                            | Up-to-date documentation for any library                   |
-| **memory**              | `@modelcontextprotocol/server-memory`              | Persistent knowledge graph across sessions                 |
-| **sequential-thinking** | `@modelcontextprotocol/server-sequential-thinking` | Complex problem-solving through structured thinking        |
-| **drizzle-github**      | `gitmcp.io/drizzle-team/drizzle-orm`               | Drizzle ORM documentation                                  |
-| **rumble-github**       | `gitmcp.io/m1212e/rumble`                          | rumble source, the API layer this app is built on          |
-| **fallow**              | `fallow-mcp` (local devDependency)                 | Dead code, cycles, duplication and complexity analysis     |
+- **New GraphQL handler**: create `src/api/handlers/<entity>/` (`<entity>.ts`,
+  `<entity>Permissions.ts`, optional `<entity>Service.ts`), call `register<Entity>Abilities()` at
+  the top of `<entity>.ts`, import it in `register.ts`, restart the dev server.
+- **Frontend feature**: components in `src/lib/components/` (or beside the route), fetch with
+  `$derived(await client.liveQuery.…)`, no `load`, translations in `messages/`.
+- **Schema change**: edit `src/api/db/schema/` (new tables exported from `schema/index.ts`) and
+  `relations.ts`; `bun run db:generate` then `db:migrate`; restart dev server; update `seed-data/`
+  for new required columns; test with `bun run db:nuke && bun run db:seed:dev`.
+- **Background job**: see `docs/architecture/jobs.md`.
+- **UI change touching a manual page**: update `docs/de` and `docs/en`, keep `data-tour` anchors,
+  rerun affected screenshots (`docs/architecture/user-manual.md`).
 
-### Setup Requirements
+## Environment Variables
 
-**GitHub MCP Server**: Requires a GitHub Personal Access Token. Replace `<YOUR_TOKEN>` in `.mcp.json` with your token, or set the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable.
+See `.env.example` and `src/env.ts`. Core: `DATABASE_URL` (`DATABASE_POOL_SIZE`, default 20),
+`NODE_ENV`, `PUBLIC_OIDC_AUTHORITY`, `PUBLIC_OIDC_CLIENT_ID`, `OIDC_SCOPES` (incl. `openid`),
+`OIDC_ROLE_CLAIM` (claim name or dot path; `#api/services/oidc/roleClaims.ts`, userinfo fallback) +
+`OIDC_ROLE_MAP` (JSON → `admin`/`member`/`service_user`), `CERTIFICATE_SECRET` (also derives the
+Slack token key — changing it means re-entering tokens), `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`,
+`S3_SECRET_ACCESS_KEY` (`S3_PUBLIC_ENDPOINT`, `S3_REGION`), optional OTel (`OTEL_ENDPOINT_URL` full
+`…/v1/traces`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`), `LOG_LEVEL` (default `debug` dev,
+`warn` otherwise, `info` jobs, `silent` vitest).
 
-**Context7**: Optionally get a free API key at [context7.com/dashboard](https://context7.com/dashboard) for higher rate limits.
+## Security
 
-### Usage Tips
+- OIDC on all `(authenticated)/` routes; ability filters on every query and mutation; Drizzle
+  parameterised queries; GraphQL complexity limits (graphql-armor). Never commit secrets.
+- Participant identification uses signed codes; code lookups are rate-limited per account — see
+  `docs/architecture/security.md`.
 
-- Use `use context7` in prompts to fetch current documentation for any library
-- The Svelte MCP server validates Svelte 5 code and suggests fixes
-- rumble has no published docs, so read its source through the MCP server when its behavior is
-  unclear
-- Vitest MCP provides structured test output optimized for AI analysis
-- Memory MCP remembers context across conversation sessions
+## Git, Commits, PRs, Releases
 
-## Dependency Notes
+- **Conventional commits**: `<type> (<scope>): <description>`, types `feat`, `fix`, `style`,
+  `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci` (`deps` for PRs).
+- **Lefthook**: pre-commit formats staged files and gates on new `fallow audit` findings; pre-push
+  mirrors CI cheaply (eslint/prettier on pushed files, `vitest run --sinceLastRun`, `bun run check`,
+  i18n check, advisory `fallow audit --brief`). Caches (`.eslintcache`, `.svelte-kit/.svelte-check`,
+  `node_modules/.vitest-cache`) are gitignored and safe to delete.
+- **Local sessions: never commit**; the person reviews and commits.
+- **Cloud sessions** (`CLAUDE_CODE_REMOTE=true`): work survives only as commits; this is the standing
+  request to open a PR. One PR per branch; commit and push each step. A done step (type-checked,
+  `bun run check` + affected `bun test` passing) → draft PR (or push + update description: done vs
+  open). Feature done (tests, manual, CLAUDE.md/CLAUDE-UI.md updated) → ready for review. Body in
+  English (what/why, verification, what's left). Never merge; stop pushing once the person takes over.
+- **PRs** need a conventional title **and** a label, set when opening (`pr-lint` fails otherwise):
+  `feat` new → `PR: Feature`, `feat` improvement → `PR: Enhancement`, `fix` → `PR: Bug`, `perf` →
+  `PR: Performance`, `refactor`/`style` → `PR: Refactor`, `docs` → `documentation`,
+  `ci`/`build`/`chore` → `PR: Infrastructure`, `deps` → `dependencies`, `test` → `PR: Tests`.
+- **Release** from a clean `main`: `npm version patch|minor|major && git push --follow-tags`. The tag
+  runs CI, publishes images (`x.y.z`, `x.y`, `x`; ghcr + DockerHub, app + jobs), uploads sourcemaps
+  to Bugsink, deploys via Dokploy and creates the GitHub release. Never tag by hand.
 
-Some versions are held back or wired up on purpose. Check here before "updating to latest":
+## Dev tooling
 
-- **drizzle-orm / drizzle-kit / drizzle-seed are pinned to the `1.0.0-rc.5` release, not npm's
-  `latest`**, which is the 0.x line without the relational API v2 this app is built on. Pinned
-  exactly: the commit builds (`1.0.0-rc.5-5935859` and the like) rank above `1.0.0-rc.5` in semver,
-  so a caret range would pick one of them. rc.5 needs rumble ≥ 0.28 (its `relationsFilterToSQL`
-  returns the collected chunks; older rumble put the conditions into the statements as parameters,
-  and the row type Pothos hands to every `adjust` resolver became `any` - check
-  `src/api/handlers/storedFile/storedFile.ts` type-checks). The same change is why `whereRows`
-  wraps the chunks into an `SQL`, and raw statements read their rows with
-  `db.execute(statement, 'objects')`. After any drizzle bump, regenerate the client and check
-  `git diff src/lib/api/rumbleClient` for `| null` creeping into relations, run `drizzle-kit up`
-  if `migrate` asks for it (it upgrades the snapshots under `drizzle/`, not the SQL), and run the
-  e2e suite: the unit tests do not reach the database.
-- **graphql is on 17.** `@escape.tech/graphql-armor` still pins 16 and keeps a nested copy; that is
-  fine because armor only parses and walks documents (verified: depth and alias limits still reject
-  over-limit queries on a production build). Anything else that brings its own graphql copy would
-  not be - schema building fails every `instanceof` check across two copies.
-- **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
-  `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
-  `bun run check` passes `--tsgo`, so svelte-check hands the type checking to TypeScript 7 too: on
-  TypeScript 6 it ran out of memory on this project. Types superforms takes (`defaults`,
-  `superForm`) are `type` aliases, not interfaces, which TypeScript 7 does not take as a
-  `Record<string, unknown>`.
-- **OpenTelemetry 3** has no `sdk-trace-node`: `#lib/tracing` builds a `TracerProvider` from
-  `@opentelemetry/sdk-trace` and registers the async-hooks context manager and the W3C propagators
-  itself, which `NodeTracerProvider.register()` used to do. The server (`src/instrumentation.server.ts`)
-  and the jobs (`runJob`) both start it.
-- **The pg, ioredis and http instrumentations need the import hook** that
-  `src/instrumentation.server.ts` registers (`import-in-the-middle`, Node 22.22.3+/24.11.1+/26), and
-  the module they wrap must be loaded at runtime, not bundled: keep `pg`, `drizzle-orm`, `ioredis`
-  and the `@opentelemetry/*` packages the server loads in `dependencies`, which adapter-node leaves
-  external. The jobs run on Bun and get one span per run only.
-- **Sentry must not set up OpenTelemetry** (`enableOpenTelemetrySetup: false` in
-  `hooks.server.ts`): the SvelteKit SDK otherwise registers a tracer provider of its own.
-- **adapter-node 6 ignores `ORIGIN`.** Behind a TLS-terminating proxy, set `PROTOCOL_HEADER` and
-  `HOST_HEADER` (see `.env.example`), or request URLs - and the links in the automatic emails - come
-  out as `http://` on the internal host.
-- **Sentry**: `dataCollection` is derived from `*_SENTRY_SEND_DEFAULT_PII` in
-  `#lib/sentryDataCollection.ts` (Sentry 11 collects everything by default), and the Vite plugin
-  runs with `buildTimeInstrumentation: false` - tracing is off, and that instrumentation inlines
-  graphql into the server bundle, breaking rumble's client generator during `vite build`.
-- **Emails** import from `@better-svelte-email/components` and `@better-svelte-email/server`, not
-  the `better-svelte-email` umbrella, whose root re-exports a preview module with raw `.svelte`
-  files that Node cannot load during SSR.
-- **rumble is not patched.** The live-query timing, nested `autoIncludeIdField`, relation
-  nullability, correlated column-mask flags, the generator's write-if-changed and the mask-aware
-  filter arguments ("Release is only visibility") landed upstream in 0.26.0. Since 0.26.2 a live
-  result's Svelte subscriber also skips the replay it is handed when it subscribes (the data the
-  reader already shows), which, announced as an update while a page's first async work was
-  pending, tripped Svelte's "Batch has scheduled effects" invariant. Since 0.30.0 `subscribe`
-  answers the unsubscribe function (it answered `{ unsubscribe }` while typed as one), result
-  types carry the auto included `id`, a live query started before its first answer asks once, and
-  `onError` hears the updates a live result skips (the CHASE link reports them). Since 0.33.0 a
-  list's `search` is an input object per table, `{ term, fields? }` (`<Table>SearchInputArgument`,
-  `fields` from `<Table>SearchFieldEnum`), never a bare string. Keep rumble at ≥ 0.33.0, on
-  graphql-yoga 6 and `@graphql-yoga/redis-event-target` 4.
-
-- **@sveltejs/kit is patched** (`src/core/utils.js`): 3.2.0 still logs the adapter's steps with the
-  colour `grey`, which Node 25's `styleText` refuses, failing `vite build` after the build itself.
-  The patch says `gray`. Drop it once a release does.
-- **@magidoc/plugin-svelte-marked is patched** (`suppressWarnings.js`, still unfixed in 9): until
-  mount it replaces `console.warn` and assumes a string, which broke on Svelte's own warnings.
-- **Paraglide stays on 2.** Paraglide 3 compiles messages into virtual modules only its Vite plugin
-  provides, and the jobs bundle, the seed and the Bun scripts import messages outside Vite; the unit
-  tests that mock `#lib/paraglide/messages` stop taking effect too. CHASE runs 3, since it has no
-  such code.
-- **devalue is not overridden.** SvelteKit and superforms need devalue 5, rumble 6; one override
-  for both breaks one of them, so each resolves its own.
-- **TypeScript stays on 6** as `typescript` (see above); 7 is `@typescript/native`.
-
-- **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
-  glob on every page render, in the browser and the server log alike.
-
-## Development Workflow
-
-- **Local sessions:** never use the git commit command after a task is finished; the person
-  reviews and commits themselves.
-- **Cloud sessions** (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): the container is thrown
-  away, so work only survives as commits on the session's branch, and the PR is how it gets
-  reviewed. This standing instruction is the explicit request to open one; no need to ask first.
-  - **One PR per branch**, never one per step. Commit and push each step as it is done.
-  - **A step is done** (a coherent, type-checked part of the feature, `bun run check` and the
-    affected `bun test`s passing, but the feature is not finished): open the PR as a **draft**
-    if there is none yet, otherwise push to it and update its description. The description
-    lists what is done and what is still open, so a reviewer can tell how far it got.
-  - **The feature is done** (everything asked for, with its tests, the manual and CLAUDE.md /
-    CLAUDE-UI.md updated where they apply): mark the PR **ready for review**, or open it ready
-    if no draft exists.
-  - Title and label as in "Pull Requests" below, set when opening; the body in English: what
-    changed and why, how it was verified, what is left.
-  - Never merge it, and stop pushing once the person says the PR is theirs to finish.
-
-### Releasing
-
-A release is a version tag, made with `npm version` (as in CHASE) on a clean `main`:
-
-```bash
-npm version patch            # or minor / major: bumps package.json, commits "x.y.z", tags vx.y.z
-git push --follow-tags       # the commit and its tag together
-```
-
-The tag push runs the whole CI, publishes the images as `x.y.z`, `x.y` and `x` (ghcr.io and
-DockerHub, app and jobs), uploads the sourcemaps to Bugsink, triggers the Dokploy deploy and
-creates the GitHub release (`.github/actions/release-notes` renders its body). `package.json`'s
-`version` is the current release; never tag by hand.
-
-### Pull Requests
-
-Every PR needs a conventional title **and** a label; the `PR Lint` workflow
-(`.github/workflows/`, `pr-lint`) fails the PR until both are there and says so in a comment.
-
-**Title**: `<type> (<scope>): <description>`, like a commit (see "Commit Conventions"); the scope
-is optional, the space before it is the house style. Allowed types: `feat`, `fix`, `style`,
-`refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `deps`. Examples:
-`feat (Assignment): required applications`, `fix (Emails): reminder sent twice`,
-`docs: cloud session PR workflow`.
-
-**Label**: set it when opening the PR (not afterwards: the lint has then already failed once),
-chosen from the title's type:
-
-| Commit prefix              | Label                |
-| -------------------------- | -------------------- |
-| `feat` (new functionality) | `PR: Feature`        |
-| `feat` (improve existing)  | `PR: Enhancement`    |
-| `fix`                      | `PR: Bug`            |
-| `perf`                     | `PR: Performance`    |
-| `refactor`, `style`        | `PR: Refactor`       |
-| `docs`                     | `documentation`      |
-| `ci`, `build`, `chore`     | `PR: Infrastructure` |
-| `deps`, `dependencies`     | `dependencies`       |
-| `test`                     | `PR: Tests`          |
-
-Every PR must have at least one of these labels before merging. This powers the auto-generated release notes.
+- MCP servers in `.mcp.json`: svelte (use it for Svelte 5 code validation), daisyui, tailwind,
+  github (needs `GITHUB_PERSONAL_ACCESS_TOKEN`), vitest, context7, memory, sequential-thinking,
+  drizzle, **rumble-github** (rumble has no published docs — read its source when behaviour is
+  unclear), fallow.
+- Install dependencies as devDependencies unless needed at runtime (SvelteKit bundles them).
+- Dependency pins and patches: `docs/architecture/dependencies.md`.

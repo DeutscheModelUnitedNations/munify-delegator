@@ -5,21 +5,12 @@
 -->
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
-	import LoadError from '#lib/components/LoadError.svelte';
-	import { m } from '#lib/paraglide/messages';
+	import LoadBoundary from '#lib/components/LoadBoundary.svelte';
 	import ChatThread from './ChatThread.svelte';
 
 	let props: ComponentProps<typeof ChatThread> = $props();
 </script>
 
-<svelte:boundary>
+<LoadBoundary pendingClass="h-full">
 	<ChatThread {...props} />
-	{#snippet pending()}
-		<div class="flex h-full items-center justify-center">
-			<span class="loading loading-spinner" aria-label={m.genericToastLoading()}></span>
-		</div>
-	{/snippet}
-	{#snippet failed(_error, reset)}
-		<div class="p-4"><LoadError onretry={reset} /></div>
-	{/snippet}
-</svelte:boundary>
+</LoadBoundary>

@@ -207,12 +207,16 @@ Once the team has switched messages on, you find the **Messages** card in the qu
 - **Other delegates.** With **New message** you search by country, committee or role, for example "fran ga". You only see each other's role, never the name.
 - **Your delegation.** Every delegation has a group for all its members.
 
+While no chat is open, the page shows beside the chat list whom you can write to right away: your delegation and the team's inboxes. One click opens the chat.
+
 Chats with other delegates and the delegation group exist only once the roles are released. Until then the page tells you that you reach participant care there. Sent messages cannot be changed or deleted.
 
-When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off below the chat list at **Email about unread messages**.
+When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off with the gear above the chat list at **Email about unread messages**.
 
 :::tip When something is not right
-Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. You go through them point by point: each point first shows what it is about in short, open it and confirm it with **Understood**. Then the next one opens. Only once every point is confirmed can you tick the two boxes at the bottom. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
+Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. You go through them point by point: each point first shows what it is about in short, open it and confirm it with **Understood**. Then the next one opens. Only once every point is confirmed can you tick the two boxes at the bottom. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** in the gear menu above your chats.
+
+If your message seems to contain a phone number, an email address or a messenger link, the app points it out before sending. You can change the text or send it with **Send anyway**.
 
 When you open a chat with unread messages, the line **New messages** shows where you left off.
 

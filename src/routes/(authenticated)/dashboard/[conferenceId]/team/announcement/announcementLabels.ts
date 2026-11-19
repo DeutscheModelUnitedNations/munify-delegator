@@ -78,13 +78,51 @@ export function audienceLabel({
 	}
 }
 
-export const STATE_LOOK: Record<AnnouncementState, { label: () => string; badge: string }> = {
-	DRAFT: { label: () => m.announcementStateDraft(), badge: 'badge-ghost' },
-	SCHEDULED: { label: () => m.announcementStateScheduled(), badge: 'badge-info' },
-	PUBLISHED: { label: () => m.announcementStatePublished(), badge: 'badge-success' },
-	EXPIRED: { label: () => m.announcementStateExpired(), badge: 'badge-warning' },
-	ARCHIVED: { label: () => m.announcementStateArchived(), badge: 'badge-neutral' }
+/** A state's name, its badge, its icon and the bar along its row's edge in the team's list. */
+export const STATE_LOOK: Record<
+	AnnouncementState,
+	{ label: () => string; badge: string; edge: string; icon: string }
+> = {
+	DRAFT: {
+		label: () => m.announcementStateDraft(),
+		icon: 'ph-pencil-simple-line',
+		badge: 'badge-ghost',
+		edge: 'border-base-content/20'
+	},
+	SCHEDULED: {
+		label: () => m.announcementStateScheduled(),
+		icon: 'ph-clock',
+		badge: 'badge-info badge-soft',
+		edge: 'border-info'
+	},
+	PUBLISHED: {
+		label: () => m.announcementStatePublished(),
+		icon: 'ph-broadcast',
+		badge: 'badge-success badge-soft',
+		edge: 'border-success'
+	},
+	EXPIRED: {
+		label: () => m.announcementStateExpired(),
+		icon: 'ph-hourglass-low',
+		badge: 'badge-warning badge-soft',
+		edge: 'border-warning'
+	},
+	ARCHIVED: {
+		label: () => m.announcementStateArchived(),
+		icon: 'ph-archive',
+		badge: 'badge-ghost',
+		edge: 'border-transparent'
+	}
 };
+
+/** The states in the order an announcement passes through them. */
+export const STATE_ORDER: readonly AnnouncementState[] = [
+	'DRAFT',
+	'SCHEDULED',
+	'PUBLISHED',
+	'EXPIRED',
+	'ARCHIVED'
+];
 
 /** Narrows the API's `state` string to the states the page knows. */
 export function isAnnouncementState(state: string): state is AnnouncementState {

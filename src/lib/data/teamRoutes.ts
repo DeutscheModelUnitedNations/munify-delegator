@@ -12,8 +12,8 @@ import {
 } from '#lib/helpers/teamRoles';
 
 /**
- * Every page of a conference's team area, once. The side navigation, the dashboard's team entry, the command
- * palette and the route guard are all read from this list, so a page cannot be in one and
+ * Every page of a conference's team area, once. The conference's side navigation (after its
+ * overview), the command palette and the route guard are all read from this list, so a page cannot be in one and
  * missing from another, and who may open it is stated in one place (and is the same answer
  * everywhere).
  *
@@ -404,11 +404,15 @@ export const teamRoutes: readonly TeamRoute[] = [
 	}
 ];
 
-/** The public seats overview, which the dashboard offers next to its team entry */
-export const publicSeatsPath = 'seats';
-
-/** The public schedule, which the team sees whatever the conference's calendar switch says */
-export const publicCalendarPath = 'calendar';
+/**
+ * The participants' views of what the team's pages edit, which those pages link to: a participant
+ * page, relative to the conference's dashboard, per team page. The team reads the participants'
+ * schedule whatever the conference's calendar switch says.
+ */
+export const participantViewOf = {
+	seats: 'seats',
+	calendar: 'calendar'
+} as const satisfies Partial<Record<string, string>>;
 
 /** Whether the caller may open one page */
 export function mayOpenTeamRoute({
@@ -427,14 +431,6 @@ export function mayOpenTeamRoute({
 /** The pages the caller may open, in navigation order */
 export function teamRoutesFor(access: TeamAccess & { canSeePaperHub?: boolean }): TeamRoute[] {
 	return teamRoutes.filter((route) => mayOpenTeamRoute({ route, access }));
-}
-
-/**
- * Where the way into the team area leads: its first page the caller may open, since the area has
- * no landing page of its own. `undefined` when they may open none.
- */
-export function firstTeamPagePath(access: TeamAccess): string | undefined {
-	return teamRoutesFor(access).find((route) => route.path.startsWith('team/'))?.path;
 }
 
 /** The visible pages grouped into the navigation's sections, empty sections left out */

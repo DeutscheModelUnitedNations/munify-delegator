@@ -1,6 +1,7 @@
 import { m } from '#lib/paraglide/messages';
 import type { ChatInbox, ChatKind, ChatSide } from '#lib/helpers/chat';
 import { contactLabel, inboxName, type ContactLabelSource } from './chatLabels';
+import { sameDay } from './chatTime';
 
 /**
  * How a thread lays its messages out: which side each stands on, and whose name stands above it
@@ -106,6 +107,47 @@ export function bubblesOf<M extends ThreadMessage>({
 	});
 }
 
+/** Messages of one author written closer together than this share a bubble */
+const RUN_GAP_MS = 5 * 60 * 1000;
+
+export interface BubbleRun<M extends ThreadMessage> {
+	/** The first message's id, which a line above the run is keyed to */
+	key: string;
+	own: boolean;
+	author: string | undefined;
+	/** Follows a run of the same author, so it sits closer */
+	continues: boolean;
+	messages: M[];
+}
+
+/**
+ * Bubbles merged the way messengers do: what one author writes in a row within a few minutes
+ * shares one bubble. A message a line stands above (`breaksBefore`: unread, reported) starts a
+ * run of its own, so the line can stand between them.
+ */
+export function runsOf<M extends ThreadMessage & { createdAt: Date | string }>({
+	bubbles,
+	breaksBefore
+}: {
+	bubbles: readonly Bubble<M>[];
+	breaksBefore: readonly (string | undefined)[];
+}): BubbleRun<M>[] {
+	const runs: BubbleRun<M>[] = [];
+	for (const { message, own, author, continues } of bubbles) {
+		const run = runs.at(-1);
+		const previous = run?.messages.at(-1);
+		const joins =
+			run &&
+			previous &&
+			continues &&
+			!breaksBefore.includes(message.id) &&
+			new Date(message.createdAt).getTime() - new Date(previous.createdAt).getTime() <= RUN_GAP_MS;
+		if (joins) run.messages.push(message);
+		else runs.push({ key: message.id, own, author, continues, messages: [message] });
+	}
+	return runs;
+}
+
 /**
  * What there is to mark as read in an open chat, as a key that changes with each new message, or
  * nothing: no chat, a chat only reviewed (which never counts as read), or nothing unread.
@@ -144,17 +186,85 @@ export function firstUnreadId({
 	return others.at(-unreadCount)?.id ?? others.at(0)?.id;
 }
 
+/** A report of a chat as participant care reads it in the thread */
+export interface ThreadReport {
+	id: string;
+	reason: string;
+	createdAt: Date | string;
+	reporterName?: string | null;
+}
+
+export interface PlacedReports<R> {
+	/**
+	 * Reports placed above a message, the first written after them: `inDay` below the heading of
+	 * the message's day, `beforeDay` above it when they were filed on an earlier day
+	 */
+	above: Map<string, { beforeDay: R[]; inDay: R[] }>;
+	/** Filed after the last message: they close the thread */
+	after: R[];
+}
+
 /**
- * Where a report falls into a thread: the first message written after it, before which the
- * "reported" line stands. Undefined when nothing was written since: the line then closes the thread.
+ * Where reports fall into a thread: each stands at the moment it was filed, before the first
+ * message written after it.
  */
-export function firstMessageAfter({
+export function placeReports<R extends { createdAt: Date | string }>({
 	messages,
-	at
+	reports
 }: {
 	messages: readonly { id: string; createdAt: Date | string }[];
-	at: Date | string;
-}) {
-	const moment = new Date(at).getTime();
-	return messages.find((message) => new Date(message.createdAt).getTime() > moment)?.id;
+	reports: readonly R[];
+}): PlacedReports<R> {
+	const placed: PlacedReports<R> = { above: new Map(), after: [] };
+	for (const report of reports) {
+		const filed = new Date(report.createdAt);
+		const next = messages.find((message) => new Date(message.createdAt) > filed);
+		if (!next) {
+			placed.after.push(report);
+			continue;
+		}
+		const slot = placed.above.get(next.id) ?? { beforeDay: [], inDay: [] };
+		(sameDay(filed, new Date(next.createdAt)) ? slot.inDay : slot.beforeDay).push(report);
+		placed.above.set(next.id, slot);
+	}
+	return placed;
+}
+
+/**
+ * What the thread does as its newest message changes (`key` names chat and message): it opens at
+ * the first unread message, and later follows down to a new one while the reader is near the end
+ * or wrote it themselves. Otherwise it flags the message as missed.
+ */
+export function followStep({
+	key,
+	seenKey,
+	nearEnd,
+	newest,
+	side,
+	chat
+}: {
+	key: string;
+	/** The key handled last, empty before the thread opened */
+	seenKey: string;
+	nearEnd: boolean;
+	newest: ThreadMessage | undefined;
+	side: ChatSide;
+	chat: ThreadChat | null;
+}): 'stay' | 'open' | 'follow' | 'flag' {
+	if (key === seenKey) return 'stay';
+	if (seenKey === '') return 'open';
+	if (nearEnd) return 'follow';
+	const own = !!newest && !!chat && standsOnOwnSide({ message: newest, side, chat });
+	return own ? 'follow' : 'flag';
+}
+
+/** Opening jumps; following glides, unless the reader asked for less motion. */
+export function scrollBehaviorFor({
+	opening,
+	reducedMotion
+}: {
+	opening: boolean;
+	reducedMotion: boolean;
+}): ScrollBehavior {
+	return opening || reducedMotion ? 'instant' : 'smooth';
 }

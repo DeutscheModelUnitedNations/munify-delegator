@@ -23,7 +23,7 @@ Under **Announcements** you write what participants and the team should know. Ea
 
 ### Writing an announcement
 
-**New announcement** opens the editor. You fill in the fields on the left, and on the right under **Preview** you see the announcement the way readers get it.
+**New announcement** opens the editor. You write the content at the top left, and beside it under **Preview** you see the announcement the way readers get it. Audience and settings come below.
 
 - **Title** (120 characters at most) and **Text** (10,000 characters at most) are required. The text understands Markdown.
 - **Signature (optional)** goes below the text, for example "Your participant care team".
@@ -38,12 +38,14 @@ You enter times in the conference's time zone. **Save as draft** creates the ann
 
 ### The audience
 
-Under **Audience** you add groups through the select fields. Whoever is in at least one of them sees the announcement.
+Under **Audience** you search for groups and add them, or add the usual ones with one click on a suggestion below the search. Whoever is in at least one of them sees the announcement. Picked groups carry a check mark in the search; another click, the cross on the chip or **Remove all** takes them out again. The search finds:
 
-- **Add a group …**: **All participants**, **Delegates**, **Single participants**, **Supervisors**, **Applicants without a seat**, **Seated participants**, **Waiting list**, **Payment open**, **Paperwork open**, **Minors** and **Adults**.
-- **Add a committee …** and **Add a role …**: everybody seated in that committee or holding that role.
-- **Add a survey answer …**: everybody who picked that answer in a survey.
-- **Add the team …**: the **Whole team** or everybody with one team role. You reach the team only through this select, never through the other groups.
+- **Groups**: **All participants**, **Delegates**, **Single participants**, **Supervisors**, **Applicants without a seat**, **Seated participants**, **Waiting list**, **Payment open**, **Paperwork open**, **Minors** and **Adults**.
+- **Committees** and **Roles**: everybody seated in that committee or holding that role.
+- **Survey answers**: everybody who picked that answer in a survey.
+- **Team**: the **Whole team** or everybody with one team role. You reach the team only here, never through the other groups.
+
+What a picked group already holds in full is greyed out in the search: **All participants** holds **Seated participants**, every committee, every role, **Payment open** and **Paperwork open**, **Delegates** every committee, the **Whole team** every team role. Pick such a group later and the ones it holds drop out.
 
 **All participants** are everybody registered and the waiting list while people register. From the preparation stage on, with the assignment released, they are only those with a seat and their supervisors. Whoever got no seat or is still waiting is then reached through **Applicants without a seat** and **Waiting list**. Minors and adults are counted on the first day of the conference. Somebody without a birthday on record is in neither group.
 
@@ -64,7 +66,7 @@ Published right away, the announcement appears on the audience's dashboards at o
 
 ### The list
 
-The list shows every announcement with its state (**Draft**, **Scheduled**, **Published**, **Expired** or **Archived**), its audience, who wrote and published it, and how many of its audience have read it. The buttons on each announcement:
+The list shows every announcement with its state (**Draft**, **Scheduled**, **Published**, **Expired** or **Archived**), its audience, who wrote and published it, and how many of its audience have read it, as a bar. Above the list a button per state narrows the list to it. A click on an announcement opens it for editing. **Publish** sits right on it, everything else behind the three dots next to it:
 
 - **Edit**: if you change the title or text of a published announcement, readers see "updated on" with the date. A new audience applies at once.
 - **Take back**: the announcement disappears for everyone and becomes a draft again. This works for a scheduled one too.
@@ -128,9 +130,9 @@ Before their first message, participants agree to the **Terms of the message ser
 
 ### Replying and new chats
 
-If you answer several inboxes, **Messages** folds open in the navigation. Below it are the **Overview** and each inbox with its number of unread messages. The inboxes of a committee are grouped under the committee. The **Overview** shows all your inboxes as cards. If you answer only one, **Messages** opens its chats right away.
+**Messages** in the navigation carries a red dot while something is unread. The page shows the chats of all your inboxes in one list, each chat with its inbox. If you answer several, a button per inbox above the list, with its number of unread messages, narrows the list to it, a second click lifts that again.
 
-In an inbox the chats are on the left and the open chat on the right. Once somebody from the inbox reads a chat, it counts as read for everyone in the inbox.
+The chats are on the left and the open chat on the right. The bell above the list leads to your notifications. Once somebody from the inbox reads a chat, it counts as read for everyone in the inbox.
 
 You put a settled chat away with **Archive** at the top of the chat. It leaves the list for everybody who answers the inbox. The next message brings it back by itself. The button **Archive** above the list shows the archived chats. There you take a chat out again by hand with **Take out of the archive**. Participants are not told that their chat is archived.
 
@@ -144,11 +146,11 @@ In the [paper hub](./paper-hub) you write to the author of a paper directly. The
 
 ### Reports and suspensions
 
-Participants can report a direct chat or their delegation group. Chats with the team cannot be reported. Participant care and project management find reported chats under **Reports** in the navigation and in the **Overview**:
+Participants can report a direct chat or their delegation group. Chats with the team cannot be reported. Participant care and project management find reported chats under **Reports** in the navigation. While a report waits, a red notice above the chat list points there too:
 
 1. The open cases are on the left, the oldest first. Several reports of one chat are one case.
-2. Pick a case and you read the chat with names in the middle. A line shows when it was reported. You cannot write in this chat. The other person is not told who reported.
-3. On the right is the **Case file** with the reports and the **People involved**, for a delegation group all its members. For each person you see earlier settled reports about their chats, write to them or open their [user card](./participants#user-card).
+2. Pick a case and you read the chat with names in the middle. Each report stands in the chat where it was filed, with its reason, who reported and when. You cannot write in this chat. The other person is not told who reported.
+3. On the right is the **Case file** with the **People involved**, for a delegation group all its members. For each person you see earlier settled reports about their chats, write to them or open their [user card](./participants#user-card).
 4. **Suspend from chats** takes a person out of every chat with other participants of this conference. They still reach the team and the team still reaches them. **Lift suspension** undoes it.
 5. Hide offensive messages while the case is open (see below).
 6. Write down under **Internal note** what was discussed and decided, and close all reports of the chat at once with **Settle**. After that the chat is private again and participant care no longer reads it. A suspension stays until you lift it.
@@ -180,7 +182,7 @@ A notification only names the inbox and leads into the app. The text of a messag
 
 Chairs and committee consultants also hear of every paper submitted in their committee, as long as their team role may read papers (see [Who hears of new papers](./paper-hub#committee-notification)). Slack and the email **Paper submitted in a committee** tell them right away, without a switch on the [Emails](#emails) page.
 
-**Setting it up for yourself:** In the menu behind your initials at the top right, open **Notifications**. The entry appears once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
+**Setting it up for yourself:** In the menu behind your initials at the top right, open **My Account** and there the **Notifications** tab. The tab is there once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
 
 **Setting up Slack:** Project management picks the conference's workspace on the [Emails](#emails) page under **Slack workspace**. The choices are the workspaces the system's administration has added (see [Slack workspaces](./overview#slack-workspaces)). Without a workspace the conference sends no Slack messages.
 

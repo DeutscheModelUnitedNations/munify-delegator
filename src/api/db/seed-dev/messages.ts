@@ -1,7 +1,6 @@
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import type * as schema from '../schema';
-import { contentHash, termsInLocale } from '#api/handlers/messagingTerms/messagingTermsDocument';
-import { currentTermsFromFiles } from '#api/handlers/messagingTerms/termsFiles';
+import { seedAcceptancesOf } from '#api/handlers/messagingTerms/termsOnDisk';
 import { PERSONA_NATION } from './conference';
 import type { SeedBatch } from './batch';
 import type { ConferenceSeed } from './context';
@@ -505,19 +504,13 @@ export function addMessagingAccountSettings(batch: SeedBatch) {
 
 /** `userIds` accepted the terms as they stand, in German, four days ago (once per account). */
 function acceptTerms({ batch, userIds }: { batch: SeedBatch; userIds: string[] }) {
-	const shown = termsInLocale({ document: currentTermsFromFiles(), locale: 'de' });
-	const accepted = new Set(batch.messagingTermsAcceptance.map((row) => row.userId));
-	for (const user of batch.user) {
-		if (!user.id || !userIds.includes(user.id) || accepted.has(user.id)) continue;
-		accepted.add(user.id);
-		batch.messagingTermsAcceptance.push({
-			userId: user.id,
-			createdAt: new Date(Date.now() - 4 * 24 * HOUR),
-			version: shown.version,
-			revision: shown.revision,
-			locale: shown.locale,
-			contentHash: contentHash(shown),
-			confirmationIds: shown.confirmations.map((confirmation) => confirmation.id)
-		});
-	}
+	// once per person, although several conferences seed the same one
+	const accepted = new Set(batch.messagingTermsAcceptance.map((acceptance) => acceptance.userId));
+	const acceptedAt = new Date(Date.now() - 4 * 24 * HOUR);
+	batch.messagingTermsAcceptance.push(
+		...seedAcceptancesOf(userIds.filter((userId) => !accepted.has(userId))).map((acceptance) => ({
+			...acceptance,
+			createdAt: acceptedAt
+		}))
+	);
 }

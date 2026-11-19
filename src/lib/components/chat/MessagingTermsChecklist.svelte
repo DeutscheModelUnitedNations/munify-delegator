@@ -143,7 +143,7 @@
 		</div>
 	{/if}
 
-	<ol class="flex flex-col gap-2">
+	<ol class="flex flex-col gap-3">
 		{#each terms.sections as section, index (section.key)}
 			<MessagingTermsSection
 				{section}

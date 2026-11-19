@@ -10,6 +10,7 @@ import * as schema from '../schema';
 export interface SeedBatch {
 	nation: (typeof schema.nation.$inferInsert)[];
 	user: (typeof schema.user.$inferInsert)[];
+	messagingTermsAcceptance: (typeof schema.messagingTermsAcceptance.$inferInsert)[];
 	reviewerSnippet: (typeof schema.reviewerSnippet.$inferInsert)[];
 	storedFile: (typeof schema.storedFile.$inferInsert)[];
 	school: (typeof schema.school.$inferInsert)[];
@@ -38,7 +39,6 @@ export interface SeedBatch {
 	chatRead: (typeof schema.chatRead.$inferInsert)[];
 	chatReport: (typeof schema.chatReport.$inferInsert)[];
 	chatBlock: (typeof schema.chatBlock.$inferInsert)[];
-	messagingTermsAcceptance: (typeof schema.messagingTermsAcceptance.$inferInsert)[];
 	announcementAttachment: (typeof schema.announcementAttachment.$inferInsert)[];
 	announcementRead: (typeof schema.announcementRead.$inferInsert)[];
 	slackWorkspace: (typeof schema.slackWorkspace.$inferInsert)[];
@@ -81,6 +81,7 @@ export function emptyBatch(): SeedBatch {
 	return {
 		nation: [],
 		user: [],
+		messagingTermsAcceptance: [],
 		reviewerSnippet: [],
 		storedFile: [],
 		school: [],
@@ -108,7 +109,6 @@ export function emptyBatch(): SeedBatch {
 		chatRead: [],
 		chatReport: [],
 		chatBlock: [],
-		messagingTermsAcceptance: [],
 		announcementAttachment: [],
 		announcementRead: [],
 		slackWorkspace: [],
@@ -192,6 +192,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	const s = schema;
 	await insertChunked({ rows: batch.nation, insert: (rows) => db.insert(s.nation).values(rows) });
 	await insertChunked({ rows: batch.user, insert: (rows) => db.insert(s.user).values(rows) });
+	await insertChunked({
+		rows: batch.messagingTermsAcceptance,
+		insert: (rows) => db.insert(s.messagingTermsAcceptance).values(rows)
+	});
 	await insertChunked({
 		rows: batch.reviewerSnippet,
 		insert: (rows) => db.insert(s.reviewerSnippet).values(rows)
@@ -409,10 +413,6 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.chatRead,
 		insert: (rows) => db.insert(s.chatRead).values(rows)
-	});
-	await insertChunked({
-		rows: batch.messagingTermsAcceptance,
-		insert: (rows) => db.insert(s.messagingTermsAcceptance).values(rows)
 	});
 	await insertChunked({
 		rows: batch.chatBlock,
