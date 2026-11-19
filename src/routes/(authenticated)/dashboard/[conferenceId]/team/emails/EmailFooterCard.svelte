@@ -19,7 +19,10 @@
 	const written = $derived(footers.length > 0);
 </script>
 
-<div class="bg-base-100 rounded-box border-base-300 flex flex-col gap-2 border p-4">
+<div
+	class="bg-base-100 rounded-box border-base-300 flex flex-col gap-2 border p-4"
+	data-tour="team.emails.footer"
+>
 	<div class="flex flex-wrap items-center gap-3">
 		<i aria-hidden="true" class="ph-duotone ph-signature text-primary"></i>
 		<span class="font-semibold">{m.emailFooterTitle()}</span>

@@ -72,7 +72,7 @@
 			{/if}
 		</div>
 		{#if survey}
-			<div class="flex flex-none flex-wrap gap-2">
+			<div class="flex flex-none flex-wrap gap-2" data-tour="team.surveyDetail.status">
 				<button class="btn btn-ghost btn-sm" onclick={toggleDraft}>
 					<i
 						aria-hidden="true"
@@ -88,7 +88,7 @@
 		{/if}
 	</header>
 
-	<div role="tablist" class="tabs-border tabs">
+	<div role="tablist" class="tabs-border tabs" data-tour="team.surveyDetail.tabs">
 		<button
 			role="tab"
 			class="tab gap-2"

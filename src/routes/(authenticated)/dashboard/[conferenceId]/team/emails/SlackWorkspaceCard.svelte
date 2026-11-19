@@ -45,6 +45,7 @@
 	<div
 		class="bg-base-100 rounded-box border-base-300 flex flex-col gap-2 border p-4"
 		data-testid="slack-workspace-card"
+		data-tour="team.emails.slack"
 	>
 		<div class="flex flex-wrap items-center gap-3">
 			<i aria-hidden="true" class="ph-duotone ph-slack-logo text-primary"></i>

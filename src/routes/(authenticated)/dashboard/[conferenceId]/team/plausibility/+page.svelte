@@ -111,11 +111,14 @@
 </script>
 
 <div class="flex flex-col gap-6 py-4 sm:p-6">
-	<p class="text-base-content/70 text-sm">
+	<p class="text-base-content/70 text-sm" data-tour="team.plausibility.age-limits">
 		<i aria-hidden="true" class="ph-duotone ph-cake mr-1"></i>
 		{limitsText ? m.plausibilityAgeLimits({ limits: limitsText }) : m.plausibilityAgeLimitsOff()}
 	</p>
-	<div class="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
+	<div
+		class="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3"
+		data-tour="team.plausibility.checks"
+	>
 		{#each userChecks as check (check.headline)}
 			<PlausibilityCheck {...check} onSelect={openUserCard} />
 		{/each}

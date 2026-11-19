@@ -183,7 +183,7 @@
 
 	<PrintHeader title={label} searchPattern={grid.search} />
 
-	<div class="min-w-0">
+	<div class="min-w-0" data-tour="grid.table">
 		{#if grid.applied.grouping.length > 0}
 			<GroupedGrid {grid} {source} {label} onfilter={() => openPanel('filter')} {...rowProps} />
 		{:else}

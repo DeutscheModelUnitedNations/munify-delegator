@@ -48,7 +48,10 @@
 
 <div class="flex flex-col gap-4">
 	<div class="flex flex-wrap items-end gap-x-8 gap-y-4">
-		<fieldset class="fieldset min-w-0 flex-1 basis-96 p-0">
+		<fieldset
+			class="fieldset min-w-0 flex-1 basis-96 p-0"
+			data-tour="team.assignmentDelegations.sizes"
+		>
 			<legend class="fieldset-legend text-base-content/70 pt-0 text-xs tracking-wide uppercase">
 				{m.assignmentGroupSize()}
 			</legend>
@@ -76,7 +79,10 @@
 			</div>
 		</fieldset>
 	</div>
-	<div class="border-base-300 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-4">
+	<div
+		class="border-base-300 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-4"
+		data-tour="team.assignmentDelegations.actions"
+	>
 		<label class="flex cursor-pointer items-center gap-2 text-sm">
 			<input
 				type="checkbox"

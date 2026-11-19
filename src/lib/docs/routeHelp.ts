@@ -6,7 +6,8 @@ import {
 } from '@deutschemodelunitednations/docs-kit';
 import { REGISTRATION_CHOICE_ANCHOR } from './tours/anchors';
 
-// Loaded only when a tour starts, so the tours' copy is not in every page's bundle
+// Loaded only when a tour starts, so the tours' copy is not in every page's bundle. A team page's
+// tour lives in `tours/team/<page>.tour.ts` and exports it as `<page>Tour`.
 const registrationChoiceTour = async () =>
 	(await import('./tours/registrationChoice.tour')).registrationChoiceTour;
 const participantDashboardTour = async () =>
@@ -110,120 +111,156 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 
 	// Team: the team itself
 	'/(authenticated)/dashboard/[conferenceId]/team/members': {
-		docs: 'user-manual/team/overview#team-management'
+		docs: 'user-manual/team/overview#team-management',
+		tour: async () => (await import('./tours/team/members.tour')).membersTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/invitations': {
-		docs: 'user-manual/team/overview#team-management'
+		docs: 'user-manual/team/overview#team-management',
+		tour: async () => (await import('./tours/team/invitations.tour')).invitationsTour
 	},
 
 	// Team: settings
 	'/(authenticated)/dashboard/[conferenceId]/team/configuration': {
-		docs: 'user-manual/team/configuration'
+		docs: 'user-manual/team/configuration',
+		tour: async () => (await import('./tours/team/configuration.tour')).configurationTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/configuration/committees': {
-		docs: 'user-manual/team/configuration#committees-and-seats'
+		docs: 'user-manual/team/configuration#committees-and-seats',
+		tour: async () => (await import('./tours/team/committees.tour')).committeesTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/seat-planning': {
-		docs: 'user-manual/team/configuration#seat-planning'
+		docs: 'user-manual/team/configuration#seat-planning',
+		tour: async () => (await import('./tours/team/seatPlanning.tour')).seatPlanningTour
 	},
 
 	// Team: people
 	'/(authenticated)/dashboard/[conferenceId]/team/participants': {
-		docs: 'user-manual/team/participants#participants-table'
+		docs: 'user-manual/team/participants#participants-table',
+		tour: async () => (await import('./tours/team/participants.tour')).participantsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/user/[userId]': {
-		docs: 'user-manual/team/participants#user-card'
+		docs: 'user-manual/team/participants#user-card',
+		tour: async () => (await import('./tours/team/userCard.tour')).userCardTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/seats': {
-		docs: 'user-manual/team/participants#seats'
+		docs: 'user-manual/team/participants#seats',
+		tour: async () => (await import('./tours/team/seats.tour')).seatsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/waiting-list': {
-		docs: 'user-manual/team/participants#waiting-list'
+		docs: 'user-manual/team/participants#waiting-list',
+		tour: async () => (await import('./tours/team/waitingList.tour')).waitingListTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/schools': {
-		docs: 'user-manual/team/participants#schools'
+		docs: 'user-manual/team/participants#schools',
+		tour: async () => (await import('./tours/team/schools.tour')).schoolsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/schools/[schoolId]': {
-		docs: 'user-manual/team/participants#schools'
+		docs: 'user-manual/team/participants#schools',
+		tour: async () => (await import('./tours/team/school.tour')).schoolTour
 	},
 
 	// Team: formalities and the conference on site
 	'/(authenticated)/dashboard/[conferenceId]/team/payments': {
-		docs: 'user-manual/team/formalities#payments'
+		docs: 'user-manual/team/formalities#payments',
+		tour: async () => (await import('./tours/team/payments.tour')).paymentsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/postal-registration': {
-		docs: 'user-manual/team/formalities#postal-registration'
+		docs: 'user-manual/team/formalities#postal-registration',
+		tour: async () => (await import('./tours/team/postalRegistration.tour')).postalRegistrationTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/check-in': {
-		docs: 'user-manual/team/formalities#check-in'
+		docs: 'user-manual/team/formalities#check-in',
+		tour: async () => (await import('./tours/team/checkIn.tour')).checkInTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/attendance': {
-		docs: 'user-manual/team/formalities#scanner'
+		docs: 'user-manual/team/formalities#scanner',
+		tour: async () => (await import('./tours/team/attendance.tour')).attendanceTour
 	},
 
 	// Team: communication
 	'/(authenticated)/dashboard/[conferenceId]/team/announcement': {
-		docs: 'user-manual/team/communication#announcements'
+		docs: 'user-manual/team/communication#announcements',
+		tour: async () => (await import('./tours/team/announcement.tour')).announcementTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/messages': {
-		docs: 'user-manual/team/communication#messages'
+		docs: 'user-manual/team/communication#messages',
+		tour: async () => (await import('./tours/team/messages.tour')).messagesTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/emails': {
-		docs: 'user-manual/team/communication#emails'
+		docs: 'user-manual/team/communication#emails',
+		tour: async () => (await import('./tours/team/emails.tour')).emailsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/calendar': {
-		docs: 'user-manual/team/communication#calendar'
+		docs: 'user-manual/team/communication#calendar',
+		tour: async () => (await import('./tours/team/calendar.tour')).calendarTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/survey': {
-		docs: 'user-manual/team/communication#surveys'
+		docs: 'user-manual/team/communication#surveys',
+		tour: async () => (await import('./tours/team/survey.tour')).surveyTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/survey/[surveyId]': {
-		docs: 'user-manual/team/communication#surveys'
+		docs: 'user-manual/team/communication#surveys',
+		tour: async () => (await import('./tours/team/surveyDetail.tour')).surveyDetailTour
 	},
 
 	// Team: statistics and maintenance
 	'/(authenticated)/dashboard/[conferenceId]/team/stats': {
-		docs: 'user-manual/team/maintenance#statistics'
+		docs: 'user-manual/team/maintenance#statistics',
+		tour: async () => (await import('./tours/team/stats.tour')).statsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/plausibility': {
-		docs: 'user-manual/team/maintenance#plausibility'
+		docs: 'user-manual/team/maintenance#plausibility',
+		tour: async () => (await import('./tours/team/plausibility.tour')).plausibilityTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/cleanup': {
-		docs: 'user-manual/team/maintenance#cleanup'
+		docs: 'user-manual/team/maintenance#cleanup',
+		tour: async () => (await import('./tours/team/cleanup.tour')).cleanupTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/helper': {
 		docs: 'user-manual/team/maintenance#helper'
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/import': {
-		docs: 'user-manual/team/maintenance#import'
+		docs: 'user-manual/team/maintenance#import',
+		tour: async () => (await import('./tours/team/import.tour')).importTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/downloads': {
-		docs: 'user-manual/team/maintenance#downloads'
+		docs: 'user-manual/team/maintenance#downloads',
+		tour: async () => (await import('./tours/team/downloads.tour')).downloadsTour
 	},
 
 	// Team: assignment
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/introduction': {
-		docs: 'user-manual/team/assignment'
+		docs: 'user-manual/team/assignment',
+		tour: async () =>
+			(await import('./tours/team/assignmentIntroduction.tour')).assignmentIntroductionTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/sighting': {
-		docs: 'user-manual/team/assignment#sighting'
+		docs: 'user-manual/team/assignment#sighting',
+		tour: async () => (await import('./tours/team/assignmentSighting.tour')).assignmentSightingTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/weighting': {
-		docs: 'user-manual/team/assignment#weighting'
+		docs: 'user-manual/team/assignment#weighting',
+		tour: async () =>
+			(await import('./tours/team/assignmentWeighting.tour')).assignmentWeightingTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/delegations': {
-		docs: 'user-manual/team/assignment#delegations'
+		docs: 'user-manual/team/assignment#delegations',
+		tour: async () =>
+			(await import('./tours/team/assignmentDelegations.tour')).assignmentDelegationsTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/singles': {
-		docs: 'user-manual/team/assignment#single-participants'
+		docs: 'user-manual/team/assignment#single-participants',
+		tour: async () => (await import('./tours/team/assignmentSingles.tour')).assignmentSinglesTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/assignment/finish': {
-		docs: 'user-manual/team/assignment#finish-and-release'
+		docs: 'user-manual/team/assignment#finish-and-release',
+		tour: async () => (await import('./tours/team/assignmentFinish.tour')).assignmentFinishTour
 	},
 
 	// Team: AI assistants
 	'/(authenticated)/dashboard/[conferenceId]/team/ai-access': {
-		docs: 'user-manual/team/ai-access'
+		docs: 'user-manual/team/ai-access',
+		tour: async () => (await import('./tours/team/aiAccess.tour')).aiAccessTour
 	}
 };
 

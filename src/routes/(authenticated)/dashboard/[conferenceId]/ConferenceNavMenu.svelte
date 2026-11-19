@@ -15,7 +15,7 @@
 	import PlausibilityNavButton from './team/PlausibilityNavButton.svelte';
 	import CleanupNavButton from './team/CleanupNavButton.svelte';
 	import MessagesNavButton from './team/MessagesNavButton.svelte';
-	import { helpForRoute } from '#lib/docs/help';
+	import { helpForRoute, takeTour } from '#lib/docs/help';
 
 	/**
 	 * The menu itself: the conference's overview, then the registry's sections, each page a button,
@@ -38,6 +38,7 @@
 
 	// The manual's page about the team page on screen, or the manual's start
 	const help = $derived(helpForRoute(page.route.id));
+	const tour = $derived(help.tour);
 
 	const hrefOf = (route: TeamRoute) => resolve(`dashboard/${conferenceId}/${route.path}`);
 </script>
@@ -109,4 +110,17 @@
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</li>
+	{#if tour}
+		<li>
+			<button
+				type="button"
+				onclick={() => takeTour(tour)}
+				data-testid="team-tour-button"
+				data-close-drawer
+			>
+				<i aria-hidden="true" class="ph-duotone ph-signpost w-5 text-center"></i>
+				<span class="flex-1 text-left">{m.tourStart()}</span>
+			</button>
+		</li>
+	{/if}
 </NavMenu>

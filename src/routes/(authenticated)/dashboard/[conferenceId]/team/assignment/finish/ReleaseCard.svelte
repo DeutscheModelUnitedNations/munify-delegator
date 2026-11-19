@@ -41,7 +41,10 @@
 	const notice = $derived(notices[releaseNotice({ released, justApplied })]);
 </script>
 
-<section class="alert {notice.tone} alert-soft items-start">
+<section
+	class="alert {notice.tone} alert-soft items-start"
+	data-tour="team.assignmentFinish.release"
+>
 	<i aria-hidden="true" class="ph-duotone {notice.icon} mt-1 text-xl"></i>
 	<div class="flex flex-col gap-3">
 		<h3 class="font-bold">{notice.title}</h3>

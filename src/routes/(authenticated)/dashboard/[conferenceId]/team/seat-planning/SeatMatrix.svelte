@@ -76,7 +76,7 @@
 
 	<!-- the table is laid out out of flow, so it takes the height the sidebar gives the row instead of
 	     stretching it; stacked below xl there is no sidebar beside it, hence the minimum -->
-	<div class="relative min-h-96 grow">
+	<div class="relative min-h-96 grow" data-tour="team.seatPlanning.matrix">
 		<Table
 			wrapperClass="absolute inset-0"
 			class="table-pin-cols table-fixed"

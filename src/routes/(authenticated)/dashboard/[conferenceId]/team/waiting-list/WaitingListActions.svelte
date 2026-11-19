@@ -53,7 +53,7 @@
 	}
 </script>
 
-<div class="flex items-center gap-1">
+<div class="flex items-center gap-1" data-tour="team.waitingList.actions">
 	<a
 		class="btn btn-primary btn-xs"
 		href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}

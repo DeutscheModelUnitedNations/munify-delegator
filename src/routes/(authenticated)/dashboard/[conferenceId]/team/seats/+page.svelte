@@ -83,6 +83,7 @@
 
 	<div
 		class="bg-base-100 border-base-300 rounded-box sticky top-0 z-40 flex w-full flex-wrap items-center gap-x-4 gap-y-1 border px-3 py-1.5 text-sm"
+		data-tour="team.seats.switch"
 	>
 		<label class="label cursor-pointer gap-2">
 			<input

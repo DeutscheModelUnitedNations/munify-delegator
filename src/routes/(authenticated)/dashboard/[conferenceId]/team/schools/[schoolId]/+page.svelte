@@ -51,7 +51,11 @@
 				<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
 				{school.name}
 			</h2>
-			<button class="btn btn-error btn-outline btn-sm" onclick={() => (confirmingDelete = true)}>
+			<button
+				class="btn btn-error btn-outline btn-sm"
+				data-tour="team.school.delete"
+				onclick={() => (confirmingDelete = true)}
+			>
 				<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 				{m.schoolDelete()}
 			</button>
@@ -63,7 +67,7 @@
 
 	<SchoolMetrics {schoolId} {conferenceId} />
 
-	<section class="card bg-base-100 border-base-200 border shadow-sm">
+	<section class="card bg-base-100 border-base-200 border shadow-sm" data-tour="team.school.form">
 		<div class="card-body">
 			{#key schoolId}
 				<SchoolForm {schoolId} />

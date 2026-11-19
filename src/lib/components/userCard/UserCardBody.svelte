@@ -184,7 +184,11 @@
 
 		<UserCardTabs {tabs} activeTab={shownTab} onTabChange={(tab) => (activeTab = tab)} />
 
-		<div class="flex-1 overflow-y-auto p-3 sm:p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
+		<div
+			class="flex-1 overflow-y-auto p-3 sm:p-5 md:px-10 md:py-6 lg:px-16"
+			data-vaul-no-drag
+			data-tour="team.userCard.content"
+		>
 			<!-- Keyed so every tab fetches what it shows when it is opened, behind its own skeleton. -->
 			{#key shownTab}
 				<svelte:boundary onerror={(error) => logger.error('Failed to load user card tab', error)}>

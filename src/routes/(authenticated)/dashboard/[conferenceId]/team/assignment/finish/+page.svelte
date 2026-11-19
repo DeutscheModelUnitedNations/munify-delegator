@@ -163,11 +163,14 @@
 	<SchoolRuleWarnings conferenceId={params.conferenceId} plan={view} />
 	<SchoolOutcomeNotice conferenceId={params.conferenceId} plan={view} />
 
-	<section class="card bg-base-100 border-base-200 border shadow-sm">
+	<section
+		class="card bg-base-100 border-base-200 border shadow-sm"
+		data-tour="team.assignmentFinish.changes"
+	>
 		<div class="card-body gap-4 max-sm:p-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h3 class="card-title">{m.assignmentPendingChangesTitle()}</h3>
-				<div class="flex flex-wrap gap-2">
+				<div class="flex flex-wrap gap-2" data-tour="team.assignmentFinish.actions">
 					<button
 						class="btn btn-ghost btn-sm"
 						disabled={empty}

@@ -149,6 +149,7 @@
 {#snippet pairCard(pair: (typeof pairs)[number])}
 	<div
 		id="pair-{pair.id}"
+		data-tour="team.plausibility.pair"
 		class="card bg-base-200 scroll-mt-6 shadow-sm {pair.status === 'CONFIRMED'
 			? 'border-error/40 border'
 			: ''}"
@@ -173,7 +174,10 @@
 {/snippet}
 
 <section class="flex flex-col gap-4">
-	<div class="flex flex-wrap items-center justify-between gap-2">
+	<div
+		class="flex flex-wrap items-center justify-between gap-2"
+		data-tour="team.plausibility.duplicates"
+	>
 		<h2 class="text-2xl font-bold">{m.plausibilityPossibleDuplicates()}</h2>
 		<button class="btn btn-sm" onclick={scan} disabled={scanning}>
 			<i aria-hidden="true" class="ph-duotone ph-arrows-clockwise {scanning ? 'animate-spin' : ''}"

@@ -595,7 +595,7 @@ participant pages bring `BackToDashboard`, which hides itself beside the menu.
 ### Tabs
 
 `#lib/components/tabs/`: `<Tabs><Tab title icon active onclick /></Tabs>`, content switched with
-`{#if}` on your own state (or URL state).
+`{#if}` on your own state (or URL state). `tourAnchor` on `Tabs` sets its `data-tour`.
 
 ## Status Indicators
 

@@ -6,12 +6,14 @@
 		title?: string;
 		children: Snippet;
 		downloadButton?: Snippet;
+		/** `data-tour` anchor of the section, for the page's guided tour */
+		tourAnchor?: string;
 	}
 
-	let { title, children, downloadButton }: Props = $props();
+	let { title, children, downloadButton, tourAnchor }: Props = $props();
 </script>
 
-<section class="flex w-full flex-col items-start gap-4">
+<section class="flex w-full flex-col items-start gap-4" data-tour={tourAnchor}>
 	{#if title || downloadButton}
 		<h1 class="text-2xl font-bold">
 			{title}

@@ -76,6 +76,7 @@
 		class={['bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
 		style:view-transition-name="chat-list"
 		aria-label={m.chatListLabel()}
+		data-tour="chat.list"
 	>
 		{@render listHeader?.()}
 		<div class="min-h-0 flex-1 overflow-y-auto p-2">
@@ -91,6 +92,7 @@
 	<div
 		class={['min-h-0 min-w-0', !shownId && 'max-md:hidden']}
 		style:view-transition-name="chat-pane"
+		data-tour="chat.thread"
 	>
 		{#if shownId}
 			{#key shownId}
