@@ -68,17 +68,22 @@ export function paperSubmissionValues({
 	};
 }
 
-/** Renders the mail to `recipient` in their language and the conference's own words. */
+/**
+ * Renders the mail to `recipient` in their language and the conference's own words. `url` replaces
+ * the paper's link (the notification test has no paper to open).
+ */
 export function renderPaperSubmittedEmail({
 	recipient,
 	paper,
 	origin,
-	wording
+	wording,
+	url = submittedPaperUrl({ origin, paper })
 }: {
 	recipient: SnapshotUser;
 	paper: SubmittedPaper;
 	origin: string;
 	wording: ConferenceWording;
+	url?: string;
 }) {
 	return renderNoticeEmail({
 		kind: KIND,
@@ -88,7 +93,7 @@ export function renderPaperSubmittedEmail({
 		values: () => paperSubmissionValues({ paper }),
 		button: () => ({
 			label: m.emailAutoPaperSubmittedButton(),
-			url: submittedPaperUrl({ origin, paper })
+			url
 		})
 	});
 }

@@ -1530,8 +1530,15 @@ bun run preview
   never a word of the message or who wrote it; for a submitted paper where and by which role,
   never its author or text. Anything new that tells the team has to keep that,
   for the trusted persons' chats above all.
+- **Each line of the settings page sends a test** of itself (`sendNotificationTest`,
+  `notificationTest.ts`), by mail or Slack, to the caller alone, whatever the switch says: the
+  same Slack text (`inboxSlackText` / `reportSlackText` / `paperSlackText`) and the same mail
+  (`UNREAD_MESSAGES`, `CHAT_REPORTED`, a sample `PAPER_SUBMITTED`) rendered the real way, marked as
+  a test and logged as sent by hand with a `test:` key, so it claims nothing the real ones use.
+  A new topic needs its case in `testEmailKind` and the Slack text there.
 - `SLACK_API_URL` points the calls at a stand-in; only tests set it.
-  `e2e/authorization/notifications.spec.ts` pins the rules down.
+  `e2e/authorization/notifications.spec.ts` pins the rules down; the dev seed's
+  `seed-dev/notifications.ts` has the workspaces (with placeholder tokens), lookups and choices.
 
 #### 18. Review drafts
 

@@ -1,6 +1,8 @@
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import type * as schema from '../schema';
+import { MESSAGING_TERMS_VERSION } from '#lib/helpers/messagingTerms';
 import { PERSONA_NATION } from './conference';
+import type { SeedBatch } from './batch';
 import type { ConferenceSeed } from './context';
 import { teamMemberId } from './team';
 
@@ -8,12 +10,34 @@ const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 
 type Inbox = NonNullable<(typeof schema.chat.$inferInsert)['inbox']>;
+type FunctionKind = (typeof schema.teamFunction.$inferInsert)['kind'];
+
+/** The id of a team persona's committee function (or trusted person, without a committee). */
+export function teamFunctionId({
+	cs,
+	userId,
+	kind,
+	committeeId
+}: {
+	cs: ConferenceSeed;
+	userId: DevAccountSub;
+	kind: FunctionKind;
+	committeeId: string | null;
+}) {
+	return cs.rowId(`function-${userId}-${kind}-${committeeId ?? 'conference'}`);
+}
+
+/** The id of the `index`th message of a seeded chat, for what points at it (mails, Slack). */
+export const chatMessageId = ({ chatId, index }: { chatId: string; index: number }) =>
+	`${chatId}-message-${index}`;
 
 /** A message of a seeded chat: who wrote it (a participant, or a team member from the inbox) and how long ago. */
 interface SeedMessage {
 	from: { participant: string } | { team: DevAccountSub };
 	minutesAgo: number;
 	body: string;
+	/** The paper the team wrote from */
+	paperId?: string;
 }
 
 /**
@@ -54,10 +78,12 @@ function readMarkers({
  *
  * Where the roles are released, `dev-head-delegate` has an unread direct chat with another
  * delegate of their committee, one with the single participant, the delegation's group and an
- * answered question to the consultants; `dev-delegate` waits for participant care; and
- * `dev-nsa-delegate` reported a chat twice (after an earlier, settled report of it) and
- * `dev-delegate-minor` their delegation's group, which participant care (`dev-team-care`) finds
- * on the team's messages page. Before the release only the chat with participant care exists.
+ * answered question to the consultants, and an answer to the chairs (`dev-team-member`, who
+ * wrote from their position paper) waiting unread; `dev-delegate` waits for participant care; and
+ * `dev-nsa-delegate` reported a chat twice (after an earlier, settled report of it), blocked the
+ * other party, whom participant care suspended from writing, and `dev-delegate-minor` reported
+ * their delegation's group, which participant care (`dev-team-care`) finds on the team's
+ * messages page. Before the release only the chat with participant care exists.
  */
 export function addMessages(cs: ConferenceSeed) {
 	if (!cs.conference.messagingEnabled || !cs.plan.assigned) return;
@@ -74,7 +100,12 @@ export function addMessages(cs: ConferenceSeed) {
 		['dev-team-member', null, 'TRUSTED_PERSON'],
 		['dev-team-content-lead', null, 'TRUSTED_PERSON']
 	] as const) {
-		cs.batch.teamFunction.push({ teamMemberId: teamMemberId({ cs, userId }), committeeId, kind });
+		cs.batch.teamFunction.push({
+			id: teamFunctionId({ cs, userId, kind, committeeId }),
+			teamMemberId: teamMemberId({ cs, userId }),
+			committeeId,
+			kind
+		});
 	}
 
 	const addChat = ({
@@ -109,9 +140,11 @@ export function addMessages(cs: ConferenceSeed) {
 			teamReadAt: chat.kind === 'TEAM' && teamRead ? new Date(now) : null,
 			teamArchivedAt: archived ? new Date(now) : null
 		});
-		for (const message of messages) {
+		for (const [index, message] of messages.entries()) {
 			cs.batch.chatMessage.push({
+				id: chatMessageId({ chatId, index }),
 				chatId,
+				paperId: message.paperId ?? null,
 				createdAt: at(message.minutesAgo),
 				body: message.body,
 				fromTeam: 'team' in message.from,
@@ -275,6 +308,7 @@ export function addMessages(cs: ConferenceSeed) {
 		readBy: ['dev-delegate', 'dev-delegate-minor']
 	});
 	cs.batch.chatReport.push({
+		id: cs.rowId('chat-report-delegation'),
 		conferenceId: cs.id,
 		chatId: groupChatId,
 		reporterUserId: 'dev-delegate-minor',
@@ -298,6 +332,32 @@ export function addMessages(cs: ConferenceSeed) {
 			}
 		],
 		readBy: ['dev-head-delegate']
+	});
+
+	// the chair wrote from the head delegate's paper; the answer waits in the chairs' inbox
+	const headPaper = cs.batch.paper.find(
+		(paper) =>
+			paper.authorParticipantId === participantId('dev-head-delegate') &&
+			paper.type === 'POSITION_PAPER'
+	);
+	addChat({
+		id: 'chairs',
+		chat: teamChat('dev-head-delegate', 'CHAIR', first.id),
+		messages: [
+			{
+				from: { team: 'dev-team-member' },
+				minutesAgo: 8 * 60,
+				body: 'Hallo! Zu eurem Positionspapier: Bitte ergänzt noch, wie ihr die Finanzierung sicherstellen wollt.',
+				paperId: headPaper?.id
+			},
+			{
+				from: { participant: 'dev-head-delegate' },
+				minutesAgo: 30,
+				body: 'Danke für den Hinweis! Dürfen wir die überarbeitete Fassung noch nach der Frist einreichen?'
+			}
+		],
+		readBy: ['dev-head-delegate'],
+		teamRead: false
 	});
 
 	addChat({
@@ -364,6 +424,7 @@ export function addMessages(cs: ConferenceSeed) {
 			readBy: ['dev-nsa-delegate', stranger.userId]
 		});
 		cs.batch.chatReport.push({
+			id: cs.rowId('chat-report-direct'),
 			conferenceId: cs.id,
 			chatId,
 			reporterUserId: 'dev-nsa-delegate',
@@ -389,5 +450,38 @@ export function addMessages(cs: ConferenceSeed) {
 			resolvedAt: new Date(now - 3 * 24 * HOUR + HOUR),
 			resolutionNote: 'Mit beiden gesprochen. Entschuldigung angenommen, keine Sperre.'
 		});
+		// the reporter blocked the other party, and participant care suspended them meanwhile
+		cs.batch.chatBlock.push({
+			blockerParticipantId: participantId('dev-nsa-delegate'),
+			blockedParticipantId: participantId(stranger.userId)
+		});
+		cs.participant(stranger.userId).messagingSuspended = true;
+		acceptTerms({ batch: cs.batch, userIds: [stranger.userId] });
+	}
+	if (neighbour) acceptTerms({ batch: cs.batch, userIds: [neighbour.userId] });
+}
+
+/**
+ * Everybody who wrote in a seeded chat agreed to the terms first, apart from `dev-delegate`, who
+ * wrote before there were any and is asked on their next message. `dev-single` gets no mails
+ * about unread messages, and `dev-team-content-lead` switched that mail off before the team chose
+ * per inbox, so their inbox mails start off. All of it is on the account, in every conference.
+ */
+export function addMessagingAccountSettings(batch: SeedBatch) {
+	acceptTerms({
+		batch,
+		userIds: ['dev-head-delegate', 'dev-delegate-minor', 'dev-nsa-delegate', 'dev-single']
+	});
+	for (const user of batch.user) {
+		if (user.id === 'dev-single' || user.id === 'dev-team-content-lead')
+			user.messageNotificationEmails = false;
+	}
+}
+
+function acceptTerms({ batch, userIds }: { batch: SeedBatch; userIds: string[] }) {
+	for (const user of batch.user) {
+		if (!user.id || !userIds.includes(user.id)) continue;
+		user.messagingTermsVersion = MESSAGING_TERMS_VERSION;
+		user.messagingTermsAcceptedAt = new Date(Date.now() - 4 * 24 * HOUR);
 	}
 }

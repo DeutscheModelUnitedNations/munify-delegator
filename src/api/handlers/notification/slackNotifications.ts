@@ -169,6 +169,51 @@ async function tell({
 
 const slackLink = ({ url, label }: { url: string; label: string }) => `<${url}|${label}>`;
 
+/**
+ * The texts of the messages, asked for in the recipient's locale. The notification test on the
+ * settings page sends them too, so a test reads exactly like the real thing.
+ */
+
+/** A participant wrote in an inbox the member answers under `key`. */
+export const inboxSlackText = ({
+	key,
+	held,
+	conferenceTitle,
+	conferenceId,
+	origin
+}: {
+	key: TopicKey;
+	/** The member's function the inbox is answered by, for a committee's inbox. */
+	held?: { kind: string; committee?: { abbreviation: string } | null };
+	conferenceTitle: string;
+	conferenceId: string;
+	origin: string;
+}) =>
+	`${m.slackInboxMessage({
+		inbox: notificationTopicLabel({
+			topic: key.topic,
+			functionKind: held?.kind,
+			committeeAbbreviation: held?.committee?.abbreviation
+		}),
+		conference: conferenceTitle
+	})}\n${slackLink({ url: `${origin}/dashboard/${conferenceId}/team/messages`, label: m.slackOpenMessages() })}`;
+
+/** A chat was reported. */
+export const reportSlackText = ({
+	conferenceTitle,
+	conferenceId,
+	origin
+}: {
+	conferenceTitle: string;
+	conferenceId: string;
+	origin: string;
+}) =>
+	`${m.slackReportMessage({ conference: conferenceTitle })}\n${slackLink({ url: `${origin}/dashboard/${conferenceId}/team/messages?view=reports`, label: m.slackOpenReports() })}`;
+
+/** A version of a paper was submitted; `url` is where it opens. */
+export const paperSlackText = ({ paper, url }: { paper: SubmittedPaper; url: string }) =>
+	`${m.slackPaperSubmitted(paperSubmissionValues({ paper, escape: slackEscape }))}\n${slackLink({ url, label: m.slackOpenPaper() })}`;
+
 /** Tells everybody answering the inbox of `chat` that a participant wrote there. */
 async function tellInbox({
 	chat,
@@ -181,7 +226,6 @@ async function tellInbox({
 }) {
 	const recipients = await loadRecipients(chat.conferenceId);
 	if (!recipients) return;
-	const url = `${origin}/dashboard/${chat.conferenceId}/team/messages`;
 	await Promise.all(
 		recipients.members.map(async (member) => {
 			const key = topicOfInbox({ member, inbox: chat });
@@ -194,14 +238,13 @@ async function tellInbox({
 				subjectId: messageId,
 				oncePerSubject: false,
 				text: () =>
-					`${m.slackInboxMessage({
-						inbox: notificationTopicLabel({
-							topic: key.topic,
-							functionKind: held?.kind,
-							committeeAbbreviation: held?.committee?.abbreviation
-						}),
-						conference: recipients.conferenceTitle
-					})}\n${slackLink({ url, label: m.slackOpenMessages() })}`
+					inboxSlackText({
+						key,
+						held,
+						conferenceTitle: recipients.conferenceTitle,
+						conferenceId: chat.conferenceId,
+						origin
+					})
 			});
 		})
 	);
@@ -220,7 +263,6 @@ async function tellReport({
 	const recipients = await loadRecipients(conferenceId);
 	if (!recipients) return;
 	const key: TopicKey = { topic: 'CHAT_REPORT', teamFunctionId: null };
-	const url = `${origin}/dashboard/${conferenceId}/team/messages?view=reports`;
 	await Promise.all(
 		recipients.members
 			.filter((member) => hearsOfReports(member) && wantsSlack({ member, key }))
@@ -232,7 +274,7 @@ async function tellReport({
 					subjectId: reportId,
 					oncePerSubject: true,
 					text: () =>
-						`${m.slackReportMessage({ conference: recipients.conferenceTitle })}\n${slackLink({ url, label: m.slackOpenReports() })}`
+						reportSlackText({ conferenceTitle: recipients.conferenceTitle, conferenceId, origin })
 				})
 			)
 	);
@@ -264,8 +306,7 @@ async function tellPaper({ paper, origin }: { paper: SubmittedPaper; origin: str
 					key: `paper:${paper.paperId}`,
 					subjectId: paper.versionId,
 					oncePerSubject: true,
-					text: () =>
-						`${m.slackPaperSubmitted(paperSubmissionValues({ paper, escape: slackEscape }))}\n${slackLink({ url, label: m.slackOpenPaper() })}`
+					text: () => paperSlackText({ paper, url })
 				})
 			)
 	);

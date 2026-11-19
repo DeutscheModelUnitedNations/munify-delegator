@@ -13,17 +13,22 @@ import type { ConferenceSeed } from './context';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperType = (typeof schema.paper.$inferSelect)['type'];
+type AnonymousAs = NonNullable<(typeof schema.paperReview.$inferSelect)['anonymousAs']>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * One step of a paper's history, oldest first. A `save` is a version the author stored; a
  * `review` is a verdict on the version before it, which sets that version's status as the app
- * does.
+ * does, published under the reviewer's name or `anonymous` (with the name, for `CUSTOM`).
  */
 type Step =
 	| { save: 'DRAFT' | 'SUBMITTED' | 'REVISED' }
-	| { review: 'CHANGES_REQUESTED' | 'ACCEPTED'; by: DevAccountSub };
+	| {
+			review: 'CHANGES_REQUESTED' | 'ACCEPTED';
+			by: DevAccountSub;
+			anonymous?: { as: Exclude<AnonymousAs, 'CUSTOM'> } | { as: 'CUSTOM'; name: string };
+	  };
 
 interface PaperPlan {
 	authorId: string;
@@ -128,6 +133,8 @@ function addPaper({ cs, plan }: { cs: ConferenceSeed; plan: PaperPlan }) {
 			comments: reviewComments(step.review),
 			statusBefore,
 			statusAfter: step.review,
+			anonymousAs: step.anonymous?.as ?? null,
+			anonymousName: step.anonymous?.as === 'CUSTOM' ? step.anonymous.name : null,
 			createdAt
 		});
 		statusBefore = step.review;
@@ -164,7 +171,9 @@ function addPaper({ cs, plan }: { cs: ConferenceSeed; plan: PaperPlan }) {
 
 /**
  * Every paper status, written by the personas, plus a review queue from the crowd. The flag
- * collection follows from it: Germany has found the pieces of its reviewed agenda items.
+ * collection follows from it: Germany has found the pieces of its reviewed agenda items. Reviews
+ * come under the reviewer's name and under each anonymous one (Sekretariat, Wissenschaftlicher
+ * Dienst, a name of the reviewer's own).
  */
 export function addPapers(cs: ConferenceSeed) {
 	if (!cs.plan.with.papers) return;
@@ -193,7 +202,7 @@ export function addPapers(cs: ConferenceSeed) {
 				{ save: 'SUBMITTED' },
 				{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
 				{ save: 'REVISED' },
-				{ review: 'ACCEPTED', by: 'dev-team-pm' }
+				{ review: 'ACCEPTED', by: 'dev-team-pm', anonymous: { as: 'SECRETARIAT' } }
 			]
 		}
 	});
@@ -205,7 +214,14 @@ export function addPapers(cs: ConferenceSeed) {
 			type: 'POSITION_PAPER',
 			agendaItemId: head.agendaItemIds[0],
 			title: 'Positionspapier Deutschland (Änderungen erbeten)',
-			history: [{ save: 'SUBMITTED' }, { review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' }]
+			history: [
+				{ save: 'SUBMITTED' },
+				{
+					review: 'CHANGES_REQUESTED',
+					by: 'dev-team-reviewer',
+					anonymous: { as: 'RESEARCH_SERVICE' }
+				}
+			]
 		}
 	});
 	addPaper({
@@ -240,7 +256,11 @@ export function addPapers(cs: ConferenceSeed) {
 			title: 'Vorstellung unserer Organisation (überarbeitet)',
 			history: [
 				{ save: 'SUBMITTED' },
-				{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
+				{
+					review: 'CHANGES_REQUESTED',
+					by: 'dev-team-reviewer',
+					anonymous: { as: 'CUSTOM', name: 'Vorsitz der Generalversammlung' }
+				},
 				{ save: 'REVISED' }
 			],
 			// a draft for the first version, edited since: the editor warns it is stale

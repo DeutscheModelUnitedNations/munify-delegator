@@ -1,5 +1,8 @@
 import type * as schema from '../schema';
+import { hasNoSwitch } from '#lib/helpers/emailKinds';
 import type { ConferenceSeed } from './context';
+import { chatMessageId } from './messages';
+import { teamMemberId } from './team';
 
 type EmailKind = (typeof schema.emailKind.enumValues)[number];
 type EmailStatus = (typeof schema.emailStatus.enumValues)[number];
@@ -15,8 +18,11 @@ interface LogPlan {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** Mails the personas got while the conference prepared: every status the log shows. */
-const PREPARATION_LOG: LogPlan[] = [
+/**
+ * Mails the personas got while the conference prepared: every status the log shows, and the mails
+ * about announcements, messages, reports and joining the team, keyed by the rows they are about.
+ */
+const preparationLog = (cs: ConferenceSeed): LogPlan[] => [
 	{
 		kind: 'ASSIGNMENT_REJECTED',
 		userId: 'dev-rejected-delegate',
@@ -66,6 +72,34 @@ const PREPARATION_LOG: LogPlan[] = [
 		subjectKey: 'summary',
 		status: 'SENDING',
 		daysAgo: 0
+	},
+	{
+		kind: 'ANNOUNCEMENT',
+		userId: 'dev-supervisor',
+		subjectKey: `${cs.rowId('announcement-supervisors')}:0`,
+		status: 'SENT',
+		daysAgo: 1
+	},
+	{
+		kind: 'UNREAD_MESSAGES',
+		userId: 'dev-delegate',
+		subjectKey: chatMessageId({ chatId: cs.rowId('chat-delegation-germany'), index: 0 }),
+		status: 'SENT',
+		daysAgo: 1
+	},
+	{
+		kind: 'CHAT_REPORTED',
+		userId: 'dev-team-care',
+		subjectKey: cs.rowId('chat-report-direct'),
+		status: 'SENT',
+		daysAgo: 0
+	},
+	{
+		kind: 'TEAM_WELCOME',
+		userId: 'dev-team-member',
+		subjectKey: teamMemberId({ cs, userId: 'dev-team-member' }),
+		status: 'SENT',
+		daysAgo: 30
 	}
 ];
 
@@ -104,10 +138,10 @@ const POST_LOG: LogPlan[] = [
 export function addEmails(cs: ConferenceSeed) {
 	if (!cs.plan.with.emails) return;
 
-	const log = cs.plan.conference.state === 'POST' ? POST_LOG : PREPARATION_LOG;
+	const log = cs.plan.conference.state === 'POST' ? POST_LOG : preparationLog(cs);
 	const emails = new Map(cs.batch.user.map((user) => [user.id, user.email]));
 
-	for (const kind of new Set(log.map((entry) => entry.kind))) {
+	for (const kind of new Set(log.map((entry) => entry.kind).filter((kind) => !hasNoSwitch(kind)))) {
 		cs.batch.conferenceEmailSetting.push({
 			id: cs.rowId(`email-setting-${kind}`),
 			conferenceId: cs.id,
