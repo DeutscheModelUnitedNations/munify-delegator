@@ -168,7 +168,12 @@
 <div class="flex flex-col gap-4">
 	<div class="flex flex-wrap items-center gap-3">
 		<p class="text-base-content/70 min-w-0 flex-1 text-sm">{m.announcementTeamDescription()}</p>
-		<button class="btn btn-primary" onclick={() => edit()} data-testid="announcement-new">
+		<button
+			class="btn btn-primary"
+			onclick={() => edit()}
+			data-testid="announcement-new"
+			data-tour="team.announcement.new"
+		>
 			<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 			{m.announcementCreate()}
 		</button>
@@ -212,7 +217,11 @@
 	{/if}
 
 	<!-- the rows are drawn here, in snippets, not as a component of their own (see `rowView`) -->
-	<ul class="flex flex-col gap-2" data-testid="announcement-list">
+	<ul
+		class="flex flex-col gap-2"
+		data-testid="announcement-list"
+		data-tour="team.announcement.list"
+	>
 		{#each shownViews as view (view.id)}
 			{@const look = STATE_LOOK[view.state]}
 			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
@@ -343,7 +352,10 @@
 {/snippet}
 
 {#snippet rowButtons(view: RowView)}
-	<div class="flex items-center justify-end gap-1 max-lg:-mt-1">
+	<div
+		class="flex items-center justify-end gap-1 max-lg:-mt-1"
+		data-tour="team.announcement.row-actions"
+	>
 		{#each view.inline as button (button.action)}
 			<button
 				class={['btn btn-sm btn-square', button.look || 'btn-ghost']}

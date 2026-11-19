@@ -958,7 +958,10 @@
 {/snippet}
 
 {#snippet activeSessionBar()}
-	<div class="bg-base-200 flex flex-col gap-2 rounded-box p-3 md:p-4">
+	<div
+		class="bg-base-200 flex flex-col gap-2 rounded-box p-3 md:p-4"
+		data-tour="team.attendance.session-bar"
+	>
 		<!-- What is running, and what can be done with it -->
 		<div class="flex items-center gap-2">
 			<!-- Leaves the session on this device only; it stays open for everybody else -->
@@ -1105,7 +1108,7 @@
 
 		<!-- Queue -->
 		<!-- The latest scans -->
-		<div class="flex flex-col gap-2">
+		<div class="flex flex-col gap-2" data-tour="team.attendance.recent">
 			<h3 class="text-lg font-bold">{m.scanRecentScans()}</h3>
 			{#if recentScans.length === 0}
 				<p class="text-sm text-base-content/60">{m.scanRecentEmpty()}</p>
@@ -1124,7 +1127,7 @@
 
 		<!-- Everyone the session holds, from every device; participant care manages them -->
 		{#if maySetUpSessions && sessionMode !== 'INFO' && sessionStore.current}
-			<div class="flex flex-col gap-2">
+			<div class="flex flex-col gap-2" data-tour="team.attendance.people">
 				<h3 class="text-lg font-bold">{m.sessionPeople()}</h3>
 				<SessionPeople
 					sessionId={sessionStore.current.id}

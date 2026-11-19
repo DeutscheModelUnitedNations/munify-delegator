@@ -17,7 +17,7 @@
 </script>
 
 {#if counts.total > 0}
-	<div>
+	<div data-tour="paperhub.team.status">
 		<div class="flex h-9 w-full rounded-box overflow-hidden">
 			{#if counts.submitted > 0}
 				<div

@@ -365,7 +365,7 @@
 
 	<!-- One row always: labels truncate (full text in the tooltip) instead of wrapping; phones show only the icons. -->
 	<div class="mb-4">
-		<div role="tablist" class="tabs tabs-border flex-nowrap">
+		<div role="tablist" class="tabs tabs-border flex-nowrap" data-tour="team.configuration.tabs">
 			{#each tabs as tab (tab.value)}
 				{@const changeCount = changeCountPerTab[tab.value] ?? 0}
 				<button
@@ -397,7 +397,7 @@
 	</div>
 
 	{#if !canEdit}
-		<div class="alert alert-info mb-6" role="status">
+		<div class="alert alert-info mb-6" role="status" data-tour="team.configuration.read-only">
 			<i aria-hidden="true" class="ph-duotone ph-lock"></i>
 			<span>
 				{canEditContent ? m.conferenceSettingsContentOnly() : m.conferenceSettingsReadOnly()}
@@ -406,7 +406,7 @@
 	{/if}
 
 	<!-- What the open tab is for, with the save button on the same row. -->
-	<div class="mb-6 flex items-center gap-4">
+	<div class="mb-6 flex items-center gap-4" data-tour="team.configuration.save">
 		<TabIntro>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 			{@html tabIntro}

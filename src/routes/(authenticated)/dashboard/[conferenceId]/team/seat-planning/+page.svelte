@@ -95,7 +95,7 @@
 		</div>
 	{/if}
 
-	<Tabs>
+	<Tabs tourAnchor="team.seatPlanning.tabs">
 		<Tab
 			title={m.seatPlanningStatesTab()}
 			icon="flag"
@@ -138,7 +138,7 @@
 				<SeatMatrix {planner} {committees} {sizeLimits} />
 			{/if}
 		</div>
-		<aside class="shrink-0 xl:w-96">
+		<aside class="shrink-0 xl:w-96" data-tour="team.seatPlanning.hints">
 			<HintsSidebar {planner} {committees} {nonStateActors} {sizeLimits} />
 		</aside>
 	</div>

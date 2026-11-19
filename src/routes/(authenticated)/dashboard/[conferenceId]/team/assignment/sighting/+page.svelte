@@ -208,7 +208,7 @@
 <svelte:window onpopstate={onPopstate} />
 
 <div class="flex flex-col gap-4">
-	<div class="flex flex-wrap items-end gap-2">
+	<div class="flex flex-wrap items-end gap-2" data-tour="team.assignmentSighting.filters">
 		<label class="input">
 			<i aria-hidden="true" class="ph-duotone ph-magnifying-glass opacity-60"></i>
 			<input

@@ -85,7 +85,7 @@
 	]);
 </script>
 
-<section class="flex flex-col gap-4" aria-label={m.schoolMetrics()}>
+<section class="flex flex-col gap-4" aria-label={m.schoolMetrics()} data-tour="team.school.metrics">
 	<h3 class="text-lg font-bold">{m.schoolMetrics()}</h3>
 	<div
 		class="stats stats-vertical bg-base-100 border-base-200 border shadow-sm lg:stats-horizontal"

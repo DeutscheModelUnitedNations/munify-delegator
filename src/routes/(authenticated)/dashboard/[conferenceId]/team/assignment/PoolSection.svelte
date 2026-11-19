@@ -46,6 +46,7 @@
 		? 'ring-primary ring-2'
 		: ''}"
 	aria-label={m.assignmentPool()}
+	data-tour="team.assignment.pool"
 	use:droppable={{ container, callbacks: { onDrop } }}
 >
 	<h3 class="font-bold">

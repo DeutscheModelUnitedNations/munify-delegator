@@ -122,7 +122,10 @@
 </script>
 
 <div class="flex w-full flex-col gap-6 py-4 sm:px-4 md:p-8">
-	<div class="card bg-base-200 flex flex-col gap-6 p-4 sm:p-5 md:flex-row md:items-start md:gap-10">
+	<div
+		class="card bg-base-200 flex flex-col gap-6 p-4 sm:p-5 md:flex-row md:items-start md:gap-10"
+		data-tour="team.checkIn.bin-count"
+	>
 		<div class="flex min-w-0 grow flex-col gap-2">
 			<h3 class="flex items-center gap-2 text-lg font-bold">
 				<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
@@ -139,7 +142,7 @@
 	<div class="card bg-base-200 flex flex-col gap-5 p-4 sm:p-5">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h3 class="text-lg font-bold">{m.nametagBinsTitle()}</h3>
-			<div class="flex flex-wrap gap-2">
+			<div class="flex flex-wrap gap-2" data-tour="team.checkIn.downloads">
 				<button class="btn btn-sm" onclick={downloadQr} disabled={downloadingQr}>
 					<i aria-hidden="true" class="ph-duotone ph-qr-code"></i>
 					{m.nametagQrDownload()}
@@ -167,7 +170,7 @@
 			{/each}
 		</div>
 
-		<div class="flex flex-col gap-2">
+		<div class="flex flex-col gap-2" data-tour="team.checkIn.tables">
 			{#each bins as bin (bin.index)}
 				<BinRow {bin} {conferenceId} binCount={previewCount} />
 			{/each}

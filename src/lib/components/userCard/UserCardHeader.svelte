@@ -257,6 +257,7 @@
 <div class="flex items-center gap-3 px-3 pt-2 pb-1 sm:px-5 sm:pt-3 sm:pb-2 md:px-10 lg:px-16">
 	<div
 		class="border-base-300 from-primary/10 to-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-2 border bg-linear-to-br p-2.5 sm:gap-3 sm:p-4"
+		data-tour="team.userCard.header"
 	>
 		<!-- On a phone the actions sit beside the role summary, under the full-width name -->
 		<div
@@ -307,7 +308,10 @@
 			</div>
 
 			<!-- Action buttons -->
-			<div class="col-start-2 row-start-2 flex items-center gap-1 sm:col-start-3 sm:row-start-1">
+			<div
+				class="col-start-2 row-start-2 flex items-center gap-1 sm:col-start-3 sm:row-start-1"
+				data-tour="team.userCard.actions"
+			>
 				<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
 				{#if badgeSeat}
 					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>

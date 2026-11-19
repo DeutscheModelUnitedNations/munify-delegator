@@ -328,7 +328,7 @@
 
 <div class="flex w-full min-w-0 flex-col gap-4 md:gap-6">
 	<!-- Search by name, email or id; also where a hand scanner types -->
-	<div class="relative w-full" class:hidden={collapsed}>
+	<div class="relative w-full" class:hidden={collapsed} data-tour="scanner.search">
 		<ScanSearchBar
 			bind:value={query}
 			bind:inputElem={manualInputElem}
@@ -357,7 +357,7 @@
 			? 'lg:grid-cols-2'
 			: ''}"
 	>
-		<div class="min-w-0 lg:col-start-1" class:hidden={collapsed}>
+		<div class="min-w-0 lg:col-start-1" class:hidden={collapsed} data-tour="scanner.camera">
 			<ScanViewfinder
 				bind:videoElem
 				{streaming}

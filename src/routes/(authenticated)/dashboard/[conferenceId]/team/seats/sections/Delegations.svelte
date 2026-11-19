@@ -256,7 +256,7 @@
 	</tr>
 {/snippet}
 
-<SeatsTableSection>
+<SeatsTableSection tourAnchor="team.seats.delegations">
 	<!-- above the pinned first column, so the rows scroll under the header, corner included; only
 	     the corner is a <th>: the table pins every <th> to the left edge -->
 	<thead class="z-30">

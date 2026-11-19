@@ -91,7 +91,10 @@
 	});
 </script>
 
-<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12">
+<section
+	class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12"
+	data-tour="team.stats.history"
+>
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
 			<i aria-hidden="true" class="ph-duotone ph-clock-counter-clockwise text-base-content/70"></i>

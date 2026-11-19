@@ -25,7 +25,13 @@
 		<div class="flex items-center gap-1">
 			{@render actions?.()}
 			{#if onNew}
-				<button type="button" class="btn btn-primary btn-sm" onclick={onNew} data-testid="chat-new">
+				<button
+					type="button"
+					class="btn btn-primary btn-sm"
+					onclick={onNew}
+					data-testid="chat-new"
+					data-tour="chat.new"
+				>
 					<i aria-hidden="true" class="ph-duotone ph-pencil-simple-line"></i>
 					{m.chatNewMessage()}
 				</button>

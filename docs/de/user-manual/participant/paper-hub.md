@@ -7,6 +7,10 @@ description: Positions-, Arbeits- und Vorstellungspapiere schreiben, einreichen 
 
 Im Papier-Hub schreibst du die Papiere deiner Delegation, reichst sie beim Team ein und liest das Feedback dazu. Außerdem liest du dort die eingereichten Papiere der ganzen Konferenz. Betreuende sehen dort die Papiere der Delegationen, die sie betreuen.
 
+:::tip Geführte Touren
+Der Hilfe-Button (das Fragezeichen in der Kopfzeile) bietet dir eine geführte Tour durch die Ansicht, die du gerade offen hast: deine Papiere, die Papiere deiner betreuten Delegationen oder die Konferenzpapiere. Auch beim Schreiben eines neuen Papiers und auf der Seite eines Papiers gibt es eine.
+:::
+
 ## Überblick {#overview}
 
 Den Papier-Hub erreichst du über die Karte **Papier-Hub** in den **Quick Links** deines [Dashboards](./dashboard#preparation). Die Karte erscheint, sobald das Team die Papier-Einreichung öffnet.

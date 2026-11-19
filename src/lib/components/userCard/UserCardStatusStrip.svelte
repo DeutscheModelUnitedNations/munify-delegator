@@ -58,7 +58,7 @@
 {/snippet}
 
 {#if status}
-	<div class="border-base-content/10 border-t pt-1.5 sm:pt-2">
+	<div class="border-base-content/10 border-t pt-1.5 sm:pt-2" data-tour="team.userCard.status">
 		<!-- Pulled out by the buttons' padding, so their text lines up with the name above -->
 		<!-- One line a phone scrolls sideways, rather than three that push the tabs down -->
 		<div

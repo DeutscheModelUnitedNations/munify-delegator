@@ -234,7 +234,7 @@
 {/snippet}
 
 {#if timelineEvents.length > 0}
-	<div class="card bg-base-200 p-4 flex flex-col gap-2">
+	<div class="card bg-base-200 p-4 flex flex-col gap-2" data-tour="paperhub.paper.history">
 		<h2 class="text-lg font-bold">{m.history()}</h2>
 		<ul class="timeline timeline-vertical timeline-compact py-2">
 			{#each timelineEvents as event, index (event.type === 'review' ? event.review.id : event.version.id)}

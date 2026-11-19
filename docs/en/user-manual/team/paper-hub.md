@@ -7,6 +7,10 @@ description: Finding submitted papers in the Paper Hub, reviewing them and follo
 
 In the Paper Hub the team reviews the delegations' papers: position papers, working papers and introduction papers. How participants write and submit them is described in [Paper Hub for participants](../participant/paper-hub).
 
+:::tip Guided tours
+In the Team View, on the page of a paper and on the snippets, **Take the tour** (in the navigation or behind the question mark in the header) starts a tour for reviewers. It differs from the tour participants see when they submit.
+:::
+
 ## Overview {#overview}
 
 You open the Paper Hub in the team area through **Paper Hub** in the navigation. If you also take part in the conference yourself, choose the **Team View** at the top.
@@ -78,7 +82,7 @@ In front of every agenda item is a button the team uses to agree where reviewers
 2. Read the text. When you select a passage, **Quote** inserts it into your review as a quote. Next to every quote, **Find in paper** jumps back to the passage in the paper.
 3. Write your comments under **Add Review**. Nothing can be submitted without comments (**Review comments are required**). Insert [snippets](#snippets) through the bookmark in the toolbar or by typing `/` and the name.
 4. Under **New Status**, choose either **Revisions requested** or **Accepted**.
-5. If your name should not appear on the review, switch on **Publish anonymously** and pick **Secretariat** or **Research Service**. Your browser remembers the choice.
+5. If your name should not appear on the review, switch on **Publish anonymously** and pick **Secretariat**, **Research Service** or **Custom name**. With **Custom name** you enter the name the review appears under. Your browser remembers the choice.
 6. Click **Submit Review** and confirm in the **Confirm Review Submission** window.
 
 The page then says **Your review was saved successfully**. If another paper of the same agenda item is waiting for a review, **Continue reviewing and jump to next paper** takes you there. Papers without any review come before revised ones, and among them the one left untouched the longest. Otherwise it says **You have reviewed all open papers in this topic.**
@@ -99,7 +103,7 @@ While you write, your browser keeps your review of this paper every second. When
 
 In the Paper Hub, the person who wrote the paper sees the new status right away and your review under **History**. Apart from the team, only they see the review itself. Their supervisors see the status.
 
-Every review makes the email **Feedback on a paper** due to the person who wrote the paper, once per review. It names the paper, who gave the feedback (the Secretariat or the Research Service for an anonymous one) and the new status, and links to the paper. If this kind is switched to automatic on the [Emails](./communication#emails) page, it goes out with the next run on its own. Otherwise it waits there until someone sends it.
+Every review makes the email **Feedback on a paper** due to the person who wrote the paper, once per review. It names the paper, who gave the feedback (the chosen name for an anonymous one) and the new status, and links to the paper. If this kind is switched to automatic on the [Emails](./communication#emails) page, it goes out with the next run on its own. Otherwise it waits there until someone sends it.
 
 :::warning Replies go to you
 If someone replies to this email, the reply goes to the address of the person who wrote the review. They then also see your email address. An anonymous review's email has no reply address.

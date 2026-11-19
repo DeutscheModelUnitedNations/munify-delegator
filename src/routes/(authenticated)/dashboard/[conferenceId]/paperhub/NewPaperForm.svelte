@@ -27,11 +27,13 @@
 	<Form {form} class="w-full flex flex-col xl:flex-row-reverse gap-4" showSubmitButton={false}>
 		<!-- Below xl the column dissolves, so the buttons can follow the editor -->
 		<div class="contents xl:flex xl:flex-col xl:gap-4 xl:w-1/3">
-			<FormFieldset title={m.paperDetails()}>
-				{@render details()}
-			</FormFieldset>
+			<div class="w-full" data-tour="paperhub.new-paper.details">
+				<FormFieldset title={m.paperDetails()}>
+					{@render details()}
+				</FormFieldset>
+			</div>
 
-			<div class="join join-vertical w-full max-xl:order-last">
+			<div class="join join-vertical w-full max-xl:order-last" data-tour="paperhub.new-paper.save">
 				<button class="btn btn-primary btn-outline btn-lg join-item" onclick={() => onSave(false)}>
 					<i aria-hidden="true" class="ph-duotone ph-pencil-simple mr-2"></i>
 					{m.paperSaveDraft()}
@@ -42,6 +44,8 @@
 				</button>
 			</div>
 		</div>
-		{@render editor()}
+		<div class="w-full" data-tour="paperhub.new-paper.editor">
+			{@render editor()}
+		</div>
 	</Form>
 </div>
