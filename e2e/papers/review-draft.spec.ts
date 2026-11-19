@@ -317,4 +317,48 @@ test.describe('review drafts in the editor', () => {
 		await expect(second.getByTestId('review-draft-changed')).toBeHidden();
 		await second.close();
 	});
+
+	test('what is typed while a discard is on its way stays and is saved', async ({
+		page,
+		request
+	}) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		await writeDraft({ request, token, paperId, content: 'Wird verworfen.' });
+		await openPaper(page, paperId);
+		const review = page.locator('#review');
+
+		// hold the discard back until the reviewer has typed
+		let release: () => void = () => {};
+		const held = new Promise<void>((resolve) => (release = resolve));
+		await page.route('**/api/graphql**', async (route) => {
+			if (!route.request().postData()?.includes('deletePaperReviewDraft')) return route.fallback();
+			await held;
+			await route.fallback();
+		});
+		await review.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ }).click();
+		await page
+			.locator('.modal-action')
+			.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ })
+			.click();
+		await review.locator('.ProseMirror p').first().click();
+		await page.keyboard.press('End');
+		await page.keyboard.type(' Noch getippt.');
+		release();
+
+		await expect(review.locator('.ProseMirror')).toContainText('Noch getippt.');
+		await expect
+			.poll(
+				async () =>
+					(
+						await sql<{ text: string }>(
+							'SELECT comments::text AS text FROM paper_review_draft WHERE paper_id = $1',
+							[paperId]
+						)
+					)[0]?.text ?? '',
+				{ timeout: 15_000 }
+			)
+			.toContain('Noch getippt.');
+		await page.unroute('**/api/graphql**');
+	});
 });

@@ -4,6 +4,7 @@ import {
 	draftNotice,
 	draftSnapshotToSave,
 	legacyBrowserDraft,
+	startingVerdict,
 	staleDraftWarning
 } from './reviewDraft';
 
@@ -128,5 +129,22 @@ describe('legacyBrowserDraft', () => {
 		expect(
 			legacyBrowserDraft(JSON.stringify({ comments: { type: 'doc', content: [] } }))
 		).toBeUndefined();
+	});
+});
+
+describe('startingVerdict', () => {
+	it("keeps a recovered browser draft's verdict, behind the server draft's", () => {
+		expect(startingVerdict({ stored: undefined, legacy: { status: 'ACCEPTED' } })).toBe('ACCEPTED');
+		expect(
+			startingVerdict({
+				stored: { statusAfter: 'CHANGES_REQUESTED' },
+				legacy: { status: 'ACCEPTED' }
+			})
+		).toBe('CHANGES_REQUESTED');
+	});
+
+	it('leaves the default to the editor without a verdict', () => {
+		expect(startingVerdict({ stored: null, legacy: { status: undefined } })).toBeUndefined();
+		expect(startingVerdict({ stored: null, legacy: undefined })).toBeUndefined();
 	});
 });

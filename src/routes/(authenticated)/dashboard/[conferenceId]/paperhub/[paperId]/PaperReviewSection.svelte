@@ -21,7 +21,8 @@
 		draftNotice,
 		legacyBrowserDraft,
 		legacyDraftKey,
-		staleDraftWarning
+		staleDraftWarning,
+		startingVerdict
 	} from './reviewDraft';
 	import { createDraftSaver } from './reviewDraftSaver.svelte.js';
 	import { hasErrorCode } from '#lib/api/errorCodes';
@@ -135,9 +136,9 @@
 	let reviewComments = writable<JSONContent>(
 		initialDraft?.comments ?? legacyDraft?.comments ?? getEmptyTipTapDocument()
 	);
-	let selectedStatus = $state<PaperstatusEnum>(
-		initialDraft?.statusAfter ?? legacyDraft?.status ?? untrack(() => currentStatus)
-	);
+	// A draft's verdict, the browser's kept one included, wins over the editor's default.
+	const draftVerdict = startingVerdict({ stored: initialDraft, legacy: legacyDraft });
+	let selectedStatus = $state<PaperstatusEnum>(draftVerdict ?? untrack(() => currentStatus));
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
 	let showDiscardModal = $state(false);
@@ -301,12 +302,28 @@
 			success: m.reviewDraftDiscarded(),
 			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
 		});
+		const before = editorSnapshot();
 		try {
 			await promise;
-			resetEditor();
+			afterDraftGone(before);
 		} finally {
 			saver.resume();
 		}
+	}
+
+	/**
+	 * The draft is gone (discarded or sent). The editor empties, unless the reviewer typed while
+	 * that was on its way: then what they typed stays, and is saved as a new draft.
+	 */
+	function afterDraftGone(before: string) {
+		if (editorSnapshot() === before) {
+			resetEditor();
+			return;
+		}
+		dropLegacyDraft();
+		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, saver.knownUpdatedAt ?? 0);
+		editorVersion = undefined;
+		saver.acknowledge(null);
 	}
 
 	function resetEditor() {
@@ -335,7 +352,7 @@
 
 	// Set initial selected status to first available transition, unless a draft proposes one
 	$effect(() => {
-		if (initialDraft) return;
+		if (draftVerdict) return;
 		if (availableTransitions.length > 0 && selectedStatus === currentStatus) {
 			selectedStatus = availableTransitions[0].value;
 		}
@@ -374,6 +391,7 @@
 		isSubmitting = true;
 		// A save on its way would otherwise store the draft again after the review deleted it.
 		await saver.settle();
+		const before = editorSnapshot();
 		try {
 			const promise = client.mutate.createPaperReview({
 				__args: {
@@ -404,7 +422,7 @@
 
 			const result = await promise;
 			// The review is out; the server deleted the draft along with it.
-			resetEditor();
+			afterDraftGone(before);
 
 			// Check if a piece was unlocked and show the modal
 			const piece = unlockedPiece(result);

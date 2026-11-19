@@ -115,3 +115,17 @@ export function legacyBrowserDraft(stored: string | null) {
 	}
 	return { comments, status: typeof status === 'string' && isVerdict(status) ? status : undefined };
 }
+
+/**
+ * The verdict the editor starts with from a draft: the server draft's, else the one a browser
+ * draft kept. Undefined when neither proposes one, and the editor picks its default.
+ */
+export function startingVerdict<V extends string>({
+	stored,
+	legacy
+}: {
+	stored: { statusAfter: V } | null | undefined;
+	legacy: { status: V | undefined } | undefined;
+}) {
+	return stored?.statusAfter ?? legacy?.status;
+}
