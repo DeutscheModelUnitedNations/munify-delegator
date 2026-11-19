@@ -156,7 +156,9 @@ related fields side by side with a `grid` inside. `<FormSection title={m.address
 ### FormFieldset (Required for Grouping)
 
 Outside `FormSection` layouts, **always** wrap related inputs in `FormFieldset` (`title`, `icon`
-snippet before the title).
+snippet before the title). `plain` drops its frame and makes the title a small uppercase heading,
+for groups that share one larger surface (a wide dialog in regions, divided by
+`border-base-content/10` lines rather than boxed one by one).
 
 ### Available Form Components
 
@@ -185,7 +187,7 @@ inline; `SchoolLine` (`#lib/components/userCard/sections/`) is the list row with
 
 `#lib/components/Modal.svelte`: closes on backdrop click or Escape, `role="dialog"` named by
 `title` (or first heading), keeps and returns focus (`modalFocus`). Props: `open` (bindable),
-`title`, `fullWidth` (90%), `children`, `action` (footer snippet), `onclose`. With a form inside,
+`title`, `fullWidth` (90%), `wide` (`max-w-3xl`, for reading text), `wider` (`max-w-5xl`, column pickers), `children`, `action` (footer snippet), `onclose`. With a form inside,
 use `<Form {form} showSubmitButton={false}>` and submit from the `action` buttons.
 
 Footer buttons go in `{#snippet action()}…{/snippet}` (Cancel `btn`, confirm `btn btn-primary`).
@@ -277,6 +279,28 @@ after saving. Typical binding into URL state:
 - **`UrgentAnnouncementBar`**: header bar while an urgent one is unread.
 - Fetch via `fetchAnnouncementFeed`, mark via `markAnnouncementsRead` (`#lib/api/announcements`),
   so feed and bar share one result and one read state.
+- **Team list** (`team/announcement/+page.svelte`): rows drawn inline (see `rowView`), each a grid
+  of fixed columns (`.announcement-grid`, `lg` and up, with a header row): title with icon-only
+  badges (`RowBadge.tone`) and audience chips, state badge with icon (`STATE_LOOK`), short date
+  (`rowCells.when`, until, edited), read count with bar (`rowCells.reach`), author, icon buttons.
+  Short cells are `aria-hidden`; the full `rowFacts` sentences sit beside them as `sr-only` (and as
+  `title`), keeping the `announcement-<fact>` test ids. The row edits on click (`onRowClick`
+  skips its buttons and text selection), the title is the keyboard's button (`announcement-edit`).
+  `splitActions`: publish in sight, the rest behind `announcement-more`. State chips (`STATE_ORDER`) once several states exist.
+- **Editor** (`AnnouncementEditor`): `plain` fieldsets in two rows: content (with attachments)
+  beside the preview (sticky on wide screens), then audience beside settings. Importance is a
+  segmented radio group coloured like the card, toggles carry their hint beneath the label.
+  The reach count (`AudienceCount`) fetches in an `$effect`, not
+  `$derived(await …)`: awaited, it would hold back every change to the audience (chips included)
+  until the server had counted. The old count stays, dimmed, while a new one loads.
+  Audiences are added through one search (`AudienceSearch`, a combobox over `audienceSections`:
+  groups, committees, roles, survey answers, team). An option a picked block always holds
+  (`audienceCovers` in `#lib/helpers/announcements`, true at every stage) is `aria-disabled` with
+  the reason; adding a wider block drops the narrower ones (`addAudience`) and says so.
+  The search is multi-select: picked options stay, checked (`aria-selected`), and choosing one
+  again takes it out; Backspace in the empty field takes out the last; "remove all" from two on.
+  Order: search, chips, `SUGGESTED_AUDIENCES` not picked yet (one click, disabled when covered),
+  then the reach count and hint as quiet `text-xs` lines below a divider.
 
 ## Chat Components
 
@@ -285,18 +309,39 @@ after saving. Typical binding into URL state:
 
 - **`ChatWorkspace`**: list beside the open chat (taking turns on a phone). `chats` (`fetchChats`,
   `#lib/api/chats`), `selectedId`, `onSelect` (keep `?chat=` in the URL via `queryParameters`),
-  snippets `listHeader`, `emptyList`, `listFooter`.
+  snippets `listHeader`, `emptyList`, `listFooter`, `noSelection` (the pane while nothing is open).
+  Its height is guessed from the window, or with `fill` taken from a flex parent (participant page:
+  fixed-height page column). Surfaces, not frame lines: a `bg-base-200` list column, a faint ring,
+  `border-base-content/10` dividers. The thread and composer keep to a `max-w-4xl` column.
+- **Participant messages page**: compact header, `ChatStartPane` beside the list (delegation group,
+  team inboxes without single trusted persons, "new message", the role-not-name note) through
+  `createChatOpener` (`chatOpener.svelte.ts`, shared with the picker). `ChatSettingsMenu` (gear in
+  `ChatListHeader`'s `actions`) holds the unread-mail switch and the terms.
 - **`ChatThread`**: fetches itself by `chatId`, marks read while on screen, messages by day,
   composer (Enter sends, Shift+Enter breaks) or why the caller can't write (`chat.writeRefusal`).
-  Menu blocks and reports. Reviewing a report: `ChatReviewBanner`, plus a line where it was reported
-  given `reportedAt` (`firstMessageAfter`). `firstUnreadId` (`threadMessages.ts`), taken once on
+  Menu blocks and reports. Reviewing a report: `ChatReviewBanner`, plus each open report (`reports`) as a
+  note where it was filed (`placeReports`: above the next message, before its day's heading if
+  filed on a quieter day, or closing the thread). `firstUnreadId` (`threadMessages.ts`), taken once on
   open: `ChatMessages` draws "new messages" above it and the thread opens there, until reopened.
+  What one author writes within five minutes shares one bubble (`runsOf`; unread/reported lines
+  break a run), author name inside at the top, last time at the bottom, full time on hover. The
+  thread follows new messages only near the end or for the caller's own; otherwise
+  "jump to new messages" appears. The composer keeps a draft per chat (module map) and takes focus
+  on fine pointers.
+- **Motion**: switching chats is a view transition (`chatViewTransition`, `data-chat-transition`,
+  names `chat-list`/`chat-pane`, CSS in `app.css`): the pane cross-fades, on a phone list and
+  thread slide. `ChatWorkspace` swaps `shownId` (bindable, for the page around) inside it. Bubbles
+  fly in, the list reorders with `flip`, unread badges pop; Svelte transitions take
+  `prefersReducedMotion` into account, CSS ones a reduced-motion query.
 - **Report desk** (`team/messages/ReportDesk.svelte`, "Reports" in the team menu, participant
   care): three columns, taking turns when narrow. `ReportQueue` (a case per reported chat, longest
   waiting first: `reportCases`, `waitingSince`), the chat's read-only `ChatThread`, `ReportCaseFile`
-  (reports; everyone of the chat by name and role, delegation group members included, with earlier
+  (everyone of the chat by name and role, delegation group members included, with earlier
   settled reports; suspension switch; `WriteToDelegateButton`; user card; the internal note settling
   all the chat's reports, `resolveChatReports`). `SettledReports` keeps settled ones with notes.
+  Same surfaces as the messenger: one ringed frame, queue and case file as `bg-base-200` columns,
+  queue rows like chat list rows, the case file scrolls with note and "settle" pinned below.
+  Reviewing, the thread header shows no card buttons (the case file has them).
 - **Corners follow the theme**: `rounded-box` (cards, panels, bubbles), `rounded-field` (small
   things); never `rounded-lg` / `rounded-xl` (DMUN's theme is near-square).
 - **`NewChatDialog` / `NewChatPicker`**: one search over role, country, committee (`matchesSearch`:
@@ -304,28 +349,33 @@ after saving. Typical binding into URL state:
   top. `mode="team"`: person first, then the inbox to write from.
 - **`WriteToDelegateButton`**: `conferenceId`, `participantId`, optional `paperId`, `compact` (icon
   only, table rows); asks for inboxes on click.
-- **`FilterChips`**: "all" first, pressing the pressed chip lifts the filter; `options` (with
-  `key`), `selected`, `onSelect`, `label`, `chip` snippet. `CommitteeChips` builds on it.
-- **Team inboxes are picked in the team menu** (`MessagesNavButton`): a plain entry for one inbox;
-  folds open for several (or for participant care, plus reports), each with unread count, a
-  committee's inboxes as a foldable group (`inboxMenu`). Links set `?inbox=` / `?view=reports`.
-  `team/messages` without either: `InboxOverview` (a card per inbox) for several, the list for one.
-  System admins get participant care's inbox and both of every committee (`inboxesOf`), never the
-  trusted persons'. Menu and page read `fetchTeamInboxes` + `teamInboxesOf`.
+- **`FilterChips`** (`#lib/components/FilterChips.svelte`, shared): "all" first, pressing the
+  pressed chip lifts the filter; `options` (with `key`), `selected`, `onSelect`, `label`, `chip`
+  snippet. `CommitteeChips`, the team inbox chips and the announcement state chips build on it.
+- **Team messages**: one team-menu entry (`MessagesNavButton`, dot while unread) plus "Reports" for
+  participant care (dot while one waits, `?view=reports`). System admins get participant care's
+  inbox and both of every committee (`inboxesOf`), never the trusted persons'. Page and menu read
+  `fetchTeamInboxes` + `teamInboxesOf`.
+  `team/messages` is always the messenger (`InboxChats`, `fill`): every inbox's chats in one list,
+  inbox chips (`FilterChips`, unread per chip, only with several inboxes) set `?inbox=`, a red
+  banner links waiting reports, the bell in the list header links the notification settings.
 - **Archive**: `ChatArchiveButton` (thread header, team side) toggles it; archived chats are hidden
   until `ArchiveToggle` in `InboxChats` (`?archive=1`) lists them after the open ones, marked
-  (`listedChats`). Overview cards count open chats only.
+  (`listedChats`).
 - **Small parts**: `ChatList` → `ChatListItem`, `ChatMessages` → `ChatBubble`, `ChatThread` →
   `ChatThreadHeader`, picker → `PickerTeamOptions`, `PickerContactGroups`, `PickedContactInboxes`.
   Decisions live in tested helpers, not templates: `listBadge`, `kindHint` (`chatLabels.ts`),
   `unreadStateOf` (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
 - **`MessagingTermsModal`**: the terms (`messagingTerms`), loaded on open in a boundary with
   skeleton and `LoadError`; the composer opens it with `onAccepted` when the API asks for consent.
-  `MessagingTermsLink` (under the participant's list) shows them. `MessagingTermsChecklist`: a
+  `ChatSettingsMenu` shows them. `MessagingTermsChecklist`: a
   disclosure per section (`MessagingTermsSection`, title + summary on the button, `aria-expanded`);
   when agreeing, the first opens, "Understood" confirms and opens/focuses the next open one
   (`confirmSection`, `#lib/helpers/messagingTerms`), a progress bar counts, statement checkboxes stay
   disabled until all are confirmed.
+- **Contact details warning**: `ChatComposer` holds back a draft that `findPersonalDetails`
+  (`#lib/helpers/personalDetails`: phone numbers, emails, messenger links) flags and shows an inline
+  `role="alert"` with "Send anyway"; editing the draft dismisses it. Client side only, a nudge.
 - **`ChatAvatar`**: round flag or icon (`chatAvatar(chat)` / `contactAvatar(contact)`).
 - **`chatLabels.ts`** names everything (`contactLabel` → `Germany · GA`, `inboxName`, `chatTitle`,
   `chatSubtitle`). Never build labels by hand; never show a participant's name to another participant.
@@ -498,8 +548,7 @@ levels: **global** ("Konferenzen" at `/dashboard`, "Mein Konto", administration)
 conference** ("Übersicht" and below). "Dashboard" names neither in the UI.
 
 - Wordmark (`MUNify DELEGATOR`) → `/dashboard`; then breadcrumbs, whose conference crumb is
-  `ConferenceSwitcher.svelte` (dropdown). Beside the conference side nav (headed by the same
-  switcher, `inMenu`) only phones keep the crumb (`headerState.conferenceMenu`).
+  `ConferenceSwitcher.svelte` (dropdown), also beside the conference side nav.
 - Avatar menu (`UserMenu.svelte`): name + email (→ "Mein Konto": profile, notifications for team
   members), "Konferenzen", "Administration" for system admins (create conference, CHASE link, Slack
   workspaces), feedback, logout, language.
@@ -537,7 +586,7 @@ A folder without its own page is a plain-text crumb; `team` is omitted (the side
 ### ConferenceShell
 
 `[conferenceId]/ConferenceShell.svelte` (from `+layout@(authenticated).svelte`) frames every page of
-a conference. For the team it draws `ConferenceNavMenu.svelte`: switcher, **Übersicht**, then
+a conference. For the team it draws `ConferenceNavMenu.svelte`: **Übersicht**, then
 `#lib/data/teamRoutes.ts` filtered by what the caller may open, so a page is in the menu exactly
 when the guard (`team/+layout.ts`) lets them in; the command palette reads the same registry. A new
 team page is one registry entry; its `roles` say who may open it. Non-team users get no menu;

@@ -9,9 +9,9 @@ Diese Seite erklärt, was für alle Seiten des Teams gilt: wie du in den Team-Be
 
 ## Hineinkommen und zurechtfinden {#the-team-area}
 
-Alles, woran das Team einer Konferenz arbeitet, liegt in einem gemeinsamen Team-Bereich. Sobald du im Team einer Konferenz bist, steht auf jeder ihrer Seiten links die Navigation der Konferenz. Ihr erster Eintrag ist die **Übersicht** der Konferenz. Dort zeigt **Für dich offen** deine Rollen in dieser Konferenz und was in deinen Bereichen gerade wartet: ungelesene Nachrichten, gemeldete Chats, mögliche Doppelkonten, Schulzusammenführungen, fällige E-Mails und Ankündigungen im Entwurf. Ein Klick führt zur passenden Seite.
+Alles, woran das Team einer Konferenz arbeitet, liegt in einem gemeinsamen Team-Bereich. Sobald du im Team einer Konferenz bist, steht auf jeder ihrer Seiten links die Navigation der Konferenz. Ihr erster Eintrag ist die **Übersicht** der Konferenz. Neben dem Namen der Konferenz stehen deine Rollen im Team. Darunter zeigt je eine Kachel, was in deinen Bereichen gerade wartet: ungelesene Nachrichten, gemeldete Chats, mögliche Doppelkonten, Schulzusammenführungen, Personen auf der Warteliste, fällige oder fehlgeschlagene E-Mails, Ankündigungen im Entwurf, Papiere zum Bewerten und Tagesordnungspunkte, die Hilfe beim Bewerten brauchen. Ein Klick führt zur passenden Seite.
 
-Darunter stehen Karten:
+Danach folgen Karten:
 
 - **Team-Wiki**, **Dienste** und **Inhaltliche Vorbereitung**, sobald die Konferenz diese Links in den [Einstellungen](./configuration) hinterlegt hat
 - **App-Dokumentation**, falls der Server einen Link dazu hat

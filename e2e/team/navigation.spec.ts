@@ -58,7 +58,6 @@ test('the overview sits in the conference navigation, beside the team pages', as
 	});
 
 	const menu = page.getByRole('navigation', { name: /seitennavigation|page navigation/i });
-	await expect(menu.getByTestId('conference-menu-switcher')).toBeVisible();
 	// the team area has no page of its own, so no crumb leads there
 	await expect(page.locator('.breadcrumbs li:visible', { hasText: /^\s*Team\s*$/ })).toHaveCount(0);
 

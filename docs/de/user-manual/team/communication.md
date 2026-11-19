@@ -23,7 +23,7 @@ Unter **Ankündigungen** schreibst du, was Teilnehmende und Team wissen sollen. 
 
 ### Eine Ankündigung schreiben
 
-**Neue Ankündigung** öffnet den Editor. Links füllst du die Felder aus, rechts siehst du unter **Vorschau** die Ankündigung so, wie sie bei den Lesenden erscheint.
+**Neue Ankündigung** öffnet den Editor. Oben links schreibst du den Inhalt, rechts daneben siehst du unter **Vorschau** die Ankündigung so, wie sie bei den Lesenden erscheint. Darunter wählst du Zielgruppe und Einstellungen.
 
 - **Titel** (höchstens 120 Zeichen) und **Text** (höchstens 10.000 Zeichen) sind Pflicht. Der Text versteht Markdown.
 - **Unterschrift (optional)** steht unter dem Text, etwa „Euer Team der Teilnehmendenbetreuung“.
@@ -38,12 +38,14 @@ Zeiten gibst du in der Zeitzone der Konferenz an. **Als Entwurf speichern** legt
 
 ### Die Zielgruppe
 
-Unter **Zielgruppe** fügst du Gruppen über die Auswahlfelder hinzu. Wer zu mindestens einer gehört, sieht die Ankündigung.
+Unter **Zielgruppe** suchst du Gruppen und fügst sie hinzu, die üblichen auch mit einem Klick auf einen der Vorschläge unter der Suche. Wer zu mindestens einer gehört, sieht die Ankündigung. Gewählte Gruppen tragen in der Suche einen Haken; ein weiterer Klick, das Kreuz am Chip oder **Alle entfernen** nimmt sie wieder heraus. Die Suche findet:
 
-- **Gruppe hinzufügen …**: **Alle Teilnehmenden**, **Delegierte**, **Einzelteilnehmende**, **Betreuende**, **Bewerber\*innen ohne Platz**, **Teilnehmende mit Platz**, **Warteliste**, **Zahlung offen**, **Postanmeldung offen**, **Minderjährige** und **Volljährige**.
-- **Gremium hinzufügen …** und **Rolle hinzufügen …**: alle Personen mit Platz in diesem Gremium oder mit dieser Rolle.
-- **Umfrage-Antwort hinzufügen …**: alle, die in einer Umfrage diese Antwort gewählt haben.
-- **Team hinzufügen …**: das **Ganze Team** oder alle mit einer Teamrolle. Das Team erreichst du nur über diese Auswahl, nie über die anderen Gruppen.
+- **Gruppen**: **Alle Teilnehmenden**, **Delegierte**, **Einzelteilnehmende**, **Betreuende**, **Bewerber\*innen ohne Platz**, **Teilnehmende mit Platz**, **Warteliste**, **Zahlung offen**, **Postanmeldung offen**, **Minderjährige** und **Volljährige**.
+- **Gremien** und **Rollen**: alle Personen mit Platz in diesem Gremium oder mit dieser Rolle.
+- **Umfrage-Antworten**: alle, die in einer Umfrage diese Antwort gewählt haben.
+- **Team**: das **Ganze Team** oder alle mit einer Teamrolle. Das Team erreichst du nur hier, nie über die anderen Gruppen.
+
+Was eine gewählte Gruppe schon ganz enthält, ist in der Suche ausgegraut: **Alle Teilnehmenden** enthält **Teilnehmende mit Platz**, jedes Gremium, jede Rolle, **Zahlung offen** und **Postanmeldung offen**, **Delegierte** jedes Gremium, das **Ganze Team** jede Teamrolle. Wählst du eine solche Gruppe nachträglich, fallen die enthaltenen weg.
 
 **Alle Teilnehmenden** sind während der Anmeldung alle Angemeldeten und die Warteliste. Ab der Vorbereitungsphase mit freigegebener Zuteilung sind es nur noch alle mit Platz und ihre Betreuenden. Wer keinen Platz bekommen hat oder noch wartet, erreichst du dann über **Bewerber\*innen ohne Platz** und **Warteliste**. Minderjährig und volljährig zählen am ersten Konferenztag. Wer kein Geburtsdatum hinterlegt hat, gehört zu keiner der beiden Gruppen.
 
@@ -64,7 +66,7 @@ Sofort veröffentlicht erscheint die Ankündigung gleich auf den Dashboards der 
 
 ### Die Liste
 
-Die Liste zeigt jede Ankündigung mit ihrem Stand (**Entwurf**, **Geplant**, **Veröffentlicht**, **Abgelaufen** oder **Archiviert**), ihrer Zielgruppe, wer sie verfasst und veröffentlicht hat und wie viele aus der Zielgruppe sie gelesen haben. Die Knöpfe an jeder Ankündigung:
+Die Liste zeigt jede Ankündigung mit ihrem Stand (**Entwurf**, **Geplant**, **Veröffentlicht**, **Abgelaufen** oder **Archiviert**), ihrer Zielgruppe, wer sie verfasst und veröffentlicht hat und wie viele aus der Zielgruppe sie gelesen haben, als Balken. Über der Liste grenzt je Stand ein Knopf die Liste darauf ein. Ein Klick auf eine Ankündigung öffnet sie zum Bearbeiten. **Veröffentlichen** steht direkt an ihr, alles andere hinter den drei Punkten daneben:
 
 - **Bearbeiten**: Änderst du Titel oder Text einer veröffentlichten Ankündigung, sehen die Lesenden „aktualisiert am“ mit dem Datum. Eine neue Zielgruppe gilt sofort.
 - **Zurückziehen**: Die Ankündigung verschwindet bei allen und wird wieder ein Entwurf. Das geht auch mit einer geplanten.
@@ -128,9 +130,9 @@ Vor ihrer ersten Nachricht stimmen Teilnehmende den **Nutzungsbedingungen der Na
 
 ### Antworten und neue Chats
 
-Betreust du mehrere Postfächer, klappt **Nachrichten** in der Navigation auf. Darunter stehen die **Übersicht** und jedes Postfach mit der Zahl ungelesener Nachrichten. Die Postfächer eines Gremiums sind unter dem Gremium zusammengefasst. Die **Übersicht** zeigt alle deine Postfächer als Karten. Betreust du nur eines, öffnet **Nachrichten** direkt dessen Chats.
+**Nachrichten** in der Navigation trägt einen roten Punkt, solange etwas ungelesen ist. Die Seite zeigt die Chats aller deiner Postfächer in einer Liste, jeder Chat mit seinem Postfach. Betreust du mehrere, grenzt über der Liste je Postfach ein Knopf mit der Zahl ungelesener Nachrichten die Liste darauf ein, ein zweiter Klick hebt das wieder auf.
 
-Im Postfach stehen links die Chats, rechts der geöffnete Chat. Liest jemand aus dem Postfach einen Chat, gilt er für alle im Postfach als gelesen.
+Links stehen die Chats, rechts der geöffnete Chat. Die Glocke über der Liste führt zu deinen Benachrichtigungen. Liest jemand aus dem Postfach einen Chat, gilt er für alle im Postfach als gelesen.
 
 Einen erledigten Chat legst du mit **Archivieren** oben im Chat ab. Er verschwindet für alle, die das Postfach betreuen, aus der Liste. Mit der nächsten Nachricht kommt er von selbst zurück. Der Knopf **Archiv** über der Liste blendet die archivierten Chats ein. Dort holst du einen Chat mit **Aus dem Archiv holen** auch von Hand zurück. Teilnehmende erfahren nicht, dass ihr Chat archiviert ist.
 
@@ -144,11 +146,11 @@ Im [Papier-Hub](./paper-hub) schreibst du die Verfasser\*innen eines Papiers dir
 
 ### Meldungen und Sperren
 
-Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats mit dem Team lassen sich nicht melden. Die Teilnehmendenbetreuung und die Projektleitung finden gemeldete Chats unter **Meldungen** in der Navigation und in der **Übersicht**:
+Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats mit dem Team lassen sich nicht melden. Die Teilnehmendenbetreuung und die Projektleitung finden gemeldete Chats unter **Meldungen** in der Navigation. Wartet eine Meldung, weist auch ein roter Hinweis über der Chatliste darauf hin:
 
 1. Links stehen die offenen Fälle, der älteste zuerst. Mehrere Meldungen zu einem Chat sind ein Fall.
-2. Wählst du einen Fall, liest du in der Mitte den Chat mit Namen. Eine Linie zeigt, wann er gemeldet wurde. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
-3. Rechts steht die **Fallakte** mit den Meldungen und den **Beteiligten**, bei einer Delegationsgruppe mit allen Mitgliedern. Bei jeder Person siehst du frühere erledigte Meldungen zu ihren Chats, schreibst ihr oder öffnest ihre [Teilnehmendenkarte](./participants#user-card).
+2. Wählst du einen Fall, liest du in der Mitte den Chat mit Namen. Jede Meldung steht mit Grund, meldender Person und Zeit an der Stelle im Chat, an der sie abgegeben wurde. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
+3. Rechts steht die **Fallakte** mit den **Beteiligten**, bei einer Delegationsgruppe mit allen Mitgliedern. Bei jeder Person siehst du frühere erledigte Meldungen zu ihren Chats, schreibst ihr oder öffnest ihre [Teilnehmendenkarte](./participants#user-card).
 4. **Für Chats sperren** nimmt eine Person aus allen Chats mit anderen Teilnehmenden dieser Konferenz. Sie erreicht das Team weiterhin, und das Team erreicht sie. **Sperre aufheben** macht das rückgängig.
 5. Halte unter **Interne Notiz** fest, was besprochen und entschieden wurde, und schließe mit **Erledigen** alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat und die Teilnehmendenbetreuung liest ihn nicht mehr. Eine Sperre bleibt, bis du sie aufhebst.
 

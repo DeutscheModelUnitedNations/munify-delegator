@@ -9,9 +9,9 @@ This page explains what holds for every team page: how you get into the team are
 
 ## Getting in and finding your way {#the-team-area}
 
-Everything a conference's team works on lives in one shared team area. Once you are on a conference's team, every page of the conference shows the conference's navigation on the left. Its first entry is the conference's **Overview**. There, **Waiting for you** shows your roles in this conference and what is waiting in your parts of the team: unread messages, reported chats, possible duplicate accounts, school merges, due emails and announcements in draft. A click leads to the matching page.
+Everything a conference's team works on lives in one shared team area. Once you are on a conference's team, every page of the conference shows the conference's navigation on the left. Its first entry is the conference's **Overview**. Your team roles are shown next to the conference's name. Below, one tile each shows what is waiting in your parts of the team: unread messages, reported chats, possible duplicate accounts, school merges, people on the waiting list, due or failed emails, announcements in draft, papers to review and agenda items that need help with reviews. A click leads to the matching page.
 
-Below it are cards:
+After that come cards:
 
 - **Team Wiki**, **Services** and **Preparation**, once the conference has set these links in the [settings](./configuration)
 - **App Documentation**, if the server has a link for it

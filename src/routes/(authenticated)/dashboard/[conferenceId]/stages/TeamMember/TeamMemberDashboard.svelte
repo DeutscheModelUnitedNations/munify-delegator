@@ -2,7 +2,7 @@
 	@component
 	What the conference's overview offers a team member: what waits for them in the team (the side
 	navigation beside it lists the team's pages), then the links the conference and the app give the
-	team, as plain cards with no box or heading around them. Cards carry live details of their own,
+	team, as plain cards in one grid with no box or heading around them. Cards carry live details of their own,
 	such as what is on right now.
 -->
 <script lang="ts">
@@ -34,6 +34,9 @@
 	const links = $derived(getTeamResourceLinks(context));
 </script>
 
-<TeamWaiting {conferenceId} />
-<DashboardLinkCards {links} {context} {conferenceId} />
+<DashboardLinkCards {links} {context} {conferenceId}>
+	{#snippet before()}
+		<TeamWaiting {conferenceId} />
+	{/snippet}
+</DashboardLinkCards>
 <ChaseStatusCard {conferenceId} />

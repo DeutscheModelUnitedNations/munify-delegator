@@ -1,6 +1,6 @@
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import type * as schema from '../schema';
-import { MESSAGING_TERMS_VERSION } from '#lib/helpers/messagingTerms';
+import { seedAcceptancesOf } from '#api/handlers/messagingTerms/termsOnDisk';
 import { PERSONA_NATION } from './conference';
 import type { SeedBatch } from './batch';
 import type { ConferenceSeed } from './context';
@@ -479,9 +479,13 @@ export function addMessagingAccountSettings(batch: SeedBatch) {
 }
 
 function acceptTerms({ batch, userIds }: { batch: SeedBatch; userIds: string[] }) {
-	for (const user of batch.user) {
-		if (!user.id || !userIds.includes(user.id)) continue;
-		user.messagingTermsVersion = MESSAGING_TERMS_VERSION;
-		user.messagingTermsAcceptedAt = new Date(Date.now() - 4 * 24 * HOUR);
-	}
+	// once per person, although several conferences seed the same one
+	const accepted = new Set(batch.messagingTermsAcceptance.map((acceptance) => acceptance.userId));
+	const acceptedAt = new Date(Date.now() - 4 * 24 * HOUR);
+	batch.messagingTermsAcceptance.push(
+		...seedAcceptancesOf(userIds.filter((userId) => !accepted.has(userId))).map((acceptance) => ({
+			...acceptance,
+			createdAt: acceptedAt
+		}))
+	);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { inboxKey, inboxMenu, inboxesOf, listedChats, unreadByInbox } from './teamInboxes';
+import { inboxKey, inboxesOf, listedChats, unreadByInbox } from './teamInboxes';
 
 const fn = (kind: 'CHAIR' | 'CONSULTANT', committeeId: string, abbreviation: string) => ({
 	kind,
@@ -61,26 +61,6 @@ describe('a system admin', () => {
 			'CHAIR:sc',
 			'CONSULTANT:sc'
 		]);
-	});
-});
-
-describe('inboxMenu', () => {
-	test('folds a committee with several inboxes and keeps a single one flat', () => {
-		const menu = inboxMenu(
-			inboxesOf({
-				cares: true,
-				functions: [
-					fn('CHAIR', 'ga', 'GV'),
-					fn('CONSULTANT', 'ga', 'GV'),
-					fn('CONSULTANT', 'sc', 'SR')
-				]
-			})
-		);
-		expect(
-			menu.map((entry) =>
-				entry.kind === 'inbox' ? entry.inbox.key : [entry.abbreviation, entry.inboxes.length]
-			)
-		).toEqual(['PARTICIPANT_CARE', ['GV', 2], 'CONSULTANT:sc']);
 	});
 });
 

@@ -12,7 +12,6 @@
 	import { rememberTeamConference } from '#lib/state/lastTeamConference.svelte.js';
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { setConferenceMenu } from '#lib/state/conferenceMenu.svelte.js';
-	import { headerState } from '#lib/state/authenticatedHeaderStatus.svelte.js';
 	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
 	import { groupedTeamRoutes, teamRelativePath, teamSkeletonForPath } from '#lib/data/teamRoutes';
 	import ConferenceNavMenu from './ConferenceNavMenu.svelte';
@@ -46,14 +45,6 @@
 	// The home page offers the way back here
 	$effect(() => {
 		if (onTeam) rememberTeamConference(conferenceId);
-	});
-
-	// The menu's head names the conference, so the breadcrumbs need not
-	$effect(() => {
-		headerState.conferenceMenu = onTeam;
-		return () => {
-			headerState.conferenceMenu = false;
-		};
 	});
 
 	// Every navigation gets a fresh boundary, so the next page's skeleton shows right away. The

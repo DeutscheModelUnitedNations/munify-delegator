@@ -46,6 +46,11 @@ const card = (page: Page, title: string) => cards(page).filter({ hasText: title 
 const rows = (page: Page) => page.getByTestId('announcement-row');
 const row = (page: Page, title: string) =>
 	rows(page).filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+/** Runs an action of a row's "more" menu, where everything but editing and publishing waits. */
+async function fromMenu(target: ReturnType<typeof row>, action: string) {
+	await target.getByTestId('announcement-more').click();
+	await target.getByTestId(`announcement-${action}`).click();
+}
 
 /** The titles of the announcements on the reader's announcements page, in order. */
 async function feedTitles(page: Page) {
@@ -134,6 +139,12 @@ test('the team lists every announcement with its state and how many it reaches',
 	await expect(row(page, titles.welcome.title)).toContainText('verfasst von Cora Care');
 });
 
+/** Finds a block in the editor's audience search and adds it. */
+async function addAudience(page: Page, { search, name }: { search: string; name: string }) {
+	await page.getByTestId('audience-search').fill(search);
+	await page.getByRole('option', { name, exact: true }).click();
+}
+
 test('the editor refuses an empty announcement and counts the audience as it is picked', async ({
 	page
 }) => {
@@ -157,25 +168,92 @@ test('the editor refuses an empty announcement and counts the audience as it is 
 	await expect(editor.getByTestId('announcement-card')).toContainText('Eure Orga');
 
 	const count = page.getByTestId('audience-count');
-	await page
-		.getByTestId('audience-add-committee')
-		.selectOption({ label: `${fixture.sr} · Sicherheitsrat` });
+	await addAudience(page, { search: 'Sicherheitsrat', name: `${fixture.sr} · Sicherheitsrat` });
 	await expect(count).toContainText('Erreicht derzeit 1 Personen');
-	await page.getByTestId('audience-add-group').selectOption({ label: 'Betreuende' });
+	await addAudience(page, { search: 'Betreu', name: 'Betreuende' });
 	await expect(count).toContainText('Erreicht derzeit 2 Personen');
 	await expect(count).toContainText('1 Delegierte, 1 Betreuende');
 	// a block is taken away again
 	await page.getByRole('button', { name: 'Betreuende entfernen' }).click();
 	await expect(count).toContainText('Erreicht derzeit 1 Personen');
-	await page.getByTestId('audience-add-group').selectOption({ label: 'Betreuende' });
+	await addAudience(page, { search: 'Betreu', name: 'Betreuende' });
 
-	await page.getByTestId('announcement-importance').selectOption('URGENT');
+	await page
+		.getByTestId('announcement-importance')
+		.getByRole('radio', { name: 'Dringend' })
+		.check();
 	await page.getByTestId('announcement-save').click();
 	await expect(editor).toBeHidden();
 
 	await expect(row(page, URGENT).getByTestId('announcement-state')).toHaveText('Entwurf');
 	await expect(row(page, URGENT)).toContainText('Dringend');
 	await expect(row(page, URGENT)).toContainText(`Gremium: ${fixture.sr}`);
+});
+
+test('the audience search offers nothing a picked block already holds', async ({ page }) => {
+	await loginAs(page, fixedTestUser(care.id, fixture.claims(care.id)), { startUrl: TEAM });
+	await page.getByTestId('announcement-new').click();
+	const committee = `${fixture.sr} · Sicherheitsrat`;
+
+	await addAudience(page, { search: 'Sicherheitsrat', name: committee });
+	// everyone takes the committee in: it goes, and says why
+	await addAudience(page, { search: 'Alle', name: 'Alle Teilnehmenden' });
+	await expect(page.getByRole('button', { name: `Gremium: ${committee} entfernen` })).toBeHidden();
+	await expect(page.getByTestId('audience-picker')).toContainText(
+		`Schon in „Alle Teilnehmenden“ enthalten und daher entfernt: Gremium: ${committee}`
+	);
+
+	// and cannot be added again, unlike a group "everyone" does not always hold
+	await page.getByTestId('audience-search').fill('Sicherheitsrat');
+	await expect(page.getByRole('option', { name: committee })).toHaveAttribute(
+		'aria-disabled',
+		'true'
+	);
+	await page.getByTestId('audience-search').fill('Betreu');
+	await expect(page.getByRole('option', { name: 'Betreuende', exact: true })).toHaveAttribute(
+		'aria-disabled',
+		'false'
+	);
+});
+
+test('the audience starts from suggestions and is taken apart in the search', async ({ page }) => {
+	await loginAs(page, fixedTestUser(care.id, fixture.claims(care.id)), { startUrl: TEAM });
+	await page.getByTestId('announcement-new').click();
+	const picker = page.getByTestId('audience-picker');
+	const chip = (name: string) => page.getByRole('button', { name: `${name} entfernen` });
+
+	// nothing picked: the usual audiences are one click away
+	const suggestion = (name: string) =>
+		picker.getByTestId('audience-suggestion').filter({ hasText: name });
+	await suggestion('Betreuende').click();
+	await expect(chip('Betreuende')).toBeVisible();
+	await expect(suggestion('Betreuende')).toHaveCount(0);
+	// what a picked block holds cannot be suggested on top
+	await suggestion('Alle Teilnehmenden').click();
+	await expect(suggestion('Teilnehmende mit Platz')).toBeDisabled();
+	await chip('Alle Teilnehmenden').click();
+	await expect(suggestion('Teilnehmende mit Platz')).toBeEnabled();
+
+	// a picked block is checked in the search, and choosing it again takes it out
+	await addAudience(page, { search: 'Warte', name: 'Warteliste' });
+	await page.getByTestId('audience-search').fill('Betreu');
+	const supervisors = page.getByRole('option', { name: 'Betreuende', exact: true });
+	await expect(supervisors).toHaveAttribute('aria-selected', 'true');
+	await supervisors.click();
+	await expect(chip('Betreuende')).toBeHidden();
+	await expect(supervisors).toHaveAttribute('aria-selected', 'false');
+
+	// Backspace in the empty field takes out the last one
+	await page.getByTestId('audience-search').fill('');
+	await page.getByTestId('audience-search').press('Backspace');
+	await expect(chip('Warteliste')).toBeHidden();
+	await expect(picker.getByTestId('audience-suggestion').first()).toBeVisible();
+
+	// several at once go with "remove all"
+	await addAudience(page, { search: 'Warte', name: 'Warteliste' });
+	await addAudience(page, { search: 'Betreu', name: 'Betreuende' });
+	await page.getByTestId('audience-clear').click();
+	await expect(picker).toContainText('Wähle mindestens eine Zielgruppe.');
 });
 
 test('an urgent announcement reaches its audience at once, as a bar on every page, until read', async ({
@@ -269,7 +347,7 @@ test('a change to a published announcement shows as an update, and taking it bac
 	await expect(card(annaPage, titles.gv.title)).toContainText('Audimax');
 	await expect(card(annaPage, titles.gv.title)).toContainText('aktualisiert am');
 
-	await row(carePage, titles.gv.title).getByTestId('announcement-withdraw').click();
+	await fromMenu(row(carePage, titles.gv.title), 'withdraw');
 	await expect(row(carePage, titles.gv.title).getByTestId('announcement-state')).toHaveText(
 		'Entwurf'
 	);
@@ -281,17 +359,17 @@ test('an announcement is duplicated as a draft, archived and deleted', async ({ 
 	const copy = `${titles.welcome.title} (Kopie)`;
 	const before = await rows(page).count();
 
-	await row(page, titles.welcome.title).getByTestId('announcement-duplicate').click();
+	await fromMenu(row(page, titles.welcome.title), 'duplicate');
 	await expect(rows(page)).toHaveCount(before + 1);
 	await expect(row(page, copy).getByTestId('announcement-state')).toHaveText('Entwurf');
 	// the copy keeps the audience
 	await expect(row(page, copy)).toContainText('Alle Teilnehmenden');
 
-	await row(page, copy).getByTestId('announcement-archive').click();
+	await fromMenu(row(page, copy), 'archive');
 	await expect(row(page, copy).getByTestId('announcement-state')).toHaveText('Archiviert');
 
 	page.once('dialog', (dialog) => dialog.accept());
-	await row(page, copy).getByTestId('announcement-delete').click();
+	await fromMenu(row(page, copy), 'delete');
 	await expect(rows(page)).toHaveCount(before);
 	await expect(row(page, copy)).toHaveCount(0);
 });

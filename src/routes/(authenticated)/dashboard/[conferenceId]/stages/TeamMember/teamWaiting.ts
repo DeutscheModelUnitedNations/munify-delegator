@@ -3,10 +3,10 @@ import { mayOpenTeamRoute, teamRoutes, type TeamRoute } from '#lib/data/teamRout
 import type { TeamAccess } from '#lib/helpers/teamAccess';
 
 /** The paper hub has a rule of its own on top of the team roles */
-type WaitingAccess = TeamAccess & { canSeePaperHub?: boolean };
+export type WaitingAccess = TeamAccess & { canSeePaperHub?: boolean };
 
 /**
- * What waits for a team member in a conference, as the team's overview lists it: one line per
+ * What waits for a team member in a conference, as the team's overview shows it: one tile per
  * thing to answer or decide, linking to the page where it is done. Pure, so the order and the
  * rule (nothing shown that is zero, nothing linked the caller may not open) are tested.
  */
@@ -25,6 +25,12 @@ export interface WaitingCounts {
 	draftAnnouncements: number;
 	/** Submitted or revised papers waiting for a review (only reviewers read them) */
 	papersAwaitingReview: number;
+	/** Agenda items whose reviewers asked for help */
+	reviewHelpNeeded: number;
+	/** Entrants on the waiting list not given a seat or hidden */
+	waitingList: number;
+	/** Mails that could not be sent */
+	failedEmails: number;
 }
 
 export const NOTHING_WAITING: WaitingCounts = {
@@ -34,7 +40,10 @@ export const NOTHING_WAITING: WaitingCounts = {
 	schoolSuggestions: 0,
 	openEmails: 0,
 	draftAnnouncements: 0,
-	papersAwaitingReview: 0
+	papersAwaitingReview: 0,
+	reviewHelpNeeded: 0,
+	waitingList: 0,
+	failedEmails: 0
 };
 
 export interface WaitingItem {
@@ -70,6 +79,16 @@ const ITEMS: {
 		routeId: 'cleanup',
 		label: (count) => m.schoolSuggestionsOpen({ count })
 	},
+	{
+		id: 'waitingList',
+		routeId: 'waitingList',
+		label: (count) => m.teamWaitingWaitingList({ count })
+	},
+	{
+		id: 'failedEmails',
+		routeId: 'emails',
+		label: (count) => m.teamWaitingFailedEmails({ count })
+	},
 	{ id: 'openEmails', routeId: 'emails', label: (count) => m.teamWaitingEmails({ count }) },
 	{
 		id: 'draftAnnouncements',
@@ -80,6 +99,11 @@ const ITEMS: {
 		id: 'papersAwaitingReview',
 		routeId: 'paperHub',
 		label: (count) => m.teamWaitingPapers({ count })
+	},
+	{
+		id: 'reviewHelpNeeded',
+		routeId: 'paperHub',
+		label: (count) => m.teamWaitingReviewHelp({ count })
 	}
 ];
 

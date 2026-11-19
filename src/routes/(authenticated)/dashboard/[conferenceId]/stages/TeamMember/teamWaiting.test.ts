@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import type { TeamAccess } from '#lib/helpers/teamAccess';
-import { mayAskFor, NOTHING_WAITING, waitingItems, type WaitingCounts } from './teamWaiting';
+import {
+	mayAskFor,
+	NOTHING_WAITING,
+	waitingItems,
+	type WaitingAccess,
+	type WaitingCounts
+} from './teamWaiting';
 
 const as = (...roles: TeamAccess['roles']): TeamAccess => ({ isAdmin: false, roles });
 const everything: WaitingCounts = {
@@ -10,9 +16,12 @@ const everything: WaitingCounts = {
 	schoolSuggestions: 4,
 	openEmails: 5,
 	draftAnnouncements: 6,
-	papersAwaitingReview: 7
+	papersAwaitingReview: 7,
+	reviewHelpNeeded: 8,
+	waitingList: 9,
+	failedEmails: 10
 };
-const ids = ({ counts, access }: { counts: WaitingCounts; access: TeamAccess }) =>
+const ids = ({ counts, access }: { counts: WaitingCounts; access: WaitingAccess }) =>
 	waitingItems({ counts, access }).map((item) => item.id);
 
 describe('waitingItems', () => {
@@ -28,9 +37,12 @@ describe('waitingItems', () => {
 			'unreadMessages',
 			'openDuplicates',
 			'schoolSuggestions',
+			'waitingList',
+			'failedEmails',
 			'openEmails',
 			'draftAnnouncements',
-			'papersAwaitingReview'
+			'papersAwaitingReview',
+			'reviewHelpNeeded'
 		]);
 	});
 
@@ -90,4 +102,18 @@ describe('mayAskFor', () => {
 			mayAskFor({ id: 'papersAwaitingReview', access: { ...as('REVIEWER'), canSeePaperHub: true } })
 		).toBe(true);
 	});
+});
+
+test('asks reviewers for help only where they may open the paper hub', () => {
+	const counts = { ...NOTHING_WAITING, reviewHelpNeeded: 1 };
+	expect(ids({ counts, access: as('REVIEWER') })).toEqual([]);
+	expect(ids({ counts, access: { ...as('REVIEWER'), canSeePaperHub: true } })).toEqual([
+		'reviewHelpNeeded'
+	]);
+});
+
+test('shows the waiting list and failed mails to participant care only', () => {
+	const counts = { ...NOTHING_WAITING, waitingList: 1, failedEmails: 1 };
+	expect(ids({ counts, access: as('PARTICIPANT_CARE') })).toEqual(['waitingList', 'failedEmails']);
+	expect(ids({ counts, access: as('CONTENT_LEAD') })).toEqual([]);
 });

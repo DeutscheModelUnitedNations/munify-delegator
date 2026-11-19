@@ -9,12 +9,25 @@
 		open: boolean;
 		title?: string;
 		fullWidth?: boolean;
+		/** Wider than daisyUI's default for longer reading text, short of `fullWidth`. */
+		wide?: boolean;
+		/** Wider still, for pickers that lay their options out in columns. */
+		wider?: boolean;
 		children: Snippet;
 		action?: Snippet;
 		onclose?: () => void;
 	}
 
-	let { open = $bindable(), title, fullWidth = false, children, action, onclose }: Props = $props();
+	let {
+		open = $bindable(),
+		title,
+		fullWidth = false,
+		wide = false,
+		wider = false,
+		children,
+		action,
+		onclose
+	}: Props = $props();
 
 	const titleId = $props.id();
 
@@ -34,7 +47,8 @@
 		<button class="modal-backdrop" tabindex="-1" aria-label={m.a11yCloseDialog()} onclick={close}
 		></button>
 		<div
-			class="modal-box {fullWidth && 'w-auto max-w-full sm:max-w-[90%]'}"
+			class="modal-box {fullWidth && 'w-auto max-w-full sm:max-w-[90%]'} {wide &&
+				'sm:max-w-3xl'} {wider && 'sm:max-w-5xl'}"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={title ? titleId : undefined}
