@@ -91,9 +91,12 @@
 	{/if}
 {/snippet}
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6" data-tour="paperhub.view.supervisor">
 	<!-- Summary stats -->
-	<div class="stats stats-vertical sm:stats-horizontal shadow bg-base-200">
+	<div
+		class="stats stats-vertical sm:stats-horizontal shadow bg-base-200"
+		data-tour="paperhub.supervisor.stats"
+	>
 		<div class="stat">
 			<div class="stat-title">{m.supervisorPapersTotal()}</div>
 			<div class="stat-value">{statusCounts.total}</div>
@@ -122,64 +125,66 @@
 			<span>{m.supervisorPapersEmpty()}</span>
 		</div>
 	{:else}
-		<!-- Papers grouped by delegation -->
-		{#each papersByDelegation as delegation (delegation.delegationId)}
-			<div class="card bg-base-200 shadow-md">
-				<div class="card-body max-sm:p-4">
-					<h3 class="card-title flex flex-wrap items-center gap-2">
-						<Flag
-							size="sm"
-							alpha2Code={delegation.alpha2Code}
-							nsa={delegation.nsa}
-							icon={delegation.icon}
-						/>
-						{delegation.delegationName}
-						<span class="badge badge-neutral">{delegation.papers.length}</span>
-					</h3>
+		<div class="flex flex-col gap-6" data-tour="paperhub.supervisor.papers">
+			<!-- Papers grouped by delegation -->
+			{#each papersByDelegation as delegation (delegation.delegationId)}
+				<div class="card bg-base-200 shadow-md">
+					<div class="card-body max-sm:p-4">
+						<h3 class="card-title flex flex-wrap items-center gap-2">
+							<Flag
+								size="sm"
+								alpha2Code={delegation.alpha2Code}
+								nsa={delegation.nsa}
+								icon={delegation.icon}
+							/>
+							{delegation.delegationName}
+							<span class="badge badge-neutral">{delegation.papers.length}</span>
+						</h3>
 
-					<div class="overflow-x-auto">
-						<table class="table table-sm w-full align-middle">
-							<thead>
-								<tr>
-									<PaperTypeStatusColumns />
-									<th>{m.paperTopic()}</th>
-									<th class="w-0 whitespace-nowrap">{m.author()}</th>
-									<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
-									<th class="w-0"><span class="sr-only">{m.openPaper()}</span></th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each delegation.papers as paper (paper.id)}
-									<tr
-										class="hover cursor-pointer"
-										onclick={(e) => handleRowClick({ e, paperId: paper.id })}
-									>
-										<PaperTypeStatusColumns {paper} />
-										<td class="align-middle break-words">{@render topic(paper.agendaItem)}</td>
-										<td class="align-middle whitespace-nowrap"
-											>{paper.author.givenName} {paper.author.familyName}</td
-										>
-
-										<td class="align-middle text-sm text-base-content/60 whitespace-nowrap"
-											>{formatDate(paper.firstSubmittedAt)}</td
-										>
-
-										<td class="align-middle">
-											<a
-												href={paperHref(paper.id)}
-												class="btn btn-ghost btn-xs"
-												aria-label={m.openPaper()}
-											>
-												<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
-											</a>
-										</td>
+						<div class="overflow-x-auto">
+							<table class="table table-sm w-full align-middle">
+								<thead>
+									<tr>
+										<PaperTypeStatusColumns />
+										<th>{m.paperTopic()}</th>
+										<th class="w-0 whitespace-nowrap">{m.author()}</th>
+										<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
+										<th class="w-0"><span class="sr-only">{m.openPaper()}</span></th>
 									</tr>
-								{/each}
-							</tbody>
-						</table>
+								</thead>
+								<tbody>
+									{#each delegation.papers as paper (paper.id)}
+										<tr
+											class="hover cursor-pointer"
+											onclick={(e) => handleRowClick({ e, paperId: paper.id })}
+										>
+											<PaperTypeStatusColumns {paper} />
+											<td class="align-middle break-words">{@render topic(paper.agendaItem)}</td>
+											<td class="align-middle whitespace-nowrap"
+												>{paper.author.givenName} {paper.author.familyName}</td
+											>
+
+											<td class="align-middle text-sm text-base-content/60 whitespace-nowrap"
+												>{formatDate(paper.firstSubmittedAt)}</td
+											>
+
+											<td class="align-middle">
+												<a
+													href={paperHref(paper.id)}
+													class="btn btn-ghost btn-xs"
+													aria-label={m.openPaper()}
+												>
+													<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
+												</a>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
 					</div>
 				</div>
-			</div>
-		{/each}
+			{/each}
+		</div>
 	{/if}
 </div>

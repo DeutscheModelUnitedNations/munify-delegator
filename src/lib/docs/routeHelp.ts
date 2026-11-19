@@ -13,11 +13,41 @@ const registrationChoiceTour = async () =>
 const participantDashboardTour = async () =>
 	(await import('./tours/participantDashboard.tour')).participantDashboardTour;
 
+const onScreen = (anchor: string) => document.querySelector(tourAnchorSelector(anchor)) !== null;
+
 /** The conference dashboard shows the registration choice to anyone without a part in it. */
 function dashboardTour(): Promise<Tour> {
-	return document.querySelector(tourAnchorSelector(REGISTRATION_CHOICE_ANCHOR))
+	return onScreen(REGISTRATION_CHOICE_ANCHOR)
 		? registrationChoiceTour()
 		: participantDashboardTour();
+}
+
+// The paper hub serves authors, supervisors and the team on the same routes, each with tours of
+// their own (`tours/paperhub/`). Which one fits is read off the screen: the start page shows one
+// view at a time, and a paper shows the review form only to a reviewer.
+const paperhubTours = {
+	team: async () => (await import('./tours/paperhub/paperhubTeam.tour')).paperhubTeamTour,
+	supervisor: async () =>
+		(await import('./tours/paperhub/paperhubSupervisor.tour')).paperhubSupervisorTour,
+	global: async () =>
+		(await import('./tours/paperhub/paperhubConferencePapers.tour')).paperhubConferencePapersTour,
+	participant: async () =>
+		(await import('./tours/paperhub/paperhubMyPapers.tour')).paperhubMyPapersTour
+};
+
+/** The tour of the paper hub view on screen; the participants' own papers when none is found */
+function paperhubStartTour(): Promise<Tour> {
+	if (onScreen('paperhub.view.team')) return paperhubTours.team();
+	if (onScreen('paperhub.view.supervisor')) return paperhubTours.supervisor();
+	if (onScreen('paperhub.view.global')) return paperhubTours.global();
+	return paperhubTours.participant();
+}
+
+/** A paper: the reviewer's tour where the review form is, the author's (and supervisor's) otherwise */
+async function paperTour(): Promise<Tour> {
+	return onScreen('paperhub.review')
+		? (await import('./tours/paperhub/paperhubReview.tour')).paperhubReviewTour
+		: (await import('./tours/paperhub/paperhubAuthor.tour')).paperhubAuthorTour;
 }
 
 /**
@@ -76,22 +106,29 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 		docs: 'user-manual/participant/dashboard#messages'
 	},
 	'/(authenticated)/dashboard/[conferenceId]/paperhub': {
-		docs: 'user-manual/participant/paper-hub'
+		docs: 'user-manual/participant/paper-hub',
+		tour: paperhubStartTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/paperhub/newPaper': {
-		docs: 'user-manual/participant/paper-hub#writing-a-paper'
+		docs: 'user-manual/participant/paper-hub#writing-a-paper',
+		tour: async () => (await import('./tours/paperhub/paperhubNewPaper.tour')).paperhubNewPaperTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/paperhub/newResolution': {
-		docs: 'user-manual/participant/paper-hub#working-papers'
+		docs: 'user-manual/participant/paper-hub#working-papers',
+		tour: async () =>
+			(await import('./tours/paperhub/paperhubNewResolution.tour')).paperhubNewResolutionTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/paperhub/[paperId]': {
-		docs: 'user-manual/participant/paper-hub#drafts-and-submitting'
+		docs: 'user-manual/participant/paper-hub#drafts-and-submitting',
+		tour: paperTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/paperhub/view/[paperId]': {
-		docs: 'user-manual/participant/paper-hub#who-sees-what'
+		docs: 'user-manual/participant/paper-hub#who-sees-what',
+		tour: async () => (await import('./tours/paperhub/paperhubView.tour')).paperhubViewTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/paperhub/snippets': {
-		docs: 'user-manual/team/paper-hub#snippets'
+		docs: 'user-manual/team/paper-hub#snippets',
+		tour: async () => (await import('./tours/paperhub/paperhubSnippets.tour')).paperhubSnippetsTour
 	},
 
 	// System admins

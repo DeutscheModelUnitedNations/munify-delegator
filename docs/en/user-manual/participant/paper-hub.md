@@ -7,6 +7,10 @@ description: Writing, submitting and revising position, working and introduction
 
 In the Paper Hub you write your delegation's papers, submit them to the team and read the feedback on them. You also read the submitted papers of the whole conference there. Supervisors see the papers of the delegations they supervise there.
 
+:::tip Guided tours
+The help button (the question mark in the header) offers a guided tour of the view you have open: your papers, the papers of the delegations you supervise, or the conference papers. Writing a new paper and the page of a paper have one too.
+:::
+
 ## Overview {#overview}
 
 You reach the Paper Hub through the **Paper Hub** card in the **Quick Links** on your [dashboard](./dashboard#preparation). The card appears as soon as the team opens paper submission.

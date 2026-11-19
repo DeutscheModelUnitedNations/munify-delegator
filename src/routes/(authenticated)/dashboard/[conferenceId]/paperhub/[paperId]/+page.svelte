@@ -186,7 +186,7 @@
 
 	{#if baseViewMode === 'supervisor'}
 		<!-- Supervisor Read-Only Banner -->
-		<div class="alert alert-info">
+		<div class="alert alert-info" data-tour="paperhub.paper.supervisor-notice">
 			<i aria-hidden="true" class="ph-duotone ph-chalkboard-teacher"></i>
 			<span>{m.readOnlyViewSupervisor()}</span>
 		</div>
@@ -196,7 +196,7 @@
 {#snippet paperBody(paper: PaperDetail)}
 	<div class="w-full flex flex-col gap-4">
 		<!-- Paper Editor - key forces re-creation when paper or editable changes -->
-		<div bind:this={paperEditorContainer}>
+		<div bind:this={paperEditorContainer} data-tour="paperhub.paper.content">
 			{#key `${paper.id}-${editorEditable}`}
 				<PaperContent
 					{paper}

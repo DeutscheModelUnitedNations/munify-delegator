@@ -6,9 +6,11 @@
 	interface Props {
 		status: ReviewhelpstatusEnum;
 		onCycle: () => void;
+		/** The guided tour's anchor, set on the toggles that are on screen */
+		tourAnchor?: string;
 	}
 
-	let { status, onCycle }: Props = $props();
+	let { status, onCycle, tourAnchor }: Props = $props();
 
 	const appearance = {
 		HELP_NEEDED: {
@@ -31,7 +33,11 @@
 	const current = $derived(appearance[status]);
 </script>
 
-<div class="tooltip tooltip-right {current.tooltip}" data-tip={current.tip()}>
+<div
+	class="tooltip tooltip-right {current.tooltip}"
+	data-tip={current.tip()}
+	data-tour={tourAnchor}
+>
 	<button
 		class="btn btn-ghost btn-sm btn-square"
 		aria-label={m.reviewHelpStatusTooltip()}

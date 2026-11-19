@@ -7,6 +7,10 @@ description: Eingereichte Papiere im Papier-Hub finden, begutachten und den Fort
 
 Im Papier-Hub begutachtet das Team die Papiere der Delegationen: Positionspapiere, Arbeitspapiere und Vorstellungspapiere. Wie die Teilnehmenden schreiben und einreichen, steht in [Papier-Hub für Teilnehmende](../participant/paper-hub).
 
+:::tip Geführte Touren
+In der Teamansicht, auf der Seite eines Papiers und bei den Textbausteinen startet **Tour starten** (in der Navigation oder hinter dem Fragezeichen in der Kopfzeile) eine Tour für Begutachtende. Sie unterscheidet sich von der Tour, die Teilnehmende beim Einreichen sehen.
+:::
+
 ## Überblick {#overview}
 
 Den Papier-Hub öffnest du im Team-Bereich über **Papier-Hub** in der Navigation. Nimmst du an der Konferenz auch selbst teil, wählst du oben die **Teamansicht**.
@@ -78,7 +82,7 @@ Vor jedem Tagesordnungspunkt steht ein Knopf, mit dem das Team sich abstimmt, wo
 2. Lies den Text. Markierst du eine Stelle, fügt **Zitieren** sie als Zitat in dein Feedback ein. Neben jedem Zitat springt **Im Papier finden** zurück zur Stelle im Papier.
 3. Schreibe deine Kommentare unter **Bewerten**. Ohne Kommentar lässt sich nichts abgeben (**Kommentare sind erforderlich**). [Textbausteine](#snippets) fügst du über das Lesezeichen in der Werkzeugleiste ein oder indem du `/` und den Namen tippst.
 4. Wähle unter **Neuer Status** entweder **Überarbeitungen angefordert** oder **Akzeptiert**.
-5. Soll dein Name nicht beim Feedback stehen, schalte **Anonym veröffentlichen** ein und wähle **Sekretariat** oder **Wissenschaftlicher Dienst**. Dein Browser merkt sich die Wahl.
+5. Soll dein Name nicht beim Feedback stehen, schalte **Anonym veröffentlichen** ein und wähle **Sekretariat**, **Wissenschaftlicher Dienst** oder **Eigener Name**. Bei **Eigener Name** gibst du den Namen ein, unter dem das Feedback erscheinen soll. Dein Browser merkt sich die Wahl.
 6. Klicke auf **Bewertung abgeben** und bestätige im Fenster **Bewertung bestätigen**.
 
 Danach meldet die Seite **Deine Bewertung wurde erfolgreich gespeichert.** Gibt es zum selben Tagesordnungspunkt noch ein Papier, das auf Feedback wartet, bringt dich **Direkt weiter bewerten und zum nächsten Papier springen** dorthin. Dabei kommen Papiere ohne jedes Feedback vor überarbeiteten, und unter ihnen das, das am längsten unberührt ist. Sonst steht dort **Du hast alle offenen Papiere dieses Themas bearbeitet**.
@@ -99,7 +103,7 @@ Solange du schreibst, merkt sich dein Browser dein Feedback zu diesem Papier jed
 
 Im Papier-Hub sieht die Person, die das Papier geschrieben hat, den neuen Status sofort und dein Feedback unter **Historie**. Das Feedback selbst sieht außer dem Team nur sie. Ihre Betreuenden sehen den Status.
 
-Mit jedem Feedback wird die E-Mail **Feedback zu einem Papier** an die Person fällig, die das Papier geschrieben hat, einmal pro Feedback. Sie nennt das Papier, wer das Feedback gegeben hat (bei anonymem Feedback das Sekretariat oder den Wissenschaftlichen Dienst), und den neuen Status, und verlinkt auf das Papier. Ist die Art auf der Seite [E-Mails](./communication#emails) auf automatisch gestellt, geht sie mit dem nächsten Versand von selbst hinaus. Sonst wartet sie dort, bis jemand sie verschickt.
+Mit jedem Feedback wird die E-Mail **Feedback zu einem Papier** an die Person fällig, die das Papier geschrieben hat, einmal pro Feedback. Sie nennt das Papier, wer das Feedback gegeben hat (bei anonymem Feedback die gewählte Bezeichnung), und den neuen Status, und verlinkt auf das Papier. Ist die Art auf der Seite [E-Mails](./communication#emails) auf automatisch gestellt, geht sie mit dem nächsten Versand von selbst hinaus. Sonst wartet sie dort, bis jemand sie verschickt.
 
 :::warning Antworten gehen an dich
 Antwortet jemand auf diese E-Mail, geht die Antwort an die Adresse der Person, die das Feedback geschrieben hat. Damit sieht sie auch deine E-Mail-Adresse. Bei anonymem Feedback hat die E-Mail keine Antwortadresse.
