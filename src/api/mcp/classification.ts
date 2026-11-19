@@ -645,8 +645,9 @@ const FIELDS: Record<string, TypeClassification> = {
 	},
 	Paperreviewdraft: {
 		// Only the caller's own drafts are readable (`paperReviewDraftPermissions.ts`): what the
-		// assistant wrote about a paper, which the reviewer may have edited. About the paper, whose
-		// text the assistant reads anyway, never about a person.
+		// assistant wrote about a paper, and what the reviewer changed in the app. `comments` stays
+		// visible by the owner's decision, so the assistant reads its reviewer's draft back; the
+		// reviewer may type anything there, personal data included. The AI access manual says so.
 		visible: [
 			...ROW,
 			'comments',

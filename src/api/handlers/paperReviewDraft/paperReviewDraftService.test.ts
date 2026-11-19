@@ -6,6 +6,8 @@ vi.mock('#api/pubsub', () => ({ paperReviewDraftPubsub: {} }));
 const {
 	changedSinceSeen,
 	conflictUpdate,
+	nextUpdatedAt,
+	writeRefusal,
 	replacesAppEdits,
 	reviewDraftLink,
 	reviewDraftMarkdownSchema
@@ -102,5 +104,56 @@ describe('conflictUpdate', () => {
 				now
 			})
 		).toEqual({ comments, statusAfter: 'CHANGES_REQUESTED', lastEditedVia: 'UI', updatedAt: now });
+	});
+});
+
+describe('writeRefusal', () => {
+	const at = new Date('2026-11-19T10:00:00.000Z');
+	const appDraft = { lastEditedVia: 'UI' as const, updatedAt: at };
+
+	it('keeps an assistant off what the reviewer changed in the app', () => {
+		expect(
+			writeRefusal({ draft: appDraft, by: 'MCP', overwriteAppEdits: false, expected: undefined })
+		).toBe('EDITED_IN_APP');
+		expect(
+			writeRefusal({ draft: appDraft, by: 'MCP', overwriteAppEdits: true, expected: undefined })
+		).toBeUndefined();
+	});
+
+	it('keeps the editor off a draft it has not seen', () => {
+		expect(
+			writeRefusal({
+				draft: appDraft,
+				by: 'UI',
+				overwriteAppEdits: false,
+				expected: { updatedAt: new Date('2026-11-19T09:00:00.000Z') }
+			})
+		).toBe('CHANGED_ELSEWHERE');
+		expect(
+			writeRefusal({
+				draft: appDraft,
+				by: 'UI',
+				overwriteAppEdits: false,
+				expected: { updatedAt: at }
+			})
+		).toBeUndefined();
+		expect(
+			writeRefusal({ draft: appDraft, by: 'UI', overwriteAppEdits: false, expected: undefined })
+		).toBeUndefined();
+	});
+});
+
+describe('nextUpdatedAt', () => {
+	it('is now, but always later than the write before', () => {
+		const previous = new Date('2026-11-19T10:00:00.500Z');
+		expect(nextUpdatedAt({ previous: undefined, now: previous })).toBe(previous);
+		const later = new Date('2026-11-19T10:00:01.000Z');
+		expect(nextUpdatedAt({ previous, now: later })).toBe(later);
+		expect(nextUpdatedAt({ previous, now: new Date(previous) }).getTime()).toBe(
+			previous.getTime() + 1
+		);
+		expect(nextUpdatedAt({ previous, now: new Date('2026-11-19T10:00:00.000Z') }).getTime()).toBe(
+			previous.getTime() + 1
+		);
 	});
 });

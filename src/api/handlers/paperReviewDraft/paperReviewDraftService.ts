@@ -91,10 +91,47 @@ export function replacesAppEdits({
 	return by === 'MCP' && draft?.lastEditedVia === 'UI' && !overwriteAppEdits;
 }
 
-function assertNoAppEditsReplaced(args: Parameters<typeof replacesAppEdits>[0]) {
-	if (replacesAppEdits(args)) {
-		throw apiError({ code: 'CONFLICT', message: m.reviewDraftEditedInApp() });
+type Refusal = 'EDITED_IN_APP' | 'CHANGED_ELSEWHERE';
+
+/**
+ * Why a write may not go ahead on the locked draft, if it may not: an assistant would replace
+ * what the reviewer changed in the app (`replacesAppEdits`), or the review editor would replace a
+ * draft that changed since it saw it (`changedSinceSeen`, only with `expected`).
+ */
+export function writeRefusal({
+	draft,
+	by,
+	overwriteAppEdits,
+	expected
+}: {
+	draft: { lastEditedVia: Origin; updatedAt: Date } | undefined;
+	by: Origin;
+	overwriteAppEdits: boolean;
+	expected: { updatedAt: Date | null } | undefined;
+}): Refusal | undefined {
+	if (replacesAppEdits({ draft, by, overwriteAppEdits })) return 'EDITED_IN_APP';
+	if (expected && changedSinceSeen({ draft, expectedUpdatedAt: expected.updatedAt })) {
+		return 'CHANGED_ELSEWHERE';
 	}
+	return undefined;
+}
+
+const REFUSAL_MESSAGES: Record<Refusal, () => string> = {
+	EDITED_IN_APP: () => m.reviewDraftEditedInApp(),
+	CHANGED_ELSEWHERE: () => m.reviewDraftChangedElsewhere()
+};
+
+function throwRefusal(refusal: Refusal | undefined) {
+	if (refusal) throw apiError({ code: 'CONFLICT', message: REFUSAL_MESSAGES[refusal]() });
+}
+
+/**
+ * The `updatedAt` a write gives the draft: now, but always later than the one before, so two
+ * writes within one millisecond still tell apart for `changedSinceSeen`.
+ */
+export function nextUpdatedAt({ previous, now }: { previous: Date | undefined; now: Date }) {
+	if (!previous || now.getTime() > previous.getTime()) return now;
+	return new Date(previous.getTime() + 1);
 }
 
 /**
@@ -189,56 +226,21 @@ export async function saveReviewDraft({
 	const saved = await db.transaction(async (tx) => {
 		const { conferenceId, latestVersion } = await loadDraftTarget({ tx, paperId });
 		const draft = await lockDraft({ tx, paperId, reviewerId });
-		assertNoAppEditsReplaced({ draft, by, overwriteAppEdits });
-		if (expected && changedSinceSeen({ draft, expectedUpdatedAt: expected.updatedAt })) {
-			throw apiError({ code: 'CONFLICT', message: m.reviewDraftChangedElsewhere() });
-		}
+		throwRefusal(writeRefusal({ draft, by, overwriteAppEdits, expected }));
 
-		const [written] = await tx
-			.insert(schema.paperReviewDraft)
-			.values({
-				paperId,
-				reviewerId,
-				paperVersionId: latestVersion.id,
-				comments,
-				statusAfter,
-				origin: by,
-				lastEditedVia: by
-			})
-			.onConflictDoUpdate({
-				target: [schema.paperReviewDraft.paperId, schema.paperReviewDraft.reviewerId],
-				set: conflictUpdate({
-					startsOver: by === 'MCP' || !draft,
-					paperVersionId: latestVersion.id,
-					comments,
-					statusAfter,
-					by,
-					now: new Date()
-				}),
-				...(expected ? keepUnseenDraft(draft) : keepAppEdits({ by, overwriteAppEdits }))
-			})
-			.returning({
-				id: schema.paperReviewDraft.id,
-				paperVersionId: schema.paperReviewDraft.paperVersionId,
-				updatedAt: schema.paperReviewDraft.updatedAt
-			});
-		// Nothing written: `setWhere` kept a row the writer may not replace.
-		if (!written) {
-			throw apiError({
-				code: 'CONFLICT',
-				message: expected ? m.reviewDraftChangedElsewhere() : m.reviewDraftEditedInApp()
-			});
-		}
-
-		// The version this write left the draft on, read while the row is still locked.
-		const [writtenVersion] = await tx
-			.select({ version: schema.paperVersion.version })
-			.from(schema.paperVersion)
-			.where(whereRows({ table: schema.paperVersion, filter: { id: written.paperVersionId } }));
+		const written = await upsertDraft({
+			tx,
+			draft,
+			row: { paperId, reviewerId, paperVersionId: latestVersion.id, comments, statusAfter },
+			by,
+			guard: expected ? keepUnseenDraft(draft) : keepAppEdits({ by, overwriteAppEdits })
+		});
+		// Nothing written: the guard kept a row the writer may not replace.
+		if (!written) throwRefusal(expected ? 'CHANGED_ELSEWHERE' : 'EDITED_IN_APP');
 
 		return {
 			...written,
-			version: writtenVersion?.version ?? latestVersion.version,
+			version: await versionNumber({ tx, paperVersionId: written.paperVersionId }),
 			created: !draft,
 			conferenceId,
 			latestVersion
@@ -247,6 +249,60 @@ export async function saveReviewDraft({
 	if (saved.created) paperReviewDraftPubsub.created();
 	else paperReviewDraftPubsub.updated(saved.id);
 	return saved;
+}
+
+/** Inserts the draft, or updates the one there is unless `guard` keeps it; the row written. */
+async function upsertDraft({
+	tx,
+	draft,
+	row,
+	by,
+	guard
+}: {
+	tx: Transaction;
+	draft: { updatedAt: Date } | undefined;
+	row: {
+		paperId: string;
+		reviewerId: string;
+		paperVersionId: string;
+		comments: Comments;
+		statusAfter: Verdict;
+	};
+	by: Origin;
+	guard: ReturnType<typeof keepAppEdits>;
+}) {
+	const now = nextUpdatedAt({ previous: draft?.updatedAt, now: new Date() });
+	const [written] = await tx
+		.insert(schema.paperReviewDraft)
+		.values({ ...row, origin: by, lastEditedVia: by, createdAt: now, updatedAt: now })
+		.onConflictDoUpdate({
+			target: [schema.paperReviewDraft.paperId, schema.paperReviewDraft.reviewerId],
+			set: conflictUpdate({
+				startsOver: by === 'MCP' || !draft,
+				paperVersionId: row.paperVersionId,
+				comments: row.comments,
+				statusAfter: row.statusAfter,
+				by,
+				now
+			}),
+			...guard
+		})
+		.returning({
+			id: schema.paperReviewDraft.id,
+			paperVersionId: schema.paperReviewDraft.paperVersionId,
+			updatedAt: schema.paperReviewDraft.updatedAt
+		});
+	return written;
+}
+
+/** The number of a paper version, read while the draft naming it is still locked. */
+async function versionNumber({ tx, paperVersionId }: { tx: Transaction; paperVersionId: string }) {
+	const [version] = await tx
+		.select({ version: schema.paperVersion.version })
+		.from(schema.paperVersion)
+		.where(whereRows({ table: schema.paperVersion, filter: { id: paperVersionId } }));
+	if (!version) throw apiError({ code: 'NOT_FOUND', message: m.reviewOnlyReviewers() });
+	return version.version;
 }
 
 /**
@@ -304,7 +360,7 @@ export async function deleteReviewDraft({
 	const deleted = await db.transaction(async (tx) => {
 		const draft = await lockDraft({ tx, paperId, reviewerId });
 		if (!draft) return false;
-		assertNoAppEditsReplaced({ draft, by, overwriteAppEdits });
+		throwRefusal(writeRefusal({ draft, by, overwriteAppEdits, expected: undefined }));
 		await tx
 			.delete(schema.paperReviewDraft)
 			.where(whereRows({ table: schema.paperReviewDraft, filter: { id: draft.id } }));

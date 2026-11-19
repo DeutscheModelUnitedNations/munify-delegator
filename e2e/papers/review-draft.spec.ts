@@ -361,4 +361,93 @@ test.describe('review drafts in the editor', () => {
 			.toContain('Noch getippt.');
 		await page.unroute('**/api/graphql**');
 	});
+
+	test('what is typed while a running save settles before a discard stays', async ({
+		page,
+		request
+	}) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		await writeDraft({ request, token, paperId, content: 'Wird verworfen.' });
+		await openPaper(page, paperId);
+		const review = page.locator('#review');
+		const editor = review.locator('.ProseMirror');
+
+		// the first save of an edit is held on its way
+		let release: () => void = () => {};
+		const held = new Promise<void>((resolve) => (release = resolve));
+		let savesSeen = 0;
+		await page.route('**/api/graphql**', async (route) => {
+			if (!route.request().postData()?.includes('savePaperReviewDraft')) return route.fallback();
+			savesSeen++;
+			if (savesSeen === 1) await held;
+			await route.fallback();
+		});
+		await editor.locator('p').first().click();
+		await page.keyboard.press('End');
+		await page.keyboard.type(' Erste Änderung.');
+		await expect.poll(() => savesSeen, { timeout: 10_000 }).toBe(1);
+
+		// discarding waits for that save; what is typed meanwhile is not part of the discard
+		await review.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ }).click();
+		await page
+			.locator('.modal-action')
+			.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ })
+			.click();
+		await editor.locator('p').first().click();
+		await page.keyboard.press('End');
+		await page.keyboard.type(' Danach getippt.');
+		release();
+
+		await expect(editor).toContainText('Danach getippt.');
+		await expect
+			.poll(
+				async () =>
+					(
+						await sql<{ text: string }>(
+							'SELECT comments::text AS text FROM paper_review_draft WHERE paper_id = $1',
+							[paperId]
+						)
+					)[0]?.text ?? '',
+				{ timeout: 15_000 }
+			)
+			.toContain('Danach getippt.');
+		await page.unroute('**/api/graphql**');
+	});
+
+	test('a recovered browser draft keeps its verdict on an accepted paper', async ({ page }) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		await sql("UPDATE paper SET status = 'ACCEPTED' WHERE id = $1", [paperId]);
+
+		await loginAs(page, fixedTestUser(E2E_DRAFTS_PEOPLE.reviewer), {
+			startUrl: `/dashboard/${C}/paperhub/${paperId}#review`
+		});
+		await waitForHydration(page);
+		await page.evaluate(
+			(key) =>
+				localStorage.setItem(
+					key,
+					JSON.stringify({
+						comments: {
+							type: 'doc',
+							content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Passt so.' }] }]
+						},
+						selectedStatus: 'ACCEPTED',
+						savedAt: Date.now()
+					})
+				),
+			`reviewDraft_${paperId}`
+		);
+		await page.reload();
+		await waitForHydration(page);
+
+		const review = page.locator('#review');
+		await expect(review.locator('.ProseMirror')).toContainText('Passt so.', { timeout: 30_000 });
+		// the editor's default for an accepted paper would be "revisions requested"
+		await expect(
+			review.locator('label', { hasText: /^\s*(Akzeptiert|Accepted)\s*$/ }).locator('input')
+		).toBeChecked();
+		await sql("UPDATE paper SET status = 'SUBMITTED' WHERE id = $1", [paperId]);
+	});
 });

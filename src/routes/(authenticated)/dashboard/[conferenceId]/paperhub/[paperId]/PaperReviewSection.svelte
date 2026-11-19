@@ -295,6 +295,9 @@
 	/** Deletes the draft and empties the editor, once a save on its way has arrived. */
 	async function discardDraft() {
 		showDiscardModal = false;
+		// What the reviewer chose to discard: anything typed from here on, while a running save
+		// settles or the deletion is on its way, stays.
+		const before = editorSnapshot();
 		await saver.settle();
 		const promise = Promise.resolve(client.mutate.deletePaperReviewDraft({ __args: { paperId } }));
 		toast.promise(promise, {
@@ -302,7 +305,6 @@
 			success: m.reviewDraftDiscarded(),
 			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
 		});
-		const before = editorSnapshot();
 		try {
 			await promise;
 			afterDraftGone(before);
