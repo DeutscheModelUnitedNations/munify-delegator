@@ -3469,6 +3469,7 @@
 	"teamWaitingEmails": "{count} due e-mails that are not sent automatically",
 	"teamWaitingMessages": "{count} unread messages in your inboxes",
 	"teamWaitingNothing": "Nothing is waiting for you right now.",
+	"teamWaitingPapers": "{count} submitted papers waiting for a review",
 	"teamWaitingTitle": "Waiting for you",
 	"teamWiki": "Team Wiki",
 	"teamWikiDescription": "Access team knowledge base and documentation",

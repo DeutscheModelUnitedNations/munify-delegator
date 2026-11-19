@@ -2,6 +2,9 @@ import { m } from '#lib/paraglide/messages';
 import { mayOpenTeamRoute, teamRoutes, type TeamRoute } from '#lib/data/teamRoutes';
 import type { TeamAccess } from '#lib/helpers/teamAccess';
 
+/** The paper hub has a rule of its own on top of the team roles */
+type WaitingAccess = TeamAccess & { canSeePaperHub?: boolean };
+
 /**
  * What waits for a team member in a conference, as the team's overview lists it: one line per
  * thing to answer or decide, linking to the page where it is done. Pure, so the order and the
@@ -20,6 +23,8 @@ export interface WaitingCounts {
 	openEmails: number;
 	/** Announcements not published yet */
 	draftAnnouncements: number;
+	/** Submitted or revised papers waiting for a review (only reviewers read them) */
+	papersAwaitingReview: number;
 }
 
 export const NOTHING_WAITING: WaitingCounts = {
@@ -28,7 +33,8 @@ export const NOTHING_WAITING: WaitingCounts = {
 	openDuplicates: 0,
 	schoolSuggestions: 0,
 	openEmails: 0,
-	draftAnnouncements: 0
+	draftAnnouncements: 0,
+	papersAwaitingReview: 0
 };
 
 export interface WaitingItem {
@@ -69,6 +75,11 @@ const ITEMS: {
 		id: 'draftAnnouncements',
 		routeId: 'announcement',
 		label: (count) => m.teamWaitingDrafts({ count })
+	},
+	{
+		id: 'papersAwaitingReview',
+		routeId: 'paperHub',
+		label: (count) => m.teamWaitingPapers({ count })
 	}
 ];
 
@@ -77,7 +88,7 @@ export function waitingItems({
 	access
 }: {
 	counts: WaitingCounts;
-	access: TeamAccess;
+	access: WaitingAccess;
 }): WaitingItem[] {
 	return ITEMS.flatMap((item) => {
 		const count = counts[item.id];
@@ -88,7 +99,7 @@ export function waitingItems({
 }
 
 /** Whether asking for a count makes sense: only for what the caller may open */
-export function mayAskFor({ id, access }: { id: keyof WaitingCounts; access: TeamAccess }) {
+export function mayAskFor({ id, access }: { id: keyof WaitingCounts; access: WaitingAccess }) {
 	const item = ITEMS.find((entry) => entry.id === id);
 	const route = teamRoutes.find((entry) => entry.id === item?.routeId);
 	return !!route && mayOpenTeamRoute({ route, access });

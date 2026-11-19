@@ -1,1713 +1,675 @@
 # UI Design Guide
 
-This document provides guidance for building consistent user interfaces in MUNify DELEGATOR. Follow these patterns to maintain visual consistency and leverage existing components.
-
-> **Maintenance Note**: Keep this guide updated when creating new UI components, modifying existing component APIs/props, changing usage patterns, or deprecating components. Documentation should always reflect the current state of `src/lib/components/`.
+Components and UI rules. Data fetching, forms and route params: see CLAUDE.md. Keep this file in
+sync with `src/lib/components/` when adding, changing or deprecating components.
 
 ## Design Principles
 
-1. **Consistency First**: Match existing patterns in the codebase before inventing new ones
-2. **DaisyUI Native**: Prefer standard DaisyUI components and utilities over custom solutions
-3. **Minimal & Clean**: Favor simplicity, whitespace, and clear visual hierarchy
-4. **Svelte 5 Runes**: Use `$state`, `$derived`, `$effect` for reactivity (never legacy stores)
-5. **Accessible by default**: Participants include blind and low-vision people; see below
+Match existing patterns first; DaisyUI components and utilities over custom CSS; minimal, clear
+hierarchy; Svelte 5 runes only; accessible by default (blind and low-vision participants attend).
 
 ## Accessibility
 
-`e2e/accessibility/accessibility.spec.ts` runs axe-core (WCAG 2.2 A/AA, serious and critical) over
-the public and participant pages, contrast in the high contrast variant, plus the keyboard paths.
+`e2e/accessibility/accessibility.spec.ts` runs axe-core (WCAG 2.2 A/AA, serious + critical) over the
+public and participant pages, contrast in the high contrast variant, plus keyboard paths.
 
-- **Dialogs** go through `Modal`, `Drawer`, `ActionModal` or bits-ui's `Dialog`. A hand-rolled one
-  gets `role="dialog"` (or `alertdialog`), `aria-modal="true"` and
-  `{@attach modalFocus(close)}` (`#lib/helpers/modalFocus`): focus moves in, Tab stays inside,
-  Escape closes, and focus returns to the opener. One that stays mounted attaches it only while
-  open: `{@attach open ? modalFocus(close) : undefined}`. Without a label it is named after its
-  first heading. The backdrop button gets `tabindex="-1"`.
-- **Every page has one `<main id="main-content" tabindex="-1">`**, which the root layout's skip
-  link targets: the layouts hold it (`(authenticated)`, `docs`), pages outside them their own.
-  Components never render a `<main>`.
-- **Icon-only means unnamed.** A button or link showing only an icon takes `aria-label`. A tooltip
-  (`data-tip`, `title`) shows on hover only, so an icon that carries meaning (a status, a table
-  header) repeats the tooltip as `<span class="sr-only">`. If the button shows text, put the name
-  in that text rather than an `aria-label` that does not contain it (voice users say what they see).
-- **State is never colour alone**: toggles use `aria-pressed`, tabs `aria-selected`, sortable
-  headers `aria-sort` with a `<button>` inside. A control that looks disabled is `disabled`, not
-  just `btn-disabled`.
-- **Clickable rows** keep their table semantics: the row's `onclick` is for the mouse, a real
-  `<a href>` in a cell is for everyone else (`PaperTable`). Never `role="button"` on a `<tr>`.
-  A list of people or things opens an entry from the whole row, not from a small button at its
-  end: `rowClick` / `CLICKABLE_ROW` (`#lib/helpers/rowClick`) skip the row's own controls and
-  text selections, and `PersonNameButton` is the name cell that opens the user card by keyboard.
-- **`<dl>`**: each `<div>` wrapper holds one `<dt>`/`<dd>` pair and nothing else (an icon goes
-  inside the `<dt>`).
-- **High contrast** (`#lib/helpers/contrast`, the footer's `ContrastToggle`, or the system's
-  "increase contrast") sets `data-contrast="more"`; `app.css` darkens the semantic colours and
-  lifts muted text there. Muted text by opacity (`text-base-content/60`, `opacity-50`) is fine in
-  the default look; do not hard-code a colour around it.
-- **Every icon is `aria-hidden="true"`.** Phosphor icons are font glyphs a screen reader can read
-  out as a stray character, also inside a button's name; `src/lib/icons.test.ts` fails on an empty
-  `<i>` without it. An icon-only control still needs its `aria-label` (`SquareButtonWithLoadingState`
-  takes a required `label`).
+- **Dialogs** go through `Modal`, `Drawer`, `ActionModal` or bits-ui `Dialog`. A hand-rolled one
+  gets `role="dialog"` (or `alertdialog`), `aria-modal="true"` and `{@attach modalFocus(close)}`
+  (`#lib/helpers/modalFocus`: focus in, Tab trapped, Escape closes, focus returns to opener). One
+  that stays mounted: `{@attach open ? modalFocus(close) : undefined}`. Unlabelled, it is named by
+  its first heading. Backdrop button gets `tabindex="-1"`.
+- **One `<main id="main-content" tabindex="-1">` per page** (skip link target), held by the layouts
+  (`(authenticated)`, `docs`); pages outside them bring their own. Components never render `<main>`.
+- **Icon-only controls take `aria-label`.** Tooltips (`data-tip`, `title`) are hover-only, so an
+  icon carrying meaning (status, table header) repeats it as `<span class="sr-only">`. A button with
+  visible text is named by that text, not an `aria-label` that doesn't contain it (voice control).
+- **State is never colour alone**: `aria-pressed` on toggles, `aria-selected` on tabs, `aria-sort`
+  on sortable headers (with a `<button>` inside). Looks disabled = real `disabled`, not just `btn-disabled`.
+- **Clickable rows** keep table semantics: row `onclick` for the mouse, a real `<a href>` in a cell
+  for everyone else (`PaperTable`); never `role="button"` on a `<tr>`. Lists open an entry from the
+  whole row: `rowClick` / `CLICKABLE_ROW` (`#lib/helpers/rowClick`) skip the row's own controls and
+  text selections; `PersonNameButton` is the name cell that opens the user card by keyboard.
+- **`<dl>`**: each `<div>` holds exactly one `<dt>`/`<dd>` pair (an icon goes inside the `<dt>`).
+- **High contrast** (`#lib/helpers/contrast`, footer `ContrastToggle`, or system "increase
+  contrast") sets `data-contrast="more"`; `app.css` darkens semantic colours and lifts muted text.
+  Opacity-muted text (`text-base-content/60`, `opacity-50`) is fine; don't hard-code colours around it.
+- **Every icon is `aria-hidden="true"`** (Phosphor glyphs are read out as stray characters, even in
+  a button's name); `src/lib/icons.test.ts` fails on an empty `<i>` without it.
+  `SquareButtonWithLoadingState` takes a required `label`.
 
 ## Component Library Overview
 
-Components are located in `src/lib/components/`.
-
-**Naming convention**: directories are `camelCase`, component files are `PascalCase`
-(e.g. `dataGrid/DataGrid.svelte`). This matches munify-chase.
-
-Key directories:
-
-- `calendar/` - Conference calendar display (day views, time markers, entry cards)
-- `form/` - Form inputs integrated with sveltekit-superforms
-- `dashboard/` - Dashboard section layouts and widgets
-- `dataTable/` - Searchable, sortable data tables
-- `navMenu/` - Sidebar navigation components
-- `tabs/` - Tab navigation
-- `delegationStats/` - Statistics display widgets
-- `infoGrid/` - Key-value pair display grids
-- `charts/` - ECharts-based visualizations
-- `paperHub/` - Paper management components including statistics
-- `survey/` - Survey answer modal and compact survey cards for the dashboard
-
-Route-local components that set a pattern are documented below as well (e.g. [Seat Planning](#seat-planning-matrix--hints-sidebar)).
-
----
+Components live in `src/lib/components/`: directories `camelCase`, files `PascalCase`
+(`dataGrid/DataGrid.svelte`), as in munify-chase. Key directories: `calendar/`, `form/`
+(superforms inputs), `dashboard/`, `dataGrid/`, `navMenu/`, `navigation/`, `tabs/`, `table/`,
+`delegationStats/`, `infoGrid/`, `charts/echarts/`, `paperHub/`, `survey/`, `chat/`,
+`announcement/`, `email/`, `scanner/`, `teamManagement/`, `userCard/`. Route-local components that
+set a pattern are documented below too (Seat Planning, Assignment Board, Calendar Editor).
 
 ## DetailedPaperStats Component
 
-`src/lib/components/paperHub/DetailedPaperStats.svelte`
-
-Displays comprehensive paper statistics with multiple charts and gauges for the Paper Hub dashboard.
-
-### Props Interface
-
-```typescript
-interface Paper {
-	type: PaperType$options; // 'POSITION_PAPER' | 'WORKING_PAPER' | 'INTRODUCTION_PAPER'
-	status: PaperStatus$options; // 'DRAFT' | 'SUBMITTED' | 'REVISED' | 'CHANGES_REQUESTED' | 'ACCEPTED'
-	versions: Array<{ reviews: Array<{ id: string }> }>;
-}
-
-interface CommitteeWithPapers {
-	name: string; // Full committee name
-	abbreviation: string; // Short committee code (e.g., "GA", "SC")
-	papers: Paper[];
-}
-
-interface Props {
-	allPapers: Paper[];
-	committeesWithPapers: CommitteeWithPapers[];
-}
-```
-
-### Usage Example
-
-```svelte
-<script lang="ts">
-	import DetailedPaperStats from '#lib/components/paperHub/DetailedPaperStats.svelte';
-
-	// allPapers: flat array of all papers across committees
-	// committeesWithPapers: array of committees with their papers grouped
-	let { allPapers, committeesWithPapers } = $props();
-</script>
-
-{#if allPapers.length > 0}
-	<DetailedPaperStats {allPapers} {committeesWithPapers} />
-{/if}
-```
-
-### Chart Subcomponents
-
-This component uses the following chart components from `#lib/components/charts/echarts//index`:
-
-| Component             | Purpose                                    |
-| --------------------- | ------------------------------------------ |
-| `BarChart`            | Papers by type distribution                |
-| `MultiSeriesBarChart` | Status breakdown by paper type (stacked)   |
-| `GaugeChart`          | Review progress and acceptance rate gauges |
-| `EChartsBase`         | Committee breakdown horizontal bar chart   |
-
-### Features
-
-- Summary stats row (total papers, with/without reviews, accepted)
-- Review progress gauge (papers with at least one review)
-- Acceptance rate gauge (accepted papers / non-draft papers)
-- Papers by type bar chart
-- Status by type stacked bar chart
-- Committee breakdown with grouped stacked horizontal bars
-
----
+`#lib/components/paperHub/DetailedPaperStats.svelte`: Paper Hub statistics. Props `allPapers`
+(flat: `type`, `status`, `versions { reviews { id } }`) and `committeesWithPapers` (`name`,
+`abbreviation`, `papers`). Shows totals, review-progress and acceptance-rate (accepted / non-draft)
+gauges, papers by type, status by type (stacked), committee breakdown. Charts from
+`#lib/components/charts/echarts/index`: `BarChart`, `MultiSeriesBarChart`, `GaugeChart`, `EChartsBase`.
 
 ## Team Management Components
 
-Components in `src/lib/components/teamManagement/` for managing team invitations.
+`src/lib/components/teamManagement/`:
 
-### InviteTeamMembersModal
-
-`src/lib/components/teamManagement/InviteTeamMembersModal.svelte`
-
-Modal for inviting team members via email. Supports batch email input, status checking, and role assignment.
-
-#### Props Interface
-
-```typescript
-interface Props {
-	open: boolean; // Controls modal visibility (bindable)
-	conferenceId: string; // Conference to invite members to
-}
-```
-
-#### Usage Example
-
-```svelte
-<script lang="ts">
-	import InviteTeamMembersModal from '#lib/components/teamManagement/InviteTeamMembersModal.svelte';
-
-	let inviteModalOpen = $state(false);
-</script>
-
-<button class="btn btn-primary" onclick={() => (inviteModalOpen = true)}>
-	Invite Team Members
-</button>
-
-<InviteTeamMembersModal bind:open={inviteModalOpen} conferenceId={data.conferenceId} />
-```
-
-#### Features
-
-- Two-step flow: enter emails → review and assign roles
-- Email status checking (existing user, new user, pending invitation, already member)
-- Role assignment per invitee (MEMBER, REVIEWER, PARTICIPANT_CARE, TEAM_COORDINATOR, PROJECT_MANAGEMENT)
-- External domain warning when inviting non-organization emails
-- Batch email parsing with comma/semicolon/newline separators
-
----
-
-### PendingInvitationsTable
-
-`src/lib/components/teamManagement/PendingInvitationsTable.svelte`
-
-Table displaying pending team member invitations with actions.
-
-#### Props Interface
-
-```typescript
-interface Invitation {
-	id: string;
-	email: string;
-	role: string;
-	expiresAt: string;
-	userExists: boolean;
-	invitedBy: {
-		given_name: string;
-		family_name: string;
-	};
-}
-
-interface Props {
-	invitations: Invitation[];
-}
-```
-
-#### Usage Example
-
-```svelte
-<script lang="ts">
-	import PendingInvitationsTable from '#lib/components/teamManagement/PendingInvitationsTable.svelte';
-</script>
-
-<PendingInvitationsTable invitations={data.pendingInvitations} />
-```
-
-#### Features
-
-- Displays email, role, status (account exists/new user), expiration date, and inviter
-- Expiration status highlighting (expired invitations shown with reduced opacity)
-- Actions: copy invitation link, resend email, revoke invitation
-- Automatic cache invalidation after actions
-
----
+- **`InviteTeamMembersModal`** (`bind:open`, `conferenceId`): two steps (enter emails, then review
+  and assign roles). Parses comma/semicolon/newline lists, checks each address's status (existing
+  user, new, pending invitation, already member), a role per invitee, warns on external domains.
+- **`PendingInvitationsTable`** (`invitations`: `id`, `email`, `role`, `expiresAt`, `userExists`,
+  `invitedBy`): email, role, account status, expiry (expired dimmed), inviter; copy link, resend,
+  revoke.
+- `TeamManagementPage` (`team/`) frames the members and invitations pages (tabs + invite button);
+  it is a component, not a layout, because a route group would hide the pages from the breadcrumbs.
 
 ## Calendar Components
 
-Components in `src/lib/components/calendar/` for displaying conference calendar schedules.
+`src/lib/components/calendar/`:
 
-### CalendarDisplay
-
-`src/lib/components/calendar/CalendarDisplay.svelte`
-
-Main calendar container that renders day tabs (small screens) or side-by-side columns (3xl+). Handles day selection, track filtering, and entry click → drawer.
-
-#### Props Interface
-
-```typescript
-interface Props {
-	days: Day[]; // Array of calendar days with tracks and entries
-	timezone?: string; // IANA timezone (default: 'UTC') — controls "now" marker and today detection
-}
-```
-
-#### Usage Example
-
-```svelte
-<script lang="ts">
-	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
-</script>
-
-<CalendarDisplay days={previewDays} timezone="Europe/Berlin" />
-```
-
-#### Features
-
-- Responsive layout: tabs on small screens, side-by-side grid on 3xl+
-- Automatic "today" tab selection using conference timezone
-- Per-day track filtering
-- Entry click opens `CalendarEntryDrawer` with details
-
-### CalendarDayView
-
-`src/lib/components/calendar/CalendarDayView.svelte`
-
-Renders a single day's timeline with hour grid, entries positioned by time, and a live "now" marker.
-
-#### Props Interface
-
-```typescript
-interface Props {
-	dayName: string;
-	date: Date;
-	tracks: Track[];
-	entries: Entry[];
-	filterTrackId?: string | null;
-	timezone?: string; // Passed to CalendarTimeMarker
-	onEntryClick?: (entry: Entry) => void;
-}
-```
-
-### CalendarTimeMarker
-
-`src/lib/components/calendar/CalendarTimeMarker.svelte`
-
-Displays a red "now" line on the calendar timeline. Uses `Intl.DateTimeFormat` with conference timezone to compute position.
-
-#### Props Interface
-
-```typescript
-interface Props {
-	startHour: number;
-	endHour: number;
-	hourHeight: number;
-	timezone?: string; // IANA timezone (default: 'UTC')
-}
-```
-
-### CalendarEntryCard
-
-`src/lib/components/calendar/CalendarEntryCard.svelte`
-
-Renders a single calendar entry as a colored card positioned on the timeline. Shows icon, name, time range, room, and track.
-
-### CalendarEntryDrawer
-
-`src/lib/components/calendar/CalendarEntryDrawer.svelte`
-
-Slide-out drawer showing full entry details including place information, map, and site plan.
-
----
+- `CalendarDisplay`: `days`, `timezone` (IANA, default `'UTC'`). Day tabs on small screens, columns side by side on 3xl+; picks "today" in the conference timezone; per-day track filter
+- `CalendarDayView`: `dayName`, `date`, `tracks`, `entries`, `filterTrackId`, `timezone`, `onEntryClick`. One day's hour grid with entries and the "now" marker
+- `CalendarTimeMarker`: `startHour`, `endHour`, `hourHeight`, `timezone`. Red "now" line, positioned via `Intl.DateTimeFormat` in the conference timezone
+- `CalendarEntryCard`: One entry as a coloured card: icon, name, time, room, track
+- `CalendarEntryDrawer`: Slide-out details: place, map, site plan (opened by entry click)
 
 ## Calendar Editor (team/calendar)
 
-`team/calendar/` is three tabs: **Calendar** (the editor), **Days & tracks** and **Places**.
+`team/calendar/` has three tabs: **Calendar** (the editor), **Days & tracks**, **Places**.
 
 ### CalendarEditor
 
-`CalendarEditor.svelte` draws every day side by side, one column per track, on one time axis. It
-is the only place entries are moved: there is no separate list, move or sort-order form.
+`CalendarEditor.svelte` draws every day side by side, a column per track, on one time axis. It is
+the **only** place entries are moved (no list, move or sort-order form).
 
-| Gesture                          | Result                                                                                                                      |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Drag a card                      | Moves it in 15-minute steps; sideways picks the track, onto another day column moves the day                                |
-| Drag a card's top or bottom edge | Resizes it (at least 15 minutes)                                                                                            |
-| Drag a card's left or right edge | Stretches it over more tracks of its day (at least one)                                                                     |
-| Click or drag on empty space     | Opens the entry form for a new entry (an hour from the click, or the dragged range; dragging sideways picks several tracks) |
-| Click a card / Enter             | Opens the entry form; Duplicate and Delete are in its footer                                                                |
-| Arrows on a focused card         | Up/down move it 15 minutes, left/right one track; with Shift they move the end or the right edge; Delete asks to delete     |
-| Escape while dragging            | Cancels                                                                                                                     |
+Gestures: drag a card to move it in 15-min steps (sideways: track; another day column: day); drag
+top/bottom edge to resize (≥ 15 min), left/right edge to span more tracks of its day (≥ 1);
+click/drag empty space for a new entry (an hour from the click or the dragged range, sideways for
+several tracks); click / Enter opens the entry form (Duplicate, Delete in its footer); on a focused
+card arrows move 15 min / one track, Shift moves the end / right edge, Delete asks; Escape cancels a drag.
 
-An entry runs on a **run of consecutive tracks** (`calendarEntry.tracks`, the join table
-`calendarEntryToCalendarTrack`; the API takes `calendarTrackIds`). Every entry
-names at least one track; there is no "no track means all tracks" rule, so a track added later
-does not pick up existing entries, and deleting a track deletes the entries that ran on it alone. A
-moved entry keeps its width and is squeezed in where the target day has fewer tracks; the "Track …
-to …" selects in the entry form set the first and last track.
-
-**A track is the conference's, not a day's** (`calendarTrack.conferenceId`). The days it runs on are
-`calendarDayToCalendarTrack` (`calendarDay.tracks` reads through it), so a track keeps its id from
-day to day: copying or moving entries keeps the tracks the target day runs, by id, never by name.
-Taking a track off a day (`setCalendarTrackOnDay`) takes that day's entries off it and deletes those
-left on none; deferred triggers refuse an entry on a track its day does not run. A track names the
-committees and roles it is for (`calendarTrackToCommittee`, `calendarTrackToConferenceRole`): the
-dashboard's timeline (`entriesForSeat`, `seatOf`) follows the tracks for the person's committee and
-role. Only an imported day file names tracks by name (it may come from another conference): import
-reuses the conference's track of that name, which names are unique for.
+- An entry runs on a **run of consecutive tracks** (`calendarEntry.tracks`, join table
+  `calendarEntryToCalendarTrack`; API takes `calendarTrackIds`), at least one. No "no track = all
+  tracks": a new track picks up nothing; deleting a track deletes entries that ran on it alone. A
+  moved entry keeps its width, squeezed where the target day has fewer tracks. The form's "Track …
+  to …" selects set first and last track.
+- **A track is the conference's, not a day's** (`calendarTrack.conferenceId`); the days it runs on
+  are `calendarDayToCalendarTrack` (`calendarDay.tracks`). Copying/moving entries keeps tracks by
+  id, never by name. `setCalendarTrackOnDay` (off) takes that day's entries off it and deletes those
+  left on none; deferred triggers refuse an entry on a track its day doesn't run. A track names its
+  committees and roles (`calendarTrackToCommittee`, `calendarTrackToConferenceRole`); the
+  dashboard timeline (`entriesForSeat`, `seatOf`) follows them. Only an imported day file names
+  tracks by name: import reuses the conference's track of that name (names are unique).
 
 ### Structure
 
-| File                                                                                            | Role                                                                                                                                                                                                                                                 |
-| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `calendarGrid.ts`                                                                               | Pure geometry and drag maths: snapping, `dragSpan`, `createSpan`, the column grid, drop target, overlaps, lanes, `keyAction`                                                                                                                         |
-| `calendarEditor.svelte.ts` (`CalendarEditor`)                                                   | State: the drag in progress, optimistic saves in a `SvelteMap` overlaid on the live data (like the seat planner), undo toast, rollback with the server's message                                                                                     |
-| `CalendarEditor.svelte`                                                                         | Pointer handling (one `pointerdown` on the grid, the pointer stays captured so a card can change column mid-drag) and layout                                                                                                                         |
-| `EditorEntryCard.svelte`                                                                        | One card and its resize edges                                                                                                                                                                                                                        |
-| `EntryFormModal.svelte`                                                                         | Details of an entry: day, track, times and duration chips, colour, icon presets, place, room                                                                                                                                                         |
-| `DaysTracksTab.svelte`, `TrackMatrix.svelte`, `DayFormModal.svelte`, `TrackRowFormModal.svelte` | Matrix: days as columns, the conference's tracks as rows, a checkbox per cell lets the track run on that day or not; select all, deselect all, plus button (a track on every day, for the committees and roles picked), drag a row's grip to reorder |
+- `calendarGrid.ts`: pure geometry/drag maths: snapping, `dragSpan`, `createSpan`, column grid, drop target, overlaps, lanes, `keyAction`
+- `calendarEditor.svelte.ts`: State: drag in progress, optimistic saves in a `SvelteMap` over the live data, undo toast, rollback with the server's message
+- `CalendarEditor.svelte`: pointer handling (one `pointerdown` on the grid; the pointer stays captured so a card can change column mid-drag), layout
+- `EditorEntryCard.svelte`: One card and its resize edges
+- `EntryFormModal.svelte`: Entry details: day, track, times + duration chips, colour, icon presets, place, room
+- `DaysTracksTab`, `TrackMatrix`, `DayFormModal`, `TrackRowFormModal` (.svelte): Matrix: days as columns, tracks as rows, a checkbox per cell; select/deselect all; plus button (track on every day, for picked committees/roles); drag a row's grip to reorder
 
 ### Rules
 
-- **Day order comes from the date.** Days have no sort order; they are listed by their `date`
-  (a calendar day), and the day form sends only name and date (`dayFields`). Tracks are ordered
-  with the arrows (`trackOrderChanges` renumbers them).
-- **Times are wall-clock minutes stored as UTC.** The editor works in minutes of the day and writes
-  them back with `dateAtMinutes`; a drag ends at 23:45 at the latest.
-- **The hour range follows the saved entries, not the drag**, so the grid does not shift under the
-  pointer. It has an hour of room around the entries; "Whole day" shows 00:00 to 24:00.
-- **Unit tests run Svelte's server build**, where a `$derived` is computed once; read derived state
-  after the last change in a test, and leave the live overlay to `e2e/calendar/`.
+- **Day order comes from the date**; days have no sort order; the day form sends only name and date
+  (`dayFields`). Tracks are ordered with the arrows (`trackOrderChanges` renumbers).
+- **Times are wall-clock minutes stored as UTC**, written back with `dateAtMinutes`; a drag ends at
+  23:45 at the latest.
+- **The hour range follows the saved entries, not the drag** (grid doesn't shift under the pointer),
+  with an hour of room; "Whole day" shows 00:00–24:00.
+- **Unit tests run Svelte's server build**, where a `$derived` is computed once: read derived state
+  after the last change; leave the live overlay to `e2e/calendar/`.
 
 ## RoleFlag Component
 
-`#lib/components/RoleFlag.svelte` shows a delegation's role: a nation's flag or a non-state
-actor's icon (through `Flag`), nothing for no role. Pass the role as selected
-(`assignedRole { kind icon nation { alpha2Code } }`) and an optional `size` (`xs` by
-default). For the name next to it, narrow the role with `splitRole` from `#lib/helpers/conferenceRole`.
-
-```svelte
-<RoleFlag role={delegation.assignedRole} />
-```
+`#lib/components/RoleFlag.svelte`: a nation's flag or a non-state actor's icon (via `Flag`),
+nothing without a role. `role` as selected (`assignedRole { kind icon nation { alpha2Code } }`),
+optional `size` (default `xs`). For the name, narrow with `splitRole` (`#lib/helpers/conferenceRole`).
 
 ## Kbd Component
 
-`src/lib/components/Kbd.svelte`
-
-Renders a keyboard shortcut hint with OS-aware modifier formatting. On macOS, replaces modifier names with symbols (`alt` → `⌥`, `shift` → `⇧`, `ctrl` → `⌃`, `enter` → `↵`). On Windows/Linux, keeps text as-is. SSR-safe (defaults to text modifiers).
-
-### Props
-
-| Prop     | Type           | Description                        |
-| -------- | -------------- | ---------------------------------- |
-| `hotkey` | `string`       | Hotkey string, e.g. `"alt+a"`      |
-| `size`   | `'xs' \| 'sm'` | DaisyUI kbd size (default: `'sm'`) |
-
-### Usage Examples
-
-```svelte
-<script lang="ts">
-	import Kbd from '#lib/components/Kbd.svelte';
-</script>
-
-<!-- In a button -->
-<button class="btn btn-primary">
-	Save <Kbd hotkey="alt+a" />
-</button>
-
-<!-- Small size for inline badges -->
-<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
-
-<!-- Compound shortcuts -->
-<Kbd hotkey="shift+enter" />
-```
-
----
+`#lib/components/Kbd.svelte`: shortcut hint. `hotkey` (`"alt+a"`, `"shift+enter"`), `size`
+(`'xs' | 'sm'`, default `'sm'`). On macOS shows `⌥ ⇧ ⌃ ↵`; elsewhere text; SSR-safe (text by default).
 
 ## Form Components (Critical)
 
-Forms use `sveltekit-superforms` for validation and state management. Always structure forms consistently.
+Forms are superforms SPA forms submitting through a mutation (see "Forms" in CLAUDE.md). Build them
+with **`mutationForm({ initial, validators, save, toastProgress })`**
+(`#lib/components/form/mutationForm.ts`): validated on input, never reset, errors toasted,
+`save(data)` once valid, generic progress toast unless `toastProgress: false`. Prefer it over
+spelling out the superForm options.
 
 ### FormSection (long forms)
 
-For long forms (the profile, the conference settings) group fields with `FormSection` instead:
-icon, title and optional `description` on the left, fields on the right, groups separated by a
-rule rather than boxed. Lay out related fields side by side with a `grid` inside it.
+Long forms (profile, conference settings) group fields with `FormSection` (`title`, `icon`,
+optional `description` on the left, fields on the right, groups separated by a rule, not boxed); lay
+related fields side by side with a `grid` inside. `<FormSection title={m.address()} icon="house">`.
 
-```svelte
-<FormSection title={m.address()} icon="house">...</FormSection>
-```
-
-`FormImage` is the image upload (drop zone with preview, replace and discard). It fills the same
-`File` field as `FormFile`; pass `storedUrl` to preview what the server already holds.
+`FormImage`: image upload (drop zone, preview, replace, discard), fills the same `File` field as
+`FormFile`; `storedUrl` previews what the server holds.
 
 ### FormFieldset (Required for Grouping)
 
-**Always** wrap related form inputs with `FormFieldset` to provide visual grouping:
-
-```svelte
-<script lang="ts">
-	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
-	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
-	import FormSelect from '#lib/components/form/FormSelect.svelte';
-</script>
-
-<FormFieldset title="Personal Information">
-	<FormTextInput {form} name="firstName" label="First Name" />
-	<FormTextInput {form} name="lastName" label="Last Name" />
-	<FormTextInput {form} name="email" label="Email" type="email" />
-</FormFieldset>
-
-<FormFieldset title="Preferences">
-	<FormSelect {form} name="language" label="Language" options={languageOptions} />
-</FormFieldset>
-```
+Outside `FormSection` layouts, **always** wrap related inputs in `FormFieldset` (`title`, `icon`
+snippet before the title).
 
 ### Available Form Components
 
-| Component            | Purpose                            | Key Props                                                                                        |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `Form`               | Form wrapper with submit button    | `form`, `showSubmitButton`, `action`                                                             |
-| `FormFieldset`       | Visual grouping with legend        | `title`, `icon` (snippet before the title)                                                       |
-| `FormTextInput`      | Text/email/password input          | `form`, `name`, `label`, `labelIcon` (snippet), `type`, `step`, `placeholder`                    |
-| `FormTextArea`       | Multi-line text                    | `form`, `name`, `label`                                                                          |
-| `FormSelect`         | Dropdown select                    | `form`, `name`, `label`, `options`                                                               |
-| `FormCheckbox`       | Checkbox toggle                    | `form`, `name`, `label`                                                                          |
-| `FormDateTimeInput`  | Date/time picker                   | `form`, `name`, `label`                                                                          |
-| `FormFile`           | File upload                        | `form`, `name`, `label`                                                                          |
-| `FormSubmitButton`   | Submit with loading state          | `form`, `disabled`, `loading`                                                                    |
-| `AddressRegionField` | State/province of an address       | `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has none |
-| `AddressFields`      | A whole postal address             | `form`, `fields` (`ADDRESS_FIELDS`), `rules`, `disabled`; postal code/city/region per country    |
-| `AddressSection`     | `AddressFields` in its own section | `form`, `fields`, `rules`; the "Address" `FormSection` around `AddressFields`                    |
-| `SchoolPicker`       | School combobox                    | `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`         |
+Fields take `form`, `name`, `label` (plus as listed):
 
-**`SchoolPicker`** is how every form asks for a school (applications, joining a delegation, the
-waiting list, supervisors) - always the person's own.
-It binds the two fields every school mutation takes (`schoolChoiceSchema` in
-`#lib/schemata/schoolChoice.ts`): typing searches `searchSchools` (from two characters, debounced)
-and clears `schoolId`, so a new name creates a school on save; picking a suggestion sets both;
-"Keine Schule angeben" clears both, because a school is always optional. A hint line says which of
-the three it is. To change a school later, open `SchoolChangeForm`
-(`current`, `save(choice)`, `onSaved`, `requireTaintedToSubmit`) in a `Modal`, or place it inline;
-`SchoolLine` (`#lib/components/userCard/sections/`) is the list row with that button, and
-`stages/Common/MySchool.svelte` the caller's own school on the dashboard (`setParticipantSchool` without an `id`).
+- `Form` (`form`, `showSubmitButton`, `action`): wrapper with submit button
+- `FormTextInput`: `labelIcon` (snippet), `type`, `step`, `placeholder`
+- `FormTextArea`, `FormCheckbox`, `FormDateTimeInput`, `FormFile`; `FormSelect`: `options`
+  (`{ value, label }[]`)
+- `FormSubmitButton` (`form`, `disabled`, `loading`)
+- `AddressRegionField`: `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has no region
+- `AddressFields`: `form`, `fields` (`ADDRESS_FIELDS`), `rules`, `disabled`; postal code/city/region per country
+- `AddressSection`: `form`, `fields`, `rules`; `AddressFields` inside the "Address" `FormSection`
+- `SchoolPicker`: `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`
 
-**`mutationForm({ initial, validators, save, toastProgress })`** (`#lib/components/form/mutationForm.ts`)
-builds the superforms SPA form every mutation-backed form uses (see "Forms" in CLAUDE.md): validated
-on input, never reset, errors as a toast, `save(data)` once valid, with the generic progress toast
-unless `toastProgress: false`. Prefer it over spelling the options out.
-
-### Complete Form Example
-
-```svelte
-<script lang="ts">
-	import Form from '#lib/components/form/Form.svelte';
-	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
-	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
-	import FormSelect from '#lib/components/form/FormSelect.svelte';
-	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
-	import { superForm } from 'sveltekit-superforms';
-
-	let { data } = $props();
-	const form = superForm(data.form);
-</script>
-
-<Form {form}>
-	<FormFieldset title="Account Details">
-		<FormTextInput {form} name="username" label="Username" placeholder="Enter username" />
-		<FormTextInput {form} name="email" label="Email" type="email" />
-	</FormFieldset>
-
-	<FormFieldset title="Settings">
-		<FormSelect
-			{form}
-			name="role"
-			label="Role"
-			options={[
-				{ value: 'user', label: 'User' },
-				{ value: 'admin', label: 'Admin' }
-			]}
-		/>
-		<FormCheckbox {form} name="notifications" label="Enable notifications" />
-	</FormFieldset>
-</Form>
-```
-
----
+**`SchoolPicker`** is how every form asks for a school (applications, joining a delegation, waiting
+list, supervisors), always the person's own. Binds both fields of `schoolChoiceSchema`
+(`#lib/schemata/schoolChoice.ts`): typing searches `searchSchools` (≥ 2 chars, debounced) and clears
+`schoolId` (a new name creates a school on save); a suggestion sets both; "Keine Schule angeben"
+clears both (a school is always optional). A hint line says which. To change one later:
+`SchoolChangeForm` (`current`, `save(choice)`, `onSaved`, `requireTaintedToSubmit`) in a `Modal` or
+inline; `SchoolLine` (`#lib/components/userCard/sections/`) is the list row with that button;
+`stages/Common/MySchool.svelte` is the caller's own on the dashboard (`setParticipantSchool` without `id`).
 
 ## Modal Component
 
-Use `Modal` for dialogs. It closes on a backdrop click or Escape, is a `role="dialog"` named by
-its `title` (or its first heading), keeps focus inside while open and hands it back on close
-(`modalFocus`).
+`#lib/components/Modal.svelte`: closes on backdrop click or Escape, `role="dialog"` named by
+`title` (or first heading), keeps and returns focus (`modalFocus`). Props: `open` (bindable),
+`title`, `fullWidth` (90%), `children`, `action` (footer snippet), `onclose`. With a form inside,
+use `<Form {form} showSubmitButton={false}>` and submit from the `action` buttons.
 
-### Props
-
-| Prop        | Type                 | Description              |
-| ----------- | -------------------- | ------------------------ |
-| `open`      | `boolean` (bindable) | Controls visibility      |
-| `title`     | `string`             | Modal title              |
-| `fullWidth` | `boolean`            | Expand to 90% width      |
-| `children`  | `Snippet`            | Modal body content       |
-| `action`    | `Snippet`            | Footer actions (buttons) |
-| `onclose`   | `() => void`         | Callback when closed     |
-
-### Modal Example
-
-```svelte
-<script lang="ts">
-	import Modal from '#lib/components/Modal.svelte';
-	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
-
-	let modalOpen = $state(false);
-</script>
-
-<button class="btn btn-primary" onclick={() => (modalOpen = true)}>Open Modal</button>
-
-<Modal bind:open={modalOpen} title="Edit Item">
-	<FormFieldset title="Item Details">
-		<label class="form-control w-full">
-			<div class="label"><span class="label-text">Name</span></div>
-			<input type="text" class="input input-bordered w-full" placeholder="Enter name" />
-		</label>
-	</FormFieldset>
-
-	{#snippet action()}
-		<button class="btn" onclick={() => (modalOpen = false)}>Cancel</button>
-		<button class="btn btn-primary" onclick={handleSave}>Save</button>
-	{/snippet}
-</Modal>
-```
-
-### Modal with Superforms
-
-When using superforms inside a modal, integrate the Form component:
-
-```svelte
-<Modal bind:open={modalOpen} title="Create Item">
-	<Form {form} showSubmitButton={false}>
-		<FormFieldset title="Details">
-			<FormTextInput {form} name="name" label="Name" />
-			<FormTextInput {form} name="description" label="Description" />
-		</FormFieldset>
-	</Form>
-
-	{#snippet action()}
-		<button class="btn" onclick={() => (modalOpen = false)}>Cancel</button>
-		<button class="btn btn-primary" onclick={submitForm}>Create</button>
-	{/snippet}
-</Modal>
-```
+Footer buttons go in `{#snippet action()}…{/snippet}` (Cancel `btn`, confirm `btn btn-primary`).
 
 ### ActionModal and ConfirmDeleteModal
 
-For a modal that only asks for a confirmation (with or without a few fields), prefer these to a
-hand-built `Modal`. Both are always open: render them inside an `{#if}` and close them in
-`onClose`, which cancelling and the backdrop call.
+For a confirmation (with or without a few fields) prefer these to a hand-built `Modal`. Both are
+**always open**: render inside `{#if}` and close in `onClose` (cancel and backdrop call it).
 
-```svelte
-{#if editing}
-	<ActionModal
-		title={m.edit()}
-		confirmLabel={m.save()}
-		loading={saving}
-		onConfirm={save}
-		onClose={() => (editing = false)}
-	>
-		<input class="input" bind:value={name} />
-	</ActionModal>
-{/if}
-
-{#if deleting}
-	<ConfirmDeleteModal
-		title={m.delete()}
-		text={m.reallyDelete()}
-		onConfirm={remove}
-		onClose={() => (deleting = false)}
-	/>
-{/if}
-```
-
-`ConfirmDeleteModal` tracks its own loading state while `onConfirm` (async) runs. `ActionModal`
-also takes `subtitle` (snippet), `confirmClass`, `confirmDisabled`, `bodyClass` and `boxClass`.
+- `ActionModal`: `title`, `confirmLabel`, `loading`, `onConfirm`, `onClose`, children; also
+  `subtitle` (snippet), `confirmClass`, `confirmDisabled`, `bodyClass`, `boxClass`.
+- `ConfirmDeleteModal`: `title`, `text`, `onConfirm` (async; it tracks its own loading), `onClose`.
 
 ### EmailPrompt (offering mails after an action)
 
-No mutation sends mail. A team action that makes mails due (releasing the assignment, saving the
-conference settings) offers them right after with `#lib/components/email/`: `createEmailPrompt()`
-holds the state, `offer({ conferenceId, kinds })` asks what of those kinds is owed and opens the
-modal only when something is and the caller may manage the mails. "Later" leaves them on the e-mail
-page.
-
-```svelte
-<script lang="ts">
-	const emailPrompt = createEmailPrompt();
-	async function release() {
-		await client.mutate.setAssignmentReleased({ __args: { conferenceId, released: true } });
-		void emailPrompt.offer({ conferenceId, kinds: ASSIGNMENT_KINDS });
-	}
-</script>
-
-<EmailPrompt prompt={emailPrompt} />
-```
-
----
+No mutation sends mail. A team action that makes mails due offers them with
+`#lib/components/email/`: `const emailPrompt = createEmailPrompt()`, then after the mutation
+`void emailPrompt.offer({ conferenceId, kinds: ASSIGNMENT_KINDS })`, and render
+`<EmailPrompt prompt={emailPrompt} />`. It opens only when something of those kinds is owed and the
+caller may manage mails; "Later" leaves them on the e-mail page.
 
 ## Drawer Component
 
-Use `Drawer` for slide-out panels (e.g., detail views, edit forms). Like `Modal` it is a focus-keeping
-dialog, named by its `title` (or `category`), closing on Escape.
-
-### Props
-
-| Prop       | Type                 | Description                    |
-| ---------- | -------------------- | ------------------------------ |
-| `open`     | `boolean` (bindable) | Controls visibility            |
-| `category` | `string`             | Category label                 |
-| `title`    | `string`             | Panel title                    |
-| `loading`  | `boolean`            | Show loading spinner           |
-| `width`    | `string`             | Panel width (default: `34rem`) |
-| `onClose`  | `() => void`         | Callback when closed           |
-
-### Drawer Example
-
-```svelte
-<script lang="ts">
-	import Drawer from '#lib/components/Drawer.svelte';
-
-	let drawerOpen = $state(false);
-	let loading = $state(false);
-</script>
-
-<button class="btn" onclick={() => (drawerOpen = true)}>View Details</button>
-
-<Drawer bind:open={drawerOpen} category="Delegation" title="Germany" {loading}>
-	<div class="flex flex-col gap-4">
-		<p>Delegation details go here...</p>
-	</div>
-</Drawer>
-```
-
----
+`#lib/components/Drawer.svelte`: slide-out panel (details, edit forms); focus-keeping dialog named
+by `title` (or `category`), closes on Escape. Props: `open` (bindable), `category`, `title`,
+`loading` (spinner), `width` (default `34rem`), `onClose`.
 
 ## SlidePanel Component
 
-`#lib/components/SlidePanel.svelte` is the shared base for animated edge panels (the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
-
-| Prop        | Type                           | Description                                |
-| ----------- | ------------------------------ | ------------------------------------------ |
-| `open`      | `boolean` (bindable)           | Controls visibility                        |
-| `direction` | `'top' \| 'right' \| 'bottom'` | Edge it slides in from (default `'right'`) |
-| `class`     | `string`                       | Sizing classes: max width/height, rounding |
-| `keepFocus` | `boolean`                      | Do not move focus into the panel on open   |
-| `children`  | `Snippet`                      | Panel content                              |
-
----
+`#lib/components/SlidePanel.svelte`: base for animated edge panels (dataGrid `SideDrawer`,
+`CalendarEntryDrawer`). A bits-ui `Dialog` with Svelte transitions (focus trap, Escape, overlay
+click included); no swipe-to-dismiss. Put bits-ui `Dialog.Title` / `Dialog.Close` inside. Props:
+`open` (bindable), `direction` (`'top' | 'right' | 'bottom'`, default `'right'`), `class` (max
+width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 
 ## BarcodeScanner Component
 
-Use `BarcodeScanner` for pages that need barcode scanning via camera or manual text input. Encapsulates camera management, barcode detection, device switching, and manual input fallback. Every code read or typed is checked against `acceptance` (`scanAcceptance.ts`, signatures included) before it reaches `scannedCode`; a refused one is reported as a toast. `QuickScan` (the command palette's camera) takes the same `acceptance`.
+`#lib/components/scanner/BarcodeScanner.svelte`: camera scanning with device switching and manual
+input fallback. Every code read or typed is checked against `acceptance` (`scanAcceptance.ts`,
+signatures included) before it reaches `scannedCode`; refusals are toasted. `QuickScan` (command
+palette camera) takes the same `acceptance`.
 
-### Props
+- `scannedCode`: Bindable `string | null`: a bare signed code, or the user id as read/picked; `userIdOfCode` gives the user
+- `acceptance`: `ScanAcceptance`: `conferenceId`, signed code `kinds` (`live`, `print`), `printedNametags` (unsigned 1D barcodes count)
+- `persistKey`: localStorage key for the camera preference
+- `barcodeFormats`: default `['qr_code', 'code_128']`
+- `manualPlaceholder`, `scanPromptText`: Texts for the manual field and while scanning
+- `cameraZIndex`: z-index class of the preview (default `'z-30'`)
+- `extraControls`: Snippet between camera settings and input
 
-| Prop                | Type                        | Description                                                                                                       |
-| ------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `scannedCode`       | `string \| null` (bindable) | The accepted code: a bare signed code, or the user id as read or picked; `userIdOfCode` gives the user            |
-| `acceptance`        | `ScanAcceptance`            | The conference, the signed code kinds (`live`, `print`) and whether printed nametags (unsigned 1D barcodes) count |
-| `persistKey`        | `string`                    | localStorage key for camera preference                                                                            |
-| `barcodeFormats`    | `BarcodeFormat[]`           | Formats to detect (default: `['qr_code', 'code_128']`)                                                            |
-| `manualPlaceholder` | `string`                    | Placeholder for manual input field                                                                                |
-| `scanPromptText`    | `string`                    | Prompt shown while camera is scanning                                                                             |
-| `cameraZIndex`      | `string`                    | z-index class for camera preview (default: `'z-30'`)                                                              |
-| `extraControls`     | `Snippet`                   | Optional controls between camera settings and input                                                               |
-
-### Exposed Methods
-
-- `reset()` — Clears scanned code and restarts camera or refocuses manual input
-
-### BarcodeScanner Example
-
-```svelte
-<script lang="ts">
-	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
-	import { userIdOfCode } from '#lib/components/scanner/scanAcceptance';
-	import { queryParameters } from 'sveltekit-search-params';
-
-	const params = queryParameters({ queryUserId: true });
-	let scannerRef: BarcodeScanner;
-</script>
-
-<BarcodeScanner
-	bind:this={scannerRef}
-	bind:scannedCode={
-		() => params.queryUserId, (code) => (params.queryUserId = code ? userIdOfCode(code) : code)
-	}
-	acceptance={{ conferenceId, kinds: ['print'], printedNametags: false }}
-	barcodeFormats={['qr_code']}
-	persistKey="useCameraForMyPage"
-	manualPlaceholder="Enter code..."
-	scanPromptText="Present the barcode..."
-/>
-
-<!-- Call scannerRef.reset() after saving to prepare for next scan -->
-```
-
----
+Exposes `reset()` (clears the code, restarts camera or refocuses input); call it via `bind:this`
+after saving. Typical binding into URL state:
+`bind:scannedCode={() => params.queryUserId, (code) => (params.queryUserId = code ? userIdOfCode(code) : code)}`.
 
 ## Dashboard Components
 
-Dashboard pages use consistent section layouts.
+`#lib/components/dashboard/`:
 
-### DashboardSection
-
-Main section wrapper with icon, title, and description:
-
-```svelte
-<script lang="ts">
-	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-</script>
-
-<DashboardSection
-	icon="users"
-	title="Team Members"
-	description="Manage your conference team"
-	variant="default"
->
-	<!-- Section content -->
-</DashboardSection>
-```
-
-**Props:**
-
-- `icon`: Phosphor icon name (without `ph-` prefix)
-- `title`: Section heading
-- `description`: Optional subtitle
-- `variant`: `"default"` | `"info"` (info uses blue styling)
-- `collapsible`: Boolean to make the section collapsible
-- `defaultCollapsed`: Boolean for initial collapsed state
-- `collapsed`: Bindable boolean to track/control collapsed state externally
-- `headerAction`: Optional snippet for header actions
-- `tourAnchor`: Optional `data-tour` anchor a guided tour points at (see "User manual, help and
-  tours" in CLAUDE.md)
-
-### DashboardLinkCard
-
-A link card of the dashboard (`#lib/components/dashboard/DashboardLinkCard.svelte`). Beside the
-title and description it takes an `info` snippet for live details the card carries itself: the
-schedule's card shows a small timeline of what is on now and the next two things on the signed-in person's track (`CalendarLinkInfo`), the paper
-hub's card the numbers of its papers (`PaperHubLinkInfo`). A link definition (`dashboardLinks.ts`,
-`teamDashboardLinks.ts`) sets `info` to such a component, which gets the `conferenceId` and fetches
-its own data; `DashboardLinkCards` and the quick links pass it on. Team members' cards sit on the
-page without a section box around them, below `TeamWaiting` (`stages/TeamMember/`), the team's
-list of what waits for them (`teamWaiting.ts`).
-
-### DashboardContentCard
-
-Simple card container for content:
-
-```svelte
-<script lang="ts">
-	import DashboardContentCard from '#lib/components/dashboard/DashboardContentCard.svelte';
-</script>
-
-<DashboardContentCard title="Statistics" description="Overview of current data">
-	<p>Card content here...</p>
-</DashboardContentCard>
-```
-
-### ConferenceHeader
-
-Conference title header with emblem and status:
-
-```svelte
-<ConferenceHeader
-	title={conference.title}
-	longTitle={conference.longTitle}
-	state={conference.state}
-	startDate={conference.startConference}
-	endDate={conference.endConference}
-	emblemDataURL={conference.emblemDataURL}
-/>
-```
-
-### StatusChecklist
-
-A checklist with a progress bar: open steps first-class, done ones struck through. Each step is
-`DONE`, `PENDING`, `PROBLEM` or `NOT_YET_POSSIBLE`; an open step's `href` links to where it is done
-(an anchor on the page: `DashboardSection` takes an `id`). `legend={false}` drops the notes
-explaining the open statuses.
-
-```svelte
-<script lang="ts">
-	import StatusChecklist from '#lib/components/dashboard/StatusChecklist.svelte';
-</script>
-
-<StatusChecklist
-	steps={[
-		{ task: 'Invite people', status: 'DONE' },
-		{
-			task: 'Answer the questionnaire',
-			status: 'PENDING',
-			hint: 'Motivation and experience',
-			href: '#application-texts'
-		}
-	]}
-	legend={false}
-/>
-```
-
-The registration flow (`routes/(authenticated)/registration/[conferenceId]/`) frames every page in
-`RegistrationStepPage`: a way back, a stepper for the page's path (`registrationSteps.ts`; choosing
-the path on the dashboard is step 0) and the content in a `DashboardSection`.
-
----
+- **`DashboardSection`**: `icon` (Phosphor name without `ph-`), `title`, `description`, `variant`
+  (`"default" | "info"`, blue), `collapsible`, `defaultCollapsed`, `collapsed` (bindable),
+  `headerAction` (snippet), `id` (anchor target), `tourAnchor` (`data-tour` for guided tours, see
+  CLAUDE.md "User manual, help and tours").
+- **`DashboardLinkCard`**: title, description, and an `info` snippet for live details the card
+  fetches itself (e.g. `CalendarLinkInfo`: what's on now and the next two things on the caller's
+  track; `MessagesLinkInfo`: unread chats). A link definition (`dashboardLinks.ts`,
+  `teamDashboardLinks.ts`) sets `info` to a component receiving `conferenceId`;
+  `DashboardLinkCards` and the quick links pass it on. Team members' cards sit without a section
+  box, below `TeamWaiting` (`stages/TeamMember/`, from `teamWaiting.ts`).
+- **`DashboardContentCard`**: `title`, `description`, children.
+- **`ConferenceHeader`**: `title`, `longTitle`, `state`, `startDate`, `endDate`, `emblemDataURL`.
+- **`StatusChecklist`**: progress bar, open steps first, done ones struck through. `steps`:
+  `{ task, status, hint?, href? }` with status `DONE | PENDING | PROBLEM | NOT_YET_POSSIBLE`; an
+  open step's `href` links where it is done (anchor via `DashboardSection` `id`). `legend={false}`
+  drops the notes explaining open statuses.
+- **Registration flow** (`routes/(authenticated)/registration/[conferenceId]/`): every page is in
+  `RegistrationStepPage`: a way back, a stepper for the page's path (`registrationSteps.ts`;
+  choosing the path on the dashboard is step 0), content in a `DashboardSection`.
 
 ## Announcement Components
 
-The announcements (see "Announcements" in CLAUDE.md) are built from `#lib/components/announcement/`.
+`#lib/components/announcement/` (see "Announcements" in CLAUDE.md):
 
-- **`AnnouncementCard`**: one announcement as readers see it. Its edge colour, icon and badge
-  follow `importance` (the badge says it in words too); `read={false}` shows "New" and, with
-  `onread`, a "mark as read" button. A long text is folded until opened (never for an urgent one,
-  or with `expanded`). Without `read` it is a preview, which the editor uses. Its badges and its
-  file links are `AnnouncementBadges` and `AnnouncementAttachments`.
-- **`AnnouncementFeed`**: the caller's feed of a conference. With `limit` (the dashboard) it shows
-  the pinned, the unread and the newest and links to the rest; without, all of them. Renders
-  nothing without announcements unless `showEmpty`.
-- **`UrgentAnnouncementBar`**: the bar in the header while an urgent announcement is unread.
-- Fetch through `fetchAnnouncementFeed` and mark through `markAnnouncementsRead`
-  (`#lib/api/announcements`), so the feed and the bar share one result and one read state.
+- **`AnnouncementCard`**: one announcement as readers see it. Edge colour, icon and badge follow
+  `importance` (badge says it in words too); `read={false}` shows "New" and, with `onread`, a "mark
+  as read" button. Long text folds until opened (never for urgent, or with `expanded`). Without
+  `read` it is a preview (the editor). Parts: `AnnouncementBadges`, `AnnouncementAttachments`.
+- **`AnnouncementFeed`**: with `limit` (dashboard) pinned + unread + newest and a link to the rest;
+  without, all. Renders nothing when empty unless `showEmpty`.
+- **`UrgentAnnouncementBar`**: header bar while an urgent one is unread.
+- Fetch via `fetchAnnouncementFeed`, mark via `markAnnouncementsRead` (`#lib/api/announcements`),
+  so feed and bar share one result and one read state.
 
 ## Chat Components
 
-The chats (see "Messages" in CLAUDE.md) are built from `#lib/components/chat/`. Both messages
-pages (`dashboard/[conferenceId]/messages`, `team/messages`) are a `ChatWorkspace` with their own
-list header.
+`#lib/components/chat/` (see "Messages" in CLAUDE.md). Both messages pages
+(`dashboard/[conferenceId]/messages`, `team/messages`) are a `ChatWorkspace` with their own list header.
 
-- **`ChatWorkspace`**: the messenger frame, the chat list beside the open chat; on a phone the two
-  take turns. It takes the `chats` (from `fetchChats`, `#lib/api/chats`), `selectedId` and
-  `onSelect` (keep the open chat in the URL as `?chat=` through `queryParameters`), and snippets
-  for the `listHeader`, the `emptyList` and a `listFooter`.
-- **`ChatThread`**: one chat. Fetches itself by `chatId`, marks it read while on screen, shows the
-  messages by day and the field to write in (Enter sends, Shift+Enter breaks the line), or why the
-  caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
-  reviewing a report it says so (`ChatReviewBanner`) and, given `reportedAt`, draws a line where
-  the chat was reported (`firstMessageAfter`).
-- **The report desk** (`team/messages/ReportDesk.svelte`, "Reports" in the team menu, for participant care):
-  three columns, which take turns on a narrow screen. `ReportQueue` lists one case per reported
-  chat, the one waiting longest first (`reportCases`, `waitingSince`); the middle is the chat's
-  `ChatThread`, read only; `ReportCaseFile` holds the chat's reports, everybody of the chat by
-  name and role (a delegation group's members included) with their earlier settled reports, the
-  suspension switch, `WriteToDelegateButton` and the user card, and the internal note that
-  settles all of the chat's reports at once (`resolveChatReports`). `SettledReports` keeps the
-  settled ones with their notes.
-- **Corners follow the theme**: `rounded-box` for cards, panels and bubbles, `rounded-field` for
-  small things. DMUN's theme draws both (almost) square, so never `rounded-lg` / `rounded-xl`.
-- **`NewChatDialog` / `NewChatPicker`**: finding whom to write to. One search field over role,
-  country and committee (`matchesSearch`: every word has to be found, so "ger ga" works), chips
-  per committee, the team inboxes and the delegation group on top. `mode="team"` picks a person
-  first and then the inbox to write from.
-- **`WriteToDelegateButton`**: `conferenceId`, the person's `participantId`, optionally a
-  `paperId` and `compact` (icon only, for table rows). Asks for the inboxes on the click.
-- **`FilterChips`**: a row of chips narrowing a list to one group ("all" first, a pressed chip
-  lifts the filter): `options` with a `key`, `selected`, `onSelect`, a `label` and a `chip`
-  snippet for an option's content. `CommitteeChips` is built on it.
-- **The team's inboxes** are picked in the team menu, not on the page: `MessagesNavButton` is a
-  plain entry for somebody answering one inbox, and folds open for several (or for participant
-  care, who also get the reports) into the overview, each inbox with its unread count, a
-  committee holding several as a group to fold (`inboxMenu`), and the reports. The links set
-  `?inbox=` / `?view=reports`. `team/messages` without either shows `InboxOverview` (a card per
-  inbox) when there are several, the chat list right away when there is one. A system admin gets
-  participant care's inbox and both inboxes of every committee (`inboxesOf`), never the trusted
-  persons'. `fetchTeamInboxes` + `teamInboxesOf` are what both the menu and the page read.
-- **An inbox's archive**: `ChatArchiveButton` in the thread header (team side only) puts a chat
-  away or takes it out; the list leaves archived chats out until `ArchiveToggle` in `InboxChats` (`?archive=1`)
-  shows them after the open ones, marked "archived" (`listedChats`). The overview cards count
-  open chats only.
-- **Small parts, split so each stays simple**: `ChatList` renders `ChatListItem`s, `ChatMessages`
-  `ChatBubble`s, `ChatThread` a `ChatThreadHeader`, the picker `PickerTeamOptions`,
-  `PickerContactGroups` and `PickedContactInboxes`. Decisions live in tested helpers rather than
-  in the templates: `listBadge` and `kindHint` (`chatLabels.ts`), `unreadStateOf`
-  (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
-- **Where the reader left off**: `ChatThread` takes `firstUnreadId` (`threadMessages.ts`) once as
-  it opens, `ChatMessages` draws the "new messages" line above that message, and the thread opens
-  there instead of at the end. The line stays until the chat is opened again.
-- **`MessagingTermsModal`**: the terms of the message service (`messagingTerms`), loaded when it
-  opens, inside a boundary with a skeleton and `LoadError`. The composer opens it with
-  `onAccepted` when the API asks a participant to agree before their first message;
-  `MessagingTermsLink` under the participant's chat list shows them to read.
-  `MessagingTermsChecklist` lists every section as a disclosure (`MessagingTermsSection`: title and
-  summary on the button, `aria-expanded`). Asked to agree, the first section opens, "Understood" confirms it and opens and
-  focuses the next one left (`confirmSection`, `#lib/helpers/messagingTerms`), a progress bar
-  counts them, and the statements' checkboxes stay disabled until every section is confirmed.
-- **`ChatAvatar`**: a round flag or icon, from `chatAvatar(chat)` / `contactAvatar(contact)`.
-- **`chatLabels.ts`**: how everything is named, in one place: `contactLabel` (`Germany · GA`),
-  `inboxName`, `chatTitle`, `chatSubtitle`. Never build such a label by hand, and never show a
-  participant's name to another participant.
-- **`MessagesLinkInfo`**: the dashboard card's live details (unread chats).
+- **`ChatWorkspace`**: list beside the open chat (taking turns on a phone). `chats` (`fetchChats`,
+  `#lib/api/chats`), `selectedId`, `onSelect` (keep `?chat=` in the URL via `queryParameters`),
+  snippets `listHeader`, `emptyList`, `listFooter`.
+- **`ChatThread`**: fetches itself by `chatId`, marks read while on screen, messages by day,
+  composer (Enter sends, Shift+Enter breaks) or why the caller can't write (`chat.writeRefusal`).
+  Menu blocks and reports. Reviewing a report: `ChatReviewBanner`, plus a line where it was reported
+  given `reportedAt` (`firstMessageAfter`). `firstUnreadId` (`threadMessages.ts`), taken once on
+  open: `ChatMessages` draws "new messages" above it and the thread opens there, until reopened.
+- **Report desk** (`team/messages/ReportDesk.svelte`, "Reports" in the team menu, participant
+  care): three columns, taking turns when narrow. `ReportQueue` (a case per reported chat, longest
+  waiting first: `reportCases`, `waitingSince`), the chat's read-only `ChatThread`, `ReportCaseFile`
+  (reports; everyone of the chat by name and role, delegation group members included, with earlier
+  settled reports; suspension switch; `WriteToDelegateButton`; user card; the internal note settling
+  all the chat's reports, `resolveChatReports`). `SettledReports` keeps settled ones with notes.
+- **Corners follow the theme**: `rounded-box` (cards, panels, bubbles), `rounded-field` (small
+  things); never `rounded-lg` / `rounded-xl` (DMUN's theme is near-square).
+- **`NewChatDialog` / `NewChatPicker`**: one search over role, country, committee (`matchesSearch`:
+  every word must match, "ger ga" works), chips per committee, team inboxes and delegation group on
+  top. `mode="team"`: person first, then the inbox to write from.
+- **`WriteToDelegateButton`**: `conferenceId`, `participantId`, optional `paperId`, `compact` (icon
+  only, table rows); asks for inboxes on click.
+- **`FilterChips`**: "all" first, pressing the pressed chip lifts the filter; `options` (with
+  `key`), `selected`, `onSelect`, `label`, `chip` snippet. `CommitteeChips` builds on it.
+- **Team inboxes are picked in the team menu** (`MessagesNavButton`): a plain entry for one inbox;
+  folds open for several (or for participant care, plus reports), each with unread count, a
+  committee's inboxes as a foldable group (`inboxMenu`). Links set `?inbox=` / `?view=reports`.
+  `team/messages` without either: `InboxOverview` (a card per inbox) for several, the list for one.
+  System admins get participant care's inbox and both of every committee (`inboxesOf`), never the
+  trusted persons'. Menu and page read `fetchTeamInboxes` + `teamInboxesOf`.
+- **Archive**: `ChatArchiveButton` (thread header, team side) toggles it; archived chats are hidden
+  until `ArchiveToggle` in `InboxChats` (`?archive=1`) lists them after the open ones, marked
+  (`listedChats`). Overview cards count open chats only.
+- **Small parts**: `ChatList` → `ChatListItem`, `ChatMessages` → `ChatBubble`, `ChatThread` →
+  `ChatThreadHeader`, picker → `PickerTeamOptions`, `PickerContactGroups`, `PickedContactInboxes`.
+  Decisions live in tested helpers, not templates: `listBadge`, `kindHint` (`chatLabels.ts`),
+  `unreadStateOf` (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).
+- **`MessagingTermsModal`**: the terms (`messagingTerms`), loaded on open in a boundary with
+  skeleton and `LoadError`; the composer opens it with `onAccepted` when the API asks for consent.
+  `MessagingTermsLink` (under the participant's list) shows them. `MessagingTermsChecklist`: a
+  disclosure per section (`MessagingTermsSection`, title + summary on the button, `aria-expanded`);
+  when agreeing, the first opens, "Understood" confirms and opens/focuses the next open one
+  (`confirmSection`, `#lib/helpers/messagingTerms`), a progress bar counts, statement checkboxes stay
+  disabled until all are confirmed.
+- **`ChatAvatar`**: round flag or icon (`chatAvatar(chat)` / `contactAvatar(contact)`).
+- **`chatLabels.ts`** names everything (`contactLabel` → `Germany · GA`, `inboxName`, `chatTitle`,
+  `chatSubtitle`). Never build labels by hand; never show a participant's name to another participant.
+- **`MessagesLinkInfo`**: the dashboard card's unread count.
 
 ## Survey Components
 
-Survey components handle displaying and answering surveys on the participant dashboard.
+All take `conferenceTimezone`.
 
-### SurveySection
-
-Self-fetching dashboard component that queries surveys and renders them. Renders nothing if no surveys exist.
-
-**File:** `src/lib/components/dashboard/SurveySection.svelte`
-
-**Props:** `conferenceId: string`, `userId: string`, `conferenceTimezone: string`
-
-**Behavior:**
-
-- Fetches non-hidden, non-draft surveys via its own GraphQL query
-- Wraps content in a collapsible `DashboardSection`
-- Auto-collapses when all surveys are answered
-- Shows pinned selection cards below the section when collapsed (for surveys with `showSelectionOnDashboard`)
-
-### SurveyCard
-
-Compact card for a single survey within the dashboard section.
-
-**File:** `src/lib/components/survey/SurveyCard.svelte`
-
-**Props:**
-
-- `question`: `{ id, title, description, deadline, showSelectionOnDashboard, options: [...] }`
-- `answer`: `{ option: { id, title } } | undefined`
-- `userId`: string
-- `conferenceTimezone`: string
-
-Shows deadline status, title, description, current answer badge, and an "Answer"/"Change answer" button that opens `SurveyAnswerModal`.
-
-### SurveyAnswerModal
-
-Modal for answering or changing a survey answer with radio option cards and capacity indicators.
-
-**File:** `src/lib/components/survey/SurveyAnswerModal.svelte`
-
-**Props:**
-
-- `open`: boolean (bindable)
-- `question`: `{ id, title, description, deadline, options: [{ id, title, description, upperLimit, countSurveyAnswers }] }`
-- `currentAnswerOptionId`: `string | undefined`
-- `userId`: string
-- `conferenceTimezone`: string
-
-Locks submission after deadline. Contains its own `updateOneSurveyAnswer` mutation with cache invalidation.
-
-### DeadlineDisplay
-
-Reusable timezone-aware deadline display.
-
-**File:** `src/lib/components/DeadlineDisplay.svelte`
-
-**Props:** `deadline: Date | string`, `conferenceTimezone: string`
-
-Shows an open/closed badge with the deadline formatted in the conference timezone. If the user's local timezone differs, shows their local time below.
-
----
+- **`SurveySection`** (`#lib/components/dashboard/`): `conferenceId`, `userId`. Fetches non-hidden, non-draft surveys itself; renders nothing without any;
+  collapsible `DashboardSection` that auto-collapses when all are answered; when collapsed shows
+  pinned selection cards for surveys with `showSelectionOnDashboard`.
+- **`SurveyCard`** (`#lib/components/survey/`): `question` (`id`, `title`, `description`, `deadline`,
+  `showSelectionOnDashboard`, `options`), `answer` (`{ option: { id, title } } | undefined`),
+  `userId`. Deadline status, current answer badge, "Answer"/"Change answer"
+  opens `SurveyAnswerModal`.
+- **`SurveyAnswerModal`**: `open` (bindable), `question` (options with `upperLimit`,
+  `countSurveyAnswers`), `currentAnswerOptionId`, `userId`. Radio option
+  cards with capacity; locked after the deadline; runs its own `updateOneSurveyAnswer`.
+- **`DeadlineDisplay`** (`#lib/components/`): `deadline`. Open/closed badge
+  with the deadline in the conference timezone, plus local time when the user's differs.
 
 ## Data Display
 
 ### DataGrid
 
-The table of the team's pages (`#lib/components/dataGrid/DataGrid.svelte`), after the member table
-of the Mitgliedshub: a search box, a **filter builder** (conditions and groups of conditions, joined
-by AND / OR, one level deep), sorting by up to five columns (shift-click adds a column), **grouping**
-by up to three columns with collapsible groups and their counts (dates by day, month or year,
-numbers in ranges), columns to show, move and resize (the `alwaysVisible` column and the actions
-stay pinned), pages, row selection and the export (CSV, JSON, print; the selection when there is
-one, else every matching row). With `views` it keeps **saved views** - personal or shared, the
-conference's or global - in the database.
+`#lib/components/dataGrid/DataGrid.svelte`, the team pages' table: search; **filter builder**
+(conditions and groups, AND / OR, one level); sort by up to five columns (shift-click adds);
+**grouping** by up to three (collapsible, counts; dates by day/month/year, numbers in ranges);
+show/move/resize columns (`alwaysVisible` column and actions pinned); pages; selection; export (CSV,
+JSON, print; the selection, else every match). With `views`, **saved views** (personal or shared,
+conference or global) in the database.
 
-```svelte
-<script lang="ts">
-	import DataGrid from '#lib/components/dataGrid/DataGrid.svelte';
-	import { createLocalSource } from '#lib/components/dataGrid/dataSource';
-	import { cellOf, type GridColumn } from '#lib/components/dataGrid/gridColumn';
-	import BadgeCell from '#lib/components/dataGrid/cells/BadgeCell.svelte';
+Props: `columns` (`GridColumn<Row>[]`, `dataGrid/gridColumn`), `source`, `rowId`, `base` (the
+built-in view: sorting, filter, grouping, page size), `label`, `exportName`, `onRowClick`, `views`,
+`urlPrefix` (several grids on a page), snippets `toolbar` (page controls, gets the grid state, e.g.
+the participants' quick filters) and `actions` (row buttons, a column pinned right).
 
-	const columns: GridColumn<Row>[] = [
-		{ id: 'name', type: 'text', label: 'Name', alwaysVisible: true, value: (row) => row.name },
-		{
-			id: 'role',
-			type: 'enum',
-			label: 'Role',
-			options: ROLES,
-			optionLabel: translateRole,
-			value: (row) => row.role,
-			cell: (row) => cellOf({ component: BadgeCell, props: { label: translateRole(row.role) } })
-		}
-	];
-	const source = createLocalSource({ rows: () => rows, columns: () => columns });
-</script>
+**Columns.** `type` (`text`, `number`, `date`, `enum`, `multiEnum`, `boolean`) decides operators
+(`#lib/dataGrid/operators.ts`), sorting (enums in `options` order, empties last), grouping and
+default text. `value` is the row's value; `text` / `cell` what shows (a component via
+`cellOf({ component: BadgeCell, props })`, never HTML; cells in `dataGrid/cells/`); `exportValue`
+where the export differs; `optionLabel` for enums. `defaultVisible: false`, `group` (menu heading),
+`description`, `filterable` / `sortable` / `groupable: false`. A column with (nearly) one value per
+row (names, contact details, ids, free text) is **always `groupable: false`** (a group and a DB
+query per row; `#lib/dataGrid/tables/groupable.test.ts`); a view/URL grouping by one drops that
+level (`applicableGrouping`, grid and API).
 
-<DataGrid
-	{columns}
-	{source}
-	rowId={(row) => row.id}
-	base={{ sorting: [{ id: 'name', desc: false }], pageSize: 50 }}
-	label="Roles"
-	exportName="roles"
-	onRowClick={(row) => open(row)}
-/>
-```
+**Sources:**
 
-**A column says what kind of value it holds** (`type`: `text`, `number`, `date`, `enum`,
-`multiEnum`, `boolean`), and everything follows from that: the filter operators
-(`#lib/dataGrid/operators.ts`), sorting (enums in the order of their `options`, empty values last
-either way), grouping and the cell's default text. `value` is the row's value, `text` / `cell`
-what the cell shows (a component through `cellOf`, never HTML), `exportValue` what the export holds
-where it differs. `defaultVisible: false` hides a column until someone shows it; `group` sorts the
-menus into headings, `description` explains a column there; `filterable` / `sortable` /
-`groupable: false` take a column out of a menu. A column whose values are (nearly) one per row -
-names, contact details, ids, free texts - is always `groupable: false`: every row would be a group
-of its own, one database query each (`#lib/dataGrid/tables/groupable.test.ts` pins the list). A
-saved view or URL still grouping by such a column drops that level, in the grid
-(`applicableGrouping`) and the API alike. `base` is the table's built-in view: its sorting,
-filter, grouping and page size.
+- `createLocalSource({ rows, columns })` (`dataGrid/dataSource`): rows the page holds (a parsed
+  upload, the seat overview); `#lib/dataGrid/localEngine.ts` does it all in the browser.
+- `createServerSource({ table, conferenceId, rowsFor, changes })`: the big team tables. The API
+  engine (`dataTablePage`, `dataTableGroups`, CLAUDE.md "Data tables") answers row ids; `rowsFor`
+  fetches those rows via the page's own live queries and answers a **reader**. Live results are
+  tracked only when read synchronously in a `$derived`, never after an `await`, so `FlatGrid` /
+  `GroupRows` await the request in one derived and call the reader in another (that is what follows
+  live updates). Engine answers aren't live: `changes` (a live query of the table's rows read as a
+  short text, count + newest) is re-sent as `GridRequest.revision` (the engine's ignored `revision`
+  argument) so the cache doesn't answer with old ids; the team and waiting list pass one. Tables with
+  own columns (`#lib/dataGrid/tables/…`) use `defineColumns`, which refuses a column the API knows
+  and the page forgot.
 
-**Where the rows come from is the `source`, and the grid does not care which:**
+**State.** `gridState.svelte.ts` (view state, search, page, selection); `gridUrl.svelte.ts` mirrors
+it (`?view=`, `state=` only when changed, `q=`, `page=`) with a shallow `goto` once Svelte settled
+(a navigation while rows load trips "Batch has scheduled effects"). Edits write only changed parts;
+queries read an **applied** copy one task behind (`grid.applied`, `grid.query(path)`), else a panel
+edit commits together with its fetch and the panel lags until rows arrive. Key each query's derived
+on what it reads, never the whole state.
 
-- `createLocalSource({ rows, columns })` for rows the page holds (a parsed upload, the seat
-  overview): `#lib/dataGrid/localEngine.ts` searches, filters, sorts and groups them in the browser.
-- `createServerSource({ table, conferenceId, rowsFor, changes })` for the team's big tables: the API's table
-  engine (`dataTablePage`, `dataTableGroups`, see CLAUDE.md "Data tables") does all of it in the
-  database and answers row ids; `rowsFor` fetches those rows through the page's own live queries
-  and answers a **reader** building them. Live results are only tracked where they are read
-  synchronously in a `$derived`, never after an `await`, so `FlatGrid` / `GroupRows` await the
-  request in one derived and call the reader in another: that is what makes the table follow a
-  live update. The engine's answers are not live, so a reader only follows rows already on
-  screen; `changes` (a live query of the table's rows in the conference, read as a short text:
-  how many and the newest) is what tells the grid a row was added or removed elsewhere: it asks
-  for its pages and groups again with that text as `GridRequest.revision`, which the engine takes
-  as its ignored `revision` argument, so the client's cache does not answer with the old ids. The
-  team and the waiting list pass one. A table with columns of its own (`#lib/dataGrid/tables/…`)
-  builds its grid columns with `defineColumns`, which refuses a column the API knows and the page forgot.
+**Structure.** `DataGrid.svelte` only composes `toolbar/`, `filter/` (row, group, connective, value
+input), `columns/`, `grouping/` (`GroupLevel` fetches a level's groups, `GroupRows` a group's page),
+`table/` (frame, header cell with sort/filter/resize, row, cell, pager), `views/`. Pure logic in
+`#lib/dataGrid/`, unit tested. `openSoleMatch` opens the one row a link's `?q=` finds.
 
-**State.** `gridState.svelte.ts` holds the view's state, the search, the page and the selection;
-`gridUrl.svelte.ts` mirrors it into the URL (`?view=`, `state=` only when the view was changed,
-`q=`, `page=`; `urlPrefix` for a page with several grids) with a shallow `goto` once Svelte has
-settled - a navigation landing while the rows load trips Svelte's "Batch has scheduled effects"
-invariant. Edits write only the parts of the state that changed, and the queries read an
-**applied** copy one task behind (`grid.applied`, `grid.query(path)`): otherwise Svelte commits a
-panel's edit together with the fetch it causes, and the panel would only update once the rows have
-arrived. Group a query's derived on what it reads; never on the whole state.
+### Other display components
 
-**Structure.** `DataGrid.svelte` only composes: `toolbar/` (search, the panel buttons, settings,
-export), `filter/` (the builder, one component per row, group, connective and value input),
-`columns/`, `grouping/` (the panel, `GroupLevel` fetching one level's groups, `GroupRows` one
-group's page), `table/` (frame, header cell with sort / filter / resize, row, cell, pager) and
-`views/` (menu, name dialog, the API calls). Pure logic is in `#lib/dataGrid/` and unit tested.
-
-`openSoleMatch` opens the one row a link's search (`?q=`) finds, as links to a person from
-elsewhere do. The page's own controls go in the `toolbar` snippet (it gets the grid's state; the
-participants' quick filters use it); row buttons go in `actions` (a column pinned to the right).
-
-### CollapsibleCard
-
-A card whose header toggles its body, with an optional `badge` snippet at the header's end:
-
-```svelte
-<CollapsibleCard icon="users" title={m.members()} bind:expanded>
-	{#snippet badge()}<span class="badge">{count}</span>{/snippet}
-	<MemberList {delegationId} />
-</CollapsibleCard>
-```
-
-### LoadState
-
-`<LoadState {loading} {error}>…</LoadState>` shows a spinner while `loading`, the error once one
-occurred, and its children otherwise - for state a component loads by hand rather than through an
-awaited `$derived`.
-
-### DelegationStats
-
-Statistics widgets using DaisyUI stats component:
-
-```svelte
-<script lang="ts">
-	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
-</script>
-
-<GenericWidget
-	content={[
-		{ icon: 'users', title: 'Total Members', value: 42, desc: '+5 this week' },
-		{ icon: 'check-circle', title: 'Confirmed', value: 38 },
-		{ icon: 'clock', title: 'Pending', value: 4 }
-	]}
-/>
-```
-
-### InfoGrid
-
-Key-value pair display:
-
-```svelte
-<script lang="ts">
-	import Grid from '#lib/components/infoGrid/Grid.svelte';
-	import Entry from '#lib/components/infoGrid/Entry.svelte';
-</script>
-
-<Grid>
-	<Entry title="Name" icon="user" content="John Doe" />
-	<Entry title="Email" icon="envelope" content="john@example.com" />
-	<Entry title="Status" icon="check-circle">
-		<span class="badge badge-success">Active</span>
-	</Entry>
-</Grid>
-```
-
----
+- **`CollapsibleCard`**: `icon`, `title`, `bind:expanded`, optional `badge` snippet at the header's end.
+- **`LoadState`**: `<LoadState {loading} {error}>…</LoadState>`: spinner, error, or children; for
+  state loaded by hand rather than an awaited `$derived`.
+- **`DelegationStats`**: `delegationStats/GenericWidget.svelte`, DaisyUI stats:
+  `content={[{ icon, title, value, desc? }]}`.
+- **`InfoGrid`**: `infoGrid/Grid.svelte` + `Entry.svelte` (`title`, `icon`, `content` or children).
 
 ## Seat Planning (Matrix + Hints Sidebar)
 
-The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/team/seat-planning/`) is the reference for two patterns: a large editable matrix with live (optimistic) writes, and a sidebar of hints computed from the same state.
+`team/seat-planning/` is the reference for a large editable matrix with live optimistic writes and
+a hints sidebar computed from the same state.
 
 ### Structure
 
-| File                                          | Role                                                                                                                                                                                                                                                                                                                                  |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                                                                                 |
-| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table on the shared `Table` shell (`#lib/components/table/Table.svelte`: scroll container, zebra and size from the table settings; `SortButton` is the shared sort header button), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row |
-| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                                                                                         |
-| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                                                                              |
-| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets)                                                              |
-| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                                                                                          |
-| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                                                                                     |
+- `seatPlanner.svelte.ts`: `createSeatPlanner(() => ({ committees, nonStateActors, assignments }))` (type `SeatPlanner`): derived seat state, optimistic updates, undo toast, lock lookups
+- `SeatMatrix.svelte` / `SortableHeader.svelte`: Pinned table on the shared `Table` shell (`#lib/components/table/Table.svelte`: scroll container, zebra and size from table settings; `SortButton` is the shared sort header button); every column sortable (`sortSeatRows`), totals in `<tfoot>`. **Only the first column may be a `th`**: `table-pin-cols` pins every `th`
+- `SeatMatrixRow.svelte` / `SeatCell.svelte`: One row per state, one toggle button per committee; locked cells show a lock with tooltip
+- `SeatMatrixFilters.svelte` / `filters.ts`: Filters and sorting in the URL via `queryParameters` (shared with the sidebar)
+- `HintsSidebar.svelte` + `hints/*`: One component per section. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against a baseline set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council, manual)
+- `CountryInfoPopover.svelte`: Native `popover="auto"`, `fixed` next to the clicked name so the scroll container can't clip it
+- `sizeLimits.svelte.ts`: Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)
+
+Layout: matrix (`min-h-0 min-w-0 grow`) and an `<aside class="shrink-0 overflow-y-auto xl:w-80">`
+in a `flex flex-col xl:flex-row` container.
 
 ### Rules
 
-- **Logic lives in pure functions**, unit tested next to them: what the API shares in `src/lib/helpers/seatPlanning/` (`baselines.ts`, `unMembers.ts`), the page's own beside it (`seatHints.ts`, `sortRows.ts`). Components only render their results.
-- **Optimistic writes**: the class keeps pending changes in a `SvelteMap` and overlays them on the live query results. The mutation returns the changed committee with its nations, so the cache updates without a refetch, and the committee's publish reaches every other open matrix. On error the pending entry is dropped and the server's message is toasted.
+- **Logic in pure, unit-tested functions**: shared with the API in `src/lib/helpers/seatPlanning/`
+  (`baselines.ts`, `unMembers.ts`), page-only beside it (`seatHints.ts`, `sortRows.ts`). Components
+  only render results.
+- **Optimistic writes**: pending changes in a `SvelteMap` overlaid on live results. The mutation
+  returns the changed committee with its nations (cache updates without refetch; the publish reaches
+  other open matrices). On error drop the pending entry and toast the server's message.
 - **Set, don't toggle**: mutations take the target state (`enabled: true/false`) so concurrent clicks converge.
-- **Undo**: success toasts carry an action that sends the inverse mutation (`toast.success(msg, { action: { label: m.undo(), onClick } })`).
-- **Sidebar → matrix**: hints that point at rows (a size, a regional group) set the shared URL filters instead of keeping their own state.
-
-```svelte
-<script lang="ts">
-	const planner = new SeatPlanner(() => ({ committees, nonStateActors, assignments }));
-</script>
-
-<div class="flex min-h-0 grow flex-col gap-4 xl:flex-row">
-	<div class="min-h-0 min-w-0 grow"><SeatMatrix {planner} {committees} {sizeLimits} /></div>
-	<aside class="shrink-0 overflow-y-auto xl:w-80">
-		<HintsSidebar {planner} {committees} {nonStateActors} {sizeLimits} />
-	</aside>
-</div>
-```
-
-Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violations, `alert-info alert-soft` for suggestions, `alert-error alert-soft` for hard limits.
-
----
+- **Undo**: success toasts carry the inverse mutation:
+  `toast.success(msg, { action: { label: m.undo(), onClick } })`.
+- **Sidebar → matrix**: hints pointing at rows set the shared URL filters, no own state.
+- Hint alerts: `alert alert-warning alert-soft` rule violations, `alert-info alert-soft`
+  suggestions, `alert-error alert-soft` hard limits.
 
 ## Assignment Board
 
-`src/routes/(authenticated)/dashboard/[conferenceId]/team/assignment/` is a tabbed area
-(Sichtung, Gewichtung, Einzelteilnehmende, Zuteilung, Abschluss), one child route per tab, with the
-tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.svelte`.
+`team/assignment/` is tabbed (Sichtung, Gewichtung, Einzelteilnehmende, Zuteilung, Abschluss), a
+child route per tab; tabs and `DraftStatus` badge (pending changes, released or not) in `+layout.svelte`.
 
-| File                                      | Role                                                                                                                                                                                                  |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `board.ts`                                | `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `#lib/assignment`), `describeRole`                                                                 |
-| `GroupCard.svelte`                        | A draggable group (delegation, split part, converted single): rating, flags, wish rank of its role, pending marker, split/unassign                                                                    |
-| `RoleCard.svelte`                         | A drop zone for a nation, non-state actor or custom role: seats taken / total, its groups, free slots, over-capacity in red                                                                           |
-| `SplitModal.svelte`                       | Splits a delegation by picking a part per member (radio grid, no drag and drop)                                                                                                                       |
-| `assignGroup.ts`                          | Plans a role for a group: whole delegations through `assignDelegation`, parts and converted singles through their unit                                                                                |
-| `sighting/ApplicationCard.svelte`         | One application with its people, texts and wishes; `ReviewControls` rate, flag, disqualify and annotate it                                                                                            |
-| `sighting/+page.svelte`, `DeckNav.svelte` | The deck is the backend's (`sightingDeck`: filtered, ordered, a window around the card plus totals and the cards to step to); a card is read on its own, search and school filter ask the backend too |
+- `board.ts`: `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `#lib/assignment`), `describeRole`
+- `GroupCard.svelte`: Draggable group (delegation, split part, converted single): rating, flags, wish rank of its role, pending marker, split/unassign
+- `RoleCard.svelte`: Drop zone for a nation/NSA/custom role: seats taken/total, its groups, free slots, over-capacity in red
+- `SplitModal.svelte`: Splits a delegation by picking a part per member (radio grid, no drag and drop)
+- `assignGroup.ts`: Plans a role for a group: whole delegations via `assignDelegation`, parts and converted singles via their unit
+- `sighting/ApplicationCard.svelte`: One application: people, texts, wishes; `ReviewControls` rate, flag, disqualify, annotate
+- `sighting/+page.svelte`, `DeckNav.svelte`: Deck is the backend's (`sightingDeck`: filtered, ordered, window around the card + totals + cards to step to); a card is read on its own; search and school filter ask the backend
 
-- Drag and drop uses `@thisux/sveltednd` (`draggable` with `dragData: { id: group.key }`, `droppable`
-  containers named `pool`, `role:<key>`); every drop is one draft mutation, and the live queries
-  bring the result back - there is no local copy of the draft.
-- The library puts `touch-action: none` on every draggable, so on a touch screen a finger on a card
-  could neither scroll the pool nor the page. Draggable cards (`GroupCard`, `SingleCard`, the
-  members in `SplitPart`) add `pointer-coarse:touch-pan-y!` and a `DragGrip`, shown on touch
-  screens only, from which the drag starts there; with a mouse nothing changes.
+- Drag and drop: `@thisux/sveltednd` (`draggable` with `dragData: { id: group.key }`, `droppable`
+  containers `pool`, `role:<key>`). Each drop is one draft mutation; live queries bring the result
+  back, no local copy of the draft.
+- The library sets `touch-action: none` on draggables (fingers couldn't scroll). Draggable cards
+  (`GroupCard`, `SingleCard`, members in `SplitPart`) add `pointer-coarse:touch-pan-y!` and a
+  `DragGrip` (touch screens only) to start the drag from.
 - **A page that awaits (`$derived(await …)`) must not read route params or URL state inside that
-  derived.** A navigation - the table's or the sighting's own URL writes are one - hands the page
-  fresh `params`, which re-ran the derived from the state a still-pending batch showed: the card
-  stayed on the previous one. Pull the id into its own `$derived`, hold what the query depends on
-  in `$state` and write it to the URL, and create `createTableState` / `queryParameters` before the
-  first `await` (afterwards a server render has no request to read the URL of). Rumble rejects an
-  empty `AND`: use `allOf`. The client cache answers a request with unchanged variables, so a
-  refetch after a save has to change one (see `revision` of `sightingDeck`).
-- Cards keyed by props that come from live data pull their keys into their own `$derived` before
-  querying (`ApplicationCard`), or a rebuilt parent list re-runs their queries in a loop.
-- `#lib/components/assignment/AssignmentReleaseToggle.svelte` is the release switch; it saves on
-  its own and appears both on the finish tab and in the conference settings.
-- `#lib/components/AssignmentPending.svelte` is what participants and supervisors see between the
-  end of registration and the release, in place of `ApplicationRejected`.
-- `SchoolSeatsPanel.svelte` lists the seats the plan gives each school against
-  `conference.maxSeatsPerSchool` (sidebar of the delegations and singles boards, finish tab); the
-  counting is `team/assignment/schoolSeats.ts`. Dropping a group or single that takes its school
-  past the limit toasts a warning; nothing is blocked.
-
----
+  derived**: a navigation (incl. the table's/sighting's own URL writes) hands fresh `params` and
+  re-runs it from a pending batch's state, leaving the previous card. Pull the id into its own
+  `$derived`, hold query inputs in `$state` and write them to the URL, and create
+  `createTableState` / `queryParameters` before the first `await` (after it, SSR has no request URL).
+- rumble rejects an empty `AND`: use `allOf`. The client cache answers unchanged variables, so a
+  refetch after a save must change one (see `sightingDeck`'s `revision`).
+- Cards keyed by live-data props pull keys into their own `$derived` before querying
+  (`ApplicationCard`), or a rebuilt parent list re-runs their queries in a loop.
+- Release: `finish/ReleaseDialog.svelte` (the finish tab's release card).
+- `#lib/components/AssignmentPending.svelte`: what participants/supervisors see between registration
+  end and release, instead of `ApplicationRejected`.
+- School rule warnings: `SchoolRuleWarnings`, `SchoolRulesCard`, `SchoolRuleAlerts` (logic in
+  `schoolRules.ts`; see "Schools" in CLAUDE.md).
 
 ## Badge Generator
 
-Nametags and table placards ("Länderschilder") are printed with the external generator at
-`PUBLIC_BADGE_GENERATOR_URL` (default https://badges.dmun.de), which takes a CSV. `#lib/components/BadgeGeneratorLinks.svelte`
-is the one way to hand it over: a joined "CSV herunterladen" button and a link to the generator,
-with a short hint.
-
-| Prop       | Purpose                                                      |
-| ---------- | ------------------------------------------------------------ |
-| `badges`   | `() => Badge[] \| Promise<Badge[]>`, built only when clicked |
-| `filename` | Without extension                                            |
-| `label`    | The tile's / button's title                                  |
-| `variant`  | `'inline'` (default) or `'tile'` (the downloads page)        |
-| `showHint` | Shows the "upload it there, pick the badge type, print" hint |
-
-The rows come from `#lib/helpers/badgeCsv.ts` (`personBadge`, `placardBadges`, `badgeRow`), which
-keeps the generator's rules: its exact header, comma-separated UTF-8, and a flag
-(`countryAlpha2Code`) or an image (`alternativeImage`), never both.
-
----
+Nametags and placards ("Länderschilder") print with the external generator at
+`PUBLIC_BADGE_GENERATOR_URL` (default https://badges.dmun.de), from a CSV.
+`#lib/components/BadgeGeneratorLinks.svelte` is the one hand-over: joined "CSV herunterladen" button,
+generator link and hint. Props: `badges` (`() => Badge[] | Promise<Badge[]>`, built on click),
+`filename` (no extension), `label`, `variant` (`'inline'` default, `'tile'` for downloads),
+`showHint`. Rows come from `#lib/helpers/badgeCsv.ts` (`personBadge`, `placardBadges`, `badgeRow`),
+which keeps the generator's rules: exact header, comma-separated UTF-8, a flag
+(`countryAlpha2Code`) **or** an image (`alternativeImage`), never both.
 
 ## Navigation Components
 
 ## App Shell
 
-The signed-in area (`routes/(authenticated)/`) has **one** global navigation: a sticky top bar
-(`AuthenticatedHeader.svelte`) inside a centered `max-w-[1400px]` container, which the page content
-shares.
+Signed-in area (`routes/(authenticated)/`): **one** global navigation, a sticky top bar
+(`AuthenticatedHeader.svelte`) in a centred `max-w-[1400px]` container shared with content. Two
+levels: **global** ("Konferenzen" at `/dashboard`, "Mein Konto", administration) and **one
+conference** ("Übersicht" and below). "Dashboard" names neither in the UI.
 
-Two levels, named apart: **global** ("Konferenzen", the list at `/dashboard`; "Mein Konto"; the
-system administration) and **one conference** (its "Übersicht" and every page below it). "Dashboard"
-names neither in the UI.
-
-- **Wordmark** (`MUNify DELEGATOR`) links to `/dashboard`, the list of conferences.
-- **Breadcrumbs** follow it. The conference crumb is `ConferenceSwitcher.svelte`, a dropdown that
-  names the current conference and switches to another; beside the conference's side navigation,
-  whose head is the same switcher (`inMenu`), only phones keep the crumb
-  (`headerState.conferenceMenu`).
-- **Avatar menu** (`UserMenu.svelte`): name and email (leading to "Mein Konto", whose tabs are the
-  profile and, for team members, the notifications), "Konferenzen", "Administration" for system
-  admins (create a conference, CHASE link, Slack workspaces), feedback, logout, language.
-- A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
-
-The list of conferences has no sidebar. A conference adds one for its team, through
-`SideNavigationDrawer` (via `ConferenceShell`): a menu that is always fully shown on desktop (a
-drawer behind the top bar's burger on mobile), headed by the conference switcher and its
-"Übersicht", with no logo and no back or home buttons - the top bar covers those.
+- Wordmark (`MUNify DELEGATOR`) → `/dashboard`; then breadcrumbs, whose conference crumb is
+  `ConferenceSwitcher.svelte` (dropdown). Beside the conference side nav (headed by the same
+  switcher, `inMenu`) only phones keep the crumb (`headerState.conferenceMenu`).
+- Avatar menu (`UserMenu.svelte`): name + email (→ "Mein Konto": profile, notifications for team
+  members), "Konferenzen", "Administration" for system admins (create conference, CHASE link, Slack
+  workspaces), feedback, logout, language.
+- A strip atop the bar marks impersonation (yellow) and the dev server (red).
+- The conference list has no sidebar. A conference's team gets `SideNavigationDrawer` (via
+  `ConferenceShell`): always shown on desktop, behind the burger on mobile, headed by switcher and
+  "Übersicht"; no logo, back or home buttons.
 
 ### NavMenu
 
-Sidebar navigation:
+`#lib/components/navMenu/`: `NavMenu` > `NavMenuButton` (`title`, `href`, `icon` as `ph-…` class)
+and `NavMenuDetails` (`title`, `icon`; a labelled group with indented entries, does not collapse).
+`NavMenuButton` also takes:
 
-```svelte
-<script lang="ts">
-	import NavMenu from '#lib/components/navMenu/NavMenu.svelte';
-	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
-	import NavMenuDetails from '#lib/components/navMenu/NavMenuDetails.svelte';
-</script>
-
-<NavMenu>
-	<NavMenuButton title="Dashboard" href="/dashboard" icon="ph-house" />
-	<NavMenuDetails title="Settings" icon="ph-gear">
-		<NavMenuButton title="General" href="/settings/general" icon="ph-sliders-horizontal" />
-		<NavMenuButton title="Security" href="/settings/security" icon="ph-shield" />
-	</NavMenuDetails>
-</NavMenu>
-```
-
-`NavMenuDetails` is a labelled group whose entries are indented below it; it does not collapse.
-
-`NavMenuButton` takes `attention` (and `attentionLabel`, the text for screen readers and the tooltip): a small red dot that pings at the end of the entry, for something that wants a look. The management menu's plausibility entry uses it while detected duplicate pairs wait for a decision (`PlausibilityNavButton`, fetched on its own so the menu does not wait for the count).
-
-`NavMenuButton` also takes `includeSubpages`, which keeps the entry active on the pages below its `href`. Use it for a list whose detail pages are not in the menu (the survey list and `survey/[surveyId]`), so the menu still shows where you are; such a detail page also carries a back link to its list.
+- `attention` + `attentionLabel` (screen reader text and tooltip): a pinging red dot for something
+  wanting a look (`PlausibilityNavButton` while duplicate pairs await a decision; fetched on its own
+  so the menu doesn't wait).
+- `includeSubpages`: stays active below its `href`, for lists whose detail pages aren't in the menu
+  (surveys and `survey/[surveyId]`); such a detail page carries a back link to its list.
 
 ### Breadcrumbs
 
-The header's breadcrumbs (`(authenticated)/Breadcrumbs.svelte`) are built by sveltekit-breadcrumbs
-from the `+page.svelte` files' paths. Three rules keep every page covered, all checked by
-`(authenticated)/breadcrumbs.test.ts`:
+`(authenticated)/Breadcrumbs.svelte`, built by sveltekit-breadcrumbs from `+page.svelte` paths.
+Rules, checked by `(authenticated)/breadcrumbs.test.ts`:
 
-- Every folder name of a page needs an entry in `(authenticated)/breadcrumbs.ts` (a `[param]` folder
-  by its name; `conferenceId` is drawn as the conference switcher instead).
-- No page may sit in a route group (`(name)/`): the library cannot see through one, and the page
-  would have no crumbs. Share a layout through a component instead (`team/TeamManagementPage.svelte`).
+- Every folder name of a page needs an entry in `(authenticated)/breadcrumbs.ts` (`[param]` by its
+  name; `conferenceId` is drawn as the switcher).
+- **No page in a route group** (`(name)/`): the library can't see through it. Share layout through a
+  component (`team/TeamManagementPage.svelte`).
 - A static folder beats a `[param]` sibling (`dashboard/create` vs `dashboard/[conferenceId]`);
-  `staticFirst` orders the pages that way, because the library takes the first one that fits.
+  `staticFirst` orders them, as the library takes the first fit.
 
-A crumb for a folder with no page of its own is shown as plain text, not a link; `team` is left out
-altogether, since the side navigation says where in the team area one is.
+A folder without its own page is a plain-text crumb; `team` is omitted (the side nav says where you are).
 
 ### ConferenceShell
 
-The frame of every page of a conference (`[conferenceId]/ConferenceShell.svelte`, from
-`[conferenceId]/+layout@(authenticated).svelte`). For the team it draws the side navigation
-(`ConferenceNavMenu.svelte`): the conference switcher, **Übersicht** (the conference's dashboard),
-then `#lib/data/teamRoutes.ts` (the route registry) filtered by what the caller may open, so a page
-is in the menu exactly when the route guard lets them in. Anybody else gets no menu, and the
-participant pages bring their own way back (`BackToDashboard`, which leaves itself out beside the
-menu). The command palette's page entries and the guard in `team/+layout.ts` read the same
-registry. A new team
-page is one entry there; its `roles` say who may open it. Members and invitations share a tab layout
-in the `team/(members)` route group.
+`[conferenceId]/ConferenceShell.svelte` (from `+layout@(authenticated).svelte`) frames every page of
+a conference. For the team it draws `ConferenceNavMenu.svelte`: switcher, **Übersicht**, then
+`#lib/data/teamRoutes.ts` filtered by what the caller may open, so a page is in the menu exactly
+when the guard (`team/+layout.ts`) lets them in; the command palette reads the same registry. A new
+team page is one registry entry; its `roles` say who may open it. Non-team users get no menu;
+participant pages bring `BackToDashboard`, which hides itself beside the menu.
 
 ### Tabs
 
-Tab navigation:
-
-```svelte
-<script lang="ts">
-	import Tabs from '#lib/components/tabs/Tabs.svelte';
-	import Tab from '#lib/components/tabs/Tab.svelte';
-
-	let activeTab = $state('overview');
-</script>
-
-<Tabs>
-	<Tab
-		title="Overview"
-		icon="chart-pie"
-		active={activeTab === 'overview'}
-		onclick={() => (activeTab = 'overview')}
-	/>
-	<Tab
-		title="Members"
-		icon="users"
-		active={activeTab === 'members'}
-		onclick={() => (activeTab = 'members')}
-	/>
-</Tabs>
-
-{#if activeTab === 'overview'}
-	<!-- Overview content -->
-{:else if activeTab === 'members'}
-	<!-- Members content -->
-{/if}
-```
-
----
+`#lib/components/tabs/`: `<Tabs><Tab title icon active onclick /></Tabs>`, content switched with
+`{#if}` on your own state (or URL state).
 
 ## Status Indicators
 
-### StatusLight
-
-Colored status indicator with optional blink:
-
-```svelte
-<script lang="ts">
-	import StatusLight from '#lib/components/StatusLight.svelte';
-</script>
-
-<StatusLight color="success" blink={true} tooltip="Online" />
-<StatusLight color="warning" blink={false} tooltip="Pending" />
-<StatusLight color="error" blink={false} tooltip="Offline" />
-```
-
-**Colors**: `success`, `warning`, `error`, `info`
-**Sizes**: `xs`, `sm`, `md`, `lg`, `xl`
-
-### OptionalTooltip
-
-`<OptionalTooltip tip={track.description}>…</OptionalTooltip>` wraps its children in a DaisyUI tooltip only
-when `tip` is set, and renders them bare otherwise - such as a calendar track that may have a
-description.
-
-### Badges
-
-Use DaisyUI badges for status labels:
-
-```svelte
-<span class="badge badge-success">Active</span>
-<span class="badge badge-warning">Pending</span>
-<span class="badge badge-error">Rejected</span>
-<span class="badge badge-info">New</span>
-<span class="badge badge-neutral">Archived</span>
-```
-
----
+- **`StatusLight`** (`#lib/components/StatusLight.svelte`): `color` (`success`, `warning`, `error`,
+  `info`), `blink` (default true), `size` (`xs`–`xl`), `tooltip`.
+- **`OptionalTooltip`**: `<OptionalTooltip tip={…}>` wraps children in a DaisyUI tooltip only when
+  `tip` is set (e.g. a track that may have a description).
+- **Badges**: DaisyUI `badge badge-success | badge-warning | badge-error | badge-info | badge-neutral`.
 
 ## Icons
 
-Use [Phosphor](https://phosphoricons.com) icons throughout the application, as MUNify CHASE does.
-The root layout loads the regular, fill and duotone weights from `@phosphor-icons/web`; the names
-are Phosphor's own (`@phosphor-icons/core` lists them), not Font Awesome's.
+[Phosphor](https://phosphoricons.com), as MUNify CHASE. The root layout loads regular, fill and
+duotone from `@phosphor-icons/web`; names are Phosphor's (`@phosphor-icons/core`), not Font Awesome's.
 
-```svelte
-<!-- Duotone, the default look -->
-<i aria-hidden="true" class="ph-duotone ph-user"></i>
-
-<!-- Fill for active states -->
-<i aria-hidden="true" class="ph-fill ph-user"></i>
-
-<!-- Regular (outline), for brand logos -->
-<i aria-hidden="true" class="ph ph-github-logo"></i>
-
-<!-- With size -->
-<i aria-hidden="true" class="ph-duotone ph-user text-2xl"></i>
-
-<!-- With color -->
-<i aria-hidden="true" class="ph-duotone ph-check text-success"></i>
-<i aria-hidden="true" class="ph-duotone ph-x text-error"></i>
-
-<!-- Animated (app.css): spinner, beat, fade, shake -->
-<i aria-hidden="true" class="ph-fill ph-spinner-gap animate-spin"></i>
-<i aria-hidden="true" class="ph-fill ph-bell icon-shake"></i>
-```
-
-- Components taking an icon prop take the name without `ph-` (`icon="users"`) unless their
-  doc comment says it is a class (`ph-users`, as in `teamRoutes.ts` and the `SideDrawer`).
-- Icons stored in the database (`conferenceRole.icon`, `calendarEntry.icon`) are bare Phosphor
-  names; the API refuses any other (`iconArgSchema`, `#api/services/iconName`). Let the team pick
-  them with `IconPicker` (`#lib/components/IconPicker.svelte`), which searches the catalogue.
-- Phosphor glyphs are square, so there is no fixed-width class; set a width (`w-5 text-center`)
-  only where icons in a column have to line up.
-
----
+- Duotone is the default look: `<i aria-hidden="true" class="ph-duotone ph-user"></i>`; `ph-fill`
+  for active states; regular `ph` for brand logos (`ph ph-github-logo`). Size/colour via Tailwind
+  (`text-2xl`, `text-success`). Animations in `app.css`: `animate-spin` (spinner), beat, fade,
+  `icon-shake`.
+- Icon props take the bare name (`icon="users"`) unless the component's doc comment says it's a
+  class (`ph-users`, as in `teamRoutes.ts`, `NavMenuButton`, `SideDrawer`).
+- Icons stored in the DB (`conferenceRole.icon`, `calendarEntry.icon`) are bare Phosphor names; the
+  API refuses others (`iconArgSchema`, `#api/services/iconName`). Pick them with `IconPicker`
+  (`#lib/components/IconPicker.svelte`, searches the catalogue).
+- Glyphs are square: no fixed-width class; set a width (`w-5 text-center`) only where a column of
+  icons must line up.
 
 ## Color & Theming
 
-Use DaisyUI semantic color classes:
+DaisyUI semantic classes only, never hard-coded colours:
 
-### Background Colors
-
-- `bg-base-100` - Primary background
-- `bg-base-200` - Secondary/muted background
-- `bg-base-300` - Tertiary/hover background
-
-### Text Colors
-
-- `text-base-content` - Primary text
-- `text-base-content/60` - Muted text
-- `text-primary` - Primary accent
-- `text-secondary` - Secondary accent
-
-### Status Colors
-
-- `text-success` / `bg-success` - Success/positive
-- `text-warning` / `bg-warning` - Warning/caution
-- `text-error` / `bg-error` - Error/danger
-- `text-info` / `bg-info` - Information
-
-### Borders
-
-- `border-base-200` - Light border
-- `border-base-300` - Medium border
-
----
+- Backgrounds: `bg-base-100` (primary), `bg-base-200` (muted), `bg-base-300` (hover/tertiary)
+- Text: `text-base-content`, `text-base-content/60` (muted), `text-primary`, `text-secondary`
+- Status: `text-/bg-success`, `-warning`, `-error`, `-info`
+- Borders: `border-base-200` (light), `border-base-300` (medium)
 
 ## Layout Patterns
 
-### Page Container
-
-For centered content pages:
-
-```svelte
-<div class="flex w-full flex-col items-center">
-	<div class="w-full max-w-4xl">
-		<!-- Page content -->
-	</div>
-</div>
-```
-
-### Dashboard Layout
-
-For dashboard pages with multiple sections:
-
-```svelte
-<div class="flex w-full flex-col gap-10">
-	<ConferenceHeader ... />
-	<DashboardSection ...>
-		<!-- Section 1 content -->
-	</DashboardSection>
-	<DashboardSection ...>
-		<!-- Section 2 content -->
-	</DashboardSection>
-</div>
-```
-
-### Card Grid
-
-For card-based layouts:
-
-```svelte
-<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-	<div class="card bg-base-100 border border-base-200 shadow-sm">
-		<div class="card-body">
-			<!-- Card content -->
-		</div>
-	</div>
-</div>
-```
-
----
+- Centred page: `flex w-full flex-col items-center` > `w-full max-w-4xl`
+- Dashboard: `flex w-full flex-col gap-10` with `ConferenceHeader` then `DashboardSection`s
+- Card grid: `grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3` of
+  `card bg-base-100 border border-base-200 shadow-sm` > `card-body`
 
 ## Navigation
 
-Client-side navigations are instant: the next page's skeleton shows at once, the pages cross-fade,
-and a bar along the top edge reports a navigation that is still loading. Everything lives in
-`src/lib/components/navigation/` and `#lib/helpers/`.
+Client-side navigations are instant: the next page's skeleton shows at once, pages cross-fade, a
+top bar reports a still-loading navigation. Code in `src/lib/components/navigation/` and `#lib/helpers/`.
 
 ### PageBoundary
 
-`src/lib/components/navigation/PageBoundary.svelte`
+`navigation/PageBoundary.svelte`: layouts wrap their pages in it. A `<svelte:boundary>` whose
+`pending` is a `PageSkeleton`, re-created per `key` (a settled boundary never shows `pending`
+again); `pending` is passed only in the browser, so full loads still SSR with content. Props: `key`,
+`skeleton` (`SkeletonLayout`, default `PAGE_SKELETON`). Key it with
+`boundaryKey({ pathname, frames: ['team/assignment'] })` (`#lib/helpers/boundaryKey`): pages below
+a frame share one key because that layout has its own boundary.
 
-A layout wraps the pages it renders in it. It is a `<svelte:boundary>` whose `pending` snippet is a
-`PageSkeleton`, re-created for every `key` (the pathname), which is what makes the skeleton show on
-every navigation: a boundary that has settled never shows `pending` again. The snippet is only
-passed in the browser, so a full page load is still server-rendered with its content.
-
-```svelte
-<script lang="ts">
-	import { page } from '$app/state';
-	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
-	import { boundaryKey } from '#lib/helpers/boundaryKey';
-
-	import { TEAM_SKELETONS } from '#lib/data/teamSkeletons';
-
-	const pathname = $derived(page.url.pathname);
-	// pages inside `team/assignment` share one key: that layout has a PageBoundary of its own
-	const pageKey = $derived(boundaryKey({ pathname, frames: ['team/assignment'] }));
-</script>
-
-<PageBoundary key={pageKey} skeleton={TEAM_SKELETONS.participants}>
-	{@render children()}
-</PageBoundary>
-```
-
-| Prop       | Type             | Description                                                  |
-| ---------- | ---------------- | ------------------------------------------------------------ |
-| `key`      | `string`         | A new value creates a new boundary, which shows the skeleton |
-| `skeleton` | `SkeletonLayout` | What to draw; `PAGE_SKELETON` when left out                  |
-
-Where it sits: the conference shell (`[conferenceId]/ConferenceShell.svelte`, `DASHBOARD_SKELETON`
-for the overview, `teamSkeletonForPath` otherwise), the assignment layout (below its tabs,
-`ASSIGNMENT_TAB_SKELETONS`), the paper hub's layout (below its back link), and
-`dashboard/+layout.svelte` (the pages about no one conference). A layout that keeps state across its
-pages must not sit inside a boundary keyed by the pathname: name it as a frame in `boundaryKey`
-and give it a `PageBoundary` of its own.
+Used in `ConferenceShell` (`DASHBOARD_SKELETON` for the overview, else `teamSkeletonForPath`), the
+assignment layout (below its tabs, `ASSIGNMENT_TAB_SKELETONS`), the paper hub layout (below its back
+link), `dashboard/+layout.svelte`. **A layout keeping state across its pages must not sit inside a
+pathname-keyed boundary**: make it a frame in `boundaryKey` with its own `PageBoundary`.
 
 ### PageSkeleton
 
-`src/lib/components/navigation/PageSkeleton.svelte` - draws a `SkeletonLayout`, `role="status"`
-and `aria-busy`, its name as `data-skeleton`. It stays invisible for its first 120 ms
-(`.page-skeleton` in `app.css`), so cached data that resolves at once never flashes it.
-
-A layout is a tree of `SkeletonNode`s (`skeletonShapes.ts`): a node with `children` is a plain
-element (a card's frame, a row, a grid), one without a grey `skeleton` block. **Each team page has
-its own**, in `#lib/data/teamSkeletons.ts`, drawn after the page: its wrapper's classes, its
-grids and breakpoints, then its sections in the typical populated state, so the skeleton reflows
-like the page and nothing jumps when the data arrives. Build them from the shared blocks
-(`dataGrid`, `tabs`, `formSection`, `field`, `stat`, `toggle`, `paragraph`, `table`) and write
-class strings out whole, since Tailwind only finds literal ones. A new team page gets an entry in
-`TEAM_SKELETONS` and names it as its registry entry's `skeleton`; a page below an entry that looks
-different (a detail page, a page the entry `owns`) goes into `SUBPAGE_SKELETONS`. **When a page's
-layout changes, change its skeleton too.**
+`navigation/PageSkeleton.svelte`: draws a `SkeletonLayout` (`role="status"`, `aria-busy`,
+`data-skeleton`), invisible for 120 ms (`.page-skeleton` in `app.css`) so cache hits never flash it.
+A layout is a tree of `SkeletonNode`s (`skeletonShapes.ts`): with `children` a plain element, without
+a grey block. **Each team page has its own** in `#lib/data/teamSkeletons.ts`, drawn after the page
+(wrapper classes, grids, breakpoints, sections populated) so nothing jumps. Build from the shared
+blocks (`dataGrid`, `tabs`, `formSection`, `field`, `stat`, `toggle`, `paragraph`, `table`); write
+class strings whole (Tailwind finds only literals). New team page: a `TEAM_SKELETONS` entry named as
+its registry entry's `skeleton`; a differing page below an entry (detail page, a page it `owns`):
+`SUBPAGE_SKELETONS`. **When a page's layout changes, change its skeleton.**
 
 ### NavigationProgress
 
-`src/lib/components/navigation/NavigationProgress.svelte`, mounted once in the root layout. Shows a
-thin `bg-primary` bar along the top edge while `navigating.to` is set - the route guard, the page's
-code and its first render - after a 200 ms delay, so a navigation that finishes at once shows
-nothing.
+`navigation/NavigationProgress.svelte`, once in the root layout: thin `bg-primary` top bar while
+`navigating.to` is set, after 200 ms.
 
 ### View transitions
 
-`enableViewTransitionApi()` (`#lib/helpers/viewTransitionApi.svelte`, after chase) runs in the root
-layout and turns every non-shallow navigation into a `document.startViewTransition`. `app.css` sets
-the animation: the old page fades out, the new one rises in; `prefers-reduced-motion` switches it
-off. Parts that are the same on both pages carry a `view-transition-name` so they stay put instead
-of cross-fading with the content: `app-header` (`AuthenticatedHeader`), `team-nav`
-(`SideNavigationDrawer`), `app-footer` (`Footer`). A name must be unique on the page while a
-transition runs, or the browser skips the transition. To morph an element across pages the way
-chase does with committee titles, give it the same name on both (`view-transition-name: thing-{id}`).
+`enableViewTransitionApi()` (`#lib/helpers/viewTransitionApi.svelte`, root layout) wraps non-shallow
+navigations in `document.startViewTransition`; `app.css` animates (off under
+`prefers-reduced-motion`). Persistent parts stay put via `view-transition-name`: `app-header`
+(`AuthenticatedHeader`), `team-nav` (`SideNavigationDrawer`), `app-footer` (`Footer`). **Names must
+be unique on the page** or the browser skips the transition. Same name on two pages morphs an
+element (`thing-{id}`).
 
 ### Code preloading
 
-`<body data-sveltekit-preload-data="hover">` (app.html) preloads a link's route guard and code on
-hover. The team side navigation adds `data-sveltekit-preload-code="viewport"`, so the code of
-every entry on screen is fetched ahead and opening one waits for its data at most.
+`data-sveltekit-preload-data="hover"` on `<body>` (app.html); the team side nav adds
+`data-sveltekit-preload-code="viewport"`.
 
 ### Svelte transitions
 
-Overlays animate in and out through Svelte transitions, never through CSS classes toggled on mount
-(daisyUI's `.modal` transition never runs on an element that is created open): `Modal` and
-`DialogHost` fade with the box scaling from 96 %, `Drawer` and `SlidePanel` fly in from the edge,
-the command palette drops in, `MaintenanceBanner` slides. Use `transition:slide` for a block that
-appears inside a page (the seats page's assign banner, collapsibles) and `transition:fade` for an
-overlay (the statistics' refetch overlay); keep durations at 150-300 ms and respect what is there.
+Overlays animate through Svelte transitions, never CSS classes toggled on mount (daisyUI's `.modal`
+transition never runs on an element created open): `Modal` and `DialogHost` fade with the box
+scaling from 96 %, `Drawer` and `SlidePanel` fly in from the edge, the command palette drops in,
+`MaintenanceBanner` slides. Use `transition:slide` for blocks appearing inside a page (banners,
+collapsibles), `transition:fade` for overlays; 150–300 ms.
 
 ## Common Patterns
 
-### Loading States
-
-For a whole page, see "Navigation" above: the layout's `PageBoundary` shows the skeleton. Inside a
-page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a `pending` snippet.
-
-```svelte
-<!-- Spinner -->
-<span class="loading loading-spinner loading-md"></span>
-
-<!-- Skeleton -->
-<div class="skeleton h-4 w-full"></div>
-
-<!-- Loading dots -->
-<span class="loading loading-dots loading-sm"></span>
-```
-
-### Empty States
-
-```svelte
-<div class="flex flex-col items-center justify-center py-12 text-center">
-	<i aria-hidden="true" class="ph-duotone ph-tray text-4xl text-base-content/30 mb-4"></i>
-	<p class="text-base-content/60">No items found</p>
-</div>
-```
-
-### Action Buttons
-
-```svelte
-<!-- Primary action -->
-<button class="btn btn-primary">Save</button>
-
-<!-- Secondary action -->
-<button class="btn btn-ghost">Cancel</button>
-
-<!-- Danger action -->
-<button class="btn btn-error">Delete</button>
-
-<!-- Icon button -->
-<button class="btn btn-square btn-ghost btn-sm">
-	<i aria-hidden="true" class="ph-duotone ph-pencil-simple"></i>
-</button>
-```
-
----
+- **Loading**: whole pages get the layout's `PageBoundary` skeleton. A part loading on its own wraps
+  itself in `<svelte:boundary>` with a `pending` snippet. Primitives:
+  `loading loading-spinner loading-md`, `skeleton h-4 w-full`, `loading loading-dots loading-sm`.
+- **Empty states**: centred `flex flex-col items-center justify-center py-12 text-center`, a
+  `ph-duotone ph-tray text-4xl text-base-content/30 mb-4` icon, `text-base-content/60` text.
+- **Buttons**: `btn btn-primary` (primary), `btn btn-ghost` (secondary), `btn btn-error` (danger),
+  `btn btn-square btn-ghost btn-sm` + icon + `aria-label` (icon button).
 
 ## URL State Management
 
-Use `sveltekit-search-params` (v4, runes-based) for URL-persisted state. `queryParameters` returns a
-reactive object: read `params.x`, assign `params.x = …` to navigate, and assign `null` to drop the
-key. Call it during component init. Name it `params`, and the route prop `routeParams` where both
-exist.
-
-```svelte
-<script lang="ts">
-	import { queryParameters, ssp } from 'sveltekit-search-params';
-
-	const params = queryParameters({ tab: true, page: ssp.number(1) });
-	let activeTab = $derived(params.tab ?? 'overview');
-
-	function setTab(tab: string) {
-		params.tab = tab;
-	}
-</script>
-```
-
----
+`sveltekit-search-params` v4: `queryParameters({ tab: true, page: ssp.number(1) })` returns a
+reactive object; read `params.x`, assign to navigate, assign `null` to drop the key. Call it during
+component init (before any `await`). Name it `params`, and the route prop `routeParams` where both exist.
 
 ## Checklist for New UI Features
 
-Before implementing new UI:
-
-1. Check if a component already exists in `src/lib/components/`
-2. Use `FormFieldset` for all form groupings
-3. Use DaisyUI classes before writing custom CSS
-4. Use semantic color classes (not hardcoded colors)
-5. Include loading and empty states
-6. Test responsive behavior (mobile-first)
-7. Add proper aria labels for accessibility
-8. Use the `$t()` function from Paraglide-JS for all user-facing text (i18n)
+1. Reuse a component from `src/lib/components/` if one exists
+2. Group form fields (`FormFieldset` / `FormSection`)
+3. DaisyUI classes before custom CSS; semantic colours only
+4. Loading and empty states
+5. Responsive, mobile-first
+6. Accessibility rules above (labels, `aria-hidden` icons, state attributes)
+7. All user-facing text through Paraglide (`m.…()` from `#lib/paraglide/messages`)
+8. A team page gets a registry entry and a skeleton; update the manual (CLAUDE.md §11)

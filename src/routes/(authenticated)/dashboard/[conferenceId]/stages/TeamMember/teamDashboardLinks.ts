@@ -1,6 +1,4 @@
 import type { Component } from 'svelte';
-import { resolve } from '$app/paths';
-import PaperHubLinkInfo from '#lib/components/dashboard/PaperHubLinkInfo.svelte';
 import { m } from '#lib/paraglide/messages';
 import type { DashboardHref } from '#lib/data/dashboardLinks';
 
@@ -21,23 +19,6 @@ export interface TeamDashboardLink {
 	external?: boolean;
 	/** Live details shown on the card, given the conference they are for */
 	info?: Component<{ conferenceId: string }>;
-}
-
-/**
- * The paper hub, next to the team's card because the registry lists it with the team's pages. It
- * stays at its own path, as participants and supervisors use it too, so this is offered only to
- * whoever may open it (`canSeePaperHub`, as the team navigation decides it).
- */
-export function getPaperHubLink(canSeePaperHub: boolean): TeamDashboardLink | undefined {
-	if (!canSeePaperHub) return undefined;
-	return {
-		id: 'paperHub',
-		icon: 'files',
-		info: PaperHubLinkInfo,
-		getTitle: () => m.paperHub(),
-		getDescription: () => m.reviewPapers(),
-		getHref: (ctx) => resolve(`dashboard/${ctx.conferenceId}/paperhub`)
-	};
 }
 
 /**

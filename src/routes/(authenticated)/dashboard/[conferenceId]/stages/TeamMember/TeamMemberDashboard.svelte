@@ -11,12 +11,7 @@
 	import TeamWaiting from './TeamWaiting.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { PUBLIC_DOCS_URL } from '$app/env/public';
-	import { fetchCanOpenPaperHub } from '../../paperhub/myPaperHubRoles';
-	import {
-		getPaperHubLink,
-		getTeamResourceLinks,
-		type TeamDashboardLinkContext
-	} from './teamDashboardLinks';
+	import { getTeamResourceLinks, type TeamDashboardLinkContext } from './teamDashboardLinks';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -29,9 +24,6 @@
 		})
 	);
 
-	// A snapshot of a boolean, decided the same way as the team navigation's paper hub entry
-	const canSeePaperHub = $derived(await fetchCanOpenPaperHub(conferenceId));
-
 	const context = $derived<TeamDashboardLinkContext>({
 		conferenceId,
 		linkToTeamWiki: conference.linkToTeamWiki,
@@ -39,11 +31,7 @@
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		docsUrl: PUBLIC_DOCS_URL
 	});
-	const links = $derived(
-		[...getTeamResourceLinks(context), getPaperHubLink(canSeePaperHub)].filter(
-			(link) => link !== undefined
-		)
-	);
+	const links = $derived(getTeamResourceLinks(context));
 </script>
 
 <TeamWaiting {conferenceId} />

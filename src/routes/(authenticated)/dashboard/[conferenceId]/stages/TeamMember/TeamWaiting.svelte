@@ -2,7 +2,7 @@
 	@component
 	The team's overview of a conference: the caller's team roles and what waits for them in the
 	parts of the team they may open (inboxes, reports, possible duplicates, school merges, mails due,
-	announcement drafts), each linking to where it is done. Only what the caller may open is asked
+	announcement drafts, papers to review), each linking to where it is done. Only what the caller may open is asked
 	for. Live, apart from the mails, which the API works out on asking.
 -->
 <script lang="ts">
@@ -16,6 +16,8 @@
 	import { EMAIL_GROUPS, isAlwaysSent } from '#lib/helpers/emailKinds';
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import { m } from '#lib/paraglide/messages';
+	import { asCount } from '#lib/api/queryHelpers';
+	import { fetchCanOpenPaperHub } from '../../paperhub/myPaperHubRoles';
 	import { duplicatesOfConference } from '../../team/plausibility/possibleDuplicatesWhere';
 	import { mayAskFor, waitingItems, type WaitingCounts } from './teamWaiting';
 
@@ -26,10 +28,19 @@
 		(kind) => !isAlwaysSent(kind)
 	);
 
-	const access = $derived(await fetchTeamAccess(conferenceId));
+	const access = $derived({
+		...(await fetchTeamAccess(conferenceId)),
+		// A snapshot of a boolean, decided the same way as the team navigation's paper hub entry
+		canSeePaperHub: await fetchCanOpenPaperHub(conferenceId)
+	});
 	const roleLabels = $derived(access.roles.map((role) => translateTeamRole(role)));
 
-	const [chats, duplicates, suggestions, drafts, emails] = $derived(
+	const papersWith = (status: 'SUBMITTED' | 'REVISED') =>
+		client.liveQuery.papersCount({
+			__args: { where: { conference: { id: { eq: conferenceId } }, status } }
+		});
+
+	const [chats, duplicates, suggestions, drafts, emails, submitted, revised] = $derived(
 		await Promise.all([
 			fetchChats({ conferenceId }),
 			mayAskFor({ id: 'openDuplicates', access })
@@ -51,7 +62,10 @@
 					})
 				: [],
 			// empty for whoever may not send the conference's mails
-			fetchOpenEmails({ conferenceId, kinds: SENT_KINDS })
+			fetchOpenEmails({ conferenceId, kinds: SENT_KINDS }),
+			// A first review and one after a revision; zero for whoever does not review
+			mayAskFor({ id: 'papersAwaitingReview', access }) ? papersWith('SUBMITTED') : 0,
+			mayAskFor({ id: 'papersAwaitingReview', access }) ? papersWith('REVISED') : 0
 		])
 	);
 
@@ -66,7 +80,8 @@
 		openEmails: emails
 			.filter((open) => !open.automatic)
 			.reduce((total, open) => total + open.open, 0),
-		draftAnnouncements: drafts.length
+		draftAnnouncements: drafts.length,
+		papersAwaitingReview: asCount(submitted) + asCount(revised)
 	});
 	const items = $derived(waitingItems({ counts, access }));
 </script>

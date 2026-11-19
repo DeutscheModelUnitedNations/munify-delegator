@@ -9,7 +9,8 @@ const everything: WaitingCounts = {
 	openDuplicates: 2,
 	schoolSuggestions: 4,
 	openEmails: 5,
-	draftAnnouncements: 6
+	draftAnnouncements: 6,
+	papersAwaitingReview: 7
 };
 const ids = ({ counts, access }: { counts: WaitingCounts; access: TeamAccess }) =>
 	waitingItems({ counts, access }).map((item) => item.id);
@@ -28,7 +29,8 @@ describe('waitingItems', () => {
 			'openDuplicates',
 			'schoolSuggestions',
 			'openEmails',
-			'draftAnnouncements'
+			'draftAnnouncements',
+			'papersAwaitingReview'
 		]);
 	});
 
@@ -67,11 +69,25 @@ describe('waitingItems', () => {
 	});
 });
 
+test('lists the papers only for whoever may open the paper hub', () => {
+	const counts = { ...NOTHING_WAITING, papersAwaitingReview: 2 };
+	expect(ids({ counts, access: as('REVIEWER') })).toEqual([]);
+	expect(ids({ counts, access: { ...as('REVIEWER'), canSeePaperHub: true } })).toEqual([
+		'papersAwaitingReview'
+	]);
+	const [item] = waitingItems({ counts, access: { ...as('REVIEWER'), canSeePaperHub: true } });
+	expect(item?.route.path).toBe('paperhub');
+});
+
 describe('mayAskFor', () => {
 	test('asks only for what the caller may open', () => {
 		expect(mayAskFor({ id: 'openDuplicates', access: as('PARTICIPANT_CARE') })).toBe(true);
 		expect(mayAskFor({ id: 'openDuplicates', access: as('REVIEWER') })).toBe(false);
 		expect(mayAskFor({ id: 'draftAnnouncements', access: as('CONTENT_LEAD') })).toBe(true);
 		expect(mayAskFor({ id: 'draftAnnouncements', access: as('MEMBER') })).toBe(false);
+		expect(mayAskFor({ id: 'papersAwaitingReview', access: as('REVIEWER') })).toBe(false);
+		expect(
+			mayAskFor({ id: 'papersAwaitingReview', access: { ...as('REVIEWER'), canSeePaperHub: true } })
+		).toBe(true);
 	});
 });
