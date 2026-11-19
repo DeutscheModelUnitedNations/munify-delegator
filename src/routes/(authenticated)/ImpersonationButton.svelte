@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
+	import { loadDashboardAfresh } from '#lib/api/startImpersonation';
 
 	/**
 	 * Shown while impersonating someone: hovering tells whom, clicking stops the impersonation.
@@ -36,8 +35,7 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		try {
 			await promise;
-			await goto(resolve('dashboard'));
-			window.location.reload();
+			loadDashboardAfresh();
 		} catch (error) {
 			logger.error('Failed to stop impersonation', error);
 		} finally {
