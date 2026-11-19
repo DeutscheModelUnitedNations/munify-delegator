@@ -490,244 +490,248 @@ function hideAs({
 	});
 }
 
-schemaBuilder.mutationFields((t) => ({
-	openDirectChat: t.drizzleField({
-		description:
-			'The direct chat of the caller with another seated participant of the conference, opened when they have none yet. For delegation members and single participants (FORBIDDEN otherwise) once the roles are released (CONFLICT before, and while messaging is off); NOT_FOUND for a participant without a seat.',
-		type: ChatRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			participantId: t.arg.id({ required: true, description: 'From `chatContacts`.' })
-		},
-		resolve: async (select, _root, args, ctx) => {
-			const fromParticipantId = await assertWritingParticipant({
-				ctx,
-				conferenceId: args.conferenceId
-			});
-			const chat = await openDirectChat({
-				conferenceId: args.conferenceId,
-				fromParticipantId,
-				toParticipantId: args.participantId
-			});
-			await refreshCallerAbilities(ctx);
-			return db.query.chat
-				.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	openDelegationChat: t.drizzleField({
-		description:
-			"The group chat of the caller's delegation in the conference, opened when it has none yet. For its members (FORBIDDEN otherwise), once the delegation's role is released (CONFLICT before).",
-		type: ChatRef,
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (select, _root, args, ctx) => {
-			const delegationId = await assertDelegationMember({
-				ctx,
-				conferenceId: args.conferenceId
-			});
-			const chat = await openDelegationChat({
-				conferenceId: args.conferenceId,
-				delegationId
-			});
-			await refreshCallerAbilities(ctx);
-			return db.query.chat
-				.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	openTeamChat: t.drizzleField({
-		description:
-			"The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.",
-		type: ChatRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			inbox: t.arg({ type: chatInboxEnum, required: true }),
-			committeeId: t.arg.id({ description: "The committee of a chairs' or consultants' inbox." }),
-			trustedPersonId: t.arg.id({
-				description: 'One trusted person, instead of all of them together.'
-			}),
-			participantId: t.arg.id()
-		},
-		resolve: async (select, _root, args, ctx) => {
-			const inbox: ChatInbox = args.inbox;
-			const committeeId = args.committeeId ?? null;
-			const trustedUserId = args.trustedPersonId
-				? await trustedUserIdOf({
-						conferenceId: args.conferenceId,
-						trustedPersonId: args.trustedPersonId
-					})
-				: null;
-			let participantId: string;
-			if (args.participantId) {
-				await assertHoldsInbox({
+schemaBuilder.mutationFields((t) => {
+	// why participant care hides messages, the same for one message and for a person's
+	const hideReason = () => t.arg.string({ required: true }).validate(hideReasonSchema);
+	return {
+		openDirectChat: t.drizzleField({
+			description:
+				'The direct chat of the caller with another seated participant of the conference, opened when they have none yet. For delegation members and single participants (FORBIDDEN otherwise) once the roles are released (CONFLICT before, and while messaging is off); NOT_FOUND for a participant without a seat.',
+			type: ChatRef,
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				participantId: t.arg.id({ required: true, description: 'From `chatContacts`.' })
+			},
+			resolve: async (select, _root, args, ctx) => {
+				const fromParticipantId = await assertWritingParticipant({
 					ctx,
+					conferenceId: args.conferenceId
+				});
+				const chat = await openDirectChat({
 					conferenceId: args.conferenceId,
+					fromParticipantId,
+					toParticipantId: args.participantId
+				});
+				await refreshCallerAbilities(ctx);
+				return db.query.chat
+					.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		openDelegationChat: t.drizzleField({
+			description:
+				"The group chat of the caller's delegation in the conference, opened when it has none yet. For its members (FORBIDDEN otherwise), once the delegation's role is released (CONFLICT before).",
+			type: ChatRef,
+			args: { conferenceId: t.arg.id({ required: true }) },
+			resolve: async (select, _root, args, ctx) => {
+				const delegationId = await assertDelegationMember({
+					ctx,
+					conferenceId: args.conferenceId
+				});
+				const chat = await openDelegationChat({
+					conferenceId: args.conferenceId,
+					delegationId
+				});
+				await refreshCallerAbilities(ctx);
+				return db.query.chat
+					.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		openTeamChat: t.drizzleField({
+			description:
+				"The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.",
+			type: ChatRef,
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				inbox: t.arg({ type: chatInboxEnum, required: true }),
+				committeeId: t.arg.id({ description: "The committee of a chairs' or consultants' inbox." }),
+				trustedPersonId: t.arg.id({
+					description: 'One trusted person, instead of all of them together.'
+				}),
+				participantId: t.arg.id()
+			},
+			resolve: async (select, _root, args, ctx) => {
+				const inbox: ChatInbox = args.inbox;
+				const committeeId = args.committeeId ?? null;
+				const trustedUserId = args.trustedPersonId
+					? await trustedUserIdOf({
+							conferenceId: args.conferenceId,
+							trustedPersonId: args.trustedPersonId
+						})
+					: null;
+				let participantId: string;
+				if (args.participantId) {
+					await assertHoldsInbox({
+						ctx,
+						conferenceId: args.conferenceId,
+						inbox,
+						committeeId,
+						trustedUserId
+					});
+					participantId = args.participantId;
+				} else {
+					participantId = await assertWritingParticipant({ ctx, conferenceId: args.conferenceId });
+				}
+				const chat = await openTeamChat({
+					conferenceId: args.conferenceId,
+					participantId,
 					inbox,
 					committeeId,
 					trustedUserId
 				});
-				participantId = args.participantId;
-			} else {
-				participantId = await assertWritingParticipant({ ctx, conferenceId: args.conferenceId });
+				await refreshCallerAbilities(ctx);
+				return db.query.chat
+					.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
+					.then(assertFindFirstExists);
 			}
-			const chat = await openTeamChat({
-				conferenceId: args.conferenceId,
-				participantId,
-				inbox,
-				committeeId,
-				trustedUserId
-			});
-			await refreshCallerAbilities(ctx);
-			return db.query.chat
-				.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
-				.then(assertFindFirstExists);
-		}
-	}),
+		}),
 
-	sendChatMessage: t.drizzleField({
-		description:
-			'Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, TERMS_NOT_ACCEPTED for a participant who has not accepted the terms (`acceptMessagingTerms`), CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.',
-		type: ChatMessageRef,
-		args: {
-			chatId: t.arg.id({ required: true }),
-			body: t.arg.string({ required: true }).validate(messageBodySchema),
-			paperId: t.arg.id()
-		},
-		resolve: async (select, _root, args, ctx) => {
-			const { chat, side, userId, participantId } = await assertTakesPartInChat({
-				ctx,
-				id: args.chatId
-			});
-			if (side === 'PARTICIPANT') await assertAcceptedTerms(userId);
-			const id = await sendMessage({
-				chat,
-				author:
-					side === 'PARTICIPANT' && participantId
-						? { side: 'PARTICIPANT', participantId, userId }
-						: { side: 'TEAM', userId },
-				body: args.body.trim(),
-				paperId: args.paperId ?? null,
-				origin: ctx.requestUrl().origin
-			});
-			return db.query.chatMessage
-				.findFirst(
-					select(
-						(await ctx.abilities.chatMessage.filter('read')).merge({ where: { id } }).query.single
+		sendChatMessage: t.drizzleField({
+			description:
+				'Writes a message into a chat the caller takes part in: as a party, or from the inbox of a team chat they answer. NOT_FOUND for a chat they cannot read, FORBIDDEN for participant care reading a reported chat, TERMS_NOT_ACCEPTED for a participant who has not accepted the terms (`acceptMessagingTerms`), CONFLICT while they cannot write there (`chat.writeRefusal`). `paperId` attaches a paper of the participant of a team chat.',
+			type: ChatMessageRef,
+			args: {
+				chatId: t.arg.id({ required: true }),
+				body: t.arg.string({ required: true }).validate(messageBodySchema),
+				paperId: t.arg.id()
+			},
+			resolve: async (select, _root, args, ctx) => {
+				const { chat, side, userId, participantId } = await assertTakesPartInChat({
+					ctx,
+					id: args.chatId
+				});
+				if (side === 'PARTICIPANT') await assertAcceptedTerms(userId);
+				const id = await sendMessage({
+					chat,
+					author:
+						side === 'PARTICIPANT' && participantId
+							? { side: 'PARTICIPANT', participantId, userId }
+							: { side: 'TEAM', userId },
+					body: args.body.trim(),
+					paperId: args.paperId ?? null,
+					origin: ctx.requestUrl().origin
+				});
+				return db.query.chatMessage
+					.findFirst(
+						select(
+							(await ctx.abilities.chatMessage.filter('read')).merge({ where: { id } }).query.single
+						)
 					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
+					.then(assertFindFirstExists);
+			}
+		}),
 
-	markChatRead: t.field({
-		description:
-			'Marks a chat as read up to now: for the caller, or, answering a team inbox, for everybody holding it.',
-		type: 'Boolean',
-		args: { chatId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const { chat, side, userId } = await readableChat({ ctx, id: args.chatId });
-			if (side === 'REVIEW') return false;
-			await markChatRead({ chat, side, userId });
-			return true;
-		}
-	}),
+		markChatRead: t.field({
+			description:
+				'Marks a chat as read up to now: for the caller, or, answering a team inbox, for everybody holding it.',
+			type: 'Boolean',
+			args: { chatId: t.arg.id({ required: true }) },
+			resolve: async (_root, args, ctx) => {
+				const { chat, side, userId } = await readableChat({ ctx, id: args.chatId });
+				if (side === 'REVIEW') return false;
+				await markChatRead({ chat, side, userId });
+				return true;
+			}
+		}),
 
-	setChatArchived: t.field({
-		description:
-			'Puts a team chat away into the archive of its inbox, or takes it out again, for everybody holding the inbox. Archiving reads the chat; the next message brings it back. For whoever answers the inbox (FORBIDDEN otherwise, NOT_FOUND for a chat they cannot read).',
-		type: 'Boolean',
-		args: {
-			chatId: t.arg.id({ required: true }),
-			archived: t.arg.boolean({ required: true })
-		},
-		resolve: async (_root, args, ctx) => {
-			const { chat } = await assertAnswersInboxOfChat({ ctx, id: args.chatId });
-			await setChatArchived({ chat, archived: args.archived });
-			return true;
-		}
-	}),
+		setChatArchived: t.field({
+			description:
+				'Puts a team chat away into the archive of its inbox, or takes it out again, for everybody holding the inbox. Archiving reads the chat; the next message brings it back. For whoever answers the inbox (FORBIDDEN otherwise, NOT_FOUND for a chat they cannot read).',
+			type: 'Boolean',
+			args: {
+				chatId: t.arg.id({ required: true }),
+				archived: t.arg.boolean({ required: true })
+			},
+			resolve: async (_root, args, ctx) => {
+				const { chat } = await assertAnswersInboxOfChat({ ctx, id: args.chatId });
+				await setChatArchived({ chat, archived: args.archived });
+				return true;
+			}
+		}),
 
-	setChatBlocked: t.field({
-		description:
-			'Blocks (or unblocks) the other party of a direct chat: neither can write the other while it lasts. For a party of the chat (FORBIDDEN otherwise).',
-		type: 'Boolean',
-		args: {
-			chatId: t.arg.id({ required: true }),
-			blocked: t.arg.boolean({ required: true })
-		},
-		resolve: async (_root, args, ctx) => {
-			const { chat, participantId } = await assertPartyOfChat({ ctx, id: args.chatId });
-			await setChatBlocked({ chat, blockerParticipantId: participantId, blocked: args.blocked });
-			return true;
-		}
-	}),
+		setChatBlocked: t.field({
+			description:
+				'Blocks (or unblocks) the other party of a direct chat: neither can write the other while it lasts. For a party of the chat (FORBIDDEN otherwise).',
+			type: 'Boolean',
+			args: {
+				chatId: t.arg.id({ required: true }),
+				blocked: t.arg.boolean({ required: true })
+			},
+			resolve: async (_root, args, ctx) => {
+				const { chat, participantId } = await assertPartyOfChat({ ctx, id: args.chatId });
+				await setChatBlocked({ chat, blockerParticipantId: participantId, blocked: args.blocked });
+				return true;
+			}
+		}),
 
-	setMessagingSuspended: t.field({
-		description:
-			'Takes a person out of the chats between participants of their conference, or lets them back in; they keep reaching the team. Participant care only (FORBIDDEN otherwise).',
-		type: 'Boolean',
-		args: {
-			participantId: t.arg.id({ required: true }),
-			suspended: t.arg.boolean({ required: true })
-		},
-		resolve: async (_root, args, ctx) => {
-			await assertCanSuspend({ ctx, participantId: args.participantId });
-			await setMessagingSuspended({
-				participantId: args.participantId,
-				suspended: args.suspended
-			});
-			return true;
-		}
-	}),
+		setMessagingSuspended: t.field({
+			description:
+				'Takes a person out of the chats between participants of their conference, or lets them back in; they keep reaching the team. Participant care only (FORBIDDEN otherwise).',
+			type: 'Boolean',
+			args: {
+				participantId: t.arg.id({ required: true }),
+				suspended: t.arg.boolean({ required: true })
+			},
+			resolve: async (_root, args, ctx) => {
+				await assertCanSuspend({ ctx, participantId: args.participantId });
+				await setMessagingSuspended({
+					participantId: args.participantId,
+					suspended: args.suspended
+				});
+				return true;
+			}
+		}),
 
-	hideChatMessage: t.field({
-		description:
-			'Hides a message of a reported chat for everybody of it, with a reason for the team. Final: the parties read a placeholder from then on, participant care and system admins keep the text with the report. Participant care of the conference while a report of the chat is open (NOT_FOUND otherwise, FORBIDDEN for a team chat, CONFLICT for a message hidden already).',
-		type: 'Boolean',
-		args: {
-			id: t.arg.id({ required: true }),
-			reason: t.arg.string({ required: true }).validate(hideReasonSchema)
-		},
-		resolve: async (_root, args, ctx) => {
-			const chat = await assertCanModerateMessage({ ctx, messageId: args.id });
-			await hideAs({ ctx, chat, target: { messageId: args.id }, reason: args.reason });
-			return true;
-		}
-	}),
+		hideChatMessage: t.field({
+			description:
+				'Hides a message of a reported chat for everybody of it, with a reason for the team. Final: the parties read a placeholder from then on, participant care and system admins keep the text with the report. Participant care of the conference while a report of the chat is open (NOT_FOUND otherwise, FORBIDDEN for a team chat, CONFLICT for a message hidden already).',
+			type: 'Boolean',
+			args: {
+				id: t.arg.id({ required: true }),
+				reason: hideReason()
+			},
+			resolve: async (_root, args, ctx) => {
+				const chat = await assertCanModerateMessage({ ctx, messageId: args.id });
+				await hideAs({ ctx, chat, target: { messageId: args.id }, reason: args.reason });
+				return true;
+			}
+		}),
 
-	hideChatMessagesOf: t.field({
-		description:
-			'Hides everything a person wrote into a reported chat so far, for everybody of it, with a reason for the team, and answers how many messages it hid. What they write later stays visible (`setMessagingSuspended` keeps them from writing). Final, like `hideChatMessage`, and for the same people.',
-		type: 'Int',
-		args: {
-			chatId: t.arg.id({ required: true }),
-			participantId: t.arg.id({ required: true }),
-			reason: t.arg.string({ required: true }).validate(hideReasonSchema)
-		},
-		resolve: async (_root, args, ctx) => {
-			const chat = await assertCanModerateChat({ ctx, chatId: args.chatId });
-			return hideAs({
-				ctx,
-				chat,
-				target: { authorParticipantId: args.participantId },
-				reason: args.reason
-			});
-		}
-	}),
+		hideChatMessagesOf: t.field({
+			description:
+				'Hides everything a person wrote into a reported chat so far, for everybody of it, with a reason for the team, and answers how many messages it hid. What they write later stays visible (`setMessagingSuspended` keeps them from writing). Final, like `hideChatMessage`, and for the same people.',
+			type: 'Int',
+			args: {
+				chatId: t.arg.id({ required: true }),
+				participantId: t.arg.id({ required: true }),
+				reason: hideReason()
+			},
+			resolve: async (_root, args, ctx) => {
+				const chat = await assertCanModerateChat({ ctx, chatId: args.chatId });
+				return hideAs({
+					ctx,
+					chat,
+					target: { authorParticipantId: args.participantId },
+					reason: args.reason
+				});
+			}
+		}),
 
-	setMessageNotificationEmails: t.field({
-		description:
-			'Whether a mail tells the caller about chat messages they left unread for a while.',
-		type: 'Boolean',
-		args: { enabled: t.arg.boolean({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await setMessageNotificationEmails({
-				userId: ctx.mustBeLoggedIn().sub,
-				enabled: args.enabled
-			});
-			return true;
-		}
-	})
-}));
+		setMessageNotificationEmails: t.field({
+			description:
+				'Whether a mail tells the caller about chat messages they left unread for a while.',
+			type: 'Boolean',
+			args: { enabled: t.arg.boolean({ required: true }) },
+			resolve: async (_root, args, ctx) => {
+				await setMessageNotificationEmails({
+					userId: ctx.mustBeLoggedIn().sub,
+					enabled: args.enabled
+				});
+				return true;
+			}
+		})
+	};
+});

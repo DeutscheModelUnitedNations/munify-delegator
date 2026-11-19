@@ -28,6 +28,27 @@ export const hideReasonSchema = z
 export type HideTarget = { messageId: string } | { authorParticipantId: string };
 
 /**
+ * Refuses hiding one message that is not in the chat (NOT_FOUND) or hidden already (CONFLICT): the
+ * hiding is final, its reason is not rewritten.
+ */
+export function assertHideable(message: { hiddenAt: Date | null } | undefined) {
+	if (!message) throw apiError({ code: 'NOT_FOUND', message: m.chatMessageNotFound() });
+	if (message.hiddenAt) {
+		throw apiError({ code: 'CONFLICT', message: m.chatMessageAlreadyHidden() });
+	}
+}
+
+/** The messages a target names: the one message, or what the person wrote (never the team). */
+function targetCondition(target: HideTarget) {
+	return 'messageId' in target
+		? eq(schema.chatMessage.id, target.messageId)
+		: and(
+				eq(schema.chatMessage.authorParticipantId, target.authorParticipantId),
+				eq(schema.chatMessage.fromTeam, false)
+			);
+}
+
+/**
  * Hides messages of the chat for everybody of it, under its oldest open report, and answers how
  * many it hid. One message that is hidden already is a CONFLICT, one not in the chat NOT_FOUND;
  * a person's messages hide those not hidden yet (none is fine). What the person writes later
@@ -51,22 +72,13 @@ export async function hideChatMessages({
 			columns: { id: true }
 		});
 		if ('messageId' in target) {
-			const message = await tx.query.chatMessage.findFirst({
-				where: { id: target.messageId, chatId: chat.id },
-				columns: { id: true, hiddenAt: true }
-			});
-			if (!message) throw apiError({ code: 'NOT_FOUND', message: m.chatMessageNotFound() });
-			if (message.hiddenAt) {
-				throw apiError({ code: 'CONFLICT', message: m.chatMessageAlreadyHidden() });
-			}
+			assertHideable(
+				await tx.query.chatMessage.findFirst({
+					where: { id: target.messageId, chatId: chat.id },
+					columns: { hiddenAt: true }
+				})
+			);
 		}
-		const which =
-			'messageId' in target
-				? eq(schema.chatMessage.id, target.messageId)
-				: and(
-						eq(schema.chatMessage.authorParticipantId, target.authorParticipantId),
-						eq(schema.chatMessage.fromTeam, false)
-					);
 		const hidden = await tx
 			.update(schema.chatMessage)
 			.set({
@@ -76,7 +88,11 @@ export async function hideChatMessages({
 				hiddenReportId: report?.id ?? null
 			})
 			.where(
-				and(eq(schema.chatMessage.chatId, chat.id), isNull(schema.chatMessage.hiddenAt), which)
+				and(
+					eq(schema.chatMessage.chatId, chat.id),
+					isNull(schema.chatMessage.hiddenAt),
+					targetCondition(target)
+				)
 			)
 			.returning({ id: schema.chatMessage.id });
 		return hidden.map((row) => row.id);
@@ -100,6 +116,26 @@ export interface HiddenMessage {
 	hiddenReason: string;
 }
 
+/** A hidden message's row as it is read, with the report it was hidden under. */
+export type HiddenRow = Omit<HiddenMessage, 'hiddenAt' | 'hiddenReason'> & {
+	reportId: string | null;
+	hiddenAt: Date | null;
+	hiddenReason: string | null;
+};
+
+/**
+ * The hidden messages by the report they were hidden under, in the order given. A row without a
+ * report or without its hiding (which the check constraint sets together) is left out.
+ */
+export function hiddenByReport(rows: readonly HiddenRow[]) {
+	const byReport = new Map<string, HiddenMessage[]>();
+	for (const { reportId, hiddenAt, hiddenReason, ...row } of rows) {
+		if (!reportId || !hiddenAt || hiddenReason === null) continue;
+		byReport.set(reportId, [...(byReport.get(reportId) ?? []), { ...row, hiddenAt, hiddenReason }]);
+	}
+	return byReport;
+}
+
 const hiddenBatcher = createBatcher(async (reportIds: string[]) => {
 	const rows = await db
 		.select({
@@ -115,13 +151,7 @@ const hiddenBatcher = createBatcher(async (reportIds: string[]) => {
 		.from(schema.chatMessage)
 		.where(inArray(schema.chatMessage.hiddenReportId, reportIds))
 		.orderBy(asc(schema.chatMessage.createdAt));
-	const byReport = new Map<string, HiddenMessage[]>();
-	for (const { reportId, hiddenAt, hiddenReason, ...row } of rows) {
-		// the check constraint sets both together; a row without them was not hidden
-		if (!reportId || !hiddenAt || hiddenReason === null) continue;
-		byReport.set(reportId, [...(byReport.get(reportId) ?? []), { ...row, hiddenAt, hiddenReason }]);
-	}
-	return byReport;
+	return hiddenByReport(rows);
 });
 
 /**

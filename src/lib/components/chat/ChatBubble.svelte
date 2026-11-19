@@ -14,7 +14,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
-	import { hiddenState } from './hiddenMessages';
+	import ChatMessageText from './ChatMessageText.svelte';
 
 	interface Props {
 		messages: readonly {
@@ -77,7 +77,6 @@
 		]}
 	>
 		{#each messages as message, index (message.id)}
-			{@const shown = hiddenState(message)}
 			<div in:fly={enter} title={fullTime(message.createdAt)} data-testid="chat-message">
 				{#if index === 0 && author}
 					<span class={['mb-0.5 block text-xs font-semibold', look.author]}>{author}</span>
@@ -94,49 +93,7 @@
 						{m.chatAboutPaper()}
 					</a>
 				{/if}
-				{#if shown === 'placeholder'}
-					<p class="flex items-center gap-1.5 italic opacity-80" data-hidden="placeholder">
-						<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
-						{m.chatMessageHiddenPlaceholder()}
-					</p>
-				{:else if shown === 'evidence'}
-					<div
-						class="border-error/60 bg-base-100 text-base-content rounded-field border border-dashed p-2"
-						data-hidden="evidence"
-					>
-						<p class="text-error mb-1 flex items-center gap-1 text-xs font-semibold">
-							<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
-							{m.chatMessageHiddenBadge()}
-						</p>
-						<p class="break-words whitespace-pre-wrap">{message.body}</p>
-						<p class="mt-1.5 text-xs whitespace-pre-wrap">
-							<span class="font-medium">{m.chatHiddenReason()}:</span>
-							{message.hiddenReason ?? '–'}
-						</p>
-						<p class="text-base-content/60 text-xs">
-							{m.chatMessageHiddenBy({
-								name: message.hiddenByName ?? '–',
-								time: message.hiddenAt ? fullTime(message.hiddenAt) : ''
-							})}
-						</p>
-					</div>
-				{:else}
-					<div class="flex items-start gap-1">
-						<p class="min-w-0 flex-1 break-words whitespace-pre-wrap">{message.body}</p>
-						{#if onHide}
-							<button
-								type="button"
-								class="btn btn-ghost btn-xs btn-square -my-0.5 shrink-0 opacity-70 hover:opacity-100"
-								aria-label={m.chatHideMessage()}
-								title={m.chatHideMessage()}
-								onclick={() => onHide(message.id)}
-								data-testid="chat-message-hide"
-							>
-								<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
-							</button>
-						{/if}
-					</div>
-				{/if}
+				<ChatMessageText {message} onHide={onHide ? () => onHide(message.id) : undefined} />
 			</div>
 		{/each}
 		{#if lastWritten}
