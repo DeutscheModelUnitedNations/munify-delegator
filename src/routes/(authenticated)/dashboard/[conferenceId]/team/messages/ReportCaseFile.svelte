@@ -1,7 +1,7 @@
 <!--
 	@component
-	The case file of a reported chat, beside the chat itself: what was reported and by whom,
-	everybody of the chat by name and role (with the reports there were before, the switch that
+	The case file of a reported chat, beside the chat itself (which shows the reports where they
+	were filed): everybody of the chat by name and role (with the reports there were before, the switch that
 	takes them out of the chats between participants, a way to write to them and their card), and
 	the note that settles all of the chat's reports at once.
 -->
@@ -10,7 +10,6 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { CHAT_REPORT_NOTE_MAX_LENGTH } from '#lib/helpers/chat';
-	import { getLocale } from '#lib/paraglide/runtime';
 	import { m } from '#lib/paraglide/messages';
 	import ReportCasePerson from './ReportCasePerson.svelte';
 	import type { CaseReport } from './reportCases';
@@ -74,41 +73,34 @@
 			settling = false;
 		}
 	}
-
-	const dateTime = (date: Date | string) =>
-		new Date(date).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
-<div class="flex flex-col gap-3" data-testid="chat-case-file">
-	<section class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-box border p-4">
-		<h2 class="font-semibold">{m.chatCaseReports()}</h2>
-		<ul class="divide-base-300 flex flex-col divide-y">
-			{#each reports as report (report.id)}
-				<li class="flex flex-col gap-1 py-3 first:pt-0 last:pb-0" data-testid="chat-case-report">
-					<p class="text-sm whitespace-pre-wrap">{report.reason}</p>
-					<p class="text-base-content/70 text-xs">
-						{m.chatReportedBy({ name: report.reporterName ?? '–' })} · {dateTime(report.createdAt)}
-					</p>
-				</li>
-			{/each}
-		</ul>
-	</section>
+{#snippet heading(text: string)}
+	<h2 class="text-base-content/60 px-1 text-xs font-semibold tracking-wide uppercase">{text}</h2>
+{/snippet}
 
-	<section class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-box border p-4">
-		<h2 class="font-semibold">{m.chatCasePeople()}</h2>
-		<ul class="divide-base-300 flex flex-col divide-y" data-testid="chat-case-people">
-			{#each people as person (person.participantId)}
-				<ReportCasePerson {conferenceId} {person} />
-			{/each}
-		</ul>
-	</section>
+<!-- the note and the button that settles the case stay in reach while the file scrolls -->
+<div class="flex h-full min-h-0 flex-col" data-testid="chat-case-file">
+	<div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
+		<section class="flex flex-col gap-2">
+			{@render heading(m.chatCasePeople())}
+			<ul
+				class="bg-base-100 divide-base-content/10 flex flex-col divide-y rounded-box px-3"
+				data-testid="chat-case-people"
+			>
+				{#each people as person (person.participantId)}
+					<ReportCasePerson {conferenceId} {person} />
+				{/each}
+			</ul>
+		</section>
+	</div>
 
-	<section class="border-base-300 bg-base-100 flex flex-col gap-2.5 rounded-box border p-4">
-		<label class="font-semibold" for={noteId}>{m.chatCaseNote()}</label>
+	<section class="border-base-content/10 flex flex-col gap-2 border-t p-4">
+		<label class="text-sm font-semibold" for={noteId}>{m.chatCaseNote()}</label>
 		<textarea
 			id={noteId}
-			class="textarea w-full"
-			rows="3"
+			class="textarea bg-base-100 w-full"
+			rows="2"
 			maxlength={CHAT_REPORT_NOTE_MAX_LENGTH}
 			placeholder={m.chatCaseNotePlaceholder()}
 			bind:value={note}
@@ -123,6 +115,6 @@
 			<i aria-hidden="true" class="ph-duotone ph-check"></i>
 			{m.chatCaseSettle({ count: reports.length })}
 		</button>
-		<p class="text-base-content/70 text-xs">{m.chatCaseSettleHint()}</p>
+		<p class="text-base-content/60 text-xs">{m.chatCaseSettleHint()}</p>
 	</section>
 </div>

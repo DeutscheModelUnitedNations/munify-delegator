@@ -11,6 +11,8 @@ const sendSlackDirectMessage = vi.fn();
 const slackUserOf = vi.fn();
 const forgetSlackUsers = vi.fn();
 const announced = vi.fn();
+const inserted = vi.fn();
+const preferencesAnnounced = vi.fn();
 
 class SlackApiError extends Error {
 	constructor(
@@ -28,6 +30,14 @@ vi.mock('#api/db/db', () => ({
 			conference: { findFirst: findConference },
 			user: { findFirst: findUser }
 		},
+		insert: () => ({
+			values: (values: unknown) => ({
+				onConflictDoUpdate: (conflict: unknown) => {
+					inserted({ values, conflict });
+					return Promise.resolve();
+				}
+			})
+		}),
 		update: () => ({
 			set: (values: unknown) => ({
 				where: () => {
@@ -37,9 +47,12 @@ vi.mock('#api/db/db', () => ({
 			})
 		})
 	},
-	schema: { slackWorkspace: { id: 'id' } }
+	schema: { slackWorkspace: { id: 'id' }, notificationPreference: {} }
 }));
-vi.mock('#api/pubsub', () => ({ slackWorkspacePubsub: { updated: announced } }));
+vi.mock('#api/pubsub', () => ({
+	slackWorkspacePubsub: { updated: announced },
+	notificationPreferencePubsub: { updated: preferencesAnnounced }
+}));
 vi.mock('./notificationStore', () => ({ workspaceOfConference }));
 vi.mock('./slackApi', () => ({ SlackApiError, slackWorkspaceOf, sendSlackDirectMessage }));
 vi.mock('./slackToken', () => ({
@@ -48,8 +61,13 @@ vi.mock('./slackToken', () => ({
 }));
 vi.mock('./slackUsers', () => ({ slackUserOf, forgetSlackUsers }));
 
-const { botTokenSchema, sendSlackTestMessage, updateSlackWorkspace, workspaceNameSchema } =
-	await import('./notificationService');
+const {
+	botTokenSchema,
+	sendSlackTestMessage,
+	setAllNotificationPreferences,
+	updateSlackWorkspace,
+	workspaceNameSchema
+} = await import('./notificationService');
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -170,5 +188,46 @@ describe('sendSlackTestMessage', () => {
 		expect(await send()).toBe('UNAVAILABLE');
 		sendSlackDirectMessage.mockRejectedValue(new Error('boom'));
 		await expect(send()).rejects.toThrow('boom');
+	});
+});
+
+describe('setAllNotificationPreferences', () => {
+	const care = { id: 'm1', userId: 'u1', role: 'PARTICIPANT_CARE', functions: [] };
+	const chair = {
+		id: 'm2',
+		userId: 'u1',
+		role: 'MEMBER',
+		functions: [{ id: 'f1', committeeId: 'c1', kind: 'CHAIR' }]
+	};
+
+	test('writes every topic of every member, by mail and Slack, and announces it once', async () => {
+		await setAllNotificationPreferences({ members: [care, chair], enabled: false });
+		expect(inserted).toHaveBeenCalledOnce();
+		const { values } = inserted.mock.calls[0][0];
+		expect(values).toEqual(
+			[
+				['m1', 'PARTICIPANT_CARE', null],
+				['m1', 'CHAT_REPORT', null],
+				['m2', 'COMMITTEE_INBOX', 'f1']
+			].flatMap(([teamMemberId, topic, teamFunctionId]) =>
+				['EMAIL', 'SLACK'].map((channel) => ({
+					teamMemberId,
+					topic,
+					teamFunctionId,
+					channel,
+					enabled: false
+				}))
+			)
+		);
+		expect(preferencesAnnounced).toHaveBeenCalledOnce();
+	});
+
+	test('writes nothing for members without a topic', async () => {
+		await setAllNotificationPreferences({
+			members: [{ ...care, role: 'MEMBER' }],
+			enabled: true
+		});
+		expect(inserted).not.toHaveBeenCalled();
+		expect(preferencesAnnounced).not.toHaveBeenCalled();
 	});
 });

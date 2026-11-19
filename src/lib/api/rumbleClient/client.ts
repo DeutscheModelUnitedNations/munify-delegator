@@ -3530,6 +3530,10 @@ export type Mutation = {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
   }) => Committeeagendaitem,
+  setAllNotificationPreferences: (p: {
+    conferenceId?: ID | null | undefined,
+    enabled: Boolean
+  }) => Boolean,
   setAssignmentReleased: (p: {
     conferenceId: ID,
     released: Boolean

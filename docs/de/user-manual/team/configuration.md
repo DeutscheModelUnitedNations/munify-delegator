@@ -9,7 +9,7 @@ Diese Seite zeigt, wie das Konferenzteam eine Konferenz aufsetzt und pflegt: von
 
 ## Eine Konferenz anlegen {#creating-a-conference}
 
-Neue Konferenzen legen nur System-Admins an. Auf der Konferenzübersicht führt **Konferenz anlegen** zur Seite **Konferenz erstellen**.
+Neue Konferenzen legen nur System-Admins an. Auf der Seite **Konferenzen** und im Menü hinter deinen Initialen unter **Administration** führt **Konferenz anlegen** zur Seite **Konferenz erstellen**.
 
 1. Die Daten der Konferenz entstehen auf der Seite **Konferenzanfrage**, die **Konferenz erstellen** oben rechts verlinkt. Dort trägst du Eckdaten, Gremien mit ihren Staaten, nichtstaatliche Akteure und Einzelrollen ein. **Alle UN-Mitgliedstaaten hinzufügen** füllt ein Gremium mit allen Staaten. Die Seite speichert nichts auf dem Server, deine Eingaben bleiben nur in diesem Browser. Zeiten gelten in der Zeitzone Europe/Berlin. Am Ende lädst du das erzeugte JSON herunter.
 2. Ein\*e Admin wählt die Datei auf **Konferenz erstellen** aus. Sie wird sofort geprüft. Bei Fehlern erscheint **Validierung fehlgeschlagen** mit den betroffenen Stellen, etwa einem Staat, der kein UN-Mitglied ist, einem doppelten Kürzel oder einem Bewerbungsende nach dem Konferenzbeginn.

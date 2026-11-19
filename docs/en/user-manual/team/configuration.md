@@ -9,7 +9,7 @@ This page shows how the conference team sets up and maintains a conference: from
 
 ## Creating a conference {#creating-a-conference}
 
-Only system admins create new conferences. On the conference overview, **Create Conference** leads to the **Create Conference** page.
+Only system admins create new conferences. On the **Conferences** page and in the menu behind your initials under **Administration**, **Create Conference** leads to the **Create Conference** page.
 
 1. The conference's data comes from the **Conference Request** page, linked at the top right of **Create Conference**. There you enter the basic details, the committees with their nations, the non-state actors and the individual roles. **Add all UN member states** fills a committee with every state. The page saves nothing on the server, your input stays in this browser only. Times are read in the Europe/Berlin time zone. At the end you download the generated JSON.
 2. An admin selects the file on **Create Conference**. It is checked right away. If something is wrong, **Validation Failed** appears with the places concerned, for example a state that is not a UN member, a duplicate abbreviation or an application deadline after the conference starts.

@@ -157,6 +157,54 @@ export function normalizeAudiences(audiences: readonly Audience[]): Audience[] {
 	return [...seen.values()];
 }
 
+/** What a seat brings with it: nobody is in these blocks without one. */
+const NEEDS_SEAT: readonly AudienceKind[] = ['COMMITTEE', 'ROLE', 'PAYMENT_OPEN', 'PAPERWORK_OPEN'];
+
+/**
+ * The kinds whose people are always all in another kind's block, at every stage of the
+ * conference: the audiences are read live, so an overlap only while people register would not
+ * hold once the seats are settled. `EVERYONE` covers whoever holds a seat (and so their
+ * committee, role and open paperwork); a committee is only ever a delegation member's.
+ */
+const COVERS: Partial<Record<AudienceKind, readonly AudienceKind[]>> = {
+	EVERYONE: ['SEATED', ...NEEDS_SEAT],
+	SEATED: NEEDS_SEAT,
+	DELEGATES: ['COMMITTEE']
+};
+
+/** Whether everybody in `inner` is always in `outer` too, so picking both adds nobody. */
+export function audienceCovers({ outer, inner }: { outer: Audience; inner: Audience }) {
+	if (outer.kind === 'TEAM') return inner.kind === 'TEAM' && !outer.teamRole && !!inner.teamRole;
+	return COVERS[outer.kind]?.includes(inner.kind) ?? false;
+}
+
+/** The picked block that already holds everybody of `audience`, if any. */
+export function coveringAudience({
+	audience,
+	audiences
+}: {
+	audience: Audience;
+	audiences: readonly Audience[];
+}) {
+	return audiences.find((outer) => audienceCovers({ outer, inner: audience }));
+}
+
+/**
+ * The blocks with `audience` added, without the ones it now covers. Returns them apart, so the
+ * editor can say what went.
+ */
+export function addAudience({
+	audience,
+	audiences
+}: {
+	audience: Audience;
+	audiences: readonly Audience[];
+}) {
+	const removed = audiences.filter((inner) => audienceCovers({ outer: audience, inner }));
+	const kept = audiences.filter((inner) => !removed.includes(inner));
+	return { audiences: normalizeAudiences([...kept, audience]), removed };
+}
+
 /** A block as the API takes it: only what its kind uses. */
 export function audienceInput(audience: Audience) {
 	return {

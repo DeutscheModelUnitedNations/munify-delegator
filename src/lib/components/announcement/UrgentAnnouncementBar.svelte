@@ -27,30 +27,30 @@
 </script>
 
 {#if urgent}
-	<div
-		class="bg-error text-error-content flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-8"
-		role="status"
-		data-testid="urgent-announcement-bar"
-	>
-		<i aria-hidden="true" class="ph-fill ph-siren text-lg"></i>
-		<span class="min-w-0 flex-1 font-semibold break-words">
-			<span class="sr-only">{m.announcementImportanceUrgent()}: </span>{urgent.title}
-		</span>
-		<a
-			class="btn btn-sm"
-			href="{resolve('/(authenticated)/dashboard/[conferenceId]/announcements', {
-				conferenceId
-			})}#announcement-{urgent.id}"
+	<div class="bg-error text-error-content" role="status" data-testid="urgent-announcement-bar">
+		<div
+			class="mx-auto flex w-full max-w-[1800px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-8"
 		>
-			{m.announcementRead()}
-		</a>
-		<button
-			class="btn btn-ghost btn-sm btn-circle"
-			aria-label={m.announcementDismiss()}
-			title={m.announcementDismiss()}
-			onclick={() => markAnnouncementsRead({ conferenceId, ids: [urgent.id] })}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-x"></i>
-		</button>
+			<i aria-hidden="true" class="ph-fill ph-siren text-lg"></i>
+			<span class="min-w-0 flex-1 font-semibold break-words">
+				<span class="sr-only">{m.announcementImportanceUrgent()}: </span>{urgent.title}
+			</span>
+			<a
+				class="btn btn-sm"
+				href="{resolve('/(authenticated)/dashboard/[conferenceId]/announcements', {
+					conferenceId
+				})}#announcement-{urgent.id}"
+			>
+				{m.announcementRead()}
+			</a>
+			<button
+				class="btn btn-ghost btn-sm btn-circle"
+				aria-label={m.announcementDismiss()}
+				title={m.announcementDismiss()}
+				onclick={() => markAnnouncementsRead({ conferenceId, ids: [urgent.id] })}
+			>
+				<i aria-hidden="true" class="ph-duotone ph-x"></i>
+			</button>
+		</div>
 	</div>
 {/if}

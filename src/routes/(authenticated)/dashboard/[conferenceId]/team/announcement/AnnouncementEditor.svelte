@@ -74,6 +74,29 @@
 	let added = $state<File[]>([]);
 	let saving = $state(false);
 	const savedMessage = seed ? m.saved() : m.announcementSavedAsDraft();
+	const fieldId = $props.id();
+
+	/** The importances in rising order, coloured as the card shows them. */
+	const IMPORTANCES: readonly {
+		value: AnnouncementImportance;
+		label: () => string;
+		icon: string;
+		tone: string;
+	}[] = [
+		{
+			value: 'NORMAL',
+			label: m.announcementImportanceNormal,
+			icon: 'ph-megaphone',
+			tone: 'btn-info'
+		},
+		{
+			value: 'IMPORTANT',
+			label: m.announcementImportanceImportant,
+			icon: 'ph-warning-circle',
+			tone: 'btn-warning'
+		},
+		{ value: 'URGENT', label: m.announcementImportanceUrgent, icon: 'ph-siren', tone: 'btn-error' }
+	];
 
 	const titleError = $derived(announcementTextSchema.title.safeParse(title).error?.issues[0]);
 	const bodyError = $derived(announcementTextSchema.body.safeParse(body).error?.issues[0]);
@@ -130,13 +153,15 @@
 </script>
 
 <Modal bind:open fullWidth title={seed ? m.announcementEditTitle() : m.announcementNewTitle()}>
-	<div class="grid grid-cols-1 gap-4 xl:grid-cols-2" data-testid="announcement-editor">
-		<div class="flex min-w-0 flex-col gap-4">
-			<FormFieldset title={m.announcementText()}>
-				<label class="flex flex-col gap-1">
-					<span class="label-text">{m.announcementTitleLabel()}</span>
+	<div class="flex flex-col gap-6" data-testid="announcement-editor">
+		<!-- what it says beside how it reads; who gets it and how loud below -->
+		<div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+			<FormFieldset plain title={m.announcementText()}>
+				{#snippet icon()}<i aria-hidden="true" class="ph-duotone ph-text-aa text-sm"></i>{/snippet}
+				<label class="flex flex-col gap-1.5">
+					<span class="text-sm font-medium">{m.announcementTitleLabel()}</span>
 					<input
-						class="input w-full"
+						class="input w-full font-semibold"
 						maxlength={MAX_ANNOUNCEMENT_TITLE}
 						aria-invalid={touched && !!titleError}
 						bind:value={title}
@@ -147,10 +172,10 @@
 						<span class="text-error text-sm">{titleError.message}</span>
 					{/if}
 				</label>
-				<label class="mt-3 flex flex-col gap-1">
-					<span class="label-text">{m.announcementBodyLabel()}</span>
+				<label class="flex flex-col gap-1.5">
+					<span class="text-sm font-medium">{m.announcementBodyLabel()}</span>
 					<textarea
-						class="textarea h-56 w-full font-mono text-sm"
+						class="textarea h-64 w-full leading-relaxed"
 						maxlength={MAX_ANNOUNCEMENT_BODY}
 						aria-invalid={touched && !!bodyError}
 						placeholder={m.markdownSupportedPlaceholder()}
@@ -160,10 +185,13 @@
 					{#if touched && bodyError}
 						<span class="text-error text-sm">{bodyError.message}</span>
 					{/if}
-					<span class="text-base-content/60 text-xs">{m.announcementMarkdownHint()}</span>
+					<span class="text-base-content/60 flex items-center gap-1.5 text-xs">
+						<i aria-hidden="true" class="ph-duotone ph-markdown-logo text-sm"></i>
+						{m.announcementMarkdownHint()}
+					</span>
 				</label>
-				<label class="mt-3 flex flex-col gap-1">
-					<span class="label-text">{m.announcementSignatureLabel()}</span>
+				<label class="flex flex-col gap-1.5">
+					<span class="text-sm font-medium">{m.announcementSignatureLabel()}</span>
 					<input
 						class="input w-full"
 						maxlength={MAX_ANNOUNCEMENT_SIGNATURE}
@@ -172,42 +200,95 @@
 						data-testid="announcement-signature"
 					/>
 				</label>
+				<AttachmentPicker bind:kept bind:added />
 			</FormFieldset>
 
-			<FormFieldset title={m.announcementAudience()}>
+			<!-- stays in sight while the text beside it grows -->
+			<section class="flex min-w-0 flex-col gap-3 self-start xl:sticky xl:top-0">
+				<h3
+					class="text-base-content/60 flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase"
+				>
+					<i aria-hidden="true" class="ph-duotone ph-eye text-sm"></i>
+					{m.preview()}
+				</h3>
+				<AnnouncementCard
+					title={title || m.announcementTitleLabel()}
+					{body}
+					{importance}
+					{pinned}
+					signature={signature.trim() || null}
+					attachments={kept}
+					expanded
+				/>
+			</section>
+		</div>
+
+		<div class="border-base-content/10 grid grid-cols-1 gap-6 border-t pt-6 xl:grid-cols-2">
+			<FormFieldset plain title={m.announcementAudience()}>
+				{#snippet icon()}<i aria-hidden="true" class="ph-duotone ph-users-three text-sm"
+					></i>{/snippet}
 				<AudiencePicker {conferenceId} bind:audiences {lookups} />
 			</FormFieldset>
 
-			<FormFieldset title={m.announcementOptions()}>
-				<label class="flex flex-col gap-1">
-					<span class="label-text">{m.announcementImportance()}</span>
-					<select
-						class="select w-full"
-						bind:value={importance}
+			<FormFieldset plain title={m.announcementOptions()}>
+				{#snippet icon()}<i aria-hidden="true" class="ph-duotone ph-sliders-horizontal text-sm"
+					></i>{/snippet}
+				<div class="flex flex-col gap-1.5">
+					<span class="text-sm font-medium" id="{fieldId}-importance">
+						{m.announcementImportance()}
+					</span>
+					<div
+						class="join w-full"
+						role="radiogroup"
+						aria-labelledby="{fieldId}-importance"
 						data-testid="announcement-importance"
 					>
-						<option value="NORMAL">{m.announcementImportanceNormal()}</option>
-						<option value="IMPORTANT">{m.announcementImportanceImportant()}</option>
-						<option value="URGENT">{m.announcementImportanceUrgent()}</option>
-					</select>
+						{#each IMPORTANCES as option (option.value)}
+							<label
+								class={[
+									'join-item btn btn-sm has-focus-visible:outline-base-content flex-1 gap-1.5 has-focus-visible:outline-2',
+									importance === option.value ? option.tone : 'btn-soft'
+								]}
+							>
+								<input
+									type="radio"
+									class="sr-only"
+									name="{fieldId}-importance"
+									value={option.value}
+									bind:group={importance}
+								/>
+								<i aria-hidden="true" class="ph-duotone {option.icon}"></i>
+								{option.label()}
+							</label>
+						{/each}
+					</div>
 					<span class="text-base-content/60 text-xs">{m.announcementImportanceHint()}</span>
-				</label>
-				<label class="label mt-3 cursor-pointer justify-start gap-3 whitespace-normal">
-					<input type="checkbox" class="toggle toggle-primary shrink-0" bind:checked={pinned} />
-					<span>{m.announcementPinLabel()}</span>
-				</label>
-				<label class="label mt-2 cursor-pointer justify-start gap-3 whitespace-normal">
+				</div>
+				<label class="flex cursor-pointer items-start gap-3">
 					<input
 						type="checkbox"
-						class="toggle toggle-primary shrink-0"
+						class="toggle toggle-primary toggle-sm mt-0.5 shrink-0"
+						bind:checked={pinned}
+					/>
+					<span class="flex flex-col gap-0.5">
+						<span class="text-sm font-medium">{m.announcementPinLabel()}</span>
+						<span class="text-base-content/60 text-xs">{m.announcementPinHint()}</span>
+					</span>
+				</label>
+				<label class="flex cursor-pointer items-start gap-3">
+					<input
+						type="checkbox"
+						class="toggle toggle-primary toggle-sm mt-0.5 shrink-0"
 						bind:checked={notifyByMail}
 						data-testid="announcement-notify"
 					/>
-					<span>{m.announcementNotifyLabel()}</span>
+					<span class="flex flex-col gap-0.5">
+						<span class="text-sm font-medium">{m.announcementNotifyLabel()}</span>
+						<span class="text-base-content/60 text-xs">{m.announcementNotifyHint()}</span>
+					</span>
 				</label>
-				<p class="text-base-content/60 text-xs">{m.announcementNotifyHint()}</p>
-				<label class="mt-3 flex flex-col gap-1">
-					<span class="label-text">{m.announcementVisibleUntil()}</span>
+				<label class="flex flex-col gap-1.5">
+					<span class="text-sm font-medium">{m.announcementVisibleUntil()}</span>
 					<input type="datetime-local" class="input w-full" bind:value={visibleUntil} />
 					<span class="text-base-content/60 text-xs">
 						{m.announcementVisibleUntilHint()}
@@ -215,23 +296,6 @@
 					</span>
 				</label>
 			</FormFieldset>
-
-			<FormFieldset title={m.announcementAttachments()}>
-				<AttachmentPicker bind:kept bind:added />
-			</FormFieldset>
-		</div>
-
-		<div class="flex min-w-0 flex-col gap-2">
-			<span class="label-text">{m.preview()}</span>
-			<AnnouncementCard
-				title={title || m.announcementTitleLabel()}
-				{body}
-				{importance}
-				{pinned}
-				signature={signature.trim() || null}
-				attachments={kept}
-				expanded
-			/>
 		</div>
 	</div>
 	{#snippet action()}

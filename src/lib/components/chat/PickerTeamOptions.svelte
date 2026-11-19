@@ -23,10 +23,12 @@
 
 {#if inboxes.length > 0 || delegation}
 	<section>
-		<h3 class="text-base-content/60 mb-1 px-1 text-xs font-semibold tracking-wide uppercase">
+		<h3
+			class="bg-base-100 text-base-content/60 sticky top-0 z-10 px-1 py-1.5 text-xs font-semibold tracking-wide uppercase"
+		>
 			{m.chatGroupTeamAndDelegation()}
 		</h3>
-		<ul class="flex flex-col">
+		<ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 			{#if delegation}
 				<li>
 					<PickerOption

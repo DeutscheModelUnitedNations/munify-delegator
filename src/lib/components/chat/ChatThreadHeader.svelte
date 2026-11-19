@@ -1,8 +1,8 @@
 <!--
 	@component
 	The head of an open chat: who it is with, and what the caller can do about it. A participant
-	blocks or reports a chat with other participants; the team and participant care open the user
-	cards of the people in it, and whoever answers its inbox files it in the archive.
+	blocks or reports a chat with other participants; whoever answers its inbox opens the user cards
+	of the people in it and files it in the archive.
 -->
 <script lang="ts">
 	import type { OpenChat } from '#lib/api/chats';
@@ -26,7 +26,7 @@
 	const asParticipant = $derived(side === 'PARTICIPANT');
 </script>
 
-<header class="border-base-300 flex items-center gap-3 border-b px-3 py-2.5 sm:px-4">
+<header class="border-base-content/10 flex items-center gap-3 border-b px-3 py-2.5 sm:px-4">
 	{#if onBack}
 		<button
 			type="button"
@@ -43,16 +43,15 @@
 		<p class="text-base-content/60 truncate text-xs">{chatSubtitle(chat) ?? kindHint(chat)}</p>
 	</div>
 
-	{#if !asParticipant}
+	<!-- reviewing, the case file beside the chat already names everybody with their card -->
+	{#if side === 'TEAM'}
 		<div class="flex shrink-0 gap-1">
 			{#each chat.people as person (person.participantId)}
 				<UserCardButton userId={person.userId} name={person.name} />
 			{/each}
-			{#if side === 'TEAM'}
-				<ChatArchiveButton chatId={chat.id} archived={chat.archived} onArchived={onBack} />
-			{/if}
+			<ChatArchiveButton chatId={chat.id} archived={chat.archived} onArchived={onBack} />
 		</div>
-	{:else if chat.kind !== 'TEAM'}
+	{:else if asParticipant && chat.kind !== 'TEAM'}
 		<ChatThreadMenu
 			chatId={chat.id}
 			direct={chat.kind === 'DIRECT'}

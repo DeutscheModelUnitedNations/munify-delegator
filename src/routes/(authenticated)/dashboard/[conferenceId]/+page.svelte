@@ -13,6 +13,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import AgeNotice from '#lib/components/registration/AgeNotice.svelte';
 	import type { AgeRole } from '#lib/helpers/plausibilityRules';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
 
 	let { params }: PageProps = $props();
 
@@ -40,6 +41,7 @@
 	let supervisor = $derived(participation?.supervisor);
 	let teamMember = $derived(participation?.teamMember);
 	let status = $derived(participation?.participantStatus ?? null);
+	const teamRoles = $derived(teamMember ? [translateTeamRole(teamMember.role)] : []);
 	const conferenceId = $derived(params.conferenceId);
 
 	// Registered people hear about an age outside the range until the conference is over.
@@ -80,7 +82,12 @@
 	{:else}
 		<div class="flex w-full flex-col gap-10">
 			{#if conference}
-				<DashboardConferenceOverview {conferenceId} userId={currentUser.sub} {hasAssignedRole}>
+				<DashboardConferenceOverview
+					{conferenceId}
+					userId={currentUser.sub}
+					{hasAssignedRole}
+					{teamRoles}
+				>
 					{#snippet afterHeader()}
 						<ParticipantQuickLinks
 							{conferenceId}

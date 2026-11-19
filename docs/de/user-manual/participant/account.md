@@ -65,7 +65,7 @@ Unter **Konferenzen** (oben links auf das Logo klicken oder im Menü auf **Dashb
 
 - **Deine Konferenzen** stehen ganz oben: alle, an denen du teilnimmst und die noch nicht vorbei sind. Jede Karte zeigt deine Rolle dort.
 - Darunter folgen die übrigen, gruppiert nach ihrem Stand: **Aktive Konferenzen**, **Bewerbung offen**, **In Vorbereitung**, **Kommende Konferenzen** und **Vergangene Konferenzen**. Vergangene Konferenzen stehen immer hier, auch die, an denen du teilgenommen hast.
-- Jede Karte nennt Datum, Ort und **Konferenzsprache**. Kannst du dich bewerben oder auf die Warteliste setzen, steht darauf **Bewerben**, sonst **Zum Dashboard**.
+- Jede Karte nennt Datum, Ort und **Konferenzsprache**. Kannst du dich bewerben oder auf die Warteliste setzen, steht darauf **Bewerben**, sonst **Zur Übersicht**.
 
 ## Ohne Anmeldung {#without-signing-in}
 

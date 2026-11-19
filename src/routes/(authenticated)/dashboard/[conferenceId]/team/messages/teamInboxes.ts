@@ -100,36 +100,6 @@ export function inboxesOf({
 	return [...(cares ? [care] : []), ...(trusted ? TRUSTED : []), ...held.sort(byCommittee)];
 }
 
-/** One entry of the inbox menu: an inbox, or a committee holding several of them. */
-export type InboxMenuEntry =
-	| { kind: 'inbox'; inbox: TeamInbox }
-	| { kind: 'committee'; abbreviation: string; inboxes: TeamInbox[] };
-
-/**
- * The inboxes as the team menu nests them: those without a committee first, then the committees,
- * one with a single inbox as that inbox, one with several as a group to fold.
- */
-export function inboxMenu(inboxes: readonly TeamInbox[]): InboxMenuEntry[] {
-	const groups = new Map<string, TeamInbox[]>();
-	const plain: InboxMenuEntry[] = [];
-	for (const inbox of inboxes) {
-		if (inbox.committeeAbbreviation === null) plain.push({ kind: 'inbox', inbox });
-		else {
-			groups.set(inbox.committeeAbbreviation, [
-				...(groups.get(inbox.committeeAbbreviation) ?? []),
-				inbox
-			]);
-		}
-	}
-	const committees = [...groups.entries()].map(([abbreviation, own]): InboxMenuEntry => {
-		const [only] = own;
-		return own.length === 1 && only
-			? { kind: 'inbox', inbox: only }
-			: { kind: 'committee', abbreviation, inboxes: own };
-	});
-	return [...plain, ...committees];
-}
-
 /** How much of each inbox is unread, by its key. */
 export function unreadByInbox(
 	chats: readonly {

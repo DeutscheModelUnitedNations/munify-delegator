@@ -5,11 +5,12 @@
 	one is open; the thread fetches itself.
 -->
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import type { ChatSummary } from '#lib/api/chats';
 	import { m } from '#lib/paraglide/messages';
 	import ChatList from './ChatList.svelte';
 	import ChatThreadBoundary from './ChatThreadBoundary.svelte';
+	import { chatViewTransition } from './chatViewTransition';
 
 	interface Props {
 		chats: readonly ChatSummary[];
@@ -20,10 +21,19 @@
 		listHeader?: Snippet;
 		/** Instead of the list while there is no chat */
 		emptyList?: Snippet;
-		/** Under the list: settings */
+		/** Under the list */
 		listFooter?: Snippet;
+		/** Beside the list while no chat is open, instead of the hint to pick one */
+		noSelection?: Snippet;
+		/** Takes its height from the page (a flex child) instead of guessing it from the window */
+		fill?: boolean;
 		paperId?: string | null;
 		onPaperSent?: () => void;
+		/**
+		 * The chat on screen, which follows `selectedId` once its view transition swaps it in. Bind it
+		 * where the page around steps back for an open chat, so that moves along with the transition.
+		 */
+		shownId?: string | null;
 	}
 
 	let {
@@ -34,21 +44,36 @@
 		listHeader,
 		emptyList,
 		listFooter,
+		noSelection,
+		fill = false,
 		paperId = null,
-		onPaperSent
+		onPaperSent,
+		shownId = $bindable(untrack(() => selectedId))
 	}: Props = $props();
+
+	$effect(() => {
+		const next = selectedId;
+		const current = untrack(() => shownId);
+		if (next === current) return;
+		chatViewTransition({
+			direction: !current ? 'open' : !next ? 'back' : 'switch',
+			update: () => (shownId = next)
+		});
+	});
 </script>
 
 <div
 	class={[
-		'chat-workspace border-base-300 bg-base-100 grid overflow-hidden rounded-box border shadow-sm',
+		// surfaces instead of frame lines: a tinted list column beside the plain thread
+		'chat-workspace bg-base-100 ring-base-content/10 grid overflow-hidden rounded-box ring-1',
+		fill ? 'min-h-96 flex-1' : 'sized',
 		// on a phone an open chat takes the screen: the page around it steps back
-		selectedId && 'chat-open'
+		shownId && 'chat-open'
 	]}
 	data-testid="chat-workspace"
 >
 	<aside
-		class={['border-base-300 flex min-h-0 flex-col md:border-r', selectedId && 'max-md:hidden']}
+		class={['chat-list-pane bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
 		aria-label={m.chatListLabel()}
 	>
 		{@render listHeader?.()}
@@ -62,16 +87,18 @@
 		{@render listFooter?.()}
 	</aside>
 
-	<div class={['min-h-0 min-w-0', !selectedId && 'max-md:hidden']}>
-		{#if selectedId}
-			{#key selectedId}
+	<div class={['chat-thread-pane min-h-0 min-w-0', !shownId && 'max-md:hidden']}>
+		{#if shownId}
+			{#key shownId}
 				<ChatThreadBoundary
-					chatId={selectedId}
+					chatId={shownId}
 					onBack={() => onSelect(null)}
 					{paperId}
 					{onPaperSent}
 				/>
 			{/key}
+		{:else if noSelection}
+			{@render noSelection()}
 		{:else}
 			<div
 				class="text-base-content/60 flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
@@ -85,13 +112,13 @@
 
 <style>
 	/* Fills the window below the page's header, and never gets too short to read a chat in. */
-	.chat-workspace {
+	.sized {
 		--around: 18rem;
 		height: max(24rem, calc(100dvh - var(--header-height, 4rem) - var(--around)));
 	}
 
 	@media (width < 48rem) {
-		.chat-workspace.chat-open {
+		.sized.chat-open {
 			height: calc(100dvh - var(--header-height, 4rem) - 2.5rem);
 		}
 	}
@@ -99,6 +126,9 @@
 	@media (width >= 48rem) {
 		.chat-workspace {
 			grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+		}
+
+		.sized {
 			height: max(28rem, calc(100dvh - var(--header-height, 4rem) - var(--around)));
 		}
 	}

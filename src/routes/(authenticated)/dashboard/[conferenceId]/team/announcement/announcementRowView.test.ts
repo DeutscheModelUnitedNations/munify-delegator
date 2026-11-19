@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { overwriteGetLocale } from '#lib/paraglide/runtime';
-import { rowActions, rowBadges, rowFacts, rowView, type RowFacts } from './announcementRowView';
+import {
+	rowActions,
+	rowBadges,
+	rowCells,
+	rowFacts,
+	rowView,
+	splitActions,
+	type RowFacts
+} from './announcementRowView';
 
 const row: RowFacts = {
 	importance: 'NORMAL',
@@ -76,6 +84,45 @@ describe('rowFacts', () => {
 	});
 });
 
+describe('rowCells', () => {
+	const cells = (state: Parameters<typeof rowCells>[0]['state'], overrides = {}) =>
+		rowCells({ row: { ...row, ...overrides }, state, shortDate: dateTime });
+
+	test('once out: how many of how many read it, and the share for the bar', () => {
+		expect(cells('PUBLISHED', { readCount: 3, recipientCount: 12 }).reach).toEqual({
+			read: 3,
+			total: 12,
+			share: 0.25
+		});
+		expect(cells('EXPIRED', { recipientCount: 0 }).reach.share).toBeNull();
+	});
+
+	test('before it is out only whom it would reach counts', () => {
+		expect(cells('DRAFT').reach).toEqual({ read: null, total: 12, share: null });
+		expect(cells('SCHEDULED').reach.read).toBeNull();
+	});
+
+	test('names its dates short and its author, or nothing where there is none', () => {
+		const dated = cells('PUBLISHED', {
+			publishAt: '2027-03-01T08:00:00Z',
+			visibleUntil: '2027-03-05T08:00:00Z',
+			editedAt: '2027-03-02T08:00:00Z'
+		});
+		expect(dated).toMatchObject({
+			when: '<2027-03-01>',
+			until: '<2027-03-05>',
+			edited: true,
+			author: 'Ada Lovelace'
+		});
+		expect(cells('DRAFT', { author: null })).toMatchObject({
+			when: null,
+			until: null,
+			edited: false,
+			author: null
+		});
+	});
+});
+
 describe('rowActions', () => {
 	const actionsOf = (state: Parameters<typeof rowActions>[0]['state'], mail = false) =>
 		rowActions({ row: { ...row, notifyByMail: mail }, state }).map(({ action }) => action);
@@ -136,7 +183,7 @@ describe('rowView', () => {
 		expect(view).toMatchObject({ id: 'a1', title: 'Raumwechsel', state: 'PUBLISHED' });
 		expect(view.audiences).toEqual([{ id: 'au1', label: expect.stringContaining('GV') }]);
 		expect(view.actions.map(({ action }) => action)).toContain('withdraw');
-		expect(view.facts.map(({ key }) => key)).toContain('reach');
+		expect(view.facts.reach).toMatch(/5.*12/);
 		// nothing in it refers back to the row it was read from
 		expect(structuredClone(view)).toEqual(view);
 	});
@@ -145,5 +192,24 @@ describe('rowView', () => {
 		expect(rowView({ row: { ...listed, state: 'NEW_STATE' }, lookups, dateTime }).state).toBe(
 			'DRAFT'
 		);
+	});
+});
+
+describe('splitActions', () => {
+	const split = (state: Parameters<typeof rowActions>[0]['state']) => {
+		const { inline, more } = splitActions(rowActions({ row, state }));
+		return { inline: inline.map(({ action }) => action), more: more.map(({ action }) => action) };
+	};
+
+	test('going out stays in sight, editing is the row, the rest waits in the menu', () => {
+		expect(split('DRAFT').inline).toEqual(['publish']);
+		expect(split('PUBLISHED').inline).toEqual([]);
+		expect(split('PUBLISHED').more).toEqual([
+			'withdraw',
+			'test-mail',
+			'duplicate',
+			'archive',
+			'delete'
+		]);
 	});
 });

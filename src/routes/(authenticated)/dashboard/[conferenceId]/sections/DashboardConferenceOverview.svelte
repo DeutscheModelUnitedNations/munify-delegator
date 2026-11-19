@@ -13,9 +13,11 @@
 		hasAssignedRole: boolean;
 		/** Shown right under the header, before everything else: the caller's quick links. */
 		afterHeader?: Snippet;
+		/** The caller's team roles, already translated, shown beside the title */
+		teamRoles?: string[];
 	}
 
-	let { conferenceId, userId, hasAssignedRole, afterHeader }: Props = $props();
+	let { conferenceId, userId, hasAssignedRole, afterHeader, teamRoles }: Props = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
@@ -41,6 +43,7 @@
 	endDate={conference.endConference}
 	emblemUrl={conference.emblemFile?.url}
 	logoUrl={conference.logoFile?.url}
+	{teamRoles}
 />
 {@render afterHeader?.()}
 {#if userId}

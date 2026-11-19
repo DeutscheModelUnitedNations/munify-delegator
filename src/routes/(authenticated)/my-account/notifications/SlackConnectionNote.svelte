@@ -40,16 +40,16 @@
 </script>
 
 <div
-	class="bg-base-200 rounded-box flex flex-wrap items-center gap-3 p-3 text-sm"
+	class="text-base-content/70 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
 	data-testid="slack-connection"
 	data-connection={connection ?? 'NONE'}
 >
-	<i aria-hidden="true" class="ph-duotone ph-slack-logo text-xl"></i>
+	<i aria-hidden="true" class="ph-duotone ph-slack-logo text-base"></i>
 	{#if !workspaceName}
 		<span class="flex-1">{m.slackNoWorkspaceNote()}</span>
 	{:else if connection === 'CONNECTED'}
 		<span class="flex-1">{m.slackConnectedNote({ workspace: workspaceName })}</span>
-		<button class="btn btn-ghost btn-sm" onclick={sendTest} disabled={sending}>
+		<button class="btn btn-ghost btn-xs" onclick={sendTest} disabled={sending}>
 			<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 			{m.slackSendTest()}
 		</button>

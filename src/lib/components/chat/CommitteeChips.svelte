@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import FilterChips from './FilterChips.svelte';
+	import FilterChips from '#lib/components/FilterChips.svelte';
 	import { OTHER_GROUP } from './contactGroups';
 
 	interface Props {
