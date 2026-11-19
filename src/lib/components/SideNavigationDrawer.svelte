@@ -61,7 +61,8 @@ waits for its data at most. -->
 	style:view-transition-name="team-nav"
 	data-sveltekit-preload-code="viewport"
 >
-	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: delegated from the buttons inside, which handle the keyboard themselves -->
+	<!-- Clicks are delegated from the buttons inside, which handle the keyboard themselves -->
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div
 		onclick={closeOnAction}
 		class="bg-base-100 rounded-box h-full w-60 overflow-y-auto px-3 py-2 shadow-lg sm:bg-transparent sm:shadow-none"
