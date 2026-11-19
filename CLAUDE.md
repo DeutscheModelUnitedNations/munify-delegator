@@ -73,7 +73,8 @@ bun run preview
         `team/` itself; the overview (`stages/TeamMember/TeamMemberDashboard.svelte`) is home.
       - `paperhub/` — outside `team/`, participants and supervisors use it too
     - `registration/` — registration flows
-  - `api/graphql/` — GraphQL endpoint; `auth/` — OIDC callbacks; `seats/`, `vc/`,
+  - `api/graphql/` — GraphQL endpoint; `api/health/` — liveness for the image's `HEALTHCHECK`
+    (rolling updates wait for it; checks nothing behind the server); `auth/` — OIDC callbacks; `seats/`, `vc/`,
     `validateCertificate/` — public; `id/` — target of signed-code links
 - `src/api/` — backend
   - `handlers/<entity>/` — one directory per entity, three files (after avv): `<entity>.ts` GraphQL
