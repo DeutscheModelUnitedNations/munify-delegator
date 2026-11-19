@@ -154,7 +154,7 @@
 			<p>{m.assignmentWeightingHint()}</p>
 		</div>
 		<!-- The descriptions here are long, so they get the full width instead of the default 50ch -->
-		<div class="[&_.label-text]:max-w-none">
+		<div class="[&_.label-text]:max-w-none" data-tour="team.assignmentWeighting.form">
 			<Form {form}>
 				<FormFieldset title={m.assignmentWeightsRating()}>
 					{#snippet icon()}<i aria-hidden="true" class="ph-duotone ph-star text-warning"
@@ -251,7 +251,10 @@
 		</div>
 	</div>
 	<aside class="flex shrink-0 flex-col gap-4 lg:w-96">
-		<div class="card bg-base-100 border-base-200 border shadow-sm">
+		<div
+			class="card bg-base-100 border-base-200 border shadow-sm"
+			data-tour="team.assignmentWeighting.examples"
+		>
 			<div class="card-body">
 				<h3 class="card-title text-base">{m.assignmentCostExamples()}</h3>
 				<p class="text-base-content/60 text-sm">{m.assignmentCostExamplesDescription()}</p>
@@ -267,7 +270,10 @@
 				</table>
 			</div>
 		</div>
-		<div class="card bg-base-100 border-base-200 border shadow-sm">
+		<div
+			class="card bg-base-100 border-base-200 border shadow-sm"
+			data-tour="team.assignmentWeighting.impact"
+		>
 			<div class="card-body">
 				<h3 class="card-title text-base">{m.assignmentImpactTitle()}</h3>
 				<p class="text-base-content/60 text-sm">{m.assignmentImpactDescription()}</p>

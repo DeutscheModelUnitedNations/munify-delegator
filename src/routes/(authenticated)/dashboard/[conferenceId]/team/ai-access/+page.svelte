@@ -61,13 +61,16 @@
 <div class="flex flex-col gap-6">
 	<p class="max-w-3xl opacity-70">{m.aiAccessIntro()}</p>
 
-	<div class="alert alert-info max-w-3xl">
+	<div class="alert alert-info max-w-3xl" data-tour="team.aiAccess.privacy">
 		<i aria-hidden="true" class="ph-duotone ph-shield-check"></i>
 		<span>{m.aiAccessPrivacy()}</span>
 	</div>
 
 	<FormFieldset title={m.aiAccess()}>
-		<label class="label cursor-pointer justify-start gap-3 whitespace-normal">
+		<label
+			class="label cursor-pointer justify-start gap-3 whitespace-normal"
+			data-tour="team.aiAccess.switch"
+		>
 			<input
 				type="checkbox"
 				class="toggle toggle-primary shrink-0"
@@ -83,15 +86,20 @@
 	<FormFieldset title={m.aiAccessConnectTitle()}>
 		{#if serverUrl}
 			<p class="text-sm">{m.aiAccessConnectHelp()}</p>
-			<code class="bg-base-100 rounded-box block w-full overflow-x-auto p-3 text-sm">
+			<code
+				class="bg-base-100 rounded-box block w-full overflow-x-auto p-3 text-sm"
+				data-tour="team.aiAccess.connect"
+			>
 				{serverUrl}
 			</code>
 		{:else}
-			<p class="text-sm opacity-70">{m.aiAccessNotConfigured()}</p>
+			<p class="text-sm opacity-70" data-tour="team.aiAccess.connect">
+				{m.aiAccessNotConfigured()}
+			</p>
 		{/if}
 	</FormFieldset>
 
-	<section class="flex flex-col gap-2">
+	<section class="flex flex-col gap-2" data-tour="team.aiAccess.log">
 		<h2 class="text-xl font-bold">{m.aiAccessLogTitle()}</h2>
 		<p class="text-sm opacity-70">{m.aiAccessLogDescription()}</p>
 		{#if entries.length === 0}

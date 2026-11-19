@@ -7,6 +7,7 @@
 
 <div
 	class="bg-base-200 flex flex-col items-center justify-center rounded-box p-6 text-center sm:p-12"
+	data-tour="team.calendar.no-days"
 >
 	<i aria-hidden="true" class="ph-fill ph-calendar-dots text-5xl opacity-50"></i>
 	<p class="mt-4 text-lg opacity-70">{m.calendarNoDays()}</p>

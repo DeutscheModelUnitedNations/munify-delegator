@@ -26,6 +26,8 @@ Was sich die Teilnehmenden ansehen, öffnest du von der Seite des Teams aus: **P
 
 Links listet die Navigation jede Seite, die du mit deiner Rolle öffnen darfst. Ganz oben steht der Name der Konferenz. Ein Klick darauf wechselt zu einer anderen Konferenz. Darunter führt **Übersicht** zur Übersicht der Konferenz. Dann folgen die Seiten für den Alltag (**Statistiken**, **Einstellungen**, **Plätze**, **Teilnehmende**, **Warteliste**, **Schulen**, **Teammanagement**, **Papier-Hub**), danach die aufklappbaren Gruppen **Arbeitsabläufe**, **Kommunikation** und **Wartung**. Ganz unten öffnet **Handbuch zu dieser Seite** in einem neuen Tab den passenden Abschnitt dieses Handbuchs, auf Seiten ohne eigenen Abschnitt heißt der Link **Handbuch**.
 
+Darunter startet **Tour starten** eine geführte Tour durch die Seite, auf der du gerade bist. Sie zeigt dir der Reihe nach, wofür die Seite da ist und wie ihre Teile funktionieren. Fast jede Seite des Teams hat eine. Dieselbe Tour startest du auch über das Fragezeichen in der Kopfzeile.
+
 Drei Einträge machen mit einem Punkt auf sich aufmerksam: **Nachrichten**, wenn ein Postfach, das du betreust, ungelesene Nachrichten hat oder ein gemeldeter Chat auf die Teilnehmendenbetreuung wartet, **Plausibilität**, solange mögliche Doppelkonten auf eine Entscheidung warten, und **Aufräumen**, solange vorgeschlagene Schulzusammenführungen offen sind.
 
 Was du siehst, hängt nur von deiner Rolle in **dieser** Konferenz ab. Eine Rolle in einer anderen Konferenz zählt hier nicht. Eine Seite, die du nicht öffnen darfst, fehlt in der Navigation und antwortet mit **Hier hast du keinen Zugriff**, auch wenn du ihre Adresse direkt aufrufst. Administrator\*innen des Systems dürfen jede Seite öffnen, auch ohne Platz im Team.

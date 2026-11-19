@@ -143,7 +143,7 @@
 {/snippet}
 
 <!-- Charts Section -->
-<div class="grid gap-4 lg:grid-cols-3">
+<div class="grid gap-4 lg:grid-cols-3" data-tour="team.surveyDetail.charts">
 	<!-- Participation Gauge -->
 	<div class="card bg-base-100 border-base-200 border shadow-sm">
 		<div class="card-body">
@@ -162,7 +162,7 @@
 {@render chartCard(m.answersOverTime(), timelineData.xAxisData.length > 0, lineChart)}
 
 <!-- Participant Lists -->
-<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-3" data-tour="team.surveyDetail.answers">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h3 class="text-lg font-bold">{m.answers()}</h3>
 		{#if canDistribute}
@@ -171,6 +171,7 @@
 				disabled={freeSeats === 0}
 				title={freeSeats === 0 ? m.surveyDistributeNoRoom() : undefined}
 				onclick={() => (distributeOpen = true)}
+				data-tour="team.surveyDetail.distribute"
 			>
 				<i aria-hidden="true" class="ph-duotone ph-shuffle"></i>
 				{m.surveyDistribute()}
@@ -196,7 +197,10 @@
 </div>
 
 <!-- Export Section -->
-<section class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5">
+<section
+	class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5"
+	data-tour="team.surveyDetail.export"
+>
 	<header class="flex items-center gap-3">
 		<div class="flex size-10 flex-none items-center justify-center rounded-field bg-primary/15">
 			<i aria-hidden="true" class="ph-duotone ph-file-arrow-down text-xl text-primary"></i>

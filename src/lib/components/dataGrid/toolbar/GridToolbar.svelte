@@ -33,7 +33,7 @@
 </script>
 
 <!-- On a phone the search takes a row of its own and the controls wrap below it. -->
-<div class="flex min-w-0 flex-wrap items-center gap-2">
+<div class="flex min-w-0 flex-wrap items-center gap-2" data-tour="grid.toolbar">
 	<SearchBox
 		value={grid.typedSearch}
 		busy={searchBusy}

@@ -28,7 +28,7 @@
 	let { nation, nonStateActor: nsa } = $derived(splitRole(paper.delegation.assignedRole));
 </script>
 
-<div class="card bg-base-200 border border-base-300">
+<div class="card bg-base-200 border border-base-300" data-tour="paperhub.paper.header">
 	<div class="card-body p-4">
 		<!-- Top Row: Country/NSA + Status -->
 		<div class="flex items-center justify-between gap-4 flex-wrap">
@@ -82,7 +82,7 @@
 				{/if}
 			</div>
 			{#if actions}
-				<div class="flex flex-wrap items-center gap-2">
+				<div class="flex flex-wrap items-center gap-2" data-tour="paperhub.paper.export">
 					{@render actions()}
 				</div>
 			{/if}

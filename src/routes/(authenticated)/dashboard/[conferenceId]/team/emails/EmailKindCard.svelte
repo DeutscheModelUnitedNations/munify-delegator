@@ -60,6 +60,7 @@
 	class="bg-base-100 rounded-box flex flex-col gap-3 border p-4 {changed
 		? 'border-warning'
 		: 'border-base-300'}"
+	data-tour="team.emails.kind"
 >
 	<div class="flex flex-wrap items-center gap-3">
 		<span class="font-semibold">{texts.title}</span>

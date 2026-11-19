@@ -26,6 +26,8 @@ What participants see you open from the team's page: **Seats** and **Calendar** 
 
 On the left, the navigation lists every page your role lets you open. At the very top is the conference's name. Clicking it switches to another conference. Below it, **Overview** leads to the conference's overview. Then come the everyday pages (**Statistics**, **Settings**, **Seats**, **Participants**, **Waiting List**, **Schools**, **Team Management**, **Paper Hub**), then the collapsible groups **Workflows**, **Communication** and **Maintenance**. At the very bottom, **Manual for this page** opens the matching section of this manual in a new tab. On pages without a section of their own the link reads **User manual**.
 
+Below it, **Take the tour** starts a guided tour of the page you are on. It shows you, one step at a time, what the page is for and how its parts work. Almost every team page has one. The question mark in the header starts the same tour.
+
 Three entries draw attention with a dot: **Messages** when an inbox you answer has unread messages or a reported chat waits for Participant Care, **Plausibility** while possible duplicate accounts wait for a decision, and **Cleanup** while suggested school merges are open.
 
 What you see depends only on your role in **this** conference. A role in another conference counts for nothing here. A page you may not open is missing from the navigation and answers with **You don't have access to this page.**, even when you call its address directly. System administrators may open every page, even without a place on the team.

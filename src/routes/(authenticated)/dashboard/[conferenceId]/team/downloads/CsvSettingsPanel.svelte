@@ -22,7 +22,10 @@
 	};
 </script>
 
-<div class="collapse collapse-arrow bg-base-100 border-base-200 border shadow-sm">
+<div
+	class="collapse collapse-arrow bg-base-100 border-base-200 border shadow-sm"
+	data-tour="team.downloads.csv-settings"
+>
 	<input type="checkbox" />
 	<div class="collapse-title px-6 py-5">
 		<div class="flex items-center gap-3">

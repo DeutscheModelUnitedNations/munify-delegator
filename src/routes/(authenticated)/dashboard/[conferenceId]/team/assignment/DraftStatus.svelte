@@ -23,7 +23,7 @@
 	const pending = $derived(pendingCount(rows));
 </script>
 
-<div class="flex flex-wrap items-center gap-2">
+<div class="flex flex-wrap items-center gap-2" data-tour="team.assignment.draft-status">
 	<a
 		class="badge {pending > 0 ? 'badge-warning' : 'badge-ghost'}"
 		href={resolve('/(authenticated)/dashboard/[conferenceId]/team/assignment/finish', {

@@ -73,6 +73,7 @@
 			type="button"
 			class="btn btn-primary btn-sm btn-square shrink-0"
 			onclick={() => (confirmSaveModalOpen = true)}
+			data-tour="team.emails.save"
 			disabled={pendingChanges.length === 0}
 			title={saveLabel}
 			aria-label={saveLabel}

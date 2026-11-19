@@ -250,7 +250,7 @@
 {#if days.length === 0}
 	<NoCalendarDays onAdd={onOpenDays} />
 {:else}
-	<div class="flex flex-wrap items-center justify-between gap-2">
+	<div class="flex flex-wrap items-center justify-between gap-2" data-tour="team.calendar.toolbar">
 		<p class="text-base-content/60 text-sm">
 			<i aria-hidden="true" class="ph-fill ph-hand-pointing"></i>
 			{m.calendarEditorHint()}
@@ -265,7 +265,7 @@
 
 	<!-- Its own scroll area, so with many days or tracks the horizontal scrollbar stays in view
 	     and the headers and the times stay put while scrolling -->
-	<div class="max-h-[calc(100dvh-12rem)] overflow-auto">
+	<div class="max-h-[calc(100dvh-12rem)] overflow-auto" data-tour="team.calendar.grid">
 		<div style="min-width: calc(3.5rem + {grid.totalUnits} * 9rem);">
 			<!-- Day and track headers -->
 			<div class="bg-base-100 sticky top-0 z-40 flex">

@@ -14,7 +14,7 @@
 	const params = useSeatPlanningParams();
 </script>
 
-<div class="flex flex-wrap items-center gap-2">
+<div class="flex flex-wrap items-center gap-2" data-tour="team.seatPlanning.filters">
 	<label class="input input-bordered flex grow items-center gap-2">
 		<i aria-hidden="true" class="ph-duotone ph-magnifying-glass"></i>
 		<input

@@ -45,6 +45,7 @@
 	class="bg-base-100 rounded-box flex flex-col gap-2 border p-4 {changes.pace
 		? 'border-warning'
 		: 'border-base-300'}"
+	data-tour="team.emails.pace"
 >
 	<div class="flex items-center gap-3">
 		<i aria-hidden="true" class="ph-duotone ph-gauge text-primary"></i>

@@ -253,9 +253,11 @@
 	{/if}
 {/snippet}
 
-{#snippet papersTable(groupId: string, papers: Paper[])}
+<!-- Only the table of the open agenda item carries the tour's anchor: closed ones are hidden -->
+{#snippet papersTable(groupId: string, papers: Paper[], open: boolean)}
 	<div class="px-2 pb-2">
 		<PaperTable
+			tourAnchor={open ? 'paperhub.team.table' : undefined}
 			papers={getSortedPapers({ agendaItemId: groupId, papers })}
 			sortable={true}
 			sortConfig={sortState.get(groupId)}
@@ -267,14 +269,14 @@
 	</div>
 {/snippet}
 
-<div class="flex flex-col gap-3 w-full">
+<div class="flex flex-col gap-3 w-full" data-tour="paperhub.view.team">
 	<!-- Status overview, with the focus mode and snippets as controls in its header -->
 	<!-- fallow-ignore-next-line complexity -->
 	{#if !papersLoading && groupedPapers?.length}
 		<div class="card bg-base-200 p-4 flex flex-col gap-4">
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<h2 class="font-semibold">{m.paperStatusOverview()}</h2>
-				<div class="flex flex-wrap items-center gap-2">
+				<div class="flex flex-wrap items-center gap-2" data-tour="paperhub.team.controls">
 					<div class="tooltip tooltip-left" data-tip={m.focusModeDescription()}>
 						<label class="flex cursor-pointer items-center gap-2 text-sm">
 							<i aria-hidden="true" class="ph-duotone ph-target text-primary"></i>
@@ -303,7 +305,11 @@
 		</div>
 	{/if}
 
-	<div role="tablist" class="tabs tabs-border max-sm:flex-nowrap max-sm:overflow-x-auto">
+	<div
+		role="tablist"
+		class="tabs tabs-border max-sm:flex-nowrap max-sm:overflow-x-auto"
+		data-tour="paperhub.team.sections"
+	>
 		{#each sectionTabs as tab (tab.id)}
 			<button
 				role="tab"
@@ -320,72 +326,85 @@
 
 	{#if section === 'papers'}
 		<PaperGroupsState loading={papersLoading} error={snapshot.error} empty={!groupedPapers?.length}>
-			{#each groupedPapers ?? [] as committeeGroup (committeeGroup.committee.id)}
-				{@const committeePapers = committeeGroup.agendaItems.flatMap((ai) => ai.papers)}
-				{@const helpNeededCount = committeeGroup.agendaItems.filter(
-					(ai) => helpStatusOf(ai.agendaItem) === 'HELP_NEEDED'
-				).length}
+			<div class="flex flex-col gap-3" data-tour="paperhub.team.papers">
+				{#each groupedPapers ?? [] as committeeGroup (committeeGroup.committee.id)}
+					{@const committeePapers = committeeGroup.agendaItems.flatMap((ai) => ai.papers)}
+					{@const helpNeededCount = committeeGroup.agendaItems.filter(
+						(ai) => helpStatusOf(ai.agendaItem) === 'HELP_NEEDED'
+					).length}
 
-				<CommitteePaperGroup committee={committeeGroup.committee} {openGroup}>
-					{#snippet aside()}
-						<div class="flex items-center gap-2">
-							{#if helpNeededCount > 0}
-								<div
-									class="tooltip tooltip-warning tooltip-left"
-									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
-								>
-									<div class="flex items-center gap-1 text-sm font-semibold text-warning">
-										<i aria-hidden="true" class="ph-duotone ph-hand"></i>
-										{helpNeededCount}
+					<CommitteePaperGroup committee={committeeGroup.committee} {openGroup}>
+						{#snippet aside()}
+							<div class="flex items-center gap-2">
+								{#if helpNeededCount > 0}
+									<div
+										class="tooltip tooltip-warning tooltip-left"
+										data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
+									>
+										<div class="flex items-center gap-1 text-sm font-semibold text-warning">
+											<i aria-hidden="true" class="ph-duotone ph-hand"></i>
+											{helpNeededCount}
+										</div>
 									</div>
-								</div>
-							{/if}
-							{@render statusSummary(committeePapers, 'sm')}
+								{/if}
+								{@render statusSummary(committeePapers, 'sm')}
+							</div>
+						{/snippet}
+
+						<!-- Agenda Items (expanded) -->
+						<div>
+							{#each committeeGroup.agendaItems as agendaItemGroup (agendaItemGroup.agendaItem.id)}
+								{@const agendaItem = agendaItemGroup.agendaItem}
+								{@const helpStatus = helpStatusOf(agendaItem)}
+								<AgendaItemPaperGroup {agendaItem} {openGroup}>
+									{#snippet leading()}
+										<!-- Review Help Status Toggle -->
+										<ReviewHelpStatusToggle
+											status={helpStatus}
+											tourAnchor={openGroup.committee === committeeGroup.committee.id
+												? 'paperhub.team.help-status'
+												: undefined}
+											onCycle={() =>
+												cycleReviewHelpStatus({
+													agendaItemId: agendaItem.id,
+													currentStatus: helpStatus
+												})}
+										/>
+									{/snippet}
+									{#snippet aside()}
+										<div class="flex items-center gap-2">
+											{@render statusSummary(agendaItemGroup.papers, 'xs')}
+										</div>
+									{/snippet}
+
+									{@render papersTable(
+										agendaItem.id,
+										agendaItemGroup.papers,
+										openGroup.topic === agendaItem.id
+									)}
+								</AgendaItemPaperGroup>
+							{/each}
 						</div>
-					{/snippet}
+					</CommitteePaperGroup>
+				{/each}
 
-					<!-- Agenda Items (expanded) -->
-					<div>
-						{#each committeeGroup.agendaItems as agendaItemGroup (agendaItemGroup.agendaItem.id)}
-							{@const agendaItem = agendaItemGroup.agendaItem}
-							{@const helpStatus = helpStatusOf(agendaItem)}
-							<AgendaItemPaperGroup {agendaItem} {openGroup}>
-								{#snippet leading()}
-									<!-- Review Help Status Toggle -->
-									<ReviewHelpStatusToggle
-										status={helpStatus}
-										onCycle={() =>
-											cycleReviewHelpStatus({
-												agendaItemId: agendaItem.id,
-												currentStatus: helpStatus
-											})}
-									/>
-								{/snippet}
-								{#snippet aside()}
-									<div class="flex items-center gap-2">
-										{@render statusSummary(agendaItemGroup.papers, 'xs')}
-									</div>
-								{/snippet}
+				<!-- Introduction Papers Section (NSA papers without agenda items) -->
+				{#if introductionPapers.length > 0}
+					<CommitteePaperGroup {openGroup}>
+						{#snippet aside()}
+							<div class="flex items-center gap-2">
+								{@render statusSummary(introductionPapers, 'sm')}
+							</div>
+						{/snippet}
 
-								{@render papersTable(agendaItem.id, agendaItemGroup.papers)}
-							</AgendaItemPaperGroup>
-						{/each}
-					</div>
-				</CommitteePaperGroup>
-			{/each}
-
-			<!-- Introduction Papers Section (NSA papers without agenda items) -->
-			{#if introductionPapers.length > 0}
-				<CommitteePaperGroup {openGroup}>
-					{#snippet aside()}
-						<div class="flex items-center gap-2">
-							{@render statusSummary(introductionPapers, 'sm')}
-						</div>
-					{/snippet}
-
-					{@render papersTable('introduction', introductionPapers)}
-				</CommitteePaperGroup>
-			{/if}
+						{@render papersTable(
+							'introduction',
+							introductionPapers,
+							openGroup.committee === 'introduction'
+						)}
+					</CommitteePaperGroup>
+				{/if}
+			</div>
 		</PaperGroupsState>
 	{/if}
 

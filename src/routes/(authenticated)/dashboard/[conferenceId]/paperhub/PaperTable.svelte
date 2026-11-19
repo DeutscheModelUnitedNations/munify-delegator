@@ -37,6 +37,8 @@
 		rowAction?: Snippet<[Paper]>;
 		/** The papers the caller has a review draft for, marked in their row. */
 		draftPaperIds?: ReadonlySet<string>;
+		/** The guided tour's anchor, for the one table it points at */
+		tourAnchor?: string;
 	}
 
 	let {
@@ -48,7 +50,8 @@
 		showUpdatedAt = true,
 		paperHref,
 		rowAction,
-		draftPaperIds
+		draftPaperIds,
+		tourAnchor
 	}: Props = $props();
 
 	// Type colors for icon badges
@@ -163,7 +166,7 @@
 	</div>
 {/snippet}
 
-<div class="overflow-x-auto">
+<div class="overflow-x-auto" data-tour={tourAnchor}>
 	<table class="table table-sm">
 		<thead>
 			<tr class="text-xs text-base-content/60">

@@ -20,7 +20,7 @@
 </script>
 
 {#if myStats}
-	<div>
+	<div data-tour="paperhub.team.my-stats">
 		<h4 class="text-sm font-semibold mb-1">{m.yourReviewStats()}</h4>
 		<div class="flex flex-wrap items-center gap-x-6 gap-y-1">
 			<span class="flex items-center gap-2">

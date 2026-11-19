@@ -124,7 +124,7 @@
 		{/if}
 	</div>
 
-	<section class="flex flex-col gap-2">
+	<section class="flex flex-col gap-2" data-tour="team.assignmentSighting.wishes">
 		<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
 			<i aria-hidden="true" class="ph-duotone ph-flag"></i>
 			{m.assignmentWishes()}

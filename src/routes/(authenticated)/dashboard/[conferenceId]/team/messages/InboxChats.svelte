@@ -79,6 +79,7 @@
 					title={m.chatTeamNotificationsLink()}
 					aria-label={m.chatTeamNotificationsLink()}
 					data-testid="team-notifications-link"
+					data-tour="team.messages.notifications"
 				>
 					<i aria-hidden="true" class="ph-duotone ph-bell text-lg"></i>
 				</a>
@@ -88,6 +89,7 @@
 					href={resolve(`dashboard/${conferenceId}/team/messages?view=reports`)}
 					class="bg-error/10 text-error hover:bg-error/20 flex items-center gap-2 rounded-box px-3 py-2 text-sm font-medium transition-colors"
 					data-testid="team-reports-banner"
+					data-tour="team.messages.reports"
 				>
 					<i aria-hidden="true" class="ph-duotone ph-flag"></i>
 					<span class="flex-1">{m.chatReportsWaiting({ count: reported })}</span>

@@ -185,7 +185,11 @@
 				<h2 class="text-2xl font-bold">{m.reviewerSnippets()}</h2>
 				<p class="text-base-content/70">{m.reviewerSnippetsDescription()}</p>
 			</div>
-			<button class="btn btn-primary" onclick={openCreateModal}>
+			<button
+				class="btn btn-primary"
+				onclick={openCreateModal}
+				data-tour="paperhub.snippets.create"
+			>
 				<i aria-hidden="true" class="ph-duotone ph-plus"></i>
 				{m.createSnippet()}
 			</button>
@@ -193,7 +197,7 @@
 	</div>
 
 	<!-- Help Section -->
-	<div class="collapse collapse-arrow bg-base-200">
+	<div class="collapse collapse-arrow bg-base-200" data-tour="paperhub.snippets.help">
 		<input type="checkbox" />
 		<div class="collapse-title font-medium flex items-center gap-2">
 			<i aria-hidden="true" class="ph-duotone ph-question"></i>
@@ -229,7 +233,7 @@
 	</div>
 
 	<!-- Snippets List -->
-	<div class="bg-base-200 rounded-box p-4">
+	<div class="bg-base-200 rounded-box p-4" data-tour="paperhub.snippets.list">
 		{#if snippets.length === 0}
 			<div class="text-center py-8 text-base-content/50">
 				<i aria-hidden="true" class="ph-duotone ph-bookmark-simple text-4xl mb-4"></i>

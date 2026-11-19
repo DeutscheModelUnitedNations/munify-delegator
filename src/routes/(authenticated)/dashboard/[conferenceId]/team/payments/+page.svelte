@@ -281,7 +281,7 @@
 	</div>
 
 	{#if lastReceived}
-		<div class="alert alert-success">
+		<div class="alert alert-success" data-tour="team.payments.latest">
 			<i aria-hidden="true" class="ph-duotone ph-money-wavy text-lg"></i>
 			<div>
 				{m.latestPayment({ id: lastReceived.id, date: formatLongDate(lastReceived.recievedAt) })}
@@ -296,6 +296,7 @@
 		onsubmit={() => searchInputElem?.blur()}
 		placeholder={m.referenceSearch()}
 		aria-label={m.referenceSearch()}
+		data-tour="team.payments.search"
 	/>
 
 	<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">

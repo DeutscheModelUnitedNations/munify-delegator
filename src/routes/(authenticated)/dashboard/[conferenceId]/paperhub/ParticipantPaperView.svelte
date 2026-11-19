@@ -54,84 +54,87 @@
 	</div>
 {/snippet}
 
-{#if paperQueryData && paperQueryData.length > 0}
-	<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
-		<h3 class="text-xl">{m.yourPapers()}</h3>
-		<!-- Phones get one tappable row per paper instead of the wide table -->
-		<MyPaperRows papers={paperQueryData} {conferenceId} />
-		<div class="overflow-x-auto w-full max-sm:hidden">
-			<table class="table table-sm w-full">
-				<thead>
-					<tr>
-						<PaperTypeStatusColumns />
-						<th>{m.paperTopic()}</th>
-						<th class="w-0 whitespace-nowrap">{m.paperCreatedAt()}</th>
-						<th class="w-0 whitespace-nowrap">{m.paperUpdatedAt()}</th>
-						<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
-						<th class="w-0"><span class="sr-only">{m.actions()}</span></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each paperQueryData as paper (paper.id)}
+<!-- The root marks the view, whether or not there are papers yet -->
+<div class="flex flex-col gap-4 w-full" data-tour="paperhub.view.participant">
+	{#if paperQueryData && paperQueryData.length > 0}
+		<div class="w-full flex flex-col bg-base-200 p-4 rounded-box" data-tour="paperhub.my-papers">
+			<h3 class="text-xl">{m.yourPapers()}</h3>
+			<!-- Phones get one tappable row per paper instead of the wide table -->
+			<MyPaperRows papers={paperQueryData} {conferenceId} />
+			<div class="overflow-x-auto w-full max-sm:hidden">
+				<table class="table table-sm w-full">
+					<thead>
 						<tr>
-							<PaperTypeStatusColumns {paper} />
-							<td class="align-middle">
-								{#if paper.type !== 'INTRODUCTION_PAPER'}
-									{paper.agendaItem?.title}
-								{/if}
-							</td>
-							<td class="align-middle whitespace-nowrap text-base-content/60">
-								{new Date(paper.createdAt).toLocaleDateString(getLocale())}
-							</td>
-							<td class="align-middle whitespace-nowrap text-base-content/60">
-								{new Date(paper.updatedAt).toLocaleDateString(getLocale())}
-							</td>
-							<td class="align-middle whitespace-nowrap">
-								{#if paper.firstSubmittedAt}
-									{new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())}
-								{:else}
-									<span class="text-base-content/40">{m.notYetSubmitted()}</span>
-								{/if}
-							</td>
-							<td class="align-middle">
-								<a
-									href={resolve(`dashboard/${conferenceId}/paperhub/${paper.id}`)}
-									class="btn btn-primary btn-sm"
-								>
-									{m.openPaper()}
-									<i aria-hidden="true" class="ph-fill ph-arrow-right"></i>
-								</a>
-							</td>
+							<PaperTypeStatusColumns />
+							<th>{m.paperTopic()}</th>
+							<th class="w-0 whitespace-nowrap">{m.paperCreatedAt()}</th>
+							<th class="w-0 whitespace-nowrap">{m.paperUpdatedAt()}</th>
+							<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
+							<th class="w-0"><span class="sr-only">{m.actions()}</span></th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{#each paperQueryData as paper (paper.id)}
+							<tr>
+								<PaperTypeStatusColumns {paper} />
+								<td class="align-middle">
+									{#if paper.type !== 'INTRODUCTION_PAPER'}
+										{paper.agendaItem?.title}
+									{/if}
+								</td>
+								<td class="align-middle whitespace-nowrap text-base-content/60">
+									{new Date(paper.createdAt).toLocaleDateString(getLocale())}
+								</td>
+								<td class="align-middle whitespace-nowrap text-base-content/60">
+									{new Date(paper.updatedAt).toLocaleDateString(getLocale())}
+								</td>
+								<td class="align-middle whitespace-nowrap">
+									{#if paper.firstSubmittedAt}
+										{new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())}
+									{:else}
+										<span class="text-base-content/40">{m.notYetSubmitted()}</span>
+									{/if}
+								</td>
+								<td class="align-middle">
+									<a
+										href={resolve(`dashboard/${conferenceId}/paperhub/${paper.id}`)}
+										class="btn btn-primary btn-sm"
+									>
+										{m.openPaper()}
+										<i aria-hidden="true" class="ph-fill ph-arrow-right"></i>
+									</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
 		</div>
-	</div>
-{/if}
+	{/if}
 
-<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
-	<h3 class="text-xl">{m.submitAPaper()}</h3>
+	<div class="w-full flex flex-col bg-base-200 p-4 rounded-box" data-tour="paperhub.create">
+		<h3 class="text-xl">{m.submitAPaper()}</h3>
 
-	<div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-4 mt-4">
-		{#if isNSA}
+		<div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-4 mt-4">
+			{#if isNSA}
+				{@render PaperTypeBlock(
+					'INTRODUCTION_PAPER',
+					m.paperTypeIntroductionPaperDescription(),
+					resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=INTRODUCTION_PAPER`)
+				)}
+			{/if}
+
 			{@render PaperTypeBlock(
-				'INTRODUCTION_PAPER',
-				m.paperTypeIntroductionPaperDescription(),
-				resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=INTRODUCTION_PAPER`)
+				'POSITION_PAPER',
+				m.paperTypePositionPaperDescription(),
+				resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=POSITION_PAPER`)
 			)}
-		{/if}
 
-		{@render PaperTypeBlock(
-			'POSITION_PAPER',
-			m.paperTypePositionPaperDescription(),
-			resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=POSITION_PAPER`)
-		)}
-
-		{@render PaperTypeBlock(
-			'WORKING_PAPER',
-			m.paperTypeWorkingPaperDescription(),
-			resolve(`dashboard/${conferenceId}/paperhub/newResolution`)
-		)}
+			{@render PaperTypeBlock(
+				'WORKING_PAPER',
+				m.paperTypeWorkingPaperDescription(),
+				resolve(`dashboard/${conferenceId}/paperhub/newResolution`)
+			)}
+		</div>
 	</div>
 </div>

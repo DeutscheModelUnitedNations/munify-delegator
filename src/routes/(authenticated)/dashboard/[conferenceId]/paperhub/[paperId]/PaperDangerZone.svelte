@@ -35,7 +35,7 @@
 	};
 </script>
 
-<div class="mt-8">
+<div class="mt-8" data-tour="paperhub.paper.danger-zone">
 	<button
 		class="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
 		onclick={() => (showDangerZone = !showDangerZone)}

@@ -75,6 +75,7 @@
 	<aside
 		class={['chat-list-pane bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
 		aria-label={m.chatListLabel()}
+		data-tour="chat.list"
 	>
 		{@render listHeader?.()}
 		<div class="min-h-0 flex-1 overflow-y-auto p-2">
@@ -87,7 +88,10 @@
 		{@render listFooter?.()}
 	</aside>
 
-	<div class={['chat-thread-pane min-h-0 min-w-0', !shownId && 'max-md:hidden']}>
+	<div
+		class={['chat-thread-pane min-h-0 min-w-0', !shownId && 'max-md:hidden']}
+		data-tour="chat.thread"
+	>
 		{#if shownId}
 			{#key shownId}
 				<ChatThreadBoundary

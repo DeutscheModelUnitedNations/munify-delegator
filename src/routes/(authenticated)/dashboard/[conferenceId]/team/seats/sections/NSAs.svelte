@@ -68,7 +68,11 @@
 	<DownloadNSADataBtn {conferenceId} />
 {/snippet}
 
-<SeatsTableSection title={m.nsaSeats()} downloadButton={downloadNSADataBtn}>
+<SeatsTableSection
+	title={m.nsaSeats()}
+	downloadButton={downloadNSADataBtn}
+	tourAnchor="team.seats.other-roles"
+>
 	<SeatsIconHeader icon="ph-megaphone-simple" membersMenu />
 	<tbody>
 		{#each nonStateActors as nsa (nsa.id)}

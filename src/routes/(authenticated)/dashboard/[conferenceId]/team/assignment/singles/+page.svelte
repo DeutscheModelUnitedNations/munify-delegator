@@ -211,7 +211,10 @@
 {/snippet}
 
 <div class="flex flex-col gap-4">
-	<div class="alert alert-info alert-soft max-sm:alert-vertical">
+	<div
+		class="alert alert-info alert-soft max-sm:alert-vertical"
+		data-tour="team.assignmentSingles.auto-assign"
+	>
 		<i aria-hidden="true" class="ph-duotone ph-user-sound text-xl"></i>
 		<p>{m.assignmentSinglesHint()}</p>
 		<button
@@ -267,6 +270,7 @@
 		<section
 			class="grid grow grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] content-start items-start gap-3"
 			aria-label={m.assignmentRoles()}
+			data-tour="team.assignmentSingles.roles"
 		>
 			{#each roles.customRoles as role (role.id)}
 				{@const holders = holdersOf(role.id)}
