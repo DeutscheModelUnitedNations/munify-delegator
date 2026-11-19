@@ -55,8 +55,11 @@ bun run preview
   there, not `@playwright/test`) and the server via `NODE_V8_COVERAGE` mapped by
   `scripts/serverCoverage.ts` (Vite's module runner keeps no source maps for c8). Generated code is
   excluded by `scripts/coverageScope.ts`. CI scores unit coverage only.
-- **If `bun run check` eats all memory** (TS7 grows without bound), the incremental cache is
-  corrupt: delete `.svelte-kit/.svelte-check/tsbuildinfo.json`. A clean run is ~4 GB / ~10 s.
+- **If `bun run check` eats all memory** (TS7 grows without bound), a type a changed file exports
+  cannot be named in a declaration: incremental TS7 emits `.d.ts` signatures for changed files and
+  inlines unnamed types. The generated rumble client did this until rumble 0.33.3 exported its
+  `make…` return types. Exported values with huge inferred types need an annotation
+  or an exported type. A run is ~4 GB / ~10 s.
 
 ## Directory Structure
 
