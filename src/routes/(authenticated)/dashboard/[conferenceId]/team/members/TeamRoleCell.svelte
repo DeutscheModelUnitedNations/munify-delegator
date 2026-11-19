@@ -40,6 +40,7 @@
 
 <select
 	class="select select-bordered select-sm"
+	data-tour="team.members.role"
 	value={shown}
 	disabled={saving}
 	onclick={(e) => e.stopPropagation()}

@@ -197,7 +197,7 @@
 	</li>
 {/snippet}
 
-<section class="flex flex-col gap-2">
+<section class="flex flex-col gap-2" data-tour="team.attendance.sessions">
 	<div class="flex items-center justify-between gap-2">
 		<h3 class="font-semibold">{m.scanSessions()}</h3>
 		<!-- Setting a session up is tucked away: most of the team only joins one -->
@@ -205,6 +205,7 @@
 			<button
 				class="btn btn-sm {creating ? 'btn-ghost' : 'btn-primary'}"
 				aria-expanded={creating}
+				data-tour="team.attendance.new-session"
 				onclick={() => (creating = !creating)}
 			>
 				<i

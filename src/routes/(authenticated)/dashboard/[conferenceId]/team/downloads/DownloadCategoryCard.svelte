@@ -6,12 +6,17 @@
 		description: string;
 		icon: string;
 		children: Snippet;
+		/** A `data-tour` anchor for a guided tour of the page. */
+		tourAnchor?: string;
 	}
 
-	let { title, description, icon, children }: Props = $props();
+	let { title, description, icon, children, tourAnchor }: Props = $props();
 </script>
 
-<section class="card bg-base-100 border-base-200 overflow-hidden border shadow-sm">
+<section
+	class="card bg-base-100 border-base-200 overflow-hidden border shadow-sm"
+	data-tour={tourAnchor}
+>
 	<header
 		class="bg-base-200/40 border-base-200 flex items-center gap-4 border-b px-4 py-4 sm:px-6 sm:py-5"
 	>

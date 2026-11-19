@@ -23,6 +23,14 @@
 		}
 	});
 
+	// An entry that does something on the page rather than navigate (the tour) closes the drawer
+	// itself by carrying `data-close-drawer`, so the page is not covered while it runs.
+	function closeOnAction(event: MouseEvent) {
+		if (event.target instanceof Element && event.target.closest('[data-close-drawer]')) {
+			mobileOpen = false;
+		}
+	}
+
 	afterNavigate(({ shallow, type }) => {
 		if (shallow && type === 'goto') return;
 
@@ -53,7 +61,10 @@ waits for its data at most. -->
 	style:view-transition-name="team-nav"
 	data-sveltekit-preload-code="viewport"
 >
+	<!-- Clicks are delegated from the buttons inside, which handle the keyboard themselves -->
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div
+		onclick={closeOnAction}
 		class="bg-base-100 rounded-box h-full w-60 overflow-y-auto px-3 py-2 shadow-lg sm:bg-transparent sm:shadow-none"
 	>
 		{@render children()}

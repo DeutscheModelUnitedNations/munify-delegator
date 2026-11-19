@@ -211,7 +211,7 @@
 
 <DraftRecoveryModal {draft} />
 
-<div class="card bg-base-200 p-4 flex flex-col gap-4">
+<div class="card bg-base-200 p-4 flex flex-col gap-4" data-tour="paperhub.review">
 	<h2 class="text-lg font-bold">{m.addReview()}</h2>
 
 	{#if reviewed}
@@ -221,7 +221,7 @@
 			<span>{m.reviewAddedSuccessfully()}</span>
 		</div>
 		{#if nextPaperId && agendaItemId}
-			<button class="btn btn-outline" onclick={jumpToNextPaper}>
+			<button class="btn btn-outline" onclick={jumpToNextPaper} data-tour="paperhub.review.next">
 				<i aria-hidden="true" class="ph-duotone ph-caret-double-right"></i>
 				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
 			</button>
@@ -241,15 +241,17 @@
 		</div>
 	{:else}
 		<!-- Comments Editor -->
-		{#key draft.editorKey}
-			<PaperEditor.ReviewFormat
-				contentStore={reviewComments}
-				{quoteToInsert}
-				{onQuoteInserted}
-				{paperContainer}
-				{snippets}
-			/>
-		{/key}
+		<div data-tour="paperhub.review.comments">
+			{#key draft.editorKey}
+				<PaperEditor.ReviewFormat
+					contentStore={reviewComments}
+					{quoteToInsert}
+					{onQuoteInserted}
+					{paperContainer}
+					{snippets}
+				/>
+			{/key}
+		</div>
 
 		<!-- Status Selector -->
 		<ReviewStatusPicker transitions={availableTransitions} bind:selected={selectedStatus} />
@@ -261,6 +263,7 @@
 
 			<button
 				class="btn btn-primary grow"
+				data-tour="paperhub.review.submit"
 				onclick={openConfirmModal}
 				disabled={isSubmitting || !anonymityComplete}
 			>

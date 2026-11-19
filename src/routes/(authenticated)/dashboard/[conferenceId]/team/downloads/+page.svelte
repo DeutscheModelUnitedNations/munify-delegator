@@ -28,6 +28,7 @@
 		title={m.badgeDataTitle()}
 		description={m.badgeDataDescription()}
 		icon="ph-fill ph-identification-badge"
+		tourAnchor="team.downloads.badges"
 	>
 		<BadgeData conferenceId={params.conferenceId} />
 		<NsaCards conferenceId={params.conferenceId} />
@@ -45,6 +46,7 @@
 		title={m.registrationListsTitle()}
 		description={m.registrationListsDescription()}
 		icon="ph-fill ph-clipboard-text"
+		tourAnchor="team.downloads.registration-lists"
 	>
 		<ConferenceRegistrationList conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
@@ -85,6 +87,7 @@
 		title={m.integrationExportsTitle()}
 		description={m.integrationExportsDescription()}
 		icon="ph-fill ph-plug"
+		tourAnchor="team.downloads.integrations"
 	>
 		{#if chaseLink}
 			<!-- the link keeps CHASE up to date; the file is only a fallback -->

@@ -56,7 +56,7 @@
 		<DraftStatus {conferenceId} />
 	</div>
 
-	<Tabs>
+	<Tabs tourAnchor="team.assignment.tabs">
 		{#each tabs as entry (entry.id)}
 			<Tab active={tab === entry.id} title={entry.title} icon={entry.icon} href={entry.href} />
 		{/each}

@@ -13,7 +13,7 @@
 	let { onFunctions, onImpersonate, onDelete }: Props = $props();
 </script>
 
-<div class="flex justify-end gap-2">
+<div class="flex justify-end gap-2" data-tour="team.members.actions">
 	<button
 		class="btn btn-ghost btn-sm btn-square"
 		title={m.teamFunctions()}

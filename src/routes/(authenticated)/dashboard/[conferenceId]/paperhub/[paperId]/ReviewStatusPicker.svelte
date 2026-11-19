@@ -17,7 +17,7 @@
 	}
 </script>
 
-<div class="flex flex-col gap-2">
+<div class="flex flex-col gap-2" data-tour="paperhub.review.status">
 	<span class="text-sm font-semibold">{m.newStatus()}</span>
 	<div class="flex w-full gap-2 max-sm:flex-col">
 		{#each transitions as transition (transition.value)}

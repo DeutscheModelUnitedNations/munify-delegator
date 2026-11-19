@@ -380,6 +380,7 @@
 		<section
 			class="grid grow grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] content-start items-start gap-3"
 			aria-label={m.assignmentRoles()}
+			data-tour="team.assignmentDelegations.roles"
 		>
 			{#each shownRoles as role (role.key)}
 				<RoleCard

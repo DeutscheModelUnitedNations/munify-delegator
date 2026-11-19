@@ -189,7 +189,7 @@
 			onSelect={selectSuggestion}
 		/>
 
-		<div class="mb-4 flex flex-col gap-3">
+		<div class="mb-4 flex flex-col gap-3" data-tour="team.cleanup.merge">
 			{#if selectedSchools.length > 0}
 				<div class="flex flex-wrap items-center gap-2">
 					{#each selectedSchools as school (school.id)}

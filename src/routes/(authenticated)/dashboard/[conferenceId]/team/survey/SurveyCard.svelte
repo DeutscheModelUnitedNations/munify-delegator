@@ -138,6 +138,7 @@
 
 <article
 	class="flex w-full flex-col gap-5 rounded-box border border-base-300 bg-base-200/50 p-4 sm:p-5"
+	data-tour="team.survey.card"
 >
 	<header class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
 		<div class="flex min-w-0 flex-col gap-2">
@@ -152,7 +153,7 @@
 			</div>
 			<p class="text-sm whitespace-pre-line text-base-content/70">{survey.description}</p>
 		</div>
-		<div class="flex flex-none flex-wrap gap-2">
+		<div class="flex flex-none flex-wrap gap-2" data-tour="team.survey.card-actions">
 			<button
 				class="btn btn-ghost btn-sm"
 				onclick={() => toggleDraft({ id: survey.id, currentDraft: survey.draft })}
@@ -207,6 +208,7 @@
 		<a
 			class="btn btn-sm btn-primary"
 			href={resolve(`dashboard/${conferenceId}/team/survey/${survey.id}`)}
+			data-tour="team.survey.details"
 		>
 			{m.details()}
 			<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>

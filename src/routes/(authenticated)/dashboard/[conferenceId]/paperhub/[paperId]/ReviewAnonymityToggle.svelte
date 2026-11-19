@@ -21,7 +21,7 @@
 	const nameMissing = $derived(choice.as === 'CUSTOM' && choice.name.trim().length === 0);
 </script>
 
-<div class="flex flex-col gap-1">
+<div class="flex flex-col gap-1" data-tour="paperhub.review.anonymity">
 	<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
 		<label class="label cursor-pointer gap-2">
 			<input

@@ -73,7 +73,8 @@ bun run preview
         `team/` itself; the overview (`stages/TeamMember/TeamMemberDashboard.svelte`) is home.
       - `paperhub/` — outside `team/`, participants and supervisors use it too
     - `registration/` — registration flows
-  - `api/graphql/` — GraphQL endpoint; `auth/` — OIDC callbacks; `seats/`, `vc/`,
+  - `api/graphql/` — GraphQL endpoint; `api/health/` — liveness for the image's `HEALTHCHECK`
+    (rolling updates wait for it; checks nothing behind the server); `auth/` — OIDC callbacks; `seats/`, `vc/`,
     `validateCertificate/` — public; `id/` — target of signed-code links
 - `src/api/` — backend
   - `handlers/<entity>/` — one directory per entity, three files (after avv): `<entity>.ts` GraphQL
@@ -526,6 +527,11 @@ participant filter conditions), and `boardState` (`memoizeLast` compares args on
 - **Background job**: see `docs/architecture/jobs.md`.
 - **UI change touching a manual page**: update `docs/de` and `docs/en`, keep `data-tour` anchors,
   rerun affected screenshots (`docs/architecture/user-manual.md`).
+- **Every team page has a guided tour** (`src/lib/docs/tours/team/<page>.tour.ts`, exported as
+  `<page>Tour`, loaded lazily in `routeHelp.ts`; `help.test.ts` fails for a page in
+  `teamRoutes` without one). A new team page gets a tour, a changed one keeps its tour true.
+  Anchors are `team.<page>.<part>`; tables share `grid.toolbar` / `grid.views` / `grid.table`,
+  scanners `scanner.*`, chats `chat.*`. Tour text is plain (driver.js shows `**` literally).
 
 ## Environment Variables
 

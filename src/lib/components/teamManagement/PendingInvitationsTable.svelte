@@ -118,7 +118,7 @@
 {/snippet}
 
 {#if invitations.length > 0}
-	<div class="flex flex-col gap-4 mt-8">
+	<div class="flex flex-col gap-4 mt-8" data-tour="team.invitations.table">
 		<h2 class="text-xl font-semibold">{m.pendingInvitations()}</h2>
 
 		<div class="overflow-x-auto">

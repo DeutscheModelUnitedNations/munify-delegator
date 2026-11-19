@@ -237,7 +237,11 @@
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.importDescription()}</p>
 	</div>
-	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
+	<Section
+		title={m.importPresenceData()}
+		description={m.importPresenceDataDescription()}
+		tourAnchor="team.import.source"
+	>
 		{#if chaseLink}
 			<ChasePresenceNotice
 				fromFile={!!parsed?.ok}
@@ -262,6 +266,7 @@
 		<Section
 			title={m.importPresenceDelegates()}
 			description={m.importPresenceDelegatesDescription()}
+			tourAnchor="team.import.delegates"
 		>
 			<label class="my-4 flex items-center">
 				{m.threshold()}:
@@ -287,7 +292,11 @@
 	{/if}
 
 	{#if presentNsas && absentNsas}
-		<Section title={m.nonStateActors()} description={m.importPresenceNsasDescription()}>
+		<Section
+			title={m.nonStateActors()}
+			description={m.importPresenceNsasDescription()}
+			tourAnchor="team.import.nsas"
+		>
 			<label class="my-4 flex items-center gap-2">
 				{m.importPresenceMinCheckIns()}:
 				<input
@@ -337,6 +346,7 @@
 	/>
 	<button
 		class="btn btn-primary"
+		data-tour="team.import.save"
 		disabled={loading}
 		onclick={() => apply({ rows: present, didAttend: true })}
 	>

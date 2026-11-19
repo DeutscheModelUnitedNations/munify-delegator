@@ -65,7 +65,11 @@
 	<h1 class="sr-only">{m.paperHub()}</h1>
 	<div class="flex flex-col gap-2">
 		{#if showViewToggle}
-			<div role="tablist" class="tabs tabs-border mt-2 max-sm:flex-nowrap max-sm:overflow-x-auto">
+			<div
+				role="tablist"
+				class="tabs tabs-border mt-2 max-sm:flex-nowrap max-sm:overflow-x-auto"
+				data-tour="paperhub.tabs"
+			>
 				{#each viewTabs.filter((tab) => tab.available) as tab (tab.view)}
 					<button
 						role="tab"

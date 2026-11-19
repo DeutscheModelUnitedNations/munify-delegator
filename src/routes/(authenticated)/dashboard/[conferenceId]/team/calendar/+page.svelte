@@ -14,7 +14,7 @@
 
 <div class="flex flex-col gap-6 py-4 sm:px-4">
 	<div class="flex flex-wrap items-center gap-2">
-		<div role="tablist" class="tabs tabs-border flex-1">
+		<div role="tablist" class="tabs tabs-border flex-1" data-tour="team.calendar.tabs">
 			<button
 				role="tab"
 				class="tab {activeTab === 'calendar' ? 'tab-active' : ''}"
