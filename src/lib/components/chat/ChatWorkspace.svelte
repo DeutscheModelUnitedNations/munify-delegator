@@ -73,8 +73,7 @@
 	data-testid="chat-workspace"
 >
 	<aside
-		class={['bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
-		style:view-transition-name="chat-list"
+		class={['chat-list-pane bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
 		aria-label={m.chatListLabel()}
 	>
 		{@render listHeader?.()}
@@ -88,10 +87,7 @@
 		{@render listFooter?.()}
 	</aside>
 
-	<div
-		class={['min-h-0 min-w-0', !shownId && 'max-md:hidden']}
-		style:view-transition-name="chat-pane"
-	>
+	<div class={['chat-thread-pane min-h-0 min-w-0', !shownId && 'max-md:hidden']}>
 		{#if shownId}
 			{#key shownId}
 				<ChatThreadBoundary
