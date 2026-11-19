@@ -56,7 +56,7 @@ Eine Frist für Papiere kennt DELEGATOR nicht. Teile sie den Teilnehmenden selbs
 
 Oben steht die **Papier-Status Übersicht**: wie viele Papiere eingereicht, überarbeitet, zur Überarbeitung zurückgegeben und akzeptiert sind, und unter **Deine Bewertungsstatistik** deine eigenen **Erstbewertungen** und **Folgebewertungen**. Daneben liegen der **Fokus-Modus** und **Textbausteine verwalten**.
 
-Darunter wählst du zwischen **Papiere**, **Flaggensammlung**, **Bewerter-Rangliste** und **Detaillierte Paper-Statistiken**.
+Darunter wählst du zwischen **Papiere**, **Flaggensammlung**, **Rangliste der Bewertenden** und **Detaillierte Paper-Statistiken**.
 
 ### Die Papierlisten {#paper-lists}
 
@@ -142,7 +142,7 @@ In der Liste bearbeitest oder löschst du einen Baustein über die Knöpfe in se
 ## Fortschritt und Statistik {#progress}
 
 - **Flaggensammlung:** Jede Nation und jeder nichtstaatliche Akteur ist eine Flagge aus Puzzlestücken. Eine Nation hat ein Stück pro Tagesordnungspunkt ihrer Gremien, ein nichtstaatlicher Akteur drei. Ein Stück wird freigeschaltet, wenn das Papier dazu eingereicht ist, und gefunden, wenn es Feedback hat. Ist dein Feedback das erste für ein Stück, zeigt DELEGATOR das gefundene Stück an. Filtern kannst du nach **Alle**, **Unvollständig**, **Freigeschaltet** und **Vollständig**.
-- **Bewerter-Rangliste:** die zehn Personen, die am häufigsten als Erste ein Papier begutachtet haben, unter erfundenen Namen. Deine eigene Zeile ist mit **Du** markiert.
+- **Rangliste der Bewertenden:** die zehn Personen, die am häufigsten als Erste ein Papier begutachtet haben, unter erfundenen Namen. Deine eigene Zeile ist mit **Du** markiert.
 - **Detaillierte Paper-Statistiken:** die Papiere nach Status, Typ und Gremium, der Feedback-Fortschritt und die Annahmequote.
 
 ## Exportieren {#export}
