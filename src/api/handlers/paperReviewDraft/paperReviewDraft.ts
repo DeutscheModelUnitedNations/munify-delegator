@@ -101,12 +101,18 @@ schemaBuilder.mutationFields((t) => ({
 
 	savePaperReviewDraft: t.drizzleField({
 		description:
-			"Saves the caller's review draft of a paper as the review editor holds it, creating it on the first change; a draft written by an assistant keeps the version it was written for. For whoever may review the paper (NOT_FOUND otherwise), CONFLICT for a paper that is still a draft.",
+			"Saves the caller's review draft of a paper as the review editor holds it, creating it on the first change; a draft written by an assistant keeps the version it was written for. CONFLICT when the draft changed since the editor saw it (`expectedUpdatedAt`) or the paper is still a draft. For whoever may review the paper (NOT_FOUND otherwise).",
 		type: PaperReviewDraftRef,
 		args: {
 			paperId: t.arg.id({ required: true }),
 			comments: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema),
-			statusAfter: t.arg({ type: paperStatusEnum, required: true }).validate(reviewVerdictSchema)
+			statusAfter: t.arg({ type: paperStatusEnum, required: true }).validate(reviewVerdictSchema),
+			expectedUpdatedAt: t.arg({
+				type: 'DateTime',
+				required: false,
+				description:
+					'The `updatedAt` of the draft as the editor last loaded or saved it; null when it saw none.'
+			})
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const { reviewerId } = await assertCanReviewPaper({ ctx, paperId: args.paperId });
@@ -115,7 +121,8 @@ schemaBuilder.mutationFields((t) => ({
 				reviewerId,
 				comments: args.comments,
 				statusAfter: args.statusAfter,
-				by: writtenBy(ctx)
+				by: writtenBy(ctx),
+				expected: { updatedAt: args.expectedUpdatedAt ?? null }
 			});
 			return db.query.paperReviewDraft
 				.findFirst(query(await ownDraft({ ctx, paperId: args.paperId })))

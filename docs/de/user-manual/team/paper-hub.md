@@ -103,7 +103,7 @@ Einen Entwurf kann auch ein [KI-Assistent](./ai-access#review-drafts) für dich 
 
 - **Im Papier finden** zeigt, ob ein Zitat wörtlich im Papier steht. Gesucht wird in jedem Absatz, jeder Überschrift und jedem Listenpunkt einzeln. Ein Zitat über zwei Absätze findet DELEGATOR deshalb nicht, auch wenn jedes Wort stimmt.
 - Wurde nach dem Entwurf eine neue Version eingereicht, warnt DELEGATOR: **Dieser Entwurf bezieht sich auf Version 1, aktuell ist Version 2.** Prüfe dann, ob dein Feedback noch passt. Abgeben kannst du trotzdem.
-- Schreibt der Assistent deinen Entwurf neu, während du das Papier offen hast, bietet **Neuen Entwurf laden** an, ihn zu übernehmen.
+- Ändert sich dein Entwurf woanders, während du das Papier offen hast, etwa in einem anderen Tab oder durch den Assistenten, speichert DELEGATOR deine Änderungen erst wieder, wenn du dich entschieden hast. **Neuen Entwurf laden** übernimmt die gespeicherte Fassung, **Meine Fassung behalten** ersetzt sie durch deine. So überschreibt kein Tab unbemerkt, was ein anderer gespeichert hat.
 - Hast du einen Entwurf in DELEGATOR bearbeitet, überschreibt ihn der Assistent nicht ohne deine Zustimmung.
 - **Entwurf verwerfen** löscht den Entwurf und leert den Editor.
 

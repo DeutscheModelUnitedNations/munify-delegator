@@ -64,7 +64,7 @@ export function changedElsewhere({
 }
 
 /** Where saving the draft stands, shown below the editor. */
-export type DraftSaveState = 'idle' | 'saving' | 'saved' | 'failed';
+export type DraftSaveState = 'idle' | 'saving' | 'saved' | 'failed' | 'conflict';
 
 const VERDICTS = ['CHANGES_REQUESTED', 'ACCEPTED'] as const;
 

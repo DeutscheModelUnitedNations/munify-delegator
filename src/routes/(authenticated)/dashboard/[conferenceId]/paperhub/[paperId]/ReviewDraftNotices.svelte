@@ -3,17 +3,18 @@
 
 	/**
 	 * What the review editor says about the reviewer's draft (`reviewDraft.ts`): who wrote it and
-	 * when, that it was written for an older version, and that an assistant rewrote it meanwhile.
+	 * when, that it was written for an older version, and that it changed meanwhile: rewritten by
+	 * an assistant (seen live), or anywhere else (a save refused).
 	 */
 	interface Props {
 		notice: string[];
 		staleWarning: string | undefined;
-		assistantChanged: boolean;
+		changed: 'assistant' | 'elsewhere' | undefined;
 		onLoadNew: () => void;
 		onKeepMine: () => void;
 	}
 
-	let { notice, staleWarning, assistantChanged, onLoadNew, onKeepMine }: Props = $props();
+	let { notice, staleWarning, changed, onLoadNew, onKeepMine }: Props = $props();
 </script>
 
 {#if notice.length > 0}
@@ -33,10 +34,15 @@
 		<span>{staleWarning}</span>
 	</div>
 {/if}
-{#if assistantChanged}
-	<div class="alert alert-warning">
-		<i aria-hidden="true" class="ph-duotone ph-robot"></i>
-		<span>{m.reviewDraftChangedByAssistant()}</span>
+{#if changed}
+	<div class="alert alert-warning" role="alert" data-testid="review-draft-changed">
+		<i aria-hidden="true" class="ph-duotone {changed === 'assistant' ? 'ph-robot' : 'ph-warning'}"
+		></i>
+		<span>
+			{changed === 'assistant'
+				? m.reviewDraftChangedByAssistant()
+				: m.reviewDraftChangedElsewhere()}
+		</span>
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-sm" onclick={onLoadNew}>{m.reviewDraftLoadNew()}</button>
 			<button class="btn btn-sm btn-ghost" onclick={onKeepMine}>{m.reviewDraftKeepMine()}</button>

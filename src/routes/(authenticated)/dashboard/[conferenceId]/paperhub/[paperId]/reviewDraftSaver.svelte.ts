@@ -25,14 +25,25 @@ export interface SavedDraft {
  * after it, so the stored draft always ends up as the editor's latest state, an undo back to an
  * earlier text included. `flush` saves what is pending at once (leaving the paper), `settle`
  * waits for a running save and pauses (before discarding or submitting), `resume` picks up again.
+ * Each save names the draft as the editor last saw it (`expectedUpdatedAt`); a save the server
+ * refuses because it changed meanwhile (`isConflict`) stops saving until the reviewer chooses:
+ * `loaded` for the stored draft, `acknowledge` to replace it with the editor's.
  */
 export function createDraftSaver({
 	save,
 	onSaved,
+	isConflict = () => false,
 	delayMs = 1500
 }: {
-	save: (draft: { comments: JSONContent; status: Verdict }) => Promise<SavedDraft>;
+	save: (draft: {
+		comments: JSONContent;
+		status: Verdict;
+		/** The stored draft's `updatedAt` as the editor last saw it, undefined for none. */
+		expectedUpdatedAt: number | undefined;
+	}) => Promise<SavedDraft>;
 	onSaved?: (saved: SavedDraft) => void;
+	/** Whether a failed save was refused because the draft changed elsewhere. */
+	isConflict?: (error: unknown) => boolean;
 	delayMs?: number;
 }) {
 	let state = $state<DraftSaveState>('idle');
@@ -54,13 +65,23 @@ export function createDraftSaver({
 		for (let next = pending(); next && !paused; next = pending()) {
 			state = 'saving';
 			try {
-				const saved = await save({ comments: next.comments, status: next.status });
+				const saved = await save({
+					comments: next.comments,
+					status: next.status,
+					expectedUpdatedAt: knownUpdatedAt
+				});
 				savedSnapshot = next.snapshot;
 				knownUpdatedAt = timeOf(saved.updatedAt);
 				state = 'saved';
 				onSaved?.(saved);
-			} catch {
-				state = 'failed';
+			} catch (error) {
+				if (isConflict(error)) {
+					clearTimeout(timer);
+					paused = true;
+					state = 'conflict';
+				} else {
+					state = 'failed';
+				}
 				return;
 			}
 		}
@@ -91,8 +112,9 @@ export function createDraftSaver({
 		/** The editor changed: save it after a moment. */
 		edited(editor: EditorState) {
 			latest = editor;
-			// "saved" would claim the new edit is stored; a running save still shows as such
-			if (state !== 'saving' && pending()) state = 'idle';
+			// "saved" would claim the new edit is stored; a running save still shows as such, and a
+			// conflict until the reviewer chose
+			if (state !== 'saving' && state !== 'conflict' && pending()) state = 'idle';
 			if (!paused) schedule();
 		},
 		/** Saves what is pending now, without waiting for the moment to pass. */
@@ -106,8 +128,9 @@ export function createDraftSaver({
 			paused = true;
 			await running;
 		},
-		/** Saves again after `settle`, anything still pending first. */
+		/** Saves again after `settle`, anything still pending first; not past a conflict. */
 		resume() {
+			if (state === 'conflict') return;
 			paused = false;
 			if (pending()) schedule();
 		},
@@ -117,14 +140,19 @@ export function createDraftSaver({
 			latest = editor;
 			savedSnapshot = JSON.stringify(editor);
 			knownUpdatedAt = timeOf(updatedAt);
+			if (state === 'conflict') state = 'idle';
 		},
 		/**
-		 * The draft stored elsewhere is known now and the editor's content replaces it: the next
-		 * save writes the editor, even unchanged since it was loaded.
+		 * The draft stored elsewhere (or that there is none, `null`) is known now and the editor's
+		 * content replaces it: the next save writes the editor, even unchanged since it was loaded.
 		 */
-		acknowledge(updatedAt: Date | string | number) {
-			knownUpdatedAt = typeof updatedAt === 'number' ? updatedAt : timeOf(updatedAt);
+		acknowledge(updatedAt: Date | string | number | null) {
+			knownUpdatedAt =
+				updatedAt === null || typeof updatedAt === 'number'
+					? (updatedAt ?? undefined)
+					: timeOf(updatedAt);
 			savedSnapshot = undefined;
+			if (state === 'conflict') state = 'idle';
 		},
 		/** The draft is gone (discarded or sent): forget it. */
 		reset() {

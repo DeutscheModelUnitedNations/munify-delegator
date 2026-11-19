@@ -3490,6 +3490,7 @@ export type Mutation = {
   }) => Conferencesupervisor,
   savePaperReviewDraft: (p: {
     comments: JSON,
+    expectedUpdatedAt?: DateTime | null | undefined,
     paperId: ID,
     statusAfter: PaperstatusEnum
   }) => Paperreviewdraft,

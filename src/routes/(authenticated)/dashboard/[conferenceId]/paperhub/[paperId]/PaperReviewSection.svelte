@@ -24,6 +24,7 @@
 		staleDraftWarning
 	} from './reviewDraft';
 	import { createDraftSaver } from './reviewDraftSaver.svelte.js';
+	import { hasErrorCode } from '#lib/api/errorCodes';
 	import ReviewDraftNotices from './ReviewDraftNotices.svelte';
 	import ReviewDraftFooter from './ReviewDraftFooter.svelte';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
@@ -151,9 +152,14 @@
 	// Saves the editor's content as the draft; knows what the editor last loaded or saved, so an
 	// assistant's later change is told apart from this editor's own.
 	const saver = createDraftSaver({
-		save: async ({ comments, status }) => {
+		save: async ({ comments, status, expectedUpdatedAt }) => {
 			const saved = await client.mutate.savePaperReviewDraft({
-				__args: { paperId, comments, statusAfter: status },
+				__args: {
+					paperId,
+					comments,
+					statusAfter: status,
+					expectedUpdatedAt: expectedUpdatedAt === undefined ? null : new Date(expectedUpdatedAt)
+				},
 				updatedAt: true,
 				paperVersion: { version: true }
 			});
@@ -162,7 +168,8 @@
 		onSaved: (saved) => {
 			editorVersion ??= saved.version;
 			dropLegacyDraft();
-		}
+		},
+		isConflict: (err) => hasErrorCode({ err, code: 'CONFLICT' })
 	});
 	if (initialDraft) {
 		saver.loaded({
@@ -219,9 +226,19 @@
 		if (assistantChangedDraft) void saver.settle();
 	});
 
-	/** Keeps the editor's version: the assistant's rewrite is replaced with the next save. */
-	function keepMine() {
-		if (storedUpdatedAt !== undefined) saver.acknowledge(storedUpdatedAt);
+	// The draft changed meanwhile and the editor waits for the reviewer's choice: an assistant's
+	// rewrite seen live, or anything else (another tab, a discard there) the server refused a save for.
+	const changedDraft = $derived(
+		assistantChangedDraft ? 'assistant' : saver.state === 'conflict' ? 'elsewhere' : undefined
+	);
+
+	/** Keeps the editor's version: the draft stored now is replaced with the next save. */
+	async function keepMine() {
+		const latest = await client.query.myPaperReviewDraft({
+			__args: { paperId },
+			updatedAt: true
+		});
+		saver.acknowledge(latest?.updatedAt ?? null);
 		saver.resume();
 	}
 
@@ -256,7 +273,13 @@
 			__args: { paperId },
 			...DRAFT_SELECTION
 		});
-		if (!latest || editorSnapshot() !== before) return;
+		if (editorSnapshot() !== before) return;
+		if (!latest) {
+			// discarded elsewhere: loading what is stored empties the editor
+			resetEditor();
+			saver.resume();
+			return;
+		}
 		reviewComments.set(latest.comments);
 		selectedStatus = latest.statusAfter;
 		editorVersion = latest.paperVersion.version;
@@ -411,7 +434,7 @@
 	<ReviewDraftNotices
 		{notice}
 		{staleWarning}
-		assistantChanged={assistantChangedDraft}
+		changed={changedDraft}
 		onLoadNew={loadStoredDraft}
 		onKeepMine={keepMine}
 	/>

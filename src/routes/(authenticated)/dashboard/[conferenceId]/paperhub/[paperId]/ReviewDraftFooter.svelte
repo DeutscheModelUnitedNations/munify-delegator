@@ -16,12 +16,18 @@
 		idle: () => '',
 		saving: () => m.reviewDraftSaving(),
 		saved: () => m.reviewDraftSaved(),
-		failed: () => m.reviewDraftSaveFailed()
+		failed: () => m.reviewDraftSaveFailed(),
+		conflict: () => m.reviewDraftNotSaved()
 	};
 </script>
 
 <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
-	<span class={saveState === 'failed' ? 'text-error' : 'text-base-content/60'} aria-live="polite">
+	<span
+		class={saveState === 'failed' || saveState === 'conflict'
+			? 'text-error'
+			: 'text-base-content/60'}
+		aria-live="polite"
+	>
 		{SAVE_LABELS[saveState]()}
 	</span>
 	{#if hasDraft}

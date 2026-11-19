@@ -66,7 +66,8 @@ async function lockDraft({
 		.select({
 			id: schema.paperReviewDraft.id,
 			lastEditedVia: schema.paperReviewDraft.lastEditedVia,
-			paperVersionId: schema.paperReviewDraft.paperVersionId
+			paperVersionId: schema.paperReviewDraft.paperVersionId,
+			updatedAt: schema.paperReviewDraft.updatedAt
 		})
 		.from(schema.paperReviewDraft)
 		.where(whereRows({ table: schema.paperReviewDraft, filter: { paperId, reviewerId } }))
@@ -94,6 +95,34 @@ function assertNoAppEditsReplaced(args: Parameters<typeof replacesAppEdits>[0]) 
 	if (replacesAppEdits(args)) {
 		throw apiError({ code: 'CONFLICT', message: m.reviewDraftEditedInApp() });
 	}
+}
+
+/**
+ * Whether the draft changed since the review editor last loaded or saved it (`expectedUpdatedAt`,
+ * null when it saw none): another tab saved it, an assistant rewrote it, or it was discarded or
+ * created elsewhere. The editor would replace that unseen, so its save is refused.
+ */
+export function changedSinceSeen({
+	draft,
+	expectedUpdatedAt
+}: {
+	draft: { updatedAt: Date } | undefined;
+	expectedUpdatedAt: Date | null;
+}) {
+	return (draft?.updatedAt.getTime() ?? null) !== (expectedUpdatedAt?.getTime() ?? null);
+}
+
+/**
+ * Keeps the upsert to the row the editor saw: with none seen, a draft written after the lock
+ * found none is not replaced either.
+ */
+function keepUnseenDraft(draft: { id: string } | undefined) {
+	return {
+		setWhere: whereRows({
+			table: schema.paperReviewDraft,
+			filter: draft ? { id: draft.id } : { id: { isNull: true } }
+		})
+	};
 }
 
 /**
@@ -134,8 +163,10 @@ function keepAppEdits({ by, overwriteAppEdits }: { by: Origin; overwriteAppEdits
  * Writes the reviewer's draft of a paper, replacing the one there is. An assistant's draft (`by:
  * 'MCP'`) starts over: it is written for the latest version and counts as the assistant's,
  * and refuses (CONFLICT) to replace what the reviewer changed in the app unless
- * `overwriteAppEdits`. The reviewer's edits keep the version the draft was written for. Refuses
- * (CONFLICT) a paper that is a draft itself, like a review.
+ * `overwriteAppEdits`. The reviewer's edits keep the version the draft was written for. With
+ * `expected` (the review editor's saves), refuses (CONFLICT) when the draft changed since the
+ * editor saw it (`changedSinceSeen`). Refuses (CONFLICT) a paper that is a draft itself, like a
+ * review.
  */
 export async function saveReviewDraft({
 	paperId,
@@ -143,7 +174,8 @@ export async function saveReviewDraft({
 	comments,
 	statusAfter,
 	by,
-	overwriteAppEdits = false
+	overwriteAppEdits = false,
+	expected
 }: {
 	paperId: string;
 	reviewerId: string;
@@ -151,11 +183,16 @@ export async function saveReviewDraft({
 	statusAfter: Verdict;
 	by: Origin;
 	overwriteAppEdits?: boolean;
+	/** The draft as the saving editor last saw it: its `updatedAt`, null for none. */
+	expected?: { updatedAt: Date | null };
 }) {
 	const saved = await db.transaction(async (tx) => {
 		const { conferenceId, latestVersion } = await loadDraftTarget({ tx, paperId });
 		const draft = await lockDraft({ tx, paperId, reviewerId });
 		assertNoAppEditsReplaced({ draft, by, overwriteAppEdits });
+		if (expected && changedSinceSeen({ draft, expectedUpdatedAt: expected.updatedAt })) {
+			throw apiError({ code: 'CONFLICT', message: m.reviewDraftChangedElsewhere() });
+		}
 
 		const [written] = await tx
 			.insert(schema.paperReviewDraft)
@@ -178,14 +215,19 @@ export async function saveReviewDraft({
 					by,
 					now: new Date()
 				}),
-				...keepAppEdits({ by, overwriteAppEdits })
+				...(expected ? keepUnseenDraft(draft) : keepAppEdits({ by, overwriteAppEdits }))
 			})
 			.returning({
 				id: schema.paperReviewDraft.id,
 				paperVersionId: schema.paperReviewDraft.paperVersionId
 			});
-		// Nothing written: the conflicting row was the reviewer's, which `setWhere` kept.
-		if (!written) throw apiError({ code: 'CONFLICT', message: m.reviewDraftEditedInApp() });
+		// Nothing written: `setWhere` kept a row the writer may not replace.
+		if (!written) {
+			throw apiError({
+				code: 'CONFLICT',
+				message: expected ? m.reviewDraftChangedElsewhere() : m.reviewDraftEditedInApp()
+			});
+		}
 
 		return { ...written, created: !draft, conferenceId, latestVersion };
 	});

@@ -103,7 +103,7 @@ An [AI assistant](./ai-access#review-drafts) can write a draft for you too. The 
 
 - **Find in paper** shows whether a quote stands word for word in the paper. It searches each paragraph, heading and list item on its own. A quote spanning two paragraphs is therefore not found, even when every word matches.
 - If a new version was submitted after the draft, DELEGATOR warns: **This draft refers to version 1, the current one is version 2.** Check whether your review still fits. You can submit it all the same.
-- If the assistant rewrites your draft while you have the paper open, **Load the new draft** offers to take it over.
+- If your draft changes elsewhere while you have the paper open, in another tab or by the assistant, DELEGATOR saves your changes again only once you chose. **Load the new draft** takes the stored version, **Keep my version** replaces it with yours. So no tab silently overwrites what another one saved.
 - Once you edited a draft in DELEGATOR, the assistant does not replace it without your consent.
 - **Discard draft** deletes the draft and empties the editor.
 

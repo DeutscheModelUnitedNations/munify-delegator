@@ -9,19 +9,36 @@ const editor = (text: string) => ({ comments: doc(text), status: 'ACCEPTED' });
 
 /** A save the test answers by hand, to put edits between a save and its answer. */
 function controlledSave() {
-	const calls: { text: string; answer: () => void; fail: () => void }[] = [];
+	const calls: {
+		text: string;
+		expected: number | undefined;
+		answer: (updatedAt?: string) => void;
+		fail: () => void;
+		conflict: () => void;
+	}[] = [];
 	const save = vi.fn(
-		({ comments }: { comments: { content?: { content?: { text?: string }[] }[] } }) =>
+		({
+			comments,
+			expectedUpdatedAt
+		}: {
+			comments: { content?: { content?: { text?: string }[] }[] };
+			expectedUpdatedAt: number | undefined;
+		}) =>
 			new Promise<{ updatedAt: string; version: number }>((resolve, reject) => {
 				calls.push({
 					text: comments.content?.[0]?.content?.[0]?.text ?? '',
-					answer: () => resolve({ updatedAt: new Date().toISOString(), version: 1 }),
-					fail: () => reject(new Error('refused'))
+					expected: expectedUpdatedAt,
+					answer: (updatedAt = new Date().toISOString()) => resolve({ updatedAt, version: 1 }),
+					fail: () => reject(new Error('refused')),
+					conflict: () => reject(CONFLICT)
 				});
 			})
 	);
 	return { save, calls };
 }
+
+const CONFLICT = new Error('changed elsewhere');
+const isConflict = (error: unknown) => error === CONFLICT;
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -167,5 +184,59 @@ describe('createDraftSaver', () => {
 		});
 		await vi.advanceTimersByTimeAsync(5000);
 		expect(save).not.toHaveBeenCalled();
+	});
+
+	it('names the draft it last saw with every save', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save });
+		saver.edited(editor('A'));
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls[0]?.expected).toBeUndefined();
+		calls[0]?.answer('2026-11-19T10:00:00.000Z');
+		await vi.advanceTimersByTimeAsync(0);
+		saver.edited(editor('AB'));
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls[1]?.expected).toBe(Date.parse('2026-11-19T10:00:00.000Z'));
+	});
+
+	it('stops saving after a conflict until the reviewer chose', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save, isConflict });
+		saver.loaded({ editor: editor('A'), updatedAt: '2026-11-19T10:00:00.000Z' });
+		saver.edited(editor('AB'));
+		await vi.advanceTimersByTimeAsync(1500);
+		calls[0]?.conflict();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(saver.state).toBe('conflict');
+
+		// further edits and a resume (a submission refused) save nothing
+		saver.edited(editor('ABC'));
+		expect(saver.state).toBe('conflict');
+		saver.resume();
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(calls).toHaveLength(1);
+
+		// keeping the editor's version replaces the draft stored now
+		saver.acknowledge('2026-11-19T11:00:00.000Z');
+		saver.resume();
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls[1]).toMatchObject({
+			text: 'ABC',
+			expected: Date.parse('2026-11-19T11:00:00.000Z')
+		});
+	});
+
+	it('expects no draft once the one it knew is gone', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save, isConflict });
+		saver.loaded({ editor: editor('A'), updatedAt: '2026-11-19T10:00:00.000Z' });
+		saver.edited(editor('AB'));
+		await vi.advanceTimersByTimeAsync(1500);
+		calls[0]?.conflict();
+		await vi.advanceTimersByTimeAsync(0);
+		saver.acknowledge(null);
+		saver.resume();
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls[1]?.expected).toBeUndefined();
 	});
 });

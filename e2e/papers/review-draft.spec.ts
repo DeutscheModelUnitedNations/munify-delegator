@@ -266,4 +266,55 @@ test.describe('review drafts in the editor', () => {
 			[]
 		);
 	});
+
+	test('a second tab does not overwrite what the first one saved unseen', async ({
+		page,
+		request
+	}) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		await writeDraft({ request, token, paperId, content: 'Grundlage.' });
+		const storedText = async () =>
+			(
+				await sql<{ text: string }>(
+					'SELECT comments::text AS text FROM paper_review_draft WHERE paper_id = $1',
+					[paperId]
+				)
+			)[0]?.text ?? '';
+
+		// both tabs open the same draft
+		await openPaper(page, paperId);
+		const second = await page.context().newPage();
+		await second.goto(`/dashboard/${C}/paperhub/${paperId}#review`);
+		await waitForHydration(second);
+		await expect(second.getByTestId('review-draft-notice')).toBeVisible({ timeout: 30_000 });
+
+		const typeInto = async (tab: Page, text: string) => {
+			await tab.locator('#review .ProseMirror p').first().click();
+			await tab.keyboard.press('End');
+			await tab.keyboard.type(text);
+		};
+
+		// the first tab saves its edit
+		await typeInto(page, ' Aus Tab A.');
+		await expect.poll(storedText, { timeout: 10_000 }).toContain('Aus Tab A.');
+
+		// the second, which never saw that, is refused and asks
+		await typeInto(second, ' Aus Tab B.');
+		await expect(second.getByTestId('review-draft-changed')).toContainText(
+			/anderen Tab|another tab/,
+			{ timeout: 10_000 }
+		);
+		expect(await storedText()).not.toContain('Aus Tab B.');
+
+		// keeping its version replaces the stored one, knowingly
+		await second
+			.getByTestId('review-draft-changed')
+			.getByRole('button', { name: /Meine Fassung behalten|Keep my version/ })
+			.click();
+		await expect.poll(storedText, { timeout: 10_000 }).toContain('Aus Tab B.');
+		expect(await storedText()).not.toContain('Aus Tab A.');
+		await expect(second.getByTestId('review-draft-changed')).toBeHidden();
+		await second.close();
+	});
 });

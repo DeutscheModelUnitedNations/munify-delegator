@@ -3,8 +3,31 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 vi.mock('#api/pubsub', () => ({ paperReviewDraftPubsub: {} }));
 
-const { conflictUpdate, replacesAppEdits, reviewDraftLink, reviewDraftMarkdownSchema } =
-	await import('./paperReviewDraftService');
+const {
+	changedSinceSeen,
+	conflictUpdate,
+	replacesAppEdits,
+	reviewDraftLink,
+	reviewDraftMarkdownSchema
+} = await import('./paperReviewDraftService');
+
+describe('changedSinceSeen', () => {
+	const seen = new Date('2026-11-19T10:00:00.123Z');
+
+	it('passes the draft the editor saw, and none when it saw none', () => {
+		expect(
+			changedSinceSeen({ draft: { updatedAt: new Date(seen) }, expectedUpdatedAt: seen })
+		).toBe(false);
+		expect(changedSinceSeen({ draft: undefined, expectedUpdatedAt: null })).toBe(false);
+	});
+
+	it('refuses a draft saved, created or discarded elsewhere meanwhile', () => {
+		const later = new Date('2026-11-19T10:00:01.000Z');
+		expect(changedSinceSeen({ draft: { updatedAt: later }, expectedUpdatedAt: seen })).toBe(true);
+		expect(changedSinceSeen({ draft: { updatedAt: later }, expectedUpdatedAt: null })).toBe(true);
+		expect(changedSinceSeen({ draft: undefined, expectedUpdatedAt: seen })).toBe(true);
+	});
+});
 
 describe('replacesAppEdits', () => {
 	it('stops an assistant from replacing what the reviewer edited in the app', () => {

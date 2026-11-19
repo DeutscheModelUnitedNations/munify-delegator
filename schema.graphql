@@ -4542,9 +4542,18 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): Conferencesupervisor!
 
   """
-  Saves the caller's review draft of a paper as the review editor holds it, creating it on the first change; a draft written by an assistant keeps the version it was written for. For whoever may review the paper (NOT_FOUND otherwise), CONFLICT for a paper that is still a draft.
+  Saves the caller's review draft of a paper as the review editor holds it, creating it on the first change; a draft written by an assistant keeps the version it was written for. CONFLICT when the draft changed since the editor saw it (`expectedUpdatedAt`) or the paper is still a draft. For whoever may review the paper (NOT_FOUND otherwise).
   """
-  savePaperReviewDraft(comments: JSON!, paperId: ID!, statusAfter: PaperstatusEnum!): Paperreviewdraft!
+  savePaperReviewDraft(
+    comments: JSON!
+
+    """
+    The `updatedAt` of the draft as the editor last loaded or saved it; null when it saw none.
+    """
+    expectedUpdatedAt: DateTime
+    paperId: ID!
+    statusAfter: PaperstatusEnum!
+  ): Paperreviewdraft!
 
   """
   Compares everyone taking part in the conference with the accounts of earlier conferences and those with a care note, and stores the pairs found: new ones open, known ones with a fresh score but their decision kept. Answers how many pairs the scan found.
