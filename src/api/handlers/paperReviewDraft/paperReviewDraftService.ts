@@ -3,6 +3,7 @@ import { whereRows } from '#api/db/whereRows';
 import { paperReviewDraftPubsub } from '#api/pubsub';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
+import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { assertReviewable } from '../paperReview/paperReviewService';
 import { unmatchedQuotes } from './quoteCheck';
@@ -126,12 +127,14 @@ function throwRefusal(refusal: Refusal | undefined) {
 }
 
 /**
- * The `updatedAt` a write gives the draft: now, but always later than the one before, so two
- * writes within one millisecond still tell apart for `changedSinceSeen`.
+ * The `updatedAt` a write over a stored draft sets: now, but always later than the stored row's,
+ * read by Postgres from the row being updated. Two writes within one millisecond, or one that
+ * found no draft and then met another's first write, still tell apart for `changedSinceSeen`.
+ * Timestamps are stored as UTC without a zone, the way drizzle writes them.
  */
-export function nextUpdatedAt({ previous, now }: { previous: Date | undefined; now: Date }) {
-	if (!previous || now.getTime() > previous.getTime()) return now;
-	return new Date(previous.getTime() + 1);
+function laterThanStored(now: Date) {
+	const utc = now.toISOString().replace('T', ' ').replace('Z', '');
+	return sql`greatest(${utc}::timestamp(3), ${schema.paperReviewDraft.updatedAt} + interval '1 millisecond')`;
 }
 
 /**
@@ -271,20 +274,23 @@ async function upsertDraft({
 	by: Origin;
 	guard: ReturnType<typeof keepAppEdits>;
 }) {
-	const now = nextUpdatedAt({ previous: draft?.updatedAt, now: new Date() });
+	const now = new Date();
 	const [written] = await tx
 		.insert(schema.paperReviewDraft)
 		.values({ ...row, origin: by, lastEditedVia: by, createdAt: now, updatedAt: now })
 		.onConflictDoUpdate({
 			target: [schema.paperReviewDraft.paperId, schema.paperReviewDraft.reviewerId],
-			set: conflictUpdate({
-				startsOver: by === 'MCP' || !draft,
-				paperVersionId: row.paperVersionId,
-				comments: row.comments,
-				statusAfter: row.statusAfter,
-				by,
-				now
-			}),
+			set: {
+				...conflictUpdate({
+					startsOver: by === 'MCP' || !draft,
+					paperVersionId: row.paperVersionId,
+					comments: row.comments,
+					statusAfter: row.statusAfter,
+					by,
+					now
+				}),
+				updatedAt: laterThanStored(now)
+			},
 			...guard
 		})
 		.returning({
