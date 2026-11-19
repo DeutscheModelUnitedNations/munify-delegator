@@ -658,6 +658,9 @@ const FIELDS: Record<string, TypeClassification> = {
 			'statusAfter'
 		]
 	},
+	PaperReviewDraftSave: {
+		visible: ['paperVersion', 'updatedAt']
+	},
 	SavedPaperReviewDraft: {
 		// The quotes are the paper's words, which `Paperversion.content` shows as well.
 		visible: ['draftId', 'link', 'paperVersion', 'unmatchedQuotes']

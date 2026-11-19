@@ -4553,7 +4553,7 @@ type Mutation {
     expectedUpdatedAt: DateTime
     paperId: ID!
     statusAfter: PaperstatusEnum!
-  ): Paperreviewdraft!
+  ): PaperReviewDraftSave!
 
   """
   Compares everyone taking part in the conference with the accounts of earlier conferences and those with a care note, and stores the pairs found: new ones open, known ones with a fresh score but their decision kept. Answers how many pairs the scan found.
@@ -5581,6 +5581,16 @@ input PaperOrderInputArgument {
   status: SortingParameter
   type: SortingParameter
   updatedAt: SortingParameter
+}
+
+type PaperReviewDraftSave {
+  """The version of the paper the draft was written for."""
+  paperVersion: Int!
+
+  """
+  The revision this save wrote, for the next save to name as `expectedUpdatedAt`.
+  """
+  updatedAt: DateTime!
 }
 
 """A column of paper the search can look at"""

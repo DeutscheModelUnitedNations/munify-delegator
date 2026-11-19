@@ -219,7 +219,8 @@ export async function saveReviewDraft({
 			})
 			.returning({
 				id: schema.paperReviewDraft.id,
-				paperVersionId: schema.paperReviewDraft.paperVersionId
+				paperVersionId: schema.paperReviewDraft.paperVersionId,
+				updatedAt: schema.paperReviewDraft.updatedAt
 			});
 		// Nothing written: `setWhere` kept a row the writer may not replace.
 		if (!written) {
@@ -229,7 +230,19 @@ export async function saveReviewDraft({
 			});
 		}
 
-		return { ...written, created: !draft, conferenceId, latestVersion };
+		// The version this write left the draft on, read while the row is still locked.
+		const [writtenVersion] = await tx
+			.select({ version: schema.paperVersion.version })
+			.from(schema.paperVersion)
+			.where(whereRows({ table: schema.paperVersion, filter: { id: written.paperVersionId } }));
+
+		return {
+			...written,
+			version: writtenVersion?.version ?? latestVersion.version,
+			created: !draft,
+			conferenceId,
+			latestVersion
+		};
 	});
 	if (saved.created) paperReviewDraftPubsub.created();
 	else paperReviewDraftPubsub.updated(saved.id);

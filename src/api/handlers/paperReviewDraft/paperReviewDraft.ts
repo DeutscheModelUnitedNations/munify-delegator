@@ -3,7 +3,6 @@ import { editorDocumentSchema } from '#api/handlers/paper/paperService';
 import { enum_, object, schemaBuilder, type ApiContext } from '#api/rumble';
 import { mcpTool } from '#api/mcp/mcpTool';
 import { paperReviewDraftPubsub } from '#api/pubsub';
-import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertCanReviewPaper } from '../paperReview/paperReviewPermissions';
 import { reviewVerdictSchema } from '../paperReview/paperReviewService';
 import { registerPaperReviewDraftAbilities } from './paperReviewDraftPermissions';
@@ -57,6 +56,20 @@ const SavedPaperReviewDraft = schemaBuilder.simpleObject('SavedPaperReviewDraft'
 	})
 });
 
+/**
+ * What one save from the review editor wrote: its own revision, not whatever the draft is by the
+ * time the answer is built, so another tab saving right after cannot pass as this editor's save.
+ */
+const PaperReviewDraftSave = schemaBuilder.simpleObject('PaperReviewDraftSave', {
+	fields: (t) => ({
+		updatedAt: t.field({
+			type: 'DateTime',
+			description: 'The revision this save wrote, for the next save to name as `expectedUpdatedAt`.'
+		}),
+		paperVersion: t.int({ description: 'The version of the paper the draft was written for.' })
+	})
+});
+
 schemaBuilder.mutationFields((t) => ({
 	upsertPaperReviewDraft: t.field({
 		description:
@@ -99,10 +112,10 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	savePaperReviewDraft: t.drizzleField({
+	savePaperReviewDraft: t.field({
 		description:
 			"Saves the caller's review draft of a paper as the review editor holds it, creating it on the first change; a draft written by an assistant keeps the version it was written for. CONFLICT when the draft changed since the editor saw it (`expectedUpdatedAt`) or the paper is still a draft. For whoever may review the paper (NOT_FOUND otherwise).",
-		type: PaperReviewDraftRef,
+		type: PaperReviewDraftSave,
 		args: {
 			paperId: t.arg.id({ required: true }),
 			comments: t.arg({ type: 'JSON', required: true }).validate(editorDocumentSchema),
@@ -114,9 +127,9 @@ schemaBuilder.mutationFields((t) => ({
 					'The `updatedAt` of the draft as the editor last loaded or saved it; null when it saw none.'
 			})
 		},
-		resolve: async (query, _root, args, ctx) => {
+		resolve: async (_root, args, ctx) => {
 			const { reviewerId } = await assertCanReviewPaper({ ctx, paperId: args.paperId });
-			await saveReviewDraft({
+			const saved = await saveReviewDraft({
 				paperId: args.paperId,
 				reviewerId,
 				comments: args.comments,
@@ -124,9 +137,7 @@ schemaBuilder.mutationFields((t) => ({
 				by: writtenBy(ctx),
 				expected: { updatedAt: args.expectedUpdatedAt ?? null }
 			});
-			return db.query.paperReviewDraft
-				.findFirst(query(await ownDraft({ ctx, paperId: args.paperId })))
-				.then(assertFindFirstExists);
+			return { updatedAt: saved.updatedAt, paperVersion: saved.version };
 		}
 	}),
 

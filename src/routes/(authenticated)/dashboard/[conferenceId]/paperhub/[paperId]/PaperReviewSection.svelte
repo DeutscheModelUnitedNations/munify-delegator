@@ -162,9 +162,9 @@
 					expectedUpdatedAt: expectedUpdatedAt === undefined ? null : new Date(expectedUpdatedAt)
 				},
 				updatedAt: true,
-				paperVersion: { version: true }
+				paperVersion: true
 			});
-			return { updatedAt: saved.updatedAt, version: saved.paperVersion.version };
+			return { updatedAt: saved.updatedAt, version: saved.paperVersion };
 		},
 		onSaved: (saved) => {
 			editorVersion ??= saved.version;

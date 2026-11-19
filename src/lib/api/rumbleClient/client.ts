@@ -3493,7 +3493,7 @@ export type Mutation = {
     expectedUpdatedAt?: DateTime | null | undefined,
     paperId: ID,
     statusAfter: PaperstatusEnum
-  }) => Paperreviewdraft,
+  }) => PaperReviewDraftSave,
   scanPossibleDuplicates: (p: {
     conferenceId: ID
   }) => Int,
@@ -4157,6 +4157,11 @@ export type PaperOrderInputArgument = {
   status?: SortingParameter | null | undefined,
   type?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type PaperReviewDraftSave = {
+  paperVersion: Int,
+  updatedAt: DateTime    
 };
 		
 export type PaperSearchFieldEnum = "agendaItemId" | "authorParticipantId" | "delegationId" | "id";
