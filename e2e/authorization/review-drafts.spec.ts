@@ -167,4 +167,26 @@ test.describe('review drafts over MCP', () => {
 		const { isError } = await upsert(request, tokens.reviewer, { statusAfter: 'DRAFT' });
 		expect(isError).toBe(true);
 	});
+
+	test('every write moves the draft revision past the stored one', async ({ request }) => {
+		await upsert(request, tokens.reviewer);
+		// a stored revision ahead of the server's clock: a write that took only its own clock would
+		// land on or before it, and the editor's revision check could not tell the two apart
+		await query(
+			"UPDATE paper_review_draft SET updated_at = now()::timestamp(3) + interval '1 hour' WHERE paper_id = $1",
+			[PAPER]
+		);
+		const [{ stored }] = await query<{ stored: string }>(
+			'SELECT updated_at::text AS stored FROM paper_review_draft WHERE paper_id = $1',
+			[PAPER]
+		);
+		const { isError } = await upsert(request, tokens.reviewer);
+		expect(isError).toBe(false);
+		expect(
+			await query<{ later: boolean }>(
+				'SELECT updated_at > $2::timestamp(3) AS later FROM paper_review_draft WHERE paper_id = $1',
+				[PAPER, stored]
+			)
+		).toEqual([{ later: true }]);
+	});
 });
