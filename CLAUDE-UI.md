@@ -328,6 +328,10 @@ after saving. Typical binding into URL state:
   thread follows new messages only near the end or for the caller's own; otherwise
   "jump to new messages" appears. The composer keeps a draft per chat (module map) and takes focus
   on fine pointers.
+  A message participant care hid (`hiddenMessages.ts`, `hiddenState`) reads as a dashed
+  placeholder for the parties and, with text, reason and who hid it, in a dashed error frame for
+  participant care. Reviewing a chat between participants (`canHideIn`), each participant's message
+  carries an eye that opens `HideMessagesModal`.
 - **Motion**: switching chats is a view transition (`chatViewTransition`, `data-chat-transition`,
   names `chat-list`/`chat-pane`, CSS in `app.css`): the pane cross-fades, on a phone list and
   thread slide. `ChatWorkspace` swaps `shownId` (bindable, for the page around) inside it. Bubbles
@@ -338,7 +342,9 @@ after saving. Typical binding into URL state:
   waiting first: `reportCases`, `waitingSince`), the chat's read-only `ChatThread`, `ReportCaseFile`
   (everyone of the chat by name and role, delegation group members included, with earlier
   settled reports; suspension switch; `WriteToDelegateButton`; user card; the internal note settling
-  all the chat's reports, `resolveChatReports`). `SettledReports` keeps settled ones with notes.
+  all the chat's reports, `resolveChatReports`; "hide all messages" per person, `HideMessagesModal`).
+  `SettledReports` keeps settled ones with notes and the messages hidden under them
+  (`HiddenMessagesRecord`).
   Same surfaces as the messenger: one ringed frame, queue and case file as `bg-base-200` columns,
   queue rows like chat list rows, the case file scrolls with note and "settle" pinned below.
   Reviewing, the thread header shows no card buttons (the case file has them).

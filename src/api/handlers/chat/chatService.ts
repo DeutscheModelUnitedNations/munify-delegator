@@ -772,6 +772,7 @@ const lastMessageBatcher = createBatcher(async (chatIds: string[]) => {
 		.selectDistinctOn([chatMessage.chatId], {
 			chatId: chatMessage.chatId,
 			body: chatMessage.body,
+			hiddenAt: chatMessage.hiddenAt,
 			fromTeam: chatMessage.fromTeam,
 			authorParticipantId: chatMessage.authorParticipantId
 		})

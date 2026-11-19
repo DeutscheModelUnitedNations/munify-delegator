@@ -109,7 +109,7 @@ bun run preview
 | `assignment.md`          | Roles, draft/apply/release, board, required applications, release masking                                                                       |
 | `schools.md`             | Schools, school choice, visibility, school rules (groups, foreign schools)                                                                      |
 | `emails.md`              | Automatic emails: `dueEmails`, snapshot paging, sweep, log, texts, footers, pacing                                                              |
-| `messages.md`            | Chats, inboxes, trusted persons, reports, write rules, messaging terms                                                                          |
+| `messages.md`            | Chats, inboxes, trusted persons, reports, hiding messages, write rules, messaging terms                                                         |
 | `announcements.md`       | Announcement states, audiences, feed, reads, mails                                                                                              |
 | `team-notifications.md`  | Per-topic/channel team notifications, Slack workspaces                                                                                          |
 | `data-tables.md`         | DataGrid model, table engine sources, saved views, presets                                                                                      |

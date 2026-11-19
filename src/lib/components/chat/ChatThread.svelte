@@ -25,6 +25,7 @@
 		unreadStateOf,
 		type ThreadReport
 	} from './threadMessages';
+	import { canHideIn } from './hiddenMessages';
 
 	interface Props {
 		chatId: string;
@@ -176,6 +177,7 @@
 					{unreadFromId}
 					{reports}
 					conferenceId={chat.conferenceId}
+					canHide={canHideIn({ side, kind: chat.kind })}
 				/>
 			</div>
 			{#if missed}

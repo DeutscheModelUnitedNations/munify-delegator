@@ -76,7 +76,8 @@ type ApiErrorArgs = Parameters<typeof apiError>[0];
 
 /**
  * The rules the database's triggers keep (see the `conference_anchor`, `conference_reach_unchanged`,
- * `one_part_per_conference`, `conference_calendar_tracks` and `conference_role_kind` migrations),
+ * `one_part_per_conference`, `conference_calendar_tracks`, `conference_role_kind` and
+ * `chat_message_hidden` migrations),
  * by the constraint name they raise with. They are the only check of these rules: resolvers do not
  * look the rows up first.
  */
@@ -100,6 +101,14 @@ const DATABASE_RULES: { matches: (constraint: string) => boolean; error: () => A
 	{
 		matches: (constraint) => constraint === 'one_part_per_conference',
 		error: () => ({ code: 'CONFLICT', message: m.alreadyTakesPartInConference() })
+	},
+	{
+		matches: (constraint) => constraint === 'chat_message_hidden_is_final',
+		error: () => ({ code: 'CONFLICT', message: m.chatMessageAlreadyHidden() })
+	},
+	{
+		matches: (constraint) => constraint === 'chat_message_hidden_not_in_team_chat',
+		error: () => ({ code: 'FORBIDDEN', message: m.chatHideTeamChat() })
 	}
 ];
 

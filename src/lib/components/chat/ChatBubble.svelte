@@ -2,7 +2,10 @@
 	@component
 	One bubble of a thread: what one author wrote in a row (`runsOf`), the caller's side on the
 	right, the other on the left. The author's name heads it where a side has more than one voice,
-	the time of the last message closes it, and each message shows its full time on hover.
+	the time of the last message closes it, and each message shows its full time on hover. A message
+	participant care hid reads as a placeholder for the chat's people; participant care reviewing the
+	chat sees its text, marked as hidden, with who hid it and why. While reviewing, `onHide` offers to
+	hide each message not hidden yet.
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
@@ -11,13 +14,17 @@
 	import { cubicOut } from 'svelte/easing';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
+	import ChatMessageText from './ChatMessageText.svelte';
 
 	interface Props {
 		messages: readonly {
 			id: string;
-			body: string;
+			body: string | null;
 			createdAt: Date | string;
 			paperId?: string | null;
+			hiddenAt?: Date | string | null;
+			hiddenByName?: string | null;
+			hiddenReason?: string | null;
 		}[];
 		own: boolean;
 		/** The name heading the bubble, where one is shown */
@@ -25,9 +32,11 @@
 		/** Follows a bubble of the same author, so it sits closer */
 		continues: boolean;
 		conferenceId: string;
+		/** Participant care reviewing the chat: hides one of these messages */
+		onHide?: (messageId: string) => void;
 	}
 
-	let { messages, own, author, continues, conferenceId }: Props = $props();
+	let { messages, own, author, continues, conferenceId, onHide }: Props = $props();
 
 	const last = $derived(messages.at(-1));
 	const lastWritten = $derived(last ? new Date(last.createdAt) : null);
@@ -84,7 +93,7 @@
 						{m.chatAboutPaper()}
 					</a>
 				{/if}
-				<p class="break-words whitespace-pre-wrap">{message.body}</p>
+				<ChatMessageText {message} onHide={onHide ? () => onHide(message.id) : undefined} />
 			</div>
 		{/each}
 		{#if lastWritten}

@@ -3,13 +3,16 @@
 	The messages of a thread, by day: the caller's side on the right, the other on the left, what
 	one author writes in a row in one bubble, with the author's name where a side has more than one
 	voice (`threadMessages.ts`), a line above the first message the reader had not read yet and,
-	for participant care, each report where in the conversation it was filed.
+	for participant care, each report where in the conversation it was filed. Participant care
+	reviewing a chat between participants may hide what participants wrote (`HideMessagesModal`).
 -->
 <script lang="ts">
 	import type { ChatSide } from '#lib/helpers/chat';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import ChatBubble from './ChatBubble.svelte';
+	import HideMessagesModal from './HideMessagesModal.svelte';
+	import type { HideTarget } from './hiddenMessages';
 	import { dayLabel, groupByDay } from './chatTime';
 	import {
 		bubblesOf,
@@ -21,9 +24,12 @@
 	} from './threadMessages';
 
 	type Message = ThreadMessage & {
-		body: string;
+		body: string | null;
 		createdAt: Date | string;
 		paperId?: string | null;
+		hiddenAt?: Date | string | null;
+		hiddenByName?: string | null;
+		hiddenReason?: string | null;
 	};
 
 	interface Props {
@@ -35,9 +41,30 @@
 		unreadFromId?: string;
 		/** A reported chat's open reports, for participant care: each shows where it was filed */
 		reports?: readonly ThreadReport[];
+		/** Participant care reviewing the chat may hide what participants wrote */
+		canHide?: boolean;
 	}
 
-	let { messages, chat, side, conferenceId, unreadFromId, reports = [] }: Props = $props();
+	let {
+		messages,
+		chat,
+		side,
+		conferenceId,
+		unreadFromId,
+		reports = [],
+		canHide = false
+	}: Props = $props();
+
+	let hideOpen = $state(false);
+	let hideTarget = $state<HideTarget>({ kind: 'message', messageId: '' });
+	/** What hides a message of a run, where the reader may: what a participant wrote. */
+	function hideOf(run: { messages: readonly Message[] }) {
+		if (!canHide || run.messages.some((message) => message.fromTeam)) return undefined;
+		return (messageId: string) => {
+			hideTarget = { kind: 'message', messageId };
+			hideOpen = true;
+		};
+	}
 
 	const placed = $derived(placeReports({ messages, reports }));
 	const now = new Date();
@@ -99,7 +126,10 @@
 			author={run.author}
 			continues={run.continues}
 			{conferenceId}
+			onHide={hideOf(run)}
 		/>
 	{/each}
 {/each}
 {@render reportNotes(placed.after)}
+
+<HideMessagesModal bind:open={hideOpen} target={hideTarget} />

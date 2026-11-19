@@ -1326,7 +1326,9 @@ type Chat {
   kind: ChatkindEnum!
   lastMessageAt: DateTime
 
-  """The beginning of the latest message."""
+  """
+  The beginning of the latest message; a placeholder for one participant care hid.
+  """
   lastMessagePreview: String
   lastParticipantMessageAt: DateTime
 
@@ -1534,13 +1536,26 @@ type Chatmessage {
   """
   authorName: String
   authorParticipantId: ID
-  body: String!
+
+  """
+  The text. Null for the parties of the chat once participant care hid the message (`hiddenAt`): they see that it was hidden, not what it said. Participant care and system admins keep reading it.
+  """
+  body: String
 
   """Get the chats related to this chatMessage"""
   chat(orderBy: ChatOrderInputArgument, where: ChatWhereInputArgument): Chat!
   chatId: ID!
   createdAt: DateTime!
   fromTeam: Boolean!
+  hiddenAt: DateTime
+  hiddenById: ID
+
+  """
+  Who of participant care hid the message, for participant care and system admins; null for everybody else and for a message not hidden.
+  """
+  hiddenByName: String
+  hiddenReason: String
+  hiddenReportId: ID
   id: ID!
 
   """Written by the caller."""
@@ -1565,6 +1580,10 @@ input ChatmessageOrderInputArgument {
   chatId: SortingParameter
   createdAt: SortingParameter
   fromTeam: SortingParameter
+  hiddenAt: SortingParameter
+  hiddenById: SortingParameter
+  hiddenReason: SortingParameter
+  hiddenReportId: SortingParameter
   id: SortingParameter
   paperId: SortingParameter
   teamAuthorUserId: SortingParameter
@@ -1575,6 +1594,9 @@ enum ChatmessageSearchFieldEnum {
   authorParticipantId
   body
   chatId
+  hiddenById
+  hiddenReason
+  hiddenReportId
   id
   paperId
   teamAuthorUserId
@@ -1601,6 +1623,10 @@ input ChatmessageWhereInputArgument {
   chatId: IDWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   fromTeam: BooleanWhereInputArgument
+  hiddenAt: DateTimeWhereInputArgument
+  hiddenById: IDWhereInputArgument
+  hiddenReason: StringWhereInputArgument
+  hiddenReportId: IDWhereInputArgument
   id: IDWhereInputArgument
   paper: PaperWhereInputArgument
   paperId: IDWhereInputArgument
@@ -1616,6 +1642,11 @@ type Chatreport {
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
   conferenceId: ID!
   createdAt: DateTime!
+
+  """
+  The messages participant care hid while this report was the oldest open one of its chat, the oldest first; kept with the report once it is settled and the chat is private again.
+  """
+  hiddenMessages: [HiddenChatMessage!]!
   id: ID!
   reason: String!
 
@@ -3361,6 +3392,21 @@ enum GenderEnum {
   NO_STATEMENT
 }
 
+"""
+A message participant care hid while the report was open, as the record keeps it: the text, who wrote it, who hid it and why.
+"""
+type HiddenChatMessage {
+  """Who wrote it; null once their participation is gone."""
+  authorName: String
+  authorParticipantId: ID
+  body: String!
+  createdAt: DateTime!
+  hiddenAt: DateTime!
+  hiddenByName: String
+  hiddenReason: String!
+  id: ID!
+}
+
 input IDWhereInputArgument {
   AND: [IDWhereInputArgument!]
   NOT: IDWhereInputArgument
@@ -4336,6 +4382,16 @@ type Mutation {
   Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, or `TRUSTED_PERSON` for the whole conference (without a committee). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, the trusted persons their shared one and each their own. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference, a committee function without a committee and a trusted person with one.
   """
   giveTeamFunction(committeeId: ID, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
+
+  """
+  Hides a message of a reported chat for everybody of it, with a reason for the team. Final: the parties read a placeholder from then on, participant care and system admins keep the text with the report. Participant care of the conference while a report of the chat is open (NOT_FOUND otherwise, FORBIDDEN for a team chat, CONFLICT for a message hidden already).
+  """
+  hideChatMessage(id: ID!, reason: String!): Boolean!
+
+  """
+  Hides everything a person wrote into a reported chat so far, for everybody of it, with a reason for the team, and answers how many messages it hid. What they write later stays visible (`setMessagingSuspended` keeps them from writing). Final, like `hideChatMessage`, and for the same people.
+  """
+  hideChatMessagesOf(chatId: ID!, participantId: ID!, reason: String!): Int!
 
   """
   The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.

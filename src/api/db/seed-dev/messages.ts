@@ -38,6 +38,8 @@ interface SeedMessage {
 	body: string;
 	/** The paper the team wrote from */
 	paperId?: string;
+	/** Hidden by participant care under a report, that many minutes ago */
+	hidden?: { by: DevAccountSub; reportId: string; reason: string; minutesAgo: number };
 }
 
 /**
@@ -150,7 +152,15 @@ export function addMessages(cs: ConferenceSeed) {
 				fromTeam: 'team' in message.from,
 				authorParticipantId:
 					'participant' in message.from ? participantId(message.from.participant) : null,
-				teamAuthorUserId: 'team' in message.from ? message.from.team : null
+				teamAuthorUserId: 'team' in message.from ? message.from.team : null,
+				...(message.hidden
+					? {
+							hiddenAt: at(message.hidden.minutesAgo),
+							hiddenById: message.hidden.by,
+							hiddenReason: message.hidden.reason,
+							hiddenReportId: message.hidden.reportId
+						}
+					: {})
 			});
 		}
 		cs.batch.chatRead.push(...readMarkers({ chatId, messages, readBy, at }));
@@ -405,6 +415,18 @@ export function addMessages(cs: ConferenceSeed) {
 			id: 'direct-reported',
 			chat: { ...direct('dev-nsa-delegate', stranger.userId), underReview: true },
 			messages: [
+				// hidden under the earlier report, which is settled: its case keeps the text
+				{
+					from: { participant: stranger.userId },
+					minutesAgo: 3 * 24 * 60 + 20,
+					body: 'Eure Organisation ist ein Witz, euch nimmt hier sowieso niemand ernst.',
+					hidden: {
+						by: 'dev-team-care',
+						reportId: cs.rowId('chat-report-direct-earlier'),
+						reason: 'Abwertende Äußerung über die Organisation der Delegation.',
+						minutesAgo: 3 * 24 * 60 - 20
+					}
+				},
 				{
 					from: { participant: stranger.userId },
 					minutesAgo: 6 * 60,
@@ -438,8 +460,10 @@ export function addMessages(cs: ConferenceSeed) {
 			reason: 'Es geht weiter, obwohl ich um einen sachlichen Ton gebeten habe.',
 			createdAt: new Date(now - 4 * HOUR)
 		});
-		// an earlier report of the same chat, settled: it shows next to the other party
+		// an earlier report of the same chat, settled, with the message hidden under it: it shows
+		// next to the other party
 		cs.batch.chatReport.push({
+			id: cs.rowId('chat-report-direct-earlier'),
 			conferenceId: cs.id,
 			chatId,
 			reporterUserId: 'dev-nsa-delegate',
@@ -478,6 +502,7 @@ export function addMessagingAccountSettings(batch: SeedBatch) {
 	}
 }
 
+/** `userIds` accepted the terms as they stand, in German, four days ago (once per account). */
 function acceptTerms({ batch, userIds }: { batch: SeedBatch; userIds: string[] }) {
 	// once per person, although several conferences seed the same one
 	const accepted = new Set(batch.messagingTermsAcceptance.map((acceptance) => acceptance.userId));

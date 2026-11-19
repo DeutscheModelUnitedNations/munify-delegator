@@ -329,12 +329,36 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 
 	await suspendAnna.click();
 	await expect(suspendAnna).toHaveText('Für Chats sperren');
-	// settling it with a note closes the case; the note stays with the settled reports
+
+	// participant care hides a message for everybody, with a reason, for good
+	const hello = thread.getByTestId('chat-message').filter({ hasText: 'Hallo aus Deutschland' });
+	await hello.getByTestId('chat-message-hide').click();
+	await expect(carePage.getByText('Das Ausblenden ist endgültig.')).toBeVisible();
+	await expect(carePage.getByTestId('chat-hide-confirm')).toBeDisabled();
+	await carePage.getByTestId('chat-hide-reason').fill('Unangemessener Ton');
+	await carePage.getByTestId('chat-hide-confirm').click();
+	// participant care keeps the text, marked as hidden, and cannot hide it again
+	await expect(hello).toContainText('Für die Beteiligten ausgeblendet');
+	await expect(hello).toContainText('Grund: Unangemessener Ton');
+	await expect(hello.getByTestId('chat-message-hide')).toHaveCount(0);
+	// the chat's people, the author too, read a placeholder instead
+	await openChat(annaPage, /Frankreich · MSGV/);
+	const placeholder = annaPage.getByTestId('chat-message').filter({
+		hasText: 'Diese Nachricht wurde von der Teilnehmendenbetreuung ausgeblendet.'
+	});
+	await expect(placeholder).toHaveCount(1);
+	await expect(annaPage.getByTestId('chat-thread')).not.toContainText('Hallo aus Deutschland');
+
+	// settling it with a note closes the case; the note and the hidden message stay with the
+	// settled reports
 	await carePage.getByTestId('chat-case-note').fill('Mit beiden gesprochen.');
 	await carePage.getByTestId('chat-report-resolve').click();
 	await expect(carePage.getByTestId('chat-no-reports')).toBeVisible();
 	await carePage.getByText('Erledigte Meldungen (1)').click();
 	await expect(carePage.getByText('Mit beiden gesprochen.')).toBeVisible();
+	await expect(carePage.getByTestId('chat-report-hidden-message')).toContainText([
+		'Hallo aus Deutschland'
+	]);
 });
 
 test('project management hands out a committee function, which opens an inbox', async ({

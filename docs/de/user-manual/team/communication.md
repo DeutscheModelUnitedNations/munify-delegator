@@ -152,9 +152,22 @@ Teilnehmende können einen Einzelchat oder ihre Delegationsgruppe melden. Chats 
 2. Wählst du einen Fall, liest du in der Mitte den Chat mit Namen. Jede Meldung steht mit Grund, meldender Person und Zeit an der Stelle im Chat, an der sie abgegeben wurde. Schreiben kannst du in diesem Chat nicht. Die andere Person erfährt nicht, wer gemeldet hat.
 3. Rechts steht die **Fallakte** mit den **Beteiligten**, bei einer Delegationsgruppe mit allen Mitgliedern. Bei jeder Person siehst du frühere erledigte Meldungen zu ihren Chats, schreibst ihr oder öffnest ihre [Teilnehmendenkarte](./participants#user-card).
 4. **Für Chats sperren** nimmt eine Person aus allen Chats mit anderen Teilnehmenden dieser Konferenz. Sie erreicht das Team weiterhin, und das Team erreicht sie. **Sperre aufheben** macht das rückgängig.
-5. Halte unter **Interne Notiz** fest, was besprochen und entschieden wurde, und schließe mit **Erledigen** alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat und die Teilnehmendenbetreuung liest ihn nicht mehr. Eine Sperre bleibt, bis du sie aufhebst.
+5. Blende anstößige Nachrichten aus, solange der Fall offen ist (siehe unten).
+6. Halte unter **Interne Notiz** fest, was besprochen und entschieden wurde, und schließe mit **Erledigen** alle Meldungen des Chats auf einmal. Danach ist der Chat wieder privat und die Teilnehmendenbetreuung liest ihn nicht mehr. Eine Sperre bleibt, bis du sie aufhebst.
 
 Erledigte Meldungen stehen mit ihrer Notiz eingeklappt unter **Erledigte Meldungen**. Die Notiz liest nur das Team.
+
+### Nachrichten ausblenden {#hide-messages}
+
+Anstößige Inhalte blendest du für alle Beteiligten aus. Gelöscht wird dabei nichts, der Text bleibt als Beleg erhalten.
+
+- Neben jeder Nachricht von Teilnehmenden im gemeldeten Chat steht ein Auge. Damit blendest du diese eine Nachricht aus.
+- **Alle Nachrichten ausblenden** bei einer Person in der Fallakte blendet alles aus, was sie bisher in diesen Chat geschrieben hat. Was sie danach schreibt, bleibt sichtbar. Damit sie nicht weiterschreibt, sperre sie für Chats.
+- Gib jedes Mal einen **Grund** an. Ihn liest nur das Team.
+
+Das Ausblenden ist endgültig und lässt sich nicht rückgängig machen. Alle Beteiligten sehen statt der Nachricht nur noch den Hinweis, dass die Teilnehmendenbetreuung sie ausgeblendet hat, auch wer sie geschrieben hat. Wer ausgeblendet hat und warum, erfahren sie nicht. Eine eigene Benachrichtigung gibt es nicht.
+
+Die Teilnehmendenbetreuung liest den Text weiter: im offenen Fall rot umrandet mit Grund, wer ausgeblendet hat und wann, und nach dem Erledigen bei der Meldung unter **Erledigte Meldungen**. Dort bleibt er, solange es den Chat gibt, auch wenn der Chat danach wieder privat ist. Nachrichten in Chats mit dem Team lassen sich nicht ausblenden.
 
 ### Benachrichtigungen {#notifications}
 
