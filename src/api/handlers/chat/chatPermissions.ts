@@ -14,7 +14,12 @@ import {
 	teamConferenceIds,
 	type RuleArgs
 } from '#api/services/authHelper/rules';
-import { callerFacts, liveWhere, type CallerFacts } from '#api/services/authHelper/callerFacts';
+import {
+	callerFacts,
+	liveRule,
+	liveWhere,
+	type CallerFacts
+} from '#api/services/authHelper/callerFacts';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
@@ -46,9 +51,24 @@ export function registerChatAbilities() {
 		const where = adminChats(ctx)?.where;
 		return where ? { where: { chat: where } } : undefined;
 	});
+	// The parties read a message participant care hid without its text and without who hid it
+	// and why (`hiddenAt` tells them it is hidden). Masked, the text cannot be filtered by either.
 	abilityBuilder.chatMessage
 		.allow('read')
-		.when(liveWhere((args) => hop(partyOfChat(args), (chat) => ({ chat }))));
+		.when(
+			liveWhere((args) =>
+				hop(partyOfChat(args), (chat) => ({ chat, hiddenAt: { isNull: true as const } }))
+			)
+		);
+	abilityBuilder.chatMessage.allow('read').when(
+		liveRule((args) => {
+			const where = hop(partyOfChat(args), (chat) => ({
+				chat,
+				hiddenAt: { isNotNull: true as const }
+			}));
+			return where && { where, columns: HIDDEN_FROM_PARTIES };
+		})
+	);
 	abilityBuilder.chatMessage
 		.allow('read')
 		.when(liveWhere((args) => hop(inboxOfChat(args), (chat) => ({ chat }))));
@@ -64,6 +84,14 @@ export function registerChatAbilities() {
 			liveWhere((args) => isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }))
 		);
 }
+
+/** What the parties of a chat do not read of a message participant care hid. */
+const HIDDEN_FROM_PARTIES = {
+	body: false,
+	hiddenById: false,
+	hiddenReason: false,
+	hiddenReportId: false
+} as const;
 
 function adminChats(ctx: Context) {
 	return isSystemAdmin(ctx)
@@ -449,13 +477,7 @@ export async function assertCanSuspend({
  * The reported chat whose reports the caller may settle: participant care of its conference.
  * NOT_FOUND for anybody else, and for a chat without an open report.
  */
-export async function assertCanSettleReportsOf({
-	ctx,
-	chatId
-}: {
-	ctx: ApiContext;
-	chatId: string;
-}) {
+export async function assertCanSettleReportsOf({ ctx, chatId }: { ctx: Context; chatId: string }) {
 	ctx.mustBeLoggedIn();
 	const chat = await db.query.chat.findFirst({ where: { id: chatId, underReview: true } });
 	const facts = await callerFacts(ctx);
@@ -463,4 +485,34 @@ export async function assertCanSettleReportsOf({
 		throw apiError({ code: 'NOT_FOUND', message: m.chatReportNotFound() });
 	}
 	return chat;
+}
+
+/**
+ * The reported chat whose messages the caller may hide: participant care of its conference while a
+ * report of it is open, which is when they read it. NOT_FOUND for anybody else, and for a chat
+ * without an open report. A team chat is its inbox's and has nothing to hide (FORBIDDEN).
+ */
+export async function assertCanModerateChat({ ctx, chatId }: { ctx: Context; chatId: string }) {
+	const chat = await assertCanSettleReportsOf({ ctx, chatId });
+	if (chat.kind === 'TEAM') {
+		throw apiError({ code: 'FORBIDDEN', message: m.chatHideTeamChat() });
+	}
+	return chat;
+}
+
+/** `assertCanModerateChat` for the chat a message is in. NOT_FOUND for a message not found. */
+export async function assertCanModerateMessage({
+	ctx,
+	messageId
+}: {
+	ctx: Context;
+	messageId: string;
+}) {
+	ctx.mustBeLoggedIn();
+	const message = await db.query.chatMessage.findFirst({
+		where: { id: messageId },
+		columns: { chatId: true }
+	});
+	if (!message) throw apiError({ code: 'NOT_FOUND', message: m.chatMessageNotFound() });
+	return assertCanModerateChat({ ctx, chatId: message.chatId });
 }

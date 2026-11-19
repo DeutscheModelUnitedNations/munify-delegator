@@ -95,7 +95,9 @@ describe('databaseRuleError', () => {
 		['resolution_conference_id_immutable', 'INVALID_INPUT'],
 		['delegation_role_kind', 'INVALID_INPUT'],
 		['calendar_entry_track_runs_on_day', 'INVALID_INPUT'],
-		['one_part_per_conference', 'CONFLICT']
+		['one_part_per_conference', 'CONFLICT'],
+		['chat_message_hidden_is_final', 'CONFLICT'],
+		['chat_message_hidden_not_in_team_chat', 'FORBIDDEN']
 	])('answers %s as %s, at the same place', (constraint, code) => {
 		const error = databaseRuleError(failed({ code: '23514', constraint }));
 		expect(error?.extensions.code).toBe(code);

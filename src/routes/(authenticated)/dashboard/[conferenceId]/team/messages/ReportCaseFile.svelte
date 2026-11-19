@@ -89,7 +89,7 @@
 				data-testid="chat-case-people"
 			>
 				{#each people as person (person.participantId)}
-					<ReportCasePerson {conferenceId} {person} />
+					<ReportCasePerson {conferenceId} {chatId} {person} />
 				{/each}
 			</ul>
 		</section>

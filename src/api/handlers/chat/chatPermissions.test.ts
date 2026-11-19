@@ -3,13 +3,25 @@ import type { Context } from '#api/context';
 import { createCallerFactsCache } from '#api/services/authHelper/callerFactsCache';
 import type { CallerFacts } from '#api/services/authHelper/callerFacts';
 
-vi.mock('#api/db/db', () => ({ db: {} }));
+const findChat = vi.fn<(args: unknown) => Promise<object | undefined>>();
+const findMessage = vi.fn<(args: unknown) => Promise<object | undefined>>();
+vi.mock('#api/db/db', () => ({
+	db: { query: { chat: { findFirst: findChat }, chatMessage: { findFirst: findMessage } } }
+}));
 vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
 const hasAcceptedTerms = vi.fn<(userId: string) => Promise<boolean>>();
 vi.mock('#api/handlers/messagingTerms/messagingTermsService', () => ({ hasAcceptedTerms }));
 
-const { assertAcceptedTerms, caresFor, chatSide, holdsInbox, knowsPeopleOf, writingParticipantId } =
-	await import('./chatPermissions');
+const {
+	assertAcceptedTerms,
+	assertCanModerateChat,
+	assertCanModerateMessage,
+	caresFor,
+	chatSide,
+	holdsInbox,
+	knowsPeopleOf,
+	writingParticipantId
+} = await import('./chatPermissions');
 const { NO_CALLER_FACTS } = await import('#api/services/authHelper/callerFacts');
 
 /** Just enough of a request context for the checks, which read only these parts. */
@@ -264,6 +276,76 @@ describe('assertAcceptedTerms', () => {
 		hasAcceptedTerms.mockResolvedValueOnce(false);
 		await expect(assertAcceptedTerms('u1')).rejects.toMatchObject({
 			extensions: { code: 'TERMS_NOT_ACCEPTED' }
+		});
+	});
+});
+
+describe('hiding messages', () => {
+	/** A context whose facts are loaded already, as after the first rule of a request. */
+	function withFacts({ sub, known, admin }: { sub: string; known: CallerFacts; admin?: boolean }) {
+		const ctx = contextFor({ sub, admin });
+		ctx.callerFactsCache.loading = Promise.resolve(known);
+		ctx.callerFactsCache.current = known;
+		return ctx;
+	}
+	const reviewed = { ...chat, id: 'chat-1', underReview: true };
+
+	test('participant care hides in a chat of its conference while a report is open', async () => {
+		findChat.mockResolvedValueOnce(reviewed);
+		const ctx = withFacts({ sub: 'care', known: care });
+		await expect(assertCanModerateChat({ ctx, chatId: 'chat-1' })).resolves.toBe(reviewed);
+		expect(findChat).toHaveBeenLastCalledWith({ where: { id: 'chat-1', underReview: true } });
+	});
+
+	test('a system admin may too', async () => {
+		findChat.mockResolvedValueOnce(reviewed);
+		const ctx = withFacts({ sub: 'admin', known: facts(), admin: true });
+		await expect(assertCanModerateChat({ ctx, chatId: 'chat-1' })).resolves.toBe(reviewed);
+	});
+
+	test('without an open report there is nothing to hide: the chat is private', async () => {
+		findChat.mockResolvedValueOnce(undefined);
+		const ctx = withFacts({ sub: 'care', known: care });
+		await expect(assertCanModerateChat({ ctx, chatId: 'chat-1' })).rejects.toMatchObject({
+			extensions: { code: 'NOT_FOUND' }
+		});
+	});
+
+	test('nobody but participant care hides, a party of the chat neither', async () => {
+		for (const known of [
+			delegate,
+			chair,
+			facts({ team: [{ conferenceId: 'c2', roles: ['PARTICIPANT_CARE'] }] })
+		]) {
+			findChat.mockResolvedValueOnce(reviewed);
+			const ctx = withFacts({ sub: 'u', known });
+			await expect(assertCanModerateChat({ ctx, chatId: 'chat-1' })).rejects.toMatchObject({
+				extensions: { code: 'NOT_FOUND' }
+			});
+		}
+	});
+
+	test("a team chat is its inbox's and has nothing to hide", async () => {
+		findChat.mockResolvedValueOnce({ ...teamChat, id: 'chat-2', underReview: true });
+		const ctx = withFacts({ sub: 'care', known: care });
+		await expect(assertCanModerateChat({ ctx, chatId: 'chat-2' })).rejects.toMatchObject({
+			extensions: { code: 'FORBIDDEN' }
+		});
+	});
+
+	test('a message is hidden in the chat it is in', async () => {
+		findMessage.mockResolvedValueOnce({ chatId: 'chat-1' });
+		findChat.mockResolvedValueOnce(reviewed);
+		const ctx = withFacts({ sub: 'care', known: care });
+		await expect(assertCanModerateMessage({ ctx, messageId: 'msg-1' })).resolves.toBe(reviewed);
+		expect(findChat).toHaveBeenLastCalledWith({ where: { id: 'chat-1', underReview: true } });
+	});
+
+	test('a message not found is NOT_FOUND', async () => {
+		findMessage.mockResolvedValueOnce(undefined);
+		const ctx = withFacts({ sub: 'care', known: care });
+		await expect(assertCanModerateMessage({ ctx, messageId: 'gone' })).rejects.toMatchObject({
+			extensions: { code: 'NOT_FOUND' }
 		});
 	});
 });

@@ -281,9 +281,17 @@ const FIELDS: Record<string, TypeClassification> = {
 			'mine',
 			'paperId',
 			'authorParticipantId',
-			'teamAuthorUserId'
+			'teamAuthorUserId',
+			'hiddenAt',
+			'hiddenById',
+			'hiddenReportId'
 		],
-		redacted: ['body', 'authorName']
+		redacted: ['body', 'authorName', 'hiddenReason', 'hiddenByName']
+	},
+	// What participant care hid of a reported chat: the record of its case, never a word of it.
+	HiddenChatMessage: {
+		visible: ['id', 'createdAt', 'authorParticipantId', 'hiddenAt'],
+		redacted: ['body', 'authorName', 'hiddenReason', 'hiddenByName']
 	},
 	Chatreport: {
 		visible: [

@@ -6,7 +6,9 @@ import {
 	boolean,
 	index,
 	integer,
-	uniqueIndex
+	uniqueIndex,
+	check,
+	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { defaultIdAndCreatedAt, defaultIdAndTimestamps } from './helpers';
@@ -177,9 +179,32 @@ export const chatMessage = snakeCase.table(
 		fromTeam: boolean().default(false).notNull(),
 		body: text().notNull(),
 		/** The paper the message is about, when it was written from one. */
-		paperId: text().references(() => paper.id, { onDelete: 'set null', onUpdate: 'cascade' })
+		paperId: text().references(() => paper.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+		/**
+		 * When participant care hid the message for everybody of the chat, while reviewing a report.
+		 * Final: the text stays for the record (participant care and system admins read it), the
+		 * parties see a placeholder. Neither the text nor the hiding changes afterwards
+		 * (`chat_message_hidden_is_final`).
+		 */
+		hiddenAt: timestamp({ precision: 3 }),
+		/** Who of participant care hid it. */
+		hiddenById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+		/** Why, for the team only. Set together with `hiddenAt` (`chat_message_hidden_reason`). */
+		hiddenReason: text(),
+		/** The report under which it was hidden: the oldest one open then. */
+		hiddenReportId: text().references((): AnyPgColumn => chatReport.id, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		})
 	},
-	(table) => [index('chat_message_chat_id_created_at_idx').on(table.chatId, table.createdAt)]
+	(table) => [
+		index('chat_message_chat_id_created_at_idx').on(table.chatId, table.createdAt),
+		index('chat_message_hidden_report_id_idx').on(table.hiddenReportId),
+		check(
+			'chat_message_hidden_reason',
+			sql`(${table.hiddenAt} is null) = (${table.hiddenReason} is null)`
+		)
+	]
 );
 
 /** Up to when a person has read a chat. The team side of a `TEAM` chat is `chat.teamReadAt`. */

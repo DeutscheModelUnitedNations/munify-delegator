@@ -6,6 +6,7 @@ import { m } from '#lib/paraglide/messages';
 import { assertCanSettleReportsOf, assertPartyOfChat } from '#api/handlers/chat/chatPermissions';
 import {
 	participantIdOfUser,
+	personOfParticipant,
 	reportChat,
 	reportReasonSchema,
 	resolveChatReport,
@@ -14,8 +15,36 @@ import {
 } from '#api/handlers/chat/chatService';
 
 import { reportNoteSchema } from '#api/handlers/chat/reportNote';
+import { hiddenMessagesOfReport, type HiddenMessage } from '#api/handlers/chat/chatModeration';
 
 // The abilities of reports are registered with the chats' (`chatPermissions.ts`).
+
+const HiddenChatMessage = schemaBuilder.objectRef<HiddenMessage>('HiddenChatMessage');
+HiddenChatMessage.implement({
+	description:
+		'A message participant care hid while the report was open, as the record keeps it: the text, who wrote it, who hid it and why.',
+	fields: (t) => ({
+		id: t.exposeID('id'),
+		body: t.exposeString('body'),
+		createdAt: t.field({ type: 'DateTime', resolve: (message) => message.createdAt }),
+		authorParticipantId: t.exposeID('authorParticipantId', { nullable: true }),
+		authorName: t.string({
+			nullable: true,
+			description: 'Who wrote it; null once their participation is gone.',
+			resolve: async (message) =>
+				message.authorParticipantId
+					? ((await personOfParticipant(message.authorParticipantId))?.name ?? null)
+					: null
+		}),
+		hiddenAt: t.field({ type: 'DateTime', resolve: (message) => message.hiddenAt }),
+		hiddenReason: t.exposeString('hiddenReason'),
+		hiddenByName: t.string({
+			nullable: true,
+			resolve: async (message) =>
+				message.hiddenById ? ((await userNameOf(message.hiddenById)) ?? null) : null
+		})
+	})
+});
 
 const ChatReportRef = object({
 	table: 'chatReport',
@@ -37,6 +66,13 @@ const ChatReportRef = object({
 			description: 'Who settled the report.',
 			resolve: async (report) =>
 				report.resolvedById ? ((await userNameOf(report.resolvedById)) ?? null) : null
+		}),
+		// whoever reads the report reads the record of its case: participant care and system admins
+		hiddenMessages: t.field({
+			type: [HiddenChatMessage],
+			description:
+				'The messages participant care hid while this report was the oldest open one of its chat, the oldest first; kept with the report once it is settled and the chat is private again.',
+			resolve: (report) => hiddenMessagesOfReport(report.id)
 		})
 	})
 });
