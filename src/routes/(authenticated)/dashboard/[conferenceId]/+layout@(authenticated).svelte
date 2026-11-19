@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { dev } from '$app/env';
+	import { m } from '#lib/paraglide/messages';
 	import type { LayoutProps } from './$types';
-	import TeamShell from './TeamShell.svelte';
+	import ConferenceShell from './ConferenceShell.svelte';
 
 	let { children, params }: LayoutProps = $props();
 
@@ -9,6 +11,10 @@
 	const conferenceId = $derived(params.conferenceId);
 </script>
 
-<TeamShell {conferenceId}>
+<svelte:head>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.overview()}</title>
+</svelte:head>
+
+<ConferenceShell {conferenceId}>
 	{@render children()}
-</TeamShell>
+</ConferenceShell>

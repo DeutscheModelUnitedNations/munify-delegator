@@ -20,10 +20,12 @@
 
 {#each groups as group (group.key)}
 	<section>
-		<h3 class="text-base-content/60 mb-1 px-1 text-xs font-semibold tracking-wide uppercase">
+		<h3
+			class="bg-base-100 text-base-content/60 sticky top-0 z-10 px-1 py-1.5 text-xs font-semibold tracking-wide uppercase"
+		>
 			{group.key === OTHER_GROUP ? m.chatGroupWithoutCommittee() : group.name}
 		</h3>
-		<ul class="grid grid-cols-1 sm:grid-cols-2">
+		<ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 			{#each group.contacts as contact (contact.participantId)}
 				<li>
 					<PickerOption

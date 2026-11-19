@@ -207,12 +207,16 @@ Hat das Team die Nachrichten eingeschaltet, findest du im Schnellzugriff die Kar
 - **Andere Delegierte.** Über **Neue Nachricht** suchst du nach Land, Gremium oder Rolle, zum Beispiel „frank gv“. Ihr seht voneinander nur die Rolle, nie den Namen.
 - **Deine Delegation.** Jede Delegation hat eine Gruppe für alle ihre Mitglieder.
 
+Ist kein Chat geöffnet, zeigt dir die Seite neben der Chatliste, wen du direkt anschreiben kannst: deine Delegation und die Postfächer des Teams. Ein Klick öffnet den Chat.
+
 Chats mit anderen Delegierten und die Delegationsgruppe gibt es erst, wenn die Rollen veröffentlicht sind. Bis dahin sagt dir die Seite, dass du dort die Teilnehmendenbetreuung erreichst. Gesendete Nachrichten lassen sich nicht mehr ändern oder löschen.
 
-Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Unter der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
+Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Über das Zahnrad über der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
 
 :::tip Wenn etwas nicht in Ordnung ist
-Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Du gehst sie Punkt für Punkt durch: Jeder Punkt zeigt zuerst kurz, worum es geht, öffne ihn und bestätige ihn mit **Verstanden**. Danach öffnet sich der nächste. Erst wenn alle Punkte bestätigt sind, kannst du unten die beiden Haken setzen. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
+Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Du gehst sie Punkt für Punkt durch: Jeder Punkt zeigt zuerst kurz, worum es geht, öffne ihn und bestätige ihn mit **Verstanden**. Danach öffnet sich der nächste. Erst wenn alle Punkte bestätigt sind, kannst du unten die beiden Haken setzen. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** im Zahnrad-Menü über deinen Chats.
+
+Steht in deiner Nachricht anscheinend eine Telefonnummer, eine E-Mail-Adresse oder ein Messenger-Link, weist dich die App darauf hin, bevor sie sie sendet. Du kannst den Text ändern oder sie mit **Trotzdem senden** abschicken.
 
 Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
 

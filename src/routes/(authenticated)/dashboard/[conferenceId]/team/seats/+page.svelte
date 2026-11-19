@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ParticipantViewLink from '../ParticipantViewLink.svelte';
 	import NSAs from './sections/NSAs.svelte';
 	import SingleParticipants from './sections/SingleParticipants.svelte';
 	import Supervisors from './sections/Supervisors.svelte';
@@ -52,6 +53,9 @@
 </script>
 
 <div class="flex w-full flex-col items-start gap-10 py-4 sm:px-4">
+	<div class="-mb-6 flex w-full justify-end">
+		<ParticipantViewLink {conferenceId} of="seats" />
+	</div>
 	{#if assignUserParam.userId}
 		<div class="w-full" transition:slide={{ duration: 200 }}>
 			<div class="alert alert-warning w-full">

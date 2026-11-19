@@ -1,6 +1,6 @@
 <!--
 	@component
-	The caller's own switch for the mail about unread messages, under their chat list.
+	The caller's own switch for the mail about unread messages, an entry of the chat settings menu.
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
@@ -30,7 +30,7 @@
 	}
 </script>
 
-<label class="border-base-300 flex cursor-pointer items-center gap-3 border-t px-4 py-3 text-sm">
+<label class="flex cursor-pointer items-center gap-3">
 	<input
 		type="checkbox"
 		class="toggle toggle-primary toggle-sm"

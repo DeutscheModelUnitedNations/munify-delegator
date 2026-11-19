@@ -4,6 +4,9 @@ const DAY = 24 * 60 * 60 * 1000;
 
 const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
+/** Whether two moments fall on the same calendar day, where the reader is. */
+export const sameDay = (a: Date, b: Date) => startOfDay(a).getTime() === startOfDay(b).getTime();
+
 /** How many calendar days `date` lies before `now` (0 for today). */
 function daysAgo({ date, now }: { date: Date; now: Date }) {
 	return Math.round((startOfDay(now).getTime() - startOfDay(date).getTime()) / DAY);
@@ -37,7 +40,7 @@ export function groupByDay<T extends { createdAt: Date | string }>(messages: rea
 	for (const message of messages) {
 		const written = new Date(message.createdAt);
 		const last = days.at(-1);
-		if (last && startOfDay(last.day).getTime() === startOfDay(written).getTime()) {
+		if (last && sameDay(last.day, written)) {
 			last.messages.push(message);
 		} else {
 			days.push({ day: written, messages: [message] });

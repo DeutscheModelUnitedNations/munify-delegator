@@ -39,6 +39,26 @@ export async function assertOwnTeamMember({
 	return member;
 }
 
+/**
+ * The caller's memberships a change to all their settings reaches: of the one conference
+ * (NOT_FOUND when they are not on its team), or of every one whose settings they are shown.
+ */
+export async function assertOwnTeamMembers({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string | null;
+}) {
+	if (conferenceId) return [await assertOwnTeamMember({ ctx, conferenceId })];
+	const userId = assertOwnNotifications(ctx);
+	return db.query.teamMember.findMany({
+		where: { userId, conference: { state: { ne: 'POST' } } },
+		columns: { id: true, userId: true, role: true },
+		with: { functions: { columns: { id: true, committeeId: true, kind: true } } }
+	});
+}
+
 /** Refuses (FORBIDDEN) unless the caller is a system admin: they keep the workspaces and tokens. */
 export function assertCanManageSlackWorkspaces(ctx: ApiContext) {
 	ctx.mustBeLoggedIn();

@@ -4583,6 +4583,11 @@ type Mutation {
   setAgendaItemReviewHelpStatus(agendaItemId: ID!, status: ReviewhelpstatusEnum!): Committeeagendaitem!
 
   """
+  Switches all of the caller's notifications on or off, by mail and Slack: those of one conference, or without `conferenceId` those of every conference `myNotificationSettings` lists. NOT_FOUND when they are not on that conference's team.
+  """
+  setAllNotificationPreferences(conferenceId: ID, enabled: Boolean!): Boolean!
+
+  """
   Shows participants their roles, or hides them again. Sends nothing: the result mails are sent from the e-mail page, or by the job where they are switched to automatic.
   """
   setAssignmentReleased(conferenceId: ID!, released: Boolean!): Boolean!

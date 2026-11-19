@@ -4,6 +4,8 @@
 	it came and how much of it is unread. Shows the inbox of a team chat when the list mixes several.
 -->
 <script lang="ts">
+	import { flip } from 'svelte/animate';
+	import { prefersReducedMotion } from 'svelte/motion';
 	import type { ChatSummary } from '#lib/api/chats';
 	import ChatListItem from './ChatListItem.svelte';
 
@@ -22,7 +24,8 @@
 
 <ul class="flex flex-col gap-0.5" data-testid="chat-list">
 	{#each chats as chat (chat.id)}
-		<li>
+		<!-- a chat with a new message glides to the top instead of jumping there -->
+		<li animate:flip={{ duration: prefersReducedMotion.current ? 0 : 250 }}>
 			<ChatListItem {chat} selected={chat.id === selectedId} {onSelect} {showInbox} {now} />
 		</li>
 	{/each}

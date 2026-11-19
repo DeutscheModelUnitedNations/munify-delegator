@@ -1,26 +1,21 @@
 <!--
 	@component
 	Picks who an announcement is for: any number of blocks, and whoever is in one of them reads it.
-	Below the chips it says how many people that is right now.
+	One search adds blocks; one that a picked block already holds cannot be added, and adding a
+	wider one drops the narrower ones it takes in. Below it says how many people that is right now.
 -->
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { client } from '#lib/api/rumbleClient/client';
-	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import {
-		audienceInput,
+		addAudience,
 		audienceKey,
-		normalizeAudiences,
-		TEAM_ROLES,
+		coveringAudience,
 		type Audience
 	} from '#lib/helpers/announcements';
-	import AudienceSelect from './AudienceSelect.svelte';
-	import {
-		audienceKindLabel,
-		audienceLabel,
-		SIMPLE_AUDIENCES,
-		type AudienceLookups
-	} from './announcementLabels';
+	import AudienceCount from './AudienceCount.svelte';
+	import AudienceSearch from './AudienceSearch.svelte';
+	import { audienceLabel, type AudienceLookups } from './announcementLabels';
+	import { audienceSections, SUGGESTED_AUDIENCES } from './audienceOptions';
 
 	interface Props {
 		conferenceId: string;
@@ -30,148 +25,147 @@
 
 	let { conferenceId, audiences = $bindable(), lookups }: Props = $props();
 
-	const taken = $derived(new Set(audiences.map(audienceKey)));
+	const label = (audience: Audience) => audienceLabel({ audience, lookups });
+	const sections = $derived(audienceSections({ lookups, picked: audiences }));
+	/** What the last addition took out, said once below the chips. */
+	let merged = $state<string>();
 
 	function add(audience: Audience) {
-		audiences = normalizeAudiences([...audiences, audience]);
+		const next = addAudience({ audience, audiences });
+		audiences = next.audiences;
+		merged =
+			next.removed.length > 0
+				? m.announcementAudienceMerged({
+						audience: label(audience),
+						removed: next.removed.map(label).join(', ')
+					})
+				: undefined;
 	}
 
 	function remove(audience: Audience) {
 		audiences = audiences.filter((other) => audienceKey(other) !== audienceKey(audience));
+		merged = undefined;
 	}
 
-	const isSimple = (value: string): value is (typeof SIMPLE_AUDIENCES)[number] =>
-		SIMPLE_AUDIENCES.some((kind) => kind === value);
-	const isTeamRole = (value: string): value is (typeof TEAM_ROLES)[number] =>
-		TEAM_ROLES.some((role) => role === value);
+	function removeAll() {
+		audiences = [];
+		merged = undefined;
+	}
 
-	// the blocks are replaced as a whole on every change, so this asks again only then
-	const counts = $derived(
-		audiences.length === 0
-			? undefined
-			: await client.query.announcementAudiencePreview({
-					__args: { conferenceId, audiences: audiences.map(audienceInput) },
-					total: true,
-					delegates: true,
-					singleParticipants: true,
-					supervisors: true,
-					waitingList: true,
-					team: true
-				})
-	);
+	/** A block saved before another one took it in (only older announcements have these). */
+	const coveredBy = (audience: Audience) => {
+		const covering = coveringAudience({ audience, audiences });
+		return covering ? m.announcementAudienceCoveredBy({ audience: label(covering) }) : undefined;
+	};
 
-	const breakdown = $derived(
-		counts
-			? [
-					{ label: m.announcementAudienceDelegates(), count: counts.delegates },
-					{ label: m.announcementAudienceSingleParticipants(), count: counts.singleParticipants },
-					{ label: m.announcementAudienceSupervisors(), count: counts.supervisors },
-					{ label: m.announcementAudienceWaitingList(), count: counts.waitingList },
-					{ label: m.announcementAudienceTeam(), count: counts.team }
-				].filter((part) => part.count > 0)
-			: []
+	/** The usual blocks not picked yet, each saying whether a picked one already holds it. */
+	const suggestions = $derived(
+		SUGGESTED_AUDIENCES.filter(
+			(audience) => !audiences.some((other) => audienceKey(other) === audienceKey(audience))
+		).map((audience) => ({
+			key: audienceKey(audience),
+			audience,
+			label: label(audience),
+			coveredBy: coveredBy(audience)
+		}))
 	);
-
-	/** What a lookup still offers: the entries not picked yet. */
-	const open = (entries: ReadonlyMap<string, string>, kind: Audience['kind']) =>
-		[...entries].filter(([id]) => !taken.has(`${kind}:${id}`));
-
-	const WHOLE_TEAM = 'ALL';
-	const groupOptions = $derived(
-		SIMPLE_AUDIENCES.filter((kind) => !taken.has(kind)).map(
-			(kind) => [kind, audienceKindLabel(kind)] as const
-		)
-	);
-	const teamOptions = $derived([
-		...(taken.has('TEAM') ? [] : [[WHOLE_TEAM, m.announcementAudienceWholeTeam()] as const]),
-		...TEAM_ROLES.filter((role) => !taken.has(`TEAM:${role}`)).map(
-			(role) => [role, translateTeamRole(role)] as const
-		)
-	]);
-	/** The selects naming something of the conference, each only while there is anything to name. */
-	const namedSelects = $derived(
-		[
-			{
-				kind: 'COMMITTEE' as const,
-				label: m.announcementAudienceAddCommittee(),
-				testId: 'audience-add-committee',
-				entries: lookups.committees,
-				build: (committeeId: string): Audience => ({ kind: 'COMMITTEE', committeeId })
-			},
-			{
-				kind: 'ROLE' as const,
-				label: m.announcementAudienceAddRole(),
-				testId: 'audience-add-role',
-				entries: lookups.roles,
-				build: (roleId: string): Audience => ({ kind: 'ROLE', roleId })
-			},
-			{
-				kind: 'SURVEY_OPTION' as const,
-				label: m.announcementAudienceAddSurveyOption(),
-				testId: 'audience-add-survey-option',
-				entries: lookups.surveyOptions,
-				build: (surveyOptionId: string): Audience => ({ kind: 'SURVEY_OPTION', surveyOptionId })
-			}
-		].filter((select) => select.entries.size > 0)
-	);
-	const breakdownText = $derived(breakdown.map((part) => `${part.count} ${part.label}`).join(', '));
 </script>
 
 <div class="flex flex-col gap-3" data-testid="audience-picker">
+	<AudienceSearch
+		{sections}
+		onPick={add}
+		onRemove={remove}
+		onRemoveLast={() => {
+			const last = audiences.at(-1);
+			if (last) remove(last);
+		}}
+	/>
+
+	{@render picked()}
+
+	{@render suggested()}
+
+	<!-- always there, so screen readers hear when a line appears -->
+	<div aria-live="polite">
+		{#if merged}
+			<p class="text-base-content/60 flex items-start gap-1.5 text-xs">
+				<i aria-hidden="true" class="ph-duotone ph-arrows-in-simple mt-0.5"></i>
+				{merged}
+			</p>
+		{/if}
+	</div>
+
+	<div class="border-base-content/10 flex flex-col gap-1.5 border-t pt-3">
+		{#if audiences.length > 0}
+			<AudienceCount {conferenceId} {audiences} />
+		{/if}
+		<p class="text-base-content/50 text-xs leading-relaxed">{m.announcementAudienceHint()}</p>
+	</div>
+</div>
+
+{#snippet picked()}
 	{#if audiences.length > 0}
-		<ul class="flex flex-wrap gap-2" aria-label={m.announcementAudience()}>
+		<ul class="flex flex-wrap items-center gap-1.5" aria-label={m.announcementAudience()}>
 			{#each audiences as audience (audienceKey(audience))}
-				<li class="badge badge-primary badge-soft gap-1 py-3">
-					{audienceLabel({ audience, lookups })}
+				{@const covered = coveredBy(audience)}
+				<li
+					class={['badge badge-soft gap-1 py-3 pr-1', covered ? 'badge-ghost' : 'badge-primary']}
+					title={covered}
+				>
+					{label(audience)}
+					{#if covered}<span class="sr-only">({covered})</span>{/if}
 					<button
 						type="button"
-						class="cursor-pointer"
-						aria-label={m.announcementAudienceRemove({
-							audience: audienceLabel({ audience, lookups })
-						})}
+						class="hover:bg-primary/20 rounded-field flex size-5 cursor-pointer items-center justify-center"
+						aria-label={m.announcementAudienceRemove({ audience: label(audience) })}
 						onclick={() => remove(audience)}
 					>
 						<i aria-hidden="true" class="ph-duotone ph-x"></i>
 					</button>
 				</li>
 			{/each}
+			{#if audiences.length > 1}
+				<li>
+					<button
+						type="button"
+						class="btn btn-ghost btn-xs text-base-content/60"
+						onclick={removeAll}
+						data-testid="audience-clear"
+					>
+						<i aria-hidden="true" class="ph-duotone ph-x-circle"></i>
+						{m.announcementAudienceClear()}
+					</button>
+				</li>
+			{/if}
 		</ul>
 	{:else}
-		<p class="text-warning-content bg-warning/20 rounded-field px-3 py-2 text-sm">
+		<p class="text-base-content/60 flex items-center gap-1.5 text-xs">
+			<i aria-hidden="true" class="ph-duotone ph-info text-sm"></i>
 			{m.announcementAudienceRequired()}
 		</p>
 	{/if}
+{/snippet}
 
-	<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-		<AudienceSelect
-			label={m.announcementAudienceAddGroup()}
-			testId="audience-add-group"
-			options={groupOptions}
-			onPick={(value) => add({ kind: isSimple(value) ? value : 'EVERYONE' })}
-		/>
-		{#each namedSelects as select (select.kind)}
-			<AudienceSelect
-				label={select.label}
-				testId={select.testId}
-				options={open(select.entries, select.kind)}
-				onPick={(id) => add(select.build(id))}
-			/>
-		{/each}
-		<AudienceSelect
-			label={m.announcementAudienceAddTeam()}
-			testId="audience-add-team"
-			options={teamOptions}
-			onPick={(value) => add({ kind: 'TEAM', teamRole: isTeamRole(value) ? value : null })}
-		/>
-	</div>
-
-	{#if counts}
-		<p class="text-sm" data-testid="audience-count" aria-live="polite">
-			<strong>{m.announcementAudienceReaches({ count: counts.total })}</strong>
-			{#if breakdownText}
-				<span class="text-base-content/70">({breakdownText})</span>
-			{/if}
-		</p>
+{#snippet suggested()}
+	{#if suggestions.length > 0}
+		<!-- one click for the usual cases; everything else through the search -->
+		<div class="flex flex-wrap items-center gap-1.5">
+			<span class="text-base-content/60 text-xs">{m.announcementAudienceSuggestions()}</span>
+			{#each suggestions as suggestion (suggestion.key)}
+				<button
+					type="button"
+					class="btn btn-xs btn-ghost border-base-content/15 border-dashed"
+					disabled={!!suggestion.coveredBy}
+					title={suggestion.coveredBy}
+					onclick={() => add(suggestion.audience)}
+					data-testid="audience-suggestion"
+				>
+					<i aria-hidden="true" class="ph-duotone ph-plus"></i>
+					{suggestion.label}
+					{#if suggestion.coveredBy}<span class="sr-only">({suggestion.coveredBy})</span>{/if}
+				</button>
+			{/each}
+		</div>
 	{/if}
-	<p class="text-base-content/60 text-xs">{m.announcementAudienceHint()}</p>
-</div>
+{/snippet}

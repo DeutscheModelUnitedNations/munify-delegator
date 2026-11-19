@@ -64,6 +64,83 @@
 }
 
 /*
+ * The messenger's own transitions (`chatViewTransition`, `data-chat-transition` while one runs):
+ * the page stays, only the chat pane moves. On a phone list and thread slide past each other.
+ */
+/*
+ * Named only while a switch runs: a `view-transition-name` makes its element a stacking context,
+ * which would trap the dialogs opened from inside the chat (the terms, a report) below the footer.
+ */
+:root[data-chat-transition] .chat-list-pane {
+	view-transition-name: chat-list;
+}
+
+:root[data-chat-transition] .chat-thread-pane {
+	view-transition-name: chat-pane;
+}
+
+@keyframes chat-slide-in-right {
+	from {
+		translate: 30% 0;
+		opacity: 0;
+	}
+}
+
+@keyframes chat-slide-out-right {
+	to {
+		translate: 30% 0;
+		opacity: 0;
+	}
+}
+
+@keyframes chat-slide-in-left {
+	from {
+		translate: -15% 0;
+		opacity: 0;
+	}
+}
+
+@keyframes chat-slide-out-left {
+	to {
+		translate: -15% 0;
+		opacity: 0;
+	}
+}
+
+:root[data-chat-transition]::view-transition-old(root),
+:root[data-chat-transition]::view-transition-new(root),
+:root[data-chat-transition]::view-transition-old(chat-list),
+:root[data-chat-transition]::view-transition-new(chat-list) {
+	animation: none;
+}
+
+:root[data-chat-transition]::view-transition-old(chat-pane) {
+	animation: 100ms ease-in both vt-fade-out;
+}
+
+:root[data-chat-transition]::view-transition-new(chat-pane) {
+	animation: 220ms ease-out both vt-rise-in;
+}
+
+@media (width < 48rem) {
+	:root[data-chat-transition='open']::view-transition-old(chat-list) {
+		animation: 220ms ease-in both chat-slide-out-left;
+	}
+
+	:root[data-chat-transition='open']::view-transition-new(chat-pane) {
+		animation: 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both chat-slide-in-right;
+	}
+
+	:root[data-chat-transition='back']::view-transition-old(chat-pane) {
+		animation: 220ms ease-in both chat-slide-out-right;
+	}
+
+	:root[data-chat-transition='back']::view-transition-new(chat-list) {
+		animation: 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both chat-slide-in-left;
+	}
+}
+
+/*
  * A page's skeleton (`PageSkeleton`) stays invisible for its first moments: cached data resolves
  * within a frame or two, and a skeleton that flashes for that long only draws the eye.
  */

@@ -8,7 +8,6 @@
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client';
 	import {
 		fetchChatContacts,
 		fetchChatInboxes,
@@ -23,7 +22,8 @@
 	import PickerTeamOptions from './PickerTeamOptions.svelte';
 	import { contactSearchText, inboxName, matchesSearch } from './chatLabels';
 	import { groupContacts } from './contactGroups';
-	import { chatOpenError, inboxChoice } from './inboxChoice';
+	import { inboxChoice } from './inboxChoice';
+	import { createChatOpener } from './chatOpener.svelte.js';
 
 	interface Props {
 		conferenceId: string;
@@ -45,7 +45,11 @@
 
 	let search = $state('');
 	let committee = $state<string | null>(null);
-	let opening = $state(false);
+	const opener = createChatOpener({
+		conferenceId: () => conferenceId,
+		onOpened: (chatId) => onOpened(chatId)
+	});
+	const opening = $derived(opener.opening);
 	/** Team mode: the person picked, while the inbox to write from is chosen. */
 	let picked = $state<{ contact: ChatContactRow; inboxes: ChatInboxRow[] }>();
 
@@ -89,43 +93,15 @@
 	);
 	const nobody = $derived(contacts.length === 0 && inboxes.length === 0);
 
-	async function open(start: () => Promise<{ id: string }>) {
-		if (opening) return;
-		opening = true;
-		try {
-			onOpened((await start()).id);
-		} catch (error) {
-			toast.error(chatOpenError(error));
-		} finally {
-			opening = false;
-		}
-	}
-
-	const openInbox = ({ option, participantId }: { option: ChatInboxRow; participantId?: string }) =>
-		open(() =>
-			client.mutate.openTeamChat({
-				__args: {
-					conferenceId,
-					inbox: option.inbox,
-					committeeId: option.committeeId,
-					trustedPersonId: option.trustedPersonId,
-					participantId
-				},
-				id: true
-			})
-		);
-
 	async function pick(contact: ChatContactRow) {
 		const { participantId } = contact;
 		if (mode === 'participant') {
-			await open(() =>
-				client.mutate.openDirectChat({ __args: { conferenceId, participantId }, id: true })
-			);
+			await opener.direct(participantId);
 			return;
 		}
 		// the inboxes the caller answers that reach this person
 		const choice = inboxChoice(await fetchReachingInboxes({ conferenceId, participantId }));
-		if (choice.kind === 'one') await openInbox({ option: choice.option, participantId });
+		if (choice.kind === 'one') await opener.inbox({ option: choice.option, participantId });
 		else if (choice.kind === 'none') toast.error(m.chatNoInboxReaches());
 		else picked = { contact, inboxes: choice.options };
 	}
@@ -141,7 +117,7 @@
 		inboxes={picked.inboxes}
 		disabled={opening}
 		onBack={() => (picked = undefined)}
-		onChoose={(option) => openInbox({ option, participantId: picked?.contact.participantId })}
+		onChoose={(option) => opener.inbox({ option, participantId: picked?.contact.participantId })}
 	/>
 {:else}
 	<div class="flex flex-col gap-3">
@@ -162,17 +138,17 @@
 			<CommitteeChips {groups} selected={committee} onSelect={(key) => (committee = key)} />
 		{/if}
 
+		<!-- a fixed height, so the dialog does not jump while the search narrows the list -->
 		<div
-			class="-mx-2 flex max-h-96 flex-col gap-3 overflow-y-auto px-2"
+			class="-mx-2 flex h-[min(28rem,55dvh)] flex-col gap-4 overflow-y-auto px-2 [scrollbar-width:thin]"
 			data-testid="chat-contact-results"
 		>
 			<PickerTeamOptions
 				inboxes={shownInboxes}
 				delegation={showDelegation}
 				disabled={opening}
-				onInbox={(option) => openInbox({ option })}
-				onDelegation={() =>
-					open(() => client.mutate.openDelegationChat({ __args: { conferenceId }, id: true }))}
+				onInbox={(option) => opener.inbox({ option })}
+				onDelegation={opener.delegation}
 			/>
 			<PickerContactGroups groups={shownGroups} disabled={opening} onPick={pick} />
 

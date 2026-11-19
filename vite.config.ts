@@ -127,6 +127,9 @@ export default defineConfig({
 			// The unit tests never read `.env`: CI has none, and a test that passes only with the local
 			// one would fail there. A test that needs a variable mocks `$app/env/*`.
 			env: { dir: process.env.VITEST ? 'no-env-for-unit-tests' : '.' },
+			// In dev the generated env module inlines the values it was given. Sharing the dev server's
+			// directory, a test run rewrote it without them and the running server failed with env_invalid.
+			outDir: process.env.VITEST ? '.svelte-kit/vitest' : '.svelte-kit',
 			compilerOptions: {
 				// Components fetch through `client.liveQuery`, which is awaited at the top level of
 				// `<script>`. Svelte only allows that in async mode.

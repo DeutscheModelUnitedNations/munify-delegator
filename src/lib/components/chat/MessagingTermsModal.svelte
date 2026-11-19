@@ -19,7 +19,7 @@
 	let { open = $bindable(), onAccepted }: Props = $props();
 </script>
 
-<Modal bind:open title={m.chatTermsTitle()}>
+<Modal bind:open wide title={m.chatTermsTitle()}>
 	<svelte:boundary>
 		<MessagingTermsChecklist {onAccepted} onclose={() => (open = false)} />
 		{#snippet pending()}

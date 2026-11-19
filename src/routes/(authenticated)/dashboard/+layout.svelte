@@ -4,8 +4,7 @@
 	import { dev } from '$app/env';
 	import { page } from '$app/state';
 	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
-	import { boundaryKey } from '#lib/helpers/boundaryKey';
-	import { DASHBOARD_SKELETON, PAGE_SKELETON } from '#lib/components/navigation/skeletonShapes';
+	import { PAGE_SKELETON } from '#lib/components/navigation/skeletonShapes';
 
 	interface Props {
 		children: Snippet;
@@ -13,24 +12,18 @@
 
 	let { children }: Props = $props();
 
-	// A fresh boundary per page shows its skeleton at once on a client-side navigation. The paper
-	// hub's pages sit in a shell of their own (`paperhub/+layout.svelte`, the team shell), which
-	// must not be re-created between them; it shows the skeleton for its pages itself.
+	// The pages that are not about one conference: the list of conferences and the administration.
+	// A conference's own pages leave this layout (`[conferenceId]/+layout@(authenticated).svelte`).
+	// A fresh boundary per page shows its skeleton at once on a client-side navigation.
 	const pathname = $derived(page.url.pathname);
-	const pageKey = $derived(boundaryKey({ pathname, frames: ['paperhub'] }));
-	const skeleton = $derived(
-		page.route.id === '/(authenticated)/dashboard/[conferenceId]'
-			? DASHBOARD_SKELETON
-			: PAGE_SKELETON
-	);
 </script>
 
 <svelte:head>
-	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.dashboard()}</title>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.conferences()}</title>
 </svelte:head>
 
 <div class="flex w-full">
-	<PageBoundary key={pageKey} {skeleton}>
+	<PageBoundary key={pathname} skeleton={PAGE_SKELETON}>
 		{@render children()}
 	</PageBoundary>
 </div>

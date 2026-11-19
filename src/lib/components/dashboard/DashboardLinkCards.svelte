@@ -1,5 +1,5 @@
 <script module lang="ts">
-	import type { Component } from 'svelte';
+	import type { Component, Snippet } from 'svelte';
 	import type { DashboardHref } from '#lib/data/dashboardLinks';
 
 	interface LinkShape<C> {
@@ -23,9 +23,11 @@
 		context: Context;
 		/** The conference the cards' live details are for */
 		conferenceId: string;
+		/** Cards of the caller's own ahead of the links, in the same grid */
+		before?: Snippet;
 	}
 
-	let { links, context, conferenceId }: Props = $props();
+	let { links, context, conferenceId, before }: Props = $props();
 
 	// The live details load their own data, and several of them next to each other do not hydrate
 	// (svelte 5.57: `hydration_mismatch`, then a DOMException that leaves one card wearing
@@ -37,6 +39,7 @@
 </script>
 
 <DashboardLinksGrid>
+	{@render before?.()}
 	{#each links as link (link.id)}
 		<DashboardLinkCard
 			href={link.getHref(context)}

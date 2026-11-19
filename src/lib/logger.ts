@@ -65,9 +65,18 @@ const pinoLogger = pino({
 	serializers: { err: serializeError },
 	mixin: traceFields,
 	// Resolved here: pino resolves a bare target from its caller's file, which Vite's module runner
-	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`.
+	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`. One line per entry, its fields
+	// after the message, in local time; an error's stack still gets lines of its own.
 	transport: isDev
-		? { target: import.meta.resolve('pino-pretty'), options: { colorize: true } }
+		? {
+				target: import.meta.resolve('pino-pretty'),
+				options: {
+					colorize: true,
+					singleLine: true,
+					translateTime: 'SYS:HH:MM:ss.l',
+					ignore: 'pid,hostname'
+				}
+			}
 		: undefined
 });
 

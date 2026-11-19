@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import {
 	bubblesOf,
-	firstMessageAfter,
 	firstUnreadId,
+	followStep,
 	messageAuthor,
+	placeReports,
+	runsOf,
+	scrollBehaviorFor,
 	standsOnOwnSide,
 	unreadStateOf,
 	type ThreadChat
@@ -119,6 +122,41 @@ describe('bubblesOf', () => {
 	});
 });
 
+describe('runsOf', () => {
+	const at = (minute: number) => new Date(Date.UTC(2026, 10, 19, 10, minute));
+	const timed = (id: string, minute: number, mine = false) => ({
+		...fromParticipant(id, mine, mine ? 'p-deu' : 'p-fra'),
+		createdAt: at(minute)
+	});
+	const runs = (messages: ReturnType<typeof timed>[], breaksBefore: string[] = []) =>
+		runsOf({
+			bubbles: bubblesOf({ messages, side: 'PARTICIPANT', chat: direct }),
+			breaksBefore
+		}).map((run) => run.messages.map((message) => message.id));
+
+	test('puts what one author writes in a row into one bubble', () => {
+		expect(runs([timed('a', 0), timed('b', 1), timed('c', 3)])).toEqual([['a', 'b', 'c']]);
+	});
+
+	test('starts a new bubble after a pause, for another author, and below a line', () => {
+		expect(runs([timed('a', 0), timed('b', 10)])).toEqual([['a'], ['b']]);
+		expect(runs([timed('a', 0), timed('b', 1, true)])).toEqual([['a'], ['b']]);
+		expect(runs([timed('a', 0), timed('b', 1)], ['b'])).toEqual([['a'], ['b']]);
+	});
+
+	test('a bubble after a pause still sits close to the one before', () => {
+		const [, later] = runsOf({
+			bubbles: bubblesOf({
+				messages: [timed('a', 0), timed('b', 10)],
+				side: 'PARTICIPANT',
+				chat: direct
+			}),
+			breaksBefore: []
+		});
+		expect(later).toMatchObject({ key: 'b', continues: true });
+	});
+});
+
 describe('unreadStateOf', () => {
 	const chat = { id: 'chat', unreadCount: 2 };
 
@@ -179,19 +217,75 @@ describe('a reviewed delegation group', () => {
 	});
 });
 
-describe('firstMessageAfter', () => {
+describe('placeReports', () => {
 	const messages = [
-		{ id: 'a', createdAt: '2026-11-12T21:00:00Z' },
-		{ id: 'b', createdAt: '2026-11-12T21:30:00Z' }
+		{ id: 'a', createdAt: new Date(2026, 10, 12, 21, 0) },
+		{ id: 'b', createdAt: new Date(2026, 10, 12, 21, 30) },
+		{ id: 'c', createdAt: new Date(2026, 10, 14, 9, 0) }
 	];
+	const report = (id: string, createdAt: Date) => ({ id, createdAt });
 
-	test('names the first message written after the moment', () => {
-		expect(firstMessageAfter({ messages, at: '2026-11-12T21:20:00Z' })).toBe('b');
-		expect(firstMessageAfter({ messages, at: '2026-11-12T20:00:00Z' })).toBe('a');
+	test('puts a report above the first message written after it, in that day', () => {
+		const early = report('r1', new Date(2026, 10, 12, 20, 0));
+		const between = report('r2', new Date(2026, 10, 12, 21, 20));
+		const placed = placeReports({ messages, reports: [early, between] });
+		expect(placed.above.get('a')).toEqual({ beforeDay: [], inDay: [early] });
+		expect(placed.above.get('b')).toEqual({ beforeDay: [], inDay: [between] });
+		expect(placed.after).toEqual([]);
 	});
 
-	test('nothing was written since', () => {
-		expect(firstMessageAfter({ messages, at: '2026-11-12T22:00:00Z' })).toBeUndefined();
-		expect(firstMessageAfter({ messages: [], at: '2026-11-12T22:00:00Z' })).toBeUndefined();
+	test('a report from a quieter day stands above the next day’s heading', () => {
+		const quiet = report('r', new Date(2026, 10, 13, 12, 0));
+		expect(placeReports({ messages, reports: [quiet] }).above.get('c')).toEqual({
+			beforeDay: [quiet],
+			inDay: []
+		});
+	});
+
+	test('a report after the last message closes the thread', () => {
+		const late = report('r', new Date(2026, 10, 15, 8, 0));
+		expect(placeReports({ messages, reports: [late] }).after).toEqual([late]);
+		expect(placeReports({ messages: [], reports: [late] }).after).toEqual([late]);
+	});
+});
+
+describe('followStep', () => {
+	const args = {
+		key: 'chat:m2',
+		seenKey: 'chat:m1',
+		nearEnd: false,
+		newest: fromParticipant('m2'),
+		side: 'PARTICIPANT' as const,
+		chat: direct
+	};
+
+	test('does nothing while the newest message stays the same', () => {
+		expect(followStep({ ...args, seenKey: 'chat:m2' })).toBe('stay');
+	});
+
+	test('opens the thread the first time', () => {
+		expect(followStep({ ...args, seenKey: '' })).toBe('open');
+	});
+
+	test('follows a new message while the reader is near the end', () => {
+		expect(followStep({ ...args, nearEnd: true })).toBe('follow');
+	});
+
+	test('follows the reader’s own message from anywhere', () => {
+		expect(followStep({ ...args, newest: fromParticipant('m2', true) })).toBe('follow');
+	});
+
+	test('flags someone else’s message while the reader is further up', () => {
+		expect(followStep(args)).toBe('flag');
+		expect(followStep({ ...args, newest: undefined })).toBe('flag');
+		expect(followStep({ ...args, chat: null })).toBe('flag');
+	});
+});
+
+describe('scrollBehaviorFor', () => {
+	test('glides only when following and motion is welcome', () => {
+		expect(scrollBehaviorFor({ opening: false, reducedMotion: false })).toBe('smooth');
+		expect(scrollBehaviorFor({ opening: true, reducedMotion: false })).toBe('instant');
+		expect(scrollBehaviorFor({ opening: false, reducedMotion: true })).toBe('instant');
 	});
 });
