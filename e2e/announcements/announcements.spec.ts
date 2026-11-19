@@ -178,10 +178,10 @@ test('the editor refuses an empty announcement and counts the audience as it is 
 	await expect(count).toContainText('Erreicht derzeit 1 Personen');
 	await addAudience(page, { search: 'Betreu', name: 'Betreuende' });
 
-	await page
-		.getByTestId('announcement-importance')
-		.getByRole('radio', { name: 'Dringend' })
-		.check();
+	// the radio is visually hidden inside its label, which is what takes the click
+	const importance = page.getByTestId('announcement-importance');
+	await importance.locator('label', { hasText: 'Dringend' }).click();
+	await expect(importance.getByRole('radio', { name: 'Dringend' })).toBeChecked();
 	await page.getByTestId('announcement-save').click();
 	await expect(editor).toBeHidden();
 

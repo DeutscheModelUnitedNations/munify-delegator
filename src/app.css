@@ -67,6 +67,18 @@
  * The messenger's own transitions (`chatViewTransition`, `data-chat-transition` while one runs):
  * the page stays, only the chat pane moves. On a phone list and thread slide past each other.
  */
+/*
+ * Named only while a switch runs: a `view-transition-name` makes its element a stacking context,
+ * which would trap the dialogs opened from inside the chat (the terms, a report) below the footer.
+ */
+:root[data-chat-transition] .chat-list-pane {
+	view-transition-name: chat-list;
+}
+
+:root[data-chat-transition] .chat-thread-pane {
+	view-transition-name: chat-pane;
+}
+
 @keyframes chat-slide-in-right {
 	from {
 		translate: 30% 0;

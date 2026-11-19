@@ -73,8 +73,7 @@
 	data-testid="chat-workspace"
 >
 	<aside
-		class={['bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
-		style:view-transition-name="chat-list"
+		class={['chat-list-pane bg-base-200 flex min-h-0 flex-col', shownId && 'max-md:hidden']}
 		aria-label={m.chatListLabel()}
 		data-tour="chat.list"
 	>
@@ -90,8 +89,7 @@
 	</aside>
 
 	<div
-		class={['min-h-0 min-w-0', !shownId && 'max-md:hidden']}
-		style:view-transition-name="chat-pane"
+		class={['chat-thread-pane min-h-0 min-w-0', !shownId && 'max-md:hidden']}
 		data-tour="chat.thread"
 	>
 		{#if shownId}
