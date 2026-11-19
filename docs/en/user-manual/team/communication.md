@@ -150,9 +150,22 @@ Participants can report a direct chat or their delegation group. Chats with the 
 2. Pick a case and you read the chat with names in the middle. A line shows when it was reported. You cannot write in this chat. The other person is not told who reported.
 3. On the right is the **Case file** with the reports and the **People involved**, for a delegation group all its members. For each person you see earlier settled reports about their chats, write to them or open their [user card](./participants#user-card).
 4. **Suspend from chats** takes a person out of every chat with other participants of this conference. They still reach the team and the team still reaches them. **Lift suspension** undoes it.
-5. Write down under **Internal note** what was discussed and decided, and close all reports of the chat at once with **Settle**. After that the chat is private again and participant care no longer reads it. A suspension stays until you lift it.
+5. Hide offensive messages while the case is open (see below).
+6. Write down under **Internal note** what was discussed and decided, and close all reports of the chat at once with **Settle**. After that the chat is private again and participant care no longer reads it. A suspension stays until you lift it.
 
 Settled reports are folded away with their note under **Resolved reports**. Only the team reads the note.
+
+### Hiding messages {#hide-messages}
+
+You hide offensive content from everybody in the chat. Nothing is deleted: the text stays as evidence.
+
+- Next to every message a participant wrote in the reported chat there is an eye. It hides that one message.
+- **Hide all messages** at a person in the case file hides everything they wrote into this chat so far. What they write afterwards stays visible. To stop them writing, suspend them from chats.
+- Give a **Reason** every time. Only the team reads it.
+
+Hiding is final and cannot be undone. Everybody in the chat, the author included, only sees a notice that participant care hid the message. They are not told who hid it or why, and nobody is notified.
+
+Participant care keeps reading the text: in the open case with a red border, the reason, who hid it and when, and after settling with the report under **Resolved reports**. It stays there for as long as the chat exists, even once the chat is private again. Messages in chats with the team cannot be hidden.
 
 ### Notifications {#notifications}
 

@@ -38,6 +38,7 @@ export interface SeedBatch {
 	chatRead: (typeof schema.chatRead.$inferInsert)[];
 	chatReport: (typeof schema.chatReport.$inferInsert)[];
 	chatBlock: (typeof schema.chatBlock.$inferInsert)[];
+	messagingTermsAcceptance: (typeof schema.messagingTermsAcceptance.$inferInsert)[];
 	announcementAttachment: (typeof schema.announcementAttachment.$inferInsert)[];
 	announcementRead: (typeof schema.announcementRead.$inferInsert)[];
 	slackWorkspace: (typeof schema.slackWorkspace.$inferInsert)[];
@@ -107,6 +108,7 @@ export function emptyBatch(): SeedBatch {
 		chatRead: [],
 		chatReport: [],
 		chatBlock: [],
+		messagingTermsAcceptance: [],
 		announcementAttachment: [],
 		announcementRead: [],
 		slackWorkspace: [],
@@ -395,6 +397,11 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 		insert: (rows) => db.insert(s.announcementAudience).values(rows)
 	});
 	await insertChunked({ rows: batch.chat, insert: (rows) => db.insert(s.chat).values(rows) });
+	// a hidden message names the report it was hidden under
+	await insertChunked({
+		rows: batch.chatReport,
+		insert: (rows) => db.insert(s.chatReport).values(rows)
+	});
 	await insertChunked({
 		rows: batch.chatMessage,
 		insert: (rows) => db.insert(s.chatMessage).values(rows)
@@ -404,8 +411,8 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 		insert: (rows) => db.insert(s.chatRead).values(rows)
 	});
 	await insertChunked({
-		rows: batch.chatReport,
-		insert: (rows) => db.insert(s.chatReport).values(rows)
+		rows: batch.messagingTermsAcceptance,
+		insert: (rows) => db.insert(s.messagingTermsAcceptance).values(rows)
 	});
 	await insertChunked({
 		rows: batch.chatBlock,

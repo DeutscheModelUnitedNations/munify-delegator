@@ -10,6 +10,8 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import ChatBubble from './ChatBubble.svelte';
+	import HideMessagesModal from './HideMessagesModal.svelte';
+	import { hiddenState, type HideTarget } from './hiddenMessages';
 	import { dayLabel, groupByDay } from './chatTime';
 	import {
 		bubblesOf,
@@ -19,9 +21,12 @@
 	} from './threadMessages';
 
 	type Message = ThreadMessage & {
-		body: string;
+		body: string | null;
 		createdAt: Date | string;
 		paperId?: string | null;
+		hiddenAt?: Date | string | null;
+		hiddenByName?: string | null;
+		hiddenReason?: string | null;
 	};
 
 	interface Props {
@@ -33,9 +38,30 @@
 		unreadFromId?: string;
 		/** A reported chat: when its first open report came in; a line marks that moment */
 		reportedAt?: Date | string | null;
+		/** Participant care reviewing the chat may hide what participants wrote */
+		canHide?: boolean;
 	}
 
-	let { messages, chat, side, conferenceId, unreadFromId, reportedAt = null }: Props = $props();
+	let {
+		messages,
+		chat,
+		side,
+		conferenceId,
+		unreadFromId,
+		reportedAt = null,
+		canHide = false
+	}: Props = $props();
+
+	let hideOpen = $state(false);
+	let hideTarget = $state<HideTarget>({ kind: 'message', messageId: '' });
+	/** What hides a message, where the reader may: a participant's message not hidden yet. */
+	function hideOf(message: Message) {
+		if (!canHide || message.fromTeam || hiddenState(message) !== 'visible') return undefined;
+		return () => {
+			hideTarget = { kind: 'message', messageId: message.id };
+			hideOpen = true;
+		};
+	}
 	const reportedBeforeId = $derived(
 		reportedAt ? firstMessageAfter({ messages, at: reportedAt }) : undefined
 	);
@@ -89,7 +115,9 @@
 			</div>
 		{/if}
 		{#if message.id === reportedBeforeId}{@render reportedLine()}{/if}
-		<ChatBubble {message} {own} {author} {continues} {conferenceId} />
+		<ChatBubble {message} {own} {author} {continues} {conferenceId} onHide={hideOf(message)} />
 	{/each}
 {/each}
 {#if reportedAt && !reportedBeforeId && messages.length > 0}{@render reportedLine()}{/if}
+
+<HideMessagesModal bind:open={hideOpen} target={hideTarget} />

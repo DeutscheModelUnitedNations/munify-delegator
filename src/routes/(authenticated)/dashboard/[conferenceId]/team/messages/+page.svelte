@@ -57,7 +57,16 @@
 					reporterName: true,
 					reporterParticipantId: true,
 					resolutionNote: true,
-					resolvedByName: true
+					resolvedByName: true,
+					hiddenMessages: {
+						id: true,
+						body: true,
+						createdAt: true,
+						authorName: true,
+						hiddenAt: true,
+						hiddenReason: true,
+						hiddenByName: true
+					}
 				})
 			: []
 	);

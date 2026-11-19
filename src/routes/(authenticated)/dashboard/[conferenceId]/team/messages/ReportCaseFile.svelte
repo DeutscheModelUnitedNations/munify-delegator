@@ -98,7 +98,7 @@
 		<h2 class="font-semibold">{m.chatCasePeople()}</h2>
 		<ul class="divide-base-300 flex flex-col divide-y" data-testid="chat-case-people">
 			{#each people as person (person.participantId)}
-				<ReportCasePerson {conferenceId} {person} />
+				<ReportCasePerson {conferenceId} {chatId} {person} />
 			{/each}
 		</ul>
 	</section>

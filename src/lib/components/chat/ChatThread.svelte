@@ -17,6 +17,7 @@
 	import ChatThreadHeader from './ChatThreadHeader.svelte';
 	import { chatTitle, sideOf } from './chatLabels';
 	import { firstUnreadId, unreadStateOf } from './threadMessages';
+	import { canHideIn } from './hiddenMessages';
 
 	interface Props {
 		chatId: string;
@@ -139,6 +140,7 @@
 				{unreadFromId}
 				{reportedAt}
 				conferenceId={chat.conferenceId}
+				canHide={canHideIn({ side, kind: chat.kind })}
 			/>
 		</div>
 

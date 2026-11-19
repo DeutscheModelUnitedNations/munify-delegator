@@ -2,7 +2,8 @@
 	@component
 	One person of a reported chat in its case file: name and role, whether they filed a report, the
 	settled reports there were before, and what participant care can do: take them out of the chats
-	between participants, write to them, open their card.
+	between participants, hide everything they wrote into this chat so far, write to them, open
+	their card.
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
@@ -11,6 +12,7 @@
 	import ChatAvatar from '#lib/components/chat/ChatAvatar.svelte';
 	import UserCardButton from '#lib/components/chat/UserCardButton.svelte';
 	import WriteToDelegateButton from '#lib/components/chat/WriteToDelegateButton.svelte';
+	import HideMessagesModal from '#lib/components/chat/HideMessagesModal.svelte';
 	import {
 		contactAvatar,
 		contactLabel,
@@ -19,6 +21,8 @@
 
 	interface Props {
 		conferenceId: string;
+		/** The reported chat, whose messages of this person can be hidden */
+		chatId: string;
 		person: {
 			participantId: string;
 			userId: string;
@@ -31,7 +35,8 @@
 		};
 	}
 
-	let { conferenceId, person }: Props = $props();
+	let { conferenceId, chatId, person }: Props = $props();
+	let hideOpen = $state(false);
 
 	async function setSuspended({
 		participantId,
@@ -89,6 +94,19 @@
 				{suspended ? m.chatUnsuspend() : m.chatSuspend()}
 			</button>
 		{/if}
+		<button
+			type="button"
+			class="btn btn-sm btn-error btn-outline"
+			onclick={() => (hideOpen = true)}
+			data-testid="chat-hide-person"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
+			{m.chatHideAllOfPerson()}
+		</button>
 		<WriteToDelegateButton {conferenceId} participantId={person.participantId} />
 	</div>
+	<HideMessagesModal
+		bind:open={hideOpen}
+		target={{ kind: 'person', chatId, participantId: person.participantId, name: person.name }}
+	/>
 </li>

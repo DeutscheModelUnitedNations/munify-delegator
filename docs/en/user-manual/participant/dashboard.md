@@ -216,7 +216,7 @@ Before your first message the app shows you the **Terms of the message service**
 
 When you open a chat with unread messages, the line **New messages** shows where you left off.
 
-The three dots at the top of a direct chat let you use **Block person** so you can no longer write each other, or **Report chat** to report it. After a report participant care reads the chat until the report is resolved. The other person is not told who reported. Whoever breaks the rules can be suspended from chats with other participants. They can still reach the team. In an emergency call 112 and turn to the team on site directly, since messages are not read around the clock.
+The three dots at the top of a direct chat let you use **Block person** so you can no longer write each other, or **Report chat** to report it. After a report participant care reads the chat until the report is resolved. The other person is not told who reported. Participant care can hide offensive messages from everybody, and a notice takes their place in the chat. Whoever breaks the rules can be suspended from chats with other participants. They can still reach the team. In an emergency call 112 and turn to the team on site directly, since messages are not read around the clock.
 :::
 
 ## MUNify CHASE {#chase}

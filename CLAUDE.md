@@ -1390,6 +1390,19 @@ bun run preview
   settled reports there were before about their chats (`earlierReports`). A system
   admin reads what the team reads, never a private chat. `chatSide` answers how the caller relates
   to a chat (`PARTICIPANT`, `TEAM`, `REVIEW`); `REVIEW` never writes.
+- **Participant care hides messages, it never deletes them.** While a report of a chat between
+  participants is open, participant care (and a system admin) hides one message
+  (`hideChatMessage`) or everything one person wrote into the chat so far (`hideChatMessagesOf`),
+  with a reason for the team (`#api/handlers/chat/chatModeration.ts`). Hiding is final and keeps
+  the text as evidence: `chatMessage.hiddenAt` / `hiddenById` / `hiddenReason` / `hiddenReportId`
+  (the oldest report open then), and the `chat_message_hidden` migration's trigger refuses changing
+  a message's text, unhiding it or hiding in a team chat. The parties' read rule is split in two
+  (`chatPermissions.ts`): their hidden messages come with `body`, `hiddenReason`, `hiddenById` and
+  `hiddenReportId` masked, so they read a placeholder (`ChatBubble`, `lastMessagePreview`) and
+  cannot filter or search by the text either. `body` is a nullable field for that reason. Once
+  the report is settled and the chat private again, participant care reads what was hidden on the
+  report (`chatReport.hiddenMessages`, `SettledReports`); the record goes with the chat when it is
+  deleted. Nobody is notified of a hiding.
 - **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages
   through `chat.writeRefusal`): nobody while messaging is off; participants each other and their
   delegation only once the roles are released, while both hold a seat, neither blocked the other

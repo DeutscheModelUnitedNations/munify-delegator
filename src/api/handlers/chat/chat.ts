@@ -7,9 +7,13 @@ import { isSystemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
 import { messagePreview, type ChatInbox } from '#lib/helpers/chat';
+import { m } from '#lib/paraglide/messages';
 import { conferenceContacts, type Contact } from './chatContacts';
+import { hideChatMessages, hideReasonSchema, type HideTarget } from './chatModeration';
 import {
 	assertCanListContacts,
+	assertCanModerateChat,
+	assertCanModerateMessage,
 	assertCanSuspend,
 	assertDelegationMember,
 	assertHoldsInbox,
@@ -276,10 +280,12 @@ const ChatRef = object({
 		}),
 		lastMessagePreview: t.string({
 			nullable: true,
-			description: 'The beginning of the latest message.',
+			description:
+				'The beginning of the latest message; a placeholder for one participant care hid.',
 			resolve: async (chat) => {
 				const last = await lastMessageOf(chat.id);
-				return last ? messagePreview(last.body) : null;
+				if (!last) return null;
+				return last.hiddenAt ? m.chatMessageHiddenPreview() : messagePreview(last.body);
 			}
 		}),
 		blockedByMe: t.boolean({
@@ -368,6 +374,20 @@ const ChatMessageRef = object({
 			description:
 				"The author's full name where the reader may know it: of a team member writing from an inbox, of a member of the reader's own delegation group, and of anybody for participant care. Null otherwise: participants know each other by role.",
 			resolve: (message, _args, ctx) => authorNameOf({ ctx, message })
+		}),
+		// masked for the parties once participant care hid the message (`chatPermissions.ts`)
+		body: t.field({
+			type: 'String',
+			nullable: true,
+			description:
+				'The text. Null for the parties of the chat once participant care hid the message (`hiddenAt`): they see that it was hidden, not what it said. Participant care and system admins keep reading it.',
+			resolve: (message) => message.body ?? null
+		}),
+		hiddenByName: t.string({
+			nullable: true,
+			description:
+				'Who of participant care hid the message, for participant care and system admins; null for everybody else and for a message not hidden.',
+			resolve: async (message) => teamAuthorName(message.hiddenById ?? null)
 		})
 	})
 });
@@ -449,6 +469,26 @@ schemaBuilder.queryFields((t) => ({
 		}
 	})
 }));
+
+/** Hides messages of a chat the caller may moderate (the permissions file said so), as the caller. */
+function hideAs({
+	ctx,
+	chat,
+	target,
+	reason
+}: {
+	ctx: ApiContext;
+	chat: ChatRow;
+	target: HideTarget;
+	reason: string;
+}) {
+	return hideChatMessages({
+		chat,
+		target,
+		hiddenById: ctx.mustBeLoggedIn().sub,
+		reason: reason.trim()
+	});
+}
 
 schemaBuilder.mutationFields((t) => ({
 	openDirectChat: t.drizzleField({
@@ -639,6 +679,41 @@ schemaBuilder.mutationFields((t) => ({
 				suspended: args.suspended
 			});
 			return true;
+		}
+	}),
+
+	hideChatMessage: t.field({
+		description:
+			'Hides a message of a reported chat for everybody of it, with a reason for the team. Final: the parties read a placeholder from then on, participant care and system admins keep the text with the report. Participant care of the conference while a report of the chat is open (NOT_FOUND otherwise, FORBIDDEN for a team chat, CONFLICT for a message hidden already).',
+		type: 'Boolean',
+		args: {
+			id: t.arg.id({ required: true }),
+			reason: t.arg.string({ required: true }).validate(hideReasonSchema)
+		},
+		resolve: async (_root, args, ctx) => {
+			const chat = await assertCanModerateMessage({ ctx, messageId: args.id });
+			await hideAs({ ctx, chat, target: { messageId: args.id }, reason: args.reason });
+			return true;
+		}
+	}),
+
+	hideChatMessagesOf: t.field({
+		description:
+			'Hides everything a person wrote into a reported chat so far, for everybody of it, with a reason for the team, and answers how many messages it hid. What they write later stays visible (`setMessagingSuspended` keeps them from writing). Final, like `hideChatMessage`, and for the same people.',
+		type: 'Int',
+		args: {
+			chatId: t.arg.id({ required: true }),
+			participantId: t.arg.id({ required: true }),
+			reason: t.arg.string({ required: true }).validate(hideReasonSchema)
+		},
+		resolve: async (_root, args, ctx) => {
+			const chat = await assertCanModerateChat({ ctx, chatId: args.chatId });
+			return hideAs({
+				ctx,
+				chat,
+				target: { authorParticipantId: args.participantId },
+				reason: args.reason
+			});
 		}
 	}),
 

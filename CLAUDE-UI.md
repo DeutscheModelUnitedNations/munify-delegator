@@ -887,15 +887,20 @@ list header.
   messages by day and the field to write in (Enter sends, Shift+Enter breaks the line), or why the
   caller cannot write (`chat.writeRefusal`). Its menu blocks and reports; for participant care
   reviewing a report it says so (`ChatReviewBanner`) and, given `reportedAt`, draws a line where
-  the chat was reported (`firstMessageAfter`).
+  the chat was reported (`firstMessageAfter`). Reviewing a chat between participants, each
+  participant's message carries an eye that opens `HideMessagesModal` (`canHideIn`,
+  `hiddenMessages.ts`). `ChatBubble` draws a hidden message as a dashed placeholder for the
+  parties and, with its text, reason and who hid it, in a dashed error border for participant
+  care (`hiddenState`).
 - **The report desk** (`team/messages/ReportDesk.svelte`, "Reports" in the team menu, for participant care):
   three columns, which take turns on a narrow screen. `ReportQueue` lists one case per reported
   chat, the one waiting longest first (`reportCases`, `waitingSince`); the middle is the chat's
   `ChatThread`, read only; `ReportCaseFile` holds the chat's reports, everybody of the chat by
   name and role (a delegation group's members included) with their earlier settled reports, the
   suspension switch, `WriteToDelegateButton` and the user card, and the internal note that
-  settles all of the chat's reports at once (`resolveChatReports`). `SettledReports` keeps the
-  settled ones with their notes.
+  settles all of the chat's reports at once (`resolveChatReports`). Each person there offers
+  "Alle Nachrichten ausblenden" (`HideMessagesModal` with a `person` target). `SettledReports`
+  keeps the settled ones with their notes and the messages hidden under them.
 - **Corners follow the theme**: `rounded-box` for cards, panels and bubbles, `rounded-field` for
   small things. DMUN's theme draws both (almost) square, so never `rounded-lg` / `rounded-xl`.
 - **`NewChatDialog` / `NewChatPicker`**: finding whom to write to. One search field over role,

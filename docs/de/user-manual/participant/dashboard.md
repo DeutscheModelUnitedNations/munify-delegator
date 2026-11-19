@@ -216,7 +216,7 @@ Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nach
 
 Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
 
-Über die drei Punkte oben in einem Einzelchat kannst du mit **Person blockieren** dafür sorgen, dass ihr euch nicht mehr schreiben könnt, oder mit **Chat melden** den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht. Wer gegen die Regeln verstößt, kann von den Chats mit anderen Teilnehmenden gesperrt werden. Das Team erreicht man dann weiterhin. In einem Notfall wähle den Notruf 112 und wende dich vor Ort direkt an das Team, denn die Nachrichten werden nicht rund um die Uhr gelesen.
+Über die drei Punkte oben in einem Einzelchat kannst du mit **Person blockieren** dafür sorgen, dass ihr euch nicht mehr schreiben könnt, oder mit **Chat melden** den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht. Anstößige Nachrichten kann die Teilnehmendenbetreuung für alle ausblenden. Statt der Nachricht steht dann ein Hinweis im Chat. Wer gegen die Regeln verstößt, kann von den Chats mit anderen Teilnehmenden gesperrt werden. Das Team erreicht man dann weiterhin. In einem Notfall wähle den Notruf 112 und wende dich vor Ort direkt an das Team, denn die Nachrichten werden nicht rund um die Uhr gelesen.
 :::
 
 ## MUNify CHASE {#chase}

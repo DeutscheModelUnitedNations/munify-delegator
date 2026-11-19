@@ -715,3 +715,138 @@ test('switching messaging off closes every chat for writing but keeps it readabl
 	}
 	expect((await send(annaPage, chat.annaCarla, 'wieder an')).errors).toBeUndefined();
 });
+
+test('participant care hides messages of a reported chat for everybody, for good', async ({
+	browser
+}) => {
+	const annaPage = await signedIn(browser, anna.id);
+	const carlaPage = await signedIn(browser, carla.id);
+	const carePage = await signedIn(browser, care.id);
+	const chairPage = await signedIn(browser, chair.id);
+
+	const HIDE = `mutation ($id: ID!, $reason: String!) { hideChatMessage(id: $id, reason: $reason) }`;
+	const HIDE_ALL = `mutation ($chat: ID!, $p: ID!, $reason: String!) {
+		hideChatMessagesOf(chatId: $chat, participantId: $p, reason: $reason)
+	}`;
+	const WITH_IDS = `query ($chat: ID!) {
+		chatMessages(where: { chatId: { eq: $chat } }, orderBy: { createdAt: asc }) {
+			id body authorParticipantId hiddenAt hiddenReason hiddenById hiddenByName
+		}
+	}`;
+	type Row = {
+		id: string;
+		body: string | null;
+		authorParticipantId: string | null;
+		hiddenAt: string | null;
+		hiddenReason: string | null;
+		hiddenById: string | null;
+		hiddenByName: string | null;
+	};
+	const rowsOf = async (page: Page) =>
+		(await gql<{ chatMessages: Row[] }>(page, WITH_IDS, { chat: chat.annaCarla })).data
+			?.chatMessages ?? [];
+
+	expect((await send(annaPage, chat.annaCarla, 'Du bist so ein Idiot')).errors).toBeUndefined();
+	expect((await send(carlaPage, chat.annaCarla, 'Selber!')).errors).toBeUndefined();
+	const insult = (await rowsOf(annaPage)).find((row) => row.body === 'Du bist so ein Idiot');
+	if (!insult) throw new Error('The message was not written');
+
+	// nobody hides in a chat that is not reported: it is private
+	expect(codeOf(await gql(carePage, HIDE, { id: insult.id, reason: 'Beleidigung' }))).toBe(
+		'NOT_FOUND'
+	);
+
+	const REPORT = `mutation ($chat: ID!, $reason: String!) { reportChat(chatId: $chat, reason: $reason) }`;
+	expect(
+		(await gql(carlaPage, REPORT, { chat: chat.annaCarla, reason: 'Beleidigung' })).errors
+	).toBeUndefined();
+
+	// only participant care hides, with a reason; a party, the chair and an empty reason are refused
+	expect(codeOf(await gql(carlaPage, HIDE, { id: insult.id, reason: 'weg damit' }))).toBe(
+		'NOT_FOUND'
+	);
+	expect(codeOf(await gql(chairPage, HIDE, { id: insult.id, reason: 'weg damit' }))).toBe(
+		'NOT_FOUND'
+	);
+	expect(codeOf(await gql(carePage, HIDE, { id: insult.id, reason: '  ' }))).toBe('INVALID_INPUT');
+	expect(
+		(await gql(carePage, HIDE, { id: insult.id, reason: 'Beleidigung' })).errors
+	).toBeUndefined();
+	// final: hiding again is refused, the reason stays
+	expect(codeOf(await gql(carePage, HIDE, { id: insult.id, reason: 'anders' }))).toBe('CONFLICT');
+
+	// the parties, the author included, learn that it was hidden, not what it said, who hid it or why
+	for (const page of [annaPage, carlaPage]) {
+		const hidden = (await rowsOf(page)).find((row) => row.id === insult.id);
+		expect(hidden).toMatchObject({
+			body: null,
+			hiddenReason: null,
+			hiddenById: null,
+			hiddenByName: null
+		});
+		expect(hidden?.hiddenAt).not.toBeNull();
+		// nor by filtering or searching for the text
+		const BY_TEXT = `query ($chat: ID!) {
+			a: chatMessages(where: { chatId: { eq: $chat }, body: { ilike: "%Idiot%" } }) { id }
+			b: chatMessages(where: { chatId: { eq: $chat } }, search: { term: "Idiot" }) { id }
+			c: chatMessages(where: { chatId: { eq: $chat }, hiddenReason: { isNotNull: true } }) { id }
+		}`;
+		const found = await gql<{ a: unknown[]; b: unknown[]; c: unknown[] }>(page, BY_TEXT, {
+			chat: chat.annaCarla
+		});
+		expect(found.data).toEqual({ a: [], b: [], c: [] });
+	}
+	const preview = await gql<{ chats: { lastMessagePreview: string | null }[] }>(
+		carlaPage,
+		`query ($c: ID!) { chats(where: { id: { eq: $c } }) { lastMessagePreview } }`,
+		{ c: chat.annaCarla }
+	);
+	expect(JSON.stringify(preview.data)).not.toContain('Idiot');
+
+	// participant care keeps reading it, with who hid it and why
+	expect((await rowsOf(carePage)).find((row) => row.id === insult.id)).toMatchObject({
+		body: 'Du bist so ein Idiot',
+		hiddenReason: 'Beleidigung',
+		hiddenByName: `${care.given} ${care.family}`
+	});
+
+	// everything a person wrote so far, and only that: what follows stays visible
+	const all = await gql<{ hideChatMessagesOf: number }>(carePage, HIDE_ALL, {
+		chat: chat.annaCarla,
+		p: participant(carla),
+		reason: 'Zurückbeleidigt'
+	});
+	expect(all.data?.hideChatMessagesOf).toBeGreaterThan(0);
+	const carlas = (await rowsOf(annaPage)).filter(
+		(row) => row.authorParticipantId === participant(carla)
+	);
+	expect(carlas.every((row) => row.body === null && row.hiddenAt !== null)).toBe(true);
+
+	// once settled the chat is private again; the report keeps what was hidden under it
+	const SETTLE = `mutation ($chat: ID!) { resolveChatReports(chatId: $chat) }`;
+	expect((await gql(carePage, SETTLE, { chat: chat.annaCarla })).errors).toBeUndefined();
+	expect(await messagesOf(carePage, chat.annaCarla)).toEqual([]);
+	const REPORTS = `query ($c: ID!) {
+		chatReports(where: { conferenceId: { eq: $c } }, orderBy: { createdAt: desc }) {
+			reason hiddenMessages { body authorName hiddenReason hiddenByName }
+		}
+	}`;
+	const history = await gql<{
+		chatReports: { reason: string; hiddenMessages: { body: string; hiddenReason: string }[] }[];
+	}>(carePage, REPORTS, { c: CONFERENCE });
+	const record = history.data?.chatReports.find((report) => report.reason === 'Beleidigung');
+	expect(record?.hiddenMessages).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ body: 'Du bist so ein Idiot', hiddenReason: 'Beleidigung' }),
+			expect.objectContaining({ body: 'Selber!', hiddenReason: 'Zurückbeleidigt' })
+		])
+	);
+	// and stays participant care's
+	expect(
+		(await gql<{ chatReports: unknown[] }>(annaPage, REPORTS, { c: CONFERENCE })).data?.chatReports
+	).toEqual([]);
+
+	// a new message after the hiding reads as written
+	expect((await send(carlaPage, chat.annaCarla, 'Entschuldigung')).errors).toBeUndefined();
+	expect((await messagesOf(annaPage, chat.annaCarla)).at(-1)?.body).toBe('Entschuldigung');
+});
