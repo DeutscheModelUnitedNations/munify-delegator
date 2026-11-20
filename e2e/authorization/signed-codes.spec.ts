@@ -38,8 +38,10 @@ async function nametagCode(page: Page) {
 async function documentCode(page: Page, userId: string) {
 	return gql(
 		page,
-		`mutation ($c: ID!, $u: ID!) { issueDocumentCode(conferenceId: $c, userId: $u) { code } }`,
-		{ c: conferenceId, u: userId }
+		`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
+			issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p) { code }
+		}`,
+		{ c: conferenceId, u: userId, p: [{ document: 'contract', page: 0, width: 595, height: 842 }] }
 	);
 }
 
@@ -82,7 +84,7 @@ test('the scanner lookup takes a genuine nametag code and refuses a tampered or 
 	// The application documents' code is no nametag
 	const documents = await documentCode(ada, E2E_ATTENDANCE_ADA_ID);
 	expect(documents.errors, JSON.stringify(documents)).toBeUndefined();
-	const wrongKind = await lookup(care, String(documents.data?.issueDocumentCode?.code));
+	const wrongKind = await lookup(care, String(documents.data?.issueDocumentCodes?.[0]?.code));
 	expect(wrongKind.errors?.[0]?.extensions?.code).toBe('INVALID_INPUT');
 
 	// A printed nametag's barcode is the plain user id, which still counts
@@ -113,7 +115,7 @@ test("a code's link signs the visitor in first and leads only the team to the pe
 	await loginAs(ada, fixedTestUser(E2E_ATTENDANCE_ADA_ID));
 	const code = await nametagCode(ada);
 	const documents = await documentCode(ada, E2E_ATTENDANCE_ADA_ID);
-	const printCode = String(documents.data?.issueDocumentCode?.code);
+	const printCode = String(documents.data?.issueDocumentCodes?.[0]?.code);
 
 	// Signed out, genuine or not, the link only asks for a login
 	const visitor = await (await browser.newContext()).newPage();

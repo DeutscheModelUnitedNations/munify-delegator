@@ -239,6 +239,10 @@ browsers give unasked cannot read a signed code printed on paper.
 - `manualPlaceholder`, `scanPromptText`: Texts for the manual field and while scanning
 - `cameraZIndex`: z-index class of the preview (default `'z-30'`)
 - `extraControls`: Snippet between camera settings and input
+- `readPage`: `({ frame, code }) => Promise<boolean>`: reads the whole page a code is on (the
+  postal registration's "whole page" mode, `#lib/paperScan`). Given, the camera asks for 4K and a
+  code counts only once this answers true for the picture it was read in; `ScanFlowPage` passes it
+  through, with `scanPrompt`
 
 Exposes `reset()` (clears the code, restarts camera or refocuses input); call it via `bind:this`
 after saving. Typical binding into URL state:

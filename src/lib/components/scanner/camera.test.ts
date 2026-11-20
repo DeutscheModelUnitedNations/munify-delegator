@@ -140,7 +140,7 @@ describe('openScannerCamera', () => {
 	it('asks for full HD facing the given way and focuses continuously', async () => {
 		const track = fakeTrack({ capabilities: { focusMode: ['manual', 'continuous'] } });
 		const getUserMedia = fakeCamera(track);
-		await openScannerCamera('environment');
+		await openScannerCamera({ facingMode: 'environment' });
 		expect(getUserMedia).toHaveBeenCalledWith({
 			video: {
 				facingMode: { ideal: 'environment' },
@@ -151,14 +151,26 @@ describe('openScannerCamera', () => {
 		expect(track.applied).toEqual([{ advanced: [{ focusMode: 'continuous' }] }]);
 	});
 
+	it('asks for 4K to read a whole page', async () => {
+		const getUserMedia = fakeCamera(fakeTrack({ capabilities: {} }));
+		await openScannerCamera({ facingMode: 'environment', page: true });
+		expect(getUserMedia).toHaveBeenCalledWith({
+			video: {
+				facingMode: { ideal: 'environment' },
+				width: { ideal: 3840 },
+				height: { ideal: 2160 }
+			}
+		});
+	});
+
 	it('leaves the focus of a camera that cannot focus continuously, or refuses to', async () => {
 		const fixed = fakeTrack({ capabilities: { focusMode: ['manual'] } });
 		fakeCamera(fixed);
-		await openScannerCamera('user');
+		await openScannerCamera({ facingMode: 'user' });
 		expect(fixed.applied).toEqual([]);
 
 		const refusing = fakeTrack({ capabilities: { focusMode: ['continuous'] }, refuse: true });
 		fakeCamera(refusing);
-		await expect(openScannerCamera('user')).resolves.toBeDefined();
+		await expect(openScannerCamera({ facingMode: 'user' })).resolves.toBeDefined();
 	});
 });

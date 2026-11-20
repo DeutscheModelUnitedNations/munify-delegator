@@ -1,16 +1,18 @@
 /**
- * Renders the first page of a PDF template onto `canvas`, `cssWidth` pixels wide (sharp on dense
- * screens), and answers the page's size in points. pdf.js is loaded on demand: only the
- * certificate layout editor needs it.
+ * Renders page `page` (from 0) of a PDF template onto `canvas`, `cssWidth` pixels wide (sharp on
+ * dense screens), and answers the page's size in points and how many pages the template has.
+ * pdf.js is loaded on demand: only the layout editor needs it.
  */
-export async function renderFirstPage({
+export async function renderTemplatePage({
 	url,
 	canvas,
-	cssWidth
+	cssWidth,
+	page: index = 0
 }: {
 	url: string;
 	canvas: HTMLCanvasElement;
 	cssWidth: number;
+	page?: number;
 }) {
 	const [pdfjs, worker] = await Promise.all([
 		import('pdfjs-dist'),
@@ -20,7 +22,8 @@ export async function renderFirstPage({
 	const task = pdfjs.getDocument({ url });
 	const document = await task.promise;
 	try {
-		const page = await document.getPage(1);
+		const pageCount = document.numPages;
+		const page = await document.getPage(Math.min(index, pageCount - 1) + 1);
 		const points = page.getViewport({ scale: 1 });
 		const viewport = page.getViewport({
 			scale: (cssWidth * window.devicePixelRatio) / points.width
@@ -28,7 +31,7 @@ export async function renderFirstPage({
 		canvas.width = Math.round(viewport.width);
 		canvas.height = Math.round(viewport.height);
 		await page.render({ canvas, viewport }).promise;
-		return { width: points.width, height: points.height };
+		return { width: points.width, height: points.height, pageCount };
 	} finally {
 		await task.destroy();
 	}

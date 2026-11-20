@@ -96,7 +96,7 @@
 	/** Everything the postal documents need is read when they are asked for, not kept live. */
 	const downloadPostalDocs = async () => {
 		try {
-			const { user, conference, documentCode } = await fetchPostalRegistrationSources({
+			const { user, conference, issueCodes } = await fetchPostalRegistrationSources({
 				userId,
 				conferenceId
 			});
@@ -113,7 +113,7 @@
 				conference,
 				birthday: postal.birthday,
 				participant: postal.participant,
-				documentCode,
+				issueCodes,
 				recipient: postalRecipient(conference),
 				fileName: documentFileName({ user, document: 'postal_registration' })
 			});

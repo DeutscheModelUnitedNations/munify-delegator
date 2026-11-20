@@ -128,7 +128,14 @@ export const conference = snakeCase.table('conference', {
 	/**
 	 * Whether every QR code the app shows or prints for the conference is in the corporate design
 	 * (round modules in DMUN's blue, rounded corner markers, the emblem where there is room) or a
-	 * plain black one (`#lib/helpers/qrStyle`).
+	 * plain black one (`#lib/helpers/qrStyle`). The application documents' codes are always plain:
+	 * printed at home and scanned back, black on white reads best.
 	 */
-	qrCorporateDesign: boolean().default(true).notNull()
+	qrCorporateDesign: boolean().default(true).notNull(),
+	/**
+	 * Whether the application documents are printed to be read back by a scan: alignment marks in
+	 * their corners and the fields placed in the layout editor (signatures, the media consent's
+	 * boxes), which the postal registration reads off scanned pages (`#lib/paperScan`).
+	 */
+	paperScanning: boolean().default(false).notNull()
 });

@@ -45,6 +45,8 @@ const print: SignedCodeClaims = {
 	conferenceId: 'conference1',
 	issuedAt
 };
+/** A page of the application documents with its fields (`#lib/paperScan/areas`). */
+const printedPage: SignedCodeClaims = { ...print, areas: Uint8Array.of(8, 52, 11, 154, 4, 0, 1) };
 const certificate: SignedCodeClaims = {
 	kind: 'certificate',
 	issuedAt,
@@ -66,7 +68,7 @@ describe('scanner safe text', () => {
 });
 
 describe('signed codes', () => {
-	test.each([live, print, certificate])(
+	test.each([live, print, printedPage, certificate])(
 		'a $kind code verifies and says what was signed',
 		async (claims) => {
 			const code = await sign({ claims });

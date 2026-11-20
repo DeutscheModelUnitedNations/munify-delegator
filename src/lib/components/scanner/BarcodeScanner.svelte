@@ -18,6 +18,7 @@
 	import { searchUsers } from './userSearch';
 	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
 	import {
+		captureFrame,
 		openScannerCamera,
 		stopVideoStream,
 		streamZoom,
@@ -56,6 +57,13 @@
 		 * person's attention. The search box gets the focus back when they return.
 		 */
 		collapsed?: boolean;
+		/**
+		 * Reads the whole page a code was scanned on (`#lib/paperScan`): given, the camera asks for
+		 * its highest resolution, and a code read by it is handed on only once this answers true
+		 * for the picture it was read in (the page wholly in view); otherwise the next picture is
+		 * tried.
+		 */
+		readPage?: (args: { frame: ImageData; code: string }) => Promise<boolean>;
 	}
 
 	let {
@@ -68,7 +76,8 @@
 		scannedCode = $bindable<string | null>(''),
 		result,
 		belowCamera,
-		collapsed = false
+		collapsed = false,
+		readPage
 	}: Props = $props();
 
 	// Internal state
@@ -95,6 +104,8 @@
 	let detecting = false;
 	/** Set while a code is being checked, so the next one waits for the verdict. */
 	let checking = false;
+	/** Whether the camera was opened to read whole pages, at its highest resolution. */
+	let streamedForPage = false;
 
 	// Created on first use: the polyfill cannot be constructed during SSR
 	let barcodeDetector: BarcodeDetector | undefined;
@@ -134,7 +145,8 @@
 			cameraWanted.current = false;
 			return;
 		}
-		const stream = await openScannerCamera(facingMode);
+		streamedForPage = readPage !== undefined;
+		const stream = await openScannerCamera({ facingMode, page: streamedForPage });
 		video.srcObject = stream;
 		await video.play();
 		streaming = true;
@@ -198,13 +210,28 @@
 	 * Hands a code on once it is accepted; a refused one is reported and dropped. `format` is what
 	 * the code was read as, `null` for one typed or picked by hand.
 	 */
-	async function take({ text, format }: { text: string; format: string | null }) {
+	// fallow-ignore-next-line complexity
+	async function take({
+		text,
+		format,
+		frame
+	}: {
+		text: string;
+		format: string | null;
+		/** The picture the code was read in, to read its page from (`readPage`). */
+		frame?: ImageData;
+	}) {
 		if (checking) return;
 		checking = true;
 		try {
 			const verdict = await acceptScan({ text, format, acceptance });
 			if (!verdict.accepted) {
 				toast.error(verdict.message);
+				return;
+			}
+			if (frame && readPage && !(await readPage({ frame, code: verdict.code }))) {
+				// the page was not wholly readable in this picture: try the next one
+				blockedCode = null;
 				return;
 			}
 			// The scan may have been answered by hand while it was being checked
@@ -214,20 +241,30 @@
 		}
 	}
 
-	async function acceptScanned(barcode: { rawValue: string; format: string } | undefined) {
+	async function acceptScanned({
+		barcode,
+		frame
+	}: {
+		barcode: { rawValue: string; format: string } | undefined;
+		frame?: ImageData;
+	}) {
 		// The scan may have been answered by hand while the detector was running
 		if (!barcode || scannedCode || checking) return;
 		// Blocked at once, so a refused code is reported once rather than on every frame
 		blockedCode = barcode.rawValue;
-		await take({ text: barcode.rawValue, format: barcode.format });
+		await take({ text: barcode.rawValue, format: barcode.format, frame });
 	}
 
+	// fallow-ignore-next-line complexity
 	async function scanForCode() {
 		const video = videoToDetect();
 		if (!video) return;
 		detecting = true;
 		try {
-			acceptScanned(await detectNewCode(video));
+			const barcode = await detectNewCode(video);
+			// the picture the code was read in, before the video moves on
+			const frame = barcode && readPage ? captureFrame(video) : undefined;
+			acceptScanned({ barcode, frame });
 		} catch (error) {
 			toast.error(m.barcodeDetectError({ error: String(error) }));
 		} finally {
@@ -277,6 +314,12 @@
 		if (!streaming || scannedCode) return;
 		const intervalId = setInterval(scanForCode, 300);
 		return () => clearInterval(intervalId);
+	});
+
+	// Reading whole pages wants the camera at its highest resolution, codes alone do not
+	$effect(() => {
+		const forPage = readPage !== undefined;
+		if (streaming && forPage !== streamedForPage) untrack(() => void startVideo());
 	});
 
 	// Suggest people while typing, once the typing pauses; a scanned id needs no search

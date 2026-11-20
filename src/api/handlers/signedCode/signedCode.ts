@@ -1,12 +1,25 @@
 import { schemaBuilder } from '#api/rumble';
-import { assertCanIssuePrintCode } from './signedCodePermissions';
-import { issueLiveCode, issuePrintCode } from './signedCodeService';
+import { POSTAL_DOCUMENTS } from '#lib/paperScan/pageAreas';
+import { assertCanIssuePrintCodes } from './signedCodePermissions';
+import { documentCodesArgsSchema, issueLiveCode, issuePrintCodes } from './signedCodeService';
 import { signedCodeKeys } from './signingKeys';
 
 const SignedCode = schemaBuilder.simpleObject('SignedCode', {
 	description:
 		'A signed code in the scanner safe alphabet; `signedCodeLink` (`#lib/signedCode/signedCode`) makes it the link a QR code shows.',
 	fields: (t) => ({ code: t.string() })
+});
+
+const PostalDocumentEnum = schemaBuilder.enumType('PostalDocument', { values: POSTAL_DOCUMENTS });
+
+const PrintedPageInput = schemaBuilder.inputType('PrintedPageInput', {
+	description: 'A page of the application documents.',
+	fields: (t) => ({
+		document: t.field({ type: PostalDocumentEnum, required: true }),
+		page: t.int({ required: true, description: "Which page of the document's template, from 0." }),
+		width: t.float({ required: true, description: 'The page size in points.' }),
+		height: t.float({ required: true })
+	})
 });
 
 const SignedCodeKey = schemaBuilder.simpleObject('SignedCodeKey', {
@@ -31,17 +44,27 @@ schemaBuilder.mutationFields((t) => ({
 		})
 	}),
 
-	issueDocumentCode: t.field({
+	issueDocumentCodes: t.field({
 		description:
-			"The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.",
-		type: SignedCode,
+			"The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Where the conference reads its paper, each carries where its page's fields are. `layouts` and `paperScanning` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.",
+		type: [SignedCode],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			userId: t.arg.id({ required: true, description: "The holder's user id." })
+			userId: t.arg.id({ required: true, description: "The holder's user id." }),
+			pages: t.arg({ type: [PrintedPageInput], required: true }),
+			layouts: t.arg({ type: 'JSON', description: 'A test print: the layouts being edited.' }),
+			paperScanning: t.arg.boolean({ description: 'A test print: the switch as it stands.' })
 		},
+		validate: documentCodesArgsSchema,
 		resolve: async (_root, args, ctx) => {
-			await assertCanIssuePrintCode({ ctx, conferenceId: args.conferenceId, userId: args.userId });
-			return { code: await issuePrintCode(args) };
+			const { conferenceId, userId, layouts, paperScanning } = args;
+			const draft =
+				layouts == null && paperScanning == null
+					? undefined
+					: { layouts: layouts ?? undefined, paperScanning: paperScanning ?? undefined };
+			await assertCanIssuePrintCodes({ ctx, conferenceId, userId, draft: draft !== undefined });
+			const codes = await issuePrintCodes({ userId, conferenceId, pages: args.pages, draft });
+			return codes.map((code) => ({ code }));
 		}
 	})
 }));

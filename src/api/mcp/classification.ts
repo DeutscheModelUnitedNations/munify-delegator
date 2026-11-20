@@ -446,6 +446,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'mediaConsentFileId',
 			'nametagBinCount',
 			'nextDocumentNumber',
+			'paperScanning',
 			'participantMaxAge',
 			'participantMinAge',
 			'postalApartment',

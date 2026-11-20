@@ -3,6 +3,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import PdfTemplateHelp from '#lib/components/form/PdfTemplateHelp.svelte';
@@ -13,7 +14,6 @@
 	import {
 		templateOrDefault,
 		testPrintCertificate,
-		testPrintDocumentCode,
 		testPrintParticipant,
 		testPrintRecipient
 	} from './testPrintData';
@@ -72,20 +72,30 @@
 			termsAndConditionsFile: { url: true },
 			documentLayouts: true
 		});
+		const documentLayouts = withDraft({ stored: templates.documentLayouts, draft });
+		// the switch as it stands in the form, saved or not, so the test print shows it
+		const paperScanning = $formData.paperScanning;
+		// Real codes, of the person printing: a test print scanned back reads like a participant's
+		const { sub: userId } = await getCurrentUser();
 		// a minor's, so the guardian consent is part of it
 		await downloadCompletePostalRegistrationPDF({
 			isOfAge: false,
 			participant: testPrintParticipant(),
-			documentCode: testPrintDocumentCode(),
+			issueCodes: async (pages) => {
+				const codes = await client.mutate.issueDocumentCodes({
+					__args: { conferenceId, userId, pages, layouts: documentLayouts, paperScanning },
+					code: true
+				});
+				return codes.map(({ code }) => code);
+			},
 			recipient: testPrintRecipient($formData),
 			templates: {
 				contractFile: templates.contractFile,
 				guardianConsentFile: templates.guardianConsentFile,
 				mediaConsentFile: templates.mediaConsentFile,
 				termsAndConditionsFile: templates.termsAndConditionsFile,
-				documentLayouts: withDraft({ stored: templates.documentLayouts, draft }),
-				// the switch as it stands in the form, saved or not, so the test print shows it
-				qrCorporateDesign: $formData.qrCorporateDesign
+				documentLayouts,
+				paperScanning
 			},
 			fileName: 'test_postal_registration.pdf'
 		});
@@ -216,6 +226,21 @@
 			testBlocked={postalTestBlocked}
 		/>
 	</div>
+	<label class="flex cursor-pointer items-start gap-3">
+		<input
+			type="checkbox"
+			class="toggle toggle-primary"
+			name="paperScanning"
+			aria-describedby="paper-scanning-description"
+			bind:checked={$formData.paperScanning}
+		/>
+		<span class="flex flex-col gap-0.5">
+			<span>{m.paperScanning()}</span>
+			<span id="paper-scanning-description" class="text-base-content/60 text-sm">
+				{m.paperScanningDescription()}
+			</span>
+		</span>
+	</label>
 </FormSection>
 
 <FormSection title={m.certificate()} icon="medal">
@@ -241,6 +266,7 @@
 			{conferenceId}
 			{document}
 			{certificateSessions}
+			scanning={$formData.paperScanning}
 			title={m.documentLayoutTitle({ document: documentName[document]() })}
 			testPrint={(layout) =>
 				document === 'certificate'

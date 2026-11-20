@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "917b31f5-acd5-4af4-b9e6-81e9d88d6465",
+  "prevIds": [
+    "43eee5be-47de-43a3-95fb-f26a67e6a8bb"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "paper_scanning"
+      ],
+      "writes": [
+        "s|col|public.conference.paper_scanning",
+        "n|col|public.conference.paper_scanning",
+        "e|col|public.conference.paper_scanning"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "paper_scanning",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { PAPER_FIELDS, type PaperField, type PaperMark } from '#lib/paperScan/fields';
+import { MARKER } from '#lib/paperScan/markerGeometry';
 
 /**
  * Where the generated parts of a document go on the conference's own template: a certificate's
@@ -7,15 +9,20 @@ import { z } from 'zod';
  * id beside it) and the page number. The team places them in the layout editor
  * (`DocumentLayoutEditor.svelte`); the PDF generator and the editor read the same values, stored
  * per document in `conference.documentLayouts`. The page number is fixed in the bottom right
- * corner (`fixed`), the terms and conditions' pages too.
+ * corner (`fixed`), the terms and conditions' pages too. Where the conference reads its paper
+ * (`conference.paperScanning`, elements marked `scanning`), the application documents also carry
+ * alignment marks in their corners (fixed) and the fields a scan is read for: the signatures and
+ * the media consent's boxes, each on a page of its template (`#lib/paperScan`).
  *
  * Everything is a fraction of the page, measured from the top-left corner, so a layout survives a
  * template uploaded again at another size: `x`/`y` 0 is the left/top edge, 1 the right/bottom.
- * Three shapes of element exist:
+ * Four shapes of element exist:
  * - `text`: a line (or lines) of text; `x`/`y` is where its baseline starts (left aligned) or its
  *   centre (centred), `size` the font size in points;
  * - `box`: an area something is laid out in, its top-left corner, width and height;
- * - `square`: a code, its top-left corner and its side as a fraction of the page's width.
+ * - `square`: a code, its top-left corner and its side as a fraction of the page's width;
+ * - `field`: a box to tick or a line to sign on, drawn by us and read off a scan, on the page of
+ *   its template `page` says (counted from 0).
  */
 
 const fraction = z.number().min(0).max(1);
@@ -23,20 +30,24 @@ const fraction = z.number().min(0).max(1);
 const textPlacement = z.object({ x: fraction, y: fraction, size: z.number().min(5).max(72) });
 const boxPlacement = z.object({ x: fraction, y: fraction, width: fraction, height: fraction });
 const squarePlacement = z.object({ x: fraction, y: fraction, size: fraction });
+const fieldPlacement = boxPlacement.extend({ page: z.number().int().min(0).max(99) });
 
 export type TextPlacement = z.infer<typeof textPlacement>;
 export type BoxPlacement = z.infer<typeof boxPlacement>;
 export type SquarePlacement = z.infer<typeof squarePlacement>;
+export type FieldPlacement = z.infer<typeof fieldPlacement>;
 
 /**
  * A code is never printed smaller than its `minSide` (millimetres), so a phone still reads it off
  * paper; the PDF generator grows it further when its content needs more (`#lib/helpers/qrSize`).
  * Its caption (`caption`) goes above it or beside it. A `fixed` box (the page number) always stays
- * at its default: the editor shows it, nothing may be placed over it, and it is never stored.
+ * at its default: the editor shows it, nothing may be placed over it, and it is never stored. An
+ * element marked `scanning` exists only where the conference reads its paper.
  */
 type ElementSpec =
 	| { shape: 'text'; align: 'left' | 'center'; lines?: number; default: TextPlacement }
-	| { shape: 'box'; list?: boolean; fixed?: boolean; default: BoxPlacement }
+	| { shape: 'box'; list?: boolean; fixed?: boolean; scanning?: true; default: BoxPlacement }
+	| { shape: 'field'; field: PaperField; scanning: true; default: FieldPlacement }
 	| {
 			shape: 'square';
 			caption: 'above' | 'beside';
@@ -55,8 +66,11 @@ const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.
 
 /** The side of the footer code by default, in points: larger than its minimum, for good measure. */
 const FOOTER_CODE = mm(30);
-/** Where the footer sits by default: the right margin and the bottom one, in points. */
-const FOOTER = { right: 40, bottom: 20 };
+/**
+ * Where the footer sits by default: the right margin and the bottom one, in points. The right one
+ * keeps the page number and the code clear of the bottom right alignment mark.
+ */
+const FOOTER = { right: 54, bottom: 20 };
 /** The page number: a fixed area in the bottom right corner, the code by default just above. */
 const PAGE_NUMBER = { width: 80, height: 14, gap: 6 };
 
@@ -86,6 +100,64 @@ const footer = {
 		}
 	}
 } as const satisfies Record<string, ElementSpec>;
+
+/** The alignment marks in the corners (`#lib/paperScan/markers`), fixed like the page number. */
+const markerBox = ({ right, bottom }: { right: boolean; bottom: boolean }) => {
+	const near = mm(MARKER.inset);
+	const far = (length: number) => length - mm(MARKER.inset + MARKER.side);
+	return {
+		shape: 'box',
+		fixed: true,
+		scanning: true,
+		default: {
+			x: portrait.x(right ? far(A4.short) : near),
+			y: portrait.y(bottom ? far(A4.long) : near),
+			width: portrait.x(mm(MARKER.side)),
+			height: portrait.y(mm(MARKER.side))
+		}
+	} as const satisfies ElementSpec;
+};
+const markers = {
+	markerTopLeft: markerBox({ right: false, bottom: false }),
+	markerTopRight: markerBox({ right: true, bottom: false }),
+	markerBottomRight: markerBox({ right: true, bottom: true }),
+	markerBottomLeft: markerBox({ right: false, bottom: true })
+} as const satisfies Record<string, ElementSpec>;
+
+/** A field to read off a scan, by default `top` millimetres down the first page. */
+const paperField = ({
+	field,
+	top,
+	width,
+	height
+}: {
+	field: PaperField;
+	top: number;
+	width: number;
+	height: number;
+}) =>
+	({
+		shape: 'field',
+		field,
+		scanning: true,
+		default: {
+			x: portrait.x(mm(25)),
+			y: portrait.y(mm(top)),
+			width: portrait.x(mm(width)),
+			height: portrait.y(mm(height)),
+			page: 0
+		}
+	}) as const satisfies ElementSpec;
+const signatureField = (field: PaperField) =>
+	paperField({ field, top: 245, width: 80, height: 15 });
+const checkboxField = ({ field, top }: { field: PaperField; top: number }) =>
+	paperField({ field, top, width: 5, height: 5 });
+
+/** The smallest a field may be drawn, in millimetres: a box still to tick, a line to sign on. */
+const MIN_FIELD_MM: Record<PaperMark, { width: number; height: number }> = {
+	checkbox: { width: 3.5, height: 3.5 },
+	signature: { width: 25, height: 6 }
+};
 
 /** The certificate's code by default, in points. */
 const CERTIFICATE_CODE = mm(36);
@@ -140,9 +212,16 @@ export const DOCUMENT_ELEMENTS = {
 			default: { x: portrait.x(mm(25)), y: portrait.y(mm(60) + 15), size: 11 }
 		},
 		...nameAndBirthday({ top: 320, gap: 60 }),
-		...footer
+		...footer,
+		...markers,
+		signature: signatureField('termsSignature')
 	},
-	guardianConsent: { ...nameAndBirthday({ top: 180, gap: 60 }), ...footer },
+	guardianConsent: {
+		...nameAndBirthday({ top: 180, gap: 60 }),
+		...footer,
+		...markers,
+		signature: signatureField('guardianSignature')
+	},
 	mediaConsent: {
 		...nameAndBirthday({ top: 225, gap: 42 }),
 		...footer,
@@ -150,7 +229,12 @@ export const DOCUMENT_ELEMENTS = {
 			shape: 'text',
 			align: 'left',
 			default: { x: portrait.x(70), y: portrait.y(225 + 84), size: 10 }
-		}
+		},
+		...markers,
+		mediaAll: checkboxField({ field: 'mediaAll', top: 200 }),
+		mediaPartial: checkboxField({ field: 'mediaPartial', top: 208 }),
+		mediaNone: checkboxField({ field: 'mediaNone', top: 216 }),
+		signature: signatureField('mediaSignature')
 	}
 } as const satisfies Record<string, Record<string, ElementSpec>>;
 
@@ -173,7 +257,9 @@ type Placement<S extends ElementSpec> = S extends { shape: 'text' }
 	? TextPlacement
 	: S extends { shape: 'box' }
 		? BoxPlacement
-		: SquarePlacement;
+		: S extends { shape: 'field' }
+			? FieldPlacement
+			: SquarePlacement;
 export type DocumentLayout<D extends LayoutDocument> = {
 	[E in keyof (typeof DOCUMENT_ELEMENTS)[D]]: (typeof DOCUMENT_ELEMENTS)[D][E] extends ElementSpec
 		? Placement<(typeof DOCUMENT_ELEMENTS)[D][E]>
@@ -181,7 +267,12 @@ export type DocumentLayout<D extends LayoutDocument> = {
 };
 export type ElementOf<D extends LayoutDocument> = keyof DocumentLayout<D> & string;
 
-const placementSchema = { text: textPlacement, box: boxPlacement, square: squarePlacement };
+const placementSchema = {
+	text: textPlacement,
+	box: boxPlacement,
+	square: squarePlacement,
+	field: fieldPlacement
+};
 
 /** Whether an element stays at its default, whatever was stored. */
 const isFixed = (spec: ElementSpec) => spec.shape === 'box' && spec.fixed === true;
@@ -201,9 +292,31 @@ export function documentLayoutSchema(document: LayoutDocument) {
 	);
 }
 
-/** The elements of a document in the order they are declared. */
-export const elementsOf = <D extends LayoutDocument>(document: D) =>
-	specsOf(document).map(([id, spec]) => ({ id, spec }));
+/** Whether an element exists only where the conference reads its paper. */
+const forScanning = (spec: ElementSpec) => 'scanning' in spec && spec.scanning === true;
+
+/**
+ * The elements of a document in the order they are declared; those of paper scanning only where
+ * the conference reads its paper (`scanning`).
+ */
+export const elementsOf = <D extends LayoutDocument>(
+	document: D,
+	{ scanning }: { scanning: boolean } = { scanning: false }
+) =>
+	specsOf(document)
+		.filter(([, spec]) => scanning || !forScanning(spec))
+		.map(([id, spec]) => ({ id, spec }));
+
+/** A field as the editor and the generator list it: with what is drawn for it. */
+const fieldEntry = ({
+	id,
+	placement,
+	field
+}: {
+	id: string;
+	placement: FieldPlacement;
+	field: PaperField;
+}) => ({ id, placement, field, mark: PAPER_FIELDS[field].mark });
 
 /**
  * The elements of a document by shape, each with its placement in `layout` (the layout editor draws
@@ -221,14 +334,20 @@ export function elementsByShape({
 	const squares: { id: string; placement: SquarePlacement; caption: 'above' | 'beside' }[] = [];
 	for (const { id, spec } of elements) {
 		const placement = layout[id];
-		if (!placement) continue;
+		if (!placement || 'page' in placement) continue;
 		if ('width' in placement) {
 			if (spec.shape === 'box')
 				boxes.push({ id, placement, list: spec.list ?? false, fixed: spec.fixed ?? false });
 		} else if (spec.shape === 'text') texts.push({ id, align: spec.align, placement });
 		else if (spec.shape === 'square') squares.push({ id, placement, caption: spec.caption });
 	}
-	return { texts, boxes, squares };
+	const fields = elements.flatMap(({ id, spec }) => {
+		const placement = layout[id];
+		return spec.shape === 'field' && placement && 'page' in placement
+			? [fieldEntry({ id, placement, field: spec.field })]
+			: [];
+	});
+	return { texts, boxes, squares, fields };
 }
 
 /** The default layout of a document. */
@@ -251,7 +370,7 @@ export function resolveDocumentLayout<D extends LayoutDocument>({
 	const placed = ofDocument.success
 		? z.record(z.string(), z.unknown()).safeParse(ofDocument.data[document])
 		: undefined;
-	const layout: Record<string, TextPlacement | BoxPlacement | SquarePlacement> = {};
+	const layout: Record<string, AnyPlacement> = {};
 	for (const [id, spec] of specsOf(document)) {
 		const parsed = placementSchema[spec.shape].safeParse(placed?.success ? placed.data[id] : null);
 		layout[id] = parsed.success && !isFixed(spec) ? parsed.data : spec.default;
@@ -281,7 +400,7 @@ const clamp = ({ value, min, max }: { value: number; min: number; max: number })
 const clampToPage = ({ position, size }: { position: number; size: number }) =>
 	clamp({ value: position, min: 0, max: Math.max(0, 1 - size) });
 
-type AnyPlacement = TextPlacement | BoxPlacement | SquarePlacement;
+type AnyPlacement = TextPlacement | BoxPlacement | SquarePlacement | FieldPlacement;
 
 /** A drag of `start` by `dx`/`dy`; `aspect` is the page's width over its height. */
 type PlacementDrag<P extends AnyPlacement> = {
@@ -303,7 +422,7 @@ export function movePlacement<P extends AnyPlacement>({
 	dy,
 	aspect
 }: PlacementDrag<P>): P {
-	if (shape === 'box' && 'width' in start) {
+	if ((shape === 'box' || shape === 'field') && 'width' in start) {
 		return {
 			...start,
 			x: clampToPage({ position: start.x + dx, size: start.width }),
@@ -346,24 +465,27 @@ function areaOf({ placement, aspect }: { placement: AnyPlacement; aspect: number
 
 /**
  * Whether `placement` of the element `id` would cover one of the document's fixed areas (the page
- * number); the editor refuses such a move. Texts are left out: their extent depends on the text.
+ * number, and the alignment marks where the conference reads its paper: `scanning`); the editor
+ * refuses such a move. Texts are left out: their extent depends on the text.
  */
 export function coversFixedArea({
 	document,
 	id,
 	shape,
 	placement,
-	aspect
+	aspect,
+	scanning = false
 }: {
 	document: LayoutDocument;
 	id: string;
 	shape: ElementSpec['shape'];
 	placement: AnyPlacement;
 	aspect: number;
+	scanning?: boolean;
 }) {
 	if (shape === 'text') return false;
 	const area = areaOf({ placement, aspect });
-	return specsOf(document).some(([other, spec]) => {
+	return elementsOf(document, { scanning }).some(({ id: other, spec }) => {
 		if (other === id || !isFixed(spec)) return false;
 		const fixed = areaOf({ placement: spec.default, aspect });
 		return (
@@ -399,11 +521,14 @@ export function withMinimumSizes<L extends Record<string, AnyPlacement>>({
 	return grown;
 }
 
+/** The smallest a box may be resized to, as fractions of the page's width and height. */
+type MinBox = { width: number; height: number };
+
 /**
- * Resizes a box (or a square, which stays square, following the larger of the two) from its
- * bottom right corner by `dx`/`dy`, never past the page's edge nor below `minSize` (a square's,
- * as a fraction of the page's width). A text keeps its placement: its size is its font's
- * (`resizeText`).
+ * Resizes a box or field (or a square, which stays square, following the larger of the two) from
+ * its bottom right corner by `dx`/`dy`, never past the page's edge nor below `minSize` (a square's,
+ * as a fraction of the page's width) or `minBox` (a field's, `fieldMinimum`). A text keeps its
+ * placement: its size is its font's (`resizeText`).
  */
 export function resizePlacement<P extends AnyPlacement>({
 	shape,
@@ -411,13 +536,14 @@ export function resizePlacement<P extends AnyPlacement>({
 	dx,
 	dy,
 	aspect,
-	minSize = MIN_BOX
-}: PlacementDrag<P> & { minSize?: number }): P {
-	if (shape === 'box' && 'width' in start) {
+	minSize = MIN_BOX,
+	minBox = { width: MIN_BOX, height: MIN_BOX }
+}: PlacementDrag<P> & { minSize?: number; minBox?: MinBox }): P {
+	if ((shape === 'box' || shape === 'field') && 'width' in start) {
 		return {
 			...start,
-			width: clamp({ value: start.width + dx, min: MIN_BOX, max: 1 - start.x }),
-			height: clamp({ value: start.height + dy, min: MIN_BOX, max: 1 - start.y })
+			width: clamp({ value: start.width + dx, min: minBox.width, max: 1 - start.x }),
+			height: clamp({ value: start.height + dy, min: minBox.height, max: 1 - start.y })
 		};
 	}
 	if (shape === 'square' && 'size' in start) {
@@ -434,14 +560,15 @@ export function resizePlacement<P extends AnyPlacement>({
 }
 
 /** Where an element is while it is dragged (or resized from its corner) by `dx`/`dy`. */
-export function dragPlacement<P extends TextPlacement | BoxPlacement | SquarePlacement>({
+export function dragPlacement<P extends AnyPlacement>({
 	shape,
 	start,
 	resize,
 	dx,
 	dy,
 	aspect,
-	minSize
+	minSize,
+	minBox
 }: {
 	shape: ElementSpec['shape'];
 	start: P;
@@ -451,10 +578,27 @@ export function dragPlacement<P extends TextPlacement | BoxPlacement | SquarePla
 	aspect: number;
 	/** A square's smallest size (`minSquareSize`). */
 	minSize?: number;
+	/** A field's smallest size (`fieldMinimum`). */
+	minBox?: MinBox;
 }): P {
 	return resize
-		? resizePlacement({ shape, start, dx, dy, aspect, minSize })
+		? resizePlacement({ shape, start, dx, dy, aspect, minSize, minBox })
 		: movePlacement({ shape, start, dx, dy, aspect });
+}
+
+/** The smallest a field of `mark` may be on a page of `page` (points), as fractions of it. */
+export function fieldMinimum({
+	mark,
+	page
+}: {
+	mark: PaperMark;
+	page: { width: number; height: number };
+}): MinBox {
+	const min = MIN_FIELD_MM[mark];
+	return {
+		width: Math.min(1, (min.width * POINTS_PER_MM) / page.width),
+		height: Math.min(1, (min.height * POINTS_PER_MM) / page.height)
+	};
 }
 
 /** A text's font size, a step at a time, within what a layout allows. */

@@ -1647,6 +1647,7 @@ export type Conference = {
   messagingEnabled: Boolean,
   nametagBinCount: Int,
   nextDocumentNumber: Int,
+  paperScanning: Boolean,
   papers: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1786,6 +1787,7 @@ export type ConferenceOrderInputArgument = {
   mediaConsentFileId?: SortingParameter | null | undefined,
   messagingEnabled?: SortingParameter | null | undefined,
   nametagBinCount?: SortingParameter | null | undefined,
+  paperScanning?: SortingParameter | null | undefined,
   participantMaxAge?: SortingParameter | null | undefined,
   participantMinAge?: SortingParameter | null | undefined,
   postalApartment?: SortingParameter | null | undefined,
@@ -1879,6 +1881,7 @@ export type ConferenceWhereInputArgument = {
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
   messagingEnabled?: BooleanWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
+  paperScanning?: BooleanWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
   participantMaxAge?: IntWhereInputArgument | null | undefined,
   participantMinAge?: IntWhereInputArgument | null | undefined,
@@ -3418,10 +3421,13 @@ export type Mutation = {
     participantId: ID,
     reason: String
   }) => Int,
-  issueDocumentCode: (p: {
+  issueDocumentCodes: (p: {
     conferenceId: ID,
+    layouts?: JSON | null | undefined,
+    pages: PrintedPageInput[],
+    paperScanning?: Boolean | null | undefined,
     userId: ID
-  }) => SignedCode,
+  }) => SignedCode[],
   issueNametagCode: (p: {
     conferenceId: ID
   }) => SignedCode,
@@ -3784,6 +3790,7 @@ export type Mutation = {
     mediaConsentFileId?: ID | null | undefined,
     messagingEnabled?: Boolean | null | undefined,
     nametagBinCount?: Int | null | undefined,
+    paperScanning?: Boolean | null | undefined,
     participantMaxAge?: Int | null | undefined,
     participantMinAge?: Int | null | undefined,
     postalApartment?: String | null | undefined,
@@ -4605,12 +4612,21 @@ export type PossibleduplicateWhereInputArgument = {
 		
 export type PossibleduplicatestatusEnum = "CONFIRMED" | "DISMISSED" | "OPEN";
 		
+export type PostalDocument = "contract" | "guardianConsent" | "mediaConsent";
+		
 export type PreviewConferenceSupervisor = {
   different_school: Boolean,
   family_name: String | null,
   given_name: String | null,
   school_city: String | null,
   school_name: String | null    
+};
+		
+export type PrintedPageInput = {
+  document: PostalDocument,
+  height: Float,
+  page: Int,
+  width: Float    
 };
 		
 export type ProfileField = "apartment" | "birthday" | "city" | "country" | "emergencyContacts" | "family_name" | "foodPreference" | "gender" | "given_name" | "phone" | "pronouns" | "region" | "street" | "wantsJoinTeamInformation" | "wantsToReceiveGeneralInformation" | "zip";

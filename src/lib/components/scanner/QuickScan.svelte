@@ -70,7 +70,7 @@
 		if (!videoElem) return;
 		try {
 			if (!navigator.mediaDevices) throw new Error(m.cameraInsecureContext());
-			const stream = await openScannerCamera('environment');
+			const stream = await openScannerCamera({ facingMode: 'environment' });
 			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;

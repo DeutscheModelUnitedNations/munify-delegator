@@ -59,9 +59,6 @@ const testPrintCode = (length: number) => {
 	);
 };
 
-/** What a test print's documents carry instead of a signed code, as long as a real one. */
-export const testPrintDocumentCode = () => testPrintCode(205);
-
 /** The made-up holder of a test certificate, with a code as long as a real one and a few sessions. */
 export function testPrintCertificate(sessions: string[]): ParticipantCertificateData {
 	return {

@@ -16,6 +16,13 @@ export const postalRegistrationTour: Tour = {
 			side: 'bottom'
 		},
 		{
+			// only where the conference reads its paper (`paperScanning`); skipped otherwise
+			anchor: 'team.postalRegistration.paper',
+			title: () => m.tourTeamPostalRegistrationPaperTitle(),
+			body: () => m.tourTeamPostalRegistrationPaperBody(),
+			side: 'bottom'
+		},
+		{
 			anchor: 'scanner.camera',
 			title: () => m.tourTeamPostalRegistrationCameraTitle(),
 			body: () => m.tourTeamPostalRegistrationCameraBody(),

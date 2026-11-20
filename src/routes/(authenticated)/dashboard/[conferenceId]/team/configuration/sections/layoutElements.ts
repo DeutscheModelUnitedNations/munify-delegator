@@ -13,7 +13,15 @@ export const elementLabel: Record<LayoutElement, () => string> = {
 	birthday: () => m.birthday(),
 	address: () => m.address(),
 	code: () => m.documentLayoutCode(),
-	pageNumber: () => m.documentLayoutPageNumber()
+	pageNumber: () => m.documentLayoutPageNumber(),
+	markerTopLeft: () => m.documentLayoutMarker(),
+	markerTopRight: () => m.documentLayoutMarker(),
+	markerBottomRight: () => m.documentLayoutMarker(),
+	markerBottomLeft: () => m.documentLayoutMarker(),
+	signature: () => m.documentLayoutSignature(),
+	mediaAll: () => m.documentLayoutMediaAll(),
+	mediaPartial: () => m.documentLayoutMediaPartial(),
+	mediaNone: () => m.documentLayoutMediaNone()
 };
 
 /**
@@ -29,7 +37,16 @@ export const elementSample: Record<LayoutElement, () => string[]> = {
 	address: () => ['405 E 45th St, New York, NY 10017, USA'],
 	// the name above the id, beside the code, as printed
 	code: () => ['Antonio Guterres', 'x7k2m9p4q1w8'],
-	pageNumber: () => ['1 / 3']
+	pageNumber: () => ['1 / 3'],
+	// the marks and fields are drawn, not written
+	markerTopLeft: () => [],
+	markerTopRight: () => [],
+	markerBottomRight: () => [],
+	markerBottomLeft: () => [],
+	signature: () => [],
+	mediaAll: () => [],
+	mediaPartial: () => [],
+	mediaNone: () => []
 };
 
 /** The template each document is drawn on, as the conference selects it. */

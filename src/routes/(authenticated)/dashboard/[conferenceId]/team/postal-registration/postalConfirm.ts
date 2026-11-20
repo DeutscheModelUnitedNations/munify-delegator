@@ -1,5 +1,6 @@
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import type { StatusChange } from '#lib/components/scanner/scannedUserFlow.svelte.js';
+import type { PostalStatus } from '#lib/paperScan/proposal';
 
 /** The scanned user together with their status row, or `undefined` when either is missing. */
 export function scannedUserWithStatus<U, S>(
@@ -27,5 +28,15 @@ export function confirmAllChange({
 			? undefined
 			: 'DONE',
 		mediaConsentStatus: 'ALLOWED_ALL'
+	};
+}
+
+/** A person's postal status as a scan is read against; a person without a status row has none in. */
+export function postalStatusOf(status: Partial<PostalStatus> | null | undefined): PostalStatus {
+	return {
+		termsAndConditions: status?.termsAndConditions ?? 'PENDING',
+		guardianConsent: status?.guardianConsent ?? 'PENDING',
+		mediaConsent: status?.mediaConsent ?? 'PENDING',
+		mediaConsentStatus: status?.mediaConsentStatus ?? 'NOT_SET'
 	};
 }

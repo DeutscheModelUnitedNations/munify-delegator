@@ -33,6 +33,10 @@
 		onClose: () => void;
 		/** Body of the scanned person's card */
 		children: Snippet<[user: NonNullable<ScannedUserData<S>['user']>, status: S | null]>;
+		/** What the camera's picture asks for, when not a code */
+		scanPrompt?: string;
+		/** Reads the whole page a code is scanned on (`BarcodeScanner`'s `readPage`). */
+		readPage?: (args: { frame: ImageData; code: string }) => Promise<boolean>;
 	}
 
 	let {
@@ -49,7 +53,9 @@
 		confirmLabel,
 		onConfirm,
 		onClose,
-		children
+		children,
+		scanPrompt,
+		readPage
 	}: Props = $props();
 
 	const HISTORY_LENGTH = 5;
@@ -99,8 +105,9 @@
 		{acceptance}
 		{persistKey}
 		{conferenceId}
+		{readPage}
 		manualPlaceholder={m.enterPostalRegistrationCode()}
-		scanPromptText={m.scanPostalRegistrationCodePrompt()}
+		scanPromptText={scanPrompt ?? m.scanPostalRegistrationCodePrompt()}
 	>
 		{#snippet belowCamera()}
 			<ScanHistory

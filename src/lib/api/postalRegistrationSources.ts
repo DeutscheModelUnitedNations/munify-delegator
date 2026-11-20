@@ -2,13 +2,15 @@ import { client } from './rumbleClient/client';
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import {
 	downloadCompletePostalRegistrationPDF,
+	type IssueDocumentCodes,
 	type ParticipantData,
 	type RecipientData
 } from '#lib/utils/pdfGenerator';
 
 /**
  * Reads everything a postal registration PDF is built from: the person's address and birthday,
- * the conference's postal address and consent texts, and the signed code the documents carry.
+ * the conference's postal address and consent texts; the signed codes the pages carry are issued
+ * once the pages are known (`issueCodes`).
  *
  * Meant to be called once, at the moment of download. The templates are PDFs, so only their
  * URLs are selected; the PDF generator fetches the files.
@@ -20,7 +22,7 @@ export async function fetchPostalRegistrationSources({
 	userId: string;
 	conferenceId: string;
 }) {
-	const [user, conference, { code: documentCode }] = await Promise.all([
+	const [user, conference] = await Promise.all([
 		client.query.user({
 			__args: { id: userId },
 			id: true,
@@ -47,11 +49,17 @@ export async function fetchPostalRegistrationSources({
 			mediaConsentFile: { url: true },
 			termsAndConditionsFile: { url: true },
 			documentLayouts: true,
-			qrCorporateDesign: true
-		}),
-		client.mutate.issueDocumentCode({ __args: { conferenceId, userId }, code: true })
+			paperScanning: true
+		})
 	]);
-	return { user, conference, documentCode };
+	const issueCodes: IssueDocumentCodes = async (pages) => {
+		const codes = await client.mutate.issueDocumentCodes({
+			__args: { conferenceId, userId, pages },
+			code: true
+		});
+		return codes.map(({ code }) => code);
+	};
+	return { user, conference, issueCodes };
 }
 
 export type PostalRegistrationSources = Awaited<ReturnType<typeof fetchPostalRegistrationSources>>;
@@ -67,14 +75,14 @@ export async function downloadPostalRegistrationDocuments({
 	conference,
 	birthday,
 	participant,
-	documentCode,
+	issueCodes,
 	recipient,
 	fileName
 }: {
 	conference: PostalRegistrationSources['conference'];
 	birthday: Date;
 	participant: ParticipantData;
-	documentCode: string;
+	issueCodes: IssueDocumentCodes;
 	recipient: RecipientData;
 	fileName: string;
 }): Promise<void> {
@@ -84,7 +92,7 @@ export async function downloadPostalRegistrationDocuments({
 			dateOfBirth: birthday
 		}),
 		participant,
-		documentCode,
+		issueCodes,
 		recipient,
 		templates: conference,
 		fileName

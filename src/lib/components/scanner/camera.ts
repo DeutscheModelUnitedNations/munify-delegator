@@ -5,7 +5,9 @@ import { logger } from '#lib/logger';
  * dense code printed small (a signed code on paper) has too few pixels to be read unless it is held
  * closer than the camera can focus. So the scanners ask for full HD (`ideal`: a camera with less
  * gives what it has), keep focusing continuously where the camera can, and offer its zoom, so the
- * paper can be held at a distance the camera focuses at and zoomed in on.
+ * paper can be held at a distance the camera focuses at and zoomed in on. Reading a whole page
+ * (`page`: its fields too, `#lib/paperScan`) asks for 4K, where the camera has it: the page then
+ * fills the picture with a few pixels to each millimetre.
  */
 
 /** One set of constraints `applyConstraints` takes. */
@@ -59,14 +61,20 @@ async function focusContinuously(track: MediaStreamTrack) {
 
 const videoTrackOf = (stream: MediaStream) => stream.getVideoTracks().at(0);
 
-/** Opens the camera facing `facingMode` for scanning (see the module comment). */
-export async function openScannerCamera(facingMode: 'environment' | 'user') {
+/** Opens the camera facing `facingMode` for scanning a code, or a whole `page` (see the module comment). */
+export async function openScannerCamera({
+	facingMode,
+	page = false
+}: {
+	facingMode: 'environment' | 'user';
+	page?: boolean;
+}) {
 	// `ideal` falls back to whatever camera exists, e.g. a laptop's single webcam
 	const stream = await navigator.mediaDevices.getUserMedia({
 		video: {
 			facingMode: { ideal: facingMode },
-			width: { ideal: 1920 },
-			height: { ideal: 1080 }
+			width: { ideal: page ? 3840 : 1920 },
+			height: { ideal: page ? 2160 : 1080 }
 		}
 	});
 	const track = videoTrackOf(stream);
@@ -108,6 +116,19 @@ export async function zoomVideo({
 	if (!(stream instanceof MediaStream)) return undefined;
 	const zoom = await zoomStream({ stream, value });
 	return video?.srcObject === stream ? zoom : undefined;
+}
+
+/** The picture `video` shows right now, at the camera's full resolution; none before it has one. */
+export function captureFrame(video: HTMLVideoElement): ImageData | undefined {
+	const { videoWidth: width, videoHeight: height } = video;
+	if (width === 0 || height === 0) return undefined;
+	const canvas = document.createElement('canvas');
+	canvas.width = width;
+	canvas.height = height;
+	const context = canvas.getContext('2d', { willReadFrequently: true });
+	if (!context) return undefined;
+	context.drawImage(video, 0, 0, width, height);
+	return context.getImageData(0, 0, width, height);
 }
 
 /** Turns off the camera `video` shows. */
