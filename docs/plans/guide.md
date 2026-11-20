@@ -27,19 +27,20 @@ Crawled on 2026-11-20.
   - MUNBW has the same shape; its IGH (court) has its own steps (_Urteilssätze schreiben_).
 - **Almost everything is a copy.** Text similarity of the crawled pages:
 
-  | Pages compared                                   | Similarity |
-  | ------------------------------------------------ | ---------- |
-  | Schritt 5, SR vs WiSo (MUN-SH)                   | 100 %      |
-  | Warum vorbereiten, MUN-SH vs MUNBW               | 100 %      |
-  | Schritt 1, MUN-SH vs MUNBW                       | 99 %       |
-  | Schritt 2, MUN-SH vs MUNBW                       | 100 %      |
-  | Schritt 5, MUN-SH vs MUNBW                       | 94 %       |
-  | UN-ABC (49k characters), MUN-SH vs MUNBW         | 100 %      |
+  | Pages compared                           | Similarity |
+  | ---------------------------------------- | ---------- |
+  | Schritt 5, SR vs WiSo (MUN-SH)           | 100 %      |
+  | Warum vorbereiten, MUN-SH vs MUNBW       | 100 %      |
+  | Schritt 1, MUN-SH vs MUNBW               | 99 %       |
+  | Schritt 2, MUN-SH vs MUNBW               | 100 %      |
+  | Schritt 5, MUN-SH vs MUNBW               | 94 %       |
+  | UN-ABC (49k characters), MUN-SH vs MUNBW | 100 %      |
 
   What really differs: the agenda item pages (25–32k characters each, with the committee text as
   PDF download, content warning, summary, points for discussion, background, research hints,
   glossary, sources), the committee pages (Schritt 3, which also list the committee's topics) and
   _Organisatorisches_.
+
 - **Copies rot**: slugs were reused across years, so `/munbw/gv-top-1-katastrophenschutz/` shows
   "Klimaflucht" and the WEK lives at `die-fachkommission-fur-suchtstoffe-sh`.
 - **Content elements** (count over 25 crawled pages): toggles/accordions 111 (the ABCs, the country
@@ -52,27 +53,27 @@ Crawled on 2026-11-20.
 
 ## Decisions
 
-| Topic                  | Decision                                                                                                                                                                                                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sharing modes          | Four scopes per page: **everywhere** (every series, every year), **year** (every series, one year), **series** (one series, every year), **conference** (one conference).                                                                                                 |
-| Series                 | New entity `conference_series` (MUNBW, MUN-SH), kept by system admins; a conference picks its series. Shared scopes reach **only conferences with a series**, never other organizers' conferences.                                                                        |
-| Year                   | The **calendar year of the conference start** (in the conference's time zone). MUNBW 2026 and MUN-SH 2027 are different years.                                                                                                                                            |
-| Who reads              | **Logged in only**, inside the conference dashboard.                                                                                                                                                                                                                      |
-| When participants read | Only once the assignment is released **and** the new conference toggle "Guide published" is on (assignment may be released before the guide is updated). Team always (preview).                                                                                          |
-| Audiences              | Delegates (their own committee's section), NSA representatives, custom roles (press, IGH judges, … one by one), supervisors. **Supervisors and team see everything.**                                                                                                    |
-| Sidebar                | Per conference: ordered sections of entries pointing at pages. A **committee template** (one per conference) is expanded once per committee: shared step pages, the committee's page, its agenda item pages. A delegate sees only their committee's section.              |
-| IGH and other specials | Custom roles; their sections are built by hand with the custom role as audience. No template variants.                                                                                                                                                                   |
-| Committee / TOP pages  | Owned by the committee and the agenda item (`committee`, `committee_agenda_item`), edited in the guide editor, filling the template's slots automatically.                                                                                                                |
-| Committee text PDF     | **Generated with Typst from the agenda item page when it is published**, stored as a file and offered on the page (and reusable by the paper hub and MCP). No upload.                                                                                                    |
-| Shared edits           | **Draft and publish.** Page content, page scope and the sidebar (incl. the committee template) are drafts until published. Every publish keeps a **version** to view and restore.                                                                                         |
-| Placeholders           | A few fixed ones in pages: `{{Konferenz}}`, `{{Gremium}}`, `{{Themen}}` (list of the committee's agenda items).                                                                                                                                                         |
-| Editing rights         | New team permission `editGuide` (content lead, project management). Pages beyond one conference may be edited and published by holders of `editGuide` in **any conference the page reaches**. System admins always.                                                    |
-| Editor                 | TipTap with the guide blocks (below). Rich blocks are fine in the editor even where Markdown has no syntax for them.                                                                                                                                                      |
-| Participant view       | Sidebar, page, **table of contents** from headings, **previous/next** following the sidebar. No search, progress tracking or section PDFs in the first version.                                                                                                           |
-| Old link               | `conference.linkToPreparationGuide` stays as a fallback: the dashboard shows the internal guide when "Guide published" is on, otherwise the external link as today. Removed later.                                                                                       |
-| Migration              | **Out of scope for the code.** An AI assistant migrates the content over MCP after deployment (playbook at the end).                                                                                                                                                       |
-| MCP                    | Full guide support: read, write drafts, publish with preview (`confirm: true`), import files from allowlisted URLs. **Markdown first**, TipTap JSON as an alternative for rich blocks. Deleting stays in the app.                                                         |
-| Delivery               | This document first. Implementation only after review.                                                                                                                                                                                                                   |
+| Topic                  | Decision                                                                                                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sharing modes          | Four scopes per page: **everywhere** (every series, every year), **year** (every series, one year), **series** (one series, every year), **conference** (one conference).                                                                                    |
+| Series                 | New entity `conference_series` (MUNBW, MUN-SH), kept by system admins; a conference picks its series. Shared scopes reach **only conferences with a series**, never other organizers' conferences.                                                           |
+| Year                   | The **calendar year of the conference start** (in the conference's time zone). MUNBW 2026 and MUN-SH 2027 are different years.                                                                                                                               |
+| Who reads              | **Logged in only**, inside the conference dashboard.                                                                                                                                                                                                         |
+| When participants read | Only once the assignment is released **and** the new conference toggle "Guide published" is on (assignment may be released before the guide is updated). Team always (preview).                                                                              |
+| Audiences              | Delegates (their own committee's section), NSA representatives, custom roles (press, IGH judges, … one by one), supervisors. **Supervisors and team see everything.**                                                                                        |
+| Sidebar                | Per conference: ordered sections of entries pointing at pages. A **committee template** (one per conference) is expanded once per committee: shared step pages, the committee's page, its agenda item pages. A delegate sees only their committee's section. |
+| IGH and other specials | Custom roles; their sections are built by hand with the custom role as audience. No template variants.                                                                                                                                                       |
+| Committee / TOP pages  | Owned by the committee and the agenda item (`committee`, `committee_agenda_item`), edited in the guide editor, filling the template's slots automatically.                                                                                                   |
+| Committee text PDF     | **Generated with Typst from the agenda item page when it is published**, stored as a file and offered on the page (and reusable by the paper hub and MCP). No upload.                                                                                        |
+| Shared edits           | **Draft and publish.** Page content, page scope and the sidebar (incl. the committee template) are drafts until published. Every publish keeps a **version** to view and restore.                                                                            |
+| Placeholders           | A few fixed ones in pages: `{{Konferenz}}`, `{{Gremium}}`, `{{Themen}}` (list of the committee's agenda items).                                                                                                                                              |
+| Editing rights         | New team permission `editGuide` (content lead, project management). Pages beyond one conference may be edited and published by holders of `editGuide` in **any conference the page reaches**. System admins always.                                          |
+| Editor                 | TipTap with the guide blocks (below). Rich blocks are fine in the editor even where Markdown has no syntax for them.                                                                                                                                         |
+| Participant view       | Sidebar, page, **table of contents** from headings, **previous/next** following the sidebar. No search, progress tracking or section PDFs in the first version.                                                                                              |
+| Old link               | `conference.linkToPreparationGuide` stays as a fallback: the dashboard shows the internal guide when "Guide published" is on, otherwise the external link as today. Removed later.                                                                           |
+| Migration              | **Out of scope for the code.** An AI assistant migrates the content over MCP after deployment (playbook at the end).                                                                                                                                         |
+| MCP                    | Full guide support: read, write drafts, publish with preview (`confirm: true`), import files from allowlisted URLs. **Markdown first**, TipTap JSON as an alternative for rich blocks. Deleting stays in the app.                                            |
+| Delivery               | This document first. Implementation only after review.                                                                                                                                                                                                       |
 
 ## Data model
 
@@ -163,17 +164,17 @@ they hold the permission).
 Built from the paper editor's TipTap setup (`src/lib/components/paper/editor/`), as its own
 extension set:
 
-| Block                     | Editor | Markdown (MCP)                            |
-| ------------------------- | ------ | ----------------------------------------- |
-| Headings H2–H4, paragraphs, bold, italic, lists, links, blockquote, rule, table | yes | plain Markdown |
-| Image with caption        | yes    | `![caption](file:<fileId>)`               |
-| Link to another guide page | yes   | `[text](guide:<pageId>)`                  |
-| File download             | yes    | `[label](file:<fileId>)`                  |
-| Placeholder               | yes    | `{{Gremium}}`                             |
-| Callout (emoji, colour)   | yes    | TipTap JSON only                          |
-| Toggle (collapsible)      | yes    | TipTap JSON only                          |
-| Button link               | yes    | TipTap JSON only (or a plain link)        |
-| Video embed (YouTube)     | yes, loads only after a click | TipTap JSON only   |
+| Block                                                                           | Editor                        | Markdown (MCP)                     |
+| ------------------------------------------------------------------------------- | ----------------------------- | ---------------------------------- |
+| Headings H2–H4, paragraphs, bold, italic, lists, links, blockquote, rule, table | yes                           | plain Markdown                     |
+| Image with caption                                                              | yes                           | `![caption](file:<fileId>)`        |
+| Link to another guide page                                                      | yes                           | `[text](guide:<pageId>)`           |
+| File download                                                                   | yes                           | `[label](file:<fileId>)`           |
+| Placeholder                                                                     | yes                           | `{{Gremium}}`                      |
+| Callout (emoji, colour)                                                         | yes                           | TipTap JSON only                   |
+| Toggle (collapsible)                                                            | yes                           | TipTap JSON only                   |
+| Button link                                                                     | yes                           | TipTap JSON only (or a plain link) |
+| Video embed (YouTube)                                                           | yes, loads only after a click | TipTap JSON only                   |
 
 A link to a page resolves per conference to that page's place in the reader's sidebar; a page not
 in the reader's guide shows as plain text. "Weiter zu Schritt 5" buttons become unnecessary with
@@ -221,14 +222,14 @@ version and linked on the page. A failed render fails the publish with a message
 Only for conferences with AI access switched on, acting as the connected team member (same rights
 as above).
 
-| Tool                                | What it does                                                                                     |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `guidePages`                        | Pages reaching a conference, with scope, kind, state, where they are used                        |
-| `guidePage`                         | One page's draft and published version, as Markdown (default) or TipTap JSON                     |
-| `createGuidePage` / `updateGuidePageDraft` | Writes a draft from `markdown` **or** `tiptap`; Markdown that would drop rich blocks already in the page is refused unless `replaceRichBlocks: true` |
-| `publishGuidePage`                  | Preview first (conferences reached, diff summary), runs with `confirm: true`                     |
-| `guideOutline` / `updateGuideOutlineDraft` / `publishGuideOutline` | Sidebar and committee template, publish with preview                  |
-| `importGuideFile`                   | Server downloads a URL from an allowlist (`GUIDE_IMPORT_HOSTS`, default `guide.dmun.de`, `cdn.dmun.de`), checks type and size, stores it and answers the file id |
+| Tool                                                               | What it does                                                                                                                                                     |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `guidePages`                                                       | Pages reaching a conference, with scope, kind, state, where they are used                                                                                        |
+| `guidePage`                                                        | One page's draft and published version, as Markdown (default) or TipTap JSON                                                                                     |
+| `createGuidePage` / `updateGuidePageDraft`                         | Writes a draft from `markdown` **or** `tiptap`; Markdown that would drop rich blocks already in the page is refused unless `replaceRichBlocks: true`             |
+| `publishGuidePage`                                                 | Preview first (conferences reached, diff summary), runs with `confirm: true`                                                                                     |
+| `guideOutline` / `updateGuideOutlineDraft` / `publishGuideOutline` | Sidebar and committee template, publish with preview                                                                                                             |
+| `importGuideFile`                                                  | Server downloads a URL from an allowlist (`GUIDE_IMPORT_HOSTS`, default `guide.dmun.de`, `cdn.dmun.de`), checks type and size, stores it and answers the file id |
 
 Markdown ↔ TipTap extends `reviewMarkdown.ts` with the guide marks/nodes above; reading a page with
 callouts/toggles as Markdown says which blocks were left out.
