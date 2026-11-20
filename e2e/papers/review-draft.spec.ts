@@ -318,6 +318,35 @@ test.describe('review drafts in the editor', () => {
 		await second.close();
 	});
 
+	test('a review begun before a newer version arrives is saved for the version it was begun on', async ({
+		page
+	}) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		await loginAs(page, fixedTestUser(E2E_DRAFTS_PEOPLE.reviewer), {
+			startUrl: `/dashboard/${C}/paperhub/${paperId}#review`
+		});
+		const editor = page.locator('#review .ProseMirror');
+		await expect(editor).toBeVisible({ timeout: 30_000 });
+
+		// version 2 arrives while the reviewer reads version 1, before anything is saved
+		await sql(
+			"INSERT INTO paper_version (id, version, content, paper_id, status) SELECT $1, 2, content, paper_id, 'SUBMITTED' FROM paper_version WHERE id = $2",
+			[`${paperId}v2`, firstVersionId(paperId)]
+		);
+		await editor.click();
+		await page.keyboard.type('Zu Fassung eins geschrieben.');
+
+		const stored = () =>
+			sql<{ version: number }>(
+				`SELECT v.version FROM paper_review_draft d
+				 JOIN paper_version v ON v.id = d.paper_version_id WHERE d.paper_id = $1`,
+				[paperId]
+			);
+		await expect.poll(async () => (await stored())[0]?.version, { timeout: 15_000 }).toBe(1);
+		await expect(page.getByTestId('review-draft-stale')).toContainText('2', { timeout: 15_000 });
+	});
+
 	test('a review kept over an assistant’s rewrite for a newer version stays tied to its own', async ({
 		page,
 		request

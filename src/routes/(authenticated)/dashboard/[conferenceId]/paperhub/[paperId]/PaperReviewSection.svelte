@@ -146,9 +146,12 @@
 	let editorKey = $state(0);
 
 	// The paper version the review in the editor was written for: the loaded draft's, or the
-	// latest when the editor's first save created the draft. Not the stored draft's, which an
-	// assistant may have rewritten for a newer version while older comments are still here.
-	let editorVersion = $state<number | undefined>(initialDraft?.paperVersion.version);
+	// latest as the editor opened (or emptied) without one, even when a newer one arrives before
+	// the first save. Not the stored draft's, which an assistant may have rewritten for a newer
+	// version while older comments are still here.
+	let editorVersion = $state<number | undefined>(
+		initialDraft?.paperVersion.version ?? untrack(() => latestVersion)
+	);
 
 	// Saves the editor's content as the draft; knows what the editor last loaded or saved, so an
 	// assistant's later change is told apart from this editor's own.
@@ -337,7 +340,7 @@
 		}
 		dropLegacyDraft();
 		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, saver.knownUpdatedAt ?? 0);
-		editorVersion = undefined;
+		editorVersion = latestVersion;
 		saver.acknowledge(null);
 	}
 
@@ -345,7 +348,7 @@
 		dropLegacyDraft();
 		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, saver.knownUpdatedAt ?? 0);
 		reviewComments.set(getEmptyTipTapDocument());
-		editorVersion = undefined;
+		editorVersion = latestVersion;
 		saver.reset();
 		editorKey++;
 	}
