@@ -11,7 +11,7 @@ import Blockquote from '@tiptap/extension-blockquote';
 import Link from '@tiptap/extension-link';
 import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
 import { Dropcursor, Gapcursor, Placeholder, UndoRedo } from '@tiptap/extensions';
-import { calloutColor } from '#lib/guide/blocks';
+import { calloutColor, calloutIcon, DEFAULT_CALLOUT_ICON } from '#lib/guide/blocks';
 
 /**
  * The TipTap set of the guide editor (`docs/plans/guide.md`, "Editor and blocks"): the node and
@@ -70,27 +70,35 @@ const GuideImage = Node.create<{ resolveSrc: (src: string) => string | undefined
 	}
 });
 
-/** A tinted box with an emoji, holding blocks. */
+/** A tinted box with a Phosphor icon, holding blocks. */
 const Callout = Node.create({
 	name: 'callout',
 	group: 'block',
 	content: 'block+',
 	defining: true,
 	addAttributes: () => ({
-		emoji: { default: '💡' },
+		icon: { default: DEFAULT_CALLOUT_ICON },
 		color: { default: 'info' }
 	}),
-	parseHTML: () => [{ tag: 'div[data-guide-callout]' }],
+	parseHTML: () => [{ tag: 'div[data-guide-callout]', contentElement: '.guide-callout-body' }],
 	renderHTML({ node, HTMLAttributes }) {
 		const color = calloutColor(node.attrs.color);
 		return [
 			'div',
 			mergeAttributes(HTMLAttributes, {
 				'data-guide-callout': '',
-				class: `guide-callout guide-callout-${color}`,
-				'data-emoji': node.attrs.emoji ?? ''
+				'data-icon': calloutIcon(node.attrs.icon),
+				class: `guide-callout guide-callout-${color}`
 			}),
-			0
+			[
+				'i',
+				{
+					class: `guide-callout-icon ph-duotone ph-${calloutIcon(node.attrs.icon)}`,
+					contenteditable: 'false',
+					'aria-hidden': 'true'
+				}
+			],
+			['div', { class: 'guide-callout-body' }, 0]
 		];
 	}
 });

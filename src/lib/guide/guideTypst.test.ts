@@ -20,7 +20,7 @@ const doc: GuideDocument = {
 		{ type: 'image', attrs: { src: 'file:missing' } },
 		{
 			type: 'callout',
-			attrs: { emoji: '📍', color: 'warning' },
+			attrs: { icon: 'map-pin', color: 'warning' },
 			content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Achtung' }] }]
 		},
 		{

@@ -108,7 +108,7 @@ Every committee and every topic has a page of its own (**Committee and topic pag
 
 ### The editor {#guide-editor}
 
-The editor shows the page as it looks. The toolbar has headings, lists, quotes, links, images and downloads, callouts, toggles, buttons and videos. Placeholders put in the name of the conference, of the committee or the list of topics when read; the latter two only in pages of the committee template.
+The editor shows the page as it looks. The toolbar has headings, lists, quotes, links, images and downloads, callouts, toggles, buttons and videos. With the cursor in a callout, the toolbar picks its icon (a search over all Phosphor icons) and its colour. Placeholders put in the name of the conference, of the committee or the list of topics when read; the latter two only in pages of the committee template.
 
 Changes are a draft until you choose **Publish**. Before that the app shows which conferences the page reaches afterwards and which it no longer reaches. Every publish stays as a version; **Restore** copies it back into the draft. Publishing a topic's page renders the **committee text** as a PDF, which participants download on the page.
 

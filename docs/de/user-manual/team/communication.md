@@ -108,7 +108,7 @@ Jedes Gremium und jedes Thema hat eine eigene Seite (**Seiten der Gremien und Th
 
 ### Der Editor {#guide-editor}
 
-Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschriften, Listen, Zitate, Links, Bilder und Dateien zum Herunterladen, Hinweisboxen, Aufklappbereiche, Buttons und Videos. Platzhalter setzen beim Lesen den Namen der Konferenz, des Gremiums oder die Liste der Themen ein; die beiden letzten nur in Seiten der Gremienvorlage.
+Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschriften, Listen, Zitate, Links, Bilder und Dateien zum Herunterladen, Hinweisboxen, Aufklappbereiche, Buttons und Videos. Steht der Cursor in einer Hinweisbox, wählst du in der Leiste ihr Symbol (Suche über alle Phosphor-Icons) und ihre Farbe. Platzhalter setzen beim Lesen den Namen der Konferenz, des Gremiums oder die Liste der Themen ein; die beiden letzten nur in Seiten der Gremienvorlage.
 
 Änderungen sind ein Entwurf, bis du **Veröffentlichen** wählst. Vorher zeigt die App, welche Konferenzen die Seite danach erreichen und welche nicht mehr. Jede Veröffentlichung bleibt als Version erhalten; **Wiederherstellen** holt sie in den Entwurf zurück. Beim Veröffentlichen der Seite eines Themas entsteht der **Gremientext** als PDF; die Teilnehmenden laden ihn auf der Seite herunter.
 

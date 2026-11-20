@@ -9,7 +9,8 @@
 	import { uploadFile } from '#lib/api/uploadFile';
 	import { m } from '#lib/paraglide/messages';
 	import { fileHref, PLACEHOLDERS, type GuideDocument } from '#lib/guide/document';
-	import { calloutColor } from '#lib/guide/blocks';
+	import CalloutControls from './CalloutControls.svelte';
+	import { calloutColor, calloutIcon, DEFAULT_CALLOUT_ICON } from '#lib/guide/blocks';
 	import { guideExtensions } from './guideExtensions';
 	import './guideEditor.css';
 
@@ -130,21 +131,20 @@
 		);
 	}
 
-	async function insertCallout() {
-		const emoji = await promptDialog({
-			title: m.guideEditorCallout(),
-			text: m.guideEditorCalloutEmoji(),
-			initialValue: '💡'
-		});
-		if (emoji === null) return;
+	function insertCallout() {
 		run((chain) =>
 			chain.insertContent({
 				type: 'callout',
-				attrs: { emoji, color: 'info' },
+				attrs: { icon: DEFAULT_CALLOUT_ICON, color: 'info' },
 				content: [{ type: 'paragraph' }]
 			})
 		);
 	}
+
+	/** Changes the icon or the colour of the callout around the cursor. */
+	const updateCallout = (attrs: { icon?: string; color?: string }) =>
+		run((chain) => chain.updateAttributes('callout', attrs));
+	const calloutAttr = (key: string) => $editor?.getAttributes('callout')[key];
 
 	async function insertToggle() {
 		const summary = await promptDialog({
@@ -192,23 +192,6 @@
 	}) =>
 		promptDialog({ title, text, initialValue: String($editor?.getAttributes(block)[key] ?? '') });
 
-	async function editCallout() {
-		const emoji = await ask({
-			title: m.guideEditorCallout(),
-			text: m.guideEditorCalloutEmoji(),
-			block: 'callout',
-			key: 'emoji'
-		});
-		if (emoji === null) return;
-		const color = await ask({
-			title: m.guideEditorCallout(),
-			text: m.guideEditorCalloutColor(),
-			block: 'callout',
-			key: 'color'
-		});
-		run((chain) => chain.updateAttributes('callout', { emoji, color: calloutColor(color) }));
-	}
-
 	async function editToggle() {
 		const summary = await ask({
 			title: m.guideEditorToggle(),
@@ -249,13 +232,12 @@
 
 	/** How each block's attributes are changed. */
 	const BLOCK_EDITORS: Record<string, () => Promise<void>> = {
-		callout: editCallout,
 		toggle: editToggle,
 		image: editImage,
 		button: editButton
 	};
 
-	/** Changes the attributes of the callout, toggle, image or button around the cursor. */
+	/** Changes the attributes of the toggle, image or button around the cursor. */
 	async function editBlock() {
 		const block = Object.keys(BLOCK_EDITORS).find((name) => isActive(name));
 		if (block) await BLOCK_EDITORS[block]();
@@ -360,6 +342,13 @@
 		<MenuButton label={m.guideEditorEmbed()} icon="youtube-logo" onClick={insertEmbed} />
 		{#if blockSelected}
 			<MenuButton label={m.guideEditorEditBlock()} icon="pencil-simple" onClick={editBlock} />
+		{/if}
+		{#if isActive('callout')}
+			<CalloutControls
+				icon={calloutIcon(calloutAttr('icon'))}
+				color={calloutColor(calloutAttr('color'))}
+				onChange={updateCallout}
+			/>
 		{/if}
 		{#if isActive('callout') || isActive('toggle')}
 			<MenuButton label={m.guideEditorUnwrap()} icon="arrow-square-out" onClick={unwrap} />

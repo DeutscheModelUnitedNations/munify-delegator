@@ -38,7 +38,7 @@ const SHARED_PAGES: { id: string; title: string; content: GuideDocument; series?
 			paragraph('In diesem Leitfaden findest du alle Schritte, Schritt für Schritt.'),
 			{
 				type: 'callout',
-				attrs: { emoji: '❓', color: 'info' },
+				attrs: { icon: 'question', color: 'info' },
 				content: [paragraph('Fragen? Schreib dem Team über die Nachrichten.')]
 			}
 		)
@@ -159,7 +159,7 @@ export function addGuide(cs: ConferenceSeed) {
 				paragraph(`Alles zum Ablauf von ${cs.conference.title}.`),
 				{
 					type: 'callout',
-					attrs: { emoji: '📍', color: 'success' },
+					attrs: { icon: 'map-pin', color: 'success' },
 					content: [paragraph('Die Locations stehen im Kalender.')]
 				}
 			)

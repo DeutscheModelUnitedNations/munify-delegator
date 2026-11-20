@@ -171,7 +171,7 @@ extension set:
 | Link to another guide page                                                      | yes                           | `[text](guide:<pageId>)`           |
 | File download                                                                   | yes                           | `[label](file:<fileId>)`           |
 | Placeholder                                                                     | yes                           | `{{Gremium}}`                      |
-| Callout (emoji, colour)                                                         | yes                           | TipTap JSON only                   |
+| Callout (Phosphor icon, colour)                                                 | yes                           | TipTap JSON only                   |
 | Toggle (collapsible)                                                            | yes                           | TipTap JSON only                   |
 | Button link                                                                     | yes                           | TipTap JSON only (or a plain link) |
 | Video embed (YouTube)                                                           | yes, loads only after a click | TipTap JSON only                   |
@@ -243,7 +243,8 @@ callouts/toggles as Markdown says which blocks were left out.
    **series** scope; Organisatorisches → **conference**.
 4. Committee pages → the committees' pages; TOP pages → the agenda items' pages (the committee
    text PDF is regenerated, not imported).
-5. Images and other files via `importGuideFile`.
+5. Images and other files via `importGuideFile`. Callout emoji become Phosphor icons (❓ →
+   `question`, 📍 → `map-pin`, 💡 → `lightbulb`, ⚠️ → `warning`; others by meaning).
 6. Build each conference's sidebar with the committee template, NSA, press, organisational and
    glossary sections; publish pages, then sidebars, each after the preview.
 7. Hand over a report of every merge and scope decision.

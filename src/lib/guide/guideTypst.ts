@@ -119,9 +119,9 @@ function image({ node, images }: { node: GuideNode; images: Images }) {
 
 function callout({ node, images }: { node: GuideNode; images: Images }) {
 	const fill = CALLOUT_FILLS[calloutColor(node.attrs?.color)];
-	const emoji = attr(node, 'emoji');
+	// the icon is a Phosphor glyph, which the PDF has no font for: the tint carries the callout
 	const body = blocks({ nodes: node.content, images });
-	return `#block(fill: ${fill}, inset: 10pt, radius: 4pt, width: 100%)[${emoji ? `${escapeText(emoji)} ` : ''}${body}]`;
+	return `#block(fill: ${fill}, inset: 10pt, radius: 4pt, width: 100%)[${body}]`;
 }
 
 function button({ node }: { node: GuideNode }) {

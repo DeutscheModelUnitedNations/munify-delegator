@@ -180,7 +180,7 @@ const contentArgs = (t: Parameters<Parameters<typeof schemaBuilder.mutationField
 			type: 'JSON',
 			required: false,
 			description:
-				'The text as a TipTap document: paragraph, heading (level 2–4), bulletList, orderedList, listItem, blockquote, horizontalRule, hardBreak, image (`src: "file:<id>"`, `alt`, `title` as caption), callout (`emoji`, `color`: info|success|warning|error|neutral; block content), toggle (`summary`; block content), button (`href`, `label`), embed (`url`, YouTube); marks bold, italic, underline, strike, code, link (`href`: http(s), mailto, `guide:<pageId>` or `file:<fileId>`). Either this or `markdown`.'
+				'The text as a TipTap document: paragraph, heading (level 2–4), bulletList, orderedList, listItem, blockquote, horizontalRule, hardBreak, image (`src: "file:<id>"`, `alt`, `title` as caption), callout (`icon`: a Phosphor icon name such as `info`, `question`, `map-pin`; `color`: info|success|warning|error|neutral; block content), toggle (`summary`; block content), button (`href`, `label`), embed (`url`, YouTube); marks bold, italic, underline, strike, code, link (`href`: http(s), mailto, `guide:<pageId>` or `file:<fileId>`). Either this or `markdown`.'
 		})
 		.validate(guideContentSchema.nullish()),
 	markdown: t.arg

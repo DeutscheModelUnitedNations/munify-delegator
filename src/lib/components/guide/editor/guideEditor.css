@@ -7,11 +7,25 @@
 	position: relative;
 	margin: 1rem 0;
 }
-.guide-callout::before {
-	content: attr(data-emoji);
+.guide-callout-icon {
 	position: absolute;
 	left: 0.75rem;
-	top: 0.75rem;
+	top: 0.85rem;
+	font-size: 1.25rem;
+	user-select: none;
+}
+.guide-callout-body > :first-child {
+	margin-top: 0.25rem;
+}
+.guide-callout-body > :last-child {
+	margin-bottom: 0.25rem;
+}
+.guide-callout-swatch {
+	display: inline-block;
+	width: 1rem;
+	height: 1rem;
+	border-radius: 9999px;
+	border: 1px solid var(--color-base-300);
 }
 .guide-callout-success {
 	background: color-mix(in oklab, var(--color-success) 12%, transparent);

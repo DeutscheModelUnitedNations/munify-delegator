@@ -33,7 +33,7 @@ const doc: GuideDocument = {
 		},
 		{
 			type: 'callout',
-			attrs: { emoji: '❓' },
+			attrs: { icon: 'question' },
 			content: [
 				{
 					type: 'heading',
