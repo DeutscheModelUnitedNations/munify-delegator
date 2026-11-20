@@ -27,6 +27,12 @@
 		`${PREVIEW_PREFIX}${id}${key ? `:${key}` : ''}`;
 
 	/** The preview keeps its own place: its links only say which entry to open. */
+	/** Keeps the preview's links inside the preview (a click or Enter on a link is a click). */
+	function followLinks(node: HTMLElement) {
+		node.addEventListener('click', follow);
+		return () => node.removeEventListener('click', follow);
+	}
+
 	function follow(event: MouseEvent) {
 		const link = event.target instanceof Element ? event.target.closest('a') : null;
 		const href = link?.getAttribute('href');
@@ -67,8 +73,7 @@
 			{m.guidePreviewDrafts()}
 		</label>
 	</div>
-	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: links inside handle the keyboard -->
-	<div onclick={follow}>
+	<div {@attach followLinks}>
 		<GuideReader {conferenceId} {pageId} {entryKey} {hrefOf} {preview} />
 	</div>
 </section>

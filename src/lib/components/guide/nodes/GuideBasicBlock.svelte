@@ -3,10 +3,7 @@
 	import type { GuideNode } from '#lib/guide/document';
 
 	/** Paragraphs, headings, lists, list items and quotes: an element around the children. */
-	let {
-		node,
-		children
-	}: { node: GuideNode; pageHref: (pageId: string) => string; children?: Snippet } = $props();
+	let { node, children }: { node: GuideNode; children?: Snippet } = $props();
 
 	const level = $derived(
 		typeof node.attrs?.level === 'number' ? Math.min(4, Math.max(2, node.attrs.level)) : 2

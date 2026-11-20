@@ -24,7 +24,6 @@ const outlineEntrySchema = z.object({
 	label,
 	audience: audienceSchema.optional()
 });
-type OutlineEntry = z.infer<typeof outlineEntrySchema>;
 
 const outlineSectionSchema = z.object({
 	id,

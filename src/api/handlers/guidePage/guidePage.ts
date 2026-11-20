@@ -406,7 +406,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	importGuideFile: t.field({
-		extensions: mcpTool(),
+		// a URL of the old guide's files, never about people
+		extensions: mcpTool({ textArguments: ['url'] }),
 		description:
 			'Downloads a file (image or PDF, up to 20 MB) from an allowed host (the old guide: guide.dmun.de, cdn.dmun.de) and stores it as a guide file; answers its id for `file:<id>` in a page. Other hosts, types and sizes are refused (INVALID_INPUT). `editGuide` in the conference (FORBIDDEN otherwise).',
 		type: ImportedGuideFile,

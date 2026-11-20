@@ -118,7 +118,6 @@ export function pageIdOf(href: unknown) {
 }
 
 export const fileHref = (fileId: string) => `${FILE_PREFIX}${fileId}`;
-const pageHref = (pageId: string) => `${PAGE_PREFIX}${pageId}`;
 
 /** The references a node carries: an image's `src`, a link's or a button's `href`. */
 function referencesOf(node: GuideNode) {

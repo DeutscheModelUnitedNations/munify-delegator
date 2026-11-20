@@ -2,7 +2,7 @@
 	import type { GuideNode } from '#lib/guide/document';
 
 	/** An image with its caption (its title, else its alt text). */
-	let { node }: { node: GuideNode; pageHref: (pageId: string) => string } = $props();
+	let { node }: { node: GuideNode } = $props();
 
 	const attr = (key: string) => {
 		const value = node.attrs?.[key];

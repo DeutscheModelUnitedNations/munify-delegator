@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { GuideNode } from '#lib/guide/document';
 	import { isExternal, readerHref } from '#lib/guide/readerLinks';
+	import { pageHrefOf } from '../guideLinks';
 
 	/** A button to a guide page, a file or the web. */
-	let { node, pageHref }: { node: GuideNode; pageHref: (pageId: string) => string } = $props();
+	let { node }: { node: GuideNode } = $props();
+	const pageHref = pageHrefOf();
 
 	const href = $derived(readerHref({ href: node.attrs?.href, pageHref }));
 	const external = $derived(isExternal(href));

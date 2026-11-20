@@ -172,11 +172,11 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	},
 	guide: {
 		icon: 'book-open-text',
-		translation: () => m.preparationGuide()
+		translation: () => m.guideTitle()
 	},
 	page: {
-		icon: 'file-text',
-		translation: () => m.guideEntryPage()
+		icon: 'files',
+		translation: () => m.guidePages()
 	},
 	pageId: {
 		icon: 'file-magnifying-glass',

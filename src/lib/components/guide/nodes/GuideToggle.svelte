@@ -4,10 +4,7 @@
 	import type { GuideNode } from '#lib/guide/document';
 
 	/** A collapsible block, closed until the reader opens it. */
-	let {
-		node,
-		children
-	}: { node: GuideNode; pageHref: (pageId: string) => string; children?: Snippet } = $props();
+	let { node, children }: { node: GuideNode; children?: Snippet } = $props();
 
 	const summary = $derived(
 		typeof node.attrs?.summary === 'string' && node.attrs.summary

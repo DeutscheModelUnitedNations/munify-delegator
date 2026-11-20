@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>{dev ? '[dev] ' : ''}{conference.title} – {m.preparationGuide()}</title>
+	<title>{dev ? '[dev] ' : ''}{conference.title} – {m.guideTitle()}</title>
 </svelte:head>
 
 <div class="flex w-full flex-col gap-4 p-4 max-sm:px-2">

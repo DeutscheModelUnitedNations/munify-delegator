@@ -4,10 +4,7 @@
 	import type { GuideNode } from '#lib/guide/document';
 
 	/** A tinted note with its emoji. */
-	let {
-		node,
-		children
-	}: { node: GuideNode; pageHref: (pageId: string) => string; children?: Snippet } = $props();
+	let { node, children }: { node: GuideNode; children?: Snippet } = $props();
 
 	const emoji = $derived(typeof node.attrs?.emoji === 'string' ? node.attrs.emoji : '');
 </script>

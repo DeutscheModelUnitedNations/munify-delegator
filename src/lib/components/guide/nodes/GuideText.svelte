@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { GuideMark, GuideNode } from '#lib/guide/document';
 	import { isExternal, readerHref } from '#lib/guide/readerLinks';
+	import { pageHrefOf } from '../guideLinks';
 
 	/** A run of text with its marks; a link to a guide page goes through `pageHref`. */
-	let { node, pageHref }: { node: GuideNode; pageHref: (pageId: string) => string } = $props();
+	let { node }: { node: GuideNode } = $props();
+	const pageHref = pageHrefOf();
 
 	const link = $derived(node.marks?.find((mark) => mark.type === 'link'));
 	const href = $derived(readerHref({ href: link?.attrs?.href, pageHref }));
