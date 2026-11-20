@@ -63,6 +63,10 @@ An assistant filters, sorts and groups a view only by columns without personal d
 
 Whoever reviews papers can have the assistant prepare a review. The assistant writes a [review draft](./paper-hub#review-drafts) for that: the text with quotes from the paper and the proposed status. It answers with a link to the paper and names the quotes that do not stand word for word in the paper. The assistant can read your drafts, including what you changed in DELEGATOR. Only you can submit it, in the Paper Hub. The assistant cannot submit a review or change a status. Once you edited the draft in DELEGATOR, DELEGATOR refuses when the assistant wants to replace or delete it, until you tell it your changes may go.
 
+### Paper correction guide {#paper-correction-skill}
+
+The server also hands the assistant DMUN's guide for correcting papers (the **papierkorrektur** skill): how to find the next paper, where the committee text on guide.dmun.de is, the correction guidelines and a template for the feedback. When you ask for a paper to be corrected, the assistant offers to follow it. Claude loads it by itself; other assistants read it through a tool of their own. The guide is maintained in its own repository, so changes there reach every assistant within an hour.
+
 :::warning Preview first, then run
 An assistant does not run right away what reaches people outside the team. That covers the conference stage, the calendar for participants, messages between delegations, unlocking payments, postal registration or paper submission, participant statuses such as payment, documents and attendance, the status of payments, setting everybody's attendance at once, and distributing a survey. Without an explicit confirmation in the call DELEGATOR changes nothing and only answers with a preview. The assistant sets that confirmation itself, so whether it asks you first is up to the assistant. A good one does. Only confirm what you would do yourself.
 :::
