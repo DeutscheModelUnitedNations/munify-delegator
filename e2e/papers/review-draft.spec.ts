@@ -344,7 +344,11 @@ test.describe('review drafts in the editor', () => {
 				[paperId]
 			);
 		await expect.poll(async () => (await stored())[0]?.version, { timeout: 15_000 }).toBe(1);
-		await expect(page.getByTestId('review-draft-stale')).toContainText('2', { timeout: 15_000 });
+		// the version inserted above announced nothing, so the page learns of it on opening again
+		await page.reload();
+		await waitForHydration(page);
+		await expect(page.getByTestId('review-draft-stale')).toContainText('1');
+		await expect(page.getByTestId('review-draft-stale')).toContainText('2');
 	});
 
 	test('a review kept over an assistant’s rewrite for a newer version stays tied to its own', async ({
