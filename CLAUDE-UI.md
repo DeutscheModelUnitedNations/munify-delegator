@@ -315,7 +315,7 @@ The preparation guide (`docs/plans/guide.md`) lives in `src/lib/components/guide
   a snippet so the node components never import `GuideNodes` back. Videos (`GuideEmbed`) load
   only after a click.
 - **`editor/GuideEditor`** — the WYSIWYG editor (TipTap, `guideExtensions.ts`): marks, headings
-  2–4, lists, quotes, rules, links (`guide:<id>`, `file:<id>`), uploads as guide files, callouts,
+  2–4, lists, quotes, rules, links (`guide:<id>`, `file:<id>`), uploads as guide files, callouts (Phosphor icon via `IconPicker` + colour, `CalloutControls.svelte`),
   toggles, buttons, embeds, placeholders. Block attributes are changed through `promptDialog`.
 - **`ScopePicker`** — the four sharing modes as a 2×2 grid (series × year); shared modes are
   disabled without a series. `guideLabels.ts` names scopes and their badge colours.
