@@ -71,12 +71,14 @@ in its instructions so an assistant suggests one when a request matches. Clients
 skills read them with `read_skill`. `SKILL_REPOSITORIES` in `src/api/mcp/skills.ts` lists them;
 today `papierkorrektur` from the public repository `DeutscheModelUnitedNations/papierkorrektur-skill`.
 
-They are read from GitHub (tree listing on `api.github.com`, files from
-`raw.githubusercontent.com`), not bundled: a change in the skill's repository reaches every
-assistant within an hour without a release. The first MCP request after start waits for the read
-(at most 10 s per request); later ones get the copy read last while a stale one is read again in
-the background (every hour, every five minutes after a failure). A skill GitHub does not deliver
-keeps its last good copy; one never read is left out, and the server works without it. Links to
+They are read from GitHub, not bundled: the ref is resolved to a commit (`api.github.com`), and
+the listing and every file are read at that commit (files from `raw.githubusercontent.com`), so
+a change in the skill's repository reaches assistants without a release. The first MCP request
+after start waits for the read (at most 10 s for the whole read). A copy goes stale after an hour
+(five minutes after a failure); the first request after that still gets it and starts reading
+the skill again in the background, and requests after that read get the new copy. A skill GitHub
+does not deliver, or delivers broken (checked strictly before it replaces anything), keeps its
+last good copy; one never read is left out, and the server works without it. Links to
 `https://delegator.munify.cloud` in text files point at the origin of `MCP_RESOURCE` instead, so
 staging and local instances link to themselves. The skills are the same for everyone: they hold
 no data, and what they make an assistant do runs with the caller's rights like any other call.

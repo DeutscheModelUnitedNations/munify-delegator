@@ -72,30 +72,45 @@ export function withInstanceLinks({ text, origin }: { text: string; origin: stri
 	return origin === PRODUCTION_ORIGIN ? text : text.replaceAll(PRODUCTION_ORIGIN, origin);
 }
 
-/** Reads one skill's files from GitHub, keyed `<name>/<path>` as a skill catalog wants them. */
+/**
+ * Reads one skill's files from GitHub, keyed `<name>/<path>` as a skill catalog wants them. The
+ * ref is resolved to one commit first, so the listing and every file come from the same revision,
+ * and one deadline (`timeoutMs`) covers the whole read.
+ */
 export async function fetchSkillFiles({
 	skill,
 	origin,
-	fetch
+	fetch,
+	timeoutMs = FETCH_TIMEOUT_MS
 }: {
 	skill: SkillRepository;
 	origin: string;
 	fetch: typeof globalThis.fetch;
+	timeoutMs?: number;
 }) {
-	const answer = async (url: string) => {
+	const signal = AbortSignal.timeout(timeoutMs);
+	const answer = async ({ url, accept }: { url: string; accept?: string }) => {
 		const response = await fetch(url, {
-			headers: { 'User-Agent': 'munify-delegator' },
-			signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
+			headers: { 'User-Agent': 'munify-delegator', ...(accept ? { Accept: accept } : {}) },
+			signal
 		});
 		if (!response.ok) throw new Error(`GitHub answered ${response.status} for ${url}`);
 		return response;
 	};
-	const listing = treeSchema.parse(
+	const api = `https://api.github.com/repos/${skill.repository}`;
+	const commit = (
 		await (
-			await answer(
-				`https://api.github.com/repos/${skill.repository}/git/trees/${encodeURIComponent(skill.ref)}?recursive=1`
-			)
-		).json()
+			await answer({
+				url: `${api}/commits/${encodeURIComponent(skill.ref)}`,
+				accept: 'application/vnd.github.sha'
+			})
+		).text()
+	).trim();
+	if (!/^[0-9a-f]{40}$/.test(commit)) {
+		throw new Error(`${skill.repository}@${skill.ref} did not resolve to a commit`);
+	}
+	const listing = treeSchema.parse(
+		await (await answer({ url: `${api}/git/trees/${commit}?recursive=1` })).json()
 	);
 	if (listing.truncated) throw new Error(`The file listing of ${skill.repository} is incomplete`);
 	const paths = skillFilePaths({ tree: listing.tree, path: skill.path });
@@ -104,15 +119,33 @@ export async function fetchSkillFiles({
 	const files: Record<string, string | Uint8Array> = {};
 	await Promise.all(
 		paths.map(async (path) => {
-			const response = await answer(
-				`https://raw.githubusercontent.com/${skill.repository}/${encodeURIComponent(skill.ref)}/${skill.path}/${path}`
-			);
+			const response = await answer({
+				url: `https://raw.githubusercontent.com/${skill.repository}/${commit}/${skill.path}/${path}`
+			});
 			files[`${skill.name}/${path}`] = TEXT_FILE.test(path)
 				? withInstanceLinks({ text: await response.text(), origin })
 				: new Uint8Array(await response.arrayBuffer());
 		})
 	);
 	return files;
+}
+
+/**
+ * Throws unless `files` make one valid skill named `name`: a `SKILL.md` with frontmatter whose
+ * name matches, within the publication limits. Checked before a read replaces the last good copy.
+ */
+async function assertValidSkill({
+	name,
+	files
+}: {
+	name: string;
+	files: Record<string, string | Uint8Array>;
+}) {
+	const catalog = await SkillsExtension.load(memorySkillFiles(files), { strict: true });
+	const names = catalog.entries.map((entry) => entry.frontmatter.name);
+	if (names.length !== 1 || names[0] !== name) {
+		throw new Error(`Expected the one skill ${name}, found: ${names.join(', ') || 'none'}`);
+	}
 }
 
 /** The skills as served right now: the catalog for the extension and the files for `read_skill`. */
@@ -124,8 +157,9 @@ export interface SkillSnapshot {
 
 /**
  * Keeps the skills of `repositories` read from GitHub: the first call waits for them, later ones
- * get what was read last while a stale copy is read again in the background. A skill GitHub does
- * not deliver keeps its last good copy; one never read is left out.
+ * get what was read last; the first call after the copy went stale starts reading it again in
+ * the background. A skill GitHub does not deliver, or delivers broken, keeps its last good copy;
+ * one never read is left out.
  */
 export function createSkillLibrary({
 	repositories,
@@ -148,7 +182,9 @@ export function createSkillLibrary({
 		await Promise.all(
 			repositories.map(async (skill) => {
 				try {
-					filesBySkill.set(skill.name, await fetchSkillFiles({ skill, origin, fetch }));
+					const files = await fetchSkillFiles({ skill, origin, fetch });
+					await assertValidSkill({ name: skill.name, files });
+					filesBySkill.set(skill.name, files);
 				} catch (error) {
 					failed = true;
 					logger.warn('Reading an MCP skill from GitHub failed', {

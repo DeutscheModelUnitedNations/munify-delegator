@@ -25,7 +25,9 @@ description: Korrigiert Papiere.
 Link: ${PRODUCTION_ORIGIN}/dashboard/<conferenceId>/paperhub/<paperId>
 `;
 
-/** A GitHub stand-in serving the skill folder (plus files outside it). */
+const COMMIT = 'a'.repeat(40);
+
+/** A GitHub stand-in serving the skill folder (plus files outside it) at `COMMIT`. */
 function gitHub(files: Record<string, string> = {}) {
 	const content: Record<string, string> = {
 		'plugins/p/skills/papierkorrektur/SKILL.md': SKILL_MD,
@@ -35,7 +37,10 @@ function gitHub(files: Record<string, string> = {}) {
 	};
 	return vi.fn(async (input: string | URL | Request) => {
 		const url = String(input);
-		if (url.startsWith('https://api.github.com/repos/owner/repo/git/trees/main')) {
+		if (url === 'https://api.github.com/repos/owner/repo/commits/main') {
+			return new Response(`${COMMIT}\n`);
+		}
+		if (url === `https://api.github.com/repos/owner/repo/git/trees/${COMMIT}?recursive=1`) {
 			return Response.json({
 				tree: [
 					...Object.keys(content).map((path) => ({ path, type: 'blob' })),
@@ -43,8 +48,20 @@ function gitHub(files: Record<string, string> = {}) {
 				]
 			});
 		}
-		const path = url.replace('https://raw.githubusercontent.com/owner/repo/main/', '');
+		const prefix = `https://raw.githubusercontent.com/owner/repo/${COMMIT}/`;
+		const path = url.startsWith(prefix) ? url.slice(prefix.length) : '';
 		return path in content ? new Response(content[path]) : new Response('', { status: 404 });
+	});
+}
+
+/** Resolves after `ms`, or rejects once `signal` aborts. */
+function delay({ ms, signal }: { ms: number; signal: AbortSignal | null | undefined }) {
+	return new Promise<void>((resolve, reject) => {
+		const timer = setTimeout(resolve, ms);
+		signal?.addEventListener('abort', () => {
+			clearTimeout(timer);
+			reject(signal.reason);
+		});
 	});
 }
 
@@ -106,6 +123,33 @@ describe('fetchSkillFiles', () => {
 		await expect(
 			fetchSkillFiles({ skill: { ...skill, path: 'elsewhere' }, origin: '', fetch: gitHub() })
 		).rejects.toThrow('SKILL.md');
+	});
+
+	it('reads the listing and every file at the commit the ref resolved to', async () => {
+		const fetch = gitHub();
+		await fetchSkillFiles({ skill, origin: PRODUCTION_ORIGIN, fetch });
+		const urls = fetch.mock.calls.map(([url]) => String(url));
+		expect(urls[0]).toBe('https://api.github.com/repos/owner/repo/commits/main');
+		expect(urls.slice(1).every((url) => url.includes(COMMIT))).toBe(true);
+	});
+
+	it('fails when the ref does not resolve to a commit', async () => {
+		const fetch = vi.fn(async () => new Response('not a sha'));
+		await expect(fetchSkillFiles({ skill, origin: '', fetch })).rejects.toThrow(
+			'did not resolve to a commit'
+		);
+	});
+
+	it('gives the whole read one deadline', async () => {
+		const files = gitHub();
+		const fetch = vi.fn(
+			async (input: string | URL | Request, init?: Parameters<typeof globalThis.fetch>[1]) => {
+				await delay({ ms: 40, signal: init?.signal });
+				return files(input);
+			}
+		);
+		// Each request alone stays under the deadline; the three steps together do not.
+		await expect(fetchSkillFiles({ skill, origin: '', fetch, timeoutMs: 100 })).rejects.toThrow();
 	});
 
 	it('fails when GitHub refuses', async () => {
@@ -180,6 +224,34 @@ describe('createSkillLibrary', () => {
 		await library.current();
 		await vi.waitFor(() => expect(warn).toHaveBeenCalled());
 		expect((await library.current())?.entries).toHaveLength(1);
+		warn.mockRestore();
+	});
+
+	it('keeps the last good copy when the new one is broken', async () => {
+		let time = 0;
+		let broken = false;
+		const good = gitHub();
+		const bad = gitHub({ 'plugins/p/skills/papierkorrektur/SKILL.md': 'no frontmatter' });
+		const fetch = vi.fn(async (input: string | URL | Request) =>
+			broken ? bad(input) : good(input)
+		);
+		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+		const library = createSkillLibrary({
+			repositories: [skill],
+			origin: PRODUCTION_ORIGIN,
+			fetch,
+			now: () => time
+		});
+		await library.current();
+		broken = true;
+		time += 2 * 60 * 60 * 1000;
+		await library.current();
+		await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+		const snapshot = await library.current();
+		if (!snapshot) throw new Error('no skills');
+		expect(readSkillFile({ snapshot, skill: 'papierkorrektur', path: 'SKILL.md' })).toEqual({
+			text: SKILL_MD
+		});
 		warn.mockRestore();
 	});
 
