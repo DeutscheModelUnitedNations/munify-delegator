@@ -1,6 +1,7 @@
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import type * as schema from '../schema';
-import { MESSAGING_TERMS_VERSION } from '#lib/helpers/messagingTerms';
+import { contentHash, termsInLocale } from '#api/handlers/messagingTerms/messagingTermsDocument';
+import { termsOnDisk } from '#api/handlers/messagingTerms/termsOnDisk';
 import { PERSONA_NATION } from './conference';
 import type { SeedBatch } from './batch';
 import type { ConferenceSeed } from './context';
@@ -84,9 +85,14 @@ function readMarkers({
  * other party, whom participant care suspended from writing, and `dev-delegate-minor` reported
  * their delegation's group, which participant care (`dev-team-care`) finds on the team's
  * messages page. Before the release only the chat with participant care exists.
+ *
+ * The team and the own delegation are reached from the registration on, whatever the switch says:
+ * in "Registration open" (switch off) `dev-reg-head-ready` asked participant care about the
+ * application, and their not yet applied delegation talks in its group with `dev-reg-member`.
  */
 export function addMessages(cs: ConferenceSeed) {
-	if (!cs.conference.messagingEnabled || !cs.plan.assigned) return;
+	const registering = cs.plan.key === 'registration';
+	if (!registering && (!cs.conference.messagingEnabled || !cs.plan.assigned)) return;
 	const [first, second] = cs.committees;
 	if (!first || !second) return;
 	const now = Date.now();
@@ -163,6 +169,50 @@ export function addMessages(cs: ConferenceSeed) {
 		inbox,
 		committeeId
 	});
+
+	if (registering) {
+		addChat({
+			id: 'care-registration',
+			chat: teamChat('dev-reg-head-ready', 'PARTICIPANT_CARE'),
+			messages: [
+				{
+					from: { participant: 'dev-reg-head-ready' },
+					minutesAgo: 3 * 60,
+					body: 'Hallo! Müssen alle aus unserer Delegation von derselben Schule kommen?'
+				},
+				{
+					from: { team: 'dev-team-care' },
+					minutesAgo: 2 * 60,
+					body: 'Hallo! Nein, jede Person gibt ihre eigene Schule an. Ihr könnt euch gern gemischt bewerben.'
+				},
+				{
+					from: { participant: 'dev-reg-head-ready' },
+					minutesAgo: 30,
+					body: 'Super, danke! Und bis wann müssen die Bewerbungstexte fertig sein?'
+				}
+			],
+			readBy: ['dev-reg-head-ready'],
+			teamRead: false
+		});
+		addChat({
+			id: 'group-registration',
+			chat: { kind: 'DELEGATION', delegationId: cs.rowId('delegation-ready') },
+			messages: [
+				{
+					from: { participant: 'dev-reg-head-ready' },
+					minutesAgo: 26 * 60,
+					body: 'Ich habe unsere Rollenwünsche eingetragen. Schaut ihr bitte noch drüber, bevor wir die Bewerbung abschicken?'
+				},
+				{
+					from: { participant: 'dev-reg-member' },
+					minutesAgo: 20 * 60,
+					body: 'Sieht gut aus! Ich schreibe heute Abend noch meinen Teil der Motivation.'
+				}
+			],
+			readBy: ['dev-reg-member']
+		});
+		return;
+	}
 
 	// the trusted persons are reached at any time, before the roles are released too
 	addChat({
@@ -470,7 +520,14 @@ export function addMessages(cs: ConferenceSeed) {
 export function addMessagingAccountSettings(batch: SeedBatch) {
 	acceptTerms({
 		batch,
-		userIds: ['dev-head-delegate', 'dev-delegate-minor', 'dev-nsa-delegate', 'dev-single']
+		userIds: [
+			'dev-head-delegate',
+			'dev-delegate-minor',
+			'dev-nsa-delegate',
+			'dev-single',
+			'dev-reg-head-ready',
+			'dev-reg-member'
+		]
 	});
 	for (const user of batch.user) {
 		if (user.id === 'dev-single' || user.id === 'dev-team-content-lead')
@@ -478,10 +535,20 @@ export function addMessagingAccountSettings(batch: SeedBatch) {
 	}
 }
 
+/** These accounts accepted the terms as they stand, in German, four days ago. */
 function acceptTerms({ batch, userIds }: { batch: SeedBatch; userIds: string[] }) {
+	const shown = termsInLocale({ document: termsOnDisk(), locale: 'de' });
+	const createdAt = new Date(Date.now() - 4 * 24 * HOUR);
 	for (const user of batch.user) {
 		if (!user.id || !userIds.includes(user.id)) continue;
-		user.messagingTermsVersion = MESSAGING_TERMS_VERSION;
-		user.messagingTermsAcceptedAt = new Date(Date.now() - 4 * 24 * HOUR);
+		batch.messagingTermsAcceptance.push({
+			userId: user.id,
+			version: shown.version,
+			revision: shown.revision,
+			locale: shown.locale,
+			contentHash: contentHash(shown),
+			confirmationIds: shown.confirmations.map((confirmation) => confirmation.id),
+			createdAt
+		});
 	}
 }

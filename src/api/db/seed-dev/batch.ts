@@ -10,6 +10,7 @@ import * as schema from '../schema';
 export interface SeedBatch {
 	nation: (typeof schema.nation.$inferInsert)[];
 	user: (typeof schema.user.$inferInsert)[];
+	messagingTermsAcceptance: (typeof schema.messagingTermsAcceptance.$inferInsert)[];
 	reviewerSnippet: (typeof schema.reviewerSnippet.$inferInsert)[];
 	storedFile: (typeof schema.storedFile.$inferInsert)[];
 	school: (typeof schema.school.$inferInsert)[];
@@ -107,6 +108,7 @@ export function emptyBatch(): SeedBatch {
 		chatRead: [],
 		chatReport: [],
 		chatBlock: [],
+		messagingTermsAcceptance: [],
 		announcementAttachment: [],
 		announcementRead: [],
 		slackWorkspace: [],
@@ -190,6 +192,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	const s = schema;
 	await insertChunked({ rows: batch.nation, insert: (rows) => db.insert(s.nation).values(rows) });
 	await insertChunked({ rows: batch.user, insert: (rows) => db.insert(s.user).values(rows) });
+	await insertChunked({
+		rows: batch.messagingTermsAcceptance,
+		insert: (rows) => db.insert(s.messagingTermsAcceptance).values(rows)
+	});
 	await insertChunked({
 		rows: batch.reviewerSnippet,
 		insert: (rows) => db.insert(s.reviewerSnippet).values(rows)

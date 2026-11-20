@@ -57,6 +57,15 @@ test('a head delegate can set preferences and complete their delegation signup',
 	await expect(confirmButton).toBeVisible({ timeout: 15_000 });
 	await confirmButton.click();
 	await memberPage.waitForURL(new RegExp(`/dashboard/${conferenceId}$`), { timeout: 15_000 });
+
+	// the team and the delegation's group are reached while registering already
+	const messagesLink = memberPage.locator(`a[href$="/dashboard/${conferenceId}/messages"]`).first();
+	await expect(messagesLink).toBeVisible({ timeout: 15_000 });
+	await messagesLink.click();
+	await memberPage.waitForURL(new RegExp(`/dashboard/${conferenceId}/messages`), {
+		timeout: 15_000
+	});
+	await expect(memberPage.getByTestId('chat-before-release')).toBeVisible({ timeout: 15_000 });
 	await memberContext.close();
 
 	// --- back on the head delegate's dashboard: set 3 preferences and complete signup ---

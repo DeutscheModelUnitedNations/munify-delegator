@@ -200,14 +200,14 @@ Until the deadline you change your answer with **Change answer** or take it back
 
 ## Messages {#messages}
 
-Once the team has switched messages on, you find the **Messages** card in the quick links. It shows which chats hold something unread. When you have unread messages, the header also shows a message icon with their number. Messages are for delegates and single participants, not for supervisors.
+From your registration on you find the **Messages** card on the dashboard, later in the quick links. It shows which chats hold something unread. When you have unread messages, the header also shows a message icon with their number. Messages are for delegates and single participants, not for supervisors.
 
 - **Trusted persons.** When you want to talk about something in confidence you write to the trusted persons, if the team has named any. You reach them at any time, all of them together or one person by name. Only the trusted persons read these messages. When you write to one of them only that person reads it. Nobody else on the team reads along. The trusted persons see your role. You give your name yourself if you want to.
-- **Team.** You reach participant care at any time. Once the roles are released the chairs and the committee consultants of your committee join them. If you have no committee, for example as a non-state actor or single participant, you reach the chairs and consultants of every committee. Everyone answering an inbox reads along and sees who you are. An answer carries the function and the name of whoever writes it.
+- **Team.** You reach participant care at any time, already while you register. Once the roles are released the chairs and the committee consultants of your committee join them. If you have no committee, for example as a non-state actor or single participant, you reach the chairs and consultants of every committee. Everyone answering an inbox reads along and sees who you are. An answer carries the function and the name of whoever writes it.
+- **Your delegation.** Every delegation has a group for all its members, from the moment the delegation exists. So you can agree on your application together. If your delegation gets no role, the group stays readable, but nobody can write in it any more.
 - **Other delegates.** With **New message** you search by country, committee or role, for example "fran ga". You only see each other's role, never the name.
-- **Your delegation.** Every delegation has a group for all its members.
 
-Chats with other delegates and the delegation group exist only once the roles are released. Until then the page tells you that you reach participant care there. Sent messages cannot be changed or deleted.
+You write to other delegates only once the roles are released and the team has switched on messages between delegations. Until then the page tells you whom you already reach. Sent messages cannot be changed or deleted.
 
 When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off below the chat list at **Email about unread messages**.
 

@@ -80,14 +80,20 @@
 			/>
 			<span>{m.showCalendar()}</span>
 		</label>
-		<label class="flex cursor-pointer items-center gap-3">
+		<label class="flex cursor-pointer items-start gap-3">
 			<input
 				type="checkbox"
 				class="toggle toggle-primary"
 				name="messagingEnabled"
+				aria-describedby="messaging-enabled-description"
 				bind:checked={$formData.messagingEnabled}
 			/>
-			<span>{m.messagingEnabled()}</span>
+			<span class="flex flex-col gap-0.5">
+				<span>{m.messagingEnabled()}</span>
+				<span id="messaging-enabled-description" class="text-base-content/60 text-sm">
+					{m.messagingEnabledDescription()}
+				</span>
+			</span>
 		</label>
 	</div>
 	<!-- the inputs line up at the bottom, whatever their descriptions wrap to -->

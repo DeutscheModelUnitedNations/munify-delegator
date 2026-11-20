@@ -50,9 +50,12 @@ export type WriteRefusal =
 	'DISABLED' | 'NOT_RELEASED' | 'NOT_SEATED' | 'SUSPENDED' | 'BLOCKED' | 'REVIEW';
 
 /**
- * Why the caller cannot write into a chat, or null when they can. The team answers its inboxes
- * whenever messaging is on; participants write each other and their delegation once the roles are
- * released, while both hold a seat, neither blocked the other and the writer is not suspended.
+ * Why the caller cannot write into a chat, or null when they can. Chats with the team are always
+ * open, from the registration on. A delegation's group is open to its members from the moment the
+ * delegation exists, and closes for a delegation the released assignment gave no role.
+ * Participants of different delegations write each other only while the conference switched
+ * messaging on (`messagingEnabled`), once the roles are released, while both hold a seat and
+ * neither blocked the other. A suspended participant writes only to the team.
  */
 export function writeRefusal({
 	kind,
@@ -66,6 +69,7 @@ export function writeRefusal({
 }: {
 	kind: ChatKind;
 	side: ChatSide;
+	/** The conference's switch: chats between participants of different delegations. */
 	messagingEnabled: boolean;
 	assignmentReleased: boolean;
 	writerSeated: boolean;
@@ -76,13 +80,18 @@ export function writeRefusal({
 	blocked: boolean;
 }): WriteRefusal | null {
 	if (side === 'REVIEW') return 'REVIEW';
-	if (!messagingEnabled) return 'DISABLED';
 	if (side === 'TEAM' || kind === 'TEAM') return null;
+	if (kind === 'DELEGATION') {
+		// before the release nobody holds a seat; after it a rejected delegation's group closes
+		if (assignmentReleased && !writerSeated) return 'NOT_SEATED';
+		return writerSuspended ? 'SUSPENDED' : null;
+	}
+	if (!messagingEnabled) return 'DISABLED';
 	if (!assignmentReleased) return 'NOT_RELEASED';
 	if (!writerSeated) return 'NOT_SEATED';
 	if (writerSuspended) return 'SUSPENDED';
-	if (kind === 'DIRECT' && !counterpartSeated) return 'NOT_SEATED';
-	if (kind === 'DIRECT' && blocked) return 'BLOCKED';
+	if (!counterpartSeated) return 'NOT_SEATED';
+	if (blocked) return 'BLOCKED';
 	return null;
 }
 

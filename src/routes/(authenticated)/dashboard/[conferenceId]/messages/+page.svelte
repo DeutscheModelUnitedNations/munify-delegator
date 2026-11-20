@@ -36,8 +36,10 @@
 	);
 	const userId = $derived(me.sub);
 
+	// a delegation's group is open from the registration on, and closes for a rejected delegation
 	const delegationGroup = $derived(
-		conference.assignmentReleased && !!participation?.delegationMember?.delegation.assignedRole
+		!!participation?.delegationMember &&
+			(!conference.assignmentReleased || !!participation.delegationMember.delegation.assignedRole)
 	);
 	const view = $derived(
 		messagesPageState({
@@ -46,6 +48,13 @@
 			takesPart: !!participation?.delegationMember || !!participation?.singleParticipant,
 			hasChats: chats.length > 0
 		})
+	);
+	const othersHint = $derived(
+		view.othersClosed === 'beforeRelease'
+			? { testId: 'chat-before-release', text: m.chatBeforeReleaseHint() }
+			: view.othersClosed === 'disabled'
+				? { testId: 'chat-others-disabled', text: m.chatOtherDelegationsDisabledHint() }
+				: null
 	);
 	const onNew = $derived(view.canStart ? () => (pickerOpen = true) : undefined);
 
@@ -70,16 +79,16 @@
 	{#if view.closed}
 		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-box p-5">
 			<i aria-hidden="true" class="ph-duotone ph-chat-slash text-2xl"></i>
-			<p>{view.closed === 'disabled' ? m.chatRefusedDisabled() : m.chatOnlyParticipants()}</p>
+			<p>{m.chatOnlyParticipants()}</p>
 		</div>
 	{:else}
-		{#if view.beforeRelease}
+		{#if othersHint}
 			<p
 				class="text-base-content/70 flex items-start gap-2 text-sm"
-				data-testid="chat-before-release"
+				data-testid={othersHint.testId}
 			>
 				<i aria-hidden="true" class="ph-duotone ph-info mt-0.5"></i>
-				{m.chatBeforeReleaseHint()}
+				{othersHint.text}
 			</p>
 		{/if}
 

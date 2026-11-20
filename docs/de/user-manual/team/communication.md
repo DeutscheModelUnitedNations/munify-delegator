@@ -90,7 +90,7 @@ Mit den Nachrichten schreiben sich Teilnehmende und Team in der App. Wie das fü
 
 ### Einschalten
 
-Die Nachrichten sind zunächst aus. In den Einstellungen im Reiter **Status & Funktionen** schaltest du **Nachrichten zwischen Teilnehmenden und Team** ein und speicherst wie unter [Speichern mit Vorschau](./configuration#saving). Schaltest du sie wieder aus, bleiben alle Chats lesbar, aber niemand kann mehr schreiben, auch das Team nicht. Die Seite **Nachrichten** weist dann darauf hin.
+Das Team und die eigene Delegation erreichen Teilnehmende immer, ab der Anmeldung. Einschalten musst du nur die Chats zwischen Teilnehmenden verschiedener Delegationen: In den Einstellungen im Reiter **Status & Funktionen** schaltest du **Nachrichten zwischen Delegationen** ein und speicherst wie unter [Speichern mit Vorschau](./configuration#saving). Auch dann gehen diese Chats erst auf, wenn die Zuteilung freigegeben ist. Schaltest du sie wieder aus, bleiben die Einzelchats lesbar, aber niemand kann darin mehr schreiben. Die Seite **Nachrichten** weist dann darauf hin.
 
 Schreiben können Delegierte und Einzelteilnehmende. Betreuende nehmen an den Chats nicht teil.
 
@@ -114,13 +114,13 @@ Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen
 
 ### Wer wem schreiben kann
 
-| Wer                               | Wem                                                                                                                                                                  | Ab wann                                         |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Delegierte und Einzelteilnehmende | **Teilnehmendenbetreuung** und Vertrauenspersonen                                                                                                                    | sobald die Nachrichten an sind                  |
-| Delegierte und Einzelteilnehmende | **Vorsitz** und **Gremienberatung** ihres Gremiums. Wer ohne Gremium sitzt, etwa als nichtstaatlicher Akteur oder Einzelteilnehmende\*r, erreicht die aller Gremien. | sobald die Zuteilung freigegeben ist            |
-| Teilnehmende mit Platz            | andere Teilnehmende mit Platz, im Einzelchat                                                                                                                         | sobald die Zuteilung freigegeben ist            |
-| Mitglieder einer Delegation       | die Gruppe ihrer Delegation                                                                                                                                          | sobald die Rolle der Delegation freigegeben ist |
-| Das Team aus einem Postfach       | jede Person mit Platz, die das Postfach erreicht                                                                                                                     | sobald die Zuteilung freigegeben ist            |
+| Wer                               | Wem                                                                                                                                                                  | Ab wann                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Delegierte und Einzelteilnehmende | **Teilnehmendenbetreuung** und Vertrauenspersonen                                                                                                                    | ab der Anmeldung                                                                      |
+| Delegierte und Einzelteilnehmende | **Vorsitz** und **Gremienberatung** ihres Gremiums. Wer ohne Gremium sitzt, etwa als nichtstaatlicher Akteur oder Einzelteilnehmende\*r, erreicht die aller Gremien. | sobald die Zuteilung freigegeben ist                                                  |
+| Teilnehmende mit Platz            | andere Teilnehmende mit Platz, im Einzelchat                                                                                                                         | sobald die Zuteilung freigegeben ist und **Nachrichten zwischen Delegationen** an ist |
+| Mitglieder einer Delegation       | die Gruppe ihrer Delegation                                                                                                                                          | ab der Anmeldung, bis die Delegation ohne Rolle bleibt                                |
+| Das Team aus einem Postfach       | jede Person mit Platz, die das Postfach erreicht                                                                                                                     | sobald die Zuteilung freigegeben ist                                                  |
 
 In Einzelchats und Delegationsgruppen sehen sich Teilnehmende nur mit ihrer Rolle. Das Team liest diese Chats nicht, außer nach einer Meldung. Verliert eine Person ihren Platz, kann in ihren Einzelchats niemand mehr schreiben.
 

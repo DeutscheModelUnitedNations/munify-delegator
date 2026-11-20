@@ -5,6 +5,8 @@
  * and SR have one seat per delegation:
  * - Germany: Anna Alpha (head delegate, GV, author of a submitted position paper) and Bert Beta (SR)
  * - France: Carla Gamma (head delegate, GV) and Dora Delta (SR)
+ * - a delegation that applied and got no role: Emil Epsilon, who still reaches the team, while
+ *   their group closes (and opens again while the specs take the release back)
  * - a supervisor, who takes no part in the chats
  * - the team: participant care, a chair of GV (team role MEMBER), a reviewer advising GV
  *   (CONSULTANT), project management, a plain member without any function, and two trusted
@@ -17,6 +19,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, inArray } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
+import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
@@ -66,7 +69,14 @@ export function messagesFixture(tag: 'ui' | 'auth') {
 			family: 'Delta'
 		}
 	} as const;
-	const people = [...Object.values(team), ...Object.values(delegates)];
+	/** Head delegate of the delegation the released assignment gave no role. */
+	const applicant = {
+		id: user('emil'),
+		memberId: `e2e00000${key}member0000005`,
+		given: 'Emil',
+		family: 'Epsilon'
+	} as const;
+	const people = [...Object.values(team), ...Object.values(delegates), applicant];
 	return {
 		key,
 		conferenceId: `e2e00000conference0000${key}`,
@@ -80,8 +90,10 @@ export function messagesFixture(tag: 'ui' | 'auth') {
 		agendaItemId: `e2e00000${key}agendaitem0001`,
 		germanyDelegationId: `e2e00000${key}delegation0001`,
 		franceDelegationId: `e2e00000${key}delegation0002`,
+		rejectedDelegationId: `e2e00000${key}delegation0003`,
 		team,
 		delegates,
+		applicant,
 		supervisorId: user('supervisor'),
 		/** The `conferenceParticipant` id of a person of the fixture, as the chats name them. */
 		participantId: (userId: string) => `e2e-${key}-participant-${userId}`,
@@ -125,7 +137,7 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 			givenName: person.given,
 			familyName: person.family
 		})),
-		...Object.values(fixture.delegates).map((person) => ({
+		...[...Object.values(fixture.delegates), fixture.applicant].map((person) => ({
 			...makeSeedUser(),
 			...COMPLETE_PROFILE,
 			id: person.id,
@@ -141,7 +153,7 @@ async function seedMessagesConference(db: NodePgDatabase, fixture: Fixture) {
 		}
 	]);
 	// everybody but Anna has agreed to the terms of the message service; she does in the specs
-	const delegates = Object.values(fixture.delegates);
+	const delegates = [...Object.values(fixture.delegates), fixture.applicant];
 	await seedTermsAcceptances(db, {
 		agreed: delegates.filter((person) => person.given !== 'Anna').map((person) => person.id),
 		others: delegates.filter((person) => person.given === 'Anna').map((person) => person.id)
@@ -217,6 +229,30 @@ async function seedDelegations(db: NodePgDatabase, fixture: Fixture) {
 	await db
 		.delete(schema.chatBlock)
 		.where(inArray(schema.chatBlock.blockerParticipantId, participantIds));
+
+	// applied, and left without a role by the released assignment
+	const rejected = {
+		...makeSeedDelegation({ conferenceId, applied: true }),
+		id: fixture.rejectedDelegationId,
+		assignedRoleId: null
+	};
+	await db
+		.insert(schema.delegation)
+		.values(rejected)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: rejected });
+	const applicantMember = {
+		...makeSeedDelegationMember({
+			delegationId: fixture.rejectedDelegationId,
+			conferenceParticipantId: await participantOf(db, fixture, fixture.applicant.id),
+			assignedCommitteeId: null,
+			isHeadDelegate: true
+		}),
+		id: fixture.applicant.memberId
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(applicantMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: applicantMember });
 
 	const supervisorParticipantId = await upsertParticipant(db, conferenceId, fixture.supervisorId);
 	await db

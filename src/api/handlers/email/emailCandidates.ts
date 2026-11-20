@@ -168,10 +168,7 @@ const PARTICIPANT_PREDICATES: Record<
 > = {
 	// A message of one of the person's chats they have not read and were not told about. The
 	// quarter of an hour it has to wait, and that only the oldest one counts, is `dueEmails`'.
-	UNREAD_MESSAGES: (ctx) =>
-		when(
-			ctx.conference.messagingEnabled,
-			() => sql`exists (
+	UNREAD_MESSAGES: (ctx) => sql`exists (
 				select 1 from chat c
 				join chat_message m on m.chat_id = c.id
 					and m.author_participant_id is distinct from ${ctx.id}
@@ -183,8 +180,7 @@ const PARTICIPANT_PREDICATES: Record<
 							where cdm.delegation_id = c.delegation_id
 								and cdm.conference_participant_id = ${ctx.id})))
 					and (cr.read_at is null or m.created_at > cr.read_at)
-					and ${ctx.open({ kind: 'UNREAD_MESSAGES', key: sql`m.id` })})`
-		),
+					and ${ctx.open({ kind: 'UNREAD_MESSAGES', key: sql`m.id` })})`,
 	DELEGATION_CREATED: (ctx) =>
 		when(registering(ctx), () =>
 			memberOf(
@@ -425,7 +421,7 @@ export const waitingListCandidates = ({
 
 /**
  * The team members (`id`, `userId` their columns) who may be owed a mail of `kinds`: not yet
- * welcomed, or, while the chats are on, anybody (a team is small, and which inboxes somebody
+ * welcomed, or, for the chats' mails, anybody (a team is small, and which inboxes somebody
  * answers and which reports they hear of is `unreadMessages.ts`'s to work out); `false` when none can be.
  */
 export function teamCandidates({
@@ -440,7 +436,7 @@ export function teamCandidates({
 	userId: Column;
 }): SQL {
 	const aboutChats = kinds.has('UNREAD_MESSAGES') || kinds.has('CHAT_REPORTED');
-	if (aboutChats && conference.messagingEnabled) return sql`true`;
+	if (aboutChats) return sql`true`;
 	return kinds.has('TEAM_WELCOME')
 		? sql`not ${closed({ conferenceId: conference.id, kind: 'TEAM_WELCOME', userId, key: id })}`
 		: sql`false`;
