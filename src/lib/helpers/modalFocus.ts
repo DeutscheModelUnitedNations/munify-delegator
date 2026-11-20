@@ -51,6 +51,12 @@ function keepTabInside({ dialog, event }: { dialog: HTMLElement; event: Keyboard
 	target.focus();
 }
 
+/** Focus is still the dialog's to hand back: inside it, or nowhere (on the body). */
+function focusStillWith(dialog: HTMLElement): boolean {
+	const active = document.activeElement;
+	return !active || active === document.body || dialog.contains(active);
+}
+
 let headingIds = 0;
 
 /** A dialog without a name of its own is announced by its first heading. */
@@ -66,7 +72,8 @@ function nameAfterHeading(dialog: HTMLElement) {
  * Makes the element a modal dialog for keyboard and screen reader users: focus moves into it
  * (to an `[autofocus]` element, else the first control, else the dialog itself), Tab and
  * Shift+Tab stay inside, Escape calls `onEscape`, and closing hands focus back to whatever had
- * it before. The element needs `role="dialog"` (or `alertdialog`) and `aria-modal="true"`;
+ * it before — unless focus has moved elsewhere in the meantime (the teardown runs after the
+ * outro, and the person may already be typing in another control). The element needs `role="dialog"` (or `alertdialog`) and `aria-modal="true"`;
  * without `aria-label(ledby)` it is named after its first heading.
  */
 export function modalFocus(onEscape?: () => void): Attachment<HTMLElement> {
@@ -97,7 +104,7 @@ export function modalFocus(onEscape?: () => void): Attachment<HTMLElement> {
 		return () => {
 			cancelAnimationFrame(frame);
 			dialog.removeEventListener('keydown', onKeydown);
-			if (previous?.isConnected) previous.focus();
+			if (previous?.isConnected && focusStillWith(dialog)) previous.focus();
 		};
 	};
 }
