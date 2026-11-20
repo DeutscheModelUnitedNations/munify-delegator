@@ -78,7 +78,7 @@ describe('countConferenceParticipations', () => {
 					from: () => chain,
 					innerJoin: () => chain,
 					where: () => chain,
-					groupBy: async () => answers.shift()
+					groupBy: async () => answers.shift() ?? []
 				};
 				return chain;
 			}
@@ -97,6 +97,16 @@ describe('countConferenceParticipations', () => {
 			new Map([
 				['u', 3],
 				['v', 1]
+			])
+		);
+	});
+
+	it('adds the supervisions of seated people', async () => {
+		fakeCounts([[{ userId: 'u', value: 1 }], [], [{ userId: 's', value: 2 }]]);
+		expect(await countConferenceParticipations(['u', 's'])).toEqual(
+			new Map([
+				['u', 1],
+				['s', 2]
 			])
 		);
 	});

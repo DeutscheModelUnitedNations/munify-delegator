@@ -170,16 +170,16 @@ Eine neue Vorlage gilt sofort für alle Dokumente, die danach erzeugt werden. En
 
 Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Person in der Schrift Space Mono auf die erste Seite der PDF, und wohin, legst du mit **Felder platzieren** fest. Das Fenster **Anordnung auf der Vorlage:** mit dem Namen des Dokuments zeigt die Seite, auf der du jedes Feld an seine Stelle ziehst:
 
-| Dokument                                    | Felder                                                                                                                 |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Teilnahmezertifikat**                     | **Name** (zentriert), **Check-in-Liste** mit den Check-ins, bei denen die Person war, **QR-Code** zur Echtheitsprüfung |
-| **Verbindliche Anmeldung**                  | **Empfängeradresse** (vier Zeilen für das Fenster eines Umschlags), **Name**, **Geburtsdatum**                         |
-| **Einwilligung der Erziehungsberechtigten** | **Name**, **Geburtsdatum**                                                                                             |
-| **Einwilligung Bildnutzung**                | **Name**, **Geburtsdatum**, **Adresse**                                                                                |
+| Dokument                                    | Felder                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Teilnahmezertifikat**                     | **Name** (zentriert), **Check-in-Liste** mit den Check-ins, bei denen die Person war, **QR-Code** zur Echtheitsprüfung                      |
+| **Verbindliche Anmeldung**                  | **Empfängeradresse** (vier Zeilen für das Fenster eines Umschlags), **Name**, **Geburtsdatum**, **QR-Code mit Name und ID**, **Seitenzahl** |
+| **Einwilligung der Erziehungsberechtigten** | **Name**, **Geburtsdatum**, **QR-Code mit Name und ID**, **Seitenzahl**                                                                     |
+| **Einwilligung Bildnutzung**                | **Name**, **Geburtsdatum**, **Adresse**, **QR-Code mit Name und ID**, **Seitenzahl**                                                        |
 
-Die Check-in-Liste und den QR-Code änderst du an ihrer Ecke unten rechts in der Größe, die Schriftgröße der Texte mit Minus und Plus unter der Seite. **Standard** setzt alles auf die Standardpositionen zurück, die auch gelten, solange du nichts platzierst. **Testdokument generieren** druckt ein Beispiel mit erfundenen Angaben schon mit der ungespeicherten Anordnung. **Speichern** übernimmt sie sofort für alle Dokumente, die danach erzeugt werden.
+Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in der Größe, die Schriftgröße der Texte mit Minus und Plus unter der Seite. **Standard** setzt alles auf die Standardpositionen zurück, die auch gelten, solange du nichts platzierst. **Testdokument generieren** druckt ein Beispiel mit erfundenen Angaben schon mit der ungespeicherten Anordnung. **Speichern** übernimmt sie sofort für alle Dokumente, die danach erzeugt werden.
 
-Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Alle Seiten der postalischen Anmeldung bekommen unten rechts Seitenzahl, Name, ID und einen kleinen signierten QR-Code. Das Zertifikat kann jede Seitengröße haben, auch quer.
+Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Jede Seite der postalischen Anmeldung bekommt den signierten QR-Code mit Name und ID daneben dort, wo ihr Dokument ihn platziert, und unten rechts die Seitenzahl, auch die Seiten der Teilnahmebedingungen. Das Zertifikat kann jede Seitengröße haben, auch quer.
 
 :::tip Platz lassen
 Lass auf deiner Vorlage an den Stellen der Felder Platz frei. **Testdokument** auf der Karte zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.

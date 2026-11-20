@@ -136,7 +136,12 @@ export async function assertCanUpdateSchools({
  * who see a school's numbers in every conference.
  */
 export async function assertCanReadSchoolMetrics(ctx: ApiContext) {
+	if (!(await canReadSchoolMetrics(ctx)))
+		throw apiError({ code: 'NOT_FOUND', message: m.schoolNotFound() });
+}
+
+/** Whether the caller is participant care of any conference (or a system admin). */
+export async function canReadSchoolMetrics(ctx: ApiContext) {
 	const facts = await callerFacts(ctx);
-	const ids = teamConferenceIds({ ctx, facts, roles: PARTICIPANT_CARE_ROLES });
-	if (!isCareTeamSomewhere(ids)) throw apiError({ code: 'NOT_FOUND', message: m.schoolNotFound() });
+	return isCareTeamSomewhere(teamConferenceIds({ ctx, facts, roles: PARTICIPANT_CARE_ROLES }));
 }

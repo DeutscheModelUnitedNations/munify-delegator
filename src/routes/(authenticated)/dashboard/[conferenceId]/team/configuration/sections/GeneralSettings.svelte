@@ -89,6 +89,21 @@
 			removable
 		/>
 	</div>
+	<label class="flex cursor-pointer items-start gap-3">
+		<input
+			type="checkbox"
+			class="toggle toggle-primary"
+			name="qrCorporateDesign"
+			aria-describedby="qr-corporate-design-description"
+			bind:checked={$formData.qrCorporateDesign}
+		/>
+		<span class="flex flex-col gap-0.5">
+			<span>{m.qrCorporateDesign()}</span>
+			<span id="qr-corporate-design-description" class="text-base-content/60 text-sm">
+				{m.qrCorporateDesignDescription()}
+			</span>
+		</span>
+	</label>
 </FormSection>
 
 <FormSection title={m.conferenceSchedule()} icon="calendar-dots">

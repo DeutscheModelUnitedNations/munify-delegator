@@ -253,11 +253,13 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'post',
 		summary:
-			'POST: ended a month ago; certificates (attended vs. not, a scanner test run left off), papers read-only, email log',
+			'POST: ended a month ago; certificates (attended vs. not, a scanner test run left off, plain QR codes), papers read-only, email log',
 		conference: {
 			title: 'Seed 8 · Post',
 			longTitle: 'Seed-Konferenz, die vorbei ist',
 			state: 'POST',
+			// plain black QR codes, the certificates' too; every other conference has the corporate look
+			qrCorporateDesign: false,
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: false,

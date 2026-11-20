@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import type { CameraZoom } from './camera';
 
 	interface Props {
 		/** The element the camera stream is attached to */
@@ -10,6 +11,9 @@
 		scannedCode: string | null;
 		scanPromptText: string;
 		canSwitchCamera: boolean;
+		/** The camera's zoom, when it has one: a slider to zoom in on a code printed small. */
+		zoom?: CameraZoom;
+		onzoom?: (value: number) => void;
 		onswitch: () => void;
 		onstop: () => void;
 		onstart: () => void;
@@ -22,6 +26,8 @@
 		scannedCode,
 		scanPromptText,
 		canSwitchCamera,
+		zoom,
+		onzoom,
 		onswitch,
 		onstop,
 		onstart
@@ -66,6 +72,24 @@
 				></span>
 			</div>
 		</div>
+
+		{#if zoom && onzoom}
+			<label
+				class="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-white"
+			>
+				<i aria-hidden="true" class="ph-duotone ph-magnifying-glass-plus"></i>
+				<input
+					type="range"
+					class="range range-xs w-24 sm:w-32"
+					min={zoom.min}
+					max={zoom.max}
+					step={zoom.step}
+					value={zoom.value}
+					aria-label={m.cameraZoom()}
+					oninput={(event) => onzoom(event.currentTarget.valueAsNumber)}
+				/>
+			</label>
+		{/if}
 
 		<div class="absolute top-3 right-3 flex gap-2">
 			{#if canSwitchCamera}

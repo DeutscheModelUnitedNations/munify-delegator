@@ -170,16 +170,16 @@ A new template applies at once to every document generated after it. If you remo
 
 The templates contain no placeholders. DELEGATOR writes the person's details onto the first page of the PDF in the Space Mono font, and where is up to you with **Place fields**. The window **Layout on the template:** with the document's name shows the page, and you drag each field to its spot:
 
-| Document                         | Fields                                                                                                               |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Certificate of participation** | **Name** (centred), **Check-in list** with the check-ins the person attended, **QR code** for the authenticity check |
-| **Binding Registration**         | **Recipient address** (four lines for the window of an envelope), **Name**, **Date of Birth**                        |
-| **Parental Agreement**           | **Name**, **Date of Birth**                                                                                          |
-| **Media Usage Agreement**        | **Name**, **Date of Birth**, **Address**                                                                             |
+| Document                         | Fields                                                                                                                                       |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Certificate of participation** | **Name** (centred), **Check-in list** with the check-ins the person attended, **QR code** for the authenticity check                         |
+| **Binding Registration**         | **Recipient address** (four lines for the window of an envelope), **Name**, **Date of Birth**, **QR code with name and ID**, **Page number** |
+| **Parental Agreement**           | **Name**, **Date of Birth**, **QR code with name and ID**, **Page number**                                                                   |
+| **Media Usage Agreement**        | **Name**, **Date of Birth**, **Address**, **QR code with name and ID**, **Page number**                                                      |
 
-You resize the check-in list and the QR code from their bottom right corner, and change the texts' font size with minus and plus below the page. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
+You resize the check-in list and the QR codes from their bottom right corner, and change the texts' font size with minus and plus below the page. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
 
-The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the page number, name, ID and a small signed QR code at the bottom right. The certificate can have any page size, landscape too.
+The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the name and ID beside it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
 
 :::tip Leave room
 Leave room on your template where the fields go. **Test document** on the card shows the result with made-up details and the postal address as it currently stands in the form.

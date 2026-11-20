@@ -31,7 +31,10 @@ describe('application details', () => {
 		familyName: id,
 		conferenceParticipationsCount: 0
 	});
-	const supervisor = { id: 'sv', user: { id: 'su', givenName: 'Max', familyName: 'Muster' } };
+	const supervisor = {
+		id: 'sv',
+		user: { id: 'su', givenName: 'Max', familyName: 'Muster', conferenceParticipationsCount: 2 }
+	};
 
 	it('shapes a delegation with its wishes in rank order', () => {
 		const details = delegationApplication({
@@ -76,7 +79,7 @@ describe('application details', () => {
 				supervisors: details.supervisors,
 				format: ({ givenName, familyName }) => `${givenName} ${familyName}`
 			})
-		).toEqual([{ id: 'sv', userId: 'su', name: 'Max Muster' }]);
+		).toEqual([{ id: 'sv', userId: 'su', name: 'Max Muster', participations: 2 }]);
 	});
 
 	it('shapes a single participant the same way', () => {

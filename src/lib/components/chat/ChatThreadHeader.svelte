@@ -12,7 +12,7 @@
 	import ChatArchiveButton from './ChatArchiveButton.svelte';
 	import ChatAvatar from './ChatAvatar.svelte';
 	import ChatThreadMenu from './ChatThreadMenu.svelte';
-	import { chatAvatar, chatSubtitle, chatTitle, kindHint } from './chatLabels';
+	import { chatAvatar, chatTitle, threadSubtitle } from './chatLabels';
 
 	interface Props {
 		chat: OpenChat;
@@ -40,7 +40,7 @@
 	<ChatAvatar avatar={chatAvatar(chat)} />
 	<div class="flex min-w-0 flex-1 flex-col">
 		<h2 class="truncate font-semibold" data-testid="chat-title">{chatTitle(chat)}</h2>
-		<p class="text-base-content/60 truncate text-xs">{chatSubtitle(chat) ?? kindHint(chat)}</p>
+		<p class="text-base-content/60 truncate text-xs">{threadSubtitle(chat)}</p>
 	</div>
 
 	<!-- reviewing, the case file beside the chat already names everybody with their card -->

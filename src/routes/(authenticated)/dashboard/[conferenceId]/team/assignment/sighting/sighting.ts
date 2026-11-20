@@ -129,7 +129,14 @@ interface Person extends WithLinkedAccounts {
 
 interface Supervisor {
 	id: string;
-	user: { id: string; givenName: string; familyName: string; email?: Nullable<string> };
+	user: {
+		id: string;
+		givenName: string;
+		familyName: string;
+		email?: Nullable<string>;
+		/** Null when the caller may not see it, as a member's. */
+		conferenceParticipationsCount?: Nullable<number>;
+	};
 }
 
 interface ApplicationTexts {
@@ -137,8 +144,12 @@ interface ApplicationTexts {
 	experience?: Nullable<string>;
 }
 
-/** A person's own school, if they named one. */
-type OwnSchool = Nullable<{ id: string; name: string }>;
+/** A person's own school, if they named one; how many conferences it took part in, if readable. */
+type OwnSchool = Nullable<{
+	id: string;
+	name: string;
+	conferenceParticipationsCount?: Nullable<number>;
+}>;
 
 export interface SightedDelegation extends ApplicationTexts {
 	members: readonly {
@@ -285,7 +296,8 @@ export function distinctSupervisors({
 	return [...new Map(supervisors.map((s) => [s.id, s])).values()].map((s) => ({
 		id: s.id,
 		userId: s.user.id,
-		name: format({ givenName: s.user.givenName, familyName: s.user.familyName })
+		name: format({ givenName: s.user.givenName, familyName: s.user.familyName }),
+		participations: s.user.conferenceParticipationsCount ?? null
 	}));
 }
 

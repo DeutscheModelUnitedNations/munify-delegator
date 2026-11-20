@@ -285,7 +285,8 @@ export const devAccounts = [
 	{
 		sub: 'dev-supervisor',
 		label: '[Participant] Supervisor, attending',
-		description: 'Teacher of the German delegation and of a rejected one, attends',
+		description:
+			'Teacher of the German delegation and of a rejected one, attends; returning supervisor of applicants in the closed registration',
 		givenName: 'Stefan',
 		familyName: 'Betreuer',
 		roles: [],

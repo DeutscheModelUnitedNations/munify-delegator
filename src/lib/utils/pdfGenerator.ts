@@ -1,6 +1,5 @@
 import { m } from '#lib/paraglide/messages';
 import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont, PDFName, PDFString } from 'pdf-lib';
-import bwipjs from '@bwip-js/browser';
 import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
 import { downloadPDF } from '#lib/utils/downloadHelpers';
@@ -9,12 +8,18 @@ import { signedCodeLink } from '#lib/signedCode/signedCode';
 import {
 	boxInPoints,
 	defaultLayout,
+	DOCUMENT_ELEMENTS,
+	POINTS_PER_MM,
 	resolveDocumentLayout,
 	squareInPoints,
 	textInPoints,
+	type BoxPlacement,
 	type DocumentLayout,
+	type SquarePlacement,
 	type TextPlacement
 } from '#lib/helpers/documentLayout';
+import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
+import { drawQr } from '#lib/api/pdfQr';
 import { logger } from '#lib/logger';
 
 export interface ParticipantData {
@@ -54,14 +59,12 @@ function drawCertificateSessions({
 	page: PDFPage;
 	font: PDFFont;
 	sessions: readonly string[];
-	area: { left: number; width: number; top: number; bottom: number };
+	area: { left: number; top: number; bottom: number };
 }) {
 	const heading = m.certificateSessionsHeading();
 	const layout = layoutCertificateSessions({
 		sessions,
-		heading,
 		options: {
-			pageWidth: area.width,
 			left: area.left,
 			top: area.top - 9,
 			bottom: area.bottom,
@@ -360,11 +363,42 @@ interface ParticipantForm {
  */
 const codeLink = (code: string) => signedCodeLink({ origin: window.location.origin, code });
 
-/** A QR code of `text`, embedded into the document as an image. */
-async function embedQrCode({ pdfDoc, text }: { pdfDoc: PDFDocument; text: string }) {
-	const canvas = document.createElement('canvas');
-	bwipjs.toCanvas(canvas, { bcid: 'qrcode', text, scale: 4 });
-	return pdfDoc.embedPng(canvas.toDataURL('image/png'));
+/**
+ * Draws a QR code of `text` where `placement` puts it on `page`, as vectors so it prints sharp.
+ * It is never smaller than `minSide` (millimetres) nor than its modules need to stay readable
+ * (`minQrSide`): a code that would be smaller grows around its centre, staying on the page.
+ * Answers where it ended up, in points.
+ */
+async function placeQrCode({
+	pdfDoc,
+	page,
+	text,
+	placement,
+	minSide,
+	corporate
+}: {
+	pdfDoc: PDFDocument;
+	page: PDFPage;
+	text: string;
+	placement: SquarePlacement;
+	minSide: number;
+	corporate: boolean;
+}) {
+	const { width, height } = page.getSize();
+	const modules = qrMatrix({ text, withEmblem: false }).size;
+	const square = fitQrSquare({
+		square: squareInPoints({ placement, width, height }),
+		minSide: Math.max(minSide * POINTS_PER_MM, minQrSide({ modules, corporate })),
+		page: { width, height }
+	});
+	await drawQr({
+		pdf: pdfDoc,
+		page,
+		text,
+		box: { x: square.left, top: square.bottom + square.side, side: square.side },
+		corporate
+	});
+	return square;
 }
 
 function createContractGenerator({
@@ -454,111 +488,138 @@ function toRomanNumeral(num: number): string {
 	return result;
 }
 
-/** The side of the QR code in the footer of the main pages: as small as a phone still reads. */
-const FOOTER_CODE_SIDE = millimeterToPixel(16);
+/** Where one main page's footer goes: its document's layout of the code and the page number. */
+type PageFooter = { code: SquarePlacement; pageNumber: BoxPlacement };
 
+/** The page number, right-aligned in the area the layout keeps for it, its size the area's. */
+function drawPageNumber({
+	page,
+	font,
+	text,
+	placement
+}: {
+	page: PDFPage;
+	font: PDFFont;
+	text: string;
+	placement: BoxPlacement;
+}) {
+	const { width, height } = page.getSize();
+	const box = boxInPoints({ placement, width, height });
+	const boxHeight = box.top - box.bottom;
+	const size = Math.max(6, Math.min(10, boxHeight * 0.8));
+	page.drawText(text, {
+		x: box.left + box.width - font.widthOfTextAtSize(text, size),
+		// capitals are about 0.7 of the size high: centred in the area
+		y: box.bottom + (boxHeight - size * 0.7) / 2,
+		size,
+		font,
+		color: rgb(0, 0, 0)
+	});
+}
+
+/**
+ * The person's name above their id, beside the code at its bottom: to its left, or to its right
+ * when the code sits too close to the left edge for them.
+ */
+function drawCodeCaption({
+	page,
+	font,
+	name,
+	id,
+	square
+}: {
+	page: PDFPage;
+	font: PDFFont;
+	name: string;
+	id: string;
+	square: { left: number; bottom: number; side: number };
+}) {
+	const size = 8;
+	const gap = 5;
+	const widest = Math.max(font.widthOfTextAtSize(name, size), font.widthOfTextAtSize(id, size));
+	const onLeft = square.left - gap - widest >= 0;
+	[id, name].forEach((line, index) => {
+		const lineWidth = font.widthOfTextAtSize(line, size);
+		page.drawText(line, {
+			x: onLeft ? square.left - gap - lineWidth : square.left + square.side + gap,
+			y: square.bottom + index * (size + 2),
+			size,
+			font,
+			color: rgb(0, 0, 0)
+		});
+	});
+}
+
+/**
+ * Numbers the pages and puts the signed code, with the person's name and id beside it, on every
+ * main page, where that page's document places them (`footers`, one per main page). The appendix
+ * (the terms and conditions) is numbered in roman numerals, where `appendixPageNumber` says.
+ */
 async function numerateDocument({
 	pdfDoc,
 	participantId,
 	participantCode,
 	participantName,
-	mainPageCount
+	footers,
+	appendixPageNumber,
+	corporate
 }: {
 	pdfDoc: PDFDocument;
 	participantId: string;
 	participantCode: string;
 	participantName: string;
-	mainPageCount: number;
+	footers: PageFooter[];
+	appendixPageNumber: BoxPlacement;
+	corporate: boolean;
 }) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+	const mainPageCount = footers.length;
+	const appendixPageCount = pages.length - mainPageCount;
+	const text = codeLink(participantCode);
 
-	const totalPages = pages.length;
-	const appendixPageCount = totalPages - mainPageCount;
-	const { width } = pdfDoc.getPage(0).getSize();
-	const fontSize = 10;
-
-	// The signed code for the footer (only needed for main pages)
-	const pngImage = await embedQrCode({ pdfDoc, text: codeLink(participantCode) });
-	const pngDims = { width: FOOTER_CODE_SIDE, height: FOOTER_CODE_SIDE };
-
-	const smallFontSize = 8;
-
-	pages.forEach((page, index) => {
-		const isMainPage = index < mainPageCount;
-		const rightX = width - defaultStyles.margin.right;
-		const barcodeY = defaultStyles.margin.bottom;
-
-		if (isMainPage) {
-			// Main pages: show participant info and barcode
-			const pageNumber = `${index + 1} / ${mainPageCount}`;
-
-			// Draw the signed code at bottom right
-			const barcodeX = rightX - pngDims.width;
-			page.drawImage(pngImage, {
-				x: barcodeX,
-				y: barcodeY,
-				width: pngDims.width,
-				height: pngDims.height
-			});
-
-			// Draw participant ID to the left of the barcode (bottom line, hugging bottom)
-			const idTextWidth = helvetica.widthOfTextAtSize(participantId, smallFontSize);
-			page.drawText(participantId, {
-				x: barcodeX - idTextWidth - 5,
-				y: barcodeY,
-				size: smallFontSize,
-				font: helvetica,
-				color: rgb(0, 0, 0)
-			});
-
-			// Draw participant name to the left of the barcode (just above ID, hugging it)
-			const nameWidth = helvetica.widthOfTextAtSize(participantName, smallFontSize);
-			page.drawText(participantName, {
-				x: barcodeX - nameWidth - 5,
-				y: barcodeY + smallFontSize + 2,
-				size: smallFontSize,
-				font: helvetica,
-				color: rgb(0, 0, 0)
-			});
-
-			// Draw page number at the top (right-aligned, with space above name/barcode)
-			const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
-			page.drawText(pageNumber, {
-				x: rightX - pageNumberWidth,
-				y: barcodeY + pngDims.height + 10,
-				size: fontSize,
-				font: helvetica,
-				color: rgb(0, 0, 0)
-			});
-		} else {
-			// Appendix pages: roman numerals, no participant info
+	for (const [index, page] of pages.entries()) {
+		const footer = footers.at(index);
+		if (!footer) {
 			const appendixIndex = index - mainPageCount + 1;
-			const pageNumber = `${toRomanNumeral(appendixIndex)} / ${toRomanNumeral(appendixPageCount)}`;
-
-			// Draw page number at the bottom right
-			const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
-			page.drawText(pageNumber, {
-				x: rightX - pageNumberWidth,
-				y: barcodeY + fontSize,
-				size: fontSize,
+			drawPageNumber({
+				page,
 				font: helvetica,
-				color: rgb(0, 0, 0)
+				text: `${toRomanNumeral(appendixIndex)} / ${toRomanNumeral(appendixPageCount)}`,
+				placement: appendixPageNumber
 			});
+			continue;
 		}
-	});
+		const square = await placeQrCode({
+			pdfDoc,
+			page,
+			text,
+			placement: footer.code,
+			minSide: DOCUMENT_ELEMENTS.contract.code.minSide,
+			corporate
+		});
+		drawCodeCaption({ page, font: helvetica, name: participantName, id: participantId, square });
+		drawPageNumber({
+			page,
+			font: helvetica,
+			text: `${index + 1} / ${mainPageCount}`,
+			placement: footer.pageNumber
+		});
+	}
 }
 
 function createCertificateGenerator({
 	pdfDoc,
 	styles,
 	data,
-	layout
+	layout,
+	corporate
 }: {
 	pdfDoc: PDFDocument;
 	styles: PageStyles;
 	data: ParticipantCertificateData;
 	layout: DocumentLayout<'certificate'>;
+	corporate: boolean;
 }): PDFPageGenerator {
 	const page = pdfDoc.getPage(0);
 	return createPDFPageGenerator({
@@ -586,9 +647,14 @@ function createCertificateGenerator({
 			});
 
 			const verifyUrl = codeLink(data.code);
-			const qr = await embedQrCode({ pdfDoc, text: verifyUrl });
-			const { left, bottom, side } = squareInPoints({ placement: layout.qr, width, height });
-			page.drawImage(qr, { x: left, y: bottom, width: side, height: side });
+			const { left, bottom, side } = await placeQrCode({
+				pdfDoc,
+				page,
+				text: verifyUrl,
+				placement: layout.qr,
+				minSide: DOCUMENT_ELEMENTS.certificate.qr.minSide,
+				corporate
+			});
 
 			// The caption above the code links where the code does, for those reading on screen.
 			const verifyText = m.certificateVerify();
@@ -659,7 +725,8 @@ async function generateCompletePostalRegistrationPDF({
 	guardianAgreement,
 	medialAgreement,
 	termsAndConditions,
-	layouts
+	layouts,
+	corporate
 }: {
 	isOfAge: boolean;
 	participant: ParticipantData;
@@ -671,58 +738,57 @@ async function generateCompletePostalRegistrationPDF({
 	termsAndConditions: string;
 	/** `conference.documentLayouts`: where the team placed the fields; the defaults otherwise. */
 	layouts: unknown;
+	/** `conference.qrCorporateDesign`: the codes in the corporate look, or plain. */
+	corporate: boolean;
 }): Promise<Uint8Array> {
-	// Determine which pages to include based on age
-	const pageGenerators: PDFPageGenerator[] = [];
+	const contractLayout = resolveDocumentLayout({ document: 'contract', stored: layouts });
+	const guardianLayout = resolveDocumentLayout({ document: 'guardianConsent', stored: layouts });
+	const mediaLayout = resolveDocumentLayout({ document: 'mediaConsent', stored: layouts });
 
-	// First PDF is always included
-	pageGenerators.push(
-		createContractGenerator({
-			pdfDoc: await loadTemplate(contract),
-			styles: defaultStyles,
-			recipientData: recipient,
-			participantData: participant,
-			layout: resolveDocumentLayout({ document: 'contract', stored: layouts })
-		})
-	);
-
+	// Each main document with the layout its pages' footers follow; the guardian consent only for
+	// a minor
+	const mainDocuments: { generator: PDFPageGenerator; footer: PageFooter }[] = [
+		{
+			generator: createContractGenerator({
+				pdfDoc: await loadTemplate(contract),
+				styles: defaultStyles,
+				recipientData: recipient,
+				participantData: participant,
+				layout: contractLayout
+			}),
+			footer: contractLayout
+		}
+	];
 	if (!isOfAge) {
-		// Second PDF depends on age
-		pageGenerators.push(
-			createConsentGenerator({
+		mainDocuments.push({
+			generator: createConsentGenerator({
 				pdfDoc: await loadTemplate(guardianAgreement),
 				styles: defaultStyles,
 				participantData: participant,
-				layout: resolveDocumentLayout({ document: 'guardianConsent', stored: layouts })
-			})
-		);
+				layout: guardianLayout
+			}),
+			footer: guardianLayout
+		});
 	}
-
-	// // Third page depends on age
-	pageGenerators.push(
-		createConsentGenerator({
+	mainDocuments.push({
+		generator: createConsentGenerator({
 			pdfDoc: await loadTemplate(medialAgreement),
 			styles: defaultStyles,
 			participantData: participant,
-			layout: resolveDocumentLayout({ document: 'mediaConsent', stored: layouts })
-		})
-	);
+			layout: mediaLayout
+		}),
+		footer: mediaLayout
+	});
 
-	const singlePDFs: PDFDocument[] = [];
-
-	// Generate all pages
-	for (const generator of pageGenerators) {
-		singlePDFs.push(await generator.generate());
-	}
-
-	// Create a new PDF document
 	const mergedPdfDoc = await PDFDocument.create();
-	for (const pdf of singlePDFs) {
+	const footers: PageFooter[] = [];
+	for (const { generator, footer } of mainDocuments) {
+		const pdf = await generator.generate();
 		await appendPages({ target: mergedPdfDoc, source: pdf });
+		for (let page = 0; page < pdf.getPageCount(); page++) {
+			footers.push({ code: footer.code, pageNumber: footer.pageNumber });
+		}
 	}
-
-	// Track main page count before adding appendix (terms and conditions)
-	const mainPageCount = mergedPdfDoc.getPageCount();
 
 	await appendPages({ target: mergedPdfDoc, source: await loadTemplate(termsAndConditions) });
 
@@ -732,7 +798,9 @@ async function generateCompletePostalRegistrationPDF({
 		participantId: participant.id,
 		participantCode: documentCode,
 		participantName: participant.name,
-		mainPageCount
+		footers,
+		appendixPageNumber: contractLayout.pageNumber,
+		corporate
 	});
 
 	// Merge all pages into a single PDF
@@ -751,6 +819,8 @@ interface PostalTemplateFiles {
 	termsAndConditionsFile?: TemplateFile;
 	/** Where the team placed the fields on them (`conference.documentLayouts`). */
 	documentLayouts?: unknown;
+	/** Whether the codes are in the corporate design (`conference.qrCorporateDesign`). */
+	qrCorporateDesign: boolean;
 }
 
 /** The template's URL, or a toast naming what is missing and an error when there is none. */
@@ -809,7 +879,8 @@ export async function downloadCompletePostalRegistrationPDF({
 			guardianAgreement: guardianContent,
 			medialAgreement: mediaContent,
 			termsAndConditions: termsContent,
-			layouts: templates.documentLayouts
+			layouts: templates.documentLayouts,
+			corporate: templates.qrCorporateDesign
 		});
 
 		downloadPDF({ bytes: pdfBytes, filename: fileName });
@@ -822,17 +893,20 @@ export async function downloadCompletePostalRegistrationPDF({
 async function generateCertificatePDF({
 	data,
 	certificate,
-	layout
+	layout,
+	corporate
 }: {
 	data: ParticipantCertificateData;
 	certificate: string;
 	layout: DocumentLayout<'certificate'>;
+	corporate: boolean;
 }) {
 	const pageGenerator = createCertificateGenerator({
 		pdfDoc: await loadTemplate(certificate),
 		styles: defaultStyles,
 		data,
-		layout
+		layout,
+		corporate
 	});
 
 	const pdf = await pageGenerator.generate();
@@ -846,20 +920,23 @@ export async function downloadCompleteCertificate({
 	data,
 	certificate,
 	fileName,
-	layout = defaultLayout('certificate')
+	layout = defaultLayout('certificate'),
+	corporate
 }: {
 	data: ParticipantCertificateData;
 	certificate: string | undefined;
 	fileName: string;
 	/** Where the conference placed the name, sessions and QR code; the default otherwise. */
 	layout?: DocumentLayout<'certificate'>;
+	/** Whether the code is in the corporate design (`conference.qrCorporateDesign`). */
+	corporate: boolean;
 }): Promise<void> {
 	try {
 		if (!certificate) {
 			toast.error(m.pdfMissingCertificate());
 			throw new Error('Missing required PDF content');
 		}
-		const pdfBytes = await generateCertificatePDF({ data, certificate, layout });
+		const pdfBytes = await generateCertificatePDF({ data, certificate, layout, corporate });
 
 		downloadPDF({ bytes: pdfBytes, filename: fileName });
 	} catch (error) {

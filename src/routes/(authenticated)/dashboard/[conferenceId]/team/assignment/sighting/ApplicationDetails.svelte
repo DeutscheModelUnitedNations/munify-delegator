@@ -11,6 +11,7 @@
 	import ApplicationText from './ApplicationText.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import PersonLine from './PersonLine.svelte';
+	import PreviousParticipations from './PreviousParticipations.svelte';
 	import { resolve } from '$app/paths';
 
 	/** Who applied in a first row (members, school, supervisors, wishes), what they wrote below. */
@@ -86,13 +87,14 @@
 			{#if application.schools.length > 0}
 				<ul class="flex flex-col gap-0.5">
 					{#each application.schools as school (school.id)}
-						<li>
+						<li class="flex items-center gap-2">
 							<a
 								class="link link-hover font-medium"
 								href={resolve(`dashboard/${conferenceId}/team/schools/${school.id}`)}
 							>
 								{school.name}
 							</a>
+							<PreviousParticipations count={school.conferenceParticipationsCount} />
 						</li>
 					{/each}
 				</ul>
@@ -109,7 +111,7 @@
 				</h4>
 				<ul class="flex flex-col gap-0.5">
 					{#each supervisors as supervisor (supervisor.id)}
-						<li>
+						<li class="flex items-center gap-2">
 							<button
 								type="button"
 								class="link link-hover cursor-pointer font-medium"
@@ -117,6 +119,7 @@
 							>
 								{supervisor.name}
 							</button>
+							<PreviousParticipations count={supervisor.participations} />
 						</li>
 					{/each}
 				</ul>

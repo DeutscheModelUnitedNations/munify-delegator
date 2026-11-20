@@ -46,7 +46,8 @@ export async function fetchPostalRegistrationSources({
 			guardianConsentFile: { url: true },
 			mediaConsentFile: { url: true },
 			termsAndConditionsFile: { url: true },
-			documentLayouts: true
+			documentLayouts: true,
+			qrCorporateDesign: true
 		}),
 		client.mutate.issueDocumentCode({ __args: { conferenceId, userId }, code: true })
 	]);

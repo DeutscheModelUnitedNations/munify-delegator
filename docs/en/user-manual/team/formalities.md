@@ -72,7 +72,7 @@ Once **Allow Postal Registration** is on, participants download their documents 
 - the **Media Usage Agreement**,
 - the terms and conditions, which are only appended and have no status of their own.
 
-In the bottom right corner of every page is a QR code that names the person and the conference and is signed by DELEGATOR. If someone lacks their documents, participant care downloads them on the user card in the **Formalities** tab with **Download documents for postal registration**.
+Every page carries a QR code that names the person and the conference and is signed by DELEGATOR. If someone lacks their documents, participant care downloads them on the user card in the **Formalities** tab with **Download documents for postal registration**.
 
 ### The statuses per document
 

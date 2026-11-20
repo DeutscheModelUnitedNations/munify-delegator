@@ -148,7 +148,8 @@ export async function loadSheetAssets(conferenceId: string) {
 			__args: { id: conferenceId },
 			title: true,
 			logoFile: { url: true },
-			emblemFile: { url: true }
+			emblemFile: { url: true },
+			qrCorporateDesign: true
 		}),
 		fetch(outfitRegularUrl).then((response) => response.arrayBuffer()),
 		fetch(outfitBoldUrl).then((response) => response.arrayBuffer())
@@ -157,7 +158,13 @@ export async function loadSheetAssets(conferenceId: string) {
 		fileToPng(conference.logoFile ?? conference.emblemFile),
 		fileToPng(conference.emblemFile)
 	]);
-	return { conferenceTitle: conference.title, logo, emblem, fonts: { regular, bold } };
+	return {
+		conferenceTitle: conference.title,
+		logo,
+		emblem,
+		corporate: conference.qrCorporateDesign,
+		fonts: { regular, bold }
+	};
 }
 
 /** A stored image as PNG; `null` when there is none or it cannot be read. */

@@ -228,7 +228,9 @@ width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 `#lib/components/scanner/BarcodeScanner.svelte`: camera scanning with device switching and manual
 input fallback. Every code read or typed is checked against `acceptance` (`scanAcceptance.ts`,
 signatures included) before it reaches `scannedCode`; refusals are toasted. `QuickScan` (command
-palette camera) takes the same `acceptance`.
+palette camera) takes the same `acceptance`. Both open the camera through `scanner/camera.ts`
+(full HD, continuous focus, a zoom slider in `ScanViewfinder` where the camera zooms): the 640×480
+browsers give unasked cannot read a signed code printed on paper.
 
 - `scannedCode`: Bindable `string | null`: a bare signed code, or the user id as read/picked; `userIdOfCode` gives the user
 - `acceptance`: `ScanAcceptance`: `conferenceId`, signed code `kinds` (`live`, `print`), `printedNametags` (unsigned 1D barcodes count)
@@ -357,13 +359,17 @@ after saving. Typical binding into URL state:
   only, table rows); asks for inboxes on click.
 - **`FilterChips`** (`#lib/components/FilterChips.svelte`, shared): "all" first, pressing the
   pressed chip lifts the filter; `options` (with `key`), `selected`, `onSelect`, `label`, `chip`
-  snippet. `CommitteeChips`, the team inbox chips and the announcement state chips build on it.
+  snippet. `CommitteeChips` and the announcement state chips build on it.
 - **Team messages**: one team-menu entry (`MessagesNavButton`, dot while unread) plus "Reports" for
   participant care (dot while one waits, `?view=reports`). System admins get participant care's
   inbox and both of every committee (`inboxesOf`), never the trusted persons'. Page and menu read
   `fetchTeamInboxes` + `teamInboxesOf`.
   `team/messages` is always the messenger (`InboxChats`, `fill`): every inbox's chats in one list,
-  inbox chips (`FilterChips`, unread per chip, only with several inboxes) set `?inbox=`, a red
+  `InboxFilter` (only with several inboxes) narrows it in two rows: a segmented row of inbox kinds
+  (`inboxGroups`: care, trusted persons, chairs, consultants; only with several kinds), then for a
+  kind of several inboxes chips per committee / shared vs own; unread per segment and chip.
+  `?inbox=` holds an inbox key or a kind's `group:<KIND>` (`inboxFilter`). Each chat names its
+  inbox (badge) unless one inbox is chosen, and the open chat's header too; a red
   banner links waiting reports, the bell in the list header links the notification settings.
 - **Archive**: `ChatArchiveButton` (thread header, team side) toggles it; archived chats are hidden
   until `ArchiveToggle` in `InboxChats` (`?archive=1`) lists them after the open ones, marked
@@ -459,6 +465,10 @@ input), `columns/`, `grouping/` (`GroupLevel` fetches a level's groups, `GroupRo
 
 ### Other display components
 
+- **`QrCode`**: `data`, `conferenceId`, optional `emblem`, `label`. Every QR code goes through it
+  (on screen), `#lib/api/downloadQrPng` (PNG) or `#lib/api/pdfQr` (`drawQr`, vectors in PDFs), so
+  all follow the conference's `qrCorporateDesign` (`qrStyle`). Printed codes are sized with
+  `minQrSide` (`#lib/helpers/qrSize`: 0.45 mm modules) so phones read them.
 - **`CollapsibleCard`**: `icon`, `title`, `bind:expanded`, optional `badge` snippet at the header's end.
 - **`LoadState`**: `<LoadState {loading} {error}>…</LoadState>`: spinner, error, or children; for
   state loaded by hand rather than an awaited `$derived`.

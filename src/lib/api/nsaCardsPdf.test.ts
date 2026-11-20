@@ -25,6 +25,7 @@ describe('buildNsaCardsPdf', () => {
 			conferenceTitle: 'MUN-SH 2027',
 			logo: null,
 			cardLabel: (number) => `Card ${number}`,
+			corporate: true,
 			fonts: { regular: await font(400), bold: await font(700) }
 		});
 		expect((await PDFDocument.load(bytes)).getPageCount()).toBe(2);

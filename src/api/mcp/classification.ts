@@ -453,6 +453,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'postalCountry',
 			'postalStreet',
 			'postalZip',
+			'qrCorporateDesign',
 			'registrationDeadlineGracePeriodMinutes',
 			'showCalendar',
 			'startConference',
@@ -722,7 +723,16 @@ const FIELDS: Record<string, TypeClassification> = {
 
 	// --- Schools: the institution, never its contact person ---------------------------------------
 	School: {
-		visible: [...ROW, 'name', 'city', 'region', 'country', 'isForeignSchool', 'website'],
+		visible: [
+			...ROW,
+			'name',
+			'city',
+			'region',
+			'country',
+			'isForeignSchool',
+			'website',
+			'conferenceParticipationsCount'
+		],
 		redacted: ['street', 'apartment', 'zip', 'contactName', 'contactEmail', 'contactPhone', 'notes']
 	},
 	ConferenceSchools: {

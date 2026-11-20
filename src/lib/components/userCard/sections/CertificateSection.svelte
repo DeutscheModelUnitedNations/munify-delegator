@@ -22,6 +22,7 @@
 					__args: { id: conferenceId },
 					certificateFile: { url: true },
 					documentLayouts: true,
+					qrCorporateDesign: true,
 					title: true
 				}),
 				client.query.getCertificate({
@@ -44,7 +45,8 @@
 				layout: resolveDocumentLayout({
 					document: 'certificate',
 					stored: conferenceData.documentLayouts
-				})
+				}),
+				corporate: conferenceData.qrCorporateDesign
 			});
 		} catch (error) {
 			logger.error('Error generating PDF', error);

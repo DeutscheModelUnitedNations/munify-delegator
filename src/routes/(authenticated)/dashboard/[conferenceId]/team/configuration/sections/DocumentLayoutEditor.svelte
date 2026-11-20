@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
+	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -9,8 +10,12 @@
 	import {
 		defaultLayout,
 		dragPlacement,
+		elementsByShape,
 		elementsOf,
+		coversFixedArea,
+		minSquareSize,
 		resizeText,
+		withMinimumSizes,
 		resolveDocumentLayout,
 		type BoxPlacement,
 		type LayoutDocument,
@@ -31,18 +36,22 @@
 	 * Places a document's generated parts on the conference's own template: its first page is drawn,
 	 * and every part is a box on it to drag - boxes and codes also resize from their bottom right
 	 * corner, texts change size below. The same editor serves the certificate and the postal
-	 * documents; what each has comes from `DOCUMENT_ELEMENTS`.
+	 * documents; what each has comes from `DOCUMENT_ELEMENTS`. A certificate's session list shows the
+	 * conference's sessions; while no session is kept on the certificates, it is left off and a hint
+	 * links where they are chosen (its placement stays stored).
 	 */
 	interface Props {
 		conferenceId: string;
 		document: LayoutDocument;
 		title: string;
+		/** The sessions the certificates list (`certificateSampleSessions`). */
+		certificateSessions: string[];
 		/** Prints a sample of the document as laid out here, before it is saved. */
 		testPrint: (layout: Layout) => Promise<void>;
 		onclose: () => void;
 	}
 
-	let { conferenceId, document, title, testPrint, onclose }: Props = $props();
+	let { conferenceId, document, title, certificateSessions, testPrint, onclose }: Props = $props();
 
 	// Seeded once: re-reading the conference while someone drags would throw their placement away.
 	const stored = await client.query.conference({
@@ -56,6 +65,11 @@
 	const kind = untrack(() => document);
 	const templateUrl = stored[templateField[kind]]?.url;
 	const elements = elementsOf(kind);
+	/** A certificate without sessions to list has no list to place. */
+	const withoutSessions = $derived(kind === 'certificate' && certificateSessions.length === 0);
+	const shown = $derived(
+		withoutSessions ? elements.filter((element) => element.id !== 'sessions') : elements
+	);
 	const isLayoutElement = (id: string): id is LayoutElement => Object.hasOwn(elementLabel, id);
 
 	let layout = $state<Layout>(
@@ -70,6 +84,13 @@
 	let rendering = $state(false);
 
 	const aspect = $derived(page ? page.width / page.height : 595 / 842);
+	const pageWidth = $derived(page?.width ?? 595);
+	/** The layout as it will print: codes at least their minimum size on this template. */
+	const placed = $derived(withMinimumSizes({ document: kind, layout, pageWidth }));
+	/** The smallest side of the document's code, in millimetres, for the hint. */
+	const codeMinimum = $derived(
+		elements.flatMap(({ spec }) => (spec.shape === 'square' ? [spec.minSide] : [])).at(0)
+	);
 	/** Pixels per point, so texts show at the size they will print. */
 	const scale = $derived(page ? frameWidth / page.width : 1);
 
@@ -95,6 +116,8 @@
 		x: number;
 		y: number;
 		start: Placement;
+		/** A code's smallest size, as a fraction of the page's width. */
+		minSize?: number;
 	} | null = null;
 
 	function begin({
@@ -106,13 +129,15 @@
 		id: string;
 		resize?: boolean;
 	}) {
-		const shape = elements.find((element) => element.id === id)?.spec.shape;
-		if (!shape) return;
+		const spec = elements.find((element) => element.id === id)?.spec;
+		if (!spec) return;
 		event.preventDefault();
 		event.stopPropagation();
 		frame?.setPointerCapture(event.pointerId);
-		const start = $state.snapshot(layout[id]);
-		drag = { id, shape, resize, x: event.clientX, y: event.clientY, start };
+		const start = $state.snapshot(placed[id]);
+		const minSize =
+			spec.shape === 'square' ? minSquareSize({ minSide: spec.minSide, pageWidth }) : undefined;
+		drag = { id, shape: spec.shape, resize, x: event.clientX, y: event.clientY, start, minSize };
 	}
 
 	/** Moving and resizing, for the elements that can be resized. */
@@ -128,14 +153,19 @@
 		const rect = frame.getBoundingClientRect();
 		const dx = (event.clientX - drag.x) / rect.width;
 		const dy = (event.clientY - drag.y) / rect.height;
-		layout[drag.id] = dragPlacement({
+		const next = dragPlacement({
 			shape: drag.shape,
 			start: drag.start,
 			resize: drag.resize,
 			dx,
 			dy,
-			aspect
+			aspect,
+			minSize: drag.minSize
 		});
+		// nothing goes over the page number: the element stops where it last fitted
+		const { id, shape } = drag;
+		if (coversFixedArea({ document: kind, id, shape, placement: next, aspect })) return;
+		layout[id] = next;
 	}
 
 	function end(event: PointerEvent) {
@@ -152,7 +182,7 @@
 	async function print() {
 		printing = true;
 		try {
-			await testPrint($state.snapshot(layout));
+			await testPrint($state.snapshot(placed));
 		} catch (error) {
 			logger.error('Test print failed', error);
 		} finally {
@@ -165,7 +195,7 @@
 		// next editor read them.
 		const promise = Promise.resolve(
 			client.mutate.setDocumentLayout({
-				__args: { conferenceId, document: kind, layout: $state.snapshot(layout) },
+				__args: { conferenceId, document: kind, layout: $state.snapshot(placed) },
 				documentLayouts: true
 			})
 		);
@@ -176,34 +206,41 @@
 	}
 
 	const label = (id: string) => (isLayoutElement(id) ? elementLabel[id]() : id);
-	const sample = (id: string) => (isLayoutElement(id) ? elementSample[id]() : []);
+	const sample = (id: string) =>
+		id === 'sessions' ? certificateSessions : isLayoutElement(id) ? elementSample[id]() : [];
 
 	// The elements by shape, each with its current placement in that shape.
-	const texts = $derived(
-		elements.flatMap(({ id, spec }) => {
-			const placement = layout[id];
-			return spec.shape === 'text' && !('width' in placement)
-				? [{ id, align: spec.align, placement }]
-				: [];
-		})
-	);
-	const boxes = $derived(
-		elements.flatMap(({ id, spec }) => {
-			const placement = layout[id];
-			return spec.shape === 'box' && 'width' in placement ? [{ id, placement }] : [];
-		})
-	);
-	const squares = $derived(
-		elements.flatMap(({ id, spec }) => {
-			const placement = layout[id];
-			return spec.shape === 'square' && !('width' in placement) ? [{ id, placement }] : [];
-		})
-	);
+	const byShape = $derived(elementsByShape({ elements: shown, layout: placed }));
+	const texts = $derived(byShape.texts);
+	const boxes = $derived(byShape.boxes);
+	const squares = $derived(byShape.squares);
 </script>
 
 <Modal bind:open {title} fullWidth {onclose}>
 	<div class="flex w-6xl max-w-full flex-col gap-4">
-		<p class="text-base-content/70 text-sm">{m.certificateLayoutHint()}</p>
+		<p class="text-base-content/70 text-sm">
+			{withoutSessions ? m.certificateLayoutHintWithoutSessions() : m.certificateLayoutHint()}
+		</p>
+		{#if codeMinimum !== undefined}
+			<p class="text-base-content/70 text-sm">
+				{m.documentLayoutCodeMinimum({ size: codeMinimum })}
+			</p>
+		{/if}
+		{#if withoutSessions}
+			<div role="note" class="alert alert-info alert-soft text-sm">
+				<i aria-hidden="true" class="ph-duotone ph-list-checks"></i>
+				<span>{m.certificateLayoutNoSessions()}</span>
+				<a
+					class="btn btn-sm btn-ghost"
+					href={resolve('/(authenticated)/dashboard/[conferenceId]/team/attendance', {
+						conferenceId
+					})}
+				>
+					{m.certificateLayoutNoSessionsLink()}
+					<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
+				</a>
+			</div>
+		{/if}
 
 		<!-- The page and the parts placed on it; positions are fractions of the page. -->
 		<div
@@ -234,20 +271,22 @@
 					onmove={(event) => begin({ event, id })}
 				/>
 			{/each}
-			{#each boxes as { id, placement } (id)}
+			{#each boxes as { id, placement, list, fixed } (id)}
 				<LayoutBoxElement
 					label={label(id)}
 					{placement}
 					lines={sample(id)}
+					{list}
 					{scale}
-					{...dragHandlers(id)}
+					{...fixed ? {} : dragHandlers(id)}
 				/>
 			{/each}
-			{#each squares as { id, placement } (id)}
+			{#each squares as { id, placement, caption } (id)}
 				<LayoutSquareElement
 					label={label(id)}
 					{placement}
 					captions={sample(id)}
+					{caption}
 					{scale}
 					{...dragHandlers(id)}
 				/>

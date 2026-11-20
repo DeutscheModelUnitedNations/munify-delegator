@@ -1,5 +1,5 @@
 import type { PDFDocument, PDFFont, PDFPage } from 'pdf-lib';
-import { drawBrandedQr } from './nametagQrPdf';
+import { drawQr } from './pdfQr';
 import {
 	createNametagPdf,
 	encodable,
@@ -33,6 +33,8 @@ export interface NsaCardsPdfOptions {
 	logo: Uint8Array | null;
 	/** "Karte 2", in the reader's language. */
 	cardLabel: (cardNumber: number) => string;
+	/** The conference's `qrCorporateDesign`: the corporate look, or plain codes. */
+	corporate: boolean;
 	fonts: NametagFonts;
 }
 
@@ -225,12 +227,12 @@ async function drawCard({
 
 	const footer = bottom + PADDING;
 	const side = Math.min(canvas.width, y - 14 - footer - 22);
-	await drawBrandedQr({
+	await drawQr({
 		pdf,
 		page,
 		text: card.code,
 		box: { x: left + (CARD_WIDTH - side) / 2, top: y - 14, side },
-		emblemBytes: null
+		corporate: options.corporate
 	});
 	drawFooter({ canvas, card, options, footer });
 }

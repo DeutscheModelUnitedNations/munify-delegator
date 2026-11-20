@@ -94,7 +94,7 @@ export function addRegistrationPersonas(cs: ConferenceSeed) {
 				})
 			}
 		});
-		addSingle({
+		const appliedSingle = addSingle({
 			cs,
 			plan: {
 				id: 'single-applied',
@@ -114,6 +114,20 @@ export function addRegistrationPersonas(cs: ConferenceSeed) {
 				memberIds: [...(ready?.memberIds.values() ?? []), ...applied.memberIds.values()]
 			}
 		});
+		if (cs.plan.key === 'closed') {
+			// A returning supervisor (the later conferences seat the people they supervise there),
+			// so the sighting shows a supervisor's earlier conferences.
+			addSupervisor({
+				cs,
+				plan: {
+					id: 'supervisor-returning',
+					userId: 'dev-supervisor',
+					attends: true,
+					memberIds: [...applied.memberIds.values()],
+					singleIds: [appliedSingle]
+				}
+			});
+		}
 	}
 
 	if (cs.plan.key === 'grace' || cs.plan.key === 'closed') {

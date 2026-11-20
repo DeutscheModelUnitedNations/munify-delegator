@@ -7,7 +7,18 @@ import {
 	userPubsub
 } from '#api/pubsub';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
-import { and, count, eq, inArray, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
+import {
+	and,
+	count,
+	eq,
+	exists,
+	inArray,
+	isNotNull,
+	notExists,
+	or,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 import { userUpdateSchema } from '#lib/schemata/userForm';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
@@ -15,16 +26,24 @@ import { z } from 'zod';
 
 /**
  * How many conferences each of `userIds` actually took part in - registrations that never got a
- * seat do not count. Two queries for all of them; a user without any seat counts 0.
+ * seat do not count, and a supervisor counts where one of the people they supervise got one.
+ * Three queries for all of them; a user without any counts 0.
  */
 export async function countConferenceParticipations(
 	userIds: readonly string[]
 ): Promise<Map<string, number>> {
 	const counts = new Map<string, number>(userIds.map((id) => [id, 0]));
 	if (userIds.length === 0) return counts;
-	const { delegation, delegationMember, singleParticipant, conferenceParticipant } = schema;
+	const {
+		delegation,
+		delegationMember,
+		singleParticipant,
+		conferenceParticipant,
+		conferenceSupervisor,
+		supervision
+	} = schema;
 	const ids = [...counts.keys()];
-	const [memberships, participations] = await Promise.all([
+	const [memberships, participations, supervisions] = await Promise.all([
 		db
 			.select({ userId: conferenceParticipant.userId, value: count() })
 			.from(delegationMember)
@@ -45,10 +64,56 @@ export async function countConferenceParticipations(
 			.where(
 				and(inArray(conferenceParticipant.userId, ids), isNotNull(singleParticipant.assignedRoleId))
 			)
+			.groupBy(conferenceParticipant.userId),
+		db
+			.select({ userId: conferenceParticipant.userId, value: count() })
+			.from(conferenceSupervisor)
+			.innerJoin(
+				conferenceParticipant,
+				eq(conferenceParticipant.id, conferenceSupervisor.conferenceParticipantId)
+			)
+			.where(
+				and(
+					inArray(conferenceParticipant.userId, ids),
+					or(
+						exists(
+							db
+								.select({ id: supervision.id })
+								.from(supervision)
+								.innerJoin(
+									delegationMember,
+									eq(delegationMember.conferenceParticipantId, supervision.b)
+								)
+								.innerJoin(delegation, eq(delegation.id, delegationMember.delegationId))
+								.where(
+									and(
+										eq(supervision.a, conferenceSupervisor.id),
+										isNotNull(delegation.assignedRoleId)
+									)
+								)
+						),
+						exists(
+							db
+								.select({ id: supervision.id })
+								.from(supervision)
+								.innerJoin(
+									singleParticipant,
+									eq(singleParticipant.conferenceParticipantId, supervision.b)
+								)
+								.where(
+									and(
+										eq(supervision.a, conferenceSupervisor.id),
+										isNotNull(singleParticipant.assignedRoleId)
+									)
+								)
+						)
+					)
+				)
+			)
 			.groupBy(conferenceParticipant.userId)
 	]);
 
-	for (const { userId, value } of [...memberships, ...participations]) {
+	for (const { userId, value } of [...memberships, ...participations, ...supervisions]) {
 		counts.set(userId, (counts.get(userId) ?? 0) + value);
 	}
 	return counts;

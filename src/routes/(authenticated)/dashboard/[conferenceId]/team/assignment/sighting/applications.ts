@@ -19,7 +19,13 @@ const person = {
 
 const supervisors = {
 	id: true,
-	user: { id: true, givenName: true, familyName: true, email: true }
+	user: {
+		id: true,
+		givenName: true,
+		familyName: true,
+		email: true,
+		conferenceParticipationsCount: true
+	}
 } as const;
 
 /** What a card shows of a delegation. */
@@ -33,7 +39,7 @@ const delegationCard = {
 		user: person,
 		supervisors,
 		// each person's own school: the delegation keeps none
-		school: { id: true, name: true, isForeignSchool: true }
+		school: { id: true, name: true, isForeignSchool: true, conferenceParticipationsCount: true }
 	},
 	appliedForRoles: {
 		id: true,
@@ -50,7 +56,7 @@ const delegationCard = {
 /** What a card shows of a single participant. */
 const singleCard = {
 	id: true,
-	school: { id: true, name: true, isForeignSchool: true },
+	school: { id: true, name: true, isForeignSchool: true, conferenceParticipationsCount: true },
 	motivation: true,
 	experience: true,
 	user: person,

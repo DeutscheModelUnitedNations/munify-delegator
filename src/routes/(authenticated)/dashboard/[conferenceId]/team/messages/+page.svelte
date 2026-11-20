@@ -11,6 +11,7 @@
 	import SettledReports from './SettledReports.svelte';
 	import { fetchTeamInboxes, teamInboxesOf } from './fetchTeamInboxes';
 	import InboxChats from './InboxChats.svelte';
+	import { inboxFilter, inboxGroups } from './teamInboxes';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -80,7 +81,7 @@
 	const selectedId = $derived(params.chat ?? null);
 	// an inbox only the URL still names (a function taken away) narrows nothing
 	const selectedInbox = $derived(
-		inboxes.some((inbox) => inbox.key === params.inbox) ? (params.inbox ?? null) : null
+		inboxFilter({ groups: inboxGroups(inboxes), selected: params.inbox })?.key ?? null
 	);
 	const paperId = $derived(params.paper ?? null);
 	// the team starts a chat with a seated participant once the roles are released, whatever the

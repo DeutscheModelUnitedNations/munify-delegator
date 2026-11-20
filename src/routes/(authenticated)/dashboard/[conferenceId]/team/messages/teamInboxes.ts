@@ -132,3 +132,109 @@ export function listedChats<T extends { archived: boolean }>({
 	const archived = chats.filter((chat) => chat.archived);
 	return { chats: showArchive ? [...open, ...archived] : open, archived: archived.length };
 }
+
+/**
+ * A kind of inbox as the filter's first row offers it: participant care's one inbox, or the
+ * chairs', consultants' or trusted persons' several, which a second row tells apart. A group of one
+ * inbox is keyed by that inbox; a group of several by its kind, narrowing to all of them.
+ */
+export interface InboxGroup {
+	key: string;
+	kind: ChatInbox;
+	inboxes: TeamInbox[];
+}
+
+/** The inbox groups, in the order their first inbox comes in. */
+export function inboxGroups(inboxes: readonly TeamInbox[]): InboxGroup[] {
+	const byKind = new Map<ChatInbox, TeamInbox[]>();
+	for (const inbox of inboxes) byKind.set(inbox.inbox, [...(byKind.get(inbox.inbox) ?? []), inbox]);
+	return [...byKind].map(([kind, members]) => {
+		const [only] = members;
+		return {
+			key: members.length === 1 && only ? only.key : `group:${kind}`,
+			kind,
+			inboxes: members
+		};
+	});
+}
+
+/**
+ * What a filter key narrows the list to: its group, the one inbox if it names one, and the keys of
+ * the inboxes whose chats stay. A key naming nothing the caller answers (a function taken away)
+ * narrows nothing.
+ */
+export function inboxFilter({
+	groups,
+	selected
+}: {
+	groups: readonly InboxGroup[];
+	selected: string | null | undefined;
+}): { key: string; group: InboxGroup; inbox: TeamInbox | null; keys: Set<string> } | null {
+	for (const group of groups) {
+		const inbox =
+			group.inboxes.find((inbox) => inbox.key === selected) ??
+			(group.key === selected && group.inboxes.length === 1 ? group.inboxes[0] : undefined);
+		if (inbox) return { key: inbox.key, group, inbox, keys: new Set([inbox.key]) };
+		if (group.key === selected) {
+			const keys = new Set(group.inboxes.map((inbox) => inbox.key));
+			return { key: group.key, group, inbox: null, keys };
+		}
+	}
+	return null;
+}
+
+/**
+ * The inbox filter's two rows: the kinds, when there are several, and the inboxes of the kind
+ * chosen (or of the only one), when it has several. Each row starts with its "all". Every button
+ * says whether it is pressed, the filter key pressing it selects (pressed again, it lets go) and
+ * how much is unread behind it.
+ */
+export function inboxFilterRows({
+	groups,
+	selected,
+	unreadOf
+}: {
+	groups: readonly InboxGroup[];
+	selected: string | null;
+	unreadOf: ReadonlyMap<string, number>;
+}) {
+	const filter = inboxFilter({ groups, selected });
+	const several = groups.length > 1;
+	const unreadIn = (inboxes: readonly TeamInbox[]) =>
+		inboxes.reduce((sum, inbox) => sum + (unreadOf.get(inbox.key) ?? 0), 0);
+	const kinds = several
+		? {
+				all: { pressed: filter === null, target: null, unread: 0 },
+				groups: groups.map((group) => {
+					const pressed = filter?.group.key === group.key;
+					return {
+						group,
+						pressed,
+						target: pressed ? null : group.key,
+						unread: unreadIn(group.inboxes)
+					};
+				})
+			}
+		: null;
+	// the inboxes of the kind chosen, or of the only kind there is
+	const group = several ? filter?.group : groups[0];
+	// with one kind only, "all" in the second row is the whole list
+	const allMembers = several ? (group?.key ?? null) : null;
+	const members =
+		group && group.inboxes.length > 1
+			? {
+					group,
+					all: { pressed: selected === allMembers, target: allMembers, unread: 0 },
+					inboxes: group.inboxes.map((inbox) => {
+						const pressed = filter?.inbox?.key === inbox.key;
+						return {
+							inbox,
+							pressed,
+							target: pressed ? allMembers : inbox.key,
+							unread: unreadOf.get(inbox.key) ?? 0
+						};
+					})
+				}
+			: null;
+	return { kinds, members };
+}

@@ -124,5 +124,11 @@ export const conference = snakeCase.table('conference', {
 	 * Whether the people of the conference can write each other inside the app (`chat`). Off, the
 	 * chats there are stay readable and nothing new is written.
 	 */
-	messagingEnabled: boolean().default(false).notNull()
+	messagingEnabled: boolean().default(false).notNull(),
+	/**
+	 * Whether every QR code the app shows or prints for the conference is in the corporate design
+	 * (round modules in DMUN's blue, rounded corner markers, the emblem where there is room) or a
+	 * plain black one (`#lib/helpers/qrStyle`).
+	 */
+	qrCorporateDesign: boolean().default(true).notNull()
 });

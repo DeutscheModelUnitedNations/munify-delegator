@@ -52,7 +52,7 @@ export const UserRef = object({
 	adjust: (t) => ({
 		conferenceParticipationsCount: t.field({
 			description:
-				'How many conferences this person actually took part in - registrations that never got a seat do not count, which is what makes this a useful "is this a returning participant" signal in the admin UI. Null unless the caller is the person or has them in their care (participant care and project management of a conference they take part or wait in, system admins).',
+				'How many conferences this person actually took part in - registrations that never got a seat do not count (a supervisor counts where someone they supervise got one), which is what makes this a useful "is this a returning participant" signal in the admin UI. Null unless the caller is the person or has them in their care (participant care and project management of a conference they take part or wait in, system admins).',
 			type: 'Int',
 			nullable: true,
 			resolve: async (user, _args, ctx) =>

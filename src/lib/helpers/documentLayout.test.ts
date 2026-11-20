@@ -3,15 +3,21 @@ import {
 	DOCUMENT_ELEMENTS,
 	LAYOUT_DOCUMENTS,
 	boxInPoints,
+	coversFixedArea,
 	dragPlacement,
 	defaultLayout,
 	documentLayoutSchema,
+	elementsByShape,
+	elementsOf,
+	minSquareSize,
 	movePlacement,
+	POINTS_PER_MM,
 	resizePlacement,
 	resizeText,
 	resolveDocumentLayout,
 	squareInPoints,
-	textInPoints
+	textInPoints,
+	withMinimumSizes
 } from './documentLayout';
 
 const LANDSCAPE = 842 / 595;
@@ -31,7 +37,7 @@ describe('the document layouts', () => {
 			size: 18
 		});
 		const qr = squareInPoints({ placement: certificate.qr, width: 842, height: 595 });
-		expect(qr.side).toBeCloseTo(84);
+		expect(qr.side / POINTS_PER_MM).toBeCloseTo(36);
 		expect(qr.left + qr.side).toBeCloseTo(842 - 48);
 		expect(qr.bottom).toBeCloseTo(48);
 		const contract = defaultLayout('contract');
@@ -111,5 +117,146 @@ describe('the document layouts', () => {
 		expect(boxInPoints({ placement: sessions, width: 842, height: 595 }).top).toBeGreaterThan(
 			boxInPoints({ placement: sessions, width: 842, height: 595 }).bottom
 		);
+	});
+
+	test('every application document has the footer: the page number fixed bottom right, the code above', () => {
+		for (const document of ['contract', 'guardianConsent', 'mediaConsent'] as const) {
+			const { code, pageNumber } = defaultLayout(document);
+			const area = boxInPoints({ placement: pageNumber, width: 595, height: 842 });
+			expect(area.left + area.width).toBeCloseTo(595 - 40);
+			expect(area.bottom).toBeCloseTo(20);
+			const square = squareInPoints({ placement: code, width: 595, height: 842 });
+			expect(square.left + square.side).toBeCloseTo(595 - 40);
+			expect(square.bottom).toBeGreaterThan(area.top);
+			expect(square.side / POINTS_PER_MM).toBeGreaterThanOrEqual(
+				DOCUMENT_ELEMENTS[document].code.minSide
+			);
+		}
+	});
+
+	test('the page number stays where it is, whatever was stored, and is not part of what is saved', () => {
+		const moved = { x: 0.1, y: 0.1, width: 0.2, height: 0.05 };
+		const layout = resolveDocumentLayout({
+			document: 'contract',
+			stored: { contract: { pageNumber: moved } }
+		});
+		expect(layout.pageNumber).toEqual(defaultLayout('contract').pageNumber);
+		const parsed = documentLayoutSchema('contract').safeParse(defaultLayout('contract'));
+		expect(parsed.success && 'pageNumber' in parsed.data).toBe(false);
+	});
+
+	test('nothing but a text may cover the page number', () => {
+		const aspect = 595 / 842;
+		const { pageNumber, code, name } = defaultLayout('contract');
+		const onIt = { ...code, y: pageNumber.y };
+		expect(
+			coversFixedArea({
+				document: 'contract',
+				id: 'code',
+				shape: 'square',
+				placement: onIt,
+				aspect
+			})
+		).toBe(true);
+		expect(
+			coversFixedArea({
+				document: 'contract',
+				id: 'code',
+				shape: 'square',
+				placement: code,
+				aspect
+			})
+		).toBe(false);
+		expect(
+			coversFixedArea({
+				document: 'contract',
+				id: 'name',
+				shape: 'text',
+				placement: { ...name, x: pageNumber.x, y: pageNumber.y },
+				aspect
+			})
+		).toBe(false);
+		// the certificate has no fixed area
+		const { qr } = defaultLayout('certificate');
+		expect(
+			coversFixedArea({ document: 'certificate', id: 'qr', shape: 'square', placement: qr, aspect })
+		).toBe(false);
+	});
+
+	test('every code is at least its minimum by default', () => {
+		for (const document of LAYOUT_DOCUMENTS) {
+			const layout: Record<string, { size: number }> = defaultLayout(document);
+			for (const [id, spec] of Object.entries(DOCUMENT_ELEMENTS[document])) {
+				if (spec.shape !== 'square') continue;
+				const pageWidth = document === 'certificate' ? 842 : 595;
+				expect(layout[id].size).toBeGreaterThanOrEqual(
+					minSquareSize({ minSide: spec.minSide, pageWidth }) - 1e-9
+				);
+			}
+		}
+	});
+
+	test('a code is never resized below its minimum, nor shown or saved smaller', () => {
+		const { code } = defaultLayout('contract');
+		const minSize = minSquareSize({
+			minSide: DOCUMENT_ELEMENTS.contract.code.minSide,
+			pageWidth: 595
+		});
+		const shrunk = resizePlacement({
+			shape: 'square',
+			start: code,
+			dx: -1,
+			dy: -1,
+			aspect: 595 / 842,
+			minSize
+		});
+		expect(shrunk.size).toBeCloseTo(minSize);
+
+		const layout = { ...defaultLayout('contract'), code: { ...code, size: 0.01 } };
+		const grown = withMinimumSizes({ document: 'contract', layout, pageWidth: 595 });
+		expect(grown.code).toEqual({ ...code, size: minSize });
+		expect(grown.name).toBe(layout.name);
+		const fine = defaultLayout('contract');
+		expect(withMinimumSizes({ document: 'contract', layout: fine, pageWidth: 595 })).toBe(fine);
+	});
+
+	test('a code on a page too small for its minimum takes the whole width', () => {
+		expect(minSquareSize({ minSide: 25, pageWidth: 50 })).toBe(1);
+	});
+});
+
+describe('elementsByShape', () => {
+	test('splits a certificate into its name, its list of sessions and its code', () => {
+		const { texts, boxes, squares } = elementsByShape({
+			elements: elementsOf('certificate'),
+			layout: defaultLayout('certificate')
+		});
+		expect(texts.map(({ id, align }) => [id, align])).toEqual([['name', 'center']]);
+		expect(boxes.map(({ id, list, fixed }) => [id, list, fixed])).toEqual([
+			['sessions', true, false]
+		]);
+		expect(squares.map(({ id }) => id)).toEqual(['qr']);
+	});
+
+	test('marks the page number fixed and captions the code beside it', () => {
+		const { boxes, squares } = elementsByShape({
+			elements: elementsOf('contract'),
+			layout: defaultLayout('contract')
+		});
+		expect(boxes).toContainEqual(
+			expect.objectContaining({ id: 'pageNumber', fixed: true, list: false })
+		);
+		expect(squares).toContainEqual(expect.objectContaining({ id: 'code', caption: 'beside' }));
+	});
+
+	test('leaves out an element without a placement, or with one of another shape', () => {
+		const layout = defaultLayout('certificate');
+		const { texts, boxes, squares } = elementsByShape({
+			elements: elementsOf('certificate'),
+			layout: { name: layout.sessions, qr: layout.qr }
+		});
+		expect(texts).toEqual([]);
+		expect(boxes).toEqual([]);
+		expect(squares.map(({ id }) => id)).toEqual(['qr']);
 	});
 });

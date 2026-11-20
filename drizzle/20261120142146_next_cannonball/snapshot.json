@@ -1,0 +1,48 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "43eee5be-47de-43a3-95fb-f26a67e6a8bb",
+  "prevIds": [
+    "d20daae5-a331-45b3-b01d-dbc18bbbd62f",
+    "64cf462d-2da4-46cd-8fd6-6252c760098b"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "qr_corporate_design"
+      ],
+      "writes": [
+        "s|col|public.conference.qr_corporate_design",
+        "n|col|public.conference.qr_corporate_design",
+        "e|col|public.conference.qr_corporate_design"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "qr_corporate_design",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "true",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}
