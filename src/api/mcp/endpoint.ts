@@ -8,6 +8,7 @@ import { error, type RequestEvent } from '@sveltejs/kit';
 import { runWithLocale } from '#api/services/requestLocale';
 import { mcpPrincipalSchema, mcpResourceUrl, verifyMcpAccessToken } from './auth';
 import { createMcpServer } from './server';
+import { mcpSkills } from './skills';
 
 /**
  * `/mcp`: the MCP server's HTTP endpoint (Streamable HTTP, stateless). Each request carries the
@@ -60,8 +61,9 @@ export async function serveMcp(event: RequestEvent) {
 	}
 	const principal = mcpPrincipalSchema.parse(authInfo.extra);
 
+	const skills = await mcpSkills(resource.origin);
 	const handler = createMcpHandler(
-		() => createMcpServer({ event, principal, clientId: authInfo.clientId }),
+		() => createMcpServer({ event, principal, clientId: authInfo.clientId, skills }),
 		{ responseMode: 'json' }
 	);
 	// The API words its errors for whoever asks; an assistant reads English best.

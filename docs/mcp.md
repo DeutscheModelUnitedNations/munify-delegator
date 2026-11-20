@@ -34,6 +34,7 @@ The rules live in `src/api/mcp/` (see CLAUDE.md, "MCP server"). How the team use
 | `participant_counts`                                | Participants counted by up to three attributes                        |
 | `assignment_overview`                               | Seats and holders per role, warnings, a page of the applications      |
 | `graphql_query` / `graphql_schema`                  | Any read-only query, and the schema with redacted fields marked       |
+| `read_skill`                                        | A file of an offered skill, for clients without MCP skills support    |
 | `createCommittee`, `assignDelegation`, … (about 69) | The mutations that opted in, one tool each                            |
 
 Saved views of the team's tables (`createTableView`, `updateTableView`, `copyTableView`,
@@ -73,6 +74,26 @@ participants and preview first (read `guidePagePublishPreview` for the conferenc
 `importGuideFile` downloads an image or PDF from the allowed hosts (`GUIDE_IMPORT_HOSTS`, by
 default guide.dmun.de and cdn.dmun.de) and answers its id for `file:<id>` in a page. Deleting
 pages stays in the app.
+
+## Skills
+
+The server offers skills, instructions for whole tasks, through the MCP skills extension
+(SEP-2640, `@modelcontextprotocol/server/ext/skills`; resources `skill://<name>/…`), and names them
+in its instructions so an assistant suggests one when a request matches. Clients that do not load
+skills read them with `read_skill`. `SKILL_REPOSITORIES` in `src/api/mcp/skills.ts` lists them;
+today `papierkorrektur` from the public repository `DeutscheModelUnitedNations/papierkorrektur-skill`.
+
+They are read from GitHub, not bundled: the ref is resolved to a commit (`api.github.com`), and
+the listing and every file are read at that commit (files from `raw.githubusercontent.com`), so
+a change in the skill's repository reaches assistants without a release. The first MCP request
+after start waits for the read (at most 10 s for the whole read). A copy goes stale after an hour
+(five minutes after a failure); the first request after that still gets it and starts reading
+the skill again in the background, and requests after that read get the new copy. A skill GitHub
+does not deliver, or delivers broken (checked strictly before it replaces anything), keeps its
+last good copy; one never read is left out, and the server works without it. Links to
+`https://delegator.munify.cloud` in text files point at the origin of `MCP_RESOURCE` instead, so
+staging and local instances link to themselves. The skills are the same for everyone: they hold
+no data, and what they make an assistant do runs with the caller's rights like any other call.
 
 ## Setting it up
 
