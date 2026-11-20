@@ -437,7 +437,8 @@ bun run preview
   reviewer, read only by that reviewer (not project management, not a system admin); it reaches
   no author, sends no mail, changes no status. Once edited in the app (`lastEditedVia = UI`) MCP
   writes answer CONFLICT unless `overwriteAppEdits`. `PaperReviewSection.svelte` saves edits as the
-  draft (`createDraftSaver`; each save names the `updatedAt` it last saw, `expectedUpdatedAt`, and
+  draft (`createDraftSaver`; each save names the paper version its text was written for and the
+  `updatedAt` it last saw, `expectedUpdatedAt`, and
   is refused with CONFLICT when the draft changed elsewhere, `changedSinceSeen`, until the reviewer
   loads the stored one or keeps theirs) and takes over the old browser-only `reviewDraft_<paperId>` entry;
   `createPaperReview` deletes the draft. No MCP tool sends a review or sets a status; keep it so.

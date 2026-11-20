@@ -104,6 +104,26 @@ describe('conflictUpdate', () => {
 			})
 		).toEqual({ comments, statusAfter: 'CHANGES_REQUESTED', lastEditedVia: 'UI', updatedAt: now });
 	});
+
+	it('stores the version the editor names, its text kept over a newer rewrite', () => {
+		expect(
+			conflictUpdate({
+				startsOver: false,
+				pinsVersion: true,
+				paperVersionId: 'v1',
+				comments,
+				statusAfter: 'CHANGES_REQUESTED',
+				by: 'UI',
+				now
+			})
+		).toEqual({
+			comments,
+			statusAfter: 'CHANGES_REQUESTED',
+			lastEditedVia: 'UI',
+			updatedAt: now,
+			paperVersionId: 'v1'
+		});
+	});
 });
 
 describe('writeRefusal', () => {

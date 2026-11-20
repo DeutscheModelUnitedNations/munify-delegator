@@ -318,6 +318,44 @@ test.describe('review drafts in the editor', () => {
 		await second.close();
 	});
 
+	test('a review kept over an assistant’s rewrite for a newer version stays tied to its own', async ({
+		page,
+		request
+	}) => {
+		const paperId = E2E_DRAFTS_PAPER_IDS.discard;
+		await resetPaper(paperId);
+		await writeDraft({ request, token, paperId, content: 'Zu Fassung eins.' });
+		await openPaper(page, paperId);
+
+		// a newer version arrives and the assistant rewrites the draft for it
+		await sql(
+			"INSERT INTO paper_version (id, version, content, paper_id, status) SELECT $1, 2, content, paper_id, 'SUBMITTED' FROM paper_version WHERE id = $2",
+			[`${paperId}v2`, firstVersionId(paperId)]
+		);
+		await writeDraft({ request, token, paperId, content: 'Zu Fassung zwei.' });
+		const changed = page.getByTestId('review-draft-changed');
+		await expect(changed).toBeVisible({ timeout: 10_000 });
+
+		// keeping the editor's text keeps the version it was written for
+		await changed.getByRole('button', { name: /Meine Fassung behalten|Keep my version/ }).click();
+		const stored = () =>
+			sql<{ text: string; version: number }>(
+				`SELECT d.comments::text AS text, v.version FROM paper_review_draft d
+				 JOIN paper_version v ON v.id = d.paper_version_id WHERE d.paper_id = $1`,
+				[paperId]
+			);
+		await expect
+			.poll(async () => (await stored())[0]?.text ?? '', { timeout: 10_000 })
+			.toContain('Zu Fassung eins.');
+		expect((await stored())[0]?.version).toBe(1);
+
+		// and opened again, it is still warned about as written for the older one
+		await page.reload();
+		await waitForHydration(page);
+		await expect(page.getByTestId('review-draft-stale')).toContainText('1');
+		await expect(page.getByTestId('review-draft-stale')).toContainText('2');
+	});
+
 	test('what is typed while a discard is on its way stays and is saved', async ({
 		page,
 		request

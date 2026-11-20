@@ -53,6 +53,9 @@ export function createDraftSaver({
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let running: Promise<void> | undefined;
 	let paused = false;
+	// Bumped whenever the editor takes another draft as its base (`loaded`, `acknowledge`, `reset`):
+	// a save sent before then answers for a draft the editor no longer holds, and is ignored.
+	let generation = 0;
 
 	/** The latest state, when it differs from what is stored and is worth storing. */
 	function pending() {
@@ -64,27 +67,36 @@ export function createDraftSaver({
 	async function saveUntilCurrent() {
 		for (let next = pending(); next && !paused; next = pending()) {
 			state = 'saving';
+			const sentFor = generation;
 			try {
 				const saved = await save({
 					comments: next.comments,
 					status: next.status,
 					expectedUpdatedAt: knownUpdatedAt
 				});
+				if (sentFor !== generation) continue;
 				savedSnapshot = next.snapshot;
 				knownUpdatedAt = timeOf(saved.updatedAt);
 				state = 'saved';
 				onSaved?.(saved);
 			} catch (error) {
-				if (isConflict(error)) {
-					clearTimeout(timer);
-					paused = true;
-					state = 'conflict';
-				} else {
-					state = 'failed';
-				}
+				if (sentFor !== generation) continue;
+				failed(error);
 				return;
 			}
 		}
+		if (state === 'saving') state = 'idle';
+	}
+
+	/** A save failed: refused for a draft changed meanwhile (stop until the reviewer chose), or not. */
+	function failed(error: unknown) {
+		if (!isConflict(error)) {
+			state = 'failed';
+			return;
+		}
+		clearTimeout(timer);
+		paused = true;
+		state = 'conflict';
 	}
 
 	function run() {
@@ -140,6 +152,7 @@ export function createDraftSaver({
 			latest = editor;
 			savedSnapshot = JSON.stringify(editor);
 			knownUpdatedAt = timeOf(updatedAt);
+			generation++;
 			if (state === 'conflict') state = 'idle';
 		},
 		/**
@@ -152,6 +165,7 @@ export function createDraftSaver({
 					? (updatedAt ?? undefined)
 					: timeOf(updatedAt);
 			savedSnapshot = undefined;
+			generation++;
 			if (state === 'conflict') state = 'idle';
 		},
 		/** The draft is gone (discarded or sent): forget it. */
@@ -160,6 +174,7 @@ export function createDraftSaver({
 			latest = undefined;
 			savedSnapshot = undefined;
 			knownUpdatedAt = undefined;
+			generation++;
 			state = 'idle';
 		}
 	};

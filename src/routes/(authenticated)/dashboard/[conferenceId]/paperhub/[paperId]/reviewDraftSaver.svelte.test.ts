@@ -237,6 +237,41 @@ describe('createDraftSaver', () => {
 		saver.acknowledge(null);
 		saver.resume();
 		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls).toHaveLength(2);
 		expect(calls[1]?.expected).toBeUndefined();
+	});
+
+	it('ignores the answer to a save sent before another draft was loaded', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save, isConflict });
+		saver.loaded({ editor: editor('A'), updatedAt: '2026-11-19T10:00:00.000Z' });
+		saver.edited(editor('AB'));
+		await vi.advanceTimersByTimeAsync(1500);
+		// an assistant's rewrite is loaded while the save is on its way, which then is refused
+		saver.loaded({ editor: editor('Neu'), updatedAt: '2026-11-19T11:00:00.000Z' });
+		calls[0]?.conflict();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(saver.state).not.toBe('conflict');
+		expect(saver.knownUpdatedAt).toBe(Date.parse('2026-11-19T11:00:00.000Z'));
+		saver.edited(editor('Neu!'));
+		await vi.advanceTimersByTimeAsync(1500);
+		expect(calls).toHaveLength(2);
+		expect(calls[1]).toMatchObject({
+			text: 'Neu!',
+			expected: Date.parse('2026-11-19T11:00:00.000Z')
+		});
+	});
+
+	it('keeps the loaded draft over a late answer to a save sent before', async () => {
+		const { save, calls } = controlledSave();
+		const saver = createDraftSaver({ save, isConflict });
+		saver.edited(editor('A'));
+		await vi.advanceTimersByTimeAsync(1500);
+		saver.loaded({ editor: editor('Neu'), updatedAt: '2026-11-19T11:00:00.000Z' });
+		calls[0]?.answer('2026-11-19T10:00:00.000Z');
+		await vi.advanceTimersByTimeAsync(0);
+		expect(saver.knownUpdatedAt).toBe(Date.parse('2026-11-19T11:00:00.000Z'));
+		expect(saver.state).toBe('idle');
+		expect(saver.dirty).toBe(false);
 	});
 });

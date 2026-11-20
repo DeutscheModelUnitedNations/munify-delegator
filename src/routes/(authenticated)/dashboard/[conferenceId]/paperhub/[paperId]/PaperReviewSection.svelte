@@ -159,7 +159,9 @@
 					paperId,
 					comments,
 					statusAfter: status,
-					expectedUpdatedAt: expectedUpdatedAt === undefined ? null : new Date(expectedUpdatedAt)
+					expectedUpdatedAt: expectedUpdatedAt === undefined ? null : new Date(expectedUpdatedAt),
+					// kept over an assistant's rewrite for a newer version, the text stays tied to its own
+					paperVersion: editorVersion ?? null
 				},
 				updatedAt: true,
 				paperVersion: true
@@ -222,9 +224,20 @@
 		return `${notified} ${m.reviewSubmissionAnonymousNotice({ author, name })}`;
 	});
 
-	// While an assistant's rewrite waits for the reviewer's choice, saving would replace it.
+	// While an assistant's rewrite waits for the reviewer's choice, saving would replace it. Once
+	// none waits any more (chosen, or gone again), saving goes on.
+	let pausedForAssistant = false;
 	$effect(() => {
-		if (assistantChangedDraft) void saver.settle();
+		const waiting = assistantChangedDraft;
+		untrack(() => {
+			if (waiting) {
+				pausedForAssistant = true;
+				void saver.settle();
+			} else if (pausedForAssistant) {
+				pausedForAssistant = false;
+				saver.resume();
+			}
+		});
 	});
 
 	// The draft changed meanwhile and the editor waits for the reviewer's choice: an assistant's

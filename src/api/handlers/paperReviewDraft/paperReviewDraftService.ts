@@ -167,10 +167,12 @@ function keepUnseenDraft(draft: { id: string } | undefined) {
 
 /**
  * What a draft row already there is set to. An assistant's draft, or the reviewer's first, starts
- * over: written for the latest version and counted as new. The reviewer's edits keep the rest.
+ * over: written for the latest version and counted as new. The reviewer's edits keep the rest,
+ * the version too unless the editor names the one its text was written for (`pinsVersion`).
  */
 export function conflictUpdate({
 	startsOver,
+	pinsVersion = false,
 	paperVersionId,
 	comments,
 	statusAfter,
@@ -178,6 +180,7 @@ export function conflictUpdate({
 	now
 }: {
 	startsOver: boolean;
+	pinsVersion?: boolean;
 	paperVersionId: string;
 	comments: Comments;
 	statusAfter: Verdict;
@@ -185,7 +188,32 @@ export function conflictUpdate({
 	now: Date;
 }) {
 	const edit = { comments, statusAfter, lastEditedVia: by, updatedAt: now };
-	return startsOver ? { ...edit, paperVersionId, origin: by, createdAt: now } : edit;
+	if (startsOver) return { ...edit, paperVersionId, origin: by, createdAt: now };
+	return pinsVersion ? { ...edit, paperVersionId } : edit;
+}
+
+/**
+ * The version of the paper a draft is written for: the one the editor names (its text was written
+ * for it, an older one kept over an assistant's rewrite for a newer one included), else the latest.
+ */
+async function draftVersionId({
+	tx,
+	paperId,
+	latestVersion,
+	writtenFor
+}: {
+	tx: Transaction;
+	paperId: string;
+	latestVersion: { id: string; version: number };
+	writtenFor: number | undefined;
+}) {
+	if (writtenFor === undefined || writtenFor === latestVersion.version) return latestVersion.id;
+	const [version] = await tx
+		.select({ id: schema.paperVersion.id })
+		.from(schema.paperVersion)
+		.where(whereRows({ table: schema.paperVersion, filter: { paperId, version: writtenFor } }));
+	if (!version) throw apiError({ code: 'NOT_FOUND', message: m.reviewOnlyReviewers() });
+	return version.id;
 }
 
 /**
@@ -215,7 +243,8 @@ export async function saveReviewDraft({
 	statusAfter,
 	by,
 	overwriteAppEdits = false,
-	expected
+	expected,
+	writtenFor
 }: {
 	paperId: string;
 	reviewerId: string;
@@ -225,16 +254,20 @@ export async function saveReviewDraft({
 	overwriteAppEdits?: boolean;
 	/** The draft as the saving editor last saw it: its `updatedAt`, null for none. */
 	expected?: { updatedAt: Date | null };
+	/** The paper version the editor's text was written for; the latest when not given. */
+	writtenFor?: number;
 }) {
 	const saved = await db.transaction(async (tx) => {
 		const { conferenceId, latestVersion } = await loadDraftTarget({ tx, paperId });
 		const draft = await lockDraft({ tx, paperId, reviewerId });
 		throwRefusal(writeRefusal({ draft, by, overwriteAppEdits, expected }));
+		const paperVersionId = await draftVersionId({ tx, paperId, latestVersion, writtenFor });
 
 		const written = await upsertDraft({
 			tx,
 			draft,
-			row: { paperId, reviewerId, paperVersionId: latestVersion.id, comments, statusAfter },
+			row: { paperId, reviewerId, paperVersionId, comments, statusAfter },
+			pinsVersion: writtenFor !== undefined,
 			by,
 			guard: expected ? keepUnseenDraft(draft) : keepAppEdits({ by, overwriteAppEdits })
 		});
@@ -259,11 +292,13 @@ async function upsertDraft({
 	tx,
 	draft,
 	row,
+	pinsVersion,
 	by,
 	guard
 }: {
 	tx: Transaction;
 	draft: { updatedAt: Date } | undefined;
+	pinsVersion: boolean;
 	row: {
 		paperId: string;
 		reviewerId: string;
@@ -283,6 +318,7 @@ async function upsertDraft({
 			set: {
 				...conflictUpdate({
 					startsOver: by === 'MCP' || !draft,
+					pinsVersion,
 					paperVersionId: row.paperVersionId,
 					comments: row.comments,
 					statusAfter: row.statusAfter,

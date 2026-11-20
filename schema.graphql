@@ -4608,6 +4608,11 @@ type Mutation {
     """
     expectedUpdatedAt: DateTime
     paperId: ID!
+
+    """
+    The paper version the editor's text was written for; the draft is stored for it. The latest when null.
+    """
+    paperVersion: Int
     statusAfter: PaperstatusEnum!
   ): PaperReviewDraftSave!
 

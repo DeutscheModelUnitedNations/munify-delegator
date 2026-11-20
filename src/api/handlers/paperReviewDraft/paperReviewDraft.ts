@@ -125,6 +125,11 @@ schemaBuilder.mutationFields((t) => ({
 				required: false,
 				description:
 					'The `updatedAt` of the draft as the editor last loaded or saved it; null when it saw none.'
+			}),
+			paperVersion: t.arg.int({
+				required: false,
+				description:
+					"The paper version the editor's text was written for; the draft is stored for it. The latest when null."
 			})
 		},
 		resolve: async (_root, args, ctx) => {
@@ -135,7 +140,8 @@ schemaBuilder.mutationFields((t) => ({
 				comments: args.comments,
 				statusAfter: args.statusAfter,
 				by: writtenBy(ctx),
-				expected: { updatedAt: args.expectedUpdatedAt ?? null }
+				expected: { updatedAt: args.expectedUpdatedAt ?? null },
+				writtenFor: args.paperVersion ?? undefined
 			});
 			return { updatedAt: saved.updatedAt, paperVersion: saved.version };
 		}

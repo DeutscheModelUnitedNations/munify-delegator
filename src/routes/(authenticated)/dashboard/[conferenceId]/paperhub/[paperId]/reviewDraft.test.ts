@@ -61,6 +61,16 @@ describe('changedElsewhere', () => {
 		expect(changedElsewhere({ draft, knownUpdatedAt: new Date(updated).getTime() })).toBe(false);
 	});
 
+	it('notices an assistant’s draft the editor knew nothing of', () => {
+		const draft = { lastEditedVia: 'MCP' as const, updatedAt: updated };
+		expect(changedElsewhere({ draft, knownUpdatedAt: undefined })).toBe(true);
+	});
+
+	it('ignores a live result that has not caught up with the editor’s own save', () => {
+		const draft = { lastEditedVia: 'MCP' as const, updatedAt: created };
+		expect(changedElsewhere({ draft, knownUpdatedAt: new Date(updated).getTime() })).toBe(false);
+	});
+
 	it('ignores the reviewer’s own saves and a missing draft', () => {
 		expect(
 			changedElsewhere({ draft: { lastEditedVia: 'UI', updatedAt: updated }, knownUpdatedAt: 0 })

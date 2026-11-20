@@ -3526,6 +3526,7 @@ export type Mutation = {
     comments: JSON,
     expectedUpdatedAt?: DateTime | null | undefined,
     paperId: ID,
+    paperVersion?: Int | null | undefined,
     statusAfter: PaperstatusEnum
   }) => PaperReviewDraftSave,
   scanPossibleDuplicates: (p: {

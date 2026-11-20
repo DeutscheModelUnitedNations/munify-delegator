@@ -50,7 +50,9 @@ export function staleDraftWarning({
 
 /**
  * Whether the stored draft changed since the editor last loaded or saved it, by somebody else than
- * this editor: an assistant writing it again while the page is open.
+ * this editor: an assistant writing it again while the page is open. Only a revision later than
+ * the one the editor knows counts (revisions only grow): a live result that has not caught up with
+ * the editor's own save yet still shows the assistant's earlier one.
  */
 export function changedElsewhere({
 	draft,
@@ -60,7 +62,8 @@ export function changedElsewhere({
 	knownUpdatedAt: number | undefined;
 }) {
 	if (!draft || draft.lastEditedVia !== 'MCP') return false;
-	return new Date(draft.updatedAt).getTime() !== knownUpdatedAt;
+	if (knownUpdatedAt === undefined) return true;
+	return new Date(draft.updatedAt).getTime() > knownUpdatedAt;
 }
 
 /** Where saving the draft stands, shown below the editor. */
