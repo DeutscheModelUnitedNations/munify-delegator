@@ -43,4 +43,10 @@ ENV NODE_ENV=production \
 
 USER node
 EXPOSE 3000/tcp
+# The swarm takes this when the service sets no healthcheck of its own: a rolling update replaces the
+# next replica only once the new one answers, so one always serves. The start period covers the
+# migrations; checking every 2s in it marks a new replica healthy as soon as it listens. No curl in
+# the image, so node asks.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=120s --start-interval=2s --retries=3 \
+	CMD ["node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
 CMD ["sh", "-c", "node node_modules/drizzle-kit/bin.cjs migrate && exec node build/index.js"]

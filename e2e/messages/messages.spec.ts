@@ -37,7 +37,7 @@ async function write(page: Page, text: string) {
 
 /** An inbox the caller answers, in the team menu: it narrows the chat list to that inbox. */
 const inboxChip = (page: Page, name: string) =>
-	page.getByTestId('team-inbox-menu').getByRole('link', { name });
+	page.getByRole('group', { name: 'Nach Postfach filtern' }).getByRole('button', { name });
 
 const openChat = (page: Page, title: string | RegExp) =>
 	page.getByTestId('chat-list').getByRole('button', { name: title }).click();
@@ -108,7 +108,8 @@ test('a delegate finds another by country and committee and writes to them', asy
 	).toBeVisible();
 	await expect(terms).toBeHidden();
 
-	// and they stay there to read, without anything to confirm
+	// and they stay there to read under the chat settings, without anything to confirm
+	await page.getByTestId('chat-settings').click();
 	await page.getByTestId('chat-terms-read').click();
 	await expect(terms.getByTestId('chat-terms-section')).toHaveCount(7);
 	await expect(page.getByTestId('chat-terms-understood')).toHaveCount(0);
@@ -157,6 +158,22 @@ test('the other delegate sees it on the dashboard by role, and both follow the c
 	await expect(
 		annaPage.getByTestId('chat-message').filter({ hasText: 'Hallo aus Frankreich' })
 	).toBeVisible();
+
+	// a phone number is held back until she says to send it anyway
+	const withNumber = 'Ruf mich an: 0171 1234567';
+	const warning = annaPage.getByTestId('chat-personal-details-warning');
+	await annaPage.getByTestId('chat-input').fill(withNumber);
+	await annaPage.getByTestId('chat-send').click();
+	await expect(warning).toContainText('eine Telefonnummer');
+	await expect(annaPage.getByTestId('chat-message')).toHaveCount(2);
+	// editing the text takes the warning away
+	await annaPage.getByTestId('chat-input').fill(`${withNumber}!`);
+	await expect(warning).toHaveCount(0);
+	await annaPage.getByTestId('chat-send').click();
+	await annaPage.getByTestId('chat-personal-details-send').click();
+	await expect(carlaPage.getByTestId('chat-message').filter({ hasText: withNumber })).toBeVisible();
+	await expect(annaPage.getByTestId('chat-input')).toHaveValue('');
+	await expect(warning).toHaveCount(0);
 });
 
 test('a question to a team inbox is answered under the function and name', async ({ browser }) => {
@@ -269,19 +286,18 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 	await expect(carlaPage.getByText('Gemeldet. Die Teilnehmendenbetreuung')).toBeVisible();
 
 	const carePage = await signedIn(browser, { id: care.id, startUrl: TEAM_MESSAGES });
-	// participant care starts at the overview of what it answers: its inbox and the reports
-	const overview = carePage.getByTestId('team-inbox-overview');
-	await expect(overview.getByTestId('team-inbox-card')).toContainText('Teilnehmendenbetreuung');
-	await expect(overview.getByTestId('team-reports-card')).toContainText('1 gemeldete Chats warten');
-	await overview.getByTestId('team-reports-card').click();
+	// participant care starts at its chats, with the waiting report as a banner above them
+	const banner = carePage.getByTestId('team-reports-banner');
+	await expect(banner).toContainText('1 gemeldete Chats warten');
+	await banner.click();
 	const report = carePage.getByTestId('chat-reports').getByRole('listitem');
 	await expect(report).toContainText('Frankreich · MSGV');
 	await expect(report).toContainText('Bitte schaut euch das an.');
 	await carePage.getByTestId('chat-report-open').click();
 
-	// the case file beside the chat: the report, and both people by name and role
+	// the report stands in the chat where it was filed, the case file names both people
 	const file = carePage.getByTestId('chat-case-file');
-	await expect(file.getByTestId('chat-case-report')).toContainText(
+	await expect(carePage.getByTestId('chat-thread').getByTestId('chat-case-report')).toContainText(
 		`Gemeldet von ${carla.given} ${carla.family}`
 	);
 	const people = file.getByTestId('chat-case-people').getByRole('listitem');
@@ -295,7 +311,6 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 	await expect(thread).toContainText('Du liest diesen Chat, weil er gemeldet wurde.');
 	await expect(thread).toContainText(`${anna.given} ${anna.family}`);
 	await expect(thread.getByTestId('chat-message')).toContainText(['Hallo aus Deutschland']);
-	await expect(thread.getByTestId('chat-reported-divider')).toContainText('Gemeldet');
 	await expect(carePage.getByTestId('chat-input')).toHaveCount(0);
 	await expect(carePage.getByTestId('chat-refusal')).toBeVisible();
 
@@ -314,12 +329,36 @@ test('a reported chat reaches participant care, who can suspend and settle it', 
 
 	await suspendAnna.click();
 	await expect(suspendAnna).toHaveText('Für Chats sperren');
-	// settling it with a note closes the case; the note stays with the settled reports
+
+	// participant care hides a message for everybody, with a reason, for good
+	const hello = thread.getByTestId('chat-message').filter({ hasText: 'Hallo aus Deutschland' });
+	await hello.getByTestId('chat-message-hide').click();
+	await expect(carePage.getByText('Das Ausblenden ist endgültig.')).toBeVisible();
+	await expect(carePage.getByTestId('chat-hide-confirm')).toBeDisabled();
+	await carePage.getByTestId('chat-hide-reason').fill('Unangemessener Ton');
+	await carePage.getByTestId('chat-hide-confirm').click();
+	// participant care keeps the text, marked as hidden, and cannot hide it again
+	await expect(hello).toContainText('Für die Beteiligten ausgeblendet');
+	await expect(hello).toContainText('Grund: Unangemessener Ton');
+	await expect(hello.getByTestId('chat-message-hide')).toHaveCount(0);
+	// the chat's people, the author too, read a placeholder instead
+	await openChat(annaPage, /Frankreich · MSGV/);
+	const placeholder = annaPage.getByTestId('chat-message').filter({
+		hasText: 'Diese Nachricht wurde von der Teilnehmendenbetreuung ausgeblendet.'
+	});
+	await expect(placeholder).toHaveCount(1);
+	await expect(annaPage.getByTestId('chat-thread')).not.toContainText('Hallo aus Deutschland');
+
+	// settling it with a note closes the case; the note and the hidden message stay with the
+	// settled reports
 	await carePage.getByTestId('chat-case-note').fill('Mit beiden gesprochen.');
 	await carePage.getByTestId('chat-report-resolve').click();
 	await expect(carePage.getByTestId('chat-no-reports')).toBeVisible();
 	await carePage.getByText('Erledigte Meldungen (1)').click();
 	await expect(carePage.getByText('Mit beiden gesprochen.')).toBeVisible();
+	await expect(carePage.getByTestId('chat-report-hidden-message')).toContainText([
+		'Hallo aus Deutschland'
+	]);
 });
 
 test('project management hands out a committee function, which opens an inbox', async ({
@@ -390,8 +429,10 @@ test('a participant writes to one trusted person in confidence', async ({ browse
 	await expect(answer).toContainText(`Vertrauensperson · ${tessaName}`);
 
 	const theoPage = await signedIn(browser, { id: theo.id, startUrl: TEAM_MESSAGES });
-	// a trusted person answers two inboxes, so the page starts at their overview
-	await expect(theoPage.getByTestId('team-inbox-card')).toHaveCount(2);
+	// a trusted person answers two inboxes: the list holds both, a chip narrows it to one
+	await expect(
+		theoPage.getByRole('group', { name: 'Nach Postfach filtern' }).getByRole('button')
+	).toHaveCount(3);
 	await inboxChip(theoPage, 'An mich persönlich').click();
 	await expect(theoPage.getByTestId('chat-workspace')).toBeVisible();
 	await expect(theoPage.getByText('In diesem Postfach ist noch nichts angekommen.')).toBeVisible();
@@ -417,7 +458,9 @@ test('project management makes a team member a trusted person', async ({ browser
 	await trusted.check();
 
 	// the member answers the shared inbox and their own now
-	await expect(memberPage.getByTestId('team-inbox-card')).toHaveCount(2);
+	await expect(
+		memberPage.getByRole('group', { name: 'Nach Postfach filtern' }).getByRole('button')
+	).toHaveCount(3);
 	await expect(inboxChip(memberPage, 'Vertrauenspersonen')).toBeVisible();
 	await expect(inboxChip(memberPage, 'An mich persönlich')).toBeVisible();
 

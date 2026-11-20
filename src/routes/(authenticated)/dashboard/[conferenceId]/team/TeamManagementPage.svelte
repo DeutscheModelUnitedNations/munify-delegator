@@ -19,7 +19,10 @@
 	let inviteMembersModalOpen = $state(false);
 </script>
 
-<div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-4 sm:px-6 sm:pt-6">
+<div
+	class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-4 sm:px-6 sm:pt-6"
+	data-tour="team.members.tabs"
+>
 	<Tabs>
 		<Tab title={m.teamMembers()} icon="users" active={!onInvitations} href={`${base}/members`} />
 		<Tab
@@ -29,7 +32,11 @@
 			href={`${base}/invitations`}
 		/>
 	</Tabs>
-	<button class="btn btn-primary btn-sm" onclick={() => (inviteMembersModalOpen = true)}>
+	<button
+		class="btn btn-primary btn-sm"
+		data-tour="team.members.invite"
+		onclick={() => (inviteMembersModalOpen = true)}
+	>
 		<i aria-hidden="true" class="ph-duotone ph-envelope"></i>
 		{m.inviteTeamMembers()}
 	</button>

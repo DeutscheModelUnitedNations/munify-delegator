@@ -33,7 +33,10 @@
 	);
 </script>
 
-<section class="border-primary/40 overflow-hidden rounded-box border">
+<section
+	class="border-primary/40 overflow-hidden rounded-box border"
+	data-tour="team.committees.card"
+>
 	<header
 		class="bg-primary/15 border-primary/40 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b px-4 py-1"
 	>
@@ -84,7 +87,7 @@
 		</p>
 	{/if}
 	{#if committee.agendaItems.length > 0}
-		<ul class="divide-base-content/10 divide-y">
+		<ul class="divide-base-content/10 divide-y" data-tour="team.committees.agenda-items">
 			{#each committee.agendaItems as item (item.id)}
 				<AgendaItemRow
 					{item}

@@ -37,30 +37,44 @@
 	}
 </script>
 
-<ul class="flex flex-col gap-1 not-empty:mb-2">
-	{#each files as file (file.key)}
-		<li class="flex items-center gap-2 text-sm">
-			<i aria-hidden="true" class="ph-duotone {file.icon}"></i>
-			<span class="min-w-0 flex-1 truncate">{file.name}</span>
-			<button
-				type="button"
-				class="btn btn-ghost btn-xs"
-				aria-label={m.announcementAttachmentRemove({ file: file.name })}
-				onclick={file.remove}
-			>
-				<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-			</button>
-		</li>
-	{/each}
-</ul>
-<input
-	type="file"
-	class="file-input file-input-sm w-full"
-	multiple
-	accept="application/pdf,image/png,image/jpeg,image/webp"
-	aria-label={m.announcementAttachmentAdd()}
-	onchange={pickFiles}
-/>
-<p class="text-xs {tooMany ? 'text-error' : 'text-base-content/60'}">
-	{m.announcementAttachmentHint({ max: MAX_ANNOUNCEMENT_ATTACHMENTS })}
-</p>
+<div class="flex flex-col gap-1.5">
+	<span class="text-sm font-medium">{m.announcementAttachments()}</span>
+	{#if files.length > 0}
+		<ul class="flex flex-col gap-1">
+			{#each files as file (file.key)}
+				<li class="bg-base-200 rounded-field flex items-center gap-2 py-1 pr-1 pl-3 text-sm">
+					<i aria-hidden="true" class="ph-duotone {file.icon} text-base-content/60"></i>
+					<span class="min-w-0 flex-1 truncate">{file.name}</span>
+					<button
+						type="button"
+						class="btn btn-ghost btn-xs btn-square"
+						aria-label={m.announcementAttachmentRemove({ file: file.name })}
+						title={m.announcementAttachmentRemove({ file: file.name })}
+						onclick={file.remove}
+					>
+						<i aria-hidden="true" class="ph-duotone ph-x"></i>
+					</button>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+	<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+		<!-- the input itself stays for screen readers and tests; the button is its face -->
+		<label
+			class="btn btn-sm btn-soft has-focus-visible:outline-base-content has-focus-visible:outline-2"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-paperclip"></i>
+			{m.announcementAttachmentAdd()}
+			<input
+				type="file"
+				class="sr-only"
+				multiple
+				accept="application/pdf,image/png,image/jpeg,image/webp"
+				onchange={pickFiles}
+			/>
+		</label>
+		<span class="text-xs {tooMany ? 'text-error' : 'text-base-content/60'}">
+			{m.announcementAttachmentHint({ max: MAX_ANNOUNCEMENT_ATTACHMENTS })}
+		</span>
+	</div>
+</div>

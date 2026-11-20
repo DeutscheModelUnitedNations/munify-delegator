@@ -60,7 +60,7 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="flex flex-col items-center gap-3">
+<div class="flex flex-col items-center gap-3" data-tour="team.assignmentSighting.deck">
 	<div class="flex w-full max-w-3xl flex-col gap-2">
 		<div class="bg-base-300 flex h-2 w-full overflow-hidden rounded-full" aria-hidden="true">
 			{#each ['rated', 'flagged', 'disqualified'] as const as status (status)}

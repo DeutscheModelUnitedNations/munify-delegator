@@ -119,7 +119,10 @@
 </script>
 
 {#if current}
-	<div class="bg-base-200 border-base-300 rounded-box mb-6 border">
+	<div
+		class="bg-base-200 border-base-300 rounded-box mb-6 border"
+		data-tour="team.cleanup.suggestions"
+	>
 		<div class="border-base-300 flex flex-wrap items-center gap-2 border-b px-4 py-2">
 			<div class="min-w-0 flex-1 max-sm:basis-full">
 				<span class="font-bold">{m.cleanupSuggestionsTitle()}</span>

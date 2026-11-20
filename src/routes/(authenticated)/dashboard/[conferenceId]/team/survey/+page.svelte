@@ -133,7 +133,11 @@
 
 <div class="flex flex-col gap-6 py-4 sm:px-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-		<button class="btn btn-primary" onclick={() => (showCreateModal = true)}>
+		<button
+			class="btn btn-primary"
+			onclick={() => (showCreateModal = true)}
+			data-tour="team.survey.create"
+		>
 			<i aria-hidden="true" class="ph-fill ph-plus"></i>
 			{m.createSurvey()}
 		</button>

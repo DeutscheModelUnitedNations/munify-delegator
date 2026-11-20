@@ -1,6 +1,7 @@
 import type { RouteId } from '$app/types';
 import { resolve } from '$app/paths';
 import { localizeHref } from '#lib/paraglide/runtime';
+import type { Tour } from '@deutschemodelunitednations/docs-kit';
 import { DEFAULT_HELP_DOCS, routeHelp } from './routeHelp';
 
 /**
@@ -16,4 +17,13 @@ export function helpForRoute(routeId: RouteId | null) {
 		tour: help?.tour,
 		specific: help !== undefined
 	};
+}
+
+/**
+ * Starts a route's tour. driver.js and its styles load only when a tour actually starts, which is
+ * why `runTour` is imported here rather than at the top.
+ */
+export async function takeTour(tour: () => Promise<Tour>) {
+	const [{ runTour }, loaded] = await Promise.all([import('./runTour'), tour()]);
+	runTour(loaded);
 }

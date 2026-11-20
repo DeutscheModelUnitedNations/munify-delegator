@@ -14,7 +14,8 @@
 
 <span
 	class={[
-		'bg-base-300 text-base-content/70 ring-base-300 flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1',
+		'flex shrink-0 items-center justify-center overflow-hidden rounded-full',
+		'alpha2Code' in avatar ? 'ring-base-content/15 ring-1' : 'bg-primary/15 text-primary',
 		size === 'sm' ? 'size-8 text-base' : 'size-10 text-xl'
 	]}
 >

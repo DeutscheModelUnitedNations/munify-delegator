@@ -1,7 +1,6 @@
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import type * as schema from '../schema';
-import { contentHash, termsInLocale } from '#api/handlers/messagingTerms/messagingTermsDocument';
-import { termsOnDisk } from '#api/handlers/messagingTerms/termsOnDisk';
+import { seedAcceptancesOf } from '#api/handlers/messagingTerms/termsOnDisk';
 import { PERSONA_NATION } from './conference';
 import type { SeedBatch } from './batch';
 import type { ConferenceSeed } from './context';
@@ -39,6 +38,8 @@ interface SeedMessage {
 	body: string;
 	/** The paper the team wrote from */
 	paperId?: string;
+	/** Hidden by participant care under a report, that many minutes ago */
+	hidden?: { by: DevAccountSub; reportId: string; reason: string; minutesAgo: number };
 }
 
 /**
@@ -156,7 +157,15 @@ export function addMessages(cs: ConferenceSeed) {
 				fromTeam: 'team' in message.from,
 				authorParticipantId:
 					'participant' in message.from ? participantId(message.from.participant) : null,
-				teamAuthorUserId: 'team' in message.from ? message.from.team : null
+				teamAuthorUserId: 'team' in message.from ? message.from.team : null,
+				...(message.hidden
+					? {
+							hiddenAt: at(message.hidden.minutesAgo),
+							hiddenById: message.hidden.by,
+							hiddenReason: message.hidden.reason,
+							hiddenReportId: message.hidden.reportId
+						}
+					: {})
 			});
 		}
 		cs.batch.chatRead.push(...readMarkers({ chatId, messages, readBy, at }));
@@ -455,6 +464,18 @@ export function addMessages(cs: ConferenceSeed) {
 			id: 'direct-reported',
 			chat: { ...direct('dev-nsa-delegate', stranger.userId), underReview: true },
 			messages: [
+				// hidden under the earlier report, which is settled: its case keeps the text
+				{
+					from: { participant: stranger.userId },
+					minutesAgo: 3 * 24 * 60 + 20,
+					body: 'Eure Organisation ist ein Witz, euch nimmt hier sowieso niemand ernst.',
+					hidden: {
+						by: 'dev-team-care',
+						reportId: cs.rowId('chat-report-direct-earlier'),
+						reason: 'Abwertende Äußerung über die Organisation der Delegation.',
+						minutesAgo: 3 * 24 * 60 - 20
+					}
+				},
 				{
 					from: { participant: stranger.userId },
 					minutesAgo: 6 * 60,
@@ -488,8 +509,10 @@ export function addMessages(cs: ConferenceSeed) {
 			reason: 'Es geht weiter, obwohl ich um einen sachlichen Ton gebeten habe.',
 			createdAt: new Date(now - 4 * HOUR)
 		});
-		// an earlier report of the same chat, settled: it shows next to the other party
+		// an earlier report of the same chat, settled, with the message hidden under it: it shows
+		// next to the other party
 		cs.batch.chatReport.push({
+			id: cs.rowId('chat-report-direct-earlier'),
 			conferenceId: cs.id,
 			chatId,
 			reporterUserId: 'dev-nsa-delegate',
@@ -535,20 +558,15 @@ export function addMessagingAccountSettings(batch: SeedBatch) {
 	}
 }
 
-/** These accounts accepted the terms as they stand, in German, four days ago. */
+/** `userIds` accepted the terms as they stand, in German, four days ago (once per account). */
 function acceptTerms({ batch, userIds }: { batch: SeedBatch; userIds: string[] }) {
-	const shown = termsInLocale({ document: termsOnDisk(), locale: 'de' });
-	const createdAt = new Date(Date.now() - 4 * 24 * HOUR);
-	for (const user of batch.user) {
-		if (!user.id || !userIds.includes(user.id)) continue;
-		batch.messagingTermsAcceptance.push({
-			userId: user.id,
-			version: shown.version,
-			revision: shown.revision,
-			locale: shown.locale,
-			contentHash: contentHash(shown),
-			confirmationIds: shown.confirmations.map((confirmation) => confirmation.id),
-			createdAt
-		});
-	}
+	// once per person, although several conferences seed the same one
+	const accepted = new Set(batch.messagingTermsAcceptance.map((acceptance) => acceptance.userId));
+	const acceptedAt = new Date(Date.now() - 4 * 24 * HOUR);
+	batch.messagingTermsAcceptance.push(
+		...seedAcceptancesOf(userIds.filter((userId) => !accepted.has(userId))).map((acceptance) => ({
+			...acceptance,
+			createdAt: acceptedAt
+		}))
+	);
 }

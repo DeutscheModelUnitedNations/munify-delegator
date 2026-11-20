@@ -2,7 +2,8 @@
 	@component
 	One person of a reported chat in its case file: name and role, whether they filed a report, the
 	settled reports there were before, and what participant care can do: take them out of the chats
-	between participants, write to them, open their card.
+	between participants, hide everything they wrote into this chat so far, write to them, open
+	their card.
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
@@ -11,6 +12,7 @@
 	import ChatAvatar from '#lib/components/chat/ChatAvatar.svelte';
 	import UserCardButton from '#lib/components/chat/UserCardButton.svelte';
 	import WriteToDelegateButton from '#lib/components/chat/WriteToDelegateButton.svelte';
+	import HideMessagesModal from '#lib/components/chat/HideMessagesModal.svelte';
 	import {
 		contactAvatar,
 		contactLabel,
@@ -19,6 +21,8 @@
 
 	interface Props {
 		conferenceId: string;
+		/** The reported chat, whose messages of this person can be hidden */
+		chatId: string;
 		person: {
 			participantId: string;
 			userId: string;
@@ -31,7 +35,8 @@
 		};
 	}
 
-	let { conferenceId, person }: Props = $props();
+	let { conferenceId, chatId, person }: Props = $props();
+	let hideOpen = $state(false);
 
 	async function setSuspended({
 		participantId,
@@ -52,43 +57,60 @@
 	}
 </script>
 
-<li class="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-	<div class="flex items-start gap-2.5">
-		{#if person.contact}
-			<ChatAvatar avatar={contactAvatar(person.contact)} size="sm" />
-		{/if}
-		<div class="flex min-w-0 flex-1 flex-col gap-0.5">
-			<span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
-				{person.name}
-				{#if person.reported}
-					<span class="badge badge-info badge-soft badge-sm">{m.chatCaseReporter()}</span>
-				{/if}
-			</span>
-			<span class="text-base-content/70 text-xs">
-				{person.contact ? contactLabel(person.contact) : m.chatFormerParticipant()}
-			</span>
-			{#if person.earlierReports > 0}
-				<span class="text-error text-xs font-medium">
-					{m.chatCaseEarlierReports({ count: person.earlierReports })}
-				</span>
+<li class="flex items-start gap-3 py-3">
+	{#if person.contact}
+		<ChatAvatar avatar={contactAvatar(person.contact)} size="sm" />
+	{:else}
+		<ChatAvatar avatar={{ icon: 'user' }} size="sm" />
+	{/if}
+	<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+		<span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+			{person.name}
+			{#if person.reported}
+				<span class="badge badge-info badge-soft badge-sm">{m.chatCaseReporter()}</span>
 			{/if}
-		</div>
-		<UserCardButton userId={person.userId} name={person.name} />
-	</div>
-	<div class="flex flex-wrap gap-2">
+			{#if person.contact?.suspended}
+				<span class="badge badge-error badge-sm">{m.chatSuspendedBadge()}</span>
+			{/if}
+		</span>
+		<span class="text-base-content/60 text-xs">
+			{person.contact ? contactLabel(person.contact) : m.chatFormerParticipant()}
+		</span>
+		{#if person.earlierReports > 0}
+			<span class="text-error text-xs font-medium">
+				{m.chatCaseEarlierReports({ count: person.earlierReports })}
+			</span>
+		{/if}
 		{#if person.contact}
 			{@const suspended = !!person.contact.suspended}
 			<button
 				type="button"
-				class={['btn btn-sm', suspended ? 'btn-outline' : 'btn-error btn-outline']}
+				class={['btn btn-ghost btn-xs -ml-2 mt-1 gap-1.5 self-start', !suspended && 'text-error']}
 				aria-pressed={suspended}
 				onclick={() => setSuspended({ participantId: person.participantId, suspended: !suspended })}
 				data-testid="chat-suspend"
 			>
-				<i aria-hidden="true" class="ph-duotone ph-prohibit"></i>
+				<i aria-hidden="true" class={['ph-duotone', suspended ? 'ph-lock-open' : 'ph-prohibit']}
+				></i>
 				{suspended ? m.chatUnsuspend() : m.chatSuspend()}
 			</button>
 		{/if}
-		<WriteToDelegateButton {conferenceId} participantId={person.participantId} />
+		<button
+			type="button"
+			class="btn btn-ghost btn-xs text-error -ml-2 gap-1.5 self-start"
+			onclick={() => (hideOpen = true)}
+			data-testid="chat-hide-person"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
+			{m.chatHideAllOfPerson()}
+		</button>
 	</div>
+	<div class="flex shrink-0 items-center">
+		<WriteToDelegateButton {conferenceId} participantId={person.participantId} compact />
+		<UserCardButton userId={person.userId} name={person.name} />
+	</div>
+	<HideMessagesModal
+		bind:open={hideOpen}
+		target={{ kind: 'person', chatId, participantId: person.participantId, name: person.name }}
+	/>
 </li>

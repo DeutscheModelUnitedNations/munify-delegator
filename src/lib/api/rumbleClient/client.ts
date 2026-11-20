@@ -1212,7 +1212,7 @@ export type ChatkindEnum = "DELEGATION" | "DIRECT" | "TEAM";
 export type Chatmessage = {
   authorName: String | null,
   authorParticipantId: ID | null,
-  body: String,
+  body: String | null,
   chat: (p?: {
     orderBy?: ChatOrderInputArgument | null | undefined,
     where?: ChatWhereInputArgument | null | undefined
@@ -1220,6 +1220,11 @@ export type Chatmessage = {
   chatId: ID,
   createdAt: DateTime,
   fromTeam: Boolean,
+  hiddenAt: DateTime | null,
+  hiddenById: ID | null,
+  hiddenByName: String | null,
+  hiddenReason: String | null,
+  hiddenReportId: ID | null,
   id: ID,
   mine: Boolean,
   paper: (p?: {
@@ -1237,12 +1242,16 @@ export type ChatmessageOrderInputArgument = {
   chatId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   fromTeam?: SortingParameter | null | undefined,
+  hiddenAt?: SortingParameter | null | undefined,
+  hiddenById?: SortingParameter | null | undefined,
+  hiddenReason?: SortingParameter | null | undefined,
+  hiddenReportId?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   paperId?: SortingParameter | null | undefined,
   teamAuthorUserId?: SortingParameter | null | undefined    
 };
 		
-export type ChatmessageSearchFieldEnum = "authorParticipantId" | "body" | "chatId" | "id" | "paperId" | "teamAuthorUserId";
+export type ChatmessageSearchFieldEnum = "authorParticipantId" | "body" | "chatId" | "hiddenById" | "hiddenReason" | "hiddenReportId" | "id" | "paperId" | "teamAuthorUserId";
 		
 export type ChatmessageSearchInputArgument = {
   fields?: ChatmessageSearchFieldEnum[] | undefined,
@@ -1259,6 +1268,10 @@ export type ChatmessageWhereInputArgument = {
   chatId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   fromTeam?: BooleanWhereInputArgument | null | undefined,
+  hiddenAt?: DateTimeWhereInputArgument | null | undefined,
+  hiddenById?: IDWhereInputArgument | null | undefined,
+  hiddenReason?: StringWhereInputArgument | null | undefined,
+  hiddenReportId?: IDWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   paper?: PaperWhereInputArgument | null | undefined,
   paperId?: IDWhereInputArgument | null | undefined,
@@ -1277,6 +1290,7 @@ export type Chatreport = {
   }) => Conference,
   conferenceId: ID,
   createdAt: DateTime,
+  hiddenMessages: () => HiddenChatMessage[],
   id: ID,
   reason: String,
   reporterName: String | null,
@@ -2783,6 +2797,17 @@ export type FoodpreferenceEnum = "OMNIVORE" | "VEGAN" | "VEGETARIAN";
 		
 export type GenderEnum = "DIVERSE" | "FEMALE" | "MALE" | "NO_STATEMENT";
 		
+export type HiddenChatMessage = {
+  authorName: String | null,
+  authorParticipantId: ID | null,
+  body: String,
+  createdAt: DateTime,
+  hiddenAt: DateTime,
+  hiddenByName: String | null,
+  hiddenReason: String,
+  id: ID    
+};
+		
 export type ID = string;
 		
 export type IDWhereInputArgument = {
@@ -3377,6 +3402,15 @@ export type Mutation = {
     kind: TeamfunctionkindEnum,
     teamMemberId: ID
   }) => Teamfunction,
+  hideChatMessage: (p: {
+    id: ID,
+    reason: String
+  }) => Boolean,
+  hideChatMessagesOf: (p: {
+    chatId: ID,
+    participantId: ID,
+    reason: String
+  }) => Int,
   issueDocumentCode: (p: {
     conferenceId: ID,
     userId: ID
@@ -3521,6 +3555,10 @@ export type Mutation = {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
   }) => Committeeagendaitem,
+  setAllNotificationPreferences: (p: {
+    conferenceId?: ID | null | undefined,
+    enabled: Boolean
+  }) => Boolean,
   setAssignmentReleased: (p: {
     conferenceId: ID,
     released: Boolean

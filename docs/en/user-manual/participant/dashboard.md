@@ -207,16 +207,20 @@ From your registration on you find the **Messages** card on the dashboard, later
 - **Your delegation.** Every delegation has a group for all its members, from the moment the delegation exists. So you can agree on your application together. If your delegation gets no role, the group stays readable, but nobody can write in it any more.
 - **Other delegates.** With **New message** you search by country, committee or role, for example "fran ga". You only see each other's role, never the name.
 
+While no chat is open, the page shows beside the chat list whom you can write to right away: your delegation and the team's inboxes. One click opens the chat.
+
 You write to other delegates only once the roles are released and the team has switched on messages between delegations. Until then the page tells you whom you already reach. Sent messages cannot be changed or deleted.
 
-When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off below the chat list at **Email about unread messages**.
+When a message stays unread for a quarter of an hour, the conference can send you an email with a link to your chats. The mail does not contain the message. You turn these mails off with the gear above the chat list at **Email about unread messages**.
 
 :::tip When something is not right
-Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. You go through them point by point: each point first shows what it is about in short, open it and confirm it with **Understood**. Then the next one opens. Only once every point is confirmed can you tick the two boxes at the bottom. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** below your chats.
+Before your first message the app shows you the **Terms of the message service**. They set out respectful conduct and explain who can read along. You go through them point by point: each point first shows what it is about in short, open it and confirm it with **Understood**. Then the next one opens. Only once every point is confirmed can you tick the two boxes at the bottom. Your message only goes out once you agreed with **Agree and send**. That holds once for your account and every conference. If the terms change, the app asks again. You can read them again at any time with **Read the terms** in the gear menu above your chats.
+
+If your message seems to contain a phone number, an email address or a messenger link, the app points it out before sending. You can change the text or send it with **Send anyway**.
 
 When you open a chat with unread messages, the line **New messages** shows where you left off.
 
-The three dots at the top of a direct chat let you use **Block person** so you can no longer write each other, or **Report chat** to report it. After a report participant care reads the chat until the report is resolved. The other person is not told who reported. Whoever breaks the rules can be suspended from chats with other participants. They can still reach the team. In an emergency call 112 and turn to the team on site directly, since messages are not read around the clock.
+The three dots at the top of a direct chat let you use **Block person** so you can no longer write each other, or **Report chat** to report it. After a report participant care reads the chat until the report is resolved. The other person is not told who reported. Participant care can hide offensive messages from everybody, and a notice takes their place in the chat. Whoever breaks the rules can be suspended from chats with other participants. They can still reach the team. In an emergency call 112 and turn to the team on site directly, since messages are not read around the clock.
 :::
 
 ## MUNify CHASE {#chase}

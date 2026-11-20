@@ -4,6 +4,9 @@
 	much of it is unread, with the badge `listBadge` gives it.
 -->
 <script lang="ts">
+	import { prefersReducedMotion } from 'svelte/motion';
+	import { scale } from 'svelte/transition';
+	import { backOut } from 'svelte/easing';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import type { ChatSummary } from '#lib/api/chats';
@@ -36,7 +39,7 @@
 	type="button"
 	class={[
 		'flex w-full items-center gap-3 rounded-box px-3 py-2.5 text-left transition-colors',
-		selected ? 'bg-primary/10' : 'hover:bg-base-200'
+		selected ? 'bg-primary/15' : 'hover:bg-base-content/5'
 	]}
 	aria-current={selected ? 'true' : undefined}
 	onclick={() => onSelect(chat.id)}
@@ -82,7 +85,14 @@
 				</span>
 			{/if}
 			{#if unread}
-				<span class="badge badge-primary badge-sm shrink-0">
+				<span
+					class="badge badge-primary badge-sm shrink-0"
+					in:scale={{
+						start: 0.5,
+						duration: prefersReducedMotion.current ? 0 : 220,
+						easing: backOut
+					}}
+				>
 					{chat.unreadCount}
 					<span class="sr-only">{m.chatUnreadMessages()}</span>
 				</span>

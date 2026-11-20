@@ -28,7 +28,7 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="flex flex-wrap items-center gap-2">
+<div class="flex flex-wrap items-center gap-2" data-tour="team.assignmentSighting.review">
 	<kbd class="kbd kbd-xs hidden sm:inline-block" title={m.assignmentRateHotkey()}>1</kbd>
 	<StarRating
 		rating={review?.evaluation ?? 0}

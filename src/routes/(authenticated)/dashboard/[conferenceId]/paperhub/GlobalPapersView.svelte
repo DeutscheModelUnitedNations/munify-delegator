@@ -110,8 +110,8 @@
 	let filteredIntroPapers = $derived(filterPapersBySearch(introductionPapers));
 </script>
 
-<div class="flex flex-col gap-3 w-full">
-	<div class="card bg-base-200 border border-base-300 p-4">
+<div class="flex flex-col gap-3 w-full" data-tour="paperhub.view.global">
+	<div class="card bg-base-200 border border-base-300 p-4" data-tour="paperhub.conference.search">
 		<label class="input input-bordered flex items-center gap-2 w-full">
 			<i aria-hidden="true" class="ph-duotone ph-magnifying-glass text-base-content/50"></i>
 			<input
@@ -132,22 +132,29 @@
 		error={snapshot.error}
 		empty={committeeGroups.length === 0 && introductionPapers.length === 0}
 	>
-		{#each visibleCommittees as { committee, columns, count } (committee.id)}
-			<section class="card bg-base-100 border border-base-300">
-				<header class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
-					<div class="flex min-w-0 items-center gap-2">
-						<span class="badge badge-primary font-bold">{committee.abbreviation}</span>
-						<h3 class="text-lg font-semibold">{committee.name}</h3>
-					</div>
-					<span class="badge badge-ghost">{count} {m.papers()}</span>
-				</header>
+		{#if visibleCommittees.length > 0}
+			<div class="flex flex-col gap-3" data-tour="paperhub.conference.committees">
+				{#each visibleCommittees as { committee, columns, count } (committee.id)}
+					<section class="card bg-base-100 border border-base-300">
+						<header class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
+							<div class="flex min-w-0 items-center gap-2">
+								<span class="badge badge-primary font-bold">{committee.abbreviation}</span>
+								<h3 class="text-lg font-semibold">{committee.name}</h3>
+							</div>
+							<span class="badge badge-ghost">{count} {m.papers()}</span>
+						</header>
 
-				<div class="px-2 pb-2"><PaperMatrix {columns} {paperHref} /></div>
-			</section>
-		{/each}
+						<div class="px-2 pb-2"><PaperMatrix {columns} {paperHref} /></div>
+					</section>
+				{/each}
+			</div>
+		{/if}
 
 		{#if filteredIntroPapers.length > 0}
-			<section class="card bg-base-100 border border-base-300">
+			<section
+				class="card bg-base-100 border border-base-300"
+				data-tour="paperhub.conference.introduction"
+			>
 				<header class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
 					<div class="flex min-w-0 items-center gap-2">
 						<span class="badge badge-secondary font-bold">{m.nonStateActorAbbreviation()}</span>

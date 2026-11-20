@@ -32,7 +32,8 @@ const nameOf = (user: Person) =>
 
 export interface RowBadge {
 	key: string;
-	look: string;
+	/** The icon's colour; the row shows a badge as its icon alone, named on hover */
+	tone: string;
 	icon: string;
 	label: string;
 }
@@ -40,13 +41,13 @@ export interface RowBadge {
 const IMPORTANCE_BADGE: Record<string, () => RowBadge> = {
 	URGENT: () => ({
 		key: 'urgent',
-		look: 'badge-error gap-1',
+		tone: 'text-error',
 		icon: 'ph-fill ph-siren',
 		label: m.announcementImportanceUrgent()
 	}),
 	IMPORTANT: () => ({
 		key: 'important',
-		look: 'badge-warning gap-1',
+		tone: 'text-warning',
 		icon: 'ph-duotone ph-warning-circle',
 		label: m.announcementImportanceImportant()
 	})
@@ -58,14 +59,14 @@ export function rowBadges(row: RowFacts): RowBadge[] {
 	if (row.pinned)
 		badges.push({
 			key: 'pinned',
-			look: 'badge-ghost gap-1',
+			tone: 'text-base-content/70',
 			icon: 'ph-fill ph-push-pin',
 			label: m.announcementPinned()
 		});
 	if (row.notifyByMail)
 		badges.push({
 			key: 'mail',
-			look: 'badge-ghost gap-1',
+			tone: 'text-base-content/70',
 			icon: 'ph-duotone ph-envelope',
 			label: m.announcementWithMail()
 		});
@@ -124,6 +125,34 @@ export function rowFacts({
 	return facts;
 }
 
+/**
+ * The short values of a row's columns, which the full sentences of `rowFacts` explain on hover
+ * and to screen readers: when it goes or went out (and until when), how many read it of how many
+ * (or whom it would reach, before it is out), and who wrote it.
+ */
+export function rowCells({
+	row,
+	state,
+	shortDate
+}: {
+	row: RowFacts;
+	state: AnnouncementState;
+	shortDate: (value: Date | string) => string;
+}) {
+	const out = isOutOrOver(state);
+	return {
+		when: row.publishAt ? shortDate(row.publishAt) : null,
+		until: row.visibleUntil ? shortDate(row.visibleUntil) : null,
+		edited: !!row.editedAt,
+		reach: {
+			read: out ? row.readCount : null,
+			total: row.recipientCount,
+			share: out && row.recipientCount > 0 ? row.readCount / row.recipientCount : null
+		},
+		author: nameOf(row.author) ?? null
+	};
+}
+
 const ROW_ACTIONS = [
 	'edit',
 	'publish',
@@ -170,6 +199,17 @@ export function rowActions({ row, state }: { row: RowFacts; state: AnnouncementS
 	}));
 }
 
+/**
+ * A row's buttons the way the list shows them: going out in sight, the rest in its menu. Editing
+ * is the row itself, so it is neither.
+ */
+export function splitActions(actions: ReturnType<typeof rowActions>) {
+	return {
+		inline: actions.filter((button) => button.action === 'publish'),
+		more: actions.filter((button) => button.action !== 'publish' && button.action !== 'edit')
+	};
+}
+
 /** A row as the list reads it: the facts, and what names it and its audience. */
 export interface ListedRow extends RowFacts {
 	id: string;
@@ -180,19 +220,23 @@ export interface ListedRow extends RowFacts {
 
 /**
  * Everything one row shows, as plain values, worked out by the page from its live rows. The page
- * draws the rows itself: as a component of their own inside the list's `each`, the list stopped
+ * draws the rows itself (in snippets): as a component of their own inside the list's `each`, the list stopped
  * following live updates in a production build (e2e/announcements pins it down).
  */
 export function rowView({
 	row,
 	lookups,
-	dateTime
+	dateTime,
+	shortDate = dateTime
 }: {
 	row: ListedRow;
 	lookups: AudienceLookups;
 	dateTime: (value: Date | string) => string;
+	/** The compact date for the columns; the full one goes into the sentences */
+	shortDate?: (value: Date | string) => string;
 }) {
 	const state: AnnouncementState = isAnnouncementState(row.state) ? row.state : 'DRAFT';
+	const actions = rowActions({ row, state });
 	return {
 		id: row.id,
 		title: row.title,
@@ -202,7 +246,12 @@ export function rowView({
 			id: audience.id,
 			label: audienceLabel({ audience, lookups })
 		})),
-		facts: rowFacts({ row, state, dateTime }),
-		actions: rowActions({ row, state })
+		/** The full sentences, by key */
+		facts: Object.fromEntries(
+			rowFacts({ row, state, dateTime }).map((fact) => [fact.key, fact.text])
+		),
+		cells: rowCells({ row, state, shortDate }),
+		actions,
+		...splitActions(actions)
 	};
 }

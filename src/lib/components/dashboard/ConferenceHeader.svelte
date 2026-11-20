@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client';
 	import { formatDateRange, getStateColor, translateState } from './conferenceHeader';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		title: string;
@@ -10,9 +11,20 @@
 		endDate?: Date | null;
 		emblemUrl?: string | null;
 		logoUrl?: string | null;
+		/** The caller's team roles, already translated */
+		teamRoles?: string[];
 	}
 
-	let { title, longTitle, state, startDate, endDate, emblemUrl, logoUrl }: Props = $props();
+	let {
+		title,
+		longTitle,
+		state,
+		startDate,
+		endDate,
+		emblemUrl,
+		logoUrl,
+		teamRoles = []
+	}: Props = $props();
 </script>
 
 <header class="card bg-base-100 border-base-200 border shadow-sm" data-tour="dashboard.header">
@@ -46,6 +58,16 @@
 				<div class="flex flex-wrap items-center gap-3">
 					<h1 class="text-2xl font-bold md:text-3xl">{title}</h1>
 					<span class="badge {getStateColor(state)}">{translateState(state)}</span>
+					{#if teamRoles.length > 0}
+						<ul class="flex flex-wrap gap-1.5" aria-label={m.teamYourRoles()}>
+							{#each teamRoles as label (label)}
+								<li class="badge badge-primary badge-soft gap-1.5">
+									<i class="ph-duotone ph-shield-star text-xs" aria-hidden="true"></i>
+									{label}
+								</li>
+							{/each}
+						</ul>
+					{/if}
 				</div>
 
 				{#if longTitle}

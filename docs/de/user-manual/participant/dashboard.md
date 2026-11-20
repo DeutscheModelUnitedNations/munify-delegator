@@ -207,16 +207,20 @@ Ab der Anmeldung findest du auf dem Dashboard die Karte **Nachrichten**, später
 - **Deine Delegation.** Jede Delegation hat eine Gruppe für alle ihre Mitglieder, ab dem Moment, in dem es die Delegation gibt. So stimmt ihr euch schon über die Bewerbung ab. Bekommt eure Delegation keine Rolle, bleibt die Gruppe lesbar, aber niemand kann mehr darin schreiben.
 - **Andere Delegierte.** Über **Neue Nachricht** suchst du nach Land, Gremium oder Rolle, zum Beispiel „frank gv“. Ihr seht voneinander nur die Rolle, nie den Namen.
 
+Ist kein Chat geöffnet, zeigt dir die Seite neben der Chatliste, wen du direkt anschreiben kannst: deine Delegation und die Postfächer des Teams. Ein Klick öffnet den Chat.
+
 Anderen Delegierten schreibst du erst, wenn die Rollen veröffentlicht sind und das Team die Nachrichten zwischen Delegationen eingeschaltet hat. Bis dahin sagt dir die Seite, wen du schon erreichst. Gesendete Nachrichten lassen sich nicht mehr ändern oder löschen.
 
-Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Unter der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
+Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Über das Zahnrad über der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
 
 :::tip Wenn etwas nicht in Ordnung ist
-Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Du gehst sie Punkt für Punkt durch: Jeder Punkt zeigt zuerst kurz, worum es geht, öffne ihn und bestätige ihn mit **Verstanden**. Danach öffnet sich der nächste. Erst wenn alle Punkte bestätigt sind, kannst du unten die beiden Haken setzen. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** unter deinen Chats.
+Vor deiner ersten Nachricht zeigt dir die App die **Nutzungsbedingungen der Nachrichten**. Sie regeln den respektvollen Umgang und erklären, wer mitlesen kann. Du gehst sie Punkt für Punkt durch: Jeder Punkt zeigt zuerst kurz, worum es geht, öffne ihn und bestätige ihn mit **Verstanden**. Danach öffnet sich der nächste. Erst wenn alle Punkte bestätigt sind, kannst du unten die beiden Haken setzen. Deine Nachricht geht erst raus, wenn du mit **Zustimmen und senden** zugestimmt hast. Das gilt einmal für dein Konto und alle Konferenzen. Ändern sich die Bedingungen, fragt die App noch einmal. Nachlesen kannst du sie jederzeit über **Nutzungsbedingungen lesen** im Zahnrad-Menü über deinen Chats.
+
+Steht in deiner Nachricht anscheinend eine Telefonnummer, eine E-Mail-Adresse oder ein Messenger-Link, weist dich die App darauf hin, bevor sie sie sendet. Du kannst den Text ändern oder sie mit **Trotzdem senden** abschicken.
 
 Öffnest du einen Chat mit ungelesenen Nachrichten, zeigt die Linie **Neue Nachrichten**, wo du aufgehört hast.
 
-Über die drei Punkte oben in einem Einzelchat kannst du mit **Person blockieren** dafür sorgen, dass ihr euch nicht mehr schreiben könnt, oder mit **Chat melden** den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht. Wer gegen die Regeln verstößt, kann von den Chats mit anderen Teilnehmenden gesperrt werden. Das Team erreicht man dann weiterhin. In einem Notfall wähle den Notruf 112 und wende dich vor Ort direkt an das Team, denn die Nachrichten werden nicht rund um die Uhr gelesen.
+Über die drei Punkte oben in einem Einzelchat kannst du mit **Person blockieren** dafür sorgen, dass ihr euch nicht mehr schreiben könnt, oder mit **Chat melden** den Chat melden. Nach einer Meldung liest die Teilnehmendenbetreuung den Chat, bis sie die Meldung erledigt hat. Wer gemeldet hat, erfährt die andere Person nicht. Anstößige Nachrichten kann die Teilnehmendenbetreuung für alle ausblenden. Statt der Nachricht steht dann ein Hinweis im Chat. Wer gegen die Regeln verstößt, kann von den Chats mit anderen Teilnehmenden gesperrt werden. Das Team erreicht man dann weiterhin. In einem Notfall wähle den Notruf 112 und wende dich vor Ort direkt an das Team, denn die Nachrichten werden nicht rund um die Uhr gelesen.
 :::
 
 ## MUNify CHASE {#chase}

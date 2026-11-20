@@ -57,7 +57,11 @@
 
 <div class="flex flex-col gap-10 sm:gap-20">
 	{#if showSeatPlanningHint}
-		<div role="note" class="alert alert-info alert-soft text-sm">
+		<div
+			role="note"
+			class="alert alert-info alert-soft text-sm"
+			data-tour="team.committees.seat-planning-hint"
+		>
 			<i aria-hidden="true" class="ph-duotone ph-table"></i>
 			<span>{m.committeesSeatPlanningHint()}</span>
 			<a
@@ -75,6 +79,7 @@
 	{#if canCreateAndDelete}
 		<button
 			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"
+			data-tour="team.committees.add"
 			onclick={() => (addCommitteeModalOpen = true)}
 		>
 			<i aria-hidden="true" class="ph-duotone ph-plus"></i>

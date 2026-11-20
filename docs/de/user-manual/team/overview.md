@@ -9,22 +9,24 @@ Diese Seite erklärt, was für alle Seiten des Teams gilt: wie du in den Team-Be
 
 ## Hineinkommen und zurechtfinden {#the-team-area}
 
-Alles, woran das Team einer Konferenz arbeitet, liegt in einem gemeinsamen Team-Bereich. Auf dem Dashboard der Konferenz führt die Karte **Team** hinein. Oben rechts auf der Karte steht deine Rolle in dieser Konferenz. Die Karte öffnet die erste Seite der Navigation, die du öffnen darfst. Das sind die **Statistiken**, die jede Rolle sieht.
+Alles, woran das Team einer Konferenz arbeitet, liegt in einem gemeinsamen Team-Bereich. Sobald du im Team einer Konferenz bist, steht auf jeder ihrer Seiten links die Navigation der Konferenz. Ihr erster Eintrag ist die **Übersicht** der Konferenz. Neben dem Namen der Konferenz stehen deine Rollen im Team. Darunter zeigt je eine Kachel, was in deinen Bereichen gerade wartet: ungelesene Nachrichten, gemeldete Chats, mögliche Doppelkonten, Schulzusammenführungen, Personen auf der Warteliste, fällige oder fehlgeschlagene E-Mails, Ankündigungen im Entwurf, Papiere zum Bewerten und Tagesordnungspunkte, die Hilfe beim Bewerten brauchen. Ein Klick führt zur passenden Seite.
 
-Neben der Team-Karte stehen weitere Karten:
+Danach folgen Karten:
 
 - **Team-Wiki**, **Dienste** und **Inhaltliche Vorbereitung**, sobald die Konferenz diese Links in den [Einstellungen](./configuration) hinterlegt hat
-- **Plätze der Konferenz**, die öffentliche Übersicht der Gremien, Themen, Staaten und nichtstaatlichen Akteure
 - **App-Dokumentation**, falls der Server einen Link dazu hat
-- **Zeitplan**, den das Team immer sieht, auch wenn er für Teilnehmende noch ausgeblendet ist
 - **Papier-Hub**, wenn du Papiere prüfen darfst
 - **Verbindung zu CHASE**, solange eine CHASE-Instanz verbunden ist (siehe [unten](#chase-link))
 
-Auf der Startseite führt ein Knopf mit dem Namen der Konferenz direkt zurück in den Team-Bereich, den du in diesem Browser zuletzt geöffnet hast, solange du noch in ihrem Team bist.
+Auf der Startseite führt ein Knopf mit dem Namen der Konferenz direkt zurück zur Übersicht der Konferenz, in deren Team du in diesem Browser zuletzt warst, solange du noch in ihrem Team bist.
+
+Was sich die Teilnehmenden ansehen, öffnest du von der Seite des Teams aus: **Plätze** und **Kalender** haben oben den Link **Ansicht für Teilnehmende**.
 
 ### Die Seitennavigation
 
-Links listet die Navigation jede Seite, die du mit deiner Rolle öffnen darfst. Ganz oben führt **Zurück zum Dashboard** zur Konferenz zurück. Darunter folgen die Seiten für den Alltag (**Statistiken**, **Einstellungen**, **Plätze**, **Teilnehmende**, **Warteliste**, **Schulen**, **Teammanagement**, **Papier-Hub**), danach die aufklappbaren Gruppen **Arbeitsabläufe**, **Kommunikation** und **Wartung**. Ganz unten öffnet **Handbuch zu dieser Seite** in einem neuen Tab den passenden Abschnitt dieses Handbuchs, auf Seiten ohne eigenen Abschnitt heißt der Link **Handbuch**.
+Links listet die Navigation jede Seite, die du mit deiner Rolle öffnen darfst. Ganz oben steht der Name der Konferenz. Ein Klick darauf wechselt zu einer anderen Konferenz. Darunter führt **Übersicht** zur Übersicht der Konferenz. Dann folgen die Seiten für den Alltag (**Statistiken**, **Einstellungen**, **Plätze**, **Teilnehmende**, **Warteliste**, **Schulen**, **Teammanagement**, **Papier-Hub**), danach die aufklappbaren Gruppen **Arbeitsabläufe**, **Kommunikation** und **Wartung**. Ganz unten öffnet **Handbuch zu dieser Seite** in einem neuen Tab den passenden Abschnitt dieses Handbuchs, auf Seiten ohne eigenen Abschnitt heißt der Link **Handbuch**.
+
+Darunter startet **Tour starten** eine geführte Tour durch die Seite, auf der du gerade bist. Sie zeigt dir der Reihe nach, wofür die Seite da ist und wie ihre Teile funktionieren. Fast jede Seite des Teams hat eine. Dieselbe Tour startest du auch über das Fragezeichen in der Kopfzeile.
 
 Drei Einträge machen mit einem Punkt auf sich aufmerksam: **Nachrichten**, wenn ein Postfach, das du betreust, ungelesene Nachrichten hat oder ein gemeldeter Chat auf die Teilnehmendenbetreuung wartet, **Plausibilität**, solange mögliche Doppelkonten auf eine Entscheidung warten, und **Aufräumen**, solange vorgeschlagene Schulzusammenführungen offen sind.
 
@@ -312,7 +314,7 @@ DELEGATOR prüft die Stellvertretung bei jedem Seitenaufruf neu. Sie endet von s
 
 ## Slack-Workspaces {#slack-workspaces}
 
-DELEGATOR kann Teammitglieder per Slack benachrichtigen (siehe [Benachrichtigungen](./communication#notifications)). Dafür trägt die Administration des Systems jeden Slack-Workspace einmal ein. Die Seite **Slack-Workspaces** erreichst du als Admin über den gleichnamigen Knopf auf der Konferenzübersicht.
+DELEGATOR kann Teammitglieder per Slack benachrichtigen (siehe [Benachrichtigungen](./communication#notifications)). Dafür trägt die Administration des Systems jeden Slack-Workspace einmal ein. Die Seite **Slack-Workspaces** erreichst du als Admin im Menü hinter deinen Initialen oben rechts unter **Administration**.
 
 1. Lege im Workspace eine Slack-App an und gib ihr die Bot-Scopes `chat:write`, `users:read` und `users:read.email`.
 2. Installiere die App im Workspace und kopiere ihr Bot-Token. Es beginnt mit `xoxb-`.
@@ -348,7 +350,7 @@ Solange eine CHASE-Instanz verbunden ist, sieht jedes Teammitglied auf dem Dashb
 
 Administrator\*innen finden auf der Karte und auf der Seite **Verbindung zu CHASE** den Knopf **Jetzt synchronisieren**. Er lässt DELEGATOR alles aus CHASE neu lesen und bittet CHASE, dasselbe mit DELEGATOR zu tun. Normalerweise braucht es ihn nicht, denn beide Seiten hören Änderungen sofort. Ist CHASE gerade nicht erreichbar, gleicht DELEGATOR trotzdem auf seiner Seite ab und sagt das in der Meldung.
 
-Die Seite **Verbindung zu CHASE** öffnen Administrator\*innen über den gleichnamigen Knopf auf der Konferenzübersicht. Sie zeigt, mit welcher Adresse DELEGATOR verbunden ist, **Letzte Meldung von CHASE**, **Letzter Abgleich** und den letzten Fehler, dazu **CHASE öffnen**. Ohne Verbindung erklärt sie, welche Einstellungen des Servers dafür nötig sind.
+Die Seite **Verbindung zu CHASE** öffnen Administrator\*innen im Menü hinter ihren Initialen oben rechts unter **Administration**. Sie zeigt, mit welcher Adresse DELEGATOR verbunden ist, **Letzte Meldung von CHASE**, **Letzter Abgleich** und den letzten Fehler, dazu **CHASE öffnen**. Ohne Verbindung erklärt sie, welche Einstellungen des Servers dafür nötig sind.
 
 :::note Wenn die Verbindung endet
 Entfernt die Administration die Verbindung aus der Konfiguration, endet sie beim nächsten Start des Servers. Die Resolutionen aus CHASE bleiben dann als gewöhnliche Resolutionen erhalten und lassen sich wieder löschen.

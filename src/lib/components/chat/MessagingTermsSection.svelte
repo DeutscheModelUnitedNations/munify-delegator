@@ -41,11 +41,15 @@
 	}: Props = $props();
 
 	const frame = $derived(
-		open ? 'border-primary' : done ? 'border-success/40 bg-success/5' : 'border-base-300'
+		open
+			? 'border-primary/40 bg-base-200'
+			: done
+				? 'border-success/25 bg-success/5'
+				: 'border-base-content/10 bg-base-200/40 hover:bg-base-200'
 	);
 </script>
 
-<li class="rounded-box border-2 transition-colors {frame}" data-testid="chat-terms-section">
+<li class="rounded-box border transition-colors {frame}" data-testid="chat-terms-section">
 	<h3>
 		<button
 			type="button"
@@ -59,7 +63,7 @@
 				<span
 					class="bg-success text-success-content flex size-8 shrink-0 items-center justify-center rounded-full"
 				>
-					<i aria-hidden="true" class="ph-bold ph-check"></i>
+					<i aria-hidden="true" class="ph-duotone ph-check"></i>
 					<span class="sr-only">{m.chatTermsUnderstood()}:</span>
 				</span>
 			{:else}
@@ -76,7 +80,7 @@
 			</span>
 			<i
 				aria-hidden="true"
-				class="ph-bold ph-caret-down text-base-content/60 shrink-0 transition-transform"
+				class="ph-duotone ph-caret-down text-base-content/60 shrink-0 transition-transform"
 				class:rotate-180={open}
 			></i>
 		</button>
@@ -101,7 +105,7 @@
 				onclick={onunderstood}
 				data-testid="chat-terms-understood"
 			>
-				<i aria-hidden="true" class="ph-bold ph-check"></i>
+				<i aria-hidden="true" class="ph-duotone ph-check"></i>
 				{m.chatTermsUnderstood()}
 			</button>
 		{/if}

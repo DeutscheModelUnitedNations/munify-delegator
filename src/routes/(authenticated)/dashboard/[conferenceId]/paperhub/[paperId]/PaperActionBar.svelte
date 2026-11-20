@@ -27,7 +27,7 @@
 	const isDraft = $derived(status === 'DRAFT');
 </script>
 
-<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center justify-between flex-wrap gap-2" data-tour="paperhub.paper.actions">
 	<div class="contents">
 		<!-- Author/Edit Actions (Left) -->
 		<div class="flex gap-2">

@@ -108,7 +108,11 @@ export function fetchChatMessages({ chatId, limit }: { chatId: string; limit: nu
 		fromTeam: true,
 		authorName: true,
 		authorParticipantId: true,
-		paperId: true
+		paperId: true,
+		// participant care's record of a message it hid; the parties read only that it was
+		hiddenAt: true,
+		hiddenByName: true,
+		hiddenReason: true
 	});
 }
 

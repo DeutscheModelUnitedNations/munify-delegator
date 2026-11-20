@@ -1,11 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { inArray } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
-import {
-	contentHash,
-	termsInLocale
-} from '../../src/api/handlers/messagingTerms/messagingTermsDocument';
-import { termsOnDisk } from '../../src/api/handlers/messagingTerms/termsOnDisk';
+import { seedAcceptancesOf } from '../../src/api/handlers/messagingTerms/termsOnDisk';
 
 /** `agreed` have accepted the terms as they stand, in German; `others` have not. */
 export async function seedTermsAcceptances(
@@ -16,16 +12,5 @@ export async function seedTermsAcceptances(
 		.delete(schema.messagingTermsAcceptance)
 		.where(inArray(schema.messagingTermsAcceptance.userId, [...agreed, ...others]));
 	if (agreed.length === 0) return;
-	const document = termsOnDisk();
-	const shown = termsInLocale({ document, locale: 'de' });
-	await db.insert(schema.messagingTermsAcceptance).values(
-		agreed.map((userId) => ({
-			userId,
-			version: shown.version,
-			revision: shown.revision,
-			locale: shown.locale,
-			contentHash: contentHash(shown),
-			confirmationIds: shown.confirmations.map((confirmation) => confirmation.id)
-		}))
-	);
+	await db.insert(schema.messagingTermsAcceptance).values(seedAcceptancesOf(agreed));
 }

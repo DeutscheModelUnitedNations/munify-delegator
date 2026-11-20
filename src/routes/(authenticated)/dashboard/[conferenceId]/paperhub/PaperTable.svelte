@@ -35,6 +35,8 @@
 		paperHref: (paperId: string) => ResolvedPathname;
 		/** Something to do with a paper right from its row, such as writing to its author */
 		rowAction?: Snippet<[Paper]>;
+		/** The guided tour's anchor, for the one table it points at */
+		tourAnchor?: string;
 	}
 
 	let {
@@ -45,7 +47,8 @@
 		showStatus = true,
 		showUpdatedAt = true,
 		paperHref,
-		rowAction
+		rowAction,
+		tourAnchor
 	}: Props = $props();
 
 	// Type colors for icon badges
@@ -160,7 +163,7 @@
 	</div>
 {/snippet}
 
-<div class="overflow-x-auto">
+<div class="overflow-x-auto" data-tour={tourAnchor}>
 	<table class="table table-sm">
 		<thead>
 			<tr class="text-xs text-base-content/60">

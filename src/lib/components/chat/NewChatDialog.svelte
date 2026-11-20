@@ -25,7 +25,7 @@
 	}: Props = $props();
 </script>
 
-<Modal bind:open title={m.chatNewMessage()}>
+<Modal bind:open wider title={m.chatNewMessage()}>
 	<svelte:boundary>
 		<NewChatPicker
 			{conferenceId}

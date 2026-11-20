@@ -61,7 +61,7 @@
 
 <div class="flex flex-col gap-4 w-full">
 	<!-- Back Button -->
-	<div>
+	<div data-tour="paperhub.read.back">
 		<a
 			href={resolve(`dashboard/${params.conferenceId}/paperhub?view=global`)}
 			class="btn btn-ghost btn-sm"
@@ -75,7 +75,7 @@
 		<PaperHeaderCard paper={paperData} />
 
 		<!-- Read-Only Info Banner -->
-		<div class="alert alert-info">
+		<div class="alert alert-info" data-tour="paperhub.read.notice">
 			<i aria-hidden="true" class="ph-duotone ph-eye"></i>
 			<span>{m.readOnlyViewParticipant()}</span>
 		</div>
@@ -86,7 +86,7 @@
 	{/if}
 
 	{#if loaded.initialized && paperData}
-		<div class="w-full flex flex-col gap-4">
+		<div class="w-full flex flex-col gap-4" data-tour="paperhub.read.content">
 			<!-- Paper Content -->
 
 			<PaperContent paper={paperData} {loaded} editable={false} headerData={resolutionHeaderData} />

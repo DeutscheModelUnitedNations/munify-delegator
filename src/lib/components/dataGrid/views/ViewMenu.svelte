@@ -64,7 +64,7 @@
 	</li>
 {/snippet}
 
-<div class="dropdown no-print">
+<div class="dropdown no-print" data-tour="grid.views">
 	<button tabindex="0" class="btn btn-sm btn-ghost max-w-56" disabled={busy}>
 		<i aria-hidden="true" class="ph-duotone ph-layout"></i>
 		<span class="truncate">{current?.name ?? m.dataGridBaseView()}</span>

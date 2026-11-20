@@ -28,7 +28,7 @@
 	}
 </script>
 
-<label class="flex flex-col gap-1">
+<label class="flex flex-col gap-1" data-tour="team.assignmentSighting.note">
 	<span class="flex items-center gap-2 text-sm font-semibold">
 		<i aria-hidden="true" class="ph-duotone ph-note text-lg"></i>
 		{m.assignmentNote()}

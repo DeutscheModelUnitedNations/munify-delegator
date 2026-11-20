@@ -1,19 +1,16 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { resolve } from '$app/paths';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchChats } from '#lib/api/chats';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { m } from '#lib/paraglide/messages';
 	import NewChatDialog from '#lib/components/chat/NewChatDialog.svelte';
-	import { inboxName, sideOf } from '#lib/components/chat/chatLabels';
+	import { sideOf } from '#lib/components/chat/chatLabels';
 	import ReportDesk from './ReportDesk.svelte';
 	import SettledReports from './SettledReports.svelte';
 	import { fetchTeamInboxes, teamInboxesOf } from './fetchTeamInboxes';
-	import InboxOverview from './InboxOverview.svelte';
 	import InboxChats from './InboxChats.svelte';
-	import { inboxKey } from './teamInboxes';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -57,7 +54,16 @@
 					reporterName: true,
 					reporterParticipantId: true,
 					resolutionNote: true,
-					resolvedByName: true
+					resolvedByName: true,
+					hiddenMessages: {
+						id: true,
+						body: true,
+						createdAt: true,
+						authorName: true,
+						hiddenAt: true,
+						hiddenReason: true,
+						hiddenByName: true
+					}
 				})
 			: []
 	);
@@ -68,35 +74,26 @@
 	const openReports = $derived(reports.filter((report) => report.status === 'OPEN'));
 	const settledReports = $derived(reports.filter((report) => report.status !== 'OPEN'));
 
-	const view = $derived(params.view === 'reports' && cares ? 'reports' : 'inboxes');
+	const reporting = $derived(params.view === 'reports' && cares);
+	const messenger = $derived(!reporting && inboxes.length > 0);
 	const showArchive = $derived(params.archive === '1');
-	const inboxChats = $derived(
-		teamChats.filter((chat) => !params.inbox || inboxKey(chat) === params.inbox)
-	);
-	let pickerOpen = $state(false);
-
-	const reporting = $derived(view === 'reports');
 	const selectedId = $derived(params.chat ?? null);
-	const selectedInbox = $derived(params.inbox ?? null);
-	// the team menu picks the inbox; the list says which one it shows
-	const shownInbox = $derived(inboxes.find((inbox) => inbox.key === selectedInbox));
-	// several inboxes start at their overview; one inbox, or a chat opened by its link, at the chats
-	const several = $derived(cares || inboxes.length > 1);
-	const overview = $derived(several && !reporting && !selectedInbox && !selectedId);
-	const listTitle = $derived(
-		!shownInbox ? m.chatChats() : shownInbox.own ? m.chatInboxTrustedOwn() : inboxName(shownInbox)
+	// an inbox only the URL still names (a function taken away) narrows nothing
+	const selectedInbox = $derived(
+		inboxes.some((inbox) => inbox.key === params.inbox) ? (params.inbox ?? null) : null
 	);
 	const paperId = $derived(params.paper ?? null);
-	const severalInboxes = $derived(inboxes.length > 1);
 	// the team starts a chat with a seated participant once the roles are released, whatever the
 	// switch says: it is only about participants writing each other
 	const onNew = $derived(conference.assignmentReleased ? () => (pickerOpen = true) : undefined);
+	let pickerOpen = $state(false);
 </script>
 
-<div class="flex flex-col gap-4 py-4 sm:p-6">
+<div class={['flex flex-col gap-4 py-4 sm:p-6', messenger && 'messenger-page']}>
 	<header class={['flex flex-col gap-1', selectedId && 'max-md:hidden']}>
-		<h1 class="text-2xl font-bold tracking-tight">{m.chatMessages()}</h1>
-		<p class="text-base-content/70 max-w-3xl">{m.chatTeamPageDescription()}</p>
+		<h1 class="text-2xl font-bold tracking-tight">
+			{reporting ? m.chatReports() : m.chatMessages()}
+		</h1>
 	</header>
 
 	{#if !conference.messagingEnabled}
@@ -104,20 +101,6 @@
 			<i aria-hidden="true" class="ph-duotone ph-info"></i>
 			<span>{m.chatTeamDisabledHint()}</span>
 		</div>
-	{/if}
-
-	{#if several && !overview}
-		<a
-			href={resolve(`dashboard/${conferenceId}/team/messages`)}
-			class={[
-				'link link-hover flex items-center gap-1.5 self-start text-sm',
-				selectedId && 'max-md:hidden'
-			]}
-			data-testid="team-inbox-back"
-		>
-			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>
-			{m.chatInboxOverview()}
-		</a>
 	{/if}
 
 	{#if reporting}
@@ -129,42 +112,27 @@
 			onSelect={(chatId) => (params.chat = chatId)}
 		/>
 		<SettledReports reports={settledReports} />
-	{:else if inboxes.length === 0}
+	{:else if messenger}
+		<InboxChats
+			{conferenceId}
+			chats={teamChats}
+			{inboxes}
+			{selectedInbox}
+			onInbox={(key) => (params.inbox = key)}
+			{onNew}
+			{selectedId}
+			onSelect={(id) => (params.chat = id)}
+			{showArchive}
+			onArchive={(shown) => (params.archive = shown ? '1' : null)}
+			reported={cares ? reviewChats.length : undefined}
+			{paperId}
+			onPaperSent={() => (params.paper = null)}
+		/>
+	{:else}
 		<div class="bg-base-200 text-base-content/70 flex items-start gap-3 rounded-box p-5">
 			<i aria-hidden="true" class="ph-duotone ph-tray text-2xl"></i>
 			<p>{m.chatNoInboxHint()}</p>
 		</div>
-	{:else if overview}
-		<InboxOverview
-			{conferenceId}
-			{inboxes}
-			chats={teamChats}
-			reported={cares ? reviewChats.length : undefined}
-		/>
-	{:else}
-		<InboxChats
-			chats={inboxChats}
-			title={listTitle}
-			{onNew}
-			{selectedId}
-			onSelect={(id) => (params.chat = id)}
-			showInbox={severalInboxes && !selectedInbox}
-			{showArchive}
-			onArchive={(shown) => (params.archive = shown ? '1' : null)}
-			{paperId}
-			onPaperSent={() => (params.paper = null)}
-		/>
-	{/if}
-
-	{#if inboxes.length > 0}
-		<a
-			href={resolve('my-account/notifications')}
-			class="link link-hover text-base-content/70 flex items-center gap-1.5 self-start text-sm"
-			data-testid="team-notifications-link"
-		>
-			<i aria-hidden="true" class="ph-duotone ph-bell"></i>
-			{m.chatTeamNotificationsLink()}
-		</a>
 	{/if}
 </div>
 
@@ -174,3 +142,10 @@
 	mode="team"
 	onOpened={(chatId) => (params.chat = chatId)}
 />
+
+<style>
+	/* The messenger reaches down to the window's edge; the main area above it pads by 1rem. */
+	.messenger-page {
+		height: max(32rem, calc(100dvh - var(--header-height, 4rem) - 1rem));
+	}
+</style>

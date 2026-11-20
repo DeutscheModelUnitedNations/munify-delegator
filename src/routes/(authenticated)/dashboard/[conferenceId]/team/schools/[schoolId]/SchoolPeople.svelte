@@ -40,7 +40,7 @@
 	};
 </script>
 
-<section class="flex flex-col gap-4" aria-label={m.schoolPeople()}>
+<section class="flex flex-col gap-4" aria-label={m.schoolPeople()} data-tour="team.school.people">
 	<h3 class="text-lg font-bold">
 		{m.schoolPeople()}
 		<span class="badge badge-sm align-middle">{people.length}</span>
