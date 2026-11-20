@@ -379,6 +379,8 @@ test.describe('review drafts in the editor', () => {
 			.locator('.modal-action')
 			.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ })
 			.click();
+		// the dialog hands focus back to its opener once it has faded out: type after that
+		await expect(page.getByRole('dialog')).toBeHidden();
 		await review.locator('.ProseMirror p').first().click();
 		await page.keyboard.press('End');
 		await page.keyboard.type(' Noch getippt.');
@@ -432,6 +434,8 @@ test.describe('review drafts in the editor', () => {
 			.locator('.modal-action')
 			.getByRole('button', { name: /Entwurf verwerfen|Discard draft/ })
 			.click();
+		// the dialog hands focus back to its opener once it has faded out: type after that
+		await expect(page.getByRole('dialog')).toBeHidden();
 		await editor.locator('p').first().click();
 		await page.keyboard.press('End');
 		await page.keyboard.type(' Danach getippt.');
