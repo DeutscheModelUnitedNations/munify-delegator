@@ -42,6 +42,12 @@
 		})
 	);
 
+	// The papers the caller has a review draft for (an AI assistant may have written it).
+	const myDrafts = $derived(
+		await client.liveQuery.myPaperReviewDrafts({ __args: { conferenceId }, paperId: true })
+	);
+	const draftPaperIds = $derived(new Set(myDrafts.map((draft) => draft.paperId)));
+
 	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
 	const focusMode = createPersistedState({ key: 'paperHubFocusMode', initial: false });
 
@@ -258,6 +264,7 @@
 			onSort={(key) => sortState.toggle({ groupId, key })}
 			paperHref={(paperId) => resolve(`dashboard/${conferenceId}/paperhub/${paperId}`)}
 			rowAction={answersInbox ? writeToAuthor : undefined}
+			{draftPaperIds}
 		/>
 	</div>
 {/snippet}

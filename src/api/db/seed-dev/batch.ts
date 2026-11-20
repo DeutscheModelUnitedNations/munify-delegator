@@ -55,6 +55,7 @@ export interface SeedBatch {
 	paper: (typeof schema.paper.$inferInsert)[];
 	paperVersion: (typeof schema.paperVersion.$inferInsert)[];
 	paperReview: (typeof schema.paperReview.$inferInsert)[];
+	paperReviewDraft: (typeof schema.paperReviewDraft.$inferInsert)[];
 	surveyQuestion: (typeof schema.surveyQuestion.$inferInsert)[];
 	surveyOption: (typeof schema.surveyOption.$inferInsert)[];
 	surveyAnswer: (typeof schema.surveyAnswer.$inferInsert)[];
@@ -125,6 +126,7 @@ export function emptyBatch(): SeedBatch {
 		paper: [],
 		paperVersion: [],
 		paperReview: [],
+		paperReviewDraft: [],
 		surveyQuestion: [],
 		surveyOption: [],
 		surveyAnswer: [],
@@ -310,6 +312,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.paperReview,
 		insert: (rows) => db.insert(s.paperReview).values(rows)
+	});
+	await insertChunked({
+		rows: batch.paperReviewDraft,
+		insert: (rows) => db.insert(s.paperReviewDraft).values(rows)
 	});
 	await insertChunked({
 		rows: batch.surveyQuestion,

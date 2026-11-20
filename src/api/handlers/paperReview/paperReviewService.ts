@@ -5,7 +5,12 @@ import { m } from '#lib/paraglide/messages';
 import { translatePaperStatus } from '#lib/utils/enumTranslations';
 import { apiError } from '#api/services/errors';
 import { z } from 'zod';
-import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '#api/pubsub';
+import {
+	paperPubsub,
+	paperReviewDraftPubsub,
+	paperReviewPubsub,
+	paperVersionPubsub
+} from '#api/pubsub';
 import { isFirstReviewForPiece, unlockedPiece } from './flagPieces';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
@@ -57,8 +62,15 @@ function fetchPaperForReview({ tx, paperId }: { tx: Transaction; paperId: string
 		.then(assertFindFirstExists);
 }
 
-/** Refuses (CONFLICT) a draft or a paper without a version; returns the version to review. */
-function assertReviewable({ paper }: { paper: Awaited<ReturnType<typeof fetchPaperForReview>> }) {
+/**
+ * Refuses (CONFLICT) a draft or a paper without a version; returns the version to review, the
+ * first of `versions`, which are loaded newest first. Review drafts check the same.
+ */
+export function assertReviewable<V>({
+	paper
+}: {
+	paper: { status: PaperStatus; versions: readonly V[] };
+}) {
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
 		throw apiError({
 			code: 'CONFLICT',
@@ -74,7 +86,7 @@ function assertReviewable({ paper }: { paper: Awaited<ReturnType<typeof fetchPap
 
 /**
  * Records a reviewer's verdict on a paper's latest version and gives the paper and the version
- * that status; with `anonymousAs` the author reads that name (`anonymousName` for `CUSTOM`) instead of the reviewer's. Refuses (CONFLICT) a paper that is still a draft. Returns the review's id and the
+ * that status; with `anonymousAs` the author reads that name (`anonymousName` for `CUSTOM`) instead of the reviewer's. The reviewer's review draft of the paper, if any, is deleted with it. Refuses (CONFLICT) a paper that is still a draft. Returns the review's id and the
  * flag piece the review uncovered (`flagPieces.ts`), if it was the first for one.
  */
 export async function createPaperReview({
@@ -92,7 +104,7 @@ export async function createPaperReview({
 	anonymousAs: (typeof schema.paperReview.$inferInsert)['anonymousAs'];
 	anonymousName: (typeof schema.paperReview.$inferInsert)['anonymousName'];
 }) {
-	const { versionId, result } = await db.transaction(async (tx) => {
+	const { versionId, draftDeleted, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview({ tx, paperId });
 		const latestVersion = assertReviewable({ paper });
 		const wasFirstReviewForPiece = await isFirstReviewForPiece({ tx, paper });
@@ -120,10 +132,17 @@ export async function createPaperReview({
 			.set({ status: verdict })
 			.where(whereRows({ table: schema.paperVersion, filter: { id: latestVersion.id } }));
 
+		// The reviewer's draft of this review is done with (`paperReviewDraft`).
+		const deletedDrafts = await tx
+			.delete(schema.paperReviewDraft)
+			.where(whereRows({ table: schema.paperReviewDraft, filter: { paperId, reviewerId } }))
+			.returning({ id: schema.paperReviewDraft.id });
+
 		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece({ tx, paper }) : null;
 
 		return {
 			versionId: latestVersion.id,
+			draftDeleted: deletedDrafts.length > 0,
 			result: {
 				reviewId: review.id,
 				pieceUnlocked: unlockedPieceData !== null,
@@ -132,6 +151,7 @@ export async function createPaperReview({
 		};
 	});
 	paperReviewPubsub.created();
+	if (draftDeleted) paperReviewDraftPubsub.removed();
 	paperPubsub.updated(paperId);
 	paperVersionPubsub.updated(versionId);
 	// The verdict moves the paper into or out of lists filtered by status (the linked CHASE reads

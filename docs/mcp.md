@@ -51,6 +51,17 @@ Announcements can be written, changed, duplicated, published, taken back and mai
 drafts freely; changing, publishing, taking back and mailing again preview first. Deleting an
 announcement stays in the app.
 
+Paper reviews are prepared, never sent: `upsertPaperReviewDraft` writes the caller's review draft
+of a paper (Markdown in: paragraphs, bold, italic, lists, headings and `> quotes`, taken
+literally) and answers a link to the paper's review editor and the quotes the paper's latest
+version does not contain word for word; `deletePaperReviewDraft` removes it, and
+`myPaperReviewDraft` / `myPaperReviewDrafts` read it back. A draft reaches nobody but its
+reviewer. Sending the review is only possible in the app: no tool sends one or changes a paper's
+status. Once the reviewer edited the draft in the app, both tools refuse (CONFLICT) unless called
+with `overwriteAppEdits: true`. The server does not check that the reviewer agreed, so the
+assistant sets it only after asking. A replacement makes the draft the assistant's again: later
+changes need no flag until the reviewer edits it in the app once more.
+
 ## Setting it up
 
 1. **Logto: an API resource for the MCP server.** Create an API resource whose indicator is the

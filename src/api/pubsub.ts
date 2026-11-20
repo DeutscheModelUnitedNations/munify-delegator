@@ -34,6 +34,7 @@ export const mcpAuditEntryPubsub = pubsub({ table: 'mcpAuditEntry' });
 export const notificationPreferencePubsub = pubsub({ table: 'notificationPreference' });
 export const paperPubsub = pubsub({ table: 'paper' });
 export const paperReviewPubsub = pubsub({ table: 'paperReview' });
+export const paperReviewDraftPubsub = pubsub({ table: 'paperReviewDraft' });
 export const paperVersionPubsub = pubsub({ table: 'paperVersion' });
 export const paymentTransactionPubsub = pubsub({ table: 'paymentTransaction' });
 export const placePubsub = pubsub({ table: 'place' });

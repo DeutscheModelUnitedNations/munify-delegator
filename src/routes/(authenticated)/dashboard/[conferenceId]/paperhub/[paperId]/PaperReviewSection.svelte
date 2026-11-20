@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages';
 	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client';
-	import { writable, get } from 'svelte/store';
+	import { writable } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import type { JSONContent } from '@tiptap/core';
@@ -10,13 +10,24 @@
 	import { PieceFoundModal } from '#lib/components/flagCollection/index';
 	import Modal from '#lib/components/Modal.svelte';
 	import { getEmptyTipTapDocument } from '#lib/components/paper/editor/contentValidation';
-	import { untrack } from 'svelte';
-	import { createDraftAutosave } from '#lib/components/paper/draft/draftAutosave.svelte.js';
-	import DraftRecoveryModal from '#lib/components/paper/draft/DraftRecoveryModal.svelte';
+	import { onDestroy, untrack } from 'svelte';
+	import { browser } from '$app/env';
 	import PaperHistory from './PaperHistory.svelte';
 	import ReviewStatusPicker from './ReviewStatusPicker.svelte';
 	import { hasTextContent } from '../tiptapText';
 	import { unlockedPiece, type UnlockedPiece } from './unlockedPiece';
+	import {
+		changedElsewhere,
+		draftNotice,
+		legacyBrowserDraft,
+		legacyDraftKey,
+		staleDraftWarning,
+		startingVerdict
+	} from './reviewDraft';
+	import { createDraftSaver } from './reviewDraftSaver.svelte.js';
+	import { hasErrorCode } from '#lib/api/errorCodes';
+	import ReviewDraftNotices from './ReviewDraftNotices.svelte';
+	import ReviewDraftFooter from './ReviewDraftFooter.svelte';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import ReviewAnonymityToggle from './ReviewAnonymityToggle.svelte';
 	import {
@@ -32,6 +43,8 @@
 		paperId: string;
 		conferenceId: string;
 		currentStatus: PaperstatusEnum;
+		/** The paper's latest version, which a draft may have been written before. */
+		latestVersion: number;
 		authorName?: string;
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
@@ -43,6 +56,7 @@
 		paperId,
 		conferenceId,
 		currentStatus,
+		latestVersion,
 		authorName = '',
 		quoteToInsert,
 		onQuoteInserted,
@@ -58,18 +72,143 @@
 	let reviewed = $state(false);
 	let nextPaperId = $state<string | null>(null);
 
-	// Types for draft persistence
-	interface ReviewDraft {
-		comments: JSONContent;
-		selectedStatus: PaperstatusEnum;
-		savedAt: number;
+	// The reviewer's own draft of this review (an AI assistant may have written it over MCP).
+	const DRAFT_SELECTION = {
+		comments: true,
+		statusAfter: true,
+		origin: true,
+		lastEditedVia: true,
+		createdAt: true,
+		updatedAt: true,
+		paperVersion: { version: true }
+	} as const;
+	const storedDraft = $derived(
+		await client.liveQuery.myPaperReviewDraft({ __args: { paperId }, ...DRAFT_SELECTION })
+	);
+	// The stored draft, unless this editor discarded or sent exactly that one: a live result does
+	// not reliably turn null again, and a later draft (another `updatedAt`) shows up as usual.
+	let goneUpdatedAt = $state<number | undefined>(undefined);
+	const storedUpdatedAt = $derived(
+		storedDraft ? new Date(storedDraft.updatedAt).getTime() : undefined
+	);
+	const hasDraft = $derived(storedUpdatedAt !== undefined && storedUpdatedAt !== goneUpdatedAt);
+	const draftOrigin = $derived(hasDraft ? storedDraft?.origin : undefined);
+	const draftLastEditedVia = $derived(storedDraft?.lastEditedVia);
+	const draftCreatedAt = $derived(storedDraft?.createdAt);
+	const draftUpdatedAt = $derived(storedDraft?.updatedAt);
+
+	// Seeded once from the draft: re-reading it while the reviewer types would discard their edits.
+	const initialDraft = await client.query.myPaperReviewDraft({
+		__args: { paperId: untrack(() => paperId) },
+		...DRAFT_SELECTION
+	});
+	// Without a draft on the server, an unsent review the editor kept in this browser before
+	// drafts were stored there is taken over, and saved as the draft right after. The browser keeps
+	// it until the server has it (or the reviewer discards or sends the review).
+	const legacyKey = legacyDraftKey(untrack(() => paperId));
+	const legacyDraft = initialDraft ? undefined : readLegacyDraft();
+
+	/** The review this browser kept for the paper the old way, if any. */
+	function readLegacyDraft() {
+		if (!browser) return undefined;
+		try {
+			return legacyBrowserDraft(localStorage.getItem(legacyKey));
+		} catch {
+			return undefined;
+		}
+	}
+
+	// Until the server has it, the browser's review is a draft too, and can be discarded.
+	let legacyPending = $state(legacyDraft !== undefined);
+
+	/** Forgets the review this browser kept the old way, once it is no longer needed. */
+	function dropLegacyDraft() {
+		if (!legacyPending) return;
+		legacyPending = false;
+		try {
+			localStorage.removeItem(legacyKey);
+		} catch {
+			// nothing to forget where storage is blocked
+		}
 	}
 
 	// Review form state
-	let reviewComments = writable<JSONContent>(getEmptyTipTapDocument());
-	let selectedStatus = $state<PaperstatusEnum>(untrack(() => currentStatus));
+	let reviewComments = writable<JSONContent>(
+		initialDraft?.comments ?? legacyDraft?.comments ?? getEmptyTipTapDocument()
+	);
+	// A draft's verdict, the browser's kept one included, wins over the editor's default.
+	const draftVerdict = startingVerdict({ stored: initialDraft, legacy: legacyDraft });
+	let selectedStatus = $state<PaperstatusEnum>(draftVerdict ?? untrack(() => currentStatus));
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
+	let showDiscardModal = $state(false);
+	/** Bumped to remount the editor when its content is replaced from outside. */
+	let editorKey = $state(0);
+
+	// The paper version the review in the editor was written for: the loaded draft's, or the
+	// latest as the editor opened (or emptied) without one, even when a newer one arrives before
+	// the first save. Not the stored draft's, which an assistant may have rewritten for a newer
+	// version while older comments are still here.
+	let editorVersion = $state<number | undefined>(
+		initialDraft?.paperVersion.version ?? untrack(() => latestVersion)
+	);
+
+	// Saves the editor's content as the draft; knows what the editor last loaded or saved, so an
+	// assistant's later change is told apart from this editor's own.
+	const saver = createDraftSaver({
+		save: async ({ comments, status, expectedUpdatedAt }) => {
+			const saved = await client.mutate.savePaperReviewDraft({
+				__args: {
+					paperId,
+					comments,
+					statusAfter: status,
+					expectedUpdatedAt: expectedUpdatedAt === undefined ? null : new Date(expectedUpdatedAt),
+					// kept over an assistant's rewrite for a newer version, the text stays tied to its own
+					paperVersion: editorVersion ?? null
+				},
+				updatedAt: true,
+				paperVersion: true
+			});
+			return { updatedAt: saved.updatedAt, version: saved.paperVersion };
+		},
+		onSaved: (saved) => {
+			editorVersion ??= saved.version;
+			dropLegacyDraft();
+		},
+		isConflict: (err) => hasErrorCode({ err, code: 'CONFLICT' })
+	});
+	if (initialDraft) {
+		saver.loaded({
+			editor: { comments: initialDraft.comments, status: initialDraft.statusAfter },
+			updatedAt: initialDraft.updatedAt
+		});
+	}
+
+	const notice = $derived(
+		draftOrigin && draftLastEditedVia && draftCreatedAt && draftUpdatedAt
+			? draftNotice({
+					origin: draftOrigin,
+					lastEditedVia: draftLastEditedVia,
+					createdAt: draftCreatedAt,
+					updatedAt: draftUpdatedAt
+				})
+			: []
+	);
+	const staleWarning = $derived(
+		editorVersion === undefined || !hasDraft
+			? undefined
+			: staleDraftWarning({ draftVersion: editorVersion, currentVersion: latestVersion })
+	);
+	const assistantChangedDraft = $derived(
+		hasDraft &&
+			changedElsewhere({
+				draft:
+					draftLastEditedVia && draftUpdatedAt
+						? { lastEditedVia: draftLastEditedVia, updatedAt: draftUpdatedAt }
+						: null,
+				knownUpdatedAt: saver.knownUpdatedAt
+			})
+	);
 
 	// Whether to publish under another name instead of the reviewer's, remembered across reviews.
 	const anonymityStore = createPersistedState<ReviewAnonymity>({
@@ -88,22 +227,131 @@
 		return `${notified} ${m.reviewSubmissionAnonymousNotice({ author, name })}`;
 	});
 
-	// The page re-creates this component per paper, so the draft key is fixed for its lifetime.
-	const draft = createDraftAutosave<ReviewDraft, JSONContent>({
-		storageKey: `reviewDraft_${untrack(() => paperId)}`,
-		options: {
-			// Skip if content is empty
-			readContent: () => {
-				const comments = get(reviewComments);
-				return hasTextContent(comments) ? comments : undefined;
-			},
-			toDraft: (comments, savedAt) => ({ comments, selectedStatus, savedAt }),
-			applyDraft: (saved) => {
-				reviewComments.set(saved.comments);
-				selectedStatus = saved.selectedStatus;
+	// While an assistant's rewrite waits for the reviewer's choice, saving would replace it. Once
+	// none waits any more (chosen, or gone again), saving goes on.
+	let pausedForAssistant = false;
+	$effect(() => {
+		const waiting = assistantChangedDraft;
+		untrack(() => {
+			if (waiting) {
+				pausedForAssistant = true;
+				void saver.settle();
+			} else if (pausedForAssistant) {
+				pausedForAssistant = false;
+				saver.resume();
 			}
-		}
+		});
 	});
+
+	// The draft changed meanwhile and the editor waits for the reviewer's choice: an assistant's
+	// rewrite seen live, or anything else (another tab, a discard there) the server refused a save for.
+	const changedDraft = $derived(
+		assistantChangedDraft ? 'assistant' : saver.state === 'conflict' ? 'elsewhere' : undefined
+	);
+
+	/** Keeps the editor's version: the draft stored now is replaced with the next save. */
+	async function keepMine() {
+		const latest = await client.query.myPaperReviewDraft({
+			__args: { paperId },
+			updatedAt: true
+		});
+		saver.acknowledge(latest?.updatedAt ?? null);
+		saver.resume();
+	}
+
+	// Saves the draft a moment after the reviewer stops typing or picks another status. Only the
+	// editor is tracked: the saver's own state changing must not count as an edit.
+	$effect(() => {
+		const editor = { comments: $reviewComments, status: selectedStatus };
+		untrack(() => saver.edited(editor));
+	});
+	// Leaving the paper saves what is pending rather than dropping it; closing or reloading the
+	// page, where no save can be waited for, asks first while something is not stored yet.
+	// The page is gone by the time that save answers, so a failure is told in a toast.
+	onDestroy(() => {
+		void saver.flush().then(() => {
+			if (saver.state === 'failed') toast.error(m.reviewDraftSaveFailed());
+		});
+	});
+	function warnUnsaved(event: BeforeUnloadEvent) {
+		if (!saver.dirty && saver.state !== 'saving') return;
+		void saver.flush();
+		event.preventDefault();
+	}
+
+	/** What the editor holds right now, to tell whether it changed meanwhile. */
+	const editorSnapshot = () =>
+		JSON.stringify({ comments: $reviewComments, status: selectedStatus });
+
+	/** Puts the stored draft into the editor, unless the reviewer typed while it loaded. */
+	async function loadStoredDraft() {
+		const before = editorSnapshot();
+		const latest = await client.query.myPaperReviewDraft({
+			__args: { paperId },
+			...DRAFT_SELECTION
+		});
+		if (editorSnapshot() !== before) return;
+		if (!latest) {
+			// discarded elsewhere: loading what is stored empties the editor
+			resetEditor();
+			saver.resume();
+			return;
+		}
+		reviewComments.set(latest.comments);
+		selectedStatus = latest.statusAfter;
+		editorVersion = latest.paperVersion.version;
+		saver.loaded({
+			editor: { comments: latest.comments, status: latest.statusAfter },
+			updatedAt: latest.updatedAt
+		});
+		saver.resume();
+		editorKey++;
+	}
+
+	/** Deletes the draft and empties the editor, once a save on its way has arrived. */
+	async function discardDraft() {
+		showDiscardModal = false;
+		// What the reviewer chose to discard: anything typed from here on, while a running save
+		// settles or the deletion is on its way, stays.
+		const before = editorSnapshot();
+		await saver.settle();
+		const promise = Promise.resolve(client.mutate.deletePaperReviewDraft({ __args: { paperId } }));
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.reviewDraftDiscarded(),
+			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
+		});
+		try {
+			await promise;
+			afterDraftGone(before);
+		} finally {
+			saver.resume();
+		}
+	}
+
+	/**
+	 * The draft is gone (discarded or sent). The editor empties, unless the reviewer typed while
+	 * that was on its way: then what they typed stays, and is saved as a new draft.
+	 */
+	function afterDraftGone(before: string) {
+		if (editorSnapshot() === before) {
+			resetEditor();
+			return;
+		}
+		dropLegacyDraft();
+		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, saver.knownUpdatedAt ?? 0);
+		editorVersion = latestVersion;
+		saver.acknowledge(null);
+	}
+
+	function resetEditor() {
+		dropLegacyDraft();
+		goneUpdatedAt = Math.max(storedUpdatedAt ?? 0, saver.knownUpdatedAt ?? 0);
+		reviewComments.set(getEmptyTipTapDocument());
+		editorVersion = latestVersion;
+		saver.reset();
+		editorKey++;
+	}
 
 	// Piece found modal state
 	let showPieceFoundModal = $state(false);
@@ -120,8 +368,9 @@
 				]
 	);
 
-	// Set initial selected status to first available transition
+	// Set initial selected status to first available transition, unless a draft proposes one
 	$effect(() => {
+		if (draftVerdict) return;
 		if (availableTransitions.length > 0 && selectedStatus === currentStatus) {
 			selectedStatus = availableTransitions[0].value;
 		}
@@ -158,6 +407,9 @@
 
 		showConfirmModal = false;
 		isSubmitting = true;
+		// A save on its way would otherwise store the draft again after the review deleted it.
+		await saver.settle();
+		const before = editorSnapshot();
 		try {
 			const promise = client.mutate.createPaperReview({
 				__args: {
@@ -187,6 +439,8 @@
 			});
 
 			const result = await promise;
+			// The review is out; the server deleted the draft along with it.
+			afterDraftGone(before);
 
 			// Check if a piece was unlocked and show the modal
 			const piece = unlockedPiece(result);
@@ -199,20 +453,31 @@
 			if (agendaItemId) {
 				nextPaperId = await findNextPaperId(agendaItemId);
 			}
-
-			// Clear form and localStorage draft
-			reviewComments.set(getEmptyTipTapDocument());
-			draft.clear();
 		} finally {
 			isSubmitting = false;
+			// After a refused submission, edits that waited are saved again; after a sent review
+			// the saver was reset and has nothing left.
+			saver.resume();
 		}
 	};
 </script>
 
-<DraftRecoveryModal {draft} />
+<svelte:window onbeforeunload={warnUnsaved} />
 
-<div class="card bg-base-200 p-4 flex flex-col gap-4" data-tour="paperhub.review">
+<div
+	id="review"
+	class="card bg-base-200 p-4 flex flex-col gap-4 scroll-mt-20"
+	data-tour="paperhub.review"
+>
 	<h2 class="text-lg font-bold">{m.addReview()}</h2>
+
+	<ReviewDraftNotices
+		{notice}
+		{staleWarning}
+		changed={changedDraft}
+		onLoadNew={loadStoredDraft}
+		onKeepMine={keepMine}
+	/>
 
 	{#if reviewed}
 		<!-- Options after review has been saved -->
@@ -242,7 +507,7 @@
 	{:else}
 		<!-- Comments Editor -->
 		<div data-tour="paperhub.review.comments">
-			{#key draft.editorKey}
+			{#key editorKey}
 				<PaperEditor.ReviewFormat
 					contentStore={reviewComments}
 					{quoteToInsert}
@@ -275,8 +540,28 @@
 				{m.submitReview()}
 			</button>
 		</div>
+
+		<ReviewDraftFooter
+			saveState={saver.state}
+			hasDraft={hasDraft || legacyPending}
+			disabled={isSubmitting}
+			onDiscard={() => (showDiscardModal = true)}
+		/>
 	{/if}
 </div>
+
+<Modal bind:open={showDiscardModal} title={m.reviewDraftDiscardTitle()}>
+	<p>{m.reviewDraftDiscardConfirm()}</p>
+	{#snippet action()}
+		<div class="flex gap-2">
+			<button class="btn" onclick={() => (showDiscardModal = false)}>{m.cancel()}</button>
+			<button class="btn btn-error" onclick={discardDraft}>
+				<i aria-hidden="true" class="ph-duotone ph-trash"></i>
+				{m.reviewDraftDiscard()}
+			</button>
+		</div>
+	{/snippet}
+</Modal>
 
 <!-- Review Confirmation Modal -->
 <Modal bind:open={showConfirmModal} title={m.confirmReviewSubmission()}>

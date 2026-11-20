@@ -3338,6 +3338,10 @@ export type Mutation = {
   deletePaper: (p: {
     id: ID
   }) => Boolean,
+  deletePaperReviewDraft: (p: {
+    overwriteAppEdits?: Boolean | null | undefined,
+    paperId: ID
+  }) => Boolean,
   deletePlace: (p: {
     id: ID
   }) => Boolean,
@@ -3518,6 +3522,13 @@ export type Mutation = {
   rotateSupervisorConnectionCode: (p: {
     id: ID
   }) => Conferencesupervisor,
+  savePaperReviewDraft: (p: {
+    comments: JSON,
+    expectedUpdatedAt?: DateTime | null | undefined,
+    paperId: ID,
+    paperVersion?: Int | null | undefined,
+    statusAfter: PaperstatusEnum
+  }) => PaperReviewDraftSave,
   scanPossibleDuplicates: (p: {
     conferenceId: ID
   }) => Int,
@@ -3986,6 +3997,12 @@ export type Mutation = {
     userEmail?: EmailAddress | null | undefined,
     userId?: ID | null | undefined
   }) => Conferenceparticipant,
+  upsertPaperReviewDraft: (p: {
+    content: String,
+    overwriteAppEdits?: Boolean | null | undefined,
+    paperId: ID,
+    statusAfter: PaperstatusEnum
+  }) => SavedPaperReviewDraft,
   upsertSurveyAnswer: (p: {
     optionId: ID,
     userId?: ID | null | undefined
@@ -4177,6 +4194,11 @@ export type PaperOrderInputArgument = {
   updatedAt?: SortingParameter | null | undefined    
 };
 		
+export type PaperReviewDraftSave = {
+  paperVersion: Int,
+  updatedAt: DateTime    
+};
+		
 export type PaperSearchFieldEnum = "agendaItemId" | "authorParticipantId" | "delegationId" | "id";
 		
 export type PaperSearchInputArgument = {
@@ -4263,6 +4285,30 @@ export type PaperreviewWhereInputArgument = {
 };
 		
 export type PaperreviewanonymousasEnum = "CUSTOM" | "RESEARCH_SERVICE" | "SECRETARIAT";
+		
+export type Paperreviewdraft = {
+  comments: JSON,
+  createdAt: DateTime,
+  id: ID,
+  lastEditedVia: PaperreviewdraftoriginEnum,
+  origin: PaperreviewdraftoriginEnum,
+  paper: (p?: {
+    orderBy?: PaperOrderInputArgument | null | undefined,
+    where?: PaperWhereInputArgument | null | undefined
+  }) => Paper,
+  paperId: ID,
+  paperVersion: (p?: {
+    orderBy?: PaperversionOrderInputArgument | null | undefined,
+    where?: PaperversionWhereInputArgument | null | undefined
+  }) => Paperversion,
+  paperVersionId: ID,
+  reviewerId: ID,
+  search_distance: Float | null,
+  statusAfter: PaperstatusEnum,
+  updatedAt: DateTime    
+};
+		
+export type PaperreviewdraftoriginEnum = "MCP" | "UI";
 		
 export type PaperstatusEnum = "ACCEPTED" | "CHANGES_REQUESTED" | "DRAFT" | "REVISED" | "SUBMITTED";
 		
@@ -4950,6 +4996,12 @@ export type Query = {
   }) => AgeNotice | null,
   myNotificationSettings: () => ConferenceNotificationSettings[],
   myOIDCRoles: OIDCRolesEnum[],
+  myPaperReviewDraft: (p: {
+    paperId: ID
+  }) => Paperreviewdraft | null,
+  myPaperReviewDrafts: (p: {
+    conferenceId: ID
+  }) => Paperreviewdraft[],
   myReviewStats: (p: {
     conferenceId: ID
   }) => MyReviewStats | null,
@@ -5443,6 +5495,13 @@ export type RoleapplicationWhereInputArgument = {
   role?: ConferenceroleWhereInputArgument | null | undefined,
   roleId?: IDWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type SavedPaperReviewDraft = {
+  draftId: String,
+  link: String,
+  paperVersion: Int,
+  unmatchedQuotes: String[]    
 };
 		
 export type ScanIssue = "alreadyScanned" | "guardianConsentOpen" | "notInConference" | "paymentOpen" | "surveyOptionMissing" | "teamMember" | "termsOpen";
@@ -6595,6 +6654,12 @@ export type Subscription = {
     id: ID
   }) => Mcpauditentry,
   myNotificationSettings: () => ConferenceNotificationSettings[],
+  myPaperReviewDraft: (p: {
+    paperId: ID
+  }) => Paperreviewdraft | null,
+  myPaperReviewDrafts: (p: {
+    conferenceId: ID
+  }) => Paperreviewdraft[],
   nation: (p: {
     id: ID
   }) => Nation,
@@ -7718,7 +7783,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

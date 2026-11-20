@@ -651,6 +651,29 @@ const FIELDS: Record<string, TypeClassification> = {
 		// What a reviewer wrote to a participant, and the name they signed with (may be a person's).
 		redacted: ['comments', 'anonymousName']
 	},
+	Paperreviewdraft: {
+		// Only the caller's own drafts are readable (`paperReviewDraftPermissions.ts`): what the
+		// assistant wrote about a paper, and what the reviewer changed in the app. `comments` stays
+		// visible by the owner's decision, so the assistant reads its reviewer's draft back; the
+		// reviewer may type anything there, personal data included. The AI access manual says so.
+		visible: [
+			...ROW,
+			'comments',
+			'lastEditedVia',
+			'origin',
+			'paperId',
+			'paperVersionId',
+			'reviewerId',
+			'statusAfter'
+		]
+	},
+	PaperReviewDraftSave: {
+		visible: ['paperVersion', 'updatedAt']
+	},
+	SavedPaperReviewDraft: {
+		// The quotes are the paper's words, which `Paperversion.content` shows as well.
+		visible: ['draftId', 'link', 'paperVersion', 'unmatchedQuotes']
+	},
 	Reviewersnippet: {
 		visible: [...ROW, 'name', 'userId'],
 		redacted: ['content']

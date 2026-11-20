@@ -70,6 +70,8 @@ export {
 	paperVersion,
 	paperReviewAnonymousAs,
 	paperReview,
+	paperReviewDraftOrigin,
+	paperReviewDraft,
 	reviewerSnippet,
 	resolution
 } from './papers';

@@ -7,6 +7,7 @@ import {
 	resolutionDocument,
 	reviewComments
 } from '../seed-data/content';
+import { markdownToReviewDocument } from '../../handlers/paperReviewDraft/reviewMarkdown';
 import { PERSONA_NATION } from './conference';
 import type { ConferenceSeed } from './context';
 
@@ -38,6 +39,55 @@ interface PaperPlan {
 	history: Step[];
 	/** Replaces the content of every version, for the invalid working paper. */
 	content?: unknown;
+	/**
+	 * A review draft an AI assistant wrote for `by`: for the latest version, or for an earlier one
+	 * (`forVersion`) and since edited in the app, which the editor warns about.
+	 */
+	reviewDraft?: { by: DevAccountSub; forVersion?: number };
+}
+
+/** What an assistant's draft says, quoting the paper word for word and once not. */
+const DRAFT_MARKDOWN = `Liebe Delegation,
+
+vielen Dank für euer Papier. Besonders überzeugt uns:
+
+> Die Delegation bekräftigt ihr Bekenntnis zur Charta der Vereinten Nationen und fordert ein entschlossenes, gemeinsames Handeln der Staatengemeinschaft.
+
+Bitte überarbeitet noch:
+
+- die **Quellen**, die bisher fehlen
+- den Abschnitt zur *Finanzierung*
+
+> Ein Satz, der so nicht im Papier steht.`;
+
+/** An assistant's review draft of the paper, for the version `draft` names (the latest by default). */
+function addReviewDraft({
+	cs,
+	paperId,
+	versionIds,
+	start,
+	draft
+}: {
+	cs: ConferenceSeed;
+	paperId: string;
+	versionIds: string[];
+	start: number;
+	draft: NonNullable<PaperPlan['reviewDraft']>;
+}) {
+	const forVersion = draft.forVersion ?? versionIds.length;
+	const paperVersionId = versionIds[forVersion - 1];
+	if (!paperVersionId) return;
+	cs.batch.paperReviewDraft.push({
+		paperId,
+		reviewerId: draft.by,
+		paperVersionId,
+		comments: markdownToReviewDocument(DRAFT_MARKDOWN),
+		statusAfter: 'CHANGES_REQUESTED',
+		origin: 'MCP',
+		// a draft for an older version has since been edited in the app
+		lastEditedVia: forVersion < versionIds.length ? 'UI' : 'MCP',
+		createdAt: new Date(start + (forVersion - 1) * DAY_MS + DAY_MS / 2)
+	});
 }
 
 /**
@@ -89,6 +139,16 @@ function addPaper({ cs, plan }: { cs: ConferenceSeed; plan: PaperPlan }) {
 		});
 		statusBefore = step.review;
 	});
+
+	if (plan.reviewDraft) {
+		addReviewDraft({
+			cs,
+			paperId,
+			versionIds: versions.map((v) => v.id),
+			start,
+			draft: plan.reviewDraft
+		});
+	}
 
 	// Reviews change the reviewed version's status after the fact.
 	for (const version of versions) {
@@ -202,7 +262,9 @@ export function addPapers(cs: ConferenceSeed) {
 					anonymous: { as: 'CUSTOM', name: 'Vorsitz der Generalversammlung' }
 				},
 				{ save: 'REVISED' }
-			]
+			],
+			// a draft for the first version, edited since: the editor warns it is stale
+			reviewDraft: { by: 'dev-team-reviewer', forVersion: 1 }
 		}
 	});
 	addPaper({
@@ -232,7 +294,9 @@ export function addPapers(cs: ConferenceSeed) {
 				agendaItemId: committee.agendaItemIds[index % 2],
 				title: `Positionspapier ${delegation.nation.toUpperCase()}`,
 				history: [{ save: 'SUBMITTED' }],
-				content: index === 5 ? invalidResolutionDocument : undefined
+				content: index === 5 ? invalidResolutionDocument : undefined,
+				// an assistant's fresh draft waits for the reviewer on the first one
+				reviewDraft: index === 0 ? { by: 'dev-team-reviewer' } : undefined
 			}
 		});
 	});

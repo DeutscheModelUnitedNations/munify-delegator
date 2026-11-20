@@ -257,6 +257,7 @@ export function toolAnnotations(tool: MutationTool): ToolAnnotations {
 	return {
 		readOnlyHint: false,
 		destructiveHint: /^(delete|discard)/.test(tool.name),
+		idempotentHint: tool.annotation.idempotent,
 		openWorldHint: isConfirmable(tool.annotation)
 	};
 }

@@ -59,6 +59,10 @@ It can change much of what the team's pages change, with one tool for each actio
 
 An assistant filters, sorts and groups a view only by columns without personal data, and saves no personal views. An assistant does not write notes or other texts about people. Those stay in the team area. It cannot apply or release the assignment, that only happens on the [Assignment](./assignment#finish-and-release) page.
 
+### Review drafts {#review-drafts}
+
+Whoever reviews papers can have the assistant prepare a review. The assistant writes a [review draft](./paper-hub#review-drafts) for that: the text with quotes from the paper and the proposed status. It answers with a link to the paper and names the quotes that do not stand word for word in the paper. The assistant can read your drafts, including what you changed in DELEGATOR. Only you can submit it, in the Paper Hub. The assistant cannot submit a review or change a status. Once you edited the draft in DELEGATOR, DELEGATOR refuses when the assistant wants to replace or delete it, until you tell it your changes may go.
+
 :::warning Preview first, then run
 An assistant does not run right away what reaches people outside the team. That covers the conference stage, the calendar for participants, messages between delegations, unlocking payments, postal registration or paper submission, participant statuses such as payment, documents and attendance, the status of payments, setting everybody's attendance at once, and distributing a survey. Without an explicit confirmation in the call DELEGATOR changes nothing and only answers with a preview. The assistant sets that confirmation itself, so whether it asks you first is up to the assistant. A good one does. Only confirm what you would do yourself.
 :::

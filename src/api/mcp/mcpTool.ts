@@ -22,7 +22,9 @@ const mcpToolSchema = z.object({
 	 */
 	outward: z.boolean().default(false),
 	/** Like `outward`, but only when one of these arguments is given (the conference's stage). */
-	outwardArguments: z.array(z.string()).default([])
+	outwardArguments: z.array(z.string()).default([]),
+	/** Calling it again with the same arguments changes nothing more (an upsert). */
+	idempotent: z.boolean().default(false)
 });
 
 export type McpToolOptions = z.input<typeof mcpToolSchema>;

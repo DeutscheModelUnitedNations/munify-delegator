@@ -1,0 +1,481 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "64cf462d-2da4-46cd-8fd6-6252c760098b",
+  "prevIds": [
+    "b0dcfb29-94c8-41ad-bead-e0e419eb385d"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "paper_review_draft_origin"
+      ],
+      "writes": [
+        "s|enum|public.paper_review_draft_origin",
+        "n|enum|public.paper_review_draft_origin",
+        "e|enum|public.paper_review_draft_origin",
+        "n|type|public.paper_review_draft_origin"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "paper_review_draft"
+      ],
+      "writes": [
+        "s|tbl|public.paper_review_draft",
+        "n|tbl|public.paper_review_draft",
+        "e|tbl|public.paper_review_draft",
+        "n|rel|public.paper_review_draft",
+        "n|type|public.paper_review_draft",
+        "n|rel|public.paper_review_draft_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.paper_status",
+        "n|enum|public.paper_review_draft_origin",
+        "n|enum|public.paper_review_draft_origin"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "paper_review_draft",
+        "paper_review_draft_paper_id_reviewer_id_key"
+      ],
+      "writes": [
+        "s|idx|public.paper_review_draft_paper_id_reviewer_id_key",
+        "n|idx|public.paper_review_draft_paper_id_reviewer_id_key",
+        "e|idx|public.paper_review_draft_paper_id_reviewer_id_key",
+        "n|rel|public.paper_review_draft_paper_id_reviewer_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.paper_review_draft",
+        "n|sch|public",
+        "n|col|public.paper_review_draft.paper_id",
+        "n|col|public.paper_review_draft.reviewer_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "paper_review_draft",
+        "paper_review_draft_reviewer_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.paper_review_draft_reviewer_id_idx",
+        "n|idx|public.paper_review_draft_reviewer_id_idx",
+        "e|idx|public.paper_review_draft_reviewer_id_idx",
+        "n|rel|public.paper_review_draft_reviewer_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.paper_review_draft",
+        "n|sch|public",
+        "n|col|public.paper_review_draft.reviewer_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "paper_review_draft"
+      ],
+      "writes": [
+        "s|fk|public.paper_review_draft.paper_review_draft_paper_id_paper_id_fkey",
+        "n|fk|public.paper_review_draft.paper_review_draft_paper_id_paper_id_fkey",
+        "e|fk|public.paper_review_draft.paper_review_draft_paper_id_paper_id_fkey",
+        "n|con|public.paper_review_draft.paper_review_draft_paper_id_paper_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.paper_review_draft",
+        "n|sch|public",
+        "n|tbl|public.paper",
+        "n|sch|public",
+        "n|col|public.paper_review_draft.paper_id",
+        "n|col|public.paper.id",
+        "e|uniqueness|public.paper.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "paper_review_draft"
+      ],
+      "writes": [
+        "s|fk|public.paper_review_draft.paper_review_draft_reviewer_id_user_id_fkey",
+        "n|fk|public.paper_review_draft.paper_review_draft_reviewer_id_user_id_fkey",
+        "e|fk|public.paper_review_draft.paper_review_draft_reviewer_id_user_id_fkey",
+        "n|con|public.paper_review_draft.paper_review_draft_reviewer_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.paper_review_draft",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.paper_review_draft.reviewer_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "paper_review_draft"
+      ],
+      "writes": [
+        "s|fk|public.paper_review_draft.paper_review_draft_paper_version_id_paper_version_id_fkey",
+        "n|fk|public.paper_review_draft.paper_review_draft_paper_version_id_paper_version_id_fkey",
+        "e|fk|public.paper_review_draft.paper_review_draft_paper_version_id_paper_version_id_fkey",
+        "n|con|public.paper_review_draft.paper_review_draft_paper_version_id_paper_version_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.paper_review_draft",
+        "n|sch|public",
+        "n|tbl|public.paper_version",
+        "n|sch|public",
+        "n|col|public.paper_review_draft.paper_version_id",
+        "n|col|public.paper_version.id",
+        "e|uniqueness|public.paper_version.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "paper_review_draft",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "paper_review_draft_origin",
+        "values": [
+          "MCP",
+          "UI"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "reviewer_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_version_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "comments",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "status_after",
+        "type": "paper_status",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "origin",
+        "type": "paper_review_draft_origin",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "last_edited_via",
+        "type": "paper_review_draft_origin",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_paper_id_reviewer_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "paper_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "reviewer_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_reviewer_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "reviewer_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_paper_id_paper_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "paper_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "paper",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_reviewer_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "reviewer_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_paper_version_id_paper_version_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "paper_version_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "paper_version",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "paper_review_draft",
+        "name": "paper_review_draft_status_after_verdict",
+        "value": "\"status_after\"::text in ('CHANGES_REQUESTED', 'ACCEPTED')",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

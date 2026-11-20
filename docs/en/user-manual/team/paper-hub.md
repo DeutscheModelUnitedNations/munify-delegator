@@ -96,8 +96,22 @@ You can neither edit nor delete a submitted review. The new status applies at on
 You can review any submitted paper, an accepted one again too. DELEGATOR refuses to review a draft.
 
 :::tip Your review is kept
-While you write, your browser keeps your review of this paper every second. When you come back, DELEGATOR offers to restore the draft.
+While you write, DELEGATOR saves your review of this paper as your draft whenever you pause. Below the form it then says **Draft saved**. When you come back, on another device too, your draft is back in the editor with the status you chose. A review your browser still kept the old way becomes your draft the first time you open the paper, unless it already has one.
 :::
+
+### Review drafts {#review-drafts}
+
+You have at most one draft per paper. Only you see it. Neither the delegation nor anyone else on the team, project management included, reads it. A draft sends no email, changes no status and counts nowhere as a review.
+
+An [AI assistant](./ai-access#review-drafts) can write a draft for you too. The editor then says **Draft (created by the AI assistant, …)** with the time. Read it, change it like your own review and send it with **Submit Review**. Only then do the authors learn of it. The submitted review looks like any other.
+
+- **Find in paper** shows whether a quote stands word for word in the paper. It searches each paragraph, heading and list item on its own. A quote spanning two paragraphs is therefore not found, even when every word matches.
+- If a new version was submitted after the draft, DELEGATOR warns: **This draft refers to version 1, the current one is version 2.** Check whether your review still fits. You can submit it all the same.
+- If your draft changes elsewhere while you have the paper open, in another tab or by the assistant, DELEGATOR saves your changes again only once you chose. **Load the new draft** takes the stored version, **Keep my version** replaces it with yours. So no tab silently overwrites what another one saved.
+- Once you edited a draft in DELEGATOR, the assistant does not replace it without your consent.
+- **Discard draft** deletes the draft and empties the editor.
+
+In the paper lists, a pencil marks the papers you have a draft ready for.
 
 ## What the authors learn {#author-notification}
 

@@ -25,6 +25,7 @@ import './nation/nation';
 import './notification/notification';
 import './paper/paper';
 import './paperReview/paperReview';
+import './paperReviewDraft/paperReviewDraft';
 import './paperVersion/paperVersion';
 import './paymentTransaction/paymentTransaction';
 import './place/place';

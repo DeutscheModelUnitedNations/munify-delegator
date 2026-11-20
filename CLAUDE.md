@@ -431,6 +431,18 @@ bun run preview
 - Conference states: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`.
   Supervisor connection codes are unique across conferences. Payments: `PaymentTransaction`.
   Papers are versioned with reviews.
+- **Review drafts** (`#api/handlers/paperReviewDraft/`, `paper_review_draft`): an AI assistant
+  prepares a review over MCP (`upsertPaperReviewDraft`, Markdown → TipTap in `reviewMarkdown.ts`,
+  unmatched quotes from `quoteCheck.ts`), the reviewer sends it in the app. One draft per paper and
+  reviewer, read only by that reviewer (not project management, not a system admin); it reaches
+  no author, sends no mail, changes no status. Once edited in the app (`lastEditedVia = UI`) MCP
+  writes answer CONFLICT unless `overwriteAppEdits`. `PaperReviewSection.svelte` saves edits as the
+  draft (`createDraftSaver`; each save names the paper version its text was written for and the
+  `updatedAt` it last saw, `expectedUpdatedAt`, and
+  is refused with CONFLICT when the draft changed elsewhere, `changedSinceSeen`, until the reviewer
+  loads the stored one or keeps theirs) and takes over the old browser-only `reviewDraft_<paperId>` entry;
+  `createPaperReview` deletes the draft. No MCP tool sends a review or sets a status; keep it so.
+  `e2e/authorization/review-drafts.spec.ts`, `e2e/papers/review-draft.spec.ts`.
 - Domain specifics (calendar, scanner, age limits, waiting list, certificates, document layouts):
   `docs/architecture/conference-features.md`.
 

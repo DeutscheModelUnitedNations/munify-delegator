@@ -59,6 +59,10 @@ Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Tei
 
 Eine Ansicht filtert, sortiert und gruppiert ein Assistent nur nach Spalten ohne personenbezogene Daten, persönliche Ansichten speichert er nicht. Notizen und andere Texte über Personen schreibt ein Assistent nicht, die bleiben im Team-Bereich. Die Zuteilung übernehmen oder freigeben kann er nicht, das geht nur auf der Seite [Zuteilung](./assignment#finish-and-release).
 
+### Review-Entwürfe {#review-drafts}
+
+Wer Papiere begutachtet, kann sich vom Assistenten Feedback vorbereiten lassen. Der Assistent legt dazu einen [Review-Entwurf](./paper-hub#review-drafts) an: den Text mit Zitaten aus dem Papier und den vorgeschlagenen Status. Er antwortet mit einem Link auf das Papier und nennt die Zitate, die nicht wörtlich im Papier stehen. Der Assistent kann deine Entwürfe lesen, auch was du in DELEGATOR daran geändert hast. Abgeben kannst nur du, im Papier-Hub. Der Assistent kann kein Feedback abgeben und keinen Status ändern. Hast du den Entwurf in DELEGATOR bearbeitet, lehnt DELEGATOR es ab, wenn der Assistent ihn ersetzen oder löschen will, bis du ihm sagst, dass deine Änderungen weg dürfen.
+
 :::warning Erst Vorschau, dann ausführen
 Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören der Konferenzstatus, der Kalender für Teilnehmende, die Nachrichten zwischen Delegationen, das Freischalten von Zahlungen, der postalischen Anmeldung und der Papiereinreichung, Status von Teilnehmenden wie Zahlung, Dokumente und Anwesenheit, der Status von Zahlungen, die Anwesenheit aller auf einmal und das Verteilen einer Umfrage. Ohne ausdrückliche Bestätigung im Aufruf ändert DELEGATOR nichts und antwortet nur mit einer Vorschau. Die Bestätigung setzt der Assistent selbst. Ob er dich vorher fragt, liegt also an ihm. Ein guter Assistent tut das. Bestätige nur, was du selbst so tun würdest.
 :::

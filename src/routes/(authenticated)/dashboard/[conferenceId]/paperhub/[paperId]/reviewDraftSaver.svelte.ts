@@ -1,0 +1,181 @@
+import type { JSONContent } from '@tiptap/core';
+import { draftSnapshotToSave, type DraftSaveState } from './reviewDraft';
+
+/** What the review editor holds: its document and the verdict picked. */
+export interface EditorState {
+	comments: JSONContent;
+	status: string;
+}
+
+/** A timestamp as the API answers it, in milliseconds. */
+const timeOf = (value: Date | string) =>
+	typeof value === 'string' ? Date.parse(value) : value.getTime();
+
+type Verdict = NonNullable<ReturnType<typeof draftSnapshotToSave>>['status'];
+
+/** What the server answered for a saved draft. */
+export interface SavedDraft {
+	updatedAt: Date | string;
+	version: number;
+}
+
+/**
+ * Saves the review editor's content as the reviewer's draft (`savePaperReviewDraft`) a moment
+ * after the last change. One save runs at a time: a change made while one runs is saved right
+ * after it, so the stored draft always ends up as the editor's latest state, an undo back to an
+ * earlier text included. `flush` saves what is pending at once (leaving the paper), `settle`
+ * waits for a running save and pauses (before discarding or submitting), `resume` picks up again.
+ * Each save names the draft as the editor last saw it (`expectedUpdatedAt`); a save the server
+ * refuses because it changed meanwhile (`isConflict`) stops saving until the reviewer chooses:
+ * `loaded` for the stored draft, `acknowledge` to replace it with the editor's.
+ */
+export function createDraftSaver({
+	save,
+	onSaved,
+	isConflict = () => false,
+	delayMs = 1500
+}: {
+	save: (draft: {
+		comments: JSONContent;
+		status: Verdict;
+		/** The stored draft's `updatedAt` as the editor last saw it, undefined for none. */
+		expectedUpdatedAt: number | undefined;
+	}) => Promise<SavedDraft>;
+	onSaved?: (saved: SavedDraft) => void;
+	/** Whether a failed save was refused because the draft changed elsewhere. */
+	isConflict?: (error: unknown) => boolean;
+	delayMs?: number;
+}) {
+	let state = $state<DraftSaveState>('idle');
+	let knownUpdatedAt = $state<number | undefined>(undefined);
+	let savedSnapshot: string | undefined;
+	let latest: EditorState | undefined;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	let running: Promise<void> | undefined;
+	let paused = false;
+	// Bumped whenever the editor takes another draft as its base (`loaded`, `acknowledge`, `reset`):
+	// a save sent before then answers for a draft the editor no longer holds, and is ignored.
+	let generation = 0;
+
+	/** The latest state, when it differs from what is stored and is worth storing. */
+	function pending() {
+		if (!latest) return undefined;
+		const toSave = draftSnapshotToSave({ ...latest, savedSnapshot });
+		return toSave && { comments: latest.comments, ...toSave };
+	}
+
+	async function saveUntilCurrent() {
+		for (let next = pending(); next && !paused; next = pending()) {
+			state = 'saving';
+			const sentFor = generation;
+			try {
+				const saved = await save({
+					comments: next.comments,
+					status: next.status,
+					expectedUpdatedAt: knownUpdatedAt
+				});
+				if (sentFor !== generation) continue;
+				savedSnapshot = next.snapshot;
+				knownUpdatedAt = timeOf(saved.updatedAt);
+				state = 'saved';
+				onSaved?.(saved);
+			} catch (error) {
+				if (sentFor !== generation) continue;
+				failed(error);
+				return;
+			}
+		}
+		if (state === 'saving') state = 'idle';
+	}
+
+	/** A save failed: refused for a draft changed meanwhile (stop until the reviewer chose), or not. */
+	function failed(error: unknown) {
+		if (!isConflict(error)) {
+			state = 'failed';
+			return;
+		}
+		clearTimeout(timer);
+		paused = true;
+		state = 'conflict';
+	}
+
+	function run() {
+		running ??= saveUntilCurrent().finally(() => (running = undefined));
+		return running;
+	}
+
+	function schedule() {
+		clearTimeout(timer);
+		timer = setTimeout(run, delayMs);
+	}
+
+	return {
+		get state() {
+			return state;
+		},
+		/** When the stored draft was last written by this editor (or loaded into it). */
+		get knownUpdatedAt() {
+			return knownUpdatedAt;
+		},
+		/** Whether the editor holds something that is not stored yet. */
+		get dirty() {
+			return pending() !== undefined;
+		},
+		/** The editor changed: save it after a moment. */
+		edited(editor: EditorState) {
+			latest = editor;
+			// "saved" would claim the new edit is stored; a running save still shows as such, and a
+			// conflict until the reviewer chose
+			if (state !== 'saving' && state !== 'conflict' && pending()) state = 'idle';
+			if (!paused) schedule();
+		},
+		/** Saves what is pending now, without waiting for the moment to pass. */
+		flush() {
+			clearTimeout(timer);
+			return run();
+		},
+		/** Waits for a running save and starts no other until `resume`. */
+		async settle() {
+			clearTimeout(timer);
+			paused = true;
+			await running;
+		},
+		/** Saves again after `settle`, anything still pending first; not past a conflict. */
+		resume() {
+			if (state === 'conflict') return;
+			paused = false;
+			if (pending()) schedule();
+		},
+		/** The editor now holds this stored draft: nothing to save for it. */
+		loaded({ editor, updatedAt }: { editor: EditorState; updatedAt: Date | string }) {
+			clearTimeout(timer);
+			latest = editor;
+			savedSnapshot = JSON.stringify(editor);
+			knownUpdatedAt = timeOf(updatedAt);
+			generation++;
+			if (state === 'conflict') state = 'idle';
+		},
+		/**
+		 * The draft stored elsewhere (or that there is none, `null`) is known now and the editor's
+		 * content replaces it: the next save writes the editor, even unchanged since it was loaded.
+		 */
+		acknowledge(updatedAt: Date | string | number | null) {
+			knownUpdatedAt =
+				updatedAt === null || typeof updatedAt === 'number'
+					? (updatedAt ?? undefined)
+					: timeOf(updatedAt);
+			savedSnapshot = undefined;
+			generation++;
+			if (state === 'conflict') state = 'idle';
+		},
+		/** The draft is gone (discarded or sent): forget it. */
+		reset() {
+			clearTimeout(timer);
+			latest = undefined;
+			savedSnapshot = undefined;
+			knownUpdatedAt = undefined;
+			generation++;
+			state = 'idle';
+		}
+	};
+}
