@@ -39,6 +39,7 @@ import {
 	participantsDataSchema,
 	PARTICIPANTS_QUERY
 } from './curatedReads';
+import { readSkillFile, skillInstructions, type SkillSnapshot } from './skills';
 
 /**
  * The MCP server AI assistants talk to (`/mcp`): one instance per request, acting with the
@@ -141,6 +142,31 @@ async function aboutConference({
 const conferenceIdSchema = z.string().min(1).describe('The conference (see whoami).');
 
 const READ_ONLY: ToolAnnotations = { readOnlyHint: true, openWorldHint: false };
+
+/** `read_skill`, for clients that do not load the MCP skills themselves. */
+function registerSkillTool({ server, skills }: { server: McpServer; skills: SkillSnapshot }) {
+	const names = skills.entries.map((entry) => entry.frontmatter.name);
+	server.registerTool(
+		'read_skill',
+		{
+			description: `Reads a skill this server offers (${names.join(', ')}): instructions for a whole task, such as correcting a paper. Read its SKILL.md before you start the task, then the files it points to (paths relative to the skill, such as references/guide.md).`,
+			inputSchema: z.object({
+				skill: z
+					.string()
+					.min(1)
+					.describe(`The skill: ${names.join(', ')}.`),
+				path: z.string().min(1).default('SKILL.md').describe('A file of the skill.')
+			}),
+			annotations: READ_ONLY
+		},
+		async ({ skill, path }) => {
+			const file = readSkillFile({ snapshot: skills, skill, path });
+			return 'text' in file
+				? { content: [{ type: 'text', text: file.text }] }
+				: refusal(file.problem);
+		}
+	);
+}
 
 function registerReadTools({ server, call }: { server: McpServer; call: ToolCall }) {
 	server.registerTool(
@@ -414,17 +440,25 @@ function registerMutationTools({
 export function createMcpServer({
 	event,
 	principal,
-	clientId
+	clientId,
+	skills
 }: {
 	event: RequestEvent;
 	principal: McpPrincipal;
 	clientId: string | undefined;
+	/** The skills to offer (`skills.ts`); none when undefined. */
+	skills: SkillSnapshot | undefined;
 }) {
+	const offered = skills && skills.entries.length > 0 ? skills : undefined;
 	const server = new McpServer(
 		{ name: 'munify-delegator', version: '1.0.0' },
-		{ instructions: INSTRUCTIONS }
+		{ instructions: INSTRUCTIONS + skillInstructions(offered?.entries ?? []) }
 	);
 	const call: ToolCall = { event, principal, clientId };
+	if (offered) {
+		offered.catalog.attach(server);
+		registerSkillTool({ server, skills: offered });
+	}
 	registerReadTools({ server, call });
 	registerMutationTools({ server, call, schema: executableSchema(event) });
 	return server;
