@@ -6,7 +6,12 @@
  * and the time after it (`seed-dev/plans.ts`). In them, the accounts on the oidc-mock login page
  * (`seed-data/devAccounts.ts`) each play one role: the team roles in every conference, the
  * application stages in the registration conferences, and the participant roles - delegates,
- * single participants, supervisors, rejected appl{ kind, options }: { kind: CrowdKind; options?: { incomplete?: boolean; ages?: [number, number]; }; }s the volume tables, statistics and assignment tools need.
+ * single participants, supervisors, rejected applicants and people on the waiting list. Around
+ * them, a hand-sized crowd fills committees and lists, and thousands of anonymous applications
+ * (`seed-dev/bulk.ts`) give the volume the tables, statistics and assignment tools need.
+ *
+ * The bulk is about 490k users and takes minutes to write; `--small` (`bun run db:seed:dev:small`)
+ * leaves it out and seeds only the few hundred users the personas and scenarios need, in seconds.
  *
  * The overview printed at the end says which account to sign in with for what.
  */
@@ -32,7 +37,7 @@ import { addPapers } from './seed-dev/papers';
 import { addSurveys } from './seed-dev/surveys';
 import { addEmails } from './seed-dev/emails';
 import { addMergedMembers } from './seed-dev/schools';
-import { addBulk } from './seed-dev/bulk';
+import { addBulk, bulkScale } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
 import { addResolutions } from './seed-dev/resolutions';
 import { printOverview } from './seed-dev/overview';
@@ -58,6 +63,8 @@ const storage = seedStorage();
 // A fixed faker seed keeps the generated data identical between runs (dates aside, which are
 // relative to now so every stage stays where it belongs).
 faker.seed(123);
+
+const scale = bulkScale({ argv: process.argv, env: process.env });
 
 const CROWD_AGES: Record<CrowdKind, [number, number]> = {
 	participant: [14, 20],
@@ -118,7 +125,7 @@ for (const plan of conferencePlans) {
 	addEmails(cs);
 	await addCalendar(cs);
 	await addResolutions(cs);
-	addBulk(cs);
+	addBulk({ cs, scale });
 	addDuplicateScenarioParticipants(cs);
 }
 

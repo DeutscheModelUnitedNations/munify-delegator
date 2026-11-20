@@ -57,6 +57,8 @@ bun run db:migrate
 
 // to wipe the database and seed it with example data
 bun run db:seed:dev
+// the same without the ~490k anonymous bulk users (load-test volume): seconds instead of minutes
+bun run db:seed:dev:small
 
 ```
 
