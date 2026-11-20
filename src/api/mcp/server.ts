@@ -39,7 +39,7 @@ import {
 	participantsDataSchema,
 	PARTICIPANTS_QUERY
 } from './curatedReads';
-import { skillFileText, skillInstructions, type SkillSnapshot } from './skills';
+import { readSkillFile, skillInstructions, type SkillSnapshot } from './skills';
 
 /**
  * The MCP server AI assistants talk to (`/mcp`): one instance per request, acting with the
@@ -160,18 +160,10 @@ function registerSkillTool({ server, skills }: { server: McpServer; skills: Skil
 			annotations: READ_ONLY
 		},
 		async ({ skill, path }) => {
-			const text = skillFileText({ snapshot: skills, skill, path });
-			if (text !== undefined) return { content: [{ type: 'text', text }] };
-			const entry = skills.entries.find((candidate) => candidate.frontmatter.name === skill);
-			const files =
-				entry && Array.isArray(entry.resources)
-					? entry.resources.map((resource) => resource.uri.replace(`skill://${skill}/`, ''))
-					: [];
-			return refusal(
-				entry
-					? `${skill} has no text file ${path}. Its files: ${files.join(', ')}.`
-					: `There is no skill ${skill}. Skills: ${names.join(', ')}.`
-			);
+			const file = readSkillFile({ snapshot: skills, skill, path });
+			return 'text' in file
+				? { content: [{ type: 'text', text: file.text }] }
+				: refusal(file.problem);
 		}
 	);
 }

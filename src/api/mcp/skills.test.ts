@@ -5,7 +5,7 @@ import {
 	fetchSkillFiles,
 	PRODUCTION_ORIGIN,
 	skillFilePaths,
-	skillFileText,
+	readSkillFile,
 	skillInstructions,
 	withInstanceLinks,
 	type SkillRepository
@@ -126,10 +126,20 @@ describe('createSkillLibrary', () => {
 			'skill://papierkorrektur/SKILL.md'
 		]);
 		expect(snapshot?.entries[0]?.frontmatter.description).toBe('Korrigiert Papiere.');
-		expect(skillFileText({ snapshot, skill: 'papierkorrektur', path: 'SKILL.md' })).toBe(SKILL_MD);
-		expect(skillFileText({ snapshot, skill: 'papierkorrektur', path: 'missing.md' })).toBe(
-			undefined
-		);
+		if (!snapshot) throw new Error('no skills');
+		expect(readSkillFile({ snapshot, skill: 'papierkorrektur', path: 'SKILL.md' })).toEqual({
+			text: SKILL_MD
+		});
+		expect(readSkillFile({ snapshot, skill: 'papierkorrektur', path: '/SKILL.md' })).toEqual({
+			text: SKILL_MD
+		});
+		expect(readSkillFile({ snapshot, skill: 'papierkorrektur', path: 'missing.md' })).toEqual({
+			problem:
+				'papierkorrektur has no text file missing.md. Its files: SKILL.md, references/guide.md.'
+		});
+		expect(readSkillFile({ snapshot, skill: 'other', path: 'SKILL.md' })).toEqual({
+			problem: 'There is no skill other. Skills: papierkorrektur.'
+		});
 	});
 
 	it('reads GitHub once while the copy is fresh, and again once it is stale', async () => {

@@ -24,7 +24,7 @@ export interface SkillRepository {
 	path: string;
 }
 
-export const SKILL_REPOSITORIES: SkillRepository[] = [
+const SKILL_REPOSITORIES: SkillRepository[] = [
 	{
 		name: 'papierkorrektur',
 		repository: 'DeutscheModelUnitedNations/papierkorrektur-skill',
@@ -190,18 +190,30 @@ export function mcpSkills(origin: string) {
 	return library.current();
 }
 
-/** The text of a skill file for `read_skill`; undefined when there is no such text file. */
-export function skillFileText({
+/**
+ * What `read_skill` answers: the text of a skill file, or why there is none (naming the skill's
+ * files, or the skills, so the assistant can ask again).
+ */
+export function readSkillFile({
 	snapshot,
 	skill,
 	path
 }: {
-	snapshot: SkillSnapshot | undefined;
+	snapshot: SkillSnapshot;
 	skill: string;
 	path: string;
-}) {
-	const file = snapshot?.files[`${skill}/${path.replace(/^\/+/, '')}`];
-	return typeof file === 'string' ? file : undefined;
+}): { text: string } | { problem: string } {
+	const file = snapshot.files[`${skill}/${path.replace(/^\/+/, '')}`];
+	if (typeof file === 'string') return { text: file };
+	const entry = snapshot.entries.find((candidate) => candidate.frontmatter.name === skill);
+	if (!entry) {
+		const names = snapshot.entries.map((candidate) => candidate.frontmatter.name);
+		return { problem: `There is no skill ${skill}. Skills: ${names.join(', ')}.` };
+	}
+	const files = Array.isArray(entry.resources)
+		? entry.resources.map((resource) => resource.uri.replace(`skill://${skill}/`, ''))
+		: [];
+	return { problem: `${skill} has no text file ${path}. Its files: ${files.join(', ')}.` };
 }
 
 /** The paragraph of the server's instructions naming the skills; empty when there are none. */
