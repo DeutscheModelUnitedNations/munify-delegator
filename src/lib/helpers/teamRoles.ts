@@ -47,6 +47,15 @@ export const CONFERENCE_CONTENT_ROLES = [
 	'CONTENT_LEAD'
 ] as const satisfies readonly TeamroleEnum[];
 
+/**
+ * Roles that write the preparation guide: its pages, which may be shared with other conferences,
+ * and the conference's sidebar.
+ */
+export const GUIDE_ROLES = [
+	'PROJECT_MANAGEMENT',
+	'CONTENT_LEAD'
+] as const satisfies readonly TeamroleEnum[];
+
 /** Only the conference's leadership. */
 export const PROJECT_MANAGEMENT_ROLES = [
 	'PROJECT_MANAGEMENT'
@@ -65,7 +74,8 @@ export type TeamPermission =
 	| 'planSeats'
 	| 'editConferenceContent'
 	| 'manageConference'
-	| 'manageTableViews';
+	| 'manageTableViews'
+	| 'editGuide';
 
 /** The roles each team permission is granted to (`rolesWithTeamPermission`); undefined for any. */
 const TEAM_PERMISSION_ROLES: Record<TeamPermission, readonly TeamroleEnum[] | undefined> = {
@@ -77,7 +87,8 @@ const TEAM_PERMISSION_ROLES: Record<TeamPermission, readonly TeamroleEnum[] | un
 	editConferenceContent: CONFERENCE_CONTENT_ROLES,
 	manageConference: PROJECT_MANAGEMENT_ROLES,
 	// saving, changing and deleting the conference's shared views of the team's tables
-	manageTableViews: PARTICIPANT_CARE_ROLES
+	manageTableViews: PARTICIPANT_CARE_ROLES,
+	editGuide: GUIDE_ROLES
 };
 
 /** The team roles that hold `permission`, or undefined when every team role does. */

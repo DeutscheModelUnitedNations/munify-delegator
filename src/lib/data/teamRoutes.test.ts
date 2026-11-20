@@ -77,6 +77,8 @@ describe('who sees what', () => {
 			'seatPlanning',
 			'attendance',
 			'announcement',
+			'guide',
+			'guideSidebar',
 			'messages'
 		]);
 	});

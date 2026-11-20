@@ -302,6 +302,24 @@ after saving. Typical binding into URL state:
   Order: search, chips, `SUGGESTED_AUDIENCES` not picked yet (one click, disabled when covered),
   then the reach count and hint as quiet `text-xs` lines below a divider.
 
+## Guide Components
+
+The preparation guide (`docs/plans/guide.md`) lives in `src/lib/components/guide/`:
+
+- **`GuideReader`** — a reader's guide: sidebar (`GuideSidebarNav`, a `<details>` on phones),
+  the open page (`GuidePageArticle` with previous/next, `GuideNeighbour`) and the table of contents
+  (`GuideToc`, xl screens). Takes `hrefOf` for where an entry opens, so the participant route and
+  the team's preview (`team/guide-sidebar`) share it; `preview` passes `myGuide`'s preview args.
+- **`GuideContent` / `GuideNodes`** — renders a page's TipTap JSON for readers, one small
+  component per node type in `nodes/` (a lookup, not one big `{#if}` chain); children come in as
+  a snippet so the node components never import `GuideNodes` back. Videos (`GuideEmbed`) load
+  only after a click.
+- **`editor/GuideEditor`** — the WYSIWYG editor (TipTap, `guideExtensions.ts`): marks, headings
+  2–4, lists, quotes, rules, links (`guide:<id>`, `file:<id>`), uploads as guide files, callouts,
+  toggles, buttons, embeds, placeholders. Block attributes are changed through `promptDialog`.
+- **`ScopePicker`** — the four sharing modes as a 2×2 grid (series × year); shared modes are
+  disabled without a series. `guideLabels.ts` names scopes and their badge colours.
+
 ## Chat Components
 
 `#lib/components/chat/` (see "Messages" in CLAUDE.md). Both messages pages

@@ -174,6 +174,8 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
 				showCalendar: nullToUndefined(args.showCalendar),
 				messagingEnabled: nullToUndefined(args.messagingEnabled),
+				guidePublished: nullToUndefined(args.guidePublished),
+				seriesId: args.seriesId,
 				timezone: nullToUndefined(args.timezone),
 				nametagBinCount: nullToUndefined(args.nametagBinCount),
 				// null switches the rule off, or lifts the limit

@@ -7,13 +7,14 @@ description: Ankündigungen, Nachrichten, E-Mails, Kalender und Umfragen einer K
 
 Diese Seite zeigt, wie das Team einer Konferenz Teilnehmende erreicht: mit Ankündigungen auf dem Dashboard, mit Chats, mit automatischen E-Mails, mit dem Zeitplan und mit Umfragen. Die Seiten dafür liegen im Team-Bereich in der Gruppe **Kommunikation**. Wie du dich im Team-Bereich bewegst, steht unter [Der Team-Bereich](./overview#the-team-area).
 
-| Seite             | Wer sie öffnet                                                           |
-| ----------------- | ------------------------------------------------------------------------ |
-| **Ankündigungen** | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt**       |
-| **Nachrichten**   | Jedes Teammitglied. Die Seite zeigt nur die Postfächer, die du betreust. |
-| **E-Mails**       | **Projektleitung**, **Teilnehmendenbetreuung**                           |
-| **Kalender**      | **Projektleitung**, **Teilnehmendenbetreuung**                           |
-| **Umfragen**      | **Projektleitung**, **Teilnehmendenbetreuung**                           |
+| Seite                                   | Wer sie öffnet                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| **Ankündigungen**                       | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt**       |
+| **Leitfaden**, **Leitfaden-Navigation** | **Projektleitung**, **Leitung Inhalt**                                   |
+| **Nachrichten**                         | Jedes Teammitglied. Die Seite zeigt nur die Postfächer, die du betreust. |
+| **E-Mails**                             | **Projektleitung**, **Teilnehmendenbetreuung**                           |
+| **Kalender**                            | **Projektleitung**, **Teilnehmendenbetreuung**                           |
+| **Umfragen**                            | **Projektleitung**, **Teilnehmendenbetreuung**                           |
 
 Administrator\*innen des Systems öffnen alle Seiten.
 
@@ -85,6 +86,45 @@ Diese E-Mail braucht keinen Schalter auf der Seite [E-Mails](#emails): Die Entsc
 :::warning E-Mails lassen sich nicht zurückholen
 Eine verschickte E-Mail bleibt bei den Empfangenden, auch wenn du die Ankündigung danach bearbeitest, zurückziehst oder löschst. Prüfe Text und Zielgruppe vorher, am besten mit **Test-Mail an mich**. Wer die E-Mail schon bekommen hat, bekommt sie nach einem Zurückziehen und erneuten Veröffentlichen nicht noch einmal. Dafür ist **Erneut benachrichtigen** da.
 :::
+
+## Vorbereitungsleitfaden {#guide}
+
+Der Leitfaden bereitet die Teilnehmenden in der App auf die Konferenz vor: Seiten wie im alten guide.dmun.de, mit einer Navigation je Konferenz. Die Seiten **Leitfaden** und **Leitfaden-Navigation** öffnen **Projektleitung** und **Leitung Inhalt**.
+
+### Seiten und ihre Freigabe
+
+Unter **Leitfaden** stehen alle Seiten, die diese Konferenz erreichen. Eine Seite wird einmal geschrieben und kann geteilt werden:
+
+| Freigabe                | Erreicht                                                     |
+| ----------------------- | ------------------------------------------------------------ |
+| **Überall**             | Jede Konferenz einer Reihe, in jedem Jahr (z. B. das UN-ABC) |
+| **Jahr**                | Jede Konferenz einer Reihe, die in diesem Jahr beginnt       |
+| **Reihe**               | Jede Konferenz der Reihe (z. B. MUN-SH), in jedem Jahr       |
+| **Nur diese Konferenz** | Nur hier (z. B. Organisatorisches)                           |
+
+Geteilte Seiten erreichen nur Konferenzen, die einer **Konferenzreihe** angehören. Die Reihe legt die Projektleitung oben auf der Seite fest; die Reihen selbst pflegen Systemadministrator\*innen im Kontomenü unter **Konferenzreihen**. Eine geteilte Seite darf das Leitfaden-Team jeder Konferenz bearbeiten, die sie erreicht.
+
+Jedes Gremium und jedes Thema hat eine eigene Seite (**Seiten der Gremien und Themen**). Sie gehören zur Konferenz und füllen die Gremienvorlage der Navigation.
+
+### Der Editor {#guide-editor}
+
+Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschriften, Listen, Zitate, Links, Bilder und Dateien zum Herunterladen, Hinweisboxen, Aufklappbereiche, Buttons und Videos. Platzhalter setzen beim Lesen den Namen der Konferenz, des Gremiums oder die Liste der Themen ein; die beiden letzten nur in Seiten der Gremienvorlage.
+
+Änderungen sind ein Entwurf, bis du **Veröffentlichen** wählst. Vorher zeigt die App, welche Konferenzen die Seite danach erreichen und welche nicht mehr. Jede Veröffentlichung bleibt als Version erhalten; **Wiederherstellen** holt sie in den Entwurf zurück. Beim Veröffentlichen der Seite eines Themas entsteht der **Gremientext** als PDF; die Teilnehmenden laden ihn auf der Seite herunter.
+
+### Die Navigation {#guide-sidebar}
+
+Unter **Leitfaden-Navigation** legst du fest, welche Seiten die Teilnehmenden in welchen Abschnitten lesen. Jeder Abschnitt und jeder Eintrag hat eine Zielgruppe: alle, Delegierte, NA-Vertreter\*innen, einzelne Sonderrollen (z. B. Presse oder IGH) oder Betreuende. Die **Gremienvorlage** wiederholt sich für jedes Gremium und erscheint nur dessen Delegierten: gemeinsame Schritte, die Seite des Gremiums und die Seiten seiner Themen. Betreuende und das Team sehen alles.
+
+Die Vorschau zeigt den Leitfaden so, wie ihn eine Zielgruppe sieht, wahlweise mit den Entwürfen. Auch die Navigation ist ein Entwurf, bis du sie veröffentlichst; alle Seiten darin müssen dann veröffentlicht sein.
+
+### Freigeben
+
+Die Teilnehmenden lesen den Leitfaden, sobald der Schalter **Leitfaden veröffentlicht** an und ihre Rollen verteilt sind. Bis dahin verlinkt das Dashboard weiter den externen Leitfaden aus den Einstellungen.
+
+### KI-Assistenten
+
+Mit eingeschaltetem KI-Zugang lesen Assistenten Seiten als Markdown, schreiben Entwürfe, veröffentlichen nach einer Vorschau und übernehmen Bilder und PDFs von guide.dmun.de. So lässt sich der alte Leitfaden übertragen.
 
 ## Nachrichten {#messages}
 

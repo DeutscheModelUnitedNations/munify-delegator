@@ -1,3 +1,4 @@
+import { SEED_SERIES } from './guide';
 import type * as schema from '../schema';
 
 /**
@@ -102,7 +103,8 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 1 · Pre',
 			longTitle: 'Seed-Konferenz in Planung',
-			state: 'PRE'
+			state: 'PRE',
+			seriesId: SEED_SERIES.sh
 		},
 		days: { applicationDeadline: 60, startConference: 120, endConference: 123 },
 		assigned: false,
@@ -115,7 +117,8 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 2 · Registration open',
 			longTitle: 'Seed-Konferenz mit offener Bewerbung',
-			state: 'PARTICIPANT_REGISTRATION'
+			state: 'PARTICIPANT_REGISTRATION',
+			seriesId: SEED_SERIES.sh
 		},
 		days: { applicationDeadline: 21, startConference: 60, endConference: 63 },
 		assigned: false,
@@ -130,6 +133,7 @@ export const conferencePlans: ConferencePlan[] = [
 			title: 'Seed 3 · Registration grace period',
 			longTitle: 'Seed-Konferenz in der Kulanzzeit nach Anmeldeschluss',
 			state: 'PARTICIPANT_REGISTRATION',
+			seriesId: SEED_SERIES.sh,
 			registrationDeadlineGracePeriodMinutes: 24 * 60
 		},
 		days: { applicationDeadline: -5 / (24 * 60), startConference: 45, endConference: 48 },
@@ -150,6 +154,7 @@ export const conferencePlans: ConferencePlan[] = [
 			title: 'Seed 4 · Registration closed',
 			longTitle: 'Seed-Konferenz nach Anmeldeschluss, Zuteilung läuft',
 			state: 'PARTICIPANT_REGISTRATION',
+			seriesId: SEED_SERIES.sh,
 			// Low, so the assignment's school warnings show with the seeded schools and supervisors
 			maxCollectiveGroupSize: 4,
 			maxGuaranteedSeatsPerForeignSchool: 2
@@ -168,6 +173,8 @@ export const conferencePlans: ConferencePlan[] = [
 			messagingEnabled: true,
 			longTitle: 'Seed-Konferenz in der Vorbereitung',
 			state: 'PREPARATION',
+			seriesId: SEED_SERIES.sh,
+			guidePublished: true,
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: true,
@@ -200,6 +207,7 @@ export const conferencePlans: ConferencePlan[] = [
 			messagingEnabled: true,
 			longTitle: 'Seed-Konferenz in der Vorbereitung ohne Freischaltungen',
 			state: 'PREPARATION',
+			seriesId: SEED_SERIES.sh,
 			// Seats are handed out, but participants are still waiting for the release.
 			assignmentReleased: false,
 			assignmentReleasedAt: null,
@@ -229,6 +237,8 @@ export const conferencePlans: ConferencePlan[] = [
 			messagingEnabled: true,
 			longTitle: 'Seed-Konferenz, die gerade läuft',
 			state: 'ACTIVE',
+			seriesId: SEED_SERIES.sh,
+			guidePublished: true,
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: true,
@@ -258,6 +268,8 @@ export const conferencePlans: ConferencePlan[] = [
 			title: 'Seed 8 · Post',
 			longTitle: 'Seed-Konferenz, die vorbei ist',
 			state: 'POST',
+			seriesId: SEED_SERIES.sh,
+			guidePublished: true,
 			unlockPayments: true,
 			unlockPostals: true,
 			isOpenPaperSubmission: false,
@@ -288,6 +300,8 @@ export const conferencePlans: ConferencePlan[] = [
 			title: 'Seed 9 · Second conference',
 			longTitle: 'Zweite Seed-Konferenz',
 			state: 'PREPARATION',
+			seriesId: SEED_SERIES.bw,
+			guidePublished: true,
 			unlockPayments: true,
 			unlockPostals: true,
 			maxCollectiveGroupSize: null,

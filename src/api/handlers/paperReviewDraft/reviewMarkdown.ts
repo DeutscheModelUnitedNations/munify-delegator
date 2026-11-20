@@ -1,4 +1,13 @@
-import { Lexer, type MarkedToken, type Token, type Tokens } from 'marked';
+import { Lexer, type Token, type Tokens } from 'marked';
+import {
+	flatten,
+	headingOf,
+	listItemOf,
+	listOf,
+	literalText,
+	markedTokens,
+	textRun
+} from '#api/services/markdownTokens';
 import type { JSONContent } from '@tiptap/core';
 
 /**
@@ -14,48 +23,8 @@ import type { JSONContent } from '@tiptap/core';
 
 type Mark = NonNullable<JSONContent['marks']>[number];
 
-const MARKED_TYPES: ReadonlySet<string> = new Set<MarkedToken['type']>([
-	'blockquote',
-	'br',
-	'checkbox',
-	'code',
-	'codespan',
-	'def',
-	'del',
-	'em',
-	'escape',
-	'heading',
-	'hr',
-	'html',
-	'image',
-	'link',
-	'list',
-	'list_item',
-	'paragraph',
-	'space',
-	'strong',
-	'table',
-	'text'
-]);
-
-/** Whether a token is one of marked's own, not an extension's (the lexer runs without any). */
-function isMarkedToken(token: Token): token is MarkedToken {
-	return MARKED_TYPES.has(token.type);
-}
-
-/** A token's literal text, for the kinds that are kept as they stand. */
-function literalText(token: MarkedToken) {
-	return 'text' in token && typeof token.text === 'string' ? token.text : '';
-}
-
-/** Soft line breaks inside a paragraph read as spaces, as they would when rendered. */
-function flatten(text: string) {
-	return text.replace(/\s*\n\s*/g, ' ');
-}
-
 function textNode({ text, marks }: { text: string; marks: Mark[] }): JSONContent[] {
-	if (!text) return [];
-	return [marks.length > 0 ? { type: 'text', text, marks } : { type: 'text', text }];
+	return textRun({ text, marks });
 }
 
 function isWebLink(href: string) {
@@ -63,7 +32,7 @@ function isWebLink(href: string) {
 }
 
 function inline(tokens: Token[] | undefined, marks: Mark[] = []): JSONContent[] {
-	return (tokens ?? []).filter(isMarkedToken).flatMap((token): JSONContent[] => {
+	return markedTokens(tokens).flatMap((token): JSONContent[] => {
 		switch (token.type) {
 			case 'strong':
 				return inline(token.tokens, [...marks, { type: 'bold' }]);
@@ -108,16 +77,11 @@ function quotes(token: Tokens.Blockquote): JSONContent[] {
 
 /** A list item starts with a paragraph in the editor (`ListItem`: `paragraph block*`). */
 function listItem(item: Tokens.ListItem): JSONContent {
-	const content = blocks(item.tokens);
-	const first = content.at(0);
-	return {
-		type: 'listItem',
-		content: first?.type === 'paragraph' ? content : [paragraph([]), ...content]
-	};
+	return listItemOf({ content: blocks(item.tokens), empty: paragraph([]) });
 }
 
 function blocks(tokens: Token[]): JSONContent[] {
-	return tokens.filter(isMarkedToken).flatMap((token): JSONContent[] => {
+	return markedTokens(tokens).flatMap((token): JSONContent[] => {
 		switch (token.type) {
 			case 'paragraph':
 				return [paragraph(inline(token.tokens))];
@@ -128,17 +92,12 @@ function blocks(tokens: Token[]): JSONContent[] {
 						token.tokens ? inline(token.tokens) : textNode({ text: flatten(token.text), marks: [] })
 					)
 				];
-			case 'heading': {
-				const level = Math.min(3, Math.max(2, token.depth));
-				const content = inline(token.tokens);
-				return [{ type: 'heading', attrs: { level }, ...(content.length > 0 ? { content } : {}) }];
-			}
-			case 'list': {
-				const items = token.items.map(listItem);
-				if (!token.ordered) return [{ type: 'bulletList', content: items }];
-				const start = typeof token.start === 'number' ? token.start : 1;
-				return [{ type: 'orderedList', attrs: { start }, content: items }];
-			}
+			case 'heading':
+				return [headingOf({ depth: token.depth, content: inline(token.tokens), maxLevel: 3 })];
+			case 'list':
+				return [
+					listOf({ items: token.items.map(listItem), ordered: token.ordered, start: token.start })
+				];
 			case 'blockquote':
 				return quotes(token);
 			case 'space':

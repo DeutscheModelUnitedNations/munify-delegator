@@ -1980,6 +1980,10 @@ type Conference {
   """Get the storedFiles related to this conference"""
   guardianConsentFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
   guardianConsentFileId: ID
+
+  """Get the guideOutlines related to this conference"""
+  guideOutline(orderBy: GuideoutlineOrderInputArgument, where: GuideoutlineWhereInputArgument): Guideoutline
+  guidePublished: Boolean!
   iban: String
   id: ID!
 
@@ -2047,6 +2051,10 @@ type Conference {
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
   """
   search_distance: Float
+
+  """Get the conferenceSeries related to this conference"""
+  series(orderBy: ConferenceseriesOrderInputArgument, where: ConferenceseriesWhereInputArgument): Conferenceseries
+  seriesId: ID
   showCalendar: Boolean!
 
   """Get the singleParticipants related to this conference"""
@@ -2128,6 +2136,7 @@ input ConferenceOrderInputArgument {
   endConference: SortingParameter
   feeAmount: SortingParameter
   guardianConsentFileId: SortingParameter
+  guidePublished: SortingParameter
   iban: SortingParameter
   id: SortingParameter
   imageFileId: SortingParameter
@@ -2156,6 +2165,7 @@ input ConferenceOrderInputArgument {
   postalStreet: SortingParameter
   postalZip: SortingParameter
   registrationDeadlineGracePeriodMinutes: SortingParameter
+  seriesId: SortingParameter
   showCalendar: SortingParameter
   startConference: SortingParameter
   state: SortingParameter
@@ -2208,6 +2218,7 @@ enum ConferenceSearchFieldEnum {
   postalName
   postalStreet
   postalZip
+  seriesId
   termsAndConditionsFileId
   timezone
   title
@@ -2257,6 +2268,8 @@ input ConferenceWhereInputArgument {
   feeAmount: FloatWhereInputArgument
   guardianConsentFile: StoredfileWhereInputArgument
   guardianConsentFileId: IDWhereInputArgument
+  guideOutline: GuideoutlineWhereInputArgument
+  guidePublished: BooleanWhereInputArgument
   iban: StringWhereInputArgument
   id: IDWhereInputArgument
   imageFile: StoredfileWhereInputArgument
@@ -2293,6 +2306,8 @@ input ConferenceWhereInputArgument {
   registrationDeadlineGracePeriodMinutes: IntWhereInputArgument
   resolutions: ResolutionWhereInputArgument
   roles: ConferenceroleWhereInputArgument
+  series: ConferenceseriesWhereInputArgument
+  seriesId: IDWhereInputArgument
   showCalendar: BooleanWhereInputArgument
   singleParticipants: SingleparticipantWhereInputArgument
   startConference: DateTimeWhereInputArgument
@@ -2727,6 +2742,42 @@ enum ConferencerolekindEnum {
   CUSTOM
   NATION
   NON_STATE_ACTOR
+}
+
+type Conferenceseries {
+  abbreviation: String!
+
+  """Get the conferences related to this conferenceSery"""
+  conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  updatedAt: DateTime!
+}
+
+input ConferenceseriesOrderInputArgument {
+  abbreviation: SortingParameter
+  createdAt: SortingParameter
+  id: SortingParameter
+  name: SortingParameter
+  updatedAt: SortingParameter
+}
+
+input ConferenceseriesWhereInputArgument {
+  AND: [ConferenceseriesWhereInputArgument!]
+  NOT: ConferenceseriesWhereInputArgument
+  OR: [ConferenceseriesWhereInputArgument!]
+  abbreviation: StringWhereInputArgument
+  conferences: ConferenceWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  id: IDWhereInputArgument
+  name: StringWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
 }
 
 enum ConferencestateEnum {
@@ -3392,6 +3443,492 @@ enum GenderEnum {
   NO_STATEMENT
 }
 
+type GuideConferenceTitle {
+  id: ID!
+  title: String!
+}
+
+type GuideEntryView {
+  indent: Int!
+
+  """Unique in the guide: a page shared by sections has one each."""
+  key: String!
+  pageId: ID!
+  title: String!
+}
+
+type GuideFileUrl {
+  fileId: ID!
+  fileName: String
+  url: String!
+}
+
+type GuideHeadingView {
+  """The heading's id in the page, for links into it."""
+  anchor: String!
+  level: Int!
+  text: String!
+}
+
+"""A page text as Markdown, for assistants."""
+type GuideMarkdown {
+  markdown: String!
+
+  """
+  The rich blocks Markdown has no syntax for (callout, toggle, button, embed), left out of `markdown`. Read `content` (TipTap JSON) to see them; writing Markdown over them needs `replaceRichBlocks`.
+  """
+  omittedBlocks: [String!]!
+}
+
+"""What publishing a page would do."""
+type GuidePagePublishPreview {
+  firstPublish: Boolean!
+
+  """The conferences the page reaches once published."""
+  reaches: [GuideConferenceTitle!]!
+  scope: GuideScopeKind!
+  scopeChanges: Boolean!
+
+  """The conferences that read it now and would not any more."""
+  stopsReaching: [GuideConferenceTitle!]!
+  textChanges: Boolean!
+  titleChanges: Boolean!
+}
+
+"""Whose guide a preview shows."""
+enum GuidePreviewAudience {
+  CUSTOM_ROLE
+  DELEGATE
+  EVERYTHING
+  NON_STATE_ACTOR
+  SUPERVISOR
+}
+
+"""A page of the guide as its reader reads it."""
+type GuideReaderPage {
+  """
+  The text (TipTap JSON), placeholders filled in, files as download URLs, links to pages outside the guide as plain text.
+  """
+  content: JSON!
+  entryKey: String!
+  headings: [GuideHeadingView!]!
+  next: GuideEntryView
+  pageId: ID!
+
+  """The committee text (agenda items)."""
+  pdfUrl: String
+  previous: GuideEntryView
+  sectionTitle: String!
+  title: String!
+  updatedAt: DateTime!
+}
+
+"""
+Where a guide page is shared: EVERYWHERE (every conference of a series, every year), YEAR (every series, the year of the conference), SERIES (the series of the conference, every year) or CONFERENCE (only that one).
+"""
+enum GuideScopeKind {
+  CONFERENCE
+  EVERYWHERE
+  SERIES
+  YEAR
+}
+
+type GuideSectionView {
+  entries: [GuideEntryView!]!
+  key: String!
+  title: String!
+}
+
+"""A reader's guide of a conference: their sidebar."""
+type GuideView {
+  """A team preview: drafts or another reader."""
+  preview: Boolean!
+  sections: [GuideSectionView!]!
+}
+
+type Guideoutline {
+  """Get the conferences related to this guideOutline"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
+  conferenceId: ID!
+  createdAt: DateTime!
+  draft: JSON!
+  draftUpdatedById: ID
+  id: ID!
+  published: JSON
+  publishedAt: DateTime
+  publishedById: ID
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  updatedAt: DateTime!
+
+  """Get the guideOutlineVersions related to this guideOutline"""
+  versions(limit: Int, offset: Int, orderBy: GuideoutlineversionOrderInputArgument, search: GuideoutlineversionSearchInputArgument, where: GuideoutlineversionWhereInputArgument): [Guideoutlineversion!]!
+}
+
+input GuideoutlineOrderInputArgument {
+  conferenceId: SortingParameter
+  createdAt: SortingParameter
+  draft: SortingParameter
+  draftUpdatedById: SortingParameter
+  id: SortingParameter
+  published: SortingParameter
+  publishedAt: SortingParameter
+  publishedById: SortingParameter
+  updatedAt: SortingParameter
+}
+
+input GuideoutlineWhereInputArgument {
+  AND: [GuideoutlineWhereInputArgument!]
+  NOT: GuideoutlineWhereInputArgument
+  OR: [GuideoutlineWhereInputArgument!]
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  draft: JSONWhereInputArgument
+  draftUpdatedById: IDWhereInputArgument
+  id: IDWhereInputArgument
+  published: JSONWhereInputArgument
+  publishedAt: DateTimeWhereInputArgument
+  publishedById: IDWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
+  versions: GuideoutlineversionWhereInputArgument
+}
+
+type Guideoutlineversion {
+  createdAt: DateTime!
+
+  """Get the guideOutlines related to this guideOutlineVersion"""
+  guideOutline(orderBy: GuideoutlineOrderInputArgument, where: GuideoutlineWhereInputArgument): Guideoutline!
+  id: ID!
+  number: Int!
+  outline: JSON!
+  outlineId: ID!
+  publishedById: ID
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+}
+
+input GuideoutlineversionOrderInputArgument {
+  createdAt: SortingParameter
+  id: SortingParameter
+  number: SortingParameter
+  outline: SortingParameter
+  outlineId: SortingParameter
+  publishedById: SortingParameter
+}
+
+"""A column of guideOutlineVersion the search can look at"""
+enum GuideoutlineversionSearchFieldEnum {
+  id
+  outlineId
+  publishedById
+}
+
+"""
+Fuzzy search on guideOutlineVersion, ranked by how close the columns are to the term
+"""
+input GuideoutlineversionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [GuideoutlineversionSearchFieldEnum!]
+  term: String!
+}
+
+input GuideoutlineversionWhereInputArgument {
+  AND: [GuideoutlineversionWhereInputArgument!]
+  NOT: GuideoutlineversionWhereInputArgument
+  OR: [GuideoutlineversionWhereInputArgument!]
+  createdAt: DateTimeWhereInputArgument
+  guideOutline: GuideoutlineWhereInputArgument
+  id: IDWhereInputArgument
+  number: IntWhereInputArgument
+  outline: JSONWhereInputArgument
+  outlineId: IDWhereInputArgument
+  publishedById: IDWhereInputArgument
+}
+
+type Guidepage {
+  """Get the committeeAgendaItems related to this guidePage"""
+  agendaItem(orderBy: CommitteeagendaitemOrderInputArgument, where: CommitteeagendaitemWhereInputArgument): Committeeagendaitem
+  agendaItemId: ID
+
+  """Get the committees related to this guidePage"""
+  committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee
+  committeeId: ID
+
+  """Get the conferences related to this guidePage"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference
+  conferenceId: ID
+  content: JSON!
+  createdAt: DateTime!
+
+  """The draft as Markdown."""
+  draftMarkdown: GuideMarkdown!
+  draftUpdatedAt: DateTime!
+  draftUpdatedById: ID
+  id: ID!
+  kind: GuidepagekindEnum!
+
+  """Get the conferences related to this guidePage"""
+  publishedConference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference
+  publishedConferenceId: ID
+
+  """The scope of what is published; null while nothing is."""
+  publishedScope: GuideScopeKind
+
+  """Get the conferenceSeries related to this guidePage"""
+  publishedSeries(orderBy: ConferenceseriesOrderInputArgument, where: ConferenceseriesWhereInputArgument): Conferenceseries
+  publishedSeriesId: ID
+
+  """Get the guidePageVersions related to this guidePage"""
+  publishedVersion(orderBy: GuidepageversionOrderInputArgument, where: GuidepageversionWhereInputArgument): Guidepageversion
+  publishedVersionId: ID
+  publishedYear: Int
+
+  """The draft's scope."""
+  scope: GuideScopeKind!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+
+  """Get the conferenceSeries related to this guidePage"""
+  series(orderBy: ConferenceseriesOrderInputArgument, where: ConferenceseriesWhereInputArgument): Conferenceseries
+  seriesId: ID
+  title: String!
+  updatedAt: DateTime!
+
+  """The conferences (titles) whose published sidebar names the page."""
+  usedInSidebars: [String!]!
+
+  """Get the guidePageVersions related to this guidePage"""
+  versions(limit: Int, offset: Int, orderBy: GuidepageversionOrderInputArgument, search: GuidepageversionSearchInputArgument, where: GuidepageversionWhereInputArgument): [Guidepageversion!]!
+  year: Int
+}
+
+input GuidepageOrderInputArgument {
+  agendaItemId: SortingParameter
+  committeeId: SortingParameter
+  conferenceId: SortingParameter
+  content: SortingParameter
+  createdAt: SortingParameter
+  draftUpdatedAt: SortingParameter
+  draftUpdatedById: SortingParameter
+  id: SortingParameter
+  kind: SortingParameter
+  publishedConferenceId: SortingParameter
+  publishedSeriesId: SortingParameter
+  publishedVersionId: SortingParameter
+  publishedYear: SortingParameter
+  seriesId: SortingParameter
+  title: SortingParameter
+  updatedAt: SortingParameter
+  year: SortingParameter
+}
+
+"""A column of guidePage the search can look at"""
+enum GuidepageSearchFieldEnum {
+  title
+}
+
+"""
+Fuzzy search on guidePage, ranked by how close the columns are to the term
+"""
+input GuidepageSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [GuidepageSearchFieldEnum!]
+  term: String!
+}
+
+input GuidepageWhereInputArgument {
+  AND: [GuidepageWhereInputArgument!]
+  NOT: GuidepageWhereInputArgument
+  OR: [GuidepageWhereInputArgument!]
+  agendaItem: CommitteeagendaitemWhereInputArgument
+  agendaItemId: IDWhereInputArgument
+  committee: CommitteeWhereInputArgument
+  committeeId: IDWhereInputArgument
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  content: JSONWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  draftUpdatedAt: DateTimeWhereInputArgument
+  draftUpdatedById: IDWhereInputArgument
+  id: IDWhereInputArgument
+  kind: GuidepagekindEnum
+  publishedConference: ConferenceWhereInputArgument
+  publishedConferenceId: IDWhereInputArgument
+  publishedSeries: ConferenceseriesWhereInputArgument
+  publishedSeriesId: IDWhereInputArgument
+  publishedVersion: GuidepageversionWhereInputArgument
+  publishedVersionId: IDWhereInputArgument
+  publishedYear: IntWhereInputArgument
+  series: ConferenceseriesWhereInputArgument
+  seriesId: IDWhereInputArgument
+  title: StringWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
+  versions: GuidepageversionWhereInputArgument
+  year: IntWhereInputArgument
+}
+
+type Guidepagefile {
+  createdAt: DateTime!
+
+  """Get the storedFiles related to this guidePageFile"""
+  file(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile!
+  fileId: ID!
+  id: ID!
+
+  """Get the guidePages related to this guidePageFile"""
+  page(orderBy: GuidepageOrderInputArgument, where: GuidepageWhereInputArgument): Guidepage!
+  pageId: ID!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+}
+
+input GuidepagefileOrderInputArgument {
+  createdAt: SortingParameter
+  fileId: SortingParameter
+  id: SortingParameter
+  pageId: SortingParameter
+}
+
+"""A column of guidePageFile the search can look at"""
+enum GuidepagefileSearchFieldEnum {
+  fileId
+  id
+  pageId
+}
+
+"""
+Fuzzy search on guidePageFile, ranked by how close the columns are to the term
+"""
+input GuidepagefileSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [GuidepagefileSearchFieldEnum!]
+  term: String!
+}
+
+input GuidepagefileWhereInputArgument {
+  AND: [GuidepagefileWhereInputArgument!]
+  NOT: GuidepagefileWhereInputArgument
+  OR: [GuidepagefileWhereInputArgument!]
+  createdAt: DateTimeWhereInputArgument
+  file: StoredfileWhereInputArgument
+  fileId: IDWhereInputArgument
+  id: IDWhereInputArgument
+  page: GuidepageWhereInputArgument
+  pageId: IDWhereInputArgument
+}
+
+enum GuidepagekindEnum {
+  AGENDA_ITEM
+  COMMITTEE
+  GENERAL
+}
+
+type Guidepageversion {
+  conferenceId: ID
+  content: JSON!
+  createdAt: DateTime!
+  id: ID!
+
+  """The version as Markdown."""
+  markdown: GuideMarkdown!
+  number: Int!
+
+  """Get the guidePages related to this guidePageVersion"""
+  page(orderBy: GuidepageOrderInputArgument, where: GuidepageWhereInputArgument): Guidepage!
+  pageId: ID!
+
+  """Get the storedFiles related to this guidePageVersion"""
+  pdfFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
+  pdfFileId: ID
+
+  """The committee text rendered from this version (agenda item pages)."""
+  pdfUrl: String
+  publishedById: ID
+  scope: GuideScopeKind!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  seriesId: ID
+  title: String!
+  year: Int
+}
+
+input GuidepageversionOrderInputArgument {
+  conferenceId: SortingParameter
+  content: SortingParameter
+  createdAt: SortingParameter
+  id: SortingParameter
+  number: SortingParameter
+  pageId: SortingParameter
+  pdfFileId: SortingParameter
+  publishedById: SortingParameter
+  seriesId: SortingParameter
+  title: SortingParameter
+  year: SortingParameter
+}
+
+"""A column of guidePageVersion the search can look at"""
+enum GuidepageversionSearchFieldEnum {
+  conferenceId
+  id
+  pageId
+  pdfFileId
+  publishedById
+  seriesId
+  title
+}
+
+"""
+Fuzzy search on guidePageVersion, ranked by how close the columns are to the term
+"""
+input GuidepageversionSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [GuidepageversionSearchFieldEnum!]
+  term: String!
+}
+
+input GuidepageversionWhereInputArgument {
+  AND: [GuidepageversionWhereInputArgument!]
+  NOT: GuidepageversionWhereInputArgument
+  OR: [GuidepageversionWhereInputArgument!]
+  conferenceId: IDWhereInputArgument
+  content: JSONWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  id: IDWhereInputArgument
+  number: IntWhereInputArgument
+  page: GuidepageWhereInputArgument
+  pageId: IDWhereInputArgument
+  pdfFile: StoredfileWhereInputArgument
+  pdfFileId: IDWhereInputArgument
+  publishedById: IDWhereInputArgument
+  seriesId: IDWhereInputArgument
+  title: StringWhereInputArgument
+  year: IntWhereInputArgument
+}
+
 """
 A message participant care hid while the report was open, as the record keeps it: the text, who wrote it, who hid it and why.
 """
@@ -3442,6 +3979,15 @@ type ImpersonationUser {
   given_name: String
   preferred_username: String
   sub: String!
+}
+
+type ImportedGuideFile {
+  fileName: String!
+
+  """For `file:<id>` in a page text."""
+  id: ID!
+  mimeType: String!
+  size: Int!
 }
 
 type Instancelink {
@@ -3918,6 +4464,9 @@ type Mutation {
     numOfSeatsPerDelegation: Int!
   ): Committee!
 
+  """Adds a conference series. System admins only (FORBIDDEN otherwise)."""
+  createConferenceSeries(abbreviation: String!, name: String!): Conferenceseries!
+
   """
   Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT for a sign-up of their own once the conference is over (any earlier stage takes one), for one of their own attending in person while the plausibility checks find something about them (`applicationBlockers`), or when the person takes part in the conference already or is on its team.
   """
@@ -3990,6 +4539,25 @@ type Mutation {
     """The name of a school to find (ignoring case and spacing) or create."""
     schoolName: String
   ): Delegationmember!
+
+  """
+  Creates a guide page (a draft; nobody reads it before it is published and a sidebar names it), shared as `scope` says, seen from the conference: EVERYWHERE, YEAR or SERIES need the conference to belong to a series (INVALID_INPUT otherwise). `editGuide` (project management, content lead) in the conference (FORBIDDEN otherwise).
+  """
+  createGuidePage(
+    conferenceId: ID!
+
+    """
+    The text as a TipTap document: paragraph, heading (level 2–4), bulletList, orderedList, listItem, blockquote, horizontalRule, hardBreak, image (`src: "file:<id>"`, `alt`, `title` as caption), callout (`emoji`, `color`: info|success|warning|error|neutral; block content), toggle (`summary`; block content), button (`href`, `label`), embed (`url`, YouTube); marks bold, italic, underline, strike, code, link (`href`: http(s), mailto, `guide:<pageId>` or `file:<fileId>`). Either this or `markdown`.
+    """
+    content: JSON
+
+    """
+    The text as Markdown (preferred): `##`–`####` headings, paragraphs, **bold**, *italic*, ~~strike~~, `code`, lists, `>` quotes, `---`, links (`[text](https://…)`, `[text](guide:<pageId>)` to another page, `[label](file:<fileId>)` to a download), images (`![caption](file:<fileId>)`), placeholders `{{Konferenz}}`, `{{Gremium}}`, `{{Themen}}`. Either this or `content`.
+    """
+    markdown: String
+    scope: GuideScopeKind!
+    title: String!
+  ): Guidepage!
 
   """
   Adds a non-state actor to the conference, with how many seats it has. A name or abbreviation another role of the conference has is refused with CONFLICT.
@@ -4244,6 +4812,11 @@ type Mutation {
   deleteCommittee(id: ID!): Boolean!
 
   """
+  Deletes a conference series no conference and no guide page belongs to (CONFLICT otherwise). System admins only (FORBIDDEN otherwise).
+  """
+  deleteConferenceSeries(id: ID!): Boolean!
+
+  """
   Deletes a custom role, together with the wishes for it and its place in the assignment draft. Refused with CONFLICT while somebody holds it.
   """
   deleteCustomRole(id: ID!): Boolean!
@@ -4257,6 +4830,11 @@ type Mutation {
   Removes a delegate: the member themselves or their head delegate until the delegation has applied, participant care at any time. If the head delegate leaves, another member is promoted; if nobody is left, the delegation itself goes.
   """
   deleteDelegationMember(id: ID!): Boolean!
+
+  """
+  Deletes a general page with its versions. CONFLICT while a published sidebar names it; committee and agenda item pages go with their committee or agenda item (INVALID_INPUT). For whoever may change the page (NOT_FOUND otherwise).
+  """
+  deleteGuidePage(id: ID!): Boolean!
 
   """
   Deletes a non-state actor, together with the applications for it and its place in the assignment draft. Refused with CONFLICT while a delegation is assigned to it.
@@ -4379,6 +4957,11 @@ type Mutation {
   endAttendanceSession(id: ID!): Boolean!
 
   """
+  The guide page of a committee (`committeeId`) or of an agenda item (`agendaItemId`), created empty and titled after it when there is none yet. These pages fill the sidebar's committee template and stay in their conference. `editGuide` in its conference (NOT_FOUND otherwise).
+  """
+  ensureGuidePageOf(agendaItemId: ID, committeeId: ID): Guidepage!
+
+  """
   Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, or `TRUSTED_PERSON` for the whole conference (without a committee). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, the trusted persons their shared one and each their own. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference, a committee function without a committee and a trusted person with one.
   """
   giveTeamFunction(committeeId: ID, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
@@ -4392,6 +4975,11 @@ type Mutation {
   Hides everything a person wrote into a reported chat so far, for everybody of it, with a reason for the team, and answers how many messages it hid. What they write later stays visible (`setMessagingSuspended` keeps them from writing). Final, like `hideChatMessage`, and for the same people.
   """
   hideChatMessagesOf(chatId: ID!, participantId: ID!, reason: String!): Int!
+
+  """
+  Downloads a file (image or PDF, up to 20 MB) from an allowed host (the old guide: guide.dmun.de, cdn.dmun.de) and stores it as a guide file; answers its id for `file:<id>` in a page. Other hosts, types and sizes are refused (INVALID_INPUT). `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  importGuideFile(conferenceId: ID!, url: String!): ImportedGuideFile!
 
   """
   The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.
@@ -4447,12 +5035,12 @@ type Mutation {
   ): SendPersonEmailResult!
 
   """
-  The group chat of the caller's delegation in the conference, opened when it has none yet. For its members (FORBIDDEN otherwise), once the delegation's role is released (CONFLICT before).
+  The group chat of the caller's delegation in the conference, opened when it has none yet. For its members (FORBIDDEN otherwise), from the moment the delegation exists; CONFLICT for a delegation the released assignment gave no role and that has no group yet.
   """
   openDelegationChat(conferenceId: ID!): Chat!
 
   """
-  The direct chat of the caller with another seated participant of the conference, opened when they have none yet. For delegation members and single participants (FORBIDDEN otherwise) once the roles are released (CONFLICT before, and while messaging is off); NOT_FOUND for a participant without a seat.
+  The direct chat of the caller with another seated participant of the conference, opened when they have none yet. For delegation members and single participants (FORBIDDEN otherwise) once the roles are released (CONFLICT before, and while the conference keeps participants from writing each other, `messagingEnabled`); NOT_FOUND for a participant without a seat.
   """
   openDirectChat(
     conferenceId: ID!
@@ -4462,7 +5050,7 @@ type Mutation {
   ): Chat!
 
   """
-  The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.
+  The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`).
   """
   openTeamChat(
     """The committee of a chairs' or consultants' inbox."""
@@ -4484,6 +5072,16 @@ type Mutation {
     """Left out or past: now."""
     publishAt: DateTime
   ): Announcement!
+
+  """
+  Publishes a conference's sidebar draft: its participants see these sections from now on (once the conference published its guide). Every page it names has to be published in the conference (CONFLICT, naming them, otherwise). `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  publishGuideOutline(conferenceId: ID!): Boolean!
+
+  """
+  Publishes a page's draft as a new version: participants of every conference its scope reaches read it from now on, where a sidebar names it. Read `guidePagePublishPreview` first and show it. An agenda item page renders its committee text (PDF) on publish; a failed render fails the publish. For whoever may change the page (NOT_FOUND otherwise).
+  """
+  publishGuidePage(id: ID!): Guidepage!
 
   """
   Records a result the caller picked in the search. Picking the same result again moves it to the top instead of listing it twice, and only the newest entries are kept. Every team member records their own searches; FORBIDDEN for anyone else.
@@ -4581,6 +5179,16 @@ type Mutation {
   Settles every open report of a chat at once, with an optional note for the team, and answers how many it settled; the chat is private again. Participant care of the chat's conference only (NOT_FOUND otherwise, and for a chat without an open report).
   """
   resolveChatReports(chatId: ID!, note: String): Int!
+
+  """
+  Copies a published version of a conference's sidebar into its draft. `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  restoreGuideOutlineVersion(conferenceId: ID!, versionId: ID!): Boolean!
+
+  """
+  Copies a published version's title, text and scope into the page's draft; publish to make it current again. For whoever may change the page (NOT_FOUND otherwise).
+  """
+  restoreGuidePageVersion(id: ID!, versionId: ID!): Guidepage!
 
   """
   Drops the plan to turn a single participant into a delegation, with any role planned for it.
@@ -4768,6 +5376,11 @@ type Mutation {
     """
     layout: JSON
   ): Conference!
+
+  """
+  Sets where a general page's draft is shared, seen from the conference (`scope` reaching it); takes effect with the next publish. Committee and agenda item pages stay in their conference (INVALID_INPUT). `editGuide` in the conference, and the page reaching one of the caller's (NOT_FOUND / FORBIDDEN otherwise).
+  """
+  setGuidePageScope(conferenceId: ID!, id: ID!, scope: GuideScopeKind!): Guidepage!
 
   """
   Whether a mail tells the caller about chat messages they left unread for a while.
@@ -5006,6 +5619,11 @@ type Mutation {
     A file uploaded through `requestFileUpload` for this field of this conference; `null` removes the stored one, left out keeps it.
     """
     guardianConsentFileId: ID
+
+    """
+    Whether participants read the conference's preparation guide in the app, once their roles are released too; off, the dashboard links `linkToPreparationGuide`.
+    """
+    guidePublished: Boolean
     iban: String
     id: ID!
 
@@ -5075,6 +5693,11 @@ type Mutation {
 
     """How long after the application deadline applications are still taken."""
     registrationDeadlineGracePeriodMinutes: Int
+
+    """
+    The conference series it belongs to (`conferenceSeriesList`); shared guide pages reach it only with one. `null` takes it out of its series. Project management only.
+    """
+    seriesId: ID
     showCalendar: Boolean
     startConference: DateTime
     state: ConferencestateEnum
@@ -5096,6 +5719,11 @@ type Mutation {
     unlockPostals: Boolean
     website: String
   ): Conference!
+
+  """
+  Renames a conference series; left out keeps a field. System admins only (FORBIDDEN otherwise).
+  """
+  updateConferenceSeries(abbreviation: String, id: ID!, name: String): Conferenceseries!
 
   """
   Changes whether the supervisor plans to attend the conference themselves: the supervisor, or participant care. Switching it on is refused with CONFLICT while the plausibility checks find something about them (`applicationBlockers`), unless participant care does it, who may override them; switching it off never is.
@@ -5142,6 +5770,32 @@ type Mutation {
   Moves a delegate into a committee that seats their delegation's role. When the committee is already full for the delegation, participant care displaces the longest-untouched occupant into the seat this member leaves; a head delegate is refused with CONFLICT.
   """
   updateDelegationMemberCommittee(assignedCommitteeId: ID!, id: ID!): Delegationmember!
+
+  """
+  Writes a conference's sidebar draft, replacing it whole; participants see it once published. `editGuide` in the conference (FORBIDDEN otherwise), INVALID_INPUT for an outline that does not fit. The whole sidebar as JSON: `{ sections: [{ id, title, audience, entries: [{ pageId, label?, audience? }] }], committeeTemplate?: { position, titleFormat: "COMMITTEE_NAME", slots: [{ type: "page", pageId, label? } | { type: "committeePage", label? } | { type: "agendaItemPages" }] } }`. An audience is `{ type: "everyone" | "delegates" | "nonStateActors" | "supervisors" }` or `{ type: "customRoles", roleIds: [...] }`; supervisors and the team see everything. The template makes one section per committee, for its delegates, at `position` among the sections. Every page has to reach the conference, every role be one of its custom roles.
+  """
+  updateGuideOutlineDraft(conferenceId: ID!, outline: JSON!): Boolean!
+
+  """
+  Writes a page's draft: its title and/or text (as Markdown or TipTap JSON); left out keeps them. Participants read it only once it is published. Markdown over a draft with callouts, toggles, buttons or embeds would drop them: CONFLICT unless `replaceRichBlocks`. CONFLICT as well when the draft changed since `expectedDraftUpdatedAt`. For whoever holds `editGuide` in a conference the page reaches (NOT_FOUND otherwise).
+  """
+  updateGuidePageDraft(
+    """
+    The text as a TipTap document: paragraph, heading (level 2–4), bulletList, orderedList, listItem, blockquote, horizontalRule, hardBreak, image (`src: "file:<id>"`, `alt`, `title` as caption), callout (`emoji`, `color`: info|success|warning|error|neutral; block content), toggle (`summary`; block content), button (`href`, `label`), embed (`url`, YouTube); marks bold, italic, underline, strike, code, link (`href`: http(s), mailto, `guide:<pageId>` or `file:<fileId>`). Either this or `markdown`.
+    """
+    content: JSON
+
+    """The `draftUpdatedAt` the editor last saw."""
+    expectedDraftUpdatedAt: DateTime
+    id: ID!
+
+    """
+    The text as Markdown (preferred): `##`–`####` headings, paragraphs, **bold**, *italic*, ~~strike~~, `code`, lists, `>` quotes, `---`, links (`[text](https://…)`, `[text](guide:<pageId>)` to another page, `[label](file:<fileId>)` to a download), images (`![caption](file:<fileId>)`), placeholders `{{Konferenz}}`, `{{Gremium}}`, `{{Themen}}`. Either this or `content`.
+    """
+    markdown: String
+    replaceRichBlocks: Boolean
+    title: String
+  ): Guidepage!
 
   """
   Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `icon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.
@@ -6321,12 +6975,12 @@ type Query {
   chat(id: ID!): Chat!
 
   """
-  The conference's seated people, by role, once the roles are released (empty before, and while messaging is off). For a delegation member or single participant: everybody they can open a direct chat with. For a team member answering an inbox: everybody an inbox can write to (`chatInboxes` says which). FORBIDDEN for anybody else.
+  The conference's seated people, by role, once the roles are released (empty before). For a delegation member or single participant: everybody they can open a direct chat with, while the conference lets participants write each other (`messagingEnabled`; empty otherwise). For a team member answering an inbox: everybody an inbox can write to (`chatInboxes` says which), whatever the switch says. FORBIDDEN for anybody else.
   """
   chatContacts(conferenceId: ID!): [ChatContact!]!
 
   """
-  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
+  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, from the registration on, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
   """
   chatInboxes(conferenceId: ID!, participantId: ID): [ChatInboxOption!]!
 
@@ -6404,6 +7058,11 @@ type Query {
 
   """List all conferenceRoles"""
   conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
+
+  """
+  The conference series (MUN-SH, MUNBW) by name: guide pages shared beyond one conference reach the conferences of a series.
+  """
+  conferenceSeriesList: [Conferenceseries!]!
 
   """
   The Slack workspace a conference's team is told in, or null while it has none. Project management only (FORBIDDEN otherwise).
@@ -6579,6 +7238,51 @@ type Query {
     filter: StatsFilter = ALL
   ): StatisticsResult!
 
+  """
+  Download URLs of guide files (`file:<id>` in page texts), for the editor. `editGuide` in the conference (FORBIDDEN otherwise); ids that are no guide file are left out.
+  """
+  guideFileUrls(conferenceId: ID!, fileIds: [ID!]!): [GuideFileUrl!]!
+
+  """
+  The guide pages reaching a conference, drafts and published (their draft's or their published scope reaches it), by title. `editGuide` (project management, content lead) in the conference (FORBIDDEN otherwise).
+  """
+  guideLibrary(conferenceId: ID!): [Guidepage!]!
+
+  """
+  A conference's guide sidebar: the draft and what is published (`#lib/guide/outline`). Null before anybody wrote one. `editGuide` (project management, content lead) in the conference (FORBIDDEN otherwise).
+  """
+  guideOutlineOf(conferenceId: ID!): Guideoutline
+
+  """Get a single guidePage by ID"""
+  guidePage(id: ID!): Guidepage!
+
+  """
+  What publishing a page would do: the conferences it then reaches and stops reaching, and whether title, text or scope change. Show it before publishing. For whoever may change the page (NOT_FOUND otherwise).
+  """
+  guidePagePublishPreview(id: ID!): GuidePagePublishPreview!
+
+  """List all guidePages"""
+  guidePages(limit: Int, offset: Int, orderBy: GuidepageOrderInputArgument, search: GuidepageSearchInputArgument, where: GuidepageWhereInputArgument): [Guidepage!]!
+
+  """
+  One page of the caller's guide (`myGuide`), with the previous and next one; `entryKey` picks one of several places of a page shared by sections. Null when the page is not in their guide.
+  """
+  guideReaderPage(
+    committeeId: ID
+    conferenceId: ID!
+
+    """
+    For the team: the drafts of sidebar and pages instead of what is published.
+    """
+    draft: Boolean
+    entryKey: String
+    pageId: ID!
+
+    """For the team: whose guide to show (with `committeeId` or `roleId`)."""
+    previewAs: GuidePreviewAudience
+    roleId: ID
+  ): GuideReaderPage
+
   """Whether the caller is acting as somebody else, and if so who both are."""
   impersonationStatus: ImpersonationStatus!
 
@@ -6609,6 +7313,23 @@ type Query {
   Whether the caller's age on the first conference day fits the conference's range for taking part as `role`; null when it does or no birthday is known. Registering is not refused by age, but a participant's application cannot be sent with an age outside the range (`applicationBlockers`).
   """
   myAgeNotice(conferenceId: ID!, role: AgeRole!): AgeNotice
+
+  """
+  The caller's guide of a conference: the sections and pages of its published sidebar that are for them. Null while they may not read it: participants once the conference published its guide and released the roles, supervisors all of it then, the team always (with previews).
+  """
+  myGuide(
+    committeeId: ID
+    conferenceId: ID!
+
+    """
+    For the team: the drafts of sidebar and pages instead of what is published.
+    """
+    draft: Boolean
+
+    """For the team: whose guide to show (with `committeeId` or `roleId`)."""
+    previewAs: GuidePreviewAudience
+    roleId: ID
+  ): GuideView
 
   """
   The caller's notification settings: per conference they are on the team of and that is not over, what they can be told about by mail and Slack. Empty for somebody on no team; FORBIDDEN for an AI assistant.
@@ -8594,6 +9315,9 @@ type Storedfile {
 
   """Get the conferences related to this storedFile"""
   guardianConsentOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
+
+  """Get the guidePageFiles related to this storedFile"""
+  guidePageFileOf(limit: Int, offset: Int, orderBy: GuidepagefileOrderInputArgument, search: GuidepagefileSearchInputArgument, where: GuidepagefileWhereInputArgument): [Guidepagefile!]!
   id: ID!
 
   """Get the conferences related to this storedFile"""
@@ -8659,6 +9383,7 @@ input StoredfileWhereInputArgument {
   emblemOf: ConferenceWhereInputArgument
   fileName: StringWhereInputArgument
   guardianConsentOf: ConferenceWhereInputArgument
+  guidePageFileOf: GuidepagefileWhereInputArgument
   id: IDWhereInputArgument
   imageOf: ConferenceWhereInputArgument
   key: StringWhereInputArgument
@@ -8845,6 +9570,11 @@ type Subscription {
   conferenceRoles(limit: Int, offset: Int, orderBy: ConferenceroleOrderInputArgument, search: ConferenceroleSearchInputArgument, where: ConferenceroleWhereInputArgument): [Conferencerole!]!
 
   """
+  The conference series (MUN-SH, MUNBW) by name: guide pages shared beyond one conference reach the conferences of a series.
+  """
+  conferenceSeriesList: [Conferenceseries!]!
+
+  """
   The Slack workspace a conference's team is told in, or null while it has none. Project management only (FORBIDDEN otherwise).
   """
   conferenceSlackWorkspace(conferenceId: ID!): SlackWorkspaceInfo
@@ -8879,6 +9609,41 @@ type Subscription {
   """List all emailLogs"""
   emailLogs(limit: Int, offset: Int, orderBy: EmaillogOrderInputArgument, search: EmaillogSearchInputArgument, where: EmaillogWhereInputArgument): [Emaillog!]!
 
+  """
+  The guide pages reaching a conference, drafts and published (their draft's or their published scope reaches it), by title. `editGuide` (project management, content lead) in the conference (FORBIDDEN otherwise).
+  """
+  guideLibrary(conferenceId: ID!): [Guidepage!]!
+
+  """
+  A conference's guide sidebar: the draft and what is published (`#lib/guide/outline`). Null before anybody wrote one. `editGuide` (project management, content lead) in the conference (FORBIDDEN otherwise).
+  """
+  guideOutlineOf(conferenceId: ID!): Guideoutline
+
+  """Get a single guidePage by ID"""
+  guidePage(id: ID!): Guidepage!
+
+  """List all guidePages"""
+  guidePages(limit: Int, offset: Int, orderBy: GuidepageOrderInputArgument, search: GuidepageSearchInputArgument, where: GuidepageWhereInputArgument): [Guidepage!]!
+
+  """
+  One page of the caller's guide (`myGuide`), with the previous and next one; `entryKey` picks one of several places of a page shared by sections. Null when the page is not in their guide.
+  """
+  guideReaderPage(
+    committeeId: ID
+    conferenceId: ID!
+
+    """
+    For the team: the drafts of sidebar and pages instead of what is published.
+    """
+    draft: Boolean
+    entryKey: String
+    pageId: ID!
+
+    """For the team: whose guide to show (with `committeeId` or `roleId`)."""
+    previewAs: GuidePreviewAudience
+    roleId: ID
+  ): GuideReaderPage
+
   """Get a single instanceLink by ID"""
   instanceLink(id: ID!): Instancelink!
 
@@ -8890,6 +9655,23 @@ type Subscription {
 
   """Get a single mcpAuditEntry by ID"""
   mcpAuditEntry(id: ID!): Mcpauditentry!
+
+  """
+  The caller's guide of a conference: the sections and pages of its published sidebar that are for them. Null while they may not read it: participants once the conference published its guide and released the roles, supervisors all of it then, the team always (with previews).
+  """
+  myGuide(
+    committeeId: ID
+    conferenceId: ID!
+
+    """
+    For the team: the drafts of sidebar and pages instead of what is published.
+    """
+    draft: Boolean
+
+    """For the team: whose guide to show (with `committeeId` or `roleId`)."""
+    previewAs: GuidePreviewAudience
+    roleId: ID
+  ): GuideView
 
   """
   The caller's notification settings: per conference they are on the team of and that is not over, what they can be told about by mail and Slack. Empty for somebody on no team; FORBIDDEN for an AI assistant.

@@ -5,6 +5,7 @@ import { TEAM_SKELETONS, teamSubpageSkeleton } from '#lib/data/teamSkeletons';
 import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess';
 import {
 	CONFERENCE_CONTENT_ROLES,
+	GUIDE_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
 	SEAT_PLANNING_ROLES,
@@ -253,6 +254,40 @@ export const teamRoutes: readonly TeamRoute[] = [
 		category: 'communication',
 		keywords: ['ankündigungen', 'announcements', 'nachrichten', 'messages', 'mitteilungen'],
 		roles: CONFERENCE_CONTENT_ROLES
+	},
+	{
+		id: 'guide',
+		skeleton: TEAM_SKELETONS.guide,
+		path: teamPath('guide'),
+		owns: [teamPath('guide/page')],
+		title: () => m.guideTeamPages(),
+		description: () => m.guideTeamPagesDescription(),
+		icon: 'ph-book-open-text',
+		group: 'info',
+		category: 'communication',
+		keywords: [
+			'leitfaden',
+			'guide',
+			'vorbereitung',
+			'preparation',
+			'seiten',
+			'pages',
+			'wiki',
+			'gremientext'
+		],
+		roles: GUIDE_ROLES
+	},
+	{
+		id: 'guideSidebar',
+		skeleton: TEAM_SKELETONS.guideSidebar,
+		path: teamPath('guide-sidebar'),
+		title: () => m.guideTeamSidebar(),
+		description: () => m.guideTeamSidebarDescription(),
+		icon: 'ph-list-bullets',
+		group: 'info',
+		category: 'communication',
+		keywords: ['leitfaden', 'guide', 'navigation', 'sidebar', 'gliederung', 'outline', 'vorlage'],
+		roles: GUIDE_ROLES
 	},
 	{
 		id: 'messages',

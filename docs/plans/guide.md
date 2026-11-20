@@ -2,8 +2,8 @@
 
 The preparation material for participants lives on guide.dmun.de today (Ghost). It moves into the
 DELEGATOR: a wiki-like guide per conference, edited by the team with a WYSIWYG editor (TipTap),
-whose pages can be shared between conferences and years. This document is the plan; nothing is
-built yet.
+whose pages can be shared between conferences and years. This document was the plan; it is now
+implemented (see "Implementation notes" at the end).
 
 ## What guide.dmun.de is today
 
@@ -269,3 +269,24 @@ Each phase with unit tests and e2e (incl. empty and error states), as one PR ser
 - Placeholders that need a committee (`{{Gremium}}`, `{{Themen}}`) are allowed only in pages used in
   the committee template; elsewhere the editor warns.
 - Past (`POST`) conferences keep showing what is published now (no freezing per conference).
+
+## Implementation notes
+
+What was built differs from the plan in a few places:
+
+- **Assumptions**: implemented as listed above (supervisors see everything incl. supervisor-only
+  entries; nothing for supervisors before "Guide published"; committee placeholders are only filled
+  in committee sections, the editor shows a hint elsewhere; POST conferences show what is published
+  now).
+- **Settings**: the series and the "Guide published" switch sit at the top of the team's
+  **Guide** page instead of the conference settings page (`updateConference` takes `seriesId`,
+  project management, and `guidePublished`, the content roles).
+- **Routes**: team pages `team/guide`, `team/guide/page/[pageId]`, `team/guide-sidebar`;
+  participants `guide` and `guide/[pageId]` (`?entry=` picks one place of a shared page);
+  system admins `dashboard/conference-series`.
+- **Blocks**: tables are not in the editor yet (no TipTap table extension in the project);
+  everything else in the block table is.
+- **MCP**: the read tools are the GraphQL queries through `graphql_query` (`guideLibrary`,
+  `guidePage { draftMarkdown }`, `guideOutlineOf`), not tools of their own.
+- **Typst**: the committee text is rendered from the agenda item page on publish; images of types
+  Typst 0.10 cannot read (WebP) are left out of the PDF.

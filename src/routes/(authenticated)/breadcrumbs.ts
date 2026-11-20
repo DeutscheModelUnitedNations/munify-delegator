@@ -166,6 +166,26 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'slack-logo',
 		translation: () => m.slackWorkspaces()
 	},
+	'conference-series': {
+		icon: 'stack',
+		translation: () => m.conferenceSeriesTitle()
+	},
+	guide: {
+		icon: 'book-open-text',
+		translation: () => m.preparationGuide()
+	},
+	page: {
+		icon: 'file-text',
+		translation: () => m.guideEntryPage()
+	},
+	pageId: {
+		icon: 'file-magnifying-glass',
+		translation: () => m.guideEntryPage()
+	},
+	'guide-sidebar': {
+		icon: 'list-bullets',
+		translation: () => m.guideTeamSidebar()
+	},
 	notifications: {
 		icon: 'bell',
 		translation: () => m.notifications()

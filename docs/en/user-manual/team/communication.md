@@ -7,13 +7,14 @@ description: Announcements, messages, emails, calendar and surveys of a conferen
 
 This page shows how a conference's team reaches participants: with announcements on the dashboard, with chats, with automatic emails, with the schedule and with surveys. Their pages are in the team area, in the **Communication** group. How to find your way around the team area is under [The team area](./overview#the-team-area).
 
-| Page                | Who opens it                                                   |
-| ------------------- | -------------------------------------------------------------- |
-| **Announcements**   | **Project Management**, **Participant Care**, **Content Lead** |
-| **Messages**        | Every team member. The page only shows the inboxes you answer. |
-| **Emails**          | **Project Management**, **Participant Care**                   |
-| **Calendar**        | **Project Management**, **Participant Care**                   |
-| **Surveys / Polls** | **Project Management**, **Participant Care**                   |
+| Page                         | Who opens it                                                   |
+| ---------------------------- | -------------------------------------------------------------- |
+| **Announcements**            | **Project Management**, **Participant Care**, **Content Lead** |
+| **Guide**, **Guide sidebar** | **Project Management**, **Content Lead**                       |
+| **Messages**                 | Every team member. The page only shows the inboxes you answer. |
+| **Emails**                   | **Project Management**, **Participant Care**                   |
+| **Calendar**                 | **Project Management**, **Participant Care**                   |
+| **Surveys / Polls**          | **Project Management**, **Participant Care**                   |
 
 System administrators open every page.
 
@@ -85,6 +86,45 @@ This email needs no switch on the [Emails](#emails) page: the decision is made o
 :::warning Emails cannot be recalled
 An email that went out stays with its recipients, even if you edit, take back or delete the announcement afterwards. Check the text and the audience first, ideally with **Test mail to me**. Whoever already got the email does not get it again when you take the announcement back and publish it once more. That is what **Notify again** is for.
 :::
+
+## Preparation guide {#guide}
+
+The guide prepares participants for the conference inside the app: pages as on the old guide.dmun.de, with a sidebar per conference. The pages **Guide** and **Guide sidebar** are opened by **Project Management** and **Content Lead**.
+
+### Pages and their scope
+
+**Guide** lists every page reaching this conference. A page is written once and can be shared:
+
+| Scope                    | Reaches                                                    |
+| ------------------------ | ---------------------------------------------------------- |
+| **Everywhere**           | Every conference of a series, every year (e.g. the UN ABC) |
+| **Year**                 | Every conference of a series starting in that year         |
+| **Series**               | Every conference of the series (e.g. MUN-SH), every year   |
+| **This conference only** | Only here (e.g. the organisational pages)                  |
+
+Shared pages reach only conferences that belong to a **conference series**. Project management sets the series at the top of the page; system admins keep the series in the account menu under **Conference series**. A shared page may be edited by the guide team of every conference it reaches.
+
+Every committee and every topic has a page of its own (**Committee and topic pages**). They belong to the conference and fill the sidebar's committee template.
+
+### The editor {#guide-editor}
+
+The editor shows the page as it looks. The toolbar has headings, lists, quotes, links, images and downloads, callouts, toggles, buttons and videos. Placeholders put in the name of the conference, of the committee or the list of topics when read; the latter two only in pages of the committee template.
+
+Changes are a draft until you choose **Publish**. Before that the app shows which conferences the page reaches afterwards and which it no longer reaches. Every publish stays as a version; **Restore** copies it back into the draft. Publishing a topic's page renders the **committee text** as a PDF, which participants download on the page.
+
+### The sidebar {#guide-sidebar}
+
+**Guide sidebar** sets which pages participants read in which sections. Every section and entry has an audience: everyone, delegates, non-state actors, single custom roles (e.g. press or ICJ) or supervisors. The **committee template** repeats for every committee and shows to its delegates only: shared steps, the committee's page and its topics' pages. Supervisors and the team see everything.
+
+The preview shows the guide as an audience sees it, with the drafts if you like. The sidebar too is a draft until you publish it; every page in it has to be published then.
+
+### Opening it
+
+Participants read the guide once the **Guide published** switch is on and their roles are released. Until then the dashboard keeps linking the external guide from the settings.
+
+### AI assistants
+
+With AI access switched on, assistants read pages as Markdown, write drafts, publish after a preview and take over images and PDFs from guide.dmun.de. That is how the old guide moves in.
 
 ## Messages {#messages}
 
