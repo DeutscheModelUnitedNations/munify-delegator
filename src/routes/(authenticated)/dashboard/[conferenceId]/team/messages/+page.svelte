@@ -83,12 +83,9 @@
 		inboxes.some((inbox) => inbox.key === params.inbox) ? (params.inbox ?? null) : null
 	);
 	const paperId = $derived(params.paper ?? null);
-	// the team starts a chat with a participant once the roles are released
-	const onNew = $derived(
-		conference.messagingEnabled && conference.assignmentReleased
-			? () => (pickerOpen = true)
-			: undefined
-	);
+	// the team starts a chat with a seated participant once the roles are released, whatever the
+	// switch says: it is only about participants writing each other
+	const onNew = $derived(conference.assignmentReleased ? () => (pickerOpen = true) : undefined);
 	let pickerOpen = $state(false);
 </script>
 
@@ -100,8 +97,8 @@
 	</header>
 
 	{#if !conference.messagingEnabled}
-		<div class="alert alert-warning" role="status">
-			<i aria-hidden="true" class="ph-duotone ph-chat-slash"></i>
+		<div class="alert alert-info" role="status">
+			<i aria-hidden="true" class="ph-duotone ph-info"></i>
 			<span>{m.chatTeamDisabledHint()}</span>
 		</div>
 	{/if}

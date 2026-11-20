@@ -162,8 +162,6 @@ export interface EmailSnapshot {
 		certificateAvailable: boolean;
 		/** The linked MUNify CHASE's address; `null` while no instance is linked. */
 		chaseUrl: string | null;
-		/** Whether the chats are switched on, which the unread-messages mail needs. */
-		messagingEnabled: boolean;
 	};
 	/** The people the mails are worked out for. */
 	people: SnapshotPerson[];

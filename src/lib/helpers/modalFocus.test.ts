@@ -40,6 +40,24 @@ describe('modalFocus', () => {
 		expect(document.activeElement).toBe(opener);
 	});
 
+	it('hands focus back when it fell to the body while closing', () => {
+		const { opener, dialog } = setup('<input id="a" />');
+		const detach = modalFocus()(dialog);
+		document.getElementById('a')!.blur();
+		if (typeof detach === 'function') detach();
+		expect(document.activeElement).toBe(opener);
+	});
+
+	it('leaves focus where it is when it moved outside the dialog before closing', () => {
+		const { dialog } = setup('<input id="a" />');
+		const editor = document.createElement('textarea');
+		document.body.append(editor);
+		const detach = modalFocus()(dialog);
+		editor.focus();
+		if (typeof detach === 'function') detach();
+		expect(document.activeElement).toBe(editor);
+	});
+
 	it('prefers an autofocus element', () => {
 		const { dialog } = setup('<input id="a" /><button id="b" autofocus>ok</button>');
 		modalFocus()(dialog);

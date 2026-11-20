@@ -200,16 +200,16 @@ Bis zur Frist änderst du deine Antwort mit **Antwort ändern** oder nimmst sie 
 
 ## Nachrichten {#messages}
 
-Hat das Team die Nachrichten eingeschaltet, findest du im Schnellzugriff die Karte **Nachrichten**. Sie zeigt dir, in welchen Chats etwas Ungelesenes wartet. Hast du ungelesene Nachrichten, zeigt auch die Kopfzeile ein Nachrichtensymbol mit ihrer Zahl. Nachrichten gibt es für Delegierte und Einzelteilnehmende, nicht für Betreuende.
+Ab der Anmeldung findest du auf dem Dashboard die Karte **Nachrichten**, später im Schnellzugriff. Sie zeigt dir, in welchen Chats etwas Ungelesenes wartet. Hast du ungelesene Nachrichten, zeigt auch die Kopfzeile ein Nachrichtensymbol mit ihrer Zahl. Nachrichten gibt es für Delegierte und Einzelteilnehmende, nicht für Betreuende.
 
 - **Vertrauenspersonen.** Wenn du etwas vertraulich besprechen möchtest, schreibst du den Vertrauenspersonen, sofern das Team welche benannt hat. Du erreichst sie jederzeit, alle gemeinsam oder eine einzelne Person mit Namen. Diese Nachrichten lesen nur die Vertrauenspersonen. Schreibst du einer einzelnen, liest nur sie. Sonst liest niemand aus dem Team mit. Die Vertrauenspersonen sehen deine Rolle. Deinen Namen nennst du selbst, wenn du möchtest.
-- **Team.** Die Teilnehmendenbetreuung erreichst du jederzeit. Sobald die Rollen veröffentlicht sind, kommen der Vorsitz und die Gremienberatung deines Gremiums dazu. Hast du kein Gremium, etwa als nichtstaatlicher Akteur oder Einzelteilnehmende\*r, erreichst du Vorsitz und Gremienberatung aller Gremien. Alle, die ein Postfach betreuen, lesen mit und sehen, wer du bist. Die Antwort trägt die Funktion und den Namen der Person, die sie schreibt.
+- **Team.** Die Teilnehmendenbetreuung erreichst du jederzeit, schon während der Anmeldung. Sobald die Rollen veröffentlicht sind, kommen der Vorsitz und die Gremienberatung deines Gremiums dazu. Hast du kein Gremium, etwa als nichtstaatlicher Akteur oder Einzelteilnehmende\*r, erreichst du Vorsitz und Gremienberatung aller Gremien. Alle, die ein Postfach betreuen, lesen mit und sehen, wer du bist. Die Antwort trägt die Funktion und den Namen der Person, die sie schreibt.
+- **Deine Delegation.** Jede Delegation hat eine Gruppe für alle ihre Mitglieder, ab dem Moment, in dem es die Delegation gibt. So stimmt ihr euch schon über die Bewerbung ab. Bekommt eure Delegation keine Rolle, bleibt die Gruppe lesbar, aber niemand kann mehr darin schreiben.
 - **Andere Delegierte.** Über **Neue Nachricht** suchst du nach Land, Gremium oder Rolle, zum Beispiel „frank gv“. Ihr seht voneinander nur die Rolle, nie den Namen.
-- **Deine Delegation.** Jede Delegation hat eine Gruppe für alle ihre Mitglieder.
 
 Ist kein Chat geöffnet, zeigt dir die Seite neben der Chatliste, wen du direkt anschreiben kannst: deine Delegation und die Postfächer des Teams. Ein Klick öffnet den Chat.
 
-Chats mit anderen Delegierten und die Delegationsgruppe gibt es erst, wenn die Rollen veröffentlicht sind. Bis dahin sagt dir die Seite, dass du dort die Teilnehmendenbetreuung erreichst. Gesendete Nachrichten lassen sich nicht mehr ändern oder löschen.
+Anderen Delegierten schreibst du erst, wenn die Rollen veröffentlicht sind und das Team die Nachrichten zwischen Delegationen eingeschaltet hat. Bis dahin sagt dir die Seite, wen du schon erreichst. Gesendete Nachrichten lassen sich nicht mehr ändern oder löschen.
 
 Bleibt eine Nachricht eine Viertelstunde ungelesen, kann dir die Konferenz eine E-Mail mit einem Link zu deinen Chats schicken. Der Text der Nachricht steht nicht in der Mail. Über das Zahnrad über der Chatliste schaltest du diese Mails bei **E-Mail bei ungelesenen Nachrichten** ab.
 

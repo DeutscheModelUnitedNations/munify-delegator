@@ -129,7 +129,7 @@ The cards under **Quick Links** on the participants' dashboard, such as **Fee Pa
 - **Allow Postal Registration**: participants download their [postal registration](../participant/dashboard#postal-registration). This only works when all four [templates](#documents) are stored. For everyone with a seat whose documents are not complete yet, **Postal registration unlocked** becomes due.
 - **Paper Submission Open**: participants create papers on their committees' agenda items in the [Paper Hub](../participant/paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
 - **Show calendar for participants**: participants see the [schedule](./communication#calendar). The team always sees it.
-- **Messages between participants and team**: unlocks the [messages](./communication#messages). Switched off, existing chats stay readable, but nobody writes anything new.
+- **Messages between delegations**: unlocks the direct chats between participants of different delegations once the assignment is released (see [Messages](./communication#messages)). Participants always reach the team and their own delegation. Switched off, existing direct chats stay readable, but nobody writes anything new there.
 
 :::tip Release first, then the paperwork
 **Participation fee unlocked** and **Postal registration unlocked** only become due once the assignment is released. If you allow payments before that, saving offers no emails. After the release they go out with the next automatic run if the kind is set to automatic. Otherwise they wait on the [Emails](./communication#emails) page until you send them.

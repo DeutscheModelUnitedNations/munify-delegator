@@ -4,8 +4,10 @@ Chats, inboxes, trusted persons, reports and hiding, write rules, messaging term
 `CLAUDE.md` ("Architecture docs").
 
 - **People of a conference write each other inside the app** (`#api/handlers/chat/`, tables in
-  `schema/messages.ts`), once the conference switched it on (`conference.messagingEnabled`, a
-  feature switch of `updateConference`). A `chat` is `DIRECT` (two seated participants), `DELEGATION`
+  `schema/messages.ts`). The team inboxes and a delegation's own group are open from the
+  registration on, for everybody registered; only chats between participants of different
+  delegations wait for the conference's switch (`conference.messagingEnabled`, "Nachrichten
+  zwischen Delegationen", a feature switch of `updateConference`). A `chat` is `DIRECT` (two seated participants), `DELEGATION`
   (a delegation's group) or `TEAM` (one participant and a team inbox); `chatMessage` is append-only.
   Delegation members and single participants take part, supervisors do not.
 - **Participants know each other by role, never by name.** A `ChatContact` (`chatContacts.ts`) is a
@@ -61,10 +63,16 @@ Chats, inboxes, trusted persons, reports and hiding, write rules, messaging term
   report (`chatReport.hiddenMessages`, `SettledReports`); the record goes with the chat when it is
   deleted. Nobody is notified of a hiding.
 - **Who may write right now** is `writeRefusal` (`#lib/helpers/chat.ts`, shared with the pages
-  through `chat.writeRefusal`): nobody while messaging is off; participants each other and their
-  delegation only once the roles are released, while both hold a seat, neither blocked the other
-  (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`, set by
-  participant care). The team is always reached.
+  through `chat.writeRefusal`): the team is always reached, whatever the switch, the seat or a
+  suspension say (participant care and the trusted persons from the registration on, a committee's
+  inboxes once the seat there is released, `inboxReaches`). A delegation's group opens with the
+  delegation, before it applies, and closes (read only, `NOT_SEATED`) for one the released
+  assignment left without a role. Participants of different delegations write each other only
+  while the switch is on, once the roles are released, while both hold a seat, neither blocked the
+  other (`chatBlock`) and the writer is not suspended (`conferenceParticipant.messagingSuspended`,
+  set by participant care, which closes the group too, never the team). The unread-message and
+  report mails follow the chats, not the switch. Participants without quick links (registering,
+  waiting for the selection, rejected) reach the page through the dashboard's `MessagesEntry`.
 - **A participant agrees to the terms before their first message.** The terms of the message
   service are the app's, one YAML file per version with every text in both languages
   (`#api/handlers/messagingTerms/terms/v<version>.yaml`, read by `terms.ts` and checked by the zod

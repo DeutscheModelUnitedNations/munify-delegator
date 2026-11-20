@@ -21,7 +21,6 @@ export interface DashboardLinkContext {
 	linkToPreparationGuide?: string | null;
 	isOpenPaperSubmission?: boolean;
 	showCalendar?: boolean;
-	messagingEnabled?: boolean;
 	linkToPaperInbox?: string | null;
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
@@ -125,9 +124,9 @@ const dashboardLinks: DashboardLink[] = [
 				conferenceId: ctx.conferenceId
 			}),
 		info: MessagesLinkInfo,
-		// Supervisors take no part in the chats
+		// Supervisors take no part in the chats; everybody else reaches the team at any time
 		showFor: ['delegation', 'singleParticipant'],
-		isVisible: (ctx) => !!ctx.messagingEnabled,
+		isVisible: () => true,
 		isDisabled: () => false
 	},
 	{

@@ -5,11 +5,14 @@
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { splitRole } from '#lib/helpers/conferenceRole';
 	import DashboardQuickLinks from './DashboardQuickLinks.svelte';
+	import MessagesEntry from './MessagesEntry.svelte';
 
 	/**
 	 * The quick links at the top of the dashboard, for whoever has a part to prepare: an accepted
 	 * delegation member or single participant, or a supervisor with at least one accepted student,
 	 * once the assignment is released and while the conference is being prepared or running.
+	 * Delegation members and single participants without them get the way to the messages alone:
+	 * the team and their delegation are reachable from the registration on.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -41,6 +44,13 @@
 		delegationMember?.delegation.assignedRole ? delegationMember.delegation.id : undefined
 	);
 	const delegationRole = $derived(splitRole(delegationMember?.delegation.assignedRole));
+	const seated = $derived(!!singleParticipant?.assignedRole || !!delegationId);
+	// whoever writes but has no quick links (registering, selection, rejected) gets the messages alone
+	const messagesAlone = $derived(
+		(!!singleParticipant || !!delegationMember) &&
+			!(preparing && seated) &&
+			conference.state !== 'PRE'
+	);
 </script>
 
 {#if preparing}
@@ -92,3 +102,5 @@
 		{/if}
 	{/if}
 {/if}
+
+<MessagesEntry {conferenceId} visible={messagesAlone} />

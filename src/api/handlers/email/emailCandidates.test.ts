@@ -25,8 +25,7 @@ const conference: EmailSnapshot['conference'] = {
 	startConference: new Date(now.getTime() + 60 * DAY),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: false,
-	chaseUrl: null,
-	messagingEnabled: true
+	chaseUrl: null
 };
 
 /** Which kinds the filter asks the log about. */
@@ -98,17 +97,13 @@ describe('waiting list and team', () => {
 		const member = { conference, id: ids.id, userId: ids.userId };
 		const welcome = teamCandidates({ ...member, kinds: new Set(['TEAM_WELCOME']) });
 		expect(render(welcome).params).toContain('TEAM_WELCOME');
-		// while the chats are on, anybody on the team may have an inbox with something unread
+		// anybody on the team may have an inbox with something unread, whatever the switch says
 		const unread = teamCandidates({ ...member, kinds: new Set(['UNREAD_MESSAGES']) });
 		expect(render(unread).sql).toBe('true');
 		// and participant care may have a report to hear of
 		const reported = teamCandidates({ ...member, kinds: new Set(['CHAT_REPORTED']) });
 		expect(render(reported).sql).toBe('true');
-		const off = teamCandidates({
-			...member,
-			conference: { ...conference, messagingEnabled: false },
-			kinds: new Set(['UNREAD_MESSAGES'])
-		});
-		expect(render(off).sql).toBe('false');
+		const nothing = teamCandidates({ ...member, kinds: new Set(['PAYMENT_RECEIVED']) });
+		expect(render(nothing).sql).toBe('false');
 	});
 });
