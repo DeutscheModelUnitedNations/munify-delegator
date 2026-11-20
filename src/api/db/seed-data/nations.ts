@@ -1,4 +1,4 @@
-import worldCountries from 'world-countries';
+import worldCountries from '@deutschemodelunitednations/world-countries';
 import type * as schema from '../schema';
 
 /**

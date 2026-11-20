@@ -31,6 +31,7 @@
 		"@deutschemodelunitednations/corporate-identity": "^2.1.0",
 		"@deutschemodelunitednations/docs-kit": "^0.2.0",
 		"@deutschemodelunitednations/munify-resolution-editor": "^0.7.0",
+		"@deutschemodelunitednations/world-countries": "^0.1.0",
 		"@dipser/epc-qr-code.js": "^1.0.3",
 		"@eslint/compat": "^2.1.1",
 		"@eslint/js": "^10.0.1",

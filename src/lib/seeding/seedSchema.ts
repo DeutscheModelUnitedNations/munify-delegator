@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import worldCountries from 'world-countries';
+import worldCountries from '@deutschemodelunitednations/world-countries';
 
 // The `Nation` table only ever contains UN member states, because that is how
 // `prisma/defaultData/nations.ts` populates it. Deriving the accepted codes from
