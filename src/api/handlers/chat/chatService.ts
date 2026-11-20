@@ -164,7 +164,8 @@ async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 }
 
 /**
- * The team inboxes that write with the participant (`inboxReaches`): participant care always, a
+ * The team inboxes that write with the participant (`inboxReaches`): participant care and the
+ * trusted persons always, from the registration on and whatever the conference's switch says, a
  * committee's chairs and consultants once the participant's seat is released.
  */
 export async function inboxesReaching({
@@ -179,7 +180,6 @@ export async function inboxesReaching({
 		conferenceContacts(conferenceId),
 		conferenceInboxes(conferenceId)
 	]);
-	if (!flags.messagingEnabled) return [];
 	const contact = flags.assignmentReleased ? contacts.get(participantId) : undefined;
 	const person = contact ? { committeeId: contact.committee?.id ?? null } : null;
 	return inboxes.filter(({ inbox, committee }) =>
@@ -187,7 +187,8 @@ export async function inboxesReaching({
 	);
 }
 
-async function assertMessagingOn(conferenceId: string) {
+/** The conference's flags, refused (CONFLICT) while it keeps participants from writing each other. */
+async function assertDirectMessagingOn(conferenceId: string) {
 	const flags = await messagingFlags(conferenceId);
 	if (!flags.messagingEnabled) throw refused('DISABLED');
 	return flags;
@@ -221,7 +222,7 @@ export async function openDirectChat({
 	fromParticipantId: string;
 	toParticipantId: string;
 }) {
-	const flags = await assertMessagingOn(conferenceId);
+	const flags = await assertDirectMessagingOn(conferenceId);
 	if (!flags.assignmentReleased) throw refused('NOT_RELEASED');
 	const contacts = await conferenceContacts(conferenceId);
 	if (fromParticipantId === toParticipantId || !contacts.has(fromParticipantId)) {
@@ -235,7 +236,11 @@ export async function openDirectChat({
 	return findOrCreateChat({ where: key, values: { conferenceId, ...key } });
 }
 
-/** The group chat of a delegation that holds a role, opened when it has none yet. */
+/**
+ * The group chat of a delegation, opened when it has none yet: from the moment the delegation
+ * exists, whatever the conference's switch says. Once the assignment is released a delegation
+ * without a role keeps the group it had (read only, `writeRefusal`) but opens none.
+ */
 export async function openDelegationChat({
 	conferenceId,
 	delegationId
@@ -243,14 +248,19 @@ export async function openDelegationChat({
 	conferenceId: string;
 	delegationId: string;
 }) {
-	const flags = await assertMessagingOn(conferenceId);
-	if (!flags.assignmentReleased) throw refused('NOT_RELEASED');
-	const delegation = await db.query.delegation.findFirst({
-		where: { id: delegationId, conferenceId, assignedRoleId: { isNotNull: true } },
-		columns: { id: true }
-	});
-	if (!delegation) throw refused('NOT_SEATED');
 	const key = { kind: 'DELEGATION' as const, delegationId };
+	const existing = await db.query.chat.findFirst({ where: key });
+	if (existing) return existing;
+	const [flags, delegation] = await Promise.all([
+		messagingFlags(conferenceId),
+		db.query.delegation.findFirst({
+			where: { id: delegationId, conferenceId },
+			columns: { assignedRoleId: true }
+		})
+	]);
+	if (!delegation || (flags.assignmentReleased && !delegation.assignedRoleId)) {
+		throw refused('NOT_SEATED');
+	}
 	return findOrCreateChat({ where: key, values: { conferenceId, ...key } });
 }
 
@@ -269,7 +279,6 @@ export async function openTeamChat({
 	/** The one trusted person to write to; null for their shared inbox and every other one */
 	trustedUserId?: string | null;
 }) {
-	await assertMessagingOn(conferenceId);
 	const reaching = await inboxesReaching({ conferenceId, participantId });
 	const wanted = {
 		inbox,

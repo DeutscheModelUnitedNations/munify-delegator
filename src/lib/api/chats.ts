@@ -151,8 +151,8 @@ export function fetchReachingInboxes({
 }
 
 /**
- * Whether the caller answers a team inbox of the conference while its messaging is on: participant
- * care, or a committee function. Decides whether "write to delegate" is offered at all.
+ * Whether the caller answers a team inbox of the conference: participant care, or a committee
+ * function. Decides whether "write to delegate" is offered at all.
  */
 export async function fetchAnswersInbox({
 	conferenceId,
@@ -163,14 +163,12 @@ export async function fetchAnswersInbox({
 	userId: string;
 	cares: boolean;
 }) {
-	const [conference, functions] = await Promise.all([
-		client.liveQuery.conference({ __args: { id: conferenceId }, messagingEnabled: true }),
-		client.liveQuery.teamFunctions({
-			__args: {
-				where: { teamMember: { userId: { eq: userId }, conferenceId: { eq: conferenceId } } }
-			},
-			kind: true
-		})
-	]);
-	return conference.messagingEnabled && (cares || functions.length > 0);
+	if (cares) return true;
+	const functions = await client.liveQuery.teamFunctions({
+		__args: {
+			where: { teamMember: { userId: { eq: userId }, conferenceId: { eq: conferenceId } } }
+		},
+		kind: true
+	});
+	return functions.length > 0;
 }

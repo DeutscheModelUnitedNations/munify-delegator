@@ -57,6 +57,19 @@ test('a head delegate can set preferences and complete their delegation signup',
 	await expect(confirmButton).toBeVisible({ timeout: 15_000 });
 	await confirmButton.click();
 	await memberPage.waitForURL(new RegExp(`/dashboard/${conferenceId}$`), { timeout: 15_000 });
+
+	// the team and the delegation's group are reached while registering already
+	const messagesLink = memberPage.locator(`a[href$="/dashboard/${conferenceId}/messages"]`).first();
+	await expect(messagesLink).toBeVisible({ timeout: 15_000 });
+	await messagesLink.click();
+	await memberPage.waitForURL(new RegExp(`/dashboard/${conferenceId}/messages`), {
+		timeout: 15_000
+	});
+	// the page is open to them and says why other delegations are not reachable yet: the e2e
+	// conference has its assignment released (other specs need it), so the switch is the reason
+	await expect(memberPage.getByTestId(/^chat-(before-release|others-disabled)$/)).toBeVisible({
+		timeout: 15_000
+	});
 	await memberContext.close();
 
 	// --- back on the head delegate's dashboard: set 3 preferences and complete signup ---

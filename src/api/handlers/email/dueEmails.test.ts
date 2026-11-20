@@ -85,7 +85,6 @@ function snapshot(
 			timezone: 'Europe/Berlin',
 			certificateAvailable: false,
 			chaseUrl: null,
-			messagingEnabled: true,
 			...conference
 		},
 		people,

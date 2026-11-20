@@ -47,11 +47,12 @@ describe('writeRefusal', () => {
 		expect(writeRefusal({ ...open, assignmentReleased: false })).toBe('NOT_RELEASED');
 	});
 
-	test('nobody writes while messaging is off, the team included', () => {
-		expect(writeRefusal({ ...open, messagingEnabled: false })).toBe('DISABLED');
-		expect(writeRefusal({ ...open, kind: 'TEAM', side: 'TEAM', messagingEnabled: false })).toBe(
-			'DISABLED'
-		);
+	test('the switch only closes chats between participants of different delegations', () => {
+		const off = { ...open, messagingEnabled: false };
+		expect(writeRefusal(off)).toBe('DISABLED');
+		expect(writeRefusal({ ...off, kind: 'TEAM' })).toBeNull();
+		expect(writeRefusal({ ...off, kind: 'TEAM', side: 'TEAM' })).toBeNull();
+		expect(writeRefusal({ ...off, kind: 'DELEGATION' })).toBeNull();
 	});
 
 	test('a suspended or blocked participant cannot write to other participants', () => {
@@ -65,16 +66,26 @@ describe('writeRefusal', () => {
 		expect(writeRefusal({ ...open, writerSeated: false })).toBe('NOT_SEATED');
 	});
 
-	test('the team is reached whatever the seat, the release or a suspension say', () => {
+	test("a delegation's group is open from the registration on, and closes for a rejected one", () => {
+		const group = { ...open, kind: 'DELEGATION' as const, messagingEnabled: false };
+		const applying = { ...group, assignmentReleased: false, writerSeated: false };
+		expect(writeRefusal(applying)).toBeNull();
+		expect(writeRefusal(group)).toBeNull();
+		expect(writeRefusal({ ...group, writerSeated: false })).toBe('NOT_SEATED');
+	});
+
+	test('the team is reached whatever the switch, the seat, the release or a suspension say', () => {
 		const stuck = {
 			...open,
 			kind: 'TEAM' as const,
+			messagingEnabled: false,
 			assignmentReleased: false,
 			writerSeated: false,
 			writerSuspended: true
 		};
 		expect(writeRefusal(stuck)).toBeNull();
 		expect(writeRefusal({ ...stuck, side: 'TEAM' })).toBeNull();
+		expect(writeRefusal({ ...stuck, assignmentReleased: true })).toBeNull();
 	});
 
 	test('participant care reading a reported chat does not write in it', () => {

@@ -6,7 +6,8 @@ import { E2E_SEATS_GV_ID } from '../seed/seats';
 // The chats (`src/api/handlers/chat/`): a chat is read by its parties and, for a team chat, by
 // whoever answers its inbox; participants know each other by role only; participant care reads a
 // chat between participants only while a report is open; blocks, suspensions and the conference's
-// switch close a chat for writing. The specs build on each other's chats, so they run in order
+// switch close a chat between delegations for writing, while the team and the own delegation's
+// group are reached from the registration on. The specs build on each other's chats, so they run in order
 // (the fixture, e2e/seed/messages.ts, starts every run without any).
 // Several people sign in per test, each through the provider once.
 test.describe.configure({ mode: 'serial', timeout: 90_000 });
@@ -50,6 +51,7 @@ const OPEN_TEAM = `mutation ($c: ID!, $inbox: ChatinboxEnum!, $committee: ID, $p
 		conferenceId: $c, inbox: $inbox, committeeId: $committee, participantId: $p, trustedPersonId: $trusted
 	) { id }
 }`;
+const OPEN_GROUP = `mutation ($c: ID!) { openDelegationChat(conferenceId: $c) { id } }`;
 const SEND = `mutation ($chat: ID!, $body: String!) { sendChatMessage(chatId: $chat, body: $body) { id } }`;
 const CHATS = `query ($c: ID!) {
 	chats(where: { conferenceId: { eq: $c } }) {
@@ -695,10 +697,11 @@ test('what is written to the trusted persons stays with them', async ({ browser 
 	);
 });
 
-test('switching messaging off closes every chat for writing but keeps it readable', async ({
+test('switching messaging off closes the chats between delegations, not the team or the own group', async ({
 	browser
 }) => {
 	const annaPage = await signedIn(browser, anna.id);
+	const bertPage = await signedIn(browser, bert.id);
 	const chairPage = await signedIn(browser, chair.id);
 	const managementPage = await signedIn(browser, management.id);
 	const SWITCH = `mutation ($c: ID!, $on: Boolean!) { updateConference(id: $c, messagingEnabled: $on) { messagingEnabled } }`;
@@ -707,13 +710,68 @@ test('switching messaging off closes every chat for writing but keeps it readabl
 	expect((await gql(managementPage, SWITCH, { c: CONFERENCE, on: false })).errors).toBeUndefined();
 	try {
 		expect(codeOf(await send(annaPage, chat.annaCarla, 'aus?'))).toBe('CONFLICT');
-		expect(codeOf(await send(chairPage, chat.annaChairs, 'aus?'))).toBe('CONFLICT');
 		expect(codeOf((await openDirect(annaPage, dora)).result)).toBe('CONFLICT');
 		expect((await messagesOf(annaPage, chat.annaCarla)).length).toBeGreaterThan(0);
+		// the team answers and is written to as before, and a delegation's group stays open
+		expect((await send(chairPage, chat.annaChairs, 'trotzdem da')).errors).toBeUndefined();
+		expect((await send(bertPage, chat.bertCare, 'noch eine Frage')).errors).toBeUndefined();
+		const group = await gql<{ openDelegationChat: { id: string } }>(bertPage, OPEN_GROUP, {
+			c: CONFERENCE
+		});
+		const groupId = group.data?.openDelegationChat.id ?? '';
+		expect((await send(bertPage, groupId, 'Gruppe offen')).errors).toBeUndefined();
 	} finally {
 		await gql(managementPage, SWITCH, { c: CONFERENCE, on: true });
 	}
 	expect((await send(annaPage, chat.annaCarla, 'wieder an')).errors).toBeUndefined();
+});
+
+test("an applicant reaches the team and their group before the release, and a rejected delegation's group closes", async ({
+	browser
+}) => {
+	const emilPage = await signedIn(browser, fixture.applicant.id);
+	const carePage = await signedIn(browser, care.id);
+	const managementPage = await signedIn(browser, management.id);
+	const RELEASE = `mutation ($c: ID!, $on: Boolean!) { setAssignmentReleased(conferenceId: $c, released: $on) }`;
+	const SWITCH = `mutation ($c: ID!, $on: Boolean!) { updateConference(id: $c, messagingEnabled: $on) { messagingEnabled } }`;
+	const openGroup = async () =>
+		gql<{ openDelegationChat: { id: string } }>(emilPage, OPEN_GROUP, { c: CONFERENCE });
+
+	// while the team still selects, with the switch off: the group and the team are open
+	expect((await gql(managementPage, RELEASE, { c: CONFERENCE, on: false })).errors).toBeUndefined();
+	expect((await gql(managementPage, SWITCH, { c: CONFERENCE, on: false })).errors).toBeUndefined();
+	// assigned in the `try`, so the release is put back whatever fails there
+	let groupId: string;
+	try {
+		const opened = await openGroup();
+		expect(opened.errors).toBeUndefined();
+		groupId = opened.data?.openDelegationChat.id ?? '';
+		expect((await send(emilPage, groupId, 'Wir bewerben uns!')).errors).toBeUndefined();
+
+		const inboxes = await gql<{ chatInboxes: { inbox: string }[] }>(
+			emilPage,
+			`query ($c: ID!) { chatInboxes(conferenceId: $c) { inbox } }`,
+			{ c: CONFERENCE }
+		);
+		// participant care, but no committee's inbox without a seat
+		expect(inboxes.data?.chatInboxes.map((row) => row.inbox)).toContain('PARTICIPANT_CARE');
+		expect(inboxes.data?.chatInboxes.some((row) => row.inbox === 'CHAIR')).toBe(false);
+		const careChat = await openTeam(emilPage, { inbox: 'PARTICIPANT_CARE' });
+		expect(careChat.result.errors).toBeUndefined();
+		expect((await send(emilPage, careChat.id, 'Wann wird zugeteilt?')).errors).toBeUndefined();
+		expect((await send(carePage, careChat.id, 'Bald!')).errors).toBeUndefined();
+		// other participants only once the roles are released and the switch is on
+		expect(codeOf((await openDirect(emilPage, anna)).result)).toBe('CONFLICT');
+	} finally {
+		await gql(managementPage, SWITCH, { c: CONFERENCE, on: true });
+		await gql(managementPage, RELEASE, { c: CONFERENCE, on: true });
+	}
+
+	// released without a role: the group stays readable but closed, the team stays reachable
+	expect(codeOf(await send(emilPage, groupId, 'Und jetzt?'))).toBe('CONFLICT');
+	expect((await messagesOf(emilPage, groupId)).length).toBe(1);
+	const careChat = await openTeam(emilPage, { inbox: 'PARTICIPANT_CARE' });
+	expect((await send(emilPage, careChat.id, 'Warteliste?')).errors).toBeUndefined();
 });
 
 test('participant care hides messages of a reported chat for everybody, for good', async ({

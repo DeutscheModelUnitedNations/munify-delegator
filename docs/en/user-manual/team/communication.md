@@ -92,7 +92,7 @@ With messages, participants and the team write to each other in the app. How thi
 
 ### Switching them on
 
-Messages are off at first. In the settings, in the **Status & Features** tab, switch on **Messages between participants and team** and save as described under [Saving with a preview](./configuration#saving). If you switch them off again, every chat stays readable, but nobody can write any more, not even the team. The **Messages** page then says so.
+Participants always reach the team and their own delegation, from their registration on. You only switch on the chats between participants of different delegations: in the settings, in the **Status & Features** tab, switch on **Messages between delegations** and save as described under [Saving with a preview](./configuration#saving). Even then these chats only open once the assignment is released. If you switch them off again, the direct chats stay readable, but nobody can write in them any more. The **Messages** page then says so.
 
 Delegates and single participants can write. Supervisors do not take part in the chats.
 
@@ -116,13 +116,13 @@ Participants write to the trusted persons all together or to one of them by name
 
 ### Who can write to whom
 
-| Who                               | To whom                                                                                                                                                                             | From when                                    |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Delegates and single participants | **Participant care** and the trusted persons                                                                                                                                        | as soon as messages are on                   |
-| Delegates and single participants | **Chairs** and **Committee consultants** of their committee. Whoever sits without a committee, such as a non-state actor or a single participant, reaches those of every committee. | as soon as the assignment is released        |
-| Seated participants               | other seated participants, in a direct chat                                                                                                                                         | as soon as the assignment is released        |
-| Members of a delegation           | their delegation's group                                                                                                                                                            | as soon as the delegation's role is released |
-| The team, from an inbox           | every seated person the inbox reaches                                                                                                                                               | as soon as the assignment is released        |
+| Who                               | To whom                                                                                                                                                                             | From when                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Delegates and single participants | **Participant care** and the trusted persons                                                                                                                                        | from the registration on                                                         |
+| Delegates and single participants | **Chairs** and **Committee consultants** of their committee. Whoever sits without a committee, such as a non-state actor or a single participant, reaches those of every committee. | as soon as the assignment is released                                            |
+| Seated participants               | other seated participants, in a direct chat                                                                                                                                         | as soon as the assignment is released and **Messages between delegations** is on |
+| Members of a delegation           | their delegation's group                                                                                                                                                            | from the registration on, until the delegation is left without a role            |
+| The team, from an inbox           | every seated person the inbox reaches                                                                                                                                               | as soon as the assignment is released                                            |
 
 In direct chats and delegation groups, participants see each other by role only. The team does not read these chats, except after a report. When a person loses their seat, nobody can write in their direct chats any more.
 

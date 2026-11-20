@@ -399,7 +399,7 @@ const readableChatQuery = async ({ ctx, id }: { ctx: ApiContext; id: string }) =
 schemaBuilder.queryFields((t) => ({
 	chatContacts: t.field({
 		description:
-			"The conference's seated people, by role, once the roles are released (empty before, and while messaging is off). For a delegation member or single participant: everybody they can open a direct chat with. For a team member answering an inbox: everybody an inbox can write to (`chatInboxes` says which). FORBIDDEN for anybody else.",
+			"The conference's seated people, by role, once the roles are released (empty before). For a delegation member or single participant: everybody they can open a direct chat with, while the conference lets participants write each other (`messagingEnabled`; empty otherwise). For a team member answering an inbox: everybody an inbox can write to (`chatInboxes` says which), whatever the switch says. FORBIDDEN for anybody else.",
 		type: [ChatContact],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -411,7 +411,9 @@ schemaBuilder.queryFields((t) => ({
 				where: { id: args.conferenceId },
 				columns: { messagingEnabled: true, assignmentReleased: true }
 			});
-			if (!conference?.messagingEnabled || !conference.assignmentReleased) return [];
+			if (!conference?.assignmentReleased) return [];
+			// the switch is about participants writing each other; the team's inboxes are always open
+			if (participantId && !conference.messagingEnabled) return [];
 			const contacts = await conferenceContacts(args.conferenceId);
 			// a participant without a seat writes to nobody but the team
 			if (participantId && !contacts.has(participantId)) return [];
@@ -423,7 +425,7 @@ schemaBuilder.queryFields((t) => ({
 
 	chatInboxes: t.field({
 		description:
-			'The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.',
+			'The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, from the registration on, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.',
 		type: [ChatInboxOption],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -496,7 +498,7 @@ schemaBuilder.mutationFields((t) => {
 	return {
 		openDirectChat: t.drizzleField({
 			description:
-				'The direct chat of the caller with another seated participant of the conference, opened when they have none yet. For delegation members and single participants (FORBIDDEN otherwise) once the roles are released (CONFLICT before, and while messaging is off); NOT_FOUND for a participant without a seat.',
+				'The direct chat of the caller with another seated participant of the conference, opened when they have none yet. For delegation members and single participants (FORBIDDEN otherwise) once the roles are released (CONFLICT before, and while the conference keeps participants from writing each other, `messagingEnabled`); NOT_FOUND for a participant without a seat.',
 			type: ChatRef,
 			args: {
 				conferenceId: t.arg.id({ required: true }),
@@ -521,7 +523,7 @@ schemaBuilder.mutationFields((t) => {
 
 		openDelegationChat: t.drizzleField({
 			description:
-				"The group chat of the caller's delegation in the conference, opened when it has none yet. For its members (FORBIDDEN otherwise), once the delegation's role is released (CONFLICT before).",
+				"The group chat of the caller's delegation in the conference, opened when it has none yet. For its members (FORBIDDEN otherwise), from the moment the delegation exists; CONFLICT for a delegation the released assignment gave no role and that has no group yet.",
 			type: ChatRef,
 			args: { conferenceId: t.arg.id({ required: true }) },
 			resolve: async (select, _root, args, ctx) => {
@@ -542,7 +544,7 @@ schemaBuilder.mutationFields((t) => {
 
 		openTeamChat: t.drizzleField({
 			description:
-				"The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`) and while messaging is off.",
+				"The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`).",
 			type: ChatRef,
 			args: {
 				conferenceId: t.arg.id({ required: true }),

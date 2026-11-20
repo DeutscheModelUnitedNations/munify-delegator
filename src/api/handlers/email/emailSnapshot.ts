@@ -55,13 +55,7 @@ const PEOPLE_ONLY: readonly EmailPagePart[] = ['people'];
 export const partsFor = (kinds: ReadonlySet<EmailKind>) =>
 	new Set([...kinds].flatMap((kind) => PARTS_OF_KIND[kind] ?? PEOPLE_ONLY));
 /** Whether the page has to read who has not read their chats. */
-const needsUnread = ({
-	conference,
-	kinds
-}: {
-	conference: EmailConference;
-	kinds: ReadonlySet<EmailKind>;
-}) => conference.messagingEnabled && kinds.has('UNREAD_MESSAGES');
+const needsUnread = (kinds: ReadonlySet<EmailKind>) => kinds.has('UNREAD_MESSAGES');
 const needsReviews = (kinds: ReadonlySet<EmailKind>) => kinds.has('PAPER_REVIEWED');
 const needsSurveys = (kinds: ReadonlySet<EmailKind>) =>
 	kinds.has('SURVEY_PUBLISHED') || kinds.has('SURVEY_REMINDER');
@@ -98,8 +92,7 @@ export async function loadEmailConference(
 			applicationDeadline: true,
 			startConference: true,
 			timezone: true,
-			certificateFileId: true,
-			messagingEnabled: true
+			certificateFileId: true
 		}
 	});
 	if (!conference) return undefined;
@@ -372,7 +365,7 @@ async function peopleUnread({
 	kinds: ReadonlySet<EmailKind>;
 	participantIds: string[];
 }) {
-	if (!needsUnread({ conference, kinds })) return [];
+	if (!needsUnread(kinds)) return [];
 	return loadUnreadOfParticipants({ conferenceId: conference.id, participantIds });
 }
 
@@ -519,7 +512,7 @@ function teamUnread({
 	kinds: ReadonlySet<EmailKind>;
 	team: readonly SnapshotTeamMember[];
 }) {
-	return needsUnread({ conference, kinds })
+	return needsUnread(kinds)
 		? loadUnreadOfTeam({
 				conferenceId: conference.id,
 				teamMemberIds: team.map((member) => member.id)
@@ -537,7 +530,7 @@ function teamReports({
 	kinds: ReadonlySet<EmailKind>;
 	team: readonly SnapshotTeamMember[];
 }) {
-	return conference.messagingEnabled && kinds.has('CHAT_REPORTED')
+	return kinds.has('CHAT_REPORTED')
 		? loadOpenReportsOfTeam({
 				conferenceId: conference.id,
 				teamMemberIds: team.map((member) => member.id)

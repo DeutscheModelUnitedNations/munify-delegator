@@ -4,38 +4,40 @@ import { messagesPageState } from './messagesPageState';
 const open = { messagingEnabled: true, assignmentReleased: true, takesPart: true, hasChats: false };
 
 describe('messagesPageState', () => {
-	it('lets a participant start chats once messaging is on', () => {
-		expect(messagesPageState(open)).toEqual({ closed: null, canStart: true, beforeRelease: false });
+	it('lets a participant write to everybody once the roles are out and the switch is on', () => {
+		expect(messagesPageState(open)).toEqual({ closed: null, canStart: true, othersClosed: null });
 	});
 
-	it('points out that only the team is reachable before the release', () => {
-		expect(messagesPageState({ ...open, assignmentReleased: false }).beforeRelease).toBe(true);
+	it('lets a participant start chats with the team and their delegation whatever the switch says', () => {
+		const off = messagesPageState({ ...open, messagingEnabled: false, assignmentReleased: false });
+		expect(off.closed).toBeNull();
+		expect(off.canStart).toBe(true);
 	});
 
-	it('says why there is nothing to see while messaging is off or the caller takes no part', () => {
-		expect(messagesPageState({ ...open, messagingEnabled: false })).toEqual({
-			closed: 'disabled',
-			canStart: false,
-			beforeRelease: false
-		});
+	it('says why other delegations are not reachable yet', () => {
+		expect(messagesPageState({ ...open, assignmentReleased: false }).othersClosed).toBe(
+			'beforeRelease'
+		);
+		expect(
+			messagesPageState({ ...open, assignmentReleased: false, messagingEnabled: false })
+				.othersClosed
+		).toBe('beforeRelease');
+		expect(messagesPageState({ ...open, messagingEnabled: false }).othersClosed).toBe('disabled');
+	});
+
+	it('says why there is nothing to see for somebody who takes no part', () => {
 		expect(messagesPageState({ ...open, takesPart: false })).toEqual({
 			closed: 'noPart',
 			canStart: false,
-			beforeRelease: false
+			othersClosed: null
 		});
-		expect(messagesPageState({ ...open, messagingEnabled: false, takesPart: false }).closed).toBe(
-			'disabled'
-		);
 	});
 
-	it('keeps earlier chats readable either way, without starting new ones', () => {
-		expect(
-			messagesPageState({
-				...open,
-				messagingEnabled: false,
-				assignmentReleased: false,
-				hasChats: true
-			})
-		).toEqual({ closed: null, canStart: false, beforeRelease: false });
+	it('keeps earlier chats readable without starting new ones', () => {
+		expect(messagesPageState({ ...open, takesPart: false, hasChats: true })).toEqual({
+			closed: null,
+			canStart: false,
+			othersClosed: null
+		});
 	});
 });
