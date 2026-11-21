@@ -4,7 +4,8 @@
 
 	/**
 	 * A field read off a scan, on the layout editor's page: a box to tick, drawn as its frame, or a
-	 * line to write on (a signature, place and date), drawn along the bottom of its area. Moved and resized from its corner.
+	 * line to write on (a signature, place and date), drawn along the bottom of its area. A box is
+	 * labelled beside it, a line inside. Moved and resized from its corner.
 	 */
 	interface Props {
 		label: string;
@@ -34,6 +35,13 @@
 	{#if mark === 'line'}
 		<span class="absolute top-0 left-1 truncate text-black/60" style="font-size: {7 * scale}px;"
 			>{label}</span
+		>
+	{:else}
+		<!-- beside the box, which is too small to hold it; the template's own text stays visible -->
+		<span
+			class="bg-info text-info-content pointer-events-none absolute top-1/2 rounded-sm px-1 whitespace-nowrap shadow-sm"
+			style="left: calc(100% + {3 * scale}px); transform: translateY(-50%); font-size: {7 *
+				scale}px;">{label}</span
 		>
 	{/if}
 	<span
