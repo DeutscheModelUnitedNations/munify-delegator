@@ -6,6 +6,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { PAPER_FIELDS } from '#lib/paperScan/fields';
+	import { snapRect, type SnapGuides } from '#lib/helpers/layoutSnap';
 	import Modal from '#lib/components/Modal.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
@@ -16,6 +17,10 @@
 		coversFixedArea,
 		fieldMinimum,
 		minSquareSize,
+		movePlacement,
+		placementRect,
+		POINTS_PER_MM,
+		resizePlacement,
 		resizeText,
 		withMinimumSizes,
 		resolveDocumentLayout,
@@ -30,6 +35,7 @@
 	import LayoutBoxElement from './LayoutBoxElement.svelte';
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
 	import LayoutFieldPages from './LayoutFieldPages.svelte';
+	import LayoutGuides from './LayoutGuides.svelte';
 	import LayoutPager from './LayoutPager.svelte';
 	import LayoutFontSizes from './LayoutFontSizes.svelte';
 	import LayoutSquareElement from './LayoutSquareElement.svelte';
@@ -187,12 +193,50 @@
 		};
 	}
 
+	/** Where the dragged element lines up with another, drawn as guides while it is dragged. */
+	let guides = $state<SnapGuides>({ vertical: [], horizontal: [] });
+
+	/** How near an edge snaps (1.5 mm) and the grid it moves on otherwise (1 mm), as page fractions. */
+	const snapSteps = $derived.by(() => {
+		const size = page ?? { width: 595, height: 842 };
+		const along = (millimetres: number) => ({
+			x: (millimetres * POINTS_PER_MM) / size.width,
+			y: (millimetres * POINTS_PER_MM) / size.height
+		});
+		return { threshold: along(1.5), grid: along(1) };
+	});
+
+	/**
+	 * `next` lined up with the other elements on the page, or on the grid (`#lib/helpers/layoutSnap`);
+	 * a code keeps the size it was dragged to.
+	 */
+	function snapped({ next, active }: { next: Placement; active: NonNullable<typeof drag> }) {
+		const others = onPage
+			.filter((element) => element.id !== active.id)
+			.map((element) => placementRect({ ...element, aspect }));
+		const { shape, resize } = active;
+		if (resize && shape === 'square')
+			return { placement: next, guides: { vertical: [], horizontal: [] } };
+		const snap = snapRect({
+			rect: placementRect({ shape, placement: next, aspect }),
+			others,
+			steps: snapSteps,
+			resize
+		});
+		const shift = { shape, start: next, dx: snap.dx, dy: snap.dy, aspect };
+		const placement = resize
+			? resizePlacement({ ...shift, minBox: active.minBox })
+			: movePlacement(shift);
+		return { placement, guides: snap.guides };
+	}
+
+	// fallow-ignore-next-line complexity
 	function follow(event: PointerEvent) {
 		if (!drag || !frame) return;
 		const rect = frame.getBoundingClientRect();
 		const dx = (event.clientX - drag.x) / rect.width;
 		const dy = (event.clientY - drag.y) / rect.height;
-		const next = dragPlacement({
+		const dragged = dragPlacement({
 			shape: drag.shape,
 			start: drag.start,
 			resize: drag.resize,
@@ -202,6 +246,12 @@
 			minSize: drag.minSize,
 			minBox: drag.minBox
 		});
+		// Alt places freely
+		const lined = event.altKey
+			? { placement: dragged, guides: { vertical: [], horizontal: [] } }
+			: snapped({ next: dragged, active: drag });
+		const next = lined.placement;
+		guides = lined.guides;
 		// nothing goes over the page number or the marks: the element stops where it last fitted
 		const { id, shape } = drag;
 		const covers = coversFixedArea({
@@ -219,6 +269,7 @@
 	function end(event: PointerEvent) {
 		if (frame?.hasPointerCapture(event.pointerId)) frame.releasePointerCapture(event.pointerId);
 		drag = null;
+		guides = { vertical: [], horizontal: [] };
 	}
 
 	/** Puts a field on another page of the template, where it was on its own. */
@@ -271,6 +322,13 @@
 	const squares = $derived(byShape.squares);
 	const allFields = $derived(byShape.fields);
 	const fields = $derived(allFields.filter(({ placement }) => placement.page === pageIndex));
+	/** Everything on the page shown, to line a dragged element up with. */
+	const onPage = $derived([
+		...texts.map(({ id, placement }) => ({ id, shape: 'text' as const, placement })),
+		...boxes.map(({ id, placement }) => ({ id, shape: 'box' as const, placement })),
+		...squares.map(({ id, placement }) => ({ id, shape: 'square' as const, placement })),
+		...fields.map(({ id, placement }) => ({ id, shape: 'field' as const, placement }))
+	]);
 	/** The pages a field can go on: the template's, and one it was put on before a shorter template came. */
 	const pageChoices = $derived(
 		Array.from(
@@ -295,6 +353,7 @@
 		{#if allFields.length > 0}
 			<p class="text-base-content/70 text-sm">{m.documentLayoutFieldsHint()}</p>
 		{/if}
+		<p class="text-base-content/70 text-sm">{m.documentLayoutSnapHint()}</p>
 		{#if pageCount > 1}
 			<LayoutPager bind:page={pageIndex} count={pageCount} />
 		{/if}
@@ -327,6 +386,7 @@
 			onpointercancel={end}
 		>
 			<canvas bind:this={canvas} class="absolute inset-0 h-full w-full"></canvas>
+			<LayoutGuides {guides} />
 			{#if rendering}
 				<div class="absolute inset-0 flex items-center justify-center">
 					<span class="loading loading-spinner loading-lg text-primary"></span>

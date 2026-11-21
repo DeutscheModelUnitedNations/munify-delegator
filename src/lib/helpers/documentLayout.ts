@@ -474,6 +474,24 @@ function areaOf({ placement, aspect }: { placement: AnyPlacement; aspect: number
 }
 
 /**
+ * An element's area as the editor lines it up (`#lib/helpers/layoutSnap`): a text is the point its
+ * baseline starts at, since its extent depends on the text.
+ */
+export function placementRect({
+	shape,
+	placement,
+	aspect
+}: {
+	shape: ElementSpec['shape'];
+	placement: AnyPlacement;
+	aspect: number;
+}) {
+	if (shape === 'text') return { x: placement.x, y: placement.y, width: 0, height: 0 };
+	const { x, y, width, height } = areaOf({ placement, aspect });
+	return { x, y, width, height };
+}
+
+/**
  * Whether `placement` of the element `id` would cover one of the document's fixed areas (the page
  * number, and the alignment marks where the conference reads its paper: `scanning`); the editor
  * refuses such a move. Texts are left out: their extent depends on the text.

@@ -13,6 +13,7 @@ import {
 	fieldMinimum,
 	minSquareSize,
 	movePlacement,
+	placementRect,
 	POINTS_PER_MM,
 	resizePlacement,
 	resizeText,
@@ -369,5 +370,25 @@ describe('the fields read off a scan', () => {
 			size: { width: 595, height: 842 }
 		});
 		expect(second.areas.map(({ field }) => field)).toEqual(['mediaSignature']);
+	});
+});
+
+describe('placementRect', () => {
+	test("is a text's baseline start, a code's square and a box or field as placed", () => {
+		const aspect = 595 / 842;
+		const { name, code, pageNumber, signature } = defaultLayout('contract');
+		expect(placementRect({ shape: 'text', placement: name, aspect })).toEqual({
+			x: name.x,
+			y: name.y,
+			width: 0,
+			height: 0
+		});
+		expect(placementRect({ shape: 'square', placement: code, aspect }).height).toBeCloseTo(
+			code.size * aspect
+		);
+		expect(placementRect({ shape: 'box', placement: pageNumber, aspect })).toEqual(pageNumber);
+		const { page, ...area } = signature;
+		expect(page).toBe(0);
+		expect(placementRect({ shape: 'field', placement: signature, aspect })).toEqual(area);
 	});
 });

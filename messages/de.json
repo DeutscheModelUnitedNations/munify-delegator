@@ -1576,6 +1576,7 @@
 	"documentLayoutPreviousPage": "Vorherige Seite",
 	"documentLayoutRecipient": "Empfängeradresse",
 	"documentLayoutSignature": "Unterschrift",
+	"documentLayoutSnapHint": "Beim Ziehen rasten Kanten und Mitten an den anderen Feldern ein, beim Ändern der Größe auch dieselbe Breite und Höhe; sonst bewegen sich die Felder auf einem Millimeter-Raster. Eine Linie zeigt, woran ein Feld ausgerichtet ist. Halte Alt gedrückt, um frei zu platzieren.",
 	"documentLayoutTitle": "Anordnung auf der Vorlage: {document}",
 	"documentNumber": "Dokumentennummer",
 	"documentNumberRequired": "Dokumentennummer erforderlich",

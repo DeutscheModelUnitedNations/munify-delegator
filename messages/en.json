@@ -1576,6 +1576,7 @@
 	"documentLayoutPreviousPage": "Previous page",
 	"documentLayoutRecipient": "Recipient address",
 	"documentLayoutSignature": "Signature",
+	"documentLayoutSnapHint": "While dragging, edges and centres snap to the other fields, and while resizing also to the same width and height; otherwise fields move on a millimetre grid. A line shows what a field lines up with. Hold Alt to place freely.",
 	"documentLayoutTitle": "Layout on the template: {document}",
 	"documentNumber": "Document number",
 	"documentNumberRequired": "Document number required",
