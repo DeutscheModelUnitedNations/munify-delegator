@@ -1,14 +1,6 @@
-import bwipjs from '@bwip-js/browser';
-import type { Color, PDFDocument, PDFFont, PDFPage } from 'pdf-lib';
-import {
-	createNametagPdf,
-	MUTED,
-	NEUTRAL,
-	PRIMARY,
-	roundedRectPath,
-	WHITE,
-	type NametagFonts
-} from './nametagPdf';
+import type { PDFDocument, PDFFont, PDFPage } from 'pdf-lib';
+import { createNametagPdf, MUTED, NEUTRAL, PRIMARY, type NametagFonts } from './nametagPdf';
+import { drawQr } from './pdfQr';
 
 export interface NametagQrPdfOptions {
 	/** Where the QR code leads: the page that tells a participant where to go. */
@@ -20,6 +12,8 @@ export interface NametagQrPdfOptions {
 	logo: Uint8Array | null;
 	/** The conference's emblem as PNG, in the middle of the QR code. */
 	emblem: Uint8Array | null;
+	/** The conference's `qrCorporateDesign`: the corporate look, or a plain code. */
+	corporate: boolean;
 	fonts: NametagFonts;
 }
 
@@ -27,181 +21,6 @@ export interface NametagQrPdfOptions {
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 44;
-
-/**
- * The modules of the QR code: at the highest error correction when a logo sits in the middle, at
- * a medium one otherwise, which keeps a long code's modules larger.
- */
-function qrMatrix({ text, withLogo }: { text: string; withLogo: boolean }) {
-	const [symbol] = bwipjs.raw('qrcode', text, withLogo ? 'eclevel=H' : 'eclevel=M');
-	if (!symbol || !('pixs' in symbol)) throw new Error('Could not encode the QR code');
-	return {
-		size: symbol.pixx,
-		has: (x: number, y: number) => symbol.pixs[y * symbol.pixx + x] === 1
-	};
-}
-
-/** A rounded square with its top left corner at (x, y), measured from the page's bottom left. */
-function drawRoundedSquare({
-	page,
-	x,
-	top,
-	side,
-	radius,
-	color
-}: {
-	page: PDFPage;
-	x: number;
-	top: number;
-	side: number;
-	radius: number;
-	color: Color;
-}) {
-	page.drawSvgPath(roundedRectPath({ width: side, height: side, radius }), { x, y: top, color });
-}
-
-type Matrix = ReturnType<typeof qrMatrix>;
-type Grid = { originX: number; originTop: number; module: number };
-
-// fallow-ignore-next-line complexity
-const inFinder = ({ matrix, x, y }: { matrix: Matrix; x: number; y: number }) =>
-	(x < 7 && y < 7) || (x >= matrix.size - 7 && y < 7) || (x < 7 && y >= matrix.size - 7);
-
-/** The three corner markers as nested rounded squares. */
-function drawFinders({
-	page,
-	matrix,
-	grid: { originX, originTop, module }
-}: {
-	page: PDFPage;
-	matrix: Matrix;
-	grid: Grid;
-}) {
-	for (const [fx, fy] of [
-		[0, 0],
-		[matrix.size - 7, 0],
-		[0, matrix.size - 7]
-	]) {
-		const left = originX + fx * module;
-		const top = originTop - fy * module;
-		drawRoundedSquare({ page, x: left, top, side: module * 7, radius: module * 2, color: NEUTRAL });
-		drawRoundedSquare({
-			page,
-			x: left + module,
-			top: top - module,
-			side: module * 5,
-			radius: module * 1.4,
-			color: WHITE
-		});
-		drawRoundedSquare({
-			page,
-			x: left + module * 2,
-			top: top - module * 2,
-			side: module * 3,
-			radius: module * 0.9,
-			color: PRIMARY
-		});
-	}
-}
-
-/** The emblem on a white zone in the middle, `reach` modules to each side of the centre. */
-async function drawEmblem({
-	pdf,
-	page,
-	emblemBytes,
-	matrix,
-	reach,
-	grid: { originX, originTop, module }
-}: {
-	pdf: PDFDocument;
-	page: PDFPage;
-	emblemBytes: Uint8Array;
-	matrix: Matrix;
-	reach: number;
-	grid: Grid;
-}) {
-	const emblem = await pdf.embedPng(emblemBytes);
-	const middle = (matrix.size - 1) / 2;
-	const zone = (reach * 2 + 1) * module;
-	const left = originX + (middle - reach) * module;
-	const top = originTop - (middle - reach) * module;
-	drawRoundedSquare({ page, x: left, top, side: zone, radius: zone * 0.22, color: WHITE });
-	const inner = zone * 0.78;
-	const scale = Math.min(inner / emblem.width, inner / emblem.height);
-	page.drawImage(emblem, {
-		x: left + (zone - emblem.width * scale) / 2,
-		y: top - zone + (zone - emblem.height * scale) / 2,
-		width: emblem.width * scale,
-		height: emblem.height * scale
-	});
-}
-
-/**
- * The QR code in the corporate look: round modules in the primary colour, the three corner
- * markers as nested rounded squares, and room for the emblem in the middle.
- */
-// fallow-ignore-next-line complexity
-export async function drawBrandedQr({
-	pdf,
-	page,
-	text,
-	box,
-	emblemBytes
-}: {
-	pdf: PDFDocument;
-	page: PDFPage;
-	text: string;
-	box: { x: number; top: number; side: number };
-	emblemBytes: Uint8Array | null;
-}) {
-	const matrix = qrMatrix({ text, withLogo: emblemBytes !== null });
-	const padding = box.side * 0.06;
-	const grid: Grid = {
-		module: (box.side - padding * 2) / matrix.size,
-		originX: box.x + padding,
-		originTop: box.top - padding
-	};
-
-	// the card the code sits on
-	drawRoundedSquare({
-		page,
-		x: box.x,
-		top: box.top,
-		side: box.side,
-		radius: box.side * 0.05,
-		color: WHITE
-	});
-	page.drawSvgPath(
-		roundedRectPath({ width: box.side, height: box.side, radius: box.side * 0.05 }),
-		{
-			x: box.x,
-			y: box.top,
-			borderColor: PRIMARY,
-			borderWidth: 3
-		}
-	);
-
-	const reach = Math.floor(matrix.size * 0.13);
-	const middle = (matrix.size - 1) / 2;
-	const inLogo = (x: number, y: number) =>
-		Math.abs(x - middle) <= reach && Math.abs(y - middle) <= reach;
-
-	for (let y = 0; y < matrix.size; y++) {
-		for (let x = 0; x < matrix.size; x++) {
-			if (!matrix.has(x, y) || inFinder({ matrix, x, y }) || (emblemBytes && inLogo(x, y)))
-				continue;
-			page.drawCircle({
-				x: grid.originX + (x + 0.5) * grid.module,
-				y: grid.originTop - (y + 0.5) * grid.module,
-				size: grid.module * 0.47,
-				color: PRIMARY
-			});
-		}
-	}
-
-	drawFinders({ page, matrix, grid });
-	if (emblemBytes) await drawEmblem({ pdf, page, emblemBytes, matrix, reach, grid });
-}
 
 /** The logo centred at the top; returns how far down the next element starts. */
 async function drawLogo({
@@ -258,6 +77,7 @@ export async function buildNametagQrPdf({
 	conferenceTitle,
 	logo: logoBytes,
 	emblem,
+	corporate,
 	fonts
 }: NametagQrPdfOptions): Promise<Uint8Array> {
 	const { pdf, regular, bold } = await createNametagPdf(fonts);
@@ -283,11 +103,12 @@ export async function buildNametagQrPdf({
 	page.drawRectangle({ x: (PAGE_WIDTH - 96) / 2, y: y - 18, width: 96, height: 6, color: PRIMARY });
 
 	const side = Math.min(contentWidth, y - 18 - 60 - MARGIN - 20);
-	await drawBrandedQr({
+	await drawQr({
 		pdf,
 		page,
 		text: url,
 		box: { x: (PAGE_WIDTH - side) / 2, top: y - 50, side },
+		corporate,
 		emblemBytes: emblem
 	});
 

@@ -131,7 +131,7 @@ export function kindHint(chat: Pick<ChatLabelSource, 'kind' | 'inbox' | 'trusted
 
 /**
  * The badge a chat carries in a list: "reported" for participant care reading it under a report,
- * its inbox for the team in a list mixing several inboxes, none otherwise.
+ * its inbox for the team in a list not narrowed to one inbox, none otherwise.
  */
 export function listBadge({
 	chat,
@@ -180,6 +180,22 @@ export function chatSubtitle(chat: ChatLabelSource) {
 		.map((person) => person.name)
 		.join(chat.kind === 'DELEGATION' ? ', ' : ' ↔ ');
 	return names || undefined;
+}
+
+/**
+ * What stands under the title of an open chat: the subtitle, for the team followed by the inbox the
+ * chat came in at, else what kind of chat it is.
+ */
+export function threadSubtitle(chat: ChatLabelSource) {
+	const subtitle = chatSubtitle(chat);
+	if (chat.kind !== 'TEAM' || sideOf(chat) !== 'TEAM' || !chat.inbox) {
+		return subtitle ?? kindHint(chat);
+	}
+	// a chat with one trusted person is only read by them: "to me personally"
+	const inbox = chat.trustedPersonName
+		? m.chatInboxTrustedOwn()
+		: m.chatToInbox({ inbox: inboxName(inboxOfChat({ ...chat, inbox: chat.inbox })) });
+	return joined(subtitle, inbox);
 }
 
 /** The picture of a chat: a flag, or an icon. */

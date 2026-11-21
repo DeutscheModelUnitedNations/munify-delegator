@@ -6,7 +6,7 @@
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { page } from '$app/state';
 	import QrCode from '#lib/components/QrCode.svelte';
-	import { downloadQrPng } from '#lib/helpers/qrStyle';
+	import { downloadQrPng } from '#lib/api/downloadQrPng';
 	import { supervisorConnectionLink } from '#lib/helpers/supervisorLink';
 	import EntryCode from '../Common/EntryCode.svelte';
 
@@ -17,16 +17,12 @@
 
 	let { conferenceId, supervisorId }: Props = $props();
 
-	const [supervisor, conference] = $derived(
-		await Promise.all([
-			client.liveQuery.conferenceSupervisor({
-				__args: { id: supervisorId },
-				connectionCode: true
-			}),
-			client.liveQuery.conference({ __args: { id: conferenceId }, emblemFile: { url: true } })
-		])
+	const supervisor = $derived(
+		await client.liveQuery.conferenceSupervisor({
+			__args: { id: supervisorId },
+			connectionCode: true
+		})
 	);
-	const emblemUrl = $derived(conference.emblemFile?.url ?? undefined);
 
 	const connectionLink = $derived(
 		supervisorConnectionLink({
@@ -44,7 +40,8 @@
 	const downloadQr = () => {
 		const promise = downloadQrPng({
 			data: connectionLink,
-			logoUrl: emblemUrl,
+			conferenceId,
+			emblem: true,
 			filename: `qr-${supervisor.connectionCode}.png`
 		});
 		toast.promise(promise, genericPromiseToastMessages);
@@ -70,7 +67,7 @@
 		class="bg-base-200 border-base-300 flex flex-col items-center gap-4 rounded-box border p-4 sm:flex-row sm:items-start"
 	>
 		<div class="w-40 shrink-0 rounded-box bg-base-300 p-1">
-			<QrCode data={connectionLink} logoUrl={emblemUrl} label={m.supervisorLinkQrLabel()} />
+			<QrCode data={connectionLink} {conferenceId} emblem label={m.supervisorLinkQrLabel()} />
 		</div>
 		<div class="flex min-w-0 flex-1 flex-col gap-2">
 			<h3 class="font-bold">{m.supervisorLinkTitle()}</h3>
@@ -97,6 +94,7 @@
 	</div>
 
 	<EntryCode
+		{conferenceId}
 		entryCode={supervisor.connectionCode}
 		userHasRotationPermission={true}
 		rotationFn={rotate}

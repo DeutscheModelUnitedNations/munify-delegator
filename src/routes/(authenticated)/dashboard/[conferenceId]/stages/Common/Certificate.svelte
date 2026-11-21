@@ -65,6 +65,7 @@
 				__args: { id: conferenceId },
 				certificateFile: { url: true },
 				documentLayouts: true,
+				qrCorporateDesign: true,
 				title: true
 			}),
 			client.query.getCertificate({
@@ -105,7 +106,8 @@
 			layout: resolveDocumentLayout({
 				document: 'certificate',
 				stored: sources?.[0].documentLayouts
-			})
+			}),
+			corporate: sources?.[0].qrCorporateDesign ?? true
 		});
 	};
 </script>

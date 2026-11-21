@@ -11,7 +11,8 @@ import {
 	kindHint,
 	matchesSearch,
 	listBadge,
-	sideOf
+	sideOf,
+	threadSubtitle
 } from './chatLabels';
 import { groupContacts, OTHER_GROUP } from './contactGroups';
 
@@ -91,6 +92,30 @@ describe('chatTitle', () => {
 		};
 		expect(chatTitle(chat)).toBe('Anna Schmidt');
 		expect(chatSubtitle(chat)).toBe('Anna Schmidt');
+	});
+
+	test('the team is told which inbox a chat came in at', () => {
+		const chat = {
+			kind: 'TEAM' as const,
+			side: 'TEAM',
+			inbox: 'PARTICIPANT_CARE' as const,
+			contacts: [germany],
+			people: [{ name: 'Anna Schmidt' }]
+		};
+		expect(threadSubtitle(chat)).toBe('Anna Schmidt · an Teilnehmendenbetreuung');
+		expect(threadSubtitle({ ...chat, inbox: 'CHAIR', committee: { abbreviation: 'GV' } })).toBe(
+			'Anna Schmidt · an Vorsitz · GV'
+		);
+		expect(
+			threadSubtitle({
+				...chat,
+				inbox: 'TRUSTED_PERSON',
+				trustedPersonName: 'Tessa Trost',
+				people: []
+			})
+		).toBe('An mich persönlich');
+		// the participant still reads what kind of chat it is
+		expect(threadSubtitle({ ...chat, side: 'PARTICIPANT' })).toContain('Postfach');
 	});
 
 	test('a reviewed direct chat names both parties', () => {

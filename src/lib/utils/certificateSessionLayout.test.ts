@@ -3,32 +3,30 @@ import { layoutCertificateSessions, sessionsFromClaim } from './certificateSessi
 
 // every character is as wide as the font size: easy to reason about
 const measure = (text: string, size: number) => text.length * size;
-const options = { pageWidth: 600, top: 400, bottom: 100, measure };
+const options = { left: 50, top: 400, bottom: 100, measure };
 const sessions = (count: number) => Array.from({ length: count }, (_, i) => `S${i}`);
 
 describe('layoutCertificateSessions', () => {
 	test('draws nothing without sessions', () => {
-		expect(
-			layoutCertificateSessions({ sessions: [], heading: 'Heading', options })
-		).toBeUndefined();
+		expect(layoutCertificateSessions({ sessions: [], options })).toBeUndefined();
 	});
 
-	test('puts a few sessions in one centered column below the heading', () => {
-		const layout = layoutCertificateSessions({ sessions: sessions(3), heading: 'Head', options });
+	test('puts a few sessions in one column below the heading, left aligned at the box', () => {
+		const layout = layoutCertificateSessions({ sessions: sessions(3), options });
 		expect(layout).toBeDefined();
 		if (!layout) return;
 		expect(new Set(layout.rows.map((row) => row.x)).size).toBe(1);
 		expect(layout.rows.every((row) => row.y < layout.heading.y)).toBe(true);
-		// the block (checkmark, gap, text) is centered
-		const width = layout.box + 5 + measure('S0', layout.size);
-		expect(layout.rows[0].x).toBeCloseTo((600 - width) / 2);
+		expect(layout.rows[0].x).toBe(50);
+		expect(layout.heading.x).toBe(50);
 	});
 
 	test('splits many sessions into columns, filled top to bottom', () => {
-		const layout = layoutCertificateSessions({ sessions: sessions(10), heading: 'Head', options });
+		const layout = layoutCertificateSessions({ sessions: sessions(10), options });
 		expect(layout?.rows).toHaveLength(10);
 		const xs = [...new Set(layout?.rows.map((row) => row.x))];
 		expect(xs).toHaveLength(2);
+		expect(xs[0]).toBe(50);
 		expect(layout?.rows.filter((row) => row.x === xs[0])).toHaveLength(5);
 	});
 
@@ -36,7 +34,6 @@ describe('layoutCertificateSessions', () => {
 		const tight = { ...options, top: 160, bottom: 100 };
 		const layout = layoutCertificateSessions({
 			sessions: sessions(6),
-			heading: 'Head',
 			options: tight
 		});
 		expect(layout?.size).toBeLessThan(9);

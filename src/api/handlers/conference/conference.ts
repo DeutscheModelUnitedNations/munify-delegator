@@ -105,6 +105,7 @@ schemaBuilder.mutationFields((t) => ({
 				'showCalendar',
 				'messagingEnabled',
 				'guidePublished',
+				'qrCorporateDesign',
 				'unlockPayments',
 				'unlockPostals',
 				'isOpenPaperSubmission'
@@ -138,6 +139,10 @@ schemaBuilder.mutationFields((t) => ({
 			}),
 			messagingEnabled: t.arg.boolean({
 				description: 'Whether the people of the conference can write each other in the chats.'
+			}),
+			qrCorporateDesign: t.arg.boolean({
+				description:
+					'Whether the QR codes the app shows and prints are in the corporate design (round blue modules, the emblem where there is room) or plain black squares.'
 			}),
 			timezone: t.arg
 				.string({ description: 'An IANA time zone, such as `Europe/Berlin`.' })

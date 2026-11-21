@@ -1,16 +1,18 @@
 import { db } from '#api/db/db';
 import { sql } from 'drizzle-orm';
-import { object, query, schemaBuilder } from '#api/rumble';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import {
 	assertCanReadSchoolMetrics,
 	assertCanUpdateSchools,
+	canReadSchoolMetrics,
 	canUpdateSchool,
 	registerSchoolAbilities
 } from './schoolPermissions';
 import {
+	countSchoolParticipations,
 	deleteSchool,
 	mergeSchools,
 	schoolMetrics,
@@ -18,11 +20,34 @@ import {
 	updateSchool
 } from './schoolService';
 import { schoolRenameSchema, searchSchoolsArgsSchema } from './schoolArgs';
+import { requestBatch } from '#api/services/requestBatch';
 
 registerSchoolAbilities();
 
 // by name and place, and by id: a past search in the command palette comes back as its id
-const SchoolRef = object({ table: 'school', search: { columns: ['name', 'city', 'id'] } });
+/**
+ * The conference count of every school a request asks for in one turn (the cards of the sighting):
+ * one count query for all of them, the count only for participant care of any conference, else null.
+ */
+const participationCountOf = requestBatch<ApiContext, number | null>(async ({ ctx, keys }) => {
+	if (!(await canReadSchoolMetrics(ctx))) return new Map(keys.map((id) => [id, null]));
+	return countSchoolParticipations(keys);
+});
+
+const SchoolRef = object({
+	table: 'school',
+	search: { columns: ['name', 'city', 'id'] },
+	adjust: (t) => ({
+		conferenceParticipationsCount: t.field({
+			description:
+				"In how many conferences people naming this school as their own actually got a seat. Null unless the caller is participant care of any conference (or a system admin), who read the school's history.",
+			type: 'Int',
+			nullable: true,
+			resolve: async (school, _args, ctx) =>
+				(await participationCountOf({ ctx, key: school.id })) ?? null
+		})
+	})
+});
 query({ table: 'school' });
 
 const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {

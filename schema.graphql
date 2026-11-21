@@ -2034,6 +2034,7 @@ type Conference {
   postalName: String
   postalStreet: String
   postalZip: String
+  qrCorporateDesign: Boolean!
   registrationDeadlineGracePeriodMinutes: Int!
 
   """Get the resolutions related to this conference"""
@@ -2164,6 +2165,7 @@ input ConferenceOrderInputArgument {
   postalName: SortingParameter
   postalStreet: SortingParameter
   postalZip: SortingParameter
+  qrCorporateDesign: SortingParameter
   registrationDeadlineGracePeriodMinutes: SortingParameter
   seriesId: SortingParameter
   showCalendar: SortingParameter
@@ -2303,6 +2305,7 @@ input ConferenceWhereInputArgument {
   postalName: StringWhereInputArgument
   postalStreet: StringWhereInputArgument
   postalZip: StringWhereInputArgument
+  qrCorporateDesign: BooleanWhereInputArgument
   registrationDeadlineGracePeriodMinutes: IntWhereInputArgument
   resolutions: ResolutionWhereInputArgument
   roles: ConferenceroleWhereInputArgument
@@ -5691,6 +5694,11 @@ type Mutation {
     postalStreet: String
     postalZip: String
 
+    """
+    Whether the QR codes the app shows and prints are in the corporate design (round blue modules, the emblem where there is room) or plain black squares.
+    """
+    qrCorporateDesign: Boolean
+
     """How long after the application deadline applications are still taken."""
     registrationDeadlineGracePeriodMinutes: Int
 
@@ -8067,6 +8075,11 @@ type ScanLookupResult {
 type School {
   apartment: String
   city: String
+
+  """
+  In how many conferences people naming this school as their own actually got a seat. Null unless the caller is participant care of any conference (or a system admin), who read the school's history.
+  """
+  conferenceParticipationsCount: Int
   contactEmail: String
   contactName: String
   contactPhone: String
@@ -10463,7 +10476,7 @@ type User {
   conferenceParticipants(limit: Int, offset: Int, orderBy: ConferenceparticipantOrderInputArgument, search: ConferenceparticipantSearchInputArgument, where: ConferenceparticipantWhereInputArgument): [Conferenceparticipant!]!
 
   """
-  How many conferences this person actually took part in - registrations that never got a seat do not count, which is what makes this a useful "is this a returning participant" signal in the admin UI. Null unless the caller is the person or has them in their care (participant care and project management of a conference they take part or wait in, system admins).
+  How many conferences this person actually took part in - registrations that never got a seat do not count (a supervisor counts where someone they supervise got one), which is what makes this a useful "is this a returning participant" signal in the admin UI. Null unless the caller is the person or has them in their care (participant care and project management of a conference they take part or wait in, system admins).
   """
   conferenceParticipationsCount: Int
 

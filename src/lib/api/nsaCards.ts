@@ -56,6 +56,7 @@ async function download({
 			conferenceTitle: assets.conferenceTitle,
 			logo: assets.logo,
 			cardLabel: (cardNumber) => m.nsaCardNumberLabel({ number: cardNumber }),
+			corporate: assets.corporate,
 			fonts: assets.fonts
 		}),
 		filename

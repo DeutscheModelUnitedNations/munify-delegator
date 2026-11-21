@@ -17,6 +17,13 @@
 	} from './suggestions';
 	import { searchUsers } from './userSearch';
 	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
+	import {
+		openScannerCamera,
+		stopVideoStream,
+		streamZoom,
+		zoomVideo,
+		type CameraZoom
+	} from './camera';
 
 	interface Props {
 		/** Barcode formats to detect */
@@ -70,6 +77,8 @@
 	let videoElem = $state<HTMLVideoElement>();
 	let streaming = $state(false);
 	let starting = $state(false);
+	/** The camera's zoom, while it streams with one. */
+	let zoom = $state<CameraZoom>();
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
 	let cameraWanted = createPersistedState({ key: untrack(() => persistKey), initial: false });
 	let manualInputElem = $state<HTMLInputElement>();
@@ -125,13 +134,11 @@
 			cameraWanted.current = false;
 			return;
 		}
-		// `ideal` falls back to whatever camera exists, e.g. a laptop's single webcam
-		const stream = await navigator.mediaDevices.getUserMedia({
-			video: { facingMode: { ideal: facingMode } }
-		});
+		const stream = await openScannerCamera(facingMode);
 		video.srcObject = stream;
 		await video.play();
 		streaming = true;
+		zoom = streamZoom(stream);
 		cameraWanted.current = true;
 		await refreshVideoDevices();
 	}
@@ -159,12 +166,13 @@
 	}
 
 	function stopVideo() {
-		// `MediaStream` does not exist during SSR, where this runs as the component is torn down.
-		if (videoElem && videoElem.srcObject instanceof MediaStream) {
-			videoElem.srcObject.getTracks().forEach((track) => track.stop());
-			videoElem.srcObject = null;
-		}
+		stopVideoStream(videoElem);
 		streaming = false;
+		zoom = undefined;
+	}
+
+	async function zoomTo(value: number) {
+		zoom = await zoomVideo({ video: videoElem, value });
 	}
 
 	function turnCameraOff() {
@@ -365,6 +373,8 @@
 				{scannedCode}
 				{scanPromptText}
 				canSwitchCamera={availableVideoDevices.length > 1}
+				{zoom}
+				onzoom={zoomTo}
 				onswitch={switchCamera}
 				onstop={turnCameraOff}
 				onstart={startVideo}

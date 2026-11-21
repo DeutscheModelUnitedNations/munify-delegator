@@ -6,6 +6,13 @@
 	import ScanViewfinder from './ScanViewfinder.svelte';
 	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
 	import { readAimIdentifier } from './aimIdentifier';
+	import {
+		openScannerCamera,
+		stopVideoStream,
+		streamZoom,
+		zoomVideo,
+		type CameraZoom
+	} from './camera';
 
 	interface Props {
 		/** Which codes it takes; a refused one is reported, and the camera waits for the next. */
@@ -22,6 +29,8 @@
 	let streaming = $state(false);
 	let starting = $state(true);
 	let handled = $state<string | null>(null);
+	/** The camera's zoom, while it streams with one. */
+	let zoom = $state<CameraZoom>();
 
 	// Created on first use: the polyfill cannot be constructed during SSR
 	let detector: BarcodeDetector | undefined;
@@ -47,11 +56,13 @@
 	}
 
 	function stopVideo() {
-		if (videoElem?.srcObject instanceof MediaStream) {
-			videoElem.srcObject.getTracks().forEach((track) => track.stop());
-			videoElem.srcObject = null;
-		}
+		stopVideoStream(videoElem);
 		streaming = false;
+		zoom = undefined;
+	}
+
+	async function zoomTo(value: number) {
+		zoom = await zoomVideo({ video: videoElem, value });
 	}
 
 	// fallow-ignore-next-line complexity
@@ -59,11 +70,11 @@
 		if (!videoElem) return;
 		try {
 			if (!navigator.mediaDevices) throw new Error(m.cameraInsecureContext());
-			videoElem.srcObject = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode: { ideal: 'environment' } }
-			});
+			const stream = await openScannerCamera('environment');
+			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;
+			zoom = streamZoom(stream);
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : m.cameraFailed());
 			onclose();
@@ -104,6 +115,8 @@
 	scannedCode={handled}
 	scanPromptText={m.quickScanPrompt()}
 	canSwitchCamera={false}
+	{zoom}
+	onzoom={zoomTo}
 	onswitch={() => {}}
 	onstop={() => {
 		stopVideo();

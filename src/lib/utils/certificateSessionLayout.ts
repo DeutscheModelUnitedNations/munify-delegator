@@ -1,10 +1,8 @@
 import { z } from 'zod';
 
 export interface CertificateSessionLayoutOptions {
-	/** Width of the area the list is centred in: the page, or the box the team placed it in. */
-	pageWidth: number;
-	/** Left edge of that area (0 for the page). */
-	left?: number;
+	/** Left edge of the box the team placed the list in; heading and rows start there. */
+	left: number;
 	/** Baseline of the heading; the rows go below it. */
 	top: number;
 	/** Nothing is drawn below this (the verification QR code sits there). */
@@ -34,19 +32,17 @@ function columnCount(sessions: number) {
 }
 
 /**
- * Where the check-in sessions go on a certificate: a centered heading, then the sessions in one to
- * three columns, filled top to bottom, the block centered on the page. When they do not fit above
+ * Where the check-in sessions go on a certificate: a heading, then the sessions in one to three
+ * columns, filled top to bottom, all left aligned at the box's left edge. When they do not fit above
  * `bottom`, everything is scaled down (to 60 %), and rows that still do not fit are left out.
  * Undefined without sessions.
  */
 export function layoutCertificateSessions({
 	sessions,
-	heading,
 	options
 }: {
 	/** The names of the sessions the holder was at. */
 	sessions: readonly string[];
-	heading: string;
 	options: CertificateSessionLayoutOptions;
 }): CertificateSessionLayout | undefined {
 	if (sessions.length === 0) return undefined;
@@ -66,12 +62,10 @@ export function layoutCertificateSessions({
 	const widths = groups.map(
 		(group) => box + GAP + Math.max(...group.map((name) => options.measure(name, size)))
 	);
-	const total = widths.reduce((sum, width) => sum + width, 0) + COLUMN_GAP * (groups.length - 1);
 
 	const headingSize = size * 1.1;
 	const firstRow = options.top - lineHeight * 1.5;
-	const left = options.left ?? 0;
-	let x = left + (options.pageWidth - total) / 2;
+	let x = options.left;
 	const rows: CertificateSessionLayout['rows'] = [];
 	groups.forEach((group, column) => {
 		group.forEach((name, index) => {
@@ -83,7 +77,7 @@ export function layoutCertificateSessions({
 
 	return {
 		heading: {
-			x: left + (options.pageWidth - options.measure(heading, headingSize)) / 2,
+			x: options.left,
 			y: options.top,
 			size: headingSize
 		},

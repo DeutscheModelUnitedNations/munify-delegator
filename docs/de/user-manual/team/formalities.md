@@ -72,7 +72,7 @@ Sobald **Postalische Anmeldungen erlauben** eingeschaltet ist, laden Teilnehmend
 - die **Einwilligung Bildnutzung**,
 - die Teilnahmebedingungen, die nur angehängt werden und keinen eigenen Status haben.
 
-Unten rechts auf jeder Seite steht ein QR-Code, der die Person und die Konferenz nennt und von DELEGATOR signiert ist. Fehlen jemandem die Unterlagen, lädt die Teilnehmendenbetreuung sie in der Teilnehmendenkarte im Reiter **Formalitäten** mit **Dokumente für postalische Anmeldung herunterladen** herunter.
+Auf jeder Seite steht ein QR-Code, der die Person und die Konferenz nennt und von DELEGATOR signiert ist. Fehlen jemandem die Unterlagen, lädt die Teilnehmendenbetreuung sie in der Teilnehmendenkarte im Reiter **Formalitäten** mit **Dokumente für postalische Anmeldung herunterladen** herunter.
 
 ### Die Status je Dokument
 

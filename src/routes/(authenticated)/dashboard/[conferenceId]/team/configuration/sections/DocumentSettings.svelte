@@ -20,6 +20,7 @@
 	import { resolveDocumentLayout, type LayoutDocument } from '#lib/helpers/documentLayout';
 	import DocumentLayoutEditor from './DocumentLayoutEditor.svelte';
 	import TemplateCard from './TemplateCard.svelte';
+	import { certificateSampleSessions } from './layoutElements';
 	import type { ConferenceSettings } from '../form-schema';
 
 	interface Props {
@@ -37,6 +38,17 @@
 
 	let { conferenceId, form, storedDocuments }: Props = $props();
 	let formData = $derived(form.form);
+
+	// The sessions the certificates list, shown in the layout editor and the test print.
+	const sessions = $derived(
+		await client.liveQuery.attendanceSessions({
+			__args: { where: { conferenceId: { eq: conferenceId }, showOnCertificate: { eq: true } } },
+			occasion: true,
+			startedAt: true,
+			showOnCertificate: true
+		})
+	);
+	const certificateSessions = $derived(certificateSampleSessions(sessions));
 
 	let loading = $state(false);
 
@@ -71,7 +83,9 @@
 				guardianConsentFile: templates.guardianConsentFile,
 				mediaConsentFile: templates.mediaConsentFile,
 				termsAndConditionsFile: templates.termsAndConditionsFile,
-				documentLayouts: withDraft({ stored: templates.documentLayouts, draft })
+				documentLayouts: withDraft({ stored: templates.documentLayouts, draft }),
+				// the switch as it stands in the form, saved or not, so the test print shows it
+				qrCorporateDesign: $formData.qrCorporateDesign
 			},
 			fileName: 'test_postal_registration.pdf'
 		});
@@ -84,19 +98,16 @@
 			documentLayouts: true
 		});
 		await downloadCompleteCertificate(
-			// sample check-in sessions, so the layout shows in the test print
+			// every session on the certificates, as if the holder was at all of them
 			{
-				data: testPrintCertificate([
-					m.certificateSampleSessionOpening(),
-					m.certificateSampleSessionCommittees(),
-					m.certificateSampleSessionClosing()
-				]),
+				data: testPrintCertificate(certificateSessions),
 				certificate: templateOrDefault(templates.certificateFile?.url),
 				fileName: 'test_certificate.pdf',
 				layout: resolveDocumentLayout({
 					document: 'certificate',
 					stored: withDraft({ stored: templates.documentLayouts, draft })
-				})
+				}),
+				corporate: $formData.qrCorporateDesign
 			}
 		);
 	}
@@ -229,6 +240,7 @@
 		<DocumentLayoutEditor
 			{conferenceId}
 			{document}
+			{certificateSessions}
 			title={m.documentLayoutTitle({ document: documentName[document]() })}
 			testPrint={(layout) =>
 				document === 'certificate'

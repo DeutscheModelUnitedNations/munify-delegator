@@ -32,11 +32,6 @@
 		}
 	}
 
-	const conference = $derived(
-		await client.liveQuery.conference({ __args: { id: conferenceId }, emblemFile: { url: true } })
-	);
-	const emblemUrl = $derived(conference.emblemFile?.url);
-
 	onMount(() => {
 		void renew();
 		const timer = setInterval(renew, RENEW_EVERY_MS);
@@ -53,7 +48,7 @@
 
 <div class="{calm ? '' : 'animate-registration-pulse'} rounded-box p-1">
 	<div class="{calm ? 'bg-base-300' : 'animate-registration-border'} rounded-box p-1">
-		<QrCode data={code} logoUrl={emblemUrl ?? undefined}>
+		<QrCode data={code} {conferenceId} emblem>
 			{#snippet fallback()}
 				{#if failed}
 					<i aria-hidden="true" class="ph-duotone ph-warning text-error text-4xl"></i>

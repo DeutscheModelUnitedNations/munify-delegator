@@ -18,7 +18,7 @@
 		chat: ChatSummary;
 		selected: boolean;
 		onSelect: (id: string) => void;
-		/** Names the inbox on a team chat, for a list holding several inboxes */
+		/** Names the inbox on a team chat, for a list not narrowed to one inbox */
 		showInbox: boolean;
 		now: Date;
 	}

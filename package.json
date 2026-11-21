@@ -222,6 +222,7 @@
 		"db:studio": "drizzle-kit studio",
 		"db:reset": "bun ./src/api/db/reset.ts",
 		"db:seed:dev": "bun ./src/api/db/seedDev.ts",
+		"db:seed:dev:small": "bun ./src/api/db/seedDev.ts --small",
 		"docs:screenshots": "bun scripts/docs-screenshots/run.ts",
 		"dev:accounts": "bun ./scripts/writeOidcMockUsers.ts",
 		"link:client": "bun scripts/linkClient.ts",

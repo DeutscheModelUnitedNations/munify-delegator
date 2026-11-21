@@ -151,5 +151,11 @@ export const conference = snakeCase.table('conference', {
 	 * Whether participants read the conference's guide (`docs/plans/guide.md`), once their roles are
 	 * released too. The team always does. Off, the dashboard links `linkToPreparationGuide`.
 	 */
-	guidePublished: boolean().default(false).notNull()
+	guidePublished: boolean().default(false).notNull(),
+	/**
+	 * Whether every QR code the app shows or prints for the conference is in the corporate design
+	 * (round modules in DMUN's blue, rounded corner markers, the emblem where there is room) or a
+	 * plain black one (`#lib/helpers/qrStyle`).
+	 */
+	qrCorporateDesign: boolean().default(true).notNull()
 });

@@ -1,7 +1,7 @@
 <!--
 	@component
 	The chats of the inboxes the caller answers, as a messenger: all of them at once, narrowed to
-	one inbox by its chip, the open ones in the list and the archived ones (put away until their
+	one kind of inbox or one inbox by the filter, the open ones in the list and the archived ones (put away until their
 	next message) only once the archive is shown. Reported chats waiting for participant care show
 	as a banner above the list.
 -->
@@ -10,18 +10,24 @@
 	import type { ChatSummary } from '#lib/api/chats';
 	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
 	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
-	import FilterChips from '#lib/components/FilterChips.svelte';
-	import { inboxName } from '#lib/components/chat/chatLabels';
 	import { m } from '#lib/paraglide/messages';
 	import ArchiveToggle from './ArchiveToggle.svelte';
-	import { inboxKey, listedChats, unreadByInbox, type TeamInbox } from './teamInboxes';
+	import InboxFilter from './InboxFilter.svelte';
+	import {
+		inboxFilter,
+		inboxGroups,
+		inboxKey,
+		listedChats,
+		unreadByInbox,
+		type TeamInbox
+	} from './teamInboxes';
 
 	interface Props {
 		conferenceId: string;
 		/** The chats of every inbox the caller answers, archived ones included */
 		chats: readonly ChatSummary[];
 		inboxes: readonly TeamInbox[];
-		/** The key of the inbox the list is narrowed to; null for all */
+		/** The filter key (an inbox's or a kind's) the list is narrowed to; null for all */
 		selectedInbox: string | null;
 		onInbox: (key: string | null) => void;
 		/** Offers "new message" */
@@ -53,19 +59,19 @@
 	}: Props = $props();
 
 	const unreadOf = $derived(unreadByInbox(chats));
+	const groups = $derived(inboxGroups(inboxes));
+	const filter = $derived(inboxFilter({ groups, selected: selectedInbox }));
 	const shownChats = $derived(
-		selectedInbox ? chats.filter((chat) => inboxKey(chat) === selectedInbox) : chats
+		filter ? chats.filter((chat) => filter.keys.has(inboxKey(chat))) : chats
 	);
 	const listed = $derived(listedChats({ chats: shownChats, showArchive }));
-	const several = $derived(inboxes.length > 1);
-	const label = (inbox: TeamInbox) => (inbox.own ? m.chatInboxTrustedOwn() : inboxName(inbox));
 </script>
 
 <ChatWorkspace
 	chats={listed.chats}
 	{selectedId}
 	{onSelect}
-	showInbox={several && !selectedInbox}
+	showInbox={inboxes.length > 1 && !filter?.inbox}
 	{paperId}
 	{onPaperSent}
 	fill
@@ -96,24 +102,8 @@
 					<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
 				</a>
 			{/if}
-			{#if several}
-				<FilterChips
-					options={inboxes}
-					selected={selectedInbox}
-					onSelect={onInbox}
-					label={m.chatFilterByInbox()}
-				>
-					{#snippet chip(inbox)}
-						{@const unread = unreadOf.get(inbox.key) ?? 0}
-						{label(inbox)}
-						{#if unread > 0}
-							<span class="badge badge-primary badge-xs">
-								<span aria-hidden="true">{unread}</span>
-								<span class="sr-only">{m.chatUnreadCount({ count: unread })}</span>
-							</span>
-						{/if}
-					{/snippet}
-				</FilterChips>
+			{#if inboxes.length > 1}
+				<InboxFilter {groups} selected={selectedInbox} onSelect={onInbox} {unreadOf} />
 			{/if}
 			{#if listed.archived > 0 || showArchive}
 				<ArchiveToggle shown={showArchive} count={listed.archived} onToggle={onArchive} />

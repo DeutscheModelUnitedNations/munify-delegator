@@ -28,7 +28,8 @@ bun run db:generate      # write a migration for src/api/db/schema/
 bun run db:migrate       # apply migrations
 bun run db:push          # push schema without migration (throwaway DBs only)
 bun run db:reset         # drop every table and enum
-bun run db:seed:dev      # wipe + refill dev DB and bucket (all stages, personas, crowd)
+bun run db:seed:dev      # wipe + refill dev DB and bucket (all stages, personas, crowd, ~490k bulk users, ~6 min)
+bun run db:seed:dev:small # same without the bulk: ~570 users, seconds
 bun run dev:accounts     # rewrite oidc-mock.yaml users from seed-data/devAccounts.ts
 bun run db:nuke          # recreate the container and migrate
 bun run db:studio

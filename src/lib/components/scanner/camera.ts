@@ -1,0 +1,119 @@
+import { logger } from '#lib/logger';
+
+/**
+ * The camera as the scanners open it. Asked for nothing, browsers hand out 640×480, in which a
+ * dense code printed small (a signed code on paper) has too few pixels to be read unless it is held
+ * closer than the camera can focus. So the scanners ask for full HD (`ideal`: a camera with less
+ * gives what it has), keep focusing continuously where the camera can, and offer its zoom, so the
+ * paper can be held at a distance the camera focuses at and zoomed in on.
+ */
+
+/** One set of constraints `applyConstraints` takes. */
+type ConstraintSet = NonNullable<
+	NonNullable<Parameters<MediaStreamTrack['applyConstraints']>[0]>['advanced']
+>[number];
+
+/** The constraints the browser's types do not know yet (Image Capture). */
+interface CameraConstraintSet extends ConstraintSet {
+	focusMode?: string;
+	zoom?: number;
+}
+
+/** What the camera's zoom can do and where it stands. */
+export type CameraZoom = { min: number; max: number; step: number; value: number };
+
+/** One capability or setting of a track by name; the typings only know the older ones. */
+function readProperty({ source, name }: { source: object; name: string }): unknown {
+	return Object.getOwnPropertyDescriptor(source, name)?.value;
+}
+
+const isNumber = (value: unknown): value is number =>
+	typeof value === 'number' && Number.isFinite(value);
+
+/** The track's zoom, when it has one that actually zooms. */
+function zoomOf(track: MediaStreamTrack): CameraZoom | undefined {
+	if (typeof track.getCapabilities !== 'function') return undefined;
+	const range = readProperty({ source: track.getCapabilities(), name: 'zoom' });
+	if (typeof range !== 'object' || range === null) return undefined;
+	const min = readProperty({ source: range, name: 'min' });
+	const max = readProperty({ source: range, name: 'max' });
+	const step = readProperty({ source: range, name: 'step' });
+	if (!isNumber(min) || !isNumber(max) || max <= min) return undefined;
+	const value = readProperty({ source: track.getSettings(), name: 'zoom' });
+	return {
+		min,
+		max,
+		step: isNumber(step) && step > 0 ? step : 0.1,
+		value: isNumber(value) ? value : min
+	};
+}
+
+/** Focuses continuously where the camera can; a camera that cannot keeps what it does. */
+async function focusContinuously(track: MediaStreamTrack) {
+	if (typeof track.getCapabilities !== 'function') return;
+	const modes = readProperty({ source: track.getCapabilities(), name: 'focusMode' });
+	if (!Array.isArray(modes) || !modes.includes('continuous')) return;
+	const advanced: CameraConstraintSet[] = [{ focusMode: 'continuous' }];
+	await track.applyConstraints({ advanced }).catch(() => undefined);
+}
+
+const videoTrackOf = (stream: MediaStream) => stream.getVideoTracks().at(0);
+
+/** Opens the camera facing `facingMode` for scanning (see the module comment). */
+export async function openScannerCamera(facingMode: 'environment' | 'user') {
+	// `ideal` falls back to whatever camera exists, e.g. a laptop's single webcam
+	const stream = await navigator.mediaDevices.getUserMedia({
+		video: {
+			facingMode: { ideal: facingMode },
+			width: { ideal: 1920 },
+			height: { ideal: 1080 }
+		}
+	});
+	const track = videoTrackOf(stream);
+	if (track) await focusContinuously(track);
+	return stream;
+}
+
+/** The zoom of the stream's camera, when it has one. */
+export function streamZoom(stream: MediaStream) {
+	const track = videoTrackOf(stream);
+	return track ? zoomOf(track) : undefined;
+}
+
+/** Zooms the stream's camera to `value`; answers where it ended up. */
+export async function zoomStream({ stream, value }: { stream: MediaStream; value: number }) {
+	const track = videoTrackOf(stream);
+	if (!track) return undefined;
+	const advanced: CameraConstraintSet[] = [{ zoom: value }];
+	try {
+		await track.applyConstraints({ advanced });
+	} catch (error) {
+		logger.warn('Zooming the camera failed', error);
+	}
+	return zoomOf(track);
+}
+
+/**
+ * Zooms the camera `video` shows to `value`; answers where it ended up, or undefined once the
+ * camera is off (also when it went off while zooming, so the slider does not come back).
+ */
+export async function zoomVideo({
+	video,
+	value
+}: {
+	video: HTMLVideoElement | undefined;
+	value: number;
+}) {
+	const stream = video?.srcObject;
+	if (!(stream instanceof MediaStream)) return undefined;
+	const zoom = await zoomStream({ stream, value });
+	return video?.srcObject === stream ? zoom : undefined;
+}
+
+/** Turns off the camera `video` shows. */
+export function stopVideoStream(video: HTMLVideoElement | undefined) {
+	// `MediaStream` does not exist during SSR, where this runs as a scanner is torn down.
+	if (typeof MediaStream === 'undefined' || !(video?.srcObject instanceof MediaStream)) return;
+	video.srcObject.getTracks().forEach((track) => track.stop());
+	video.srcObject = null;
+}

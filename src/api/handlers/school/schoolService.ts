@@ -306,6 +306,39 @@ const schoolMetricsRowSchema = z.object({
 	fromWaitingList: z.number()
 });
 
+/**
+ * In how many conferences each of `schoolIds` actually took part: someone naming it as their own
+ * got a seat there. One query for all of them; a school without any counts 0.
+ */
+export async function countSchoolParticipations(
+	schoolIds: readonly string[]
+): Promise<Map<string, number>> {
+	const counts = new Map<string, number>(schoolIds.map((id) => [id, 0]));
+	if (schoolIds.length === 0) return counts;
+	const rows = await db.execute<{ school_id: string; value: number }>(sql`
+		select p.school_id, count(distinct p.conference_id)::int as value
+		from conference_participant p
+		where p.school_id in (${sql.join(
+			[...counts.keys()].map((id) => sql`${id}`),
+			sql`, `
+		)})
+			and (
+				exists (
+					select 1 from delegation_member dm
+					join delegation d on d.id = dm.delegation_id
+					where dm.conference_participant_id = p.id and d.assigned_role_id is not null
+				)
+				or exists (
+					select 1 from single_participant sp
+					where sp.conference_participant_id = p.id and sp.assigned_role_id is not null
+				)
+			)
+		group by p.school_id
+	`);
+	for (const row of rows.rows) counts.set(row.school_id, row.value);
+	return counts;
+}
+
 /** Per conference, how many people from the school registered, applied, got a seat and came. */
 export async function schoolMetrics(schoolId: string) {
 	const result = await db.execute<{ result: unknown }>(sql`

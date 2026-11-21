@@ -134,6 +134,7 @@
 				<p class="font-medium">{m.inviteMorePeople()}</p>
 				<p class="text-base-content/60 text-sm">{m.inviteMorePeopleDescription()}</p>
 				<EntryCode
+					{conferenceId}
 					entryCode={delegation.entryCode}
 					{referralLink}
 					{supervisorLink}

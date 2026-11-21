@@ -10,14 +10,29 @@ import { addDelegation, addSingle, addSupervisor, type RolePreference } from './
  * after a few of those delegations each, the way a teacher brings their school's groups, and the
  * conferences past registration have thousands more people waiting on the list. Totals across all
  * conferences are the sum of each plan's `bulk` (about 70k delegations, 10k singles, 17k
- * supervisors and 7k waiting list entries); `SEED_BULK_SCALE` shrinks or grows all of them, `0`
- * switches the bulk off.
+ * supervisors and 7k waiting list entries, about 490k users); `bulkScale` decides how much of it
+ * the run writes.
  */
 const MIN_SIZE = 3;
 const MAX_SIZE = 10;
 
-const scale = Number(process.env.SEED_BULK_SCALE ?? 1);
-if (!Number.isFinite(scale) || scale < 0) throw new Error('SEED_BULK_SCALE must be >= 0');
+/**
+ * How much of the bulk to seed: `--small` (`bun run db:seed:dev:small`) switches it off, leaving
+ * the personas and the hand-sized crowd (a few hundred users, seconds instead of minutes);
+ * otherwise `SEED_BULK_SCALE` shrinks or grows it, `1` by default.
+ */
+export function bulkScale({
+	argv,
+	env
+}: {
+	argv: readonly string[];
+	env: Record<string, string | undefined>;
+}) {
+	if (argv.includes('--small')) return 0;
+	const scale = Number(env.SEED_BULK_SCALE ?? 1);
+	if (!Number.isFinite(scale) || scale < 0) throw new Error('SEED_BULK_SCALE must be >= 0');
+	return scale;
+}
 
 /** Nations ordered roomiest first, with the seats each offers; computed once per conference. */
 function nationsBySeats(cs: ConferenceSeed) {
@@ -27,9 +42,9 @@ function nationsBySeats(cs: ConferenceSeed) {
 		.sort((a, b) => b.seats - a.seats || a.nation.localeCompare(b.nation));
 }
 
-export function addBulk(cs: ConferenceSeed) {
+export function addBulk({ cs, scale }: { cs: ConferenceSeed; scale: number }) {
 	const bulk = cs.plan.crowd.bulk;
-	if (!bulk) return;
+	if (!bulk || scale === 0) return;
 	const appliedShare = cs.plan.key === 'registration' ? 0.5 : 0.85;
 
 	const delegationMemberIds = addBulkDelegations({

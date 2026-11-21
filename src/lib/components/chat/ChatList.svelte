@@ -1,7 +1,8 @@
 <!--
 	@component
 	The list of chats beside the open one: who it is with, the beginning of the latest message, when
-	it came and how much of it is unread. Shows the inbox of a team chat when the list mixes several.
+	it came and how much of it is unread. Shows the inbox of a team chat unless the list is narrowed
+	to one.
 -->
 <script lang="ts">
 	import { flip } from 'svelte/animate';
@@ -13,7 +14,7 @@
 		chats: readonly ChatSummary[];
 		selectedId: string | null;
 		onSelect: (id: string) => void;
-		/** Names the inbox on each team chat, for a list holding several inboxes */
+		/** Names the inbox on each team chat, for a list not narrowed to one inbox */
 		showInbox?: boolean;
 	}
 

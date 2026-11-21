@@ -135,6 +135,7 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	website: { group: 'general', label: () => m.conferenceWebsite() },
 	image: { group: 'general', label: () => m.conferenceImage() },
 	emblem: { group: 'general', label: () => m.conferenceEmblem() },
+	qrCorporateDesign: { group: 'general', label: () => m.qrCorporateDesign() },
 	logo: { group: 'general', label: () => m.conferenceLogo() },
 	applicationDeadline: {
 		group: 'general',

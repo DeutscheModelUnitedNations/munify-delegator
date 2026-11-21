@@ -1,0 +1,1 @@
+ALTER TABLE "conference" ADD COLUMN "qr_corporate_design" boolean DEFAULT true NOT NULL;

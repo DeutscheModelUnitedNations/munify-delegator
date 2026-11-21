@@ -2,11 +2,13 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import QrCode from '#lib/components/QrCode.svelte';
-	import { downloadQrPng } from '#lib/helpers/qrStyle';
+	import { downloadQrPng } from '#lib/api/downloadQrPng';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {
+		/** The conference whose design the QR code takes. */
+		conferenceId: string;
 		entryCode: string;
 		/** Adds the copy link and QR code buttons; left out where the page shows the link itself. */
 		referralLink?: string;
@@ -16,8 +18,14 @@
 		rotationFn?: () => void;
 	}
 
-	let { entryCode, referralLink, supervisorLink, userHasRotationPermission, rotationFn }: Props =
-		$props();
+	let {
+		conferenceId,
+		entryCode,
+		referralLink,
+		supervisorLink,
+		userHasRotationPermission,
+		rotationFn
+	}: Props = $props();
 
 	let qrModalOpen = $state(false);
 </script>
@@ -89,14 +97,18 @@
 	<Modal bind:open={qrModalOpen}>
 		<div class="flex w-full flex-col items-center gap-4">
 			<div class="w-full max-w-sm rounded-box bg-base-300 p-1">
-				<QrCode data={referralLink} label={m.showQrCode()} />
+				<QrCode data={referralLink} {conferenceId} label={m.showQrCode()} />
 			</div>
 			<button
 				class="btn btn-ghost btn-sm"
 				type="button"
 				onclick={() =>
 					toast.promise(
-						downloadQrPng({ data: referralLink, filename: `qr-${entryCode}.png` }),
+						downloadQrPng({
+							data: referralLink,
+							conferenceId,
+							filename: `qr-${entryCode}.png`
+						}),
 						genericPromiseToastMessages
 					)}
 			>
