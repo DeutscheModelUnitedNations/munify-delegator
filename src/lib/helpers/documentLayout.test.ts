@@ -286,7 +286,8 @@ describe('the fields read off a scan', () => {
 			['mediaAll', 'checkbox'],
 			['mediaPartial', 'checkbox'],
 			['mediaNone', 'checkbox'],
-			['mediaSignature', 'signature']
+			['mediaPlaceDate', 'line'],
+			['mediaSignature', 'line']
 		]);
 	});
 
@@ -356,7 +357,8 @@ describe('the fields read off a scan', () => {
 		expect(first.areas.map(({ field }) => field)).toEqual([
 			'mediaAll',
 			'mediaPartial',
-			'mediaNone'
+			'mediaNone',
+			'mediaPlaceDate'
 		]);
 		expect(first.page.width).toBeCloseTo(210, 0);
 		expect(first.areas[0].width * first.page.width).toBeCloseTo(5);

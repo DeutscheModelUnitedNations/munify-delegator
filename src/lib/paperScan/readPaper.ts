@@ -50,7 +50,7 @@ type Box = { x: number; y: number; width: number; height: number };
 
 /**
  * Where a field is read: inside a box's frame, with room for a scan aligned a little off; above a
- * signature's line, which signatures cross but we drew.
+ * line (a signature's, place and date's), which handwriting crosses but we drew.
  */
 function innerBox({ box, mark }: { box: Box; mark: PaperMark }): Box {
 	if (mark === 'checkbox') {
@@ -91,7 +91,7 @@ type ReadArgs = { picture: Picture; toPicture: (point: Point) => Point };
 
 /** Ink darker than this share of the paper's brightness counts. */
 const INK = 0.65;
-/** Columns a signature's width is cut into, to tell a signature from a speck. */
+/** Columns a line's width is cut into, to tell writing from a speck. */
 const COLUMNS = 20;
 /** The most samples taken across one side of a field. */
 const MAX_SAMPLES = 240;
@@ -132,7 +132,7 @@ function inkIn({ picture, toPicture, box }: ReadArgs & { box: Box }) {
 
 /**
  * Ticked, empty or unclear from the ink found: a cross covers a good part of a box, a stray dot
- * almost none of it; a signature is thin but runs across its line, a speck does not.
+ * almost none of it; writing on a line is thin but runs along it, a speck does not.
  */
 export function judgeMark({
 	mark,

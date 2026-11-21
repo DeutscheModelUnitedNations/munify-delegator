@@ -71,11 +71,12 @@ describe('the codes of the application documents', () => {
 			'mediaAll',
 			'mediaPartial',
 			'mediaNone',
+			'mediaPlaceDate',
 			'mediaSignature'
 		]);
 		expect(areas[0]?.page.width).toBeCloseTo(210, 0);
 		expect(areas[1]).toBeUndefined();
-		expect(areas[2]?.areas.map((area) => area.field)).toEqual(['termsSignature']);
+		expect(areas[2]?.areas.map((area) => area.field)).toEqual(['termsPlaceDate', 'termsSignature']);
 	});
 
 	test('carry no fields where the paper is not read, unless a test print says so', async () => {

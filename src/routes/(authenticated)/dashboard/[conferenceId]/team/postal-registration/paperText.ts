@@ -32,6 +32,8 @@ export function describeNote(note: PaperNote): string {
 	switch (note.kind) {
 		case 'unsigned':
 			return m.paperNoteUnsigned({ document: documentName[note.document]() });
+		case 'undated':
+			return m.paperNoteUndated({ document: documentName[note.document]() });
 		case 'unclear':
 			return m.paperNoteUnclear({ document: documentName[note.document]() });
 		case 'mediaChoiceUnclear':

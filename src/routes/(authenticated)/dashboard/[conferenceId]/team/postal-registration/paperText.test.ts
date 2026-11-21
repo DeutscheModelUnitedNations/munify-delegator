@@ -19,11 +19,12 @@ describe('describeNote', () => {
 	test('words every kind of note', () => {
 		const notes = [
 			describeNote({ kind: 'unsigned', document: 'contract' }),
+			describeNote({ kind: 'undated', document: 'contract' }),
 			describeNote({ kind: 'unclear', document: 'mediaConsent' }),
 			describeNote({ kind: 'mediaChoiceUnclear' }),
 			describeNote({ kind: 'mediaChoiceDiffers', read: 'NOT_ALLOWED', stored: 'ALLOWED_ALL' })
 		];
-		expect(new Set(notes).size).toBe(4);
+		expect(new Set(notes).size).toBe(5);
 		notes.forEach((note) => expect(note.length).toBeGreaterThan(5));
 	});
 });

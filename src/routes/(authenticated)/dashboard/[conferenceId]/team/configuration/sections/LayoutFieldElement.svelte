@@ -4,7 +4,7 @@
 
 	/**
 	 * A field read off a scan, on the layout editor's page: a box to tick, drawn as its frame, or a
-	 * line to sign on, drawn along the bottom of its area. Moved and resized from its corner.
+	 * line to write on (a signature, place and date), drawn along the bottom of its area. Moved and resized from its corner.
 	 */
 	interface Props {
 		label: string;
@@ -31,7 +31,7 @@
 	title={label}
 	onpointerdown={onmove}
 >
-	{#if mark === 'signature'}
+	{#if mark === 'line'}
 		<span class="absolute top-0 left-1 truncate text-black/60" style="font-size: {7 * scale}px;"
 			>{label}</span
 		>

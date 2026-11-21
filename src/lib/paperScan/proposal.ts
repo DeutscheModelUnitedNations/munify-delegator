@@ -30,20 +30,37 @@ export type PaperChange = {
 export type PaperDocument = 'contract' | 'guardianConsent' | 'mediaConsent';
 
 /**
- * Why something was not changed: a document not signed, a field no one could tell, the media
+ * Why something was not changed: a document not signed, or signed without place and date, a
+ * field no one could tell, the media
  * choice not one box, or (left alone without a person) a choice other than the one stored.
  */
 export type PaperNote =
-	| { kind: 'unsigned' | 'unclear'; document: PaperDocument }
+	| { kind: 'unsigned' | 'undated' | 'unclear'; document: PaperDocument }
 	| { kind: 'mediaChoiceUnclear' }
 	| { kind: 'mediaChoiceDiffers'; read: MediaChoice; stored: MediaChoice };
 
 const SIGNATURES = [
-	{ field: 'termsSignature', status: 'termsAndConditions', document: 'contract' },
-	{ field: 'guardianSignature', status: 'guardianConsent', document: 'guardianConsent' },
-	{ field: 'mediaSignature', status: 'mediaConsent', document: 'mediaConsent' }
+	{
+		field: 'termsSignature',
+		placeDate: 'termsPlaceDate',
+		status: 'termsAndConditions',
+		document: 'contract'
+	},
+	{
+		field: 'guardianSignature',
+		placeDate: 'guardianPlaceDate',
+		status: 'guardianConsent',
+		document: 'guardianConsent'
+	},
+	{
+		field: 'mediaSignature',
+		placeDate: 'mediaPlaceDate',
+		status: 'mediaConsent',
+		document: 'mediaConsent'
+	}
 ] as const satisfies readonly {
 	field: PaperField;
+	placeDate: PaperField;
 	status: keyof PaperChange;
 	document: PaperDocument;
 }[];
@@ -83,7 +100,28 @@ function mediaChoice(readings: readonly FieldReading[]) {
 	return ticked.length === 1 && clear ? ticked[0].choice : 'unclear';
 }
 
-/** What the signatures read change, and the documents left unsigned or unclear. */
+/**
+ * Whether a document is signed as it has to be: signed, with place and date where its page has a
+ * field for them. `unsigned`/`undated` say what is missing, `unclear` that someone has to look.
+ */
+function signedState({
+	readings,
+	signature
+}: {
+	readings: readonly FieldReading[];
+	signature: (typeof SIGNATURES)[number];
+}): FieldState | 'undated' | undefined {
+	const signed = combineReadings({ readings, field: signature.field });
+	const dated = combineReadings({ readings, field: signature.placeDate });
+	if (signed === 'no') return 'no';
+	if (signed === 'unclear' || dated === 'unclear') return 'unclear';
+	if (signed === 'yes' && dated === 'no') return 'undated';
+	return signed;
+}
+
+const NOTE_OF = { no: 'unsigned', undated: 'undated', unclear: 'unclear' } as const;
+
+/** What the signatures read change, and the documents left unsigned, undated or unclear. */
 function signatureChanges({
 	readings,
 	status
@@ -93,11 +131,11 @@ function signatureChanges({
 }) {
 	const change: PaperChange = {};
 	const notes: PaperNote[] = [];
-	for (const { field, status: key, document } of SIGNATURES) {
-		const state = combineReadings({ readings, field });
-		if (state === 'yes' && status[key] !== 'DONE') change[key] = 'DONE';
-		if (state === 'no') notes.push({ kind: 'unsigned', document });
-		if (state === 'unclear') notes.push({ kind: 'unclear', document });
+	for (const signature of SIGNATURES) {
+		const state = signedState({ readings, signature });
+		if (state === 'yes' && status[signature.status] !== 'DONE') change[signature.status] = 'DONE';
+		else if (state && state !== 'yes')
+			notes.push({ kind: NOTE_OF[state], document: signature.document });
 	}
 	return { change, notes };
 }
@@ -115,8 +153,7 @@ function mediaChange({
 	const choice = mediaChoice(readings);
 	if (choice === 'unclear') return { change: {}, notes: [{ kind: 'mediaChoiceUnclear' }] };
 	const signed =
-		status.mediaConsent === 'DONE' ||
-		combineReadings({ readings, field: 'mediaSignature' }) === 'yes';
+		status.mediaConsent === 'DONE' || signedState({ readings, signature: SIGNATURES[2] }) === 'yes';
 	const stored = status.mediaConsentStatus;
 	if (!choice || !signed || choice === stored) return { change: {}, notes: [] };
 	if (confirm || stored === 'NOT_SET') return { change: { mediaConsentStatus: choice }, notes: [] };

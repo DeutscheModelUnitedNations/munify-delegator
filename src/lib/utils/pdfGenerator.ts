@@ -611,7 +611,7 @@ function drawPaperFields({ page, at }: { page: PDFPage; at: MainPage }) {
 	for (const area of areas) {
 		const left = area.x * width;
 		const bottom = height - (area.y + area.height) * height;
-		if (PAPER_FIELDS[area.field].mark === 'signature') {
+		if (PAPER_FIELDS[area.field].mark === 'line') {
 			page.drawLine({
 				start: { x: left, y: bottom },
 				end: { x: left + area.width * width, y: bottom },

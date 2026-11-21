@@ -19,6 +19,7 @@ export const elementLabel: Record<LayoutElement, () => string> = {
 	markerBottomRight: () => m.documentLayoutMarker(),
 	markerBottomLeft: () => m.documentLayoutMarker(),
 	signature: () => m.documentLayoutSignature(),
+	placeDate: () => m.documentLayoutPlaceDate(),
 	mediaAll: () => m.documentLayoutMediaAll(),
 	mediaPartial: () => m.documentLayoutMediaPartial(),
 	mediaNone: () => m.documentLayoutMediaNone()
@@ -44,6 +45,7 @@ export const elementSample: Record<LayoutElement, () => string[]> = {
 	markerBottomRight: () => [],
 	markerBottomLeft: () => [],
 	signature: () => [],
+	placeDate: () => [],
 	mediaAll: () => [],
 	mediaPartial: () => [],
 	mediaNone: () => []

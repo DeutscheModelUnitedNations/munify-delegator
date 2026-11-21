@@ -151,9 +151,9 @@ describe('judgeMark', () => {
 		expect(judgeMark({ mark: 'checkbox', ink: 0.2, span: 1 })).toBe('yes');
 		expect(judgeMark({ mark: 'checkbox', ink: 0.005, span: 0.1 })).toBe('no');
 		expect(judgeMark({ mark: 'checkbox', ink: 0.04, span: 0.5 })).toBe('unclear');
-		expect(judgeMark({ mark: 'signature', ink: 0.02, span: 0.7 })).toBe('yes');
-		expect(judgeMark({ mark: 'signature', ink: 0.02, span: 0.1 })).toBe('unclear');
-		expect(judgeMark({ mark: 'signature', ink: 0, span: 0 })).toBe('no');
+		expect(judgeMark({ mark: 'line', ink: 0.02, span: 0.7 })).toBe('yes');
+		expect(judgeMark({ mark: 'line', ink: 0.02, span: 0.1 })).toBe('unclear');
+		expect(judgeMark({ mark: 'line', ink: 0, span: 0 })).toBe('no');
 	});
 });
 

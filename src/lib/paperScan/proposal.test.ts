@@ -126,4 +126,33 @@ describe('proposePaperChange', () => {
 			mediaConsentStatus: 'NOT_ALLOWED'
 		});
 	});
+
+	it('counts a document signed only with its place and date, where the page has them', () => {
+		const signed = (date: FieldReading['state']) =>
+			proposePaperChange({
+				readings: [
+					{ field: 'termsSignature', state: 'yes' },
+					{ field: 'termsPlaceDate', state: date }
+				],
+				status: pending,
+				confirm: true
+			});
+		expect(signed('yes').change).toEqual({ termsAndConditions: 'DONE' });
+		expect(signed('no')).toEqual({
+			change: {},
+			notes: [{ kind: 'undated', document: 'contract' }]
+		});
+		expect(signed('unclear').notes).toEqual([{ kind: 'unclear', document: 'contract' }]);
+	});
+
+	it('takes no media choice from a form signed without place and date', () => {
+		const readings = [
+			...mediaPage('yes', 'no', 'no', 'yes'),
+			{ field: 'mediaPlaceDate', state: 'no' } as const
+		];
+		expect(proposePaperChange({ readings, status: pending, confirm: true })).toEqual({
+			change: {},
+			notes: [{ kind: 'undated', document: 'mediaConsent' }]
+		});
+	});
 });

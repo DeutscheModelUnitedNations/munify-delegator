@@ -11,7 +11,8 @@ import { MARKER } from '#lib/paperScan/markerGeometry';
  * per document in `conference.documentLayouts`. The page number is fixed in the bottom right
  * corner (`fixed`), the terms and conditions' pages too. Where the conference reads its paper
  * (`conference.paperScanning`, elements marked `scanning`), the application documents also carry
- * alignment marks in their corners (fixed) and the fields a scan is read for: the signatures and
+ * alignment marks in their corners (fixed) and the fields a scan is read for: the signatures, their
+ * place and date, and
  * the media consent's boxes, each on a page of its template (`#lib/paperScan`).
  *
  * Everything is a fraction of the page, measured from the top-left corner, so a layout survives a
@@ -64,8 +65,11 @@ const portrait = { x: (pt: number) => pt / A4.short, y: (pt: number) => pt / A4.
 /** Landscape A4. */
 const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.short };
 
-/** The side of the footer code by default, in points: larger than its minimum, for good measure. */
-const FOOTER_CODE = mm(30);
+/**
+ * The side of the footer code by default, in points: larger than its minimum, so a media consent
+ * page's code, which names its five fields (about 31 mm), prints at the size the editor shows.
+ */
+const FOOTER_CODE = mm(32);
 /**
  * Where the footer sits by default: the right margin and the bottom one, in points. The right one
  * keeps the page number and the code clear of the bottom right alignment mark.
@@ -124,14 +128,16 @@ const markers = {
 	markerBottomLeft: markerBox({ right: false, bottom: true })
 } as const satisfies Record<string, ElementSpec>;
 
-/** A field to read off a scan, by default `top` millimetres down the first page. */
+/** A field to read off a scan, by default `left` and `top` millimetres into the first page. */
 const paperField = ({
 	field,
+	left = 25,
 	top,
 	width,
 	height
 }: {
 	field: PaperField;
+	left?: number;
 	top: number;
 	width: number;
 	height: number;
@@ -141,22 +147,26 @@ const paperField = ({
 		field,
 		scanning: true,
 		default: {
-			x: portrait.x(mm(25)),
+			x: portrait.x(mm(left)),
 			y: portrait.y(mm(top)),
 			width: portrait.x(mm(width)),
 			height: portrait.y(mm(height)),
 			page: 0
 		}
 	}) as const satisfies ElementSpec;
-const signatureField = (field: PaperField) =>
-	paperField({ field, top: 245, width: 80, height: 15 });
+/** Where a document is signed by default: place and date on the left, the signature beside them. */
+const signedFields = ({ signature, placeDate }: { signature: PaperField; placeDate: PaperField }) =>
+	({
+		placeDate: paperField({ field: placeDate, top: 245, width: 75, height: 15 }),
+		signature: paperField({ field: signature, left: 110, top: 245, width: 75, height: 15 })
+	}) as const satisfies Record<string, ElementSpec>;
 const checkboxField = ({ field, top }: { field: PaperField; top: number }) =>
 	paperField({ field, top, width: 5, height: 5 });
 
-/** The smallest a field may be drawn, in millimetres: a box still to tick, a line to sign on. */
+/** The smallest a field may be drawn, in millimetres: a box still to tick, a line to write on. */
 const MIN_FIELD_MM: Record<PaperMark, { width: number; height: number }> = {
 	checkbox: { width: 3.5, height: 3.5 },
-	signature: { width: 25, height: 6 }
+	line: { width: 25, height: 6 }
 };
 
 /** The certificate's code by default, in points. */
@@ -214,13 +224,13 @@ export const DOCUMENT_ELEMENTS = {
 		...nameAndBirthday({ top: 320, gap: 60 }),
 		...footer,
 		...markers,
-		signature: signatureField('termsSignature')
+		...signedFields({ signature: 'termsSignature', placeDate: 'termsPlaceDate' })
 	},
 	guardianConsent: {
 		...nameAndBirthday({ top: 180, gap: 60 }),
 		...footer,
 		...markers,
-		signature: signatureField('guardianSignature')
+		...signedFields({ signature: 'guardianSignature', placeDate: 'guardianPlaceDate' })
 	},
 	mediaConsent: {
 		...nameAndBirthday({ top: 225, gap: 42 }),
@@ -234,7 +244,7 @@ export const DOCUMENT_ELEMENTS = {
 		mediaAll: checkboxField({ field: 'mediaAll', top: 200 }),
 		mediaPartial: checkboxField({ field: 'mediaPartial', top: 208 }),
 		mediaNone: checkboxField({ field: 'mediaNone', top: 216 }),
-		signature: signatureField('mediaSignature')
+		...signedFields({ signature: 'mediaSignature', placeDate: 'mediaPlaceDate' })
 	}
 } as const satisfies Record<string, Record<string, ElementSpec>>;
 
