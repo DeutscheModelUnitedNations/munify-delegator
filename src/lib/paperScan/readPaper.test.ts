@@ -9,9 +9,9 @@ const A4 = { width: 210, height: 297 };
 const areas: PageAreas = {
 	page: A4,
 	areas: [
-		{ field: 'mediaAll', x: 30 / 210, y: 100 / 297, width: 5 / 210, height: 5 / 297 },
-		{ field: 'mediaPartial', x: 30 / 210, y: 110 / 297, width: 5 / 210, height: 5 / 297 },
-		{ field: 'mediaNone', x: 30 / 210, y: 120 / 297, width: 5 / 210, height: 5 / 297 },
+		{ field: 'mediaPhoto', x: 30 / 210, y: 100 / 297, width: 5 / 210, height: 5 / 297 },
+		{ field: 'mediaVideo', x: 30 / 210, y: 110 / 297, width: 5 / 210, height: 5 / 297 },
+		{ field: 'mediaByDmun', x: 30 / 210, y: 120 / 297, width: 5 / 210, height: 5 / 297 },
 		{ field: 'mediaSignature', x: 30 / 210, y: 150 / 297, width: 70 / 210, height: 18 / 297 }
 	]
 };
@@ -119,8 +119,8 @@ describe('encodeAreas', () => {
 		const bytes = encodeAreas(areas);
 		bytes[4] = 99;
 		expect(decodeAreas(bytes)?.areas.map((area) => area.field)).toEqual([
-			'mediaPartial',
-			'mediaNone',
+			'mediaVideo',
+			'mediaByDmun',
 			'mediaSignature'
 		]);
 	});
@@ -168,9 +168,9 @@ describe('readPaper', () => {
 			}
 		});
 		expect(readPaper({ picture, areas })).toEqual([
-			{ field: 'mediaAll', state: 'yes' },
-			{ field: 'mediaPartial', state: 'no' },
-			{ field: 'mediaNone', state: 'no' },
+			{ field: 'mediaPhoto', state: 'yes' },
+			{ field: 'mediaVideo', state: 'no' },
+			{ field: 'mediaByDmun', state: 'no' },
 			{ field: 'mediaSignature', state: 'yes' }
 		]);
 	});

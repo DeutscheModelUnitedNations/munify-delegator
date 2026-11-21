@@ -1,4 +1,5 @@
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib';
+import { defaultLayout } from '#lib/helpers/documentLayout';
 
 /**
  * The PDFs a team would upload, laid out the way the real ones are: the conference's templates,
@@ -6,7 +7,8 @@ import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib';
  *
  * The templates leave room exactly where `#lib/utils/pdfGenerator.ts` draws: the contract's
  * address window and data matrix, each form's name / birthday / address line, the footer the
- * postal registration numbers its pages in, and the certificate's name line and QR corner. A
+ * postal registration numbers its pages in, the signature lines and the media consent's boxes a
+ * scan is read at, and the certificate's name line and QR corner. A
  * generated document that lands off its line means the generator or the template moved.
  */
 
@@ -321,55 +323,96 @@ async function guardianConsent(conference: string) {
 	return pdf.save();
 }
 
-/** The photo and video consent: name, birthday and address lines 42 pt apart from 225 pt down. */
+/**
+ * The photo and video consent as DMUN words it: name, birthday and address lines 42 pt apart from
+ * 225 pt down, then the four uses to tick, their boxes where the layout's default fields are, so a
+ * scan of a seeded print reads its own boxes.
+ */
 async function mediaConsent(conference: string) {
-	const { pdf, fonts } = await createDocument('Einwilligung zu Foto- und Filmaufnahmen');
+	const { pdf, fonts } = await createDocument('Einwilligung Bildnutzung');
 	const page = pdf.addPage(A4);
-	const { height } = page.getSize();
-	letterhead({ page, fonts, conference, title: 'Einwilligung zu Foto- und Filmaufnahmen' });
+	const { width, height } = page.getSize();
+	letterhead({ page, fonts, conference, title: 'Einwilligung Bildnutzung' });
 
 	const intro = createWriter({ page, fonts, flow: { y: height - 110 } });
 	intro.paragraph({
-		text: 'Während der Konferenz entstehen Fotos und Videos, die wir für die Berichterstattung, unsere Website und soziale Medien nutzen möchten. Dafür brauchen wir die Einwilligung der abgebildeten Person.'
+		text: `EINWILLIGUNG in die Verwendung meines Vor- und Nachnamens und Bildnisses in Video oder als Foto durch Model United Nations e. V. (DMUN) als Trägerverein von ${conference}.`
 	});
-	formLine({ page, fonts, label: 'Vor- und Nachname', baseline: height - 225 });
-	formLine({ page, fonts, label: 'Geburtsdatum', baseline: height - 267, width: 160 });
+	intro.skip(6);
+	intro.paragraph({ text: 'Mit meiner nachfolgenden Unterschrift willige ich,' });
+	formLine({ page, fonts, label: '(NAME teilnehmende Person)', baseline: height - 225 });
 	formLine({
 		page,
 		fonts,
-		label: 'Anschrift',
+		label: '(GEBURTSDATUM teilnehmende Person)',
+		baseline: height - 267,
+		width: 160
+	});
+	formLine({
+		page,
+		fonts,
+		label: '(ADRESSE teilnehmende Person)',
 		baseline: height - 309,
-		width: page.getWidth() - 2 * MARGIN
+		width: width - 2 * MARGIN
 	});
 
-	const writer = createWriter({ page, fonts, flow: { y: height - 350 } });
-	writer.paragraph({
-		text: 'Ich willige ein, dass Aufnahmen von mir veröffentlicht werden dürfen:',
-		options: {
-			font: fonts.bold
-		}
+	const choice = createWriter({ page, fonts, flow: { y: height - 338 } });
+	choice.paragraph({
+		text: 'ein, dass DMUN meinen vorstehenden Vor- und Nachnamen sowie mein Bildnis in folgender Form verwendet (zutreffendes bitte ankreuzen!):'
 	});
-	for (const option of [
-		'in der Konferenzzeitung und im Abschlussbericht',
-		'auf der Website der Konferenz',
-		'in den sozialen Medien der Konferenz',
-		'in Pressemitteilungen'
-	]) {
+
+	const layout = defaultLayout('mediaConsent');
+	const uses = [
+		{ box: layout.mediaPhoto, lines: ['als Foto (Lichtbild),'] },
+		{ box: layout.mediaVideo, lines: ['als Video oder Videosequenz (Abfolge von Videobildern),'] },
+		{
+			box: layout.mediaByDmun,
+			lines: ['welches/welche DMUN erstellt oder erstellen lassen hat und/oder']
+		},
+		{
+			box: layout.mediaByOthers,
+			lines: [
+				'welches/welche ich erstellt habe oder andere teilnehmende Personen',
+				'erstellt haben und DMUN zur Verfügung gestellt wurde.'
+			]
+		}
+	];
+	for (const { box, lines } of uses) {
+		const left = box.x * width;
+		const bottom = height - (box.y + box.height) * height;
+		const side = box.width * width;
 		page.drawRectangle({
-			x: MARGIN,
-			y: writer.y - 1,
-			width: 9,
-			height: 9,
+			x: left,
+			y: bottom,
+			width: side,
+			height: box.height * height,
 			borderWidth: 0.8,
 			borderColor: BLACK
 		});
-		writer.paragraph({ text: option, options: { indent: 18, gap: 4 } });
+		lines.forEach((line, index) => {
+			page.drawText(line, {
+				x: left + side + 8,
+				y: bottom + 2 - index * 13,
+				size: 10.5,
+				font: fonts.regular
+			});
+		});
 	}
-	writer.skip(10);
-	writer.paragraph({
-		text: 'Die Einwilligung ist freiwillig und kann jederzeit mit Wirkung für die Zukunft widerrufen werden. Bereits gedruckte Materialien können nicht zurückgerufen werden. Ohne Einwilligung entstehen keine Nachteile für die Teilnahme.',
-		options: { size: 9 }
+
+	const last = uses[uses.length - 1].box;
+	const rest = createWriter({
+		page,
+		fonts,
+		flow: { y: height - (last.y + last.height) * height - 34 }
 	});
+	for (const text of [
+		'Soweit sich aus dem vorgenannten Foto/Video Hinweise auf meine ethnische Herkunft, Religion oder Gesundheit ergeben (z.B. Hautfarbe, Kopfbedeckung, Brille), bezieht sich meine Einwilligung auch auf diese Angaben.',
+		'Die vorstehende Einwilligung ist freiwillig. Ich kann sie ohne Angabe von Gründen verweigern, ohne dass mir dadurch Nachteile entstehen können.',
+		'Meine vorstehende Einwilligung umfasst, dass die DMUN das vorgenannte Foto/Video mit meinem Bildnis im Original oder in bearbeiteter Form inhaltlich, zeitlich und räumlich unbeschränkt verarbeiten, speichern, nutzen, bearbeiten, weiterentwickeln, veröffentlichen, vervielfältigen, verbreiten, verwerten, öffentlich vorführen oder wiedergeben oder öffentlich auch zum wiederholten Abruf zur Verfügung stellen darf. Diese Berechtigung bezieht sich auch auf alle akustischen, sprachlichen oder visuellen Darstellungsformen.'
+	]) {
+		rest.paragraph({ text, options: { size: 9 } });
+		rest.skip(4);
+	}
 
 	signatures({
 		page,

@@ -20,9 +20,10 @@ export const elementLabel: Record<LayoutElement, () => string> = {
 	markerBottomLeft: () => m.documentLayoutMarker(),
 	signature: () => m.documentLayoutSignature(),
 	placeDate: () => m.documentLayoutPlaceDate(),
-	mediaAll: () => m.documentLayoutMediaAll(),
-	mediaPartial: () => m.documentLayoutMediaPartial(),
-	mediaNone: () => m.documentLayoutMediaNone()
+	mediaPhoto: () => m.documentLayoutMediaPhoto(),
+	mediaVideo: () => m.documentLayoutMediaVideo(),
+	mediaByDmun: () => m.documentLayoutMediaByDmun(),
+	mediaByOthers: () => m.documentLayoutMediaByOthers()
 };
 
 /**
@@ -46,9 +47,10 @@ export const elementSample: Record<LayoutElement, () => string[]> = {
 	markerBottomLeft: () => [],
 	signature: () => [],
 	placeDate: () => [],
-	mediaAll: () => [],
-	mediaPartial: () => [],
-	mediaNone: () => []
+	mediaPhoto: () => [],
+	mediaVideo: () => [],
+	mediaByDmun: () => [],
+	mediaByOthers: () => []
 };
 
 /** The template each document is drawn on, as the conference selects it. */

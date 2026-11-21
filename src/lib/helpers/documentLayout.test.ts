@@ -269,13 +269,14 @@ describe('the fields read off a scan', () => {
 
 	test('exist only where the conference reads its paper, with the alignment marks', () => {
 		const ids = (scanning: boolean) => elementsOf('mediaConsent', { scanning }).map(({ id }) => id);
-		expect(ids(false)).not.toContain('mediaAll');
+		expect(ids(false)).not.toContain('mediaPhoto');
 		expect(ids(true)).toEqual(
 			expect.arrayContaining([
 				'markerTopLeft',
-				'mediaAll',
-				'mediaPartial',
-				'mediaNone',
+				'mediaPhoto',
+				'mediaVideo',
+				'mediaByDmun',
+				'mediaByOthers',
 				'signature'
 			])
 		);
@@ -284,9 +285,10 @@ describe('the fields read off a scan', () => {
 			layout: defaultLayout('mediaConsent')
 		});
 		expect(fields.map(({ field, mark }) => [field, mark])).toEqual([
-			['mediaAll', 'checkbox'],
-			['mediaPartial', 'checkbox'],
-			['mediaNone', 'checkbox'],
+			['mediaPhoto', 'checkbox'],
+			['mediaVideo', 'checkbox'],
+			['mediaByDmun', 'checkbox'],
+			['mediaByOthers', 'checkbox'],
 			['mediaPlaceDate', 'line'],
 			['mediaSignature', 'line']
 		]);
@@ -327,20 +329,20 @@ describe('the fields read off a scan', () => {
 	test('are stored with their page and never resized below what can be ticked or signed', () => {
 		const layout = {
 			...defaultLayout('mediaConsent'),
-			mediaAll: { x: 0.1, y: 0.1, width: 0.02, height: 0.02, page: 2 }
+			mediaPhoto: { x: 0.1, y: 0.1, width: 0.02, height: 0.02, page: 2 }
 		};
 		const parsed = documentLayoutSchema('mediaConsent').safeParse(layout);
-		expect(parsed.success && parsed.data.mediaAll).toEqual(layout.mediaAll);
+		expect(parsed.success && parsed.data.mediaPhoto).toEqual(layout.mediaPhoto);
 		const minBox = fieldMinimum({ mark: 'checkbox', page: { width: 595, height: 842 } });
 		const shrunk = resizePlacement({
 			shape: 'field',
-			start: layout.mediaAll,
+			start: layout.mediaPhoto,
 			dx: -1,
 			dy: -1,
 			aspect,
 			minBox
 		});
-		expect(shrunk).toEqual({ ...layout.mediaAll, width: minBox.width, height: minBox.height });
+		expect(shrunk).toEqual({ ...layout.mediaPhoto, width: minBox.width, height: minBox.height });
 		expect(minBox.width * 595).toBeCloseTo(3.5 * POINTS_PER_MM);
 	});
 
@@ -356,13 +358,14 @@ describe('the fields read off a scan', () => {
 			size: { width: 595, height: 842 }
 		});
 		expect(first.areas.map(({ field }) => field)).toEqual([
-			'mediaAll',
-			'mediaPartial',
-			'mediaNone',
+			'mediaPhoto',
+			'mediaVideo',
+			'mediaByDmun',
+			'mediaByOthers',
 			'mediaPlaceDate'
 		]);
 		expect(first.page.width).toBeCloseTo(210, 0);
-		expect(first.areas[0].width * first.page.width).toBeCloseTo(5);
+		expect(first.areas[0].width * first.page.width).toBeCloseTo(4);
 		const second = pageAreas({
 			document: 'mediaConsent',
 			layout,

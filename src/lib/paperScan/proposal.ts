@@ -31,8 +31,8 @@ export type PaperDocument = 'contract' | 'guardianConsent' | 'mediaConsent';
 
 /**
  * Why something was not changed: a document not signed, or signed without place and date, a
- * field no one could tell, the media
- * choice not one box, or (left alone without a person) a choice other than the one stored.
+ * field no one could tell, the media consent's boxes not read with certainty, or (left alone
+ * without a person) a choice other than the one stored.
  */
 export type PaperNote =
 	| { kind: 'unsigned' | 'undated' | 'unclear'; document: PaperDocument }
@@ -65,11 +65,13 @@ const SIGNATURES = [
 	document: PaperDocument;
 }[];
 
-const CHOICES = [
-	{ field: 'mediaAll', choice: 'ALLOWED_ALL' },
-	{ field: 'mediaPartial', choice: 'PARTIALLY_ALLOWED' },
-	{ field: 'mediaNone', choice: 'NOT_ALLOWED' }
-] as const satisfies readonly { field: PaperField; choice: MediaChoice }[];
+/** The uses the media consent asks to tick (DMUN's form). */
+const MEDIA_USES = [
+	'mediaPhoto',
+	'mediaVideo',
+	'mediaByDmun',
+	'mediaByOthers'
+] as const satisfies readonly PaperField[];
 
 /**
  * A field read on several pages (a page sent twice) as one: what every reading says, unclear where
@@ -88,16 +90,17 @@ export function combineReadings({
 	return states.size === 1 ? only : 'unclear';
 }
 
-/** The media choice the boxes make: exactly one ticked, the others clearly empty. */
-function mediaChoice(readings: readonly FieldReading[]) {
-	const states = CHOICES.map(({ field, choice }) => ({
-		choice,
-		state: combineReadings({ readings, field })
-	})).filter(({ state }) => state !== undefined);
-	if (states.length === 0) return undefined;
-	const ticked = states.filter(({ state }) => state === 'yes');
-	const clear = states.every(({ state }) => state !== 'unclear');
-	return ticked.length === 1 && clear ? ticked[0].choice : 'unclear';
+/**
+ * The photo status the ticked uses make: every one allowed, some (to check in the form), or none.
+ * Every box has to be read, each clearly ticked or empty; otherwise a person decides.
+ */
+function mediaChoice(readings: readonly FieldReading[]): MediaChoice | 'unclear' | undefined {
+	const states = MEDIA_USES.map((field) => combineReadings({ readings, field }));
+	if (states.every((state) => state === undefined)) return undefined;
+	if (states.some((state) => state === undefined || state === 'unclear')) return 'unclear';
+	const ticked = states.filter((state) => state === 'yes').length;
+	if (ticked === 0) return 'NOT_ALLOWED';
+	return ticked === MEDIA_USES.length ? 'ALLOWED_ALL' : 'PARTIALLY_ALLOWED';
 }
 
 /**

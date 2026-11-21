@@ -67,7 +67,7 @@ const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.
 
 /**
  * The side of the footer code by default, in points: larger than its minimum, so a media consent
- * page's code, which names its five fields (about 31 mm), prints at the size the editor shows.
+ * page's code, which names its six fields (about 31 mm), prints at the size the editor shows.
  */
 const FOOTER_CODE = mm(32);
 /**
@@ -154,14 +154,18 @@ const paperField = ({
 			page: 0
 		}
 	}) as const satisfies ElementSpec;
-/** Where a document is signed by default: place and date on the left, the signature beside them. */
+/**
+ * Where a document is signed by default: place and date on the left, the signature beside them,
+ * their lines 53 mm above the bottom, where the templates usually have theirs.
+ */
 const signedFields = ({ signature, placeDate }: { signature: PaperField; placeDate: PaperField }) =>
 	({
-		placeDate: paperField({ field: placeDate, top: 245, width: 75, height: 15 }),
-		signature: paperField({ field: signature, left: 110, top: 245, width: 75, height: 15 })
+		placeDate: paperField({ field: placeDate, top: 229, width: 75, height: 15 }),
+		signature: paperField({ field: signature, left: 110, top: 229, width: 75, height: 15 })
 	}) as const satisfies Record<string, ElementSpec>;
+/** A box to tick, 4 mm, by default `top` millimetres down; the media consent's are 7 mm apart. */
 const checkboxField = ({ field, top }: { field: PaperField; top: number }) =>
-	paperField({ field, top, width: 5, height: 5 });
+	paperField({ field, top, width: 4, height: 4 });
 
 /** The smallest a field may be drawn, in millimetres: a box still to tick, a line to write on. */
 const MIN_FIELD_MM: Record<PaperMark, { width: number; height: number }> = {
@@ -241,9 +245,10 @@ export const DOCUMENT_ELEMENTS = {
 			default: { x: portrait.x(70), y: portrait.y(225 + 84), size: 10 }
 		},
 		...markers,
-		mediaAll: checkboxField({ field: 'mediaAll', top: 200 }),
-		mediaPartial: checkboxField({ field: 'mediaPartial', top: 208 }),
-		mediaNone: checkboxField({ field: 'mediaNone', top: 216 }),
+		mediaPhoto: checkboxField({ field: 'mediaPhoto', top: 142 }),
+		mediaVideo: checkboxField({ field: 'mediaVideo', top: 149 }),
+		mediaByDmun: checkboxField({ field: 'mediaByDmun', top: 156 }),
+		mediaByOthers: checkboxField({ field: 'mediaByOthers', top: 163 }),
 		...signedFields({ signature: 'mediaSignature', placeDate: 'mediaPlaceDate' })
 	}
 } as const satisfies Record<string, Record<string, ElementSpec>>;

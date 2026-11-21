@@ -9,17 +9,16 @@ const pending: PostalStatus = {
 	mediaConsentStatus: 'NOT_SET'
 };
 
-const mediaPage = (
-	all: FieldReading['state'],
-	partial: FieldReading['state'],
-	none: FieldReading['state'],
-	signed: FieldReading['state']
-): FieldReading[] => [
-	{ field: 'mediaAll', state: all },
-	{ field: 'mediaPartial', state: partial },
-	{ field: 'mediaNone', state: none },
+type State = FieldReading['state'];
+const USES = ['mediaPhoto', 'mediaVideo', 'mediaByDmun', 'mediaByOthers'] as const;
+
+/** A media consent page: its four boxes (photo, video, by DMUN, by others) and its signature. */
+const mediaPage = (boxes: [State, State, State, State], signed: State): FieldReading[] => [
+	...USES.map((field, index) => ({ field, state: boxes[index] })),
 	{ field: 'mediaSignature', state: signed }
 ];
+const all: [State, State, State, State] = ['yes', 'yes', 'yes', 'yes'];
+const none: [State, State, State, State] = ['no', 'no', 'no', 'no'];
 
 describe('combineReadings', () => {
 	it('takes what every page says, and calls disagreement unclear', () => {
@@ -47,9 +46,12 @@ describe('combineReadings', () => {
 });
 
 describe('proposePaperChange', () => {
-	it('marks signed documents in and takes the one ticked media choice', () => {
+	it('marks signed documents in and takes some ticked uses as partially allowed', () => {
 		const { change, notes } = proposePaperChange({
-			readings: [{ field: 'termsSignature', state: 'yes' }, ...mediaPage('no', 'yes', 'no', 'yes')],
+			readings: [
+				{ field: 'termsSignature', state: 'yes' },
+				...mediaPage(['yes', 'no', 'yes', 'no'], 'yes')
+			],
 			status: pending,
 			confirm: false
 		});
@@ -84,30 +86,40 @@ describe('proposePaperChange', () => {
 			mediaConsentStatus: 'ALLOWED_ALL'
 		};
 		expect(
-			proposePaperChange({ readings: mediaPage('yes', 'no', 'no', 'yes'), status, confirm: false })
-				.change
+			proposePaperChange({ readings: mediaPage(all, 'yes'), status, confirm: false }).change
 		).toEqual({});
 	});
 
-	it('takes no media choice from an unsigned form, nor one of two ticked boxes', () => {
+	it('takes every use ticked as allowed without restriction, none as not allowed', () => {
+		const choice = (boxes: [State, State, State, State]) =>
+			proposePaperChange({ readings: mediaPage(boxes, 'yes'), status: pending, confirm: false })
+				.change.mediaConsentStatus;
+		expect(choice(all)).toBe('ALLOWED_ALL');
+		expect(choice(none)).toBe('NOT_ALLOWED');
+		expect(choice(['no', 'yes', 'no', 'no'])).toBe('PARTIALLY_ALLOWED');
+	});
+
+	it('takes no media choice from an unsigned form, nor with a box unclear or unread', () => {
 		expect(
-			proposePaperChange({
-				readings: mediaPage('yes', 'no', 'no', 'no'),
-				status: pending,
-				confirm: true
-			}).change
+			proposePaperChange({ readings: mediaPage(all, 'no'), status: pending, confirm: true }).change
 		).toEqual({});
-		const twoTicked = proposePaperChange({
-			readings: mediaPage('yes', 'yes', 'no', 'yes'),
+		const unclear = proposePaperChange({
+			readings: mediaPage(['yes', 'unclear', 'no', 'no'], 'yes'),
 			status: pending,
 			confirm: true
 		});
-		expect(twoTicked.change).toEqual({ mediaConsent: 'DONE' });
-		expect(twoTicked.notes).toEqual([{ kind: 'mediaChoiceUnclear' }]);
+		expect(unclear.change).toEqual({ mediaConsent: 'DONE' });
+		expect(unclear.notes).toEqual([{ kind: 'mediaChoiceUnclear' }]);
+		const unread = proposePaperChange({
+			readings: mediaPage(all, 'yes').slice(1),
+			status: pending,
+			confirm: true
+		});
+		expect(unread.notes).toEqual([{ kind: 'mediaChoiceUnclear' }]);
 	});
 
 	it('takes a choice signed on an earlier page', () => {
-		const readings = mediaPage('no', 'no', 'yes', 'no').slice(0, 3);
+		const readings = mediaPage(none, 'no').slice(0, 4);
 		expect(
 			proposePaperChange({ readings, status: { ...pending, mediaConsent: 'DONE' }, confirm: false })
 				.change
@@ -116,7 +128,7 @@ describe('proposePaperChange', () => {
 
 	it('leaves a choice other than the stored one to a person', () => {
 		const status: PostalStatus = { ...pending, mediaConsentStatus: 'ALLOWED_ALL' };
-		const readings = mediaPage('no', 'no', 'yes', 'yes');
+		const readings = mediaPage(none, 'yes');
 		expect(proposePaperChange({ readings, status, confirm: false })).toEqual({
 			change: { mediaConsent: 'DONE' },
 			notes: [{ kind: 'mediaChoiceDiffers', read: 'NOT_ALLOWED', stored: 'ALLOWED_ALL' }]
@@ -146,10 +158,7 @@ describe('proposePaperChange', () => {
 	});
 
 	it('takes no media choice from a form signed without place and date', () => {
-		const readings = [
-			...mediaPage('yes', 'no', 'no', 'yes'),
-			{ field: 'mediaPlaceDate', state: 'no' } as const
-		];
+		const readings = [...mediaPage(all, 'yes'), { field: 'mediaPlaceDate', state: 'no' } as const];
 		expect(proposePaperChange({ readings, status: pending, confirm: true })).toEqual({
 			change: {},
 			notes: [{ kind: 'undated', document: 'mediaConsent' }]

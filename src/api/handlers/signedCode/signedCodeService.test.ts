@@ -68,9 +68,10 @@ describe('the codes of the application documents', () => {
 			})
 		);
 		expect(areas[0]?.areas.map((area) => area.field)).toEqual([
-			'mediaAll',
-			'mediaPartial',
-			'mediaNone',
+			'mediaPhoto',
+			'mediaVideo',
+			'mediaByDmun',
+			'mediaByOthers',
 			'mediaPlaceDate',
 			'mediaSignature'
 		]);

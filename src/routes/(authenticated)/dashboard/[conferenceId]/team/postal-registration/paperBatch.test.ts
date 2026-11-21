@@ -17,7 +17,7 @@ describe('pagesByPerson', () => {
 			page({ kind: 'noCode' }, 2),
 			page({ kind: 'read', userId: 'bob', readings: [] }, 3),
 			page({ kind: 'unreadable', userId: 'ada' }, 4),
-			page({ kind: 'read', userId: 'ada', readings: [{ field: 'mediaAll', state: 'no' }] }, 5)
+			page({ kind: 'read', userId: 'ada', readings: [{ field: 'mediaPhoto', state: 'no' }] }, 5)
 		];
 		expect(pagesByPerson(pages)).toEqual([
 			{
@@ -26,7 +26,7 @@ describe('pagesByPerson', () => {
 				unreadable: 1,
 				readings: [
 					{ field: 'termsSignature', state: 'yes' },
-					{ field: 'mediaAll', state: 'no' }
+					{ field: 'mediaPhoto', state: 'no' }
 				]
 			},
 			{ userId: 'bob', pages: 1, unreadable: 0, readings: [] }
