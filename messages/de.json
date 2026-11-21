@@ -1563,7 +1563,7 @@
 	"documentLayoutCode": "QR-Code mit Name und ID",
 	"documentLayoutCodeMinimum": "Der QR-Code wird mindestens {size} mm groß gedruckt, damit Handys ihn vom Papier lesen können. Braucht sein Inhalt mehr Platz, wird er beim Drucken von selbst größer.",
 	"documentLayoutFieldPages": "Seite der Felder",
-	"documentLayoutFieldsHint": "Die blauen Felder werden beim Scan ausgelesen: Leg sie über die passenden Stellen deiner Vorlage. Kästchen werden als Rahmen gedruckt, Zeilen zum Ausfüllen als Linie am unteren Rand des Feldes. Ein Dokument gilt erst als eingegangen, wenn alle seine Felder ausgefüllt sind, die der Erziehungsberechtigten nur bei Minderjährigen. Die vier Ausrichtungsmarken stehen fest; über sie lässt sich nichts legen.",
+	"documentLayoutFieldsHint": "Die blauen Felder werden beim Scan ausgelesen: Leg sie über die passenden Stellen deiner Vorlage, Zeilen zum Ausfüllen mit ihrer Unterkante auf die Linie der Vorlage. Kästchen werden als Rahmen gedruckt, für Zeilen wird nichts gedruckt. Ein Dokument gilt erst als eingegangen, wenn alle seine Felder ausgefüllt sind, die der Erziehungsberechtigten nur bei Minderjährigen. Die vier Ausrichtungsmarken stehen fest; über sie lässt sich nichts legen.",
 	"documentLayoutFixed": "steht fest und lässt sich nicht verschieben. Der QR-Code kann sie nicht überdecken.",
 	"documentLayoutInvalid": "Die Anordnung ist ungültig.",
 	"documentLayoutMarker": "Ausrichtungsmarke",

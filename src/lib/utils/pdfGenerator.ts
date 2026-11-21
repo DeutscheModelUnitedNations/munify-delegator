@@ -599,8 +599,9 @@ function drawAlignmentMarks({ page, centers }: { page: PDFPage; centers: Point[]
 }
 
 /**
- * What a page carries to be read off a scan: its alignment marks, and its fields - a box to tick,
- * a line to write on along a field's bottom.
+ * What a page carries to be read off a scan: its alignment marks, and a frame for each box to
+ * tick. A field to write in (a signature, a name, place and date) is drawn nothing for: it sits
+ * on the template's own line.
  */
 function drawPaperFields({ page, at }: { page: PDFPage; at: MainPage }) {
 	const { width, height } = page.getSize();
@@ -611,28 +612,16 @@ function drawPaperFields({ page, at }: { page: PDFPage; at: MainPage }) {
 		size: { width, height }
 	});
 	drawAlignmentMarks({ page, centers: markers });
-	const black = rgb(0, 0, 0);
 	for (const area of areas) {
-		const left = area.x * POINTS_PER_MM;
-		const bottom = height - (area.y + area.height) * POINTS_PER_MM;
-		const right = left + area.width * POINTS_PER_MM;
-		if (PAPER_FIELDS[area.field].mark === 'line') {
-			page.drawLine({
-				start: { x: left, y: bottom },
-				end: { x: right, y: bottom },
-				thickness: 0.75,
-				color: black
-			});
-		} else {
-			page.drawRectangle({
-				x: left,
-				y: bottom,
-				width: right - left,
-				height: area.height * POINTS_PER_MM,
-				borderColor: black,
-				borderWidth: 0.75
-			});
-		}
+		if (PAPER_FIELDS[area.field].mark !== 'checkbox') continue;
+		page.drawRectangle({
+			x: area.x * POINTS_PER_MM,
+			y: height - (area.y + area.height) * POINTS_PER_MM,
+			width: area.width * POINTS_PER_MM,
+			height: area.height * POINTS_PER_MM,
+			borderColor: rgb(0, 0, 0),
+			borderWidth: 0.75
+		});
 	}
 }
 

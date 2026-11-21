@@ -8,8 +8,8 @@ import type { Point } from './markerGeometry';
  * Reads the fields of a scanned page: the four markers give where the page lies in the picture
  * (a perspective through their centres, which the code says, which also takes in a page printed smaller, stretched by
  * the printer, scanned crooked or upside down), and each field the share of the paper inside it
- * that is darker than the paper around it. We drew the boxes and lines ourselves, so their own ink
- * is kept out by reading inside the box and above the line.
+ * that is darker than the paper around it. A box's frame (ours) and the line a field is written on
+ * (the template's) are kept out by reading inside the box and above the line.
  */
 
 /** What a field holds: ticked or signed, empty, or too little to tell (a person decides). */
@@ -49,8 +49,8 @@ function brightness({ picture, point }: { picture: Picture; point: Point }) {
 type Box = { x: number; y: number; width: number; height: number };
 
 /**
- * Where a field is read: inside a box's frame, with room for a scan aligned a little off; above a
- * line (a signature's, place and date's), which handwriting crosses but we drew.
+ * Where a field is read: inside a box's frame, with room for a scan aligned a little off; above the
+ * template's line a field is written on (a signature, place and date), which handwriting crosses.
  */
 function innerBox({ box, mark }: { box: Box; mark: PaperMark }): Box {
 	if (mark === 'checkbox') {

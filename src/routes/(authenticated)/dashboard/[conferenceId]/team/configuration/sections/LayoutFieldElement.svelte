@@ -3,9 +3,10 @@
 	import type { PaperMark } from '#lib/paperScan/fields';
 
 	/**
-	 * A field read off a scan, on the layout editor's page: a box to tick, drawn as its frame, or a
-	 * line to write on (a signature, place and date), drawn along the bottom of its area. A box is
-	 * labelled beside it, a line inside. Moved and resized from its corner.
+	 * A field read off a scan, on the layout editor's page: a box to tick, drawn as the frame it
+	 * prints with, or a field to write in (a signature, place and date), an outline only, since it
+	 * prints nothing and goes over the template's own line. A box is labelled beside it, a field to
+	 * write in inside. Moved and resized from its corner.
 	 */
 	interface Props {
 		label: string;
@@ -23,7 +24,7 @@
 <div
 	class="bg-info/10 absolute cursor-move text-black {mark === 'checkbox'
 		? 'border border-black'
-		: 'border-info border-b-2 border-dashed border-b-black'}"
+		: 'border-info border border-dashed'}"
 	style="left: {placement.x * 100}%; top: {placement.y * 100}%; width: {placement.width *
 		100}%; height: {placement.height * 100}%;"
 	role="button"
