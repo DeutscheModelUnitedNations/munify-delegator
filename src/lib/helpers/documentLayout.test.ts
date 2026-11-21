@@ -284,32 +284,39 @@ describe('the fields read off a scan', () => {
 		]);
 	});
 
-	test('the alignment marks are moved, never resized, and nothing is kept off them', () => {
+	test('the alignment marks are fixed: never moved, never stored, and nothing goes over them', () => {
 		const { boxes } = elementsByShape({
 			elements: elementsOf('contract', { scanning: true }),
 			layout: defaultLayout('contract')
 		});
-		expect(boxes.filter(({ marker }) => marker).map(({ id, fixed }) => [id, fixed])).toEqual([
-			['markerTopLeft', false],
-			['markerTopRight', false],
-			['markerBottomRight', false],
-			['markerBottomLeft', false]
-		]);
+		expect(boxes.filter(({ id }) => id.startsWith('marker')).every(({ fixed }) => fixed)).toBe(
+			true
+		);
+		const moved = { x: 0.5, y: 0.5, width: 0.04, height: 0.03 };
+		const layout = resolveDocumentLayout({
+			document: 'contract',
+			stored: { contract: { markerTopRight: moved } }
+		});
+		expect(layout.markerTopRight).toEqual(defaultLayout('contract').markerTopRight);
+		const parsed = documentLayoutSchema('contract').safeParse(defaultLayout('contract'));
+		expect(parsed.success && 'markerTopLeft' in parsed.data).toBe(false);
 		const { termsSignature, markerBottomLeft } = defaultLayout('contract');
 		const onMark = { ...termsSignature, x: markerBottomLeft.x, y: markerBottomLeft.y };
-		expect(
+		const covers = (scanning: boolean) =>
 			coversFixedArea({
 				document: 'contract',
 				id: 'termsSignature',
 				shape: 'field',
 				placement: onMark,
 				aspect,
-				scanning: true
-			})
-		).toBe(false);
+				scanning
+			});
+		expect(covers(true)).toBe(true);
+		// where the paper is not read, there are no marks
+		expect(covers(false)).toBe(false);
 	});
 
-	test('the footer stays clear of the page number by default', () => {
+	test('the footer stays clear of the page number and the marks by default', () => {
 		const layout = defaultLayout('contract');
 		for (const id of ['code', 'pageNumber'] as const) {
 			expect(

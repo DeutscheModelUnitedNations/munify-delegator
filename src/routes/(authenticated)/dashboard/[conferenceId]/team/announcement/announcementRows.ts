@@ -15,6 +15,7 @@ export function fetchAnnouncements(conferenceId: string) {
 		visibleUntil: true,
 		editedAt: true,
 		notifyByMail: true,
+		mailIncludesText: true,
 		recipientCount: true,
 		readCount: true,
 		author: { givenName: true, familyName: true },

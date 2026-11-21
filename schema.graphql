@@ -91,6 +91,7 @@ type Announcement {
   editedAt: DateTime
   id: ID!
   importance: AnnouncementimportanceEnum!
+  mailIncludesText: Boolean!
   mailRevision: Int!
   mailSince: DateTime
   notifyByMail: Boolean!
@@ -185,6 +186,7 @@ input AnnouncementOrderInputArgument {
   editedAt: SortingParameter
   id: SortingParameter
   importance: SortingParameter
+  mailIncludesText: SortingParameter
   mailRevision: SortingParameter
   mailSince: SortingParameter
   notifyByMail: SortingParameter
@@ -236,6 +238,7 @@ input AnnouncementWhereInputArgument {
   editedAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
   importance: AnnouncementimportanceEnum
+  mailIncludesText: BooleanWhereInputArgument
   mailRevision: IntWhereInputArgument
   mailSince: DateTimeWhereInputArgument
   notifyByMail: BooleanWhereInputArgument
@@ -3821,6 +3824,11 @@ type Mutation {
     conferenceId: ID!
     importance: AnnouncementimportanceEnum
 
+    """
+    Whether that mail carries the text, signature and file names (default); otherwise it names only the title and points to the dashboard.
+    """
+    mailIncludesText: Boolean
+
     """Whether its audience is told by mail once it is out."""
     notifyByMail: Boolean
     pinned: Boolean
@@ -4922,6 +4930,7 @@ type Mutation {
     body: String
     id: ID!
     importance: AnnouncementimportanceEnum
+    mailIncludesText: Boolean
     notifyByMail: Boolean
     pinned: Boolean
 

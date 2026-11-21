@@ -8,6 +8,7 @@ const form: AnnouncementForm = {
 	importance: 'IMPORTANT',
 	pinned: true,
 	notifyByMail: true,
+	mailIncludesText: false,
 	visibleUntil: '2027-03-01T18:30',
 	audiences: [{ kind: 'COMMITTEE', committeeId: 'c1', roleId: null }, { kind: 'SUPERVISORS' }]
 };
@@ -25,7 +26,8 @@ describe('announcementValues', () => {
 			signature: 'Eure Orga',
 			importance: 'IMPORTANT',
 			pinned: true,
-			notifyByMail: true
+			notifyByMail: true,
+			mailIncludesText: false
 		});
 		// 18:30 in Berlin's winter is 17:30 UTC
 		expect(values.visibleUntil?.toISOString()).toBe('2027-03-01T17:30:00.000Z');

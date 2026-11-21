@@ -11,7 +11,7 @@ import { MARKER } from '#lib/paperScan/markerGeometry';
  * per document in `conference.documentLayouts`. The page number is fixed in the bottom right
  * corner (`fixed`), the terms and conditions' pages too. Where the conference reads its paper
  * (`conference.paperScanning`, elements marked `scanning`), the application documents also carry
- * four alignment marks (moved clear of the template's artwork) and the fields a scan is read for,
+ * four alignment marks (fixed, clear of DMUN's banner and footer) and the fields a scan is read for,
  * each named as its `#lib/paperScan/fields` field (what is ticked, written and signed), each on a
  * page of its template (`#lib/paperScan`).
  *
@@ -51,8 +51,6 @@ type ElementSpec =
 			shape: 'box';
 			list?: boolean;
 			fixed?: boolean;
-			/** An alignment mark: moved, never resized. */
-			marker?: true;
 			scanning?: true;
 			default: BoxPlacement;
 	  }
@@ -115,14 +113,15 @@ const footer = {
 } as const satisfies Record<string, ElementSpec>;
 
 /**
- * An alignment mark (`#lib/paperScan/markers`) centred `x`/`y` millimetres into the page. The
- * team moves the marks clear of the template's own artwork (a banner, a logo); each page's code
- * says where they are. Their size is fixed.
+ * An alignment mark (`#lib/paperScan/markers`) centred `x`/`y` millimetres into the page, fixed
+ * like the page number: nothing is placed over it, and it is never moved, so a mark dragged into
+ * the text cannot make pages hard to read. Each page's code still says where its marks are, so
+ * moving these defaults never breaks a page printed before.
  */
 const markerBox = ({ x, y }: { x: number; y: number }) =>
 	({
 		shape: 'box',
-		marker: true,
+		fixed: true,
 		scanning: true,
 		default: {
 			x: portrait.x(mm(x - MARKER.side / 2)),
@@ -474,7 +473,7 @@ export const elementsOf = <D extends LayoutDocument>(
 		.filter(([, spec]) => scanning || !forScanning(spec))
 		.map(([id, spec]) => ({ id, spec }));
 
-/** A box as the editor lists it: what it holds, and whether and how it may be moved. */
+/** A box as the editor lists it: what it holds, and whether it may be moved. */
 const boxEntry = ({
 	id,
 	placement,
@@ -487,8 +486,7 @@ const boxEntry = ({
 	id,
 	placement,
 	list: spec.list ?? false,
-	fixed: spec.fixed ?? false,
-	marker: spec.marker ?? false
+	fixed: spec.fixed ?? false
 });
 
 /** A field as the editor and the generator list it: with what is drawn for it. */

@@ -236,13 +236,6 @@
 		return { placement, guides: snap.guides };
 	}
 
-	/** A box's handlers: none for a fixed one, moving only for an alignment mark. */
-	function boxHandlers({ id, fixed, marker }: { id: string; fixed: boolean; marker: boolean }) {
-		if (fixed) return {};
-		const handlers = dragHandlers(id);
-		return marker ? { onmove: handlers.onmove } : handlers;
-	}
-
 	// fallow-ignore-next-line complexity
 	function follow(event: PointerEvent) {
 		if (!drag || !frame) return;
@@ -417,14 +410,14 @@
 					onmove={(event) => begin({ event, id })}
 				/>
 			{/each}
-			{#each boxes as { id, placement, list, fixed, marker } (id)}
+			{#each boxes as { id, placement, list, fixed } (id)}
 				<LayoutBoxElement
 					label={label(id)}
 					{placement}
 					lines={sample(id)}
 					{list}
 					{scale}
-					{...boxHandlers({ id, fixed, marker })}
+					{...fixed ? {} : dragHandlers(id)}
 				/>
 			{/each}
 			{#each fields as { id, placement, mark } (id)}

@@ -158,6 +158,8 @@ export async function addAnnouncements(cs: ConferenceSeed) {
 			title: 'Hinweise für Betreuende',
 			body: 'Bitte bestätigt bis Freitag, ob ihr selbst zur Konferenz kommt.',
 			notifyByMail: true,
+			// the mail names only the title
+			mailIncludesText: false,
 			mailSince: new Date(now - 30 * HOUR)
 		},
 		audiences: [{ kind: 'SUPERVISORS' }, { kind: 'TEAM', teamRole: 'PARTICIPANT_CARE' }]
