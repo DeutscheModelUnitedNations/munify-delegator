@@ -340,6 +340,10 @@ bun run preview
 - **Locally the provider is oidc-mock**, started by the `oidcMock()` Vite plugin (no container);
   users in `oidc-mock.yaml`, login page under `/oidc`. The e2e suite signs in via its custom-claims
   form.
+- **Seed small: `bun run db:seed:dev:small`** for testing, verifying and anything automated
+  (scripts, CI). It has every persona, conference and scenario; only the ~490k anonymous bulk
+  users (`seed-dev/bulk.ts`) are missing. Use the full `db:seed:dev` only when the volume matters
+  (performance work on tables, statistics, assignment or queries).
 - **Dev accounts and dev seed belong together.** `seed-data/devAccounts.ts` lists every account;
   `bun run dev:accounts` writes `oidc-mock.yaml` (never edit its users; `devAccounts.test.ts` fails
   on drift); `db:seed:dev` gives each a user row (id = `sub`) and a part. Ten conferences cover the
@@ -536,7 +540,7 @@ participant filter conditions), and `boardState` (`memoizeLast` compares args on
   `$derived(await client.liveQuery.…)`, no `load`, translations in `messages/`.
 - **Schema change**: edit `src/api/db/schema/` (new tables exported from `schema/index.ts`) and
   `relations.ts`; `bun run db:generate` then `db:migrate`; restart dev server; update `seed-data/`
-  for new required columns; test with `bun run db:nuke && bun run db:seed:dev`.
+  for new required columns; test with `bun run db:nuke && bun run db:seed:dev:small`.
 - **Background job**: see `docs/architecture/jobs.md`.
 - **UI change touching a manual page**: update `docs/de` and `docs/en`, keep `data-tour` anchors,
   rerun affected screenshots (`docs/architecture/user-manual.md`).
