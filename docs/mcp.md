@@ -63,6 +63,18 @@ with `overwriteAppEdits: true`. The server does not check that the reviewer agre
 assistant sets it only after asking. A replacement makes the draft the assistant's again: later
 changes need no flag until the reviewer edits it in the app once more.
 
+The preparation guide (`docs/plans/guide.md`) is written over MCP as well, so an assistant can
+move the old guide.dmun.de in. `graphql_query` reads pages (`guideLibrary`, `guidePage` with
+`draftMarkdown` and `versions { markdown }`) and sidebars (`guideOutlineOf`); `createGuidePage` and
+`updateGuidePageDraft` take Markdown (preferred) or TipTap JSON, and refuse (CONFLICT) Markdown
+that would drop callouts, toggles, buttons or embeds unless `replaceRichBlocks: true`;
+`setGuidePageScope`, `ensureGuidePageOf` (committee and agenda item pages) and
+`updateGuideOutlineDraft` change drafts. `publishGuidePage` and `publishGuideOutline` reach
+participants and preview first (read `guidePagePublishPreview` for the conferences a page reaches).
+`importGuideFile` downloads an image or PDF from the allowed hosts (`GUIDE_IMPORT_HOSTS`, by
+default guide.dmun.de and cdn.dmun.de) and answers its id for `file:<id>` in a page. Deleting
+pages stays in the app.
+
 ## Skills
 
 The server offers skills, instructions for whole tasks, through the MCP skills extension

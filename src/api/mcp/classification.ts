@@ -428,6 +428,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'endConference',
 			'feeAmount',
 			'guardianConsentFileId',
+			'guidePublished',
 			'imageFileId',
 			'isOpenPaperSubmission',
 			'language',
@@ -455,6 +456,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'postalZip',
 			'qrCorporateDesign',
 			'registrationDeadlineGracePeriodMinutes',
+			'seriesId',
 			'showCalendar',
 			'startConference',
 			'state',
@@ -469,6 +471,86 @@ const FIELDS: Record<string, TypeClassification> = {
 			'waitingListLength',
 			'website'
 		]
+	},
+	// --- Preparation guide (`docs/plans/guide.md`): the team's texts about the conference, never
+	// about people; who edited is an id.
+	Conferenceseries: { visible: [...ROW, 'abbreviation', 'name'] },
+	Guidepage: {
+		visible: [
+			...ROW,
+			'agendaItemId',
+			'committeeId',
+			'conferenceId',
+			'content',
+			'draftUpdatedAt',
+			'draftUpdatedById',
+			'kind',
+			'publishedConferenceId',
+			'publishedScope',
+			'publishedSeriesId',
+			'publishedVersionId',
+			'publishedYear',
+			'scope',
+			'seriesId',
+			'title',
+			'usedInSidebars',
+			'year'
+		]
+	},
+	Guidepageversion: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'conferenceId',
+			'content',
+			'number',
+			'pageId',
+			'pdfFileId',
+			'pdfUrl',
+			'publishedById',
+			'scope',
+			'seriesId',
+			'title',
+			'year'
+		]
+	},
+	Guidepagefile: { visible: ['id', 'createdAt', 'search_distance', 'fileId', 'pageId'] },
+	Guideoutline: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'draft',
+			'draftUpdatedById',
+			'published',
+			'publishedAt',
+			'publishedById'
+		]
+	},
+	Guideoutlineversion: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'number',
+			'outline',
+			'outlineId',
+			'publishedById'
+		]
+	},
+	GuideMarkdown: { visible: ['markdown', 'omittedBlocks'] },
+	GuideConferenceTitle: { visible: ['id', 'title'] },
+	GuidePagePublishPreview: {
+		visible: ['firstPublish', 'scope', 'scopeChanges', 'textChanges', 'titleChanges']
+	},
+	GuideFileUrl: { visible: ['fileId', 'fileName', 'url'] },
+	ImportedGuideFile: { visible: ['fileName', 'id', 'mimeType', 'size'] },
+	GuideView: { visible: ['preview'] },
+	GuideSectionView: { visible: ['key', 'title'] },
+	GuideEntryView: { visible: ['indent', 'key', 'pageId', 'title'] },
+	GuideHeadingView: { visible: ['anchor', 'level', 'text'] },
+	GuideReaderPage: {
+		visible: ['content', 'entryKey', 'pageId', 'pdfUrl', 'sectionTitle', 'title', 'updatedAt']
 	},
 	Committee: {
 		visible: [

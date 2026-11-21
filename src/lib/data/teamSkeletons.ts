@@ -846,6 +846,63 @@ const announcement = {
 	]
 };
 
+/** The guide's pages: settings, filters and the list */
+const guide = {
+	name: 'guide',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-4',
+			children: [
+				{
+					class: 'flex flex-wrap items-center gap-3',
+					children: [block('h-8 w-56 rounded-full'), block('ml-auto h-10 w-40')]
+				},
+				block('h-24 w-full'),
+				block('h-8 w-96 max-w-full'),
+				...[0, 1, 2, 3, 4].map(() => block('h-14 w-full'))
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
+/** A guide page in the editor: title and scope, the toolbar, the text */
+const guidePageEditor = {
+	name: 'guidePageEditor',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-4',
+			children: [
+				{
+					class: 'flex flex-wrap items-center gap-3',
+					children: [block('h-10 min-w-0 flex-1'), block('h-10 w-28'), block('h-10 w-28')]
+				},
+				block('h-12 w-full'),
+				block('h-[28rem] w-full')
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
+/** The guide's sidebar builder: sections next to the preview */
+const guideSidebar = {
+	name: 'guideSidebar',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-4',
+			children: [
+				{
+					class: 'flex flex-wrap items-center gap-3',
+					children: [block('h-8 w-56 rounded-full'), block('ml-auto h-10 w-32'), block('h-10 w-32')]
+				},
+				{
+					class: 'grid gap-4 lg:grid-cols-2',
+					children: [block('h-[30rem] w-full'), block('h-[30rem] w-full max-lg:hidden')]
+				}
+			]
+		}
+	]
+} satisfies SkeletonLayout;
+
 /** A day of the calendar: its name and date over its track, then its entries */
 const calendarDay = ({
 	entries,
@@ -1373,6 +1430,8 @@ export const TEAM_SKELETONS = {
 	payments,
 	attendance,
 	announcement,
+	guide,
+	guideSidebar,
 	messages,
 	calendar,
 	survey,
@@ -1394,7 +1453,8 @@ const SUBPAGE_SKELETONS: readonly { prefix: string; skeleton: SkeletonLayout }[]
 	{ prefix: 'team/invitations', skeleton: invitations },
 	{ prefix: 'team/user/', skeleton: userPage },
 	{ prefix: 'team/schools/', skeleton: schoolPage },
-	{ prefix: 'team/survey/', skeleton: surveyDetail }
+	{ prefix: 'team/survey/', skeleton: surveyDetail },
+	{ prefix: 'team/guide/page/', skeleton: guidePageEditor }
 ];
 
 /** The skeleton of a page below an entry, if it has one of its own */

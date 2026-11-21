@@ -142,6 +142,15 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	'/(authenticated)/dashboard/slack-workspaces': {
 		docs: 'user-manual/team/overview#slack-workspaces'
 	},
+	'/(authenticated)/dashboard/conference-series': {
+		docs: 'user-manual/team/communication#guide'
+	},
+	'/(authenticated)/dashboard/[conferenceId]/guide': {
+		docs: 'user-manual/participant/dashboard#guide'
+	},
+	'/(authenticated)/dashboard/[conferenceId]/guide/[pageId]': {
+		docs: 'user-manual/participant/dashboard#guide'
+	},
 	'/(authenticated)/my-account/notifications': {
 		docs: 'user-manual/team/communication#notifications'
 	},
@@ -218,6 +227,18 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	'/(authenticated)/dashboard/[conferenceId]/team/announcement': {
 		docs: 'user-manual/team/communication#announcements',
 		tour: async () => (await import('./tours/team/announcement.tour')).announcementTour
+	},
+	'/(authenticated)/dashboard/[conferenceId]/team/guide': {
+		docs: 'user-manual/team/communication#guide',
+		tour: async () => (await import('./tours/team/guide.tour')).guideTour
+	},
+	'/(authenticated)/dashboard/[conferenceId]/team/guide/page/[pageId]': {
+		docs: 'user-manual/team/communication#guide-editor',
+		tour: async () => (await import('./tours/team/guidePage.tour')).guidePageTour
+	},
+	'/(authenticated)/dashboard/[conferenceId]/team/guide-sidebar': {
+		docs: 'user-manual/team/communication#guide-sidebar',
+		tour: async () => (await import('./tours/team/guideSidebar.tour')).guideSidebarTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/messages': {
 		docs: 'user-manual/team/communication#messages',

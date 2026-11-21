@@ -25,6 +25,26 @@ export function conferenceRef(onDelete: UpdateDeleteAction) {
 		.references(() => conference.id, { onDelete, onUpdate: 'cascade' });
 }
 
+/**
+ * A series of conferences of one organizer (MUN-SH, MUNBW), kept by system admins. Guide pages
+ * shared beyond one conference reach only conferences with a series, never another organizer's
+ * (`docs/plans/guide.md`).
+ */
+export const conferenceSeries = snakeCase.table('conference_series', {
+	...defaultIdAndTimestamps,
+	/** "MUN-SH". */
+	name: text().notNull(),
+	abbreviation: text().notNull()
+});
+
+/** A reference to a series; `restrict`, so a series still in use cannot be deleted. */
+export function seriesRef() {
+	return text().references(() => conferenceSeries.id, {
+		onDelete: 'restrict',
+		onUpdate: 'cascade'
+	});
+}
+
 export const conferenceState = pgEnum('conference_state', [
 	'PRE',
 	'PARTICIPANT_REGISTRATION',
@@ -125,6 +145,13 @@ export const conference = snakeCase.table('conference', {
 	 * chats there are stay readable and nothing new is written.
 	 */
 	messagingEnabled: boolean().default(false).notNull(),
+	/** The series the conference belongs to; shared guide pages reach it only with one. */
+	seriesId: seriesRef(),
+	/**
+	 * Whether participants read the conference's guide (`docs/plans/guide.md`), once their roles are
+	 * released too. The team always does. Off, the dashboard links `linkToPreparationGuide`.
+	 */
+	guidePublished: boolean().default(false).notNull(),
 	/**
 	 * Whether every QR code the app shows or prints for the conference is in the corporate design
 	 * (round modules in DMUN's blue, rounded corner markers, the emblem where there is room) or a

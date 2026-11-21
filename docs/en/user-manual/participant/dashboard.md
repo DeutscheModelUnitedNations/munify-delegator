@@ -123,6 +123,12 @@ Once the team has set them up, the quick links also hold:
 
 While the conference is being prepared, a notice asks you to set up MUNify DELEGATOR on your phone (see [At the conference](#at-the-conference)). **Done, hide** hides it on this device.
 
+## Preparation guide {#guide}
+
+Once the roles are released and the team opened the guide, the **Preparation** card on the dashboard takes you to the guide inside the app. On the left the sidebar shows the sections for you: as a delegate your committee's steps and its topics, as a non-state actor or in a custom role the pages for you. Supervisors see every section. On the right **On this page** leads to the headings, at the bottom **Previous** and **Next** through the pages. On a topic you download the committee text as a PDF. Videos load only once you click them.
+
+Before that the card links the guide on an external site, if the conference gave one.
+
 ## Payment {#payment}
 
 The **Fee Payment** card opens the payment page once the team unlocks payments. Depending on the conference's settings you then get an email. You pay the participation fee by bank transfer:
