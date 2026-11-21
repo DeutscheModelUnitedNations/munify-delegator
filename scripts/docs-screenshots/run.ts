@@ -5,8 +5,8 @@
  *   bun run docs:screenshots team/      only ids starting with "team/"
  *
  * Uses its own database (DOCS_DATABASE_URL, default `delegator_docs` next to the dev database),
- * which is migrated and filled with the dev seed on every run, and starts its own dev server
- * against it. The bucket is the dev one (`bun run dev:docker`). Stop your own dev server first:
+ * which is migrated and filled with the small dev seed (no bulk) on every run, and starts its own
+ * dev server against it. The bucket is the dev one (`bun run dev:docker`). Stop your own dev server first:
  * both need the ports 5173 and 8090 (the mock OIDC provider).
  */
 import { spawn } from 'node:child_process';
@@ -56,7 +56,8 @@ if ((await portInUse(5173)) || (await portInUse(8090))) {
 
 await ensureDatabase();
 await run(['bun', 'run', 'db:migrate']);
-if (!process.env.DOCS_SKIP_SEED) await run(['bun', 'run', 'db:seed:dev']);
+// The small seed: the shots need the personas and scenarios, not the load-test bulk.
+if (!process.env.DOCS_SKIP_SEED) await run(['bun', 'run', 'db:seed:dev:small']);
 
 // The dev server's own output would drown the progress lines
 const server = spawn('bunx', ['vite', 'dev', '--port', '5173', '--strictPort'], {
