@@ -30,7 +30,13 @@
 		type SquarePlacement,
 		type TextPlacement
 	} from '#lib/helpers/documentLayout';
-	import { elementLabel, elementSample, templateField, type LayoutElement } from './layoutElements';
+	import {
+		elementLabel,
+		elementSample,
+		templateField,
+		type LayoutElement,
+		type WrittenElement
+	} from './layoutElements';
 	import { renderTemplatePage } from './templatePage';
 	import LayoutBoxElement from './LayoutBoxElement.svelte';
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
@@ -230,6 +236,13 @@
 		return { placement, guides: snap.guides };
 	}
 
+	/** A box's handlers: none for a fixed one, moving only for an alignment mark. */
+	function boxHandlers({ id, fixed, marker }: { id: string; fixed: boolean; marker: boolean }) {
+		if (fixed) return {};
+		const handlers = dragHandlers(id);
+		return marker ? { onmove: handlers.onmove } : handlers;
+	}
+
 	// fallow-ignore-next-line complexity
 	function follow(event: PointerEvent) {
 		if (!drag || !frame) return;
@@ -311,8 +324,9 @@
 	}
 
 	const label = (id: string) => (isLayoutElement(id) ? elementLabel[id]() : id);
+	const isWritten = (id: string): id is WrittenElement => Object.hasOwn(elementSample, id);
 	const sample = (id: string) =>
-		id === 'sessions' ? certificateSessions : isLayoutElement(id) ? elementSample[id]() : [];
+		id === 'sessions' ? certificateSessions : isWritten(id) ? elementSample[id]() : [];
 
 	// The elements by shape, each with its current placement in that shape.
 	const byShape = $derived(elementsByShape({ elements: shown, layout: placed }));
@@ -403,14 +417,14 @@
 					onmove={(event) => begin({ event, id })}
 				/>
 			{/each}
-			{#each boxes as { id, placement, list, fixed } (id)}
+			{#each boxes as { id, placement, list, fixed, marker } (id)}
 				<LayoutBoxElement
 					label={label(id)}
 					{placement}
 					lines={sample(id)}
 					{list}
 					{scale}
-					{...fixed ? {} : dragHandlers(id)}
+					{...boxHandlers({ id, fixed, marker })}
 				/>
 			{/each}
 			{#each fields as { id, placement, mark } (id)}

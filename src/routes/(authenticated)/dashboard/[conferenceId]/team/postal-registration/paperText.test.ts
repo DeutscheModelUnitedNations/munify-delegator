@@ -18,9 +18,9 @@ describe('describeChange', () => {
 describe('describeNote', () => {
 	test('words every kind of note', () => {
 		const notes = [
-			describeNote({ kind: 'unsigned', document: 'contract' }),
-			describeNote({ kind: 'undated', document: 'contract' }),
-			describeNote({ kind: 'unclear', document: 'mediaConsent' }),
+			describeNote({ kind: 'missing', document: 'contract', field: 'termsSignature' }),
+			describeNote({ kind: 'unclear', document: 'mediaConsent', field: 'mediaGuardian2Name' }),
+			describeNote({ kind: 'incomplete', document: 'guardianConsent' }),
 			describeNote({ kind: 'mediaChoiceUnclear' }),
 			describeNote({ kind: 'mediaChoiceDiffers', read: 'NOT_ALLOWED', stored: 'ALLOWED_ALL' })
 		];

@@ -120,7 +120,11 @@
 		return proposePaperChange({
 			readings: read,
 			status: postalStatusOf(current.status),
-			confirm: true
+			confirm: true,
+			minor: !ofAgeAtConference({
+				startConference: conference?.startConference,
+				dateOfBirth: current.user?.birthday
+			})
 		});
 	});
 

@@ -267,50 +267,49 @@ describe('elementsByShape', () => {
 describe('the fields read off a scan', () => {
 	const aspect = 595 / 842;
 
-	test('exist only where the conference reads its paper, with the alignment marks', () => {
+	test('exist only where the conference reads its paper, with the alignment marks, each named as its field', () => {
 		const ids = (scanning: boolean) => elementsOf('mediaConsent', { scanning }).map(({ id }) => id);
 		expect(ids(false)).not.toContain('mediaPhoto');
 		expect(ids(true)).toEqual(
-			expect.arrayContaining([
-				'markerTopLeft',
-				'mediaPhoto',
-				'mediaVideo',
-				'mediaByDmun',
-				'mediaByOthers',
-				'signature'
-			])
+			expect.arrayContaining(['markerTopLeft', 'mediaPhoto', 'mediaAdvertising', 'mediaSignature'])
 		);
 		const { fields } = elementsByShape({
-			elements: elementsOf('mediaConsent', { scanning: true }),
-			layout: defaultLayout('mediaConsent')
+			elements: elementsOf('contract', { scanning: true }),
+			layout: defaultLayout('contract')
 		});
-		expect(fields.map(({ field, mark }) => [field, mark])).toEqual([
-			['mediaPhoto', 'checkbox'],
-			['mediaVideo', 'checkbox'],
-			['mediaByDmun', 'checkbox'],
-			['mediaByOthers', 'checkbox'],
-			['mediaPlaceDate', 'line'],
-			['mediaSignature', 'line']
+		expect(fields.map(({ id, field, mark }) => [id, field, mark])).toEqual([
+			['termsAccepted', 'termsAccepted', 'checkbox'],
+			['termsPlaceDate', 'termsPlaceDate', 'line'],
+			['termsSignature', 'termsSignature', 'line']
 		]);
 	});
 
-	test('keep clear of the alignment marks, but only where they are printed', () => {
-		const { signature, markerBottomLeft } = defaultLayout('contract');
-		const onMark = { ...signature, x: markerBottomLeft.x, y: markerBottomLeft.y };
-		const covers = (scanning: boolean) =>
+	test('the alignment marks are moved, never resized, and nothing is kept off them', () => {
+		const { boxes } = elementsByShape({
+			elements: elementsOf('contract', { scanning: true }),
+			layout: defaultLayout('contract')
+		});
+		expect(boxes.filter(({ marker }) => marker).map(({ id, fixed }) => [id, fixed])).toEqual([
+			['markerTopLeft', false],
+			['markerTopRight', false],
+			['markerBottomRight', false],
+			['markerBottomLeft', false]
+		]);
+		const { termsSignature, markerBottomLeft } = defaultLayout('contract');
+		const onMark = { ...termsSignature, x: markerBottomLeft.x, y: markerBottomLeft.y };
+		expect(
 			coversFixedArea({
 				document: 'contract',
-				id: 'signature',
+				id: 'termsSignature',
 				shape: 'field',
 				placement: onMark,
 				aspect,
-				scanning
-			});
-		expect(covers(true)).toBe(true);
-		expect(covers(false)).toBe(false);
+				scanning: true
+			})
+		).toBe(false);
 	});
 
-	test('the footer stays clear of the alignment marks by default', () => {
+	test('the footer stays clear of the page number by default', () => {
 		const layout = defaultLayout('contract');
 		for (const id of ['code', 'pageNumber'] as const) {
 			expect(
@@ -346,40 +345,56 @@ describe('the fields read off a scan', () => {
 		expect(minBox.width * 595).toBeCloseTo(3.5 * POINTS_PER_MM);
 	});
 
-	test('a page carries the fields on it, in millimetres of that page', () => {
-		const layout = {
-			...defaultLayout('mediaConsent'),
-			signature: { ...defaultLayout('mediaConsent').signature, page: 1 }
-		};
+	test("by default, the media consent's three pages carry its uses, its purposes and its signatures", () => {
+		const fieldsOn = (page: number) =>
+			pageAreas({
+				document: 'mediaConsent',
+				layout: defaultLayout('mediaConsent'),
+				page,
+				size: { width: 595, height: 842 }
+			}).areas.map(({ field }) => field);
+		expect(fieldsOn(0)).toEqual(['mediaPhoto', 'mediaVideo', 'mediaByDmun', 'mediaByOthers']);
+		expect(fieldsOn(1)).toHaveLength(8);
+		expect(fieldsOn(2)).toEqual([
+			'mediaPlaceDate',
+			'mediaSignature',
+			'mediaGuardian1Name',
+			'mediaGuardian2Name',
+			'mediaGuardianPlaceDate',
+			'mediaGuardian1Signature',
+			'mediaGuardian2Signature'
+		]);
+	});
+
+	test('a page carries its marks and its fields, in millimetres of that page', () => {
+		const base = defaultLayout('contract');
+		const layout = { ...base, termsSignature: { ...base.termsSignature, page: 1 } };
 		const first = pageAreas({
-			document: 'mediaConsent',
+			document: 'contract',
 			layout,
 			page: 0,
 			size: { width: 595, height: 842 }
 		});
-		expect(first.areas.map(({ field }) => field)).toEqual([
-			'mediaPhoto',
-			'mediaVideo',
-			'mediaByDmun',
-			'mediaByOthers',
-			'mediaPlaceDate'
-		]);
 		expect(first.page.width).toBeCloseTo(210, 0);
-		expect(first.areas[0].width * first.page.width).toBeCloseTo(4);
+		expect(first.markers[0].x).toBeCloseTo(13, 0);
+		expect(first.markers[0].y).toBeCloseTo(31, 0);
+		expect(first.markers[2].x).toBeCloseTo(197, 0);
+		expect(first.areas.map(({ field }) => field)).toEqual(['termsAccepted', 'termsPlaceDate']);
+		expect(first.areas[0].width).toBeCloseTo(3.6);
 		const second = pageAreas({
-			document: 'mediaConsent',
+			document: 'contract',
 			layout,
 			page: 1,
 			size: { width: 595, height: 842 }
 		});
-		expect(second.areas.map(({ field }) => field)).toEqual(['mediaSignature']);
+		expect(second.areas.map(({ field }) => field)).toEqual(['termsSignature']);
 	});
 });
 
 describe('placementRect', () => {
 	test("is a text's baseline start, a code's square and a box or field as placed", () => {
 		const aspect = 595 / 842;
-		const { name, code, pageNumber, signature } = defaultLayout('contract');
+		const { name, code, pageNumber, termsSignature: signature } = defaultLayout('contract');
 		expect(placementRect({ shape: 'text', placement: name, aspect })).toEqual({
 			x: name.x,
 			y: name.y,

@@ -1,18 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { decodeAreas, encodeAreas, type PageAreas } from './areas';
 import { MARKER_CELLS, markerCells } from './markers';
-import { MARKER, markerCenters, type Point } from './markerGeometry';
+import { MARKER, type Point } from './markerGeometry';
 import { judgeMark, perspective, readPaper } from './readPaper';
 
 const A4 = { width: 210, height: 297 };
 
+/** A page with its marks moved off the corners, as below a template's banner, and four fields. */
 const areas: PageAreas = {
 	page: A4,
+	markers: [
+		{ x: 13, y: 31 },
+		{ x: 197, y: 31 },
+		{ x: 197, y: 266 },
+		{ x: 13, y: 266 }
+	],
 	areas: [
-		{ field: 'mediaPhoto', x: 30 / 210, y: 100 / 297, width: 5 / 210, height: 5 / 297 },
-		{ field: 'mediaVideo', x: 30 / 210, y: 110 / 297, width: 5 / 210, height: 5 / 297 },
-		{ field: 'mediaByDmun', x: 30 / 210, y: 120 / 297, width: 5 / 210, height: 5 / 297 },
-		{ field: 'mediaSignature', x: 30 / 210, y: 150 / 297, width: 70 / 210, height: 18 / 297 }
+		{ field: 'mediaPhoto', x: 30, y: 100, width: 5, height: 5 },
+		{ field: 'mediaVideo', x: 30, y: 110, width: 5, height: 5 },
+		{ field: 'mediaByDmun', x: 30, y: 120, width: 5, height: 5 },
+		{ field: 'mediaSignature', x: 30, y: 150, width: 70, height: 18 }
 	]
 };
 
@@ -52,7 +59,7 @@ function scan({
 		}
 	};
 	const cell = MARKER.side / MARKER_CELLS;
-	for (const [corner, center] of markerCenters(A4).entries()) {
+	for (const [corner, center] of areas.markers.entries()) {
 		const cells = markerCells(corner);
 		cells.forEach((row, r) =>
 			row.forEach((black, c) => {
@@ -66,12 +73,8 @@ function scan({
 			})
 		);
 	}
-	for (const area of areas.areas) {
-		const x = area.x * A4.width;
-		const y = area.y * A4.height;
-		const w = area.width * A4.width;
-		const h = area.height * A4.height;
-		if (area.field === 'mediaSignature') fill({ x, y: y + h, w, h: 0.25 });
+	for (const { x, y, width: w, height: h, field } of areas.areas) {
+		if (field === 'mediaSignature') fill({ x, y: y + h, w, h: 0.25 });
 		else {
 			fill({ x, y, w, h: 0.25 });
 			fill({ x, y: y + h - 0.25, w, h: 0.25 });
@@ -98,26 +101,24 @@ const signature = (pen: (from: Point, to: Point) => void) => {
 };
 
 describe('encodeAreas', () => {
-	it('round-trips the page and its fields to within a hair', () => {
-		const decoded = decodeAreas(encodeAreas(areas));
-		expect(decoded?.page).toEqual(A4);
-		expect(decoded?.areas).toHaveLength(4);
-		decoded?.areas.forEach((area, index) => {
-			expect(area.field).toBe(areas.areas[index].field);
-			expect(area.x).toBeCloseTo(areas.areas[index].x, 4);
-			expect(area.height).toBeCloseTo(areas.areas[index].height, 4);
-		});
+	it('round-trips the page, its marks and its fields to a tenth of a millimetre', () => {
+		const odd = { ...areas, areas: [{ ...areas.areas[0], x: 30.04, width: 409.6 }] };
+		expect(decodeAreas(encodeAreas(areas))).toEqual(areas);
+		// rounded, and at most 409.5 mm
+		expect(decodeAreas(encodeAreas(odd))?.areas[0]).toMatchObject({ x: 30, width: 409.5 });
 	});
 
-	it('takes nine bytes a field and refuses bytes of another shape', () => {
-		expect(encodeAreas(areas)).toHaveLength(4 + 4 * 9);
-		expect(decodeAreas(new Uint8Array(5))).toBeNull();
+	it('takes 15 bytes for the page and its marks, 7.5 a field, and refuses other shapes', () => {
+		expect(encodeAreas(areas)).toHaveLength(15 + 4 * 7.5);
+		expect(encodeAreas({ ...areas, areas: areas.areas.slice(1) })).toHaveLength(15 + 3 * 7.5 + 0.5);
 		expect(decodeAreas(new Uint8Array(4))).toBeNull();
+		expect(decodeAreas(new Uint8Array(3))).toBeNull();
 	});
 
 	it('leaves out a field it does not know', () => {
 		const bytes = encodeAreas(areas);
-		bytes[4] = 99;
+		// the first field's code, the eleventh number: its high eight bits
+		bytes[15] = 0x60;
 		expect(decodeAreas(bytes)?.areas.map((area) => area.field)).toEqual([
 			'mediaVideo',
 			'mediaByDmun',
@@ -187,8 +188,8 @@ describe('readPaper', () => {
 
 	it('reads nothing without all four markers', () => {
 		const picture = scan({ scale: 4, ink: () => undefined });
-		// paper over the bottom right marker
-		const cut = Math.round((A4.height - 25) * 4);
+		// paper over the bottom marks
+		const cut = Math.round(255 * 4);
 		picture.data.fill(255, cut * picture.width * 4);
 		expect(readPaper({ picture, areas })).toBeNull();
 	});

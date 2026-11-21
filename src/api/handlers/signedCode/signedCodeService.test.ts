@@ -71,13 +71,16 @@ describe('the codes of the application documents', () => {
 			'mediaPhoto',
 			'mediaVideo',
 			'mediaByDmun',
-			'mediaByOthers',
-			'mediaPlaceDate',
-			'mediaSignature'
+			'mediaByOthers'
 		]);
 		expect(areas[0]?.page.width).toBeCloseTo(210, 0);
-		expect(areas[1]).toBeUndefined();
-		expect(areas[2]?.areas.map((area) => area.field)).toEqual(['termsPlaceDate', 'termsSignature']);
+		expect(areas[0]?.markers).toHaveLength(4);
+		expect(areas[1]?.areas).toHaveLength(8);
+		expect(areas[2]?.areas.map((area) => area.field)).toEqual([
+			'termsAccepted',
+			'termsPlaceDate',
+			'termsSignature'
+		]);
 	});
 
 	test('carry no fields where the paper is not read, unless a test print says so', async () => {

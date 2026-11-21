@@ -8,6 +8,7 @@
 	import { pagesByPerson, strayPages, type PersonResult, type ScannedPage } from './paperBatch';
 	import { pagesOf, readScannedPage } from './scanFiles';
 	import { postalStatusOf } from './postalConfirm';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 	import PaperBatchPerson from './PaperBatchPerson.svelte';
 
 	/**
@@ -53,7 +54,7 @@
 			guardianConsent: true,
 			mediaConsent: true,
 			mediaConsentStatus: true,
-			user: { givenName: true, familyName: true }
+			user: { givenName: true, familyName: true, birthday: true }
 		});
 	}
 
@@ -61,15 +62,22 @@
 	// fallow-ignore-next-line complexity
 	async function settle({
 		person,
-		row
+		row,
+		startConference
 	}: {
 		person: ReturnType<typeof pagesByPerson>[number];
 		row: Awaited<ReturnType<typeof statusRows>>[number] | undefined;
+		/** When the conference starts, which decides who is a minor. */
+		startConference: Date | null | undefined;
 	}): Promise<PersonResult> {
 		const proposal = proposePaperChange({
 			readings: person.readings,
 			status: postalStatusOf(row),
-			confirm: false
+			confirm: false,
+			// without a birthday (or a status row) nobody is taken for a minor
+			minor:
+				!!row?.user.birthday &&
+				!ofAgeAtConference({ startConference, dateOfBirth: row.user.birthday })
 		});
 		const result = {
 			userId: person.userId,
@@ -122,10 +130,13 @@
 				progress.files += 1;
 			}
 			const found = pagesByPerson(pages);
-			const rows = await statusRows(found.map(({ userId }) => userId));
+			const [rows, conference] = await Promise.all([
+				statusRows(found.map(({ userId }) => userId)),
+				client.query.conference({ __args: { id: conferenceId }, startConference: true })
+			]);
 			for (const person of found) {
 				const row = rows.find((candidate) => candidate.userId === person.userId);
-				people.push(await settle({ person, row }));
+				people.push(await settle({ person, row, startConference: conference.startConference }));
 			}
 		} finally {
 			running = false;

@@ -1,15 +1,13 @@
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib';
-import { defaultLayout } from '#lib/helpers/documentLayout';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 /**
- * The PDFs a team would upload, laid out the way the real ones are: the conference's templates,
- * a venue's site plan and the resolutions a committee passed.
- *
- * The templates leave room exactly where `#lib/utils/pdfGenerator.ts` draws: the contract's
- * address window and data matrix, each form's name / birthday / address line, the footer the
- * postal registration numbers its pages in, the signature lines and the media consent's boxes a
- * scan is read at, and the certificate's name line and QR corner. A
- * generated document that lands off its line means the generator or the template moved.
+ * The PDFs a team would upload: the conference's templates (DMUN's own application documents, a
+ * certificate laid out like the real one), a venue's site plan and the resolutions a committee
+ * passed. The certificate leaves room exactly where `#lib/utils/pdfGenerator.ts` draws its name
+ * line and QR corner; a generated document that lands off its line means the generator or the
+ * template moved.
  */
 
 const A4: [number, number] = [595.28, 841.89];
@@ -19,8 +17,6 @@ const NAVY = rgb(0.1, 0.2, 0.45);
 const GRAY = rgb(0.45, 0.45, 0.45);
 const LIGHT = rgb(0.85, 0.87, 0.92);
 const BLACK = rgb(0, 0, 0);
-
-const mm = (value: number) => (value * A4[1]) / 297;
 
 interface Fonts {
 	regular: PDFFont;
@@ -138,372 +134,6 @@ function createWriter({
 	};
 }
 
-/** The letterhead every template starts with: a band, the conference and the document's title. */
-function letterhead({
-	page,
-	fonts,
-	conference,
-	title
-}: {
-	page: PDFPage;
-	fonts: Fonts;
-	conference: string;
-	title: string;
-}) {
-	const { width, height } = page.getSize();
-	page.drawRectangle({ x: 0, y: height - 14, width, height: 14, color: NAVY });
-	page.drawText(conference, { x: MARGIN, y: height - 42, size: 9, font: fonts.bold, color: GRAY });
-	page.drawText(title, { x: MARGIN, y: height - 66, size: 18, font: fonts.bold, color: NAVY });
-}
-
-/**
- * A labelled form line: the label sits above, the line just below the baseline the generator
- * writes on (`baseline`), so the filled-in value reads as written on the line.
- */
-function formLine({
-	page,
-	fonts,
-	label,
-	baseline,
-	width = 300
-}: {
-	page: PDFPage;
-	fonts: Fonts;
-	label: string;
-	baseline: number;
-	width?: number;
-}) {
-	page.drawText(label, { x: MARGIN, y: baseline + 20, size: 8, font: fonts.regular, color: GRAY });
-	page.drawLine({
-		start: { x: MARGIN, y: baseline - 4 },
-		end: { x: MARGIN + width, y: baseline - 4 },
-		thickness: 0.6,
-		color: GRAY
-	});
-}
-
-/** Two signature lines with place/date and who signs. */
-function signatures({
-	page,
-	fonts,
-	y,
-	left,
-	right
-}: {
-	page: PDFPage;
-	fonts: Fonts;
-	y: number;
-	left: string;
-	right: string;
-}) {
-	const half = (page.getWidth() - 2 * MARGIN - 30) / 2;
-	for (const [index, label] of [left, right].entries()) {
-		const x = MARGIN + index * (half + 30);
-		page.drawLine({ start: { x, y }, end: { x: x + half, y }, thickness: 0.6, color: BLACK });
-		page.drawText(label, { x, y: y - 12, size: 8, font: fonts.regular, color: GRAY });
-	}
-}
-
-/** The participation contract: address window, data matrix corner, name and birthday lines. */
-async function contract(conference: string) {
-	const { pdf, fonts } = await createDocument('Teilnahmevertrag');
-	const page = pdf.addPage(A4);
-	const { height } = page.getSize();
-	letterhead({ page, fonts, conference, title: 'Teilnahmevertrag' });
-
-	// DIN 5008 window: the sender line above the recipient, which the generator writes from 60 mm.
-	page.drawText(`${conference} · Musterstraße 1 · 30159 Hannover`, {
-		x: mm(25),
-		y: height - mm(55),
-		size: 7,
-		font: fonts.regular,
-		color: GRAY
-	});
-	page.drawLine({
-		start: { x: mm(25), y: height - mm(56) },
-		end: { x: mm(105), y: height - mm(56) },
-		thickness: 0.4,
-		color: GRAY
-	});
-
-	page.drawText('zwischen der Konferenzleitung und der teilnehmenden Person', {
-		x: MARGIN,
-		y: height - 255,
-		size: 10.5,
-		font: fonts.italic
-	});
-	formLine({
-		page,
-		fonts,
-		label: 'Vor- und Nachname der teilnehmenden Person',
-		baseline: height - 320
-	});
-	formLine({ page, fonts, label: 'Geburtsdatum', baseline: height - 380, width: 160 });
-
-	const writer = createWriter({ page, fonts, flow: { y: height - 420 } });
-	const clauses = [
-		'Die teilnehmende Person meldet sich verbindlich zur Konferenz an. Mit der Unterschrift erkennt sie die beigefügten Teilnahmebedingungen an.',
-		'Der Teilnahmebeitrag ist bis zum in der Anwendung genannten Datum zu überweisen. Erst mit Eingang von Zahlung und unterschriebener Postanmeldung ist die Anmeldung vollständig.',
-		'Die Konferenzleitung stellt Tagungsräume, Verpflegung während der Sitzungen und Konferenzmaterialien. Unterkunft und Anreise organisiert die teilnehmende Person selbst.',
-		'Ein Rücktritt ist schriftlich zu erklären. Bis vier Wochen vor Konferenzbeginn wird der Beitrag abzüglich einer Bearbeitungsgebühr erstattet, danach nicht mehr.',
-		'Die teilnehmende Person verpflichtet sich, die Verhaltensregeln der Konferenz einzuhalten. Bei groben Verstößen kann sie von der weiteren Teilnahme ausgeschlossen werden.'
-	];
-	clauses.forEach((clause, index) =>
-		writer.paragraph({ text: clause, options: { hanging: `§ ${index + 1}`, indent: 28 } })
-	);
-
-	signatures({
-		page,
-		fonts,
-		y: 150,
-		left: 'Ort, Datum',
-		right: 'Unterschrift der teilnehmenden Person'
-	});
-	return pdf.save();
-}
-
-/** The guardians' consent for a minor: name and birthday from 180 pt below the top. */
-async function guardianConsent(conference: string) {
-	const { pdf, fonts } = await createDocument('Einverständniserklärung der Erziehungsberechtigten');
-	const page = pdf.addPage(A4);
-	const { height } = page.getSize();
-	letterhead({ page, fonts, conference, title: 'Einverständniserklärung' });
-	page.drawText('der Erziehungsberechtigten für minderjährige Teilnehmende', {
-		x: MARGIN,
-		y: height - 86,
-		size: 10.5,
-		font: fonts.italic
-	});
-	page.drawText('Hiermit erlauben wir / erlaube ich', {
-		x: MARGIN,
-		y: height - 130,
-		size: 10.5,
-		font: fonts.regular
-	});
-	formLine({
-		page,
-		fonts,
-		label: 'Vor- und Nachname der teilnehmenden Person',
-		baseline: height - 180
-	});
-	formLine({ page, fonts, label: 'Geburtsdatum', baseline: height - 240, width: 160 });
-
-	const writer = createWriter({ page, fonts, flow: { y: height - 285 } });
-	writer.paragraph({
-		text: `die Teilnahme an der Konferenz ${conference} einschließlich des Rahmenprogramms und der Übernachtungen.`
-	});
-	writer.skip(8);
-	for (const item of [
-		'Die teilnehmende Person darf sich in den Pausen und abends in Kleingruppen ohne Aufsicht in der Stadt bewegen.',
-		'Die Konferenzleitung darf im Notfall ärztliche Hilfe veranlassen, wenn wir nicht rechtzeitig erreichbar sind.',
-		'Allergien, Medikamente und Unverträglichkeiten haben wir im Profil der Anwendung angegeben.',
-		'Bei Verstößen gegen die Verhaltensregeln kann die teilnehmende Person auf unsere Kosten nach Hause geschickt werden.'
-	]) {
-		writer.paragraph({ text: item, options: { hanging: '–', indent: 16 } });
-	}
-	writer.skip(10);
-	writer.paragraph({
-		text: 'Notfallkontakt während der Konferenz (Name, Telefonnummer):',
-		options: { size: 9 }
-	});
-	page.drawLine({
-		start: { x: MARGIN, y: writer.y - 6 },
-		end: { x: page.getWidth() - MARGIN, y: writer.y - 6 },
-		thickness: 0.6,
-		color: GRAY
-	});
-
-	signatures({
-		page,
-		fonts,
-		y: 150,
-		left: 'Ort, Datum',
-		right: 'Unterschrift aller Erziehungsberechtigten'
-	});
-	return pdf.save();
-}
-
-/**
- * The photo and video consent as DMUN words it: name, birthday and address lines 42 pt apart from
- * 225 pt down, then the four uses to tick, their boxes where the layout's default fields are, so a
- * scan of a seeded print reads its own boxes.
- */
-async function mediaConsent(conference: string) {
-	const { pdf, fonts } = await createDocument('Einwilligung Bildnutzung');
-	const page = pdf.addPage(A4);
-	const { width, height } = page.getSize();
-	letterhead({ page, fonts, conference, title: 'Einwilligung Bildnutzung' });
-
-	const intro = createWriter({ page, fonts, flow: { y: height - 110 } });
-	intro.paragraph({
-		text: `EINWILLIGUNG in die Verwendung meines Vor- und Nachnamens und Bildnisses in Video oder als Foto durch Model United Nations e. V. (DMUN) als Trägerverein von ${conference}.`
-	});
-	intro.skip(6);
-	intro.paragraph({ text: 'Mit meiner nachfolgenden Unterschrift willige ich,' });
-	formLine({ page, fonts, label: '(NAME teilnehmende Person)', baseline: height - 225 });
-	formLine({
-		page,
-		fonts,
-		label: '(GEBURTSDATUM teilnehmende Person)',
-		baseline: height - 267,
-		width: 160
-	});
-	formLine({
-		page,
-		fonts,
-		label: '(ADRESSE teilnehmende Person)',
-		baseline: height - 309,
-		width: width - 2 * MARGIN
-	});
-
-	const choice = createWriter({ page, fonts, flow: { y: height - 338 } });
-	choice.paragraph({
-		text: 'ein, dass DMUN meinen vorstehenden Vor- und Nachnamen sowie mein Bildnis in folgender Form verwendet (zutreffendes bitte ankreuzen!):'
-	});
-
-	const layout = defaultLayout('mediaConsent');
-	const uses = [
-		{ box: layout.mediaPhoto, lines: ['als Foto (Lichtbild),'] },
-		{ box: layout.mediaVideo, lines: ['als Video oder Videosequenz (Abfolge von Videobildern),'] },
-		{
-			box: layout.mediaByDmun,
-			lines: ['welches/welche DMUN erstellt oder erstellen lassen hat und/oder']
-		},
-		{
-			box: layout.mediaByOthers,
-			lines: [
-				'welches/welche ich erstellt habe oder andere teilnehmende Personen',
-				'erstellt haben und DMUN zur Verfügung gestellt wurde.'
-			]
-		}
-	];
-	for (const { box, lines } of uses) {
-		const left = box.x * width;
-		const bottom = height - (box.y + box.height) * height;
-		const side = box.width * width;
-		page.drawRectangle({
-			x: left,
-			y: bottom,
-			width: side,
-			height: box.height * height,
-			borderWidth: 0.8,
-			borderColor: BLACK
-		});
-		lines.forEach((line, index) => {
-			page.drawText(line, {
-				x: left + side + 8,
-				y: bottom + 2 - index * 13,
-				size: 10.5,
-				font: fonts.regular
-			});
-		});
-	}
-
-	const last = uses[uses.length - 1].box;
-	const rest = createWriter({
-		page,
-		fonts,
-		flow: { y: height - (last.y + last.height) * height - 34 }
-	});
-	for (const text of [
-		'Soweit sich aus dem vorgenannten Foto/Video Hinweise auf meine ethnische Herkunft, Religion oder Gesundheit ergeben (z.B. Hautfarbe, Kopfbedeckung, Brille), bezieht sich meine Einwilligung auch auf diese Angaben.',
-		'Die vorstehende Einwilligung ist freiwillig. Ich kann sie ohne Angabe von Gründen verweigern, ohne dass mir dadurch Nachteile entstehen können.',
-		'Meine vorstehende Einwilligung umfasst, dass die DMUN das vorgenannte Foto/Video mit meinem Bildnis im Original oder in bearbeiteter Form inhaltlich, zeitlich und räumlich unbeschränkt verarbeiten, speichern, nutzen, bearbeiten, weiterentwickeln, veröffentlichen, vervielfältigen, verbreiten, verwerten, öffentlich vorführen oder wiedergeben oder öffentlich auch zum wiederholten Abruf zur Verfügung stellen darf. Diese Berechtigung bezieht sich auch auf alle akustischen, sprachlichen oder visuellen Darstellungsformen.'
-	]) {
-		rest.paragraph({ text, options: { size: 9 } });
-		rest.skip(4);
-	}
-
-	signatures({
-		page,
-		fonts,
-		y: 150,
-		left: 'Ort, Datum',
-		right: 'Unterschrift (bei Minderjährigen zusätzlich der Erziehungsberechtigten)'
-	});
-	return pdf.save();
-}
-
-const TERMS = [
-	[
-		'Geltungsbereich',
-		'Diese Bedingungen gelten für alle Teilnehmenden, Betreuenden und Gäste der Konferenz. Abweichende Vereinbarungen bedürfen der Textform.'
-	],
-	[
-		'Anmeldung',
-		'Die Anmeldung erfolgt über die Anwendung. Sie wird mit der Bestätigung der Konferenzleitung, dem Eingang des Teilnahmebeitrags und der unterschriebenen Postanmeldung verbindlich. Ein Anspruch auf eine bestimmte Rolle besteht nicht.'
-	],
-	[
-		'Zuteilung',
-		'Die Konferenzleitung teilt Delegationen, Ausschüsse und Rollen nach eigenem Ermessen zu. Wünsche werden berücksichtigt, soweit es die Zusammensetzung der Gremien erlaubt.'
-	],
-	[
-		'Teilnahmebeitrag',
-		'Der Beitrag deckt Tagungsräume, Material, Verpflegung während der Sitzungen und das Rahmenprogramm. Er ist innerhalb der in der Anwendung genannten Frist zu überweisen; als Verwendungszweck ist die angezeigte Referenz anzugeben.'
-	],
-	[
-		'Rücktritt',
-		'Ein Rücktritt ist jederzeit in Textform möglich. Bis vier Wochen vor Konferenzbeginn wird der Beitrag abzüglich einer Bearbeitungsgebühr erstattet. Danach ist eine Erstattung nur möglich, wenn ein Platz von der Warteliste nachbesetzt wird.'
-	],
-	[
-		'Absage durch die Konferenzleitung',
-		'Muss die Konferenz aus Gründen abgesagt werden, die die Konferenzleitung nicht zu vertreten hat, wird der Beitrag abzüglich bereits entstandener Kosten erstattet. Weitere Ansprüche bestehen nicht.'
-	],
-	[
-		'Verhaltensregeln',
-		'Alle Teilnehmenden begegnen einander respektvoll. Diskriminierung, Belästigung und der Konsum von Alkohol oder Drogen während der Sitzungen sind untersagt. Den Anweisungen des Konferenzteams ist Folge zu leisten.'
-	],
-	[
-		'Aufsicht',
-		'Minderjährige Teilnehmende stehen während der Sitzungen unter der Aufsicht des Konferenzteams. Außerhalb der Sitzungen gilt, was die Erziehungsberechtigten in ihrer Einverständniserklärung festgelegt haben.'
-	],
-	[
-		'Haftung',
-		'Die Konferenzleitung haftet nur für Vorsatz und grobe Fahrlässigkeit. Für mitgebrachte Gegenstände wird keine Haftung übernommen. Schäden an Räumen und Ausstattung tragen die Verursachenden.'
-	],
-	[
-		'Datenschutz',
-		'Personenbezogene Daten werden ausschließlich zur Durchführung der Konferenz verarbeitet und nach Abschluss der Nachbereitung gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten bestehen. Näheres regelt die Datenschutzerklärung.'
-	],
-	[
-		'Foto- und Filmaufnahmen',
-		'Für die Veröffentlichung von Aufnahmen gilt die gesonderte Einwilligung. Aufnahmen für die interne Dokumentation sind davon unabhängig zulässig.'
-	],
-	[
-		'Teilnahmezertifikat',
-		'Ein Zertifikat erhält, wer an den Sitzungen der Konferenz anwesend war. Die Anwesenheit wird über die Zugangskarten erfasst. Das Zertifikat trägt einen QR-Code, über den seine Echtheit geprüft werden kann.'
-	],
-	[
-		'Schlussbestimmungen',
-		'Sollte eine Bestimmung unwirksam sein, bleibt die Wirksamkeit der übrigen unberührt. Es gilt deutsches Recht. Gerichtsstand ist, soweit zulässig, der Sitz des Vereins.'
-	]
-] as const;
-
-/** The terms, appended to the postal registration as its appendix: several pages of clauses. */
-async function termsAndConditions(conference: string) {
-	const { pdf, fonts } = await createDocument('Teilnahmebedingungen');
-	const first = pdf.addPage(A4);
-	letterhead({ page: first, fonts, conference, title: 'Teilnahmebedingungen' });
-	const writer = createWriter({
-		page: first,
-		fonts,
-		flow: {
-			y: first.getHeight() - 110,
-			bottom: 110,
-			nextPage: () => pdf.addPage(A4)
-		}
-	});
-	TERMS.forEach(([title, body], index) => {
-		writer.heading({ text: `§ ${index + 1} ${title}`, size: 11.5 });
-		writer.paragraph({ text: body, options: { gap: 14 } });
-	});
-	writer.paragraph({
-		text: `Stand: ${new Date().getFullYear()}`,
-		options: { size: 8, font: fonts.italic }
-	});
-	return pdf.save();
-}
-
 /** The certificate, landscape: the name centred 215 pt below the top, the QR code bottom right. */
 async function certificate(conference: string) {
 	const { pdf, fonts } = await createDocument('Teilnahmezertifikat');
@@ -579,12 +209,20 @@ async function certificate(conference: string) {
 }
 
 /** The five templates of one conference, with its title printed in. */
+/**
+ * The application documents' templates are DMUN's own (`templates/`, taken from a real print with
+ * what the generator drew removed): the contract, the guardians' consent, the three pages of the
+ * media consent and the terms. The layout's defaults put every field where these have it.
+ */
+const template = (name: string) =>
+	readFileSync(fileURLToPath(new URL(`./templates/${name}.pdf`, import.meta.url)));
+
 export async function conferenceTemplatePdfs(conference: string) {
 	return {
-		contract: await contract(conference),
-		guardianConsent: await guardianConsent(conference),
-		mediaConsent: await mediaConsent(conference),
-		termsAndConditions: await termsAndConditions(conference),
+		contract: template('contract'),
+		guardianConsent: template('guardianConsent'),
+		mediaConsent: template('mediaConsent'),
+		termsAndConditions: template('termsAndConditions'),
 		certificate: await certificate(conference)
 	};
 }

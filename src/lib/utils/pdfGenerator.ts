@@ -22,7 +22,7 @@ import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
 import { drawQr } from '#lib/api/pdfQr';
 import { logger } from '#lib/logger';
 import { markerCells, MARKER_CELLS } from '#lib/paperScan/markers';
-import { MARKER, markerCenters } from '#lib/paperScan/markerGeometry';
+import { MARKER, type Point } from '#lib/paperScan/markerGeometry';
 import { PAPER_FIELDS } from '#lib/paperScan/fields';
 import { pageAreas, type PostalDocument, type PrintedPage } from '#lib/paperScan/pageAreas';
 
@@ -565,17 +565,16 @@ function drawCodeCaption({
 }
 
 /**
- * The alignment marks in the page's corners (`#lib/paperScan/markers`), each on white a cell wider
- * than it, so whatever the template has there does not touch it.
+ * The alignment marks (`#lib/paperScan/markers`) centred at `centers` (millimetres), each on white
+ * a cell wider than it, so whatever the template has there does not touch it.
  */
-function drawAlignmentMarks(page: PDFPage) {
-	const { width, height } = page.getSize();
+function drawAlignmentMarks({ page, centers }: { page: PDFPage; centers: Point[] }) {
+	const { height } = page.getSize();
 	const cell = (MARKER.side / MARKER_CELLS) * POINTS_PER_MM;
-	const centers = markerCenters({ width: width / POINTS_PER_MM, height: height / POINTS_PER_MM });
+	const side = MARKER_CELLS * cell;
 	for (const [corner, center] of centers.entries()) {
-		const left = center.x * POINTS_PER_MM - (MARKER_CELLS / 2) * cell;
-		const top = height - center.y * POINTS_PER_MM + (MARKER_CELLS / 2) * cell;
-		const side = MARKER_CELLS * cell;
+		const left = center.x * POINTS_PER_MM - side / 2;
+		const top = height - center.y * POINTS_PER_MM + side / 2;
 		page.drawRectangle({
 			x: left - cell,
 			y: top - side - cell,
@@ -599,32 +598,38 @@ function drawAlignmentMarks(page: PDFPage) {
 	}
 }
 
-/** The fields of the page read off a scan: a box to tick, a line to sign on along a box's bottom. */
+/**
+ * What a page carries to be read off a scan: its alignment marks, and its fields - a box to tick,
+ * a line to write on along a field's bottom.
+ */
 function drawPaperFields({ page, at }: { page: PDFPage; at: MainPage }) {
 	const { width, height } = page.getSize();
-	const { areas } = pageAreas({
+	const { markers, areas } = pageAreas({
 		document: at.document,
 		layout: at.layout,
 		page: at.page,
 		size: { width, height }
 	});
+	drawAlignmentMarks({ page, centers: markers });
+	const black = rgb(0, 0, 0);
 	for (const area of areas) {
-		const left = area.x * width;
-		const bottom = height - (area.y + area.height) * height;
+		const left = area.x * POINTS_PER_MM;
+		const bottom = height - (area.y + area.height) * POINTS_PER_MM;
+		const right = left + area.width * POINTS_PER_MM;
 		if (PAPER_FIELDS[area.field].mark === 'line') {
 			page.drawLine({
 				start: { x: left, y: bottom },
-				end: { x: left + area.width * width, y: bottom },
+				end: { x: right, y: bottom },
 				thickness: 0.75,
-				color: rgb(0, 0, 0)
+				color: black
 			});
 		} else {
 			page.drawRectangle({
 				x: left,
 				y: bottom,
-				width: area.width * width,
-				height: area.height * height,
-				borderColor: rgb(0, 0, 0),
+				width: right - left,
+				height: area.height * POINTS_PER_MM,
+				borderColor: black,
 				borderWidth: 0.75
 			});
 		}
@@ -674,10 +679,7 @@ async function numerateDocument({
 			});
 			continue;
 		}
-		if (scanning) {
-			drawAlignmentMarks(page);
-			drawPaperFields({ page, at });
-		}
+		if (scanning) drawPaperFields({ page, at });
 		const square = await placeQrCode({
 			pdfDoc,
 			page,

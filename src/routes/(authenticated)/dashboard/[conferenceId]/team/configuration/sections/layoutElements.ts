@@ -1,8 +1,14 @@
 import { m } from '#lib/paraglide/messages';
 import type { ElementOf, LayoutDocument } from '#lib/helpers/documentLayout';
+import type { PaperField } from '#lib/paperScan/fields';
+import { fieldLabel } from '#lib/paperScan/fieldLabels';
 
 /** Every element any document has. */
 export type LayoutElement = { [D in LayoutDocument]: ElementOf<D> }[LayoutDocument];
+
+/** The elements that are drawn, not written: the alignment marks and the fields read off a scan. */
+type DrawnElement =
+	PaperField | 'markerTopLeft' | 'markerTopRight' | 'markerBottomRight' | 'markerBottomLeft';
 
 /** What the layout editor calls each element. */
 export const elementLabel: Record<LayoutElement, () => string> = {
@@ -18,19 +24,17 @@ export const elementLabel: Record<LayoutElement, () => string> = {
 	markerTopRight: () => m.documentLayoutMarker(),
 	markerBottomRight: () => m.documentLayoutMarker(),
 	markerBottomLeft: () => m.documentLayoutMarker(),
-	signature: () => m.documentLayoutSignature(),
-	placeDate: () => m.documentLayoutPlaceDate(),
-	mediaPhoto: () => m.documentLayoutMediaPhoto(),
-	mediaVideo: () => m.documentLayoutMediaVideo(),
-	mediaByDmun: () => m.documentLayoutMediaByDmun(),
-	mediaByOthers: () => m.documentLayoutMediaByOthers()
+	...fieldLabel
 };
+
+/** The elements that show sample text in the editor. */
+export type WrittenElement = Exclude<LayoutElement, DrawnElement>;
 
 /**
  * The made-up content the editor shows in each text element, line by line. The sessions are the
  * conference's own (`certificateSampleSessions`), which the editor is given.
  */
-export const elementSample: Record<LayoutElement, () => string[]> = {
+export const elementSample: Record<WrittenElement, () => string[]> = {
 	name: () => ['Antonio Guterres'],
 	sessions: () => [],
 	qr: () => [m.certificateVerify()],
@@ -39,18 +43,7 @@ export const elementSample: Record<LayoutElement, () => string[]> = {
 	address: () => ['405 E 45th St, New York, NY 10017, USA'],
 	// the name above the id, beside the code, as printed
 	code: () => ['Antonio Guterres', 'x7k2m9p4q1w8'],
-	pageNumber: () => ['1 / 3'],
-	// the marks and fields are drawn, not written
-	markerTopLeft: () => [],
-	markerTopRight: () => [],
-	markerBottomRight: () => [],
-	markerBottomLeft: () => [],
-	signature: () => [],
-	placeDate: () => [],
-	mediaPhoto: () => [],
-	mediaVideo: () => [],
-	mediaByDmun: () => [],
-	mediaByOthers: () => []
+	pageNumber: () => ['1 / 3']
 };
 
 /** The template each document is drawn on, as the conference selects it. */

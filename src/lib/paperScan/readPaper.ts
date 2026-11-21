@@ -2,11 +2,11 @@ import { Matrix, solve } from 'ml-matrix';
 import { PAPER_FIELDS, type PaperField, type PaperMark } from './fields';
 import type { PageAreas } from './areas';
 import { findMarkers, type Picture } from './markers';
-import { markerCenters, type Point } from './markerGeometry';
+import type { Point } from './markerGeometry';
 
 /**
  * Reads the fields of a scanned page: the four markers give where the page lies in the picture
- * (a perspective through their centres, which also takes in a page printed smaller, stretched by
+ * (a perspective through their centres, which the code says, which also takes in a page printed smaller, stretched by
  * the printer, scanned crooked or upside down), and each field the share of the paper inside it
  * that is darker than the paper around it. We drew the boxes and lines ourselves, so their own ink
  * is kept out by reading inside the box and above the line.
@@ -164,18 +164,10 @@ export function readPaper({
 }): FieldReading[] | null {
 	const found = findMarkers(picture);
 	if (!found) return null;
-	const toPicture = perspective({ from: markerCenters(areas.page), to: found });
-	return areas.areas.map(({ field, x, y, width, height }) => {
+	const toPicture = perspective({ from: areas.markers, to: found });
+	return areas.areas.map(({ field, ...box }) => {
 		const { mark } = PAPER_FIELDS[field];
-		const box = innerBox({
-			box: {
-				x: x * areas.page.width,
-				y: y * areas.page.height,
-				width: width * areas.page.width,
-				height: height * areas.page.height
-			},
-			mark
-		});
-		return { field, state: judgeMark({ mark, ...inkIn({ picture, toPicture, box }) }) };
+		const inner = innerBox({ box, mark });
+		return { field, state: judgeMark({ mark, ...inkIn({ picture, toPicture, box: inner }) }) };
 	});
 }

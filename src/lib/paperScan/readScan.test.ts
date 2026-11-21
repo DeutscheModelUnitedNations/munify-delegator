@@ -12,12 +12,18 @@ const sign = (claims: SignedCodeClaims) =>
 			new Uint8Array(await crypto.subtle.sign('Ed25519', pair.privateKey, bytes))
 	});
 const print = { kind: 'print', userId: 'ada', conferenceId: 'mun', issuedAt: 1 } as const;
+const markers = [
+	{ x: 13, y: 13 },
+	{ x: 197, y: 13 },
+	{ x: 197, y: 284 },
+	{ x: 13, y: 284 }
+];
 const blank = { width: 100, height: 140, data: new Uint8ClampedArray(100 * 140 * 4).fill(255) };
 
 describe('readPageOfCode', () => {
 	it('reads nothing off a page whose code names no fields', async () => {
 		expect(readPageOfCode({ picture: blank, code: await sign(print) })).toEqual([]);
-		const empty = encodeAreas({ page: { width: 210, height: 297 }, areas: [] });
+		const empty = encodeAreas({ page: { width: 210, height: 297 }, markers, areas: [] });
 		expect(
 			readPageOfCode({ picture: blank, code: await sign({ ...print, areas: empty }) })
 		).toEqual([]);
@@ -26,7 +32,8 @@ describe('readPageOfCode', () => {
 	it('cannot read a page with fields whose marks are not in the picture', async () => {
 		const areas = encodeAreas({
 			page: { width: 210, height: 297 },
-			areas: [{ field: 'termsSignature', x: 0.1, y: 0.8, width: 0.4, height: 0.05 }]
+			markers,
+			areas: [{ field: 'termsSignature', x: 20, y: 230, width: 80, height: 10 }]
 		});
 		expect(readPageOfCode({ picture: blank, code: await sign({ ...print, areas }) })).toBeNull();
 	});

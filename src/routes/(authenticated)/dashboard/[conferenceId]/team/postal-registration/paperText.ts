@@ -1,5 +1,6 @@
 import { m } from '#lib/paraglide/messages';
 import type { PaperChange, PaperDocument, PaperNote } from '#lib/paperScan/proposal';
+import { fieldLabel } from '#lib/paperScan/fieldLabels';
 
 const documentName: Record<PaperDocument, () => string> = {
 	contract: () => m.userAgreement(),
@@ -30,12 +31,18 @@ export function describeChange(change: PaperChange): string[] {
 /** Why something read off paper was left for a person. */
 export function describeNote(note: PaperNote): string {
 	switch (note.kind) {
-		case 'unsigned':
-			return m.paperNoteUnsigned({ document: documentName[note.document]() });
-		case 'undated':
-			return m.paperNoteUndated({ document: documentName[note.document]() });
+		case 'missing':
+			return m.paperNoteMissing({
+				document: documentName[note.document](),
+				field: fieldLabel[note.field]()
+			});
 		case 'unclear':
-			return m.paperNoteUnclear({ document: documentName[note.document]() });
+			return m.paperNoteUnclear({
+				document: documentName[note.document](),
+				field: fieldLabel[note.field]()
+			});
+		case 'incomplete':
+			return m.paperNoteIncomplete({ document: documentName[note.document]() });
 		case 'mediaChoiceUnclear':
 			return m.paperNoteMediaChoiceUnclear();
 		case 'mediaChoiceDiffers':
