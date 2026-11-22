@@ -424,6 +424,7 @@
 				onswitch={switchCamera}
 				onstop={turnCameraOff}
 				onstart={startVideo}
+				page={readPage !== undefined}
 				overlay={cameraOverlay}
 			/>
 		</div>

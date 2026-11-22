@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
 	import type { CameraZoom } from './camera';
+	import ScanFrame from './ScanFrame.svelte';
 
 	interface Props {
 		/** The element the camera stream is attached to */
@@ -18,6 +19,8 @@
 		onswitch: () => void;
 		onstop: () => void;
 		onstart: () => void;
+		/** Frames a whole A4 page, upright, instead of a square for the code alone. */
+		page?: boolean;
 		/** Laid over the top left corner, under the zoom, whether the camera runs or not. */
 		overlay?: Snippet;
 	}
@@ -34,14 +37,29 @@
 		onswitch,
 		onstop,
 		onstart,
+		page = false,
 		overlay
 	}: Props = $props();
+
+	/** Width over height of the camera's picture, once it sends one; the box takes its shape. */
+	let pictureAspect = $state<number>();
+	function measure() {
+		if (videoElem?.videoWidth && videoElem.videoHeight) {
+			pictureAspect = videoElem.videoWidth / videoElem.videoHeight;
+		}
+	}
+	const shaped = $derived(streaming && pictureAspect !== undefined);
+	// As wide as there is room, no taller than half the screen, which keeps a portrait camera small
+	const boxStyle = $derived(
+		shaped ? `aspect-ratio: ${pictureAspect}; width: min(100%, 50dvh * ${pictureAspect});` : ''
+	);
 </script>
 
 <div
-	class="relative h-32 w-full md:aspect-video md:h-auto md:max-h-[40vh] md:min-h-52 overflow-hidden rounded-box {streaming
+	class="rounded-box relative mx-auto overflow-hidden {shaped
 		? 'bg-black'
-		: 'bg-base-200'}"
+		: 'bg-base-200 h-32 w-full md:aspect-video md:h-auto md:max-h-[40vh] md:min-h-52'}"
+	style={boxStyle}
 >
 	<video
 		bind:this={videoElem}
@@ -49,33 +67,14 @@
 		autoplay
 		muted
 		playsinline
+		onloadedmetadata={measure}
+		onresize={measure}
 	>
 		<track kind="captions" src="" srclang="en" label="English" default />
 	</video>
 
 	{#if streaming}
-		<!-- Crosshair: a square to hold the code in, the rest of the picture dimmed -->
-		<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-			<div class="relative aspect-square h-3/5 rounded-2xl shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)]">
-				<span class="absolute top-0 left-0 size-8 rounded-tl-2xl border-t-4 border-l-4 border-white"
-				></span>
-				<span
-					class="absolute top-0 right-0 size-8 rounded-tr-2xl border-t-4 border-r-4 border-white"
-				></span>
-				<span
-					class="absolute bottom-0 left-0 size-8 rounded-bl-2xl border-b-4 border-l-4 border-white"
-				></span>
-				<span
-					class="absolute right-0 bottom-0 size-8 rounded-br-2xl border-r-4 border-b-4 border-white"
-				></span>
-				<span
-					class="absolute top-1/2 left-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 bg-white/80"
-				></span>
-				<span
-					class="absolute top-1/2 left-1/2 h-6 w-px -translate-x-1/2 -translate-y-1/2 bg-white/80"
-				></span>
-			</div>
-		</div>
+		<ScanFrame {page} />
 
 		<div class="absolute top-3 right-3 flex gap-2">
 			{#if canSwitchCamera}
