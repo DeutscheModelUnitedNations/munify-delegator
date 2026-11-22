@@ -2590,6 +2590,7 @@
 	"paperSaveDraftError": "Draft could not be saved",
 	"paperSavingDraft": "Draft is being saved...",
 	"paperScanMode": "What the camera reads",
+	"paperScanModeCode": "Code only",
 	"paperScanModePage": "Whole page",
 	"paperScanPrompt": "Hold the whole page with all four corners in view...",
 	"paperStartFresh": "Start Fresh",

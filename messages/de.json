@@ -2590,6 +2590,7 @@
 	"paperSaveDraftError": "Entwurf konnte nicht gespeichert werden",
 	"paperSavingDraft": "Entwurf wird gespeichert...",
 	"paperScanMode": "Was die Kamera liest",
+	"paperScanModeCode": "Nur Code",
 	"paperScanModePage": "Ganze Seite",
 	"paperScanPrompt": "Halte die ganze Seite mit allen vier Ecken ins Bild...",
 	"paperStartFresh": "Neu beginnen",
