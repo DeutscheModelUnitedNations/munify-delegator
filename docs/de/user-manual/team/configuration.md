@@ -155,10 +155,10 @@ Der Reiter **Dokumente & Vorlagen** hält alles, woraus DELEGATOR die Papiere de
 
 Jede Vorlage hat eine eigene Karte, die zeigt, ob sie **Hinterlegt** ist, **Fehlt noch**, **Wird beim Speichern hochgeladen** oder **Wird beim Speichern entfernt**. Auf der Karte:
 
-- **PDF hochladen** oder **Durch eine neue PDF ersetzen** wählt eine Datei bis 10 MB. Sie wird erst mit **Einstellungen speichern** hochgeladen.
+- **PDF auswählen oder hierher ziehen** (bei einer hinterlegten Vorlage **PDF ersetzen**) nimmt eine Datei bis 10 MB, per Klick oder indem du sie auf die Karte ziehst. Die Karte zeigt die erste Seite und wie viele Seiten die PDF hat. Hochgeladen wird sie erst mit **Einstellungen speichern**.
 - Das Auge (**Hinterlegte Vorlage ansehen**) öffnet die hinterlegte Datei.
 - Der Papierkorb (**Vorlage entfernen**) entfernt sie beim nächsten Speichern, **Entfernen rückgängig machen** nimmt das zurück.
-- **Felder platzieren** und **Testdokument** gehen erst, wenn die Vorlage gespeichert ist („Erst eine Vorlage hochladen und speichern“, „Erst die neue Vorlage speichern“). Das Testdokument der postalischen Anmeldung braucht alle vier Vorlagen.
+- **Felder platzieren** und **Testdokument** gehen erst, wenn die Vorlage gespeichert ist („Erst eine Vorlage hochladen und speichern“, „Erst die neue Vorlage speichern“). Die vier Vorlagen der postalischen Anmeldung haben ein gemeinsames **Testdokument generieren** unter ihren Karten, das alle vier braucht.
 
 Das Fragezeichen neben den Überschriften (**Hilfe zu den PDF-Vorlagen**) erklärt, was auf welcher Vorlage steht.
 
@@ -182,7 +182,7 @@ Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in de
 Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Jede Seite der postalischen Anmeldung bekommt den signierten QR-Code mit Name und ID daneben dort, wo ihr Dokument ihn platziert, und unten rechts die Seitenzahl, auch die Seiten der Teilnahmebedingungen. Das Zertifikat kann jede Seitengröße haben, auch quer.
 
 :::tip Platz lassen
-Lass auf deiner Vorlage an den Stellen der Felder Platz frei. **Testdokument** auf der Karte zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.
+Lass auf deiner Vorlage an den Stellen der Felder Platz frei. Das Testdokument zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.
 :::
 
 ### Verabschiedete Resolutionen {#resolutions}

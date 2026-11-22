@@ -155,10 +155,10 @@ The **Documents & Templates** tab holds everything DELEGATOR builds the particip
 
 Every template has its own card showing whether it is **Stored**, **Missing**, **Uploaded on saving** or **Removed on save**. On the card:
 
-- **Upload a PDF** or **Replace with a new PDF** picks a file of up to 10 MB. It is only uploaded with **Save settings**.
+- **Choose a PDF or drop it here** (for a stored template **Replace PDF**) takes a file of up to 10 MB, by clicking or by dropping it on the card. The card shows the first page and how many pages the PDF has. It is only uploaded with **Save settings**.
 - The eye (**View the stored template**) opens the stored file.
 - The bin (**Remove template**) removes it on the next save, **Undo removal** takes that back.
-- **Place fields** and **Test document** only work once the template is saved ("Upload and save a template first", "Save the new template first"). The test document of the postal registration needs all four templates.
+- **Place fields** and **Test document** only work once the template is saved ("Upload and save a template first", "Save the new template first"). The four templates of the postal registration share one **Generate test document** below their cards, which needs all four.
 
 The question mark next to the headings (**Help on the PDF templates**) explains what goes on which template.
 
@@ -182,7 +182,7 @@ You resize the check-in list and the QR codes from their bottom right corner, an
 The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the name and ID beside it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
 
 :::tip Leave room
-Leave room on your template where the fields go. **Test document** on the card shows the result with made-up details and the postal address as it currently stands in the form.
+Leave room on your template where the fields go. The test document shows the result with made-up details and the postal address as it currently stands in the form.
 :::
 
 ### Adopted resolutions {#resolutions}

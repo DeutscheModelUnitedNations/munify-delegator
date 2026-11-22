@@ -37,7 +37,11 @@
 		type LayoutElement,
 		type WrittenElement
 	} from './layoutElements';
-	import { renderTemplatePage, templatePictures, type TemplatePicture } from './templatePage';
+	import {
+		renderTemplatePage,
+		templatePictures,
+		type TemplatePicture
+	} from '#lib/helpers/pdfPages';
 	import { checkFields } from './layoutCheck';
 	import LayoutBoxElement from './LayoutBoxElement.svelte';
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
@@ -289,8 +293,9 @@
 
 	/**
 	 * Moves the picked element by the arrow keys: half a millimetre, five with Shift, as far as the
-	 * page and the fixed areas let it.
+	 * page and the fixed areas let it. Key handling only; the steps are `arrowStep`'s, tested there.
 	 */
+	// fallow-ignore-next-line complexity
 	function nudge(event: KeyboardEvent) {
 		const id = selected;
 		const step = arrowStep(event);

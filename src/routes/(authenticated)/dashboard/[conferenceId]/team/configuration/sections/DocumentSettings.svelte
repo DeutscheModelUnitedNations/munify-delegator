@@ -142,8 +142,27 @@
 			!!storedDocuments.termsAndConditionsFile
 	);
 
-	/** Why the postal test print cannot run yet: it is built from all four templates. */
-	const postalTestBlocked = $derived(postalTemplatesStored ? undefined : m.templateTestNeedsAll());
+	/** Whether one of the four templates is picked or removed but not saved yet. */
+	const postalTemplatesChanging = $derived(
+		[
+			$formData.contractBasePDF,
+			$formData.guardianConsentBasePDF,
+			$formData.mediaConsentBasePDF,
+			$formData.termsAndConditionsBasePDF
+		].some((template) => template !== undefined)
+	);
+
+	/**
+	 * Why the postal test print cannot run yet: it is built from all four stored templates, as
+	 * saved.
+	 */
+	const postalTestBlocked = $derived(
+		!postalTemplatesStored
+			? m.templateTestNeedsAll()
+			: postalTemplatesChanging
+				? m.templatePendingBlocks()
+				: undefined
+	);
 
 	/** The document whose layout is being edited. */
 	let arranging = $state<LayoutDocument>();
@@ -186,9 +205,6 @@
 			icon="signature"
 			stored={storedDocuments.contractFile}
 			onplace={() => (arranging = 'contract')}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
 		<TemplateCard
 			{form}
@@ -197,9 +213,6 @@
 			icon="shield-check"
 			stored={storedDocuments.guardianConsentFile}
 			onplace={() => (arranging = 'guardianConsent')}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
 		<TemplateCard
 			{form}
@@ -208,9 +221,6 @@
 			icon="camera"
 			stored={storedDocuments.mediaConsentFile}
 			onplace={() => (arranging = 'mediaConsent')}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
 		<TemplateCard
 			{form}
@@ -218,10 +228,27 @@
 			title={m.termsAndConditions()}
 			icon="file-text"
 			stored={storedDocuments.termsAndConditionsFile}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
+	</div>
+	<!-- the four print as one package: one test print for them all -->
+	<div class="flex flex-wrap items-center gap-3 pt-2">
+		<span class={postalTestBlocked ? 'tooltip' : ''} data-tip={postalTestBlocked}>
+			<button
+				type="button"
+				class="btn btn-sm"
+				disabled={!!postalTestBlocked || loading}
+				onclick={handleGeneratePostalPDF}
+			>
+				<i
+					aria-hidden="true"
+					class="ph-duotone {loading ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"
+				></i>
+				{m.postalTemplateTest()}
+			</button>
+		</span>
+		<span class="text-base-content/60 text-sm"
+			>{postalTestBlocked ?? m.postalTemplateTestHint()}</span
+		>
 	</div>
 </FormSection>
 
