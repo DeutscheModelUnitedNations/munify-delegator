@@ -1650,7 +1650,6 @@ export type Conference = {
   messagingEnabled: Boolean,
   nametagBinCount: Int,
   nextDocumentNumber: Int,
-  paperScanning: Boolean,
   papers: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1790,7 +1789,6 @@ export type ConferenceOrderInputArgument = {
   mediaConsentFileId?: SortingParameter | null | undefined,
   messagingEnabled?: SortingParameter | null | undefined,
   nametagBinCount?: SortingParameter | null | undefined,
-  paperScanning?: SortingParameter | null | undefined,
   participantMaxAge?: SortingParameter | null | undefined,
   participantMinAge?: SortingParameter | null | undefined,
   postalApartment?: SortingParameter | null | undefined,
@@ -1884,7 +1882,6 @@ export type ConferenceWhereInputArgument = {
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
   messagingEnabled?: BooleanWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
-  paperScanning?: BooleanWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
   participantMaxAge?: IntWhereInputArgument | null | undefined,
   participantMinAge?: IntWhereInputArgument | null | undefined,
@@ -3429,7 +3426,6 @@ export type Mutation = {
     conferenceId: ID,
     layouts?: JSON | null | undefined,
     pages: PrintedPageInput[],
-    paperScanning?: Boolean | null | undefined,
     userId: ID
   }) => SignedCode[],
   issueNametagCode: (p: {
@@ -3795,7 +3791,6 @@ export type Mutation = {
     mediaConsentFileId?: ID | null | undefined,
     messagingEnabled?: Boolean | null | undefined,
     nametagBinCount?: Int | null | undefined,
-    paperScanning?: Boolean | null | undefined,
     participantMaxAge?: Int | null | undefined,
     participantMinAge?: Int | null | undefined,
     postalApartment?: String | null | undefined,

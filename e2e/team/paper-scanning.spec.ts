@@ -14,7 +14,7 @@ import { pageAreas } from '../../src/lib/paperScan/pageAreas';
 import { penOn } from '../../src/lib/paperScan/scanSimulation';
 import { signedCodeLink } from '../../src/lib/signedCode/signedCode';
 
-// A conference that reads its paper: participant care uploads scans and the statuses follow,
+// Reading the paper: participant care uploads scans and the statuses follow,
 // unattended; the layout editor places the fields to read, page by page, the marks fixed.
 
 const conferenceId = E2E_PAPER_CONFERENCE_ID;

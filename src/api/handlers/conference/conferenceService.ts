@@ -175,7 +175,6 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				showCalendar: nullToUndefined(args.showCalendar),
 				messagingEnabled: nullToUndefined(args.messagingEnabled),
 				qrCorporateDesign: nullToUndefined(args.qrCorporateDesign),
-				paperScanning: nullToUndefined(args.paperScanning),
 				timezone: nullToUndefined(args.timezone),
 				nametagBinCount: nullToUndefined(args.nametagBinCount),
 				// null switches the rule off, or lifts the limit

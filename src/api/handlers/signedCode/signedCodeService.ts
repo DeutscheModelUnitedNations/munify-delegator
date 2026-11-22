@@ -58,9 +58,8 @@ export const documentCodesArgsSchema = z.looseObject({
 
 /**
  * The codes printed on the pages of the application documents of `userId` in the conference, one
- * per page in the order given. Where the conference reads its paper (`paperScanning`), each carries
- * where its page's fields are, from the stored layouts (`layouts` and `paperScanning` stand in for
- * them in a test print of a layout being edited).
+ * per page in the order given, each carrying where its page's alignment marks and fields are, from
+ * the stored layouts (`layouts` stand in for them in a test print of a layout being edited).
  */
 export async function issuePrintCodes({
 	userId,
@@ -72,28 +71,25 @@ export async function issuePrintCodes({
 	userId: string;
 	conferenceId: string;
 	pages: readonly PrintedPage[];
-	draft?: { layouts?: unknown; paperScanning?: boolean };
+	draft?: { layouts: unknown };
 	now?: number;
 }) {
 	const conference = await db.query.conference.findFirst({
 		where: { id: conferenceId },
-		columns: { paperScanning: true, documentLayouts: true }
+		columns: { documentLayouts: true }
 	});
 	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
-	const scanning = draft?.paperScanning ?? conference.paperScanning;
-	const layouts = draft?.layouts === undefined ? conference.documentLayouts : draft.layouts;
+	const layouts = draft ? draft.layouts : conference.documentLayouts;
 	const issuedAt = secondsOf(now);
 	return Promise.all(
 		pages.map(({ document, page, width, height }) => {
-			const fields =
-				scanning &&
-				pageAreas({
-					document,
-					layout: resolveDocumentLayout({ document, stored: layouts }),
-					page,
-					size: { width, height }
-				});
-			const areas = fields && fields.areas.length > 0 ? encodeAreas(fields) : undefined;
+			const fields = pageAreas({
+				document,
+				layout: resolveDocumentLayout({ document, stored: layouts }),
+				page,
+				size: { width, height }
+			});
+			const areas = fields.areas.length > 0 ? encodeAreas(fields) : undefined;
 			return signCode({ kind: 'print', userId, conferenceId, issuedAt, areas });
 		})
 	);

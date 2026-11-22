@@ -2,10 +2,10 @@ import aruco from 'js-aruco2';
 import type { Point } from './markerGeometry';
 
 /**
- * The alignment marks printed near the four corners of every application document page when
- * the conference reads its paper (`conference.paperScanning`): ArUco markers, made to be found in a
- * crooked, blurry picture, and each with an id, so which corner is which (and so how the page lies)
- * comes with them. Their centres are what a scan is aligned on (`./readPaper`).
+ * The alignment marks printed on every main page of the application documents: ArUco markers,
+ * made to be found in a crooked, blurry picture, and each with an id, so which corner is which
+ * (and so how the page lies) comes with them. Their centres are what a scan is aligned on
+ * (`./readPaper`).
  */
 
 /** The ids printed at the top left, top right, bottom right and bottom left corner. */

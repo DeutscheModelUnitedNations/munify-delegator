@@ -41,7 +41,7 @@ const CLOCK_SKEW_SECONDS = 2 * 60;
  * - `live`: the digital nametag, renewed while it is shown and good for minutes only, so a
  *   screenshot passed on is of little use;
  * - `print`: the application documents, printed and sent by post, good for as long as the paper.
- *   One per page; where the conference reads its paper, it carries where that page's fields are
+ *   One per page; on a page with fields it carries where its alignment marks and fields are
  *   (`areas`, `#lib/paperScan/areas`), so a scan is read as that page was printed;
  * - `certificate`: a participation certificate, which anybody may check (`/validateCertificate`);
  * - `nsaCard`: a non-state actor's printed card, which MUNify CHASE's chairs scan to check them in

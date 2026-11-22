@@ -73,8 +73,6 @@
 			documentLayouts: true
 		});
 		const documentLayouts = withDraft({ stored: templates.documentLayouts, draft });
-		// the switch as it stands in the form, saved or not, so the test print shows it
-		const paperScanning = $formData.paperScanning;
 		// Real codes, of the person printing: a test print scanned back reads like a participant's
 		const { sub: userId } = await getCurrentUser();
 		// a minor's, so the guardian consent is part of it
@@ -83,7 +81,7 @@
 			participant: testPrintParticipant(),
 			issueCodes: async (pages) => {
 				const codes = await client.mutate.issueDocumentCodes({
-					__args: { conferenceId, userId, pages, layouts: documentLayouts, paperScanning },
+					__args: { conferenceId, userId, pages, layouts: documentLayouts },
 					code: true
 				});
 				return codes.map(({ code }) => code);
@@ -94,8 +92,7 @@
 				guardianConsentFile: templates.guardianConsentFile,
 				mediaConsentFile: templates.mediaConsentFile,
 				termsAndConditionsFile: templates.termsAndConditionsFile,
-				documentLayouts,
-				paperScanning
+				documentLayouts
 			},
 			fileName: 'test_postal_registration.pdf'
 		});
@@ -226,21 +223,6 @@
 			testBlocked={postalTestBlocked}
 		/>
 	</div>
-	<label class="flex cursor-pointer items-start gap-3">
-		<input
-			type="checkbox"
-			class="toggle toggle-primary"
-			name="paperScanning"
-			aria-describedby="paper-scanning-description"
-			bind:checked={$formData.paperScanning}
-		/>
-		<span class="flex flex-col gap-0.5">
-			<span>{m.paperScanning()}</span>
-			<span id="paper-scanning-description" class="text-base-content/60 text-sm">
-				{m.paperScanningDescription()}
-			</span>
-		</span>
-	</label>
 </FormSection>
 
 <FormSection title={m.certificate()} icon="medal">
@@ -266,7 +248,6 @@
 			{conferenceId}
 			{document}
 			{certificateSessions}
-			scanning={$formData.paperScanning}
 			title={m.documentLayoutTitle({ document: documentName[document]() })}
 			testPrint={(layout) =>
 				document === 'certificate'

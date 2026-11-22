@@ -1,0 +1,35 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "baef75df-6af8-47d0-98b5-f120bf0745cd",
+  "prevIds": [
+    "b8258880-7af8-4b8f-abb0-db7129ff9830"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "paper_scanning"
+      ],
+      "writes": [
+        "s|col|public.conference.paper_scanning",
+        "n|col|public.conference.paper_scanning",
+        "e|col|public.conference.paper_scanning"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conference\",\"paper_scanning\"]"
+    }
+  ]
+}

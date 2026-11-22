@@ -1,7 +1,7 @@
 /**
  * Fixtures for the paper scanning spec (e2e/team/paper-scanning.spec.ts).
  *
- * A conference that reads its paper, with participant care and Grace, an adult single participant
+ * A conference of its own, with participant care and Grace, an adult single participant
  * with a seat. Every run resets her postal status to nothing in, and the conference to no
  * templates and the default layouts, since the spec scans her pages and uploads templates.
  */
@@ -32,7 +32,6 @@ export async function seedPaperScanning(db: NodePgDatabase) {
 	await db
 		.update(schema.conference)
 		.set({
-			paperScanning: true,
 			unlockPostals: true,
 			documentLayouts: null,
 			contractFileId: null,

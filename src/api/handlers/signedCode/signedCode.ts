@@ -46,22 +46,18 @@ schemaBuilder.mutationFields((t) => ({
 
 	issueDocumentCodes: t.field({
 		description:
-			"The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Where the conference reads its paper, each carries where its page's fields are. `layouts` and `paperScanning` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.",
+			"The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.",
 		type: [SignedCode],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			userId: t.arg.id({ required: true, description: "The holder's user id." }),
 			pages: t.arg({ type: [PrintedPageInput], required: true }),
-			layouts: t.arg({ type: 'JSON', description: 'A test print: the layouts being edited.' }),
-			paperScanning: t.arg.boolean({ description: 'A test print: the switch as it stands.' })
+			layouts: t.arg({ type: 'JSON', description: 'A test print: the layouts being edited.' })
 		},
 		validate: documentCodesArgsSchema,
 		resolve: async (_root, args, ctx) => {
-			const { conferenceId, userId, layouts, paperScanning } = args;
-			const draft =
-				layouts == null && paperScanning == null
-					? undefined
-					: { layouts: layouts ?? undefined, paperScanning: paperScanning ?? undefined };
+			const { conferenceId, userId, layouts } = args;
+			const draft = layouts == null ? undefined : { layouts };
 			await assertCanIssuePrintCodes({ ctx, conferenceId, userId, draft: draft !== undefined });
 			const codes = await issuePrintCodes({ userId, conferenceId, pages: args.pages, draft });
 			return codes.map((code) => ({ code }));

@@ -239,7 +239,6 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	contractBasePDF: { group: 'documents', label: () => m.postalTemplateContract() },
 	guardianConsentBasePDF: { group: 'documents', label: () => m.postalTemplateGuardianConsent() },
 	mediaConsentBasePDF: { group: 'documents', label: () => m.postalTemplateMediaConsent() },
-	paperScanning: { group: 'documents', label: () => m.paperScanning() },
 	termsAndConditionsBasePDF: {
 		group: 'documents',
 		label: () => m.postalTemplateTermsAndConditions()

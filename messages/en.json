@@ -2585,8 +2585,6 @@
 	"paperScanModeCode": "Code only",
 	"paperScanModePage": "Whole page",
 	"paperScanPrompt": "Hold the whole page with all four corners in view...",
-	"paperScanning": "Read the documents from scans",
-	"paperScanningDescription": "Prints alignment marks in the corners and the fields you place on the templates (signatures, the media consent's boxes). The postal registration then reads them off scanned or photographed pages.",
 	"paperStartFresh": "Start Fresh",
 	"paperStatsCharacters": "{count} chars",
 	"paperStatsParagraphs": "{count} paragraphs",

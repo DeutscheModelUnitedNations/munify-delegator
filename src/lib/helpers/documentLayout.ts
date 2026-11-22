@@ -9,9 +9,8 @@ import { MARKER } from '#lib/paperScan/markerGeometry';
  * id beside it) and the page number. The team places them in the layout editor
  * (`DocumentLayoutEditor.svelte`); the PDF generator and the editor read the same values, stored
  * per document in `conference.documentLayouts`. The page number is fixed in the bottom right
- * corner (`fixed`), the terms and conditions' pages too. Where the conference reads its paper
- * (`conference.paperScanning`, elements marked `scanning`), the application documents also carry
- * four alignment marks (fixed, clear of DMUN's banner and footer) and the fields a scan is read for,
+ * corner (`fixed`), the terms and conditions' pages too. The application documents also carry four
+ * alignment marks (fixed, clear of DMUN's banner and footer) and the fields a scan is read for,
  * each named as its `#lib/paperScan/fields` field (what is ticked, written and signed), each on a
  * page of its template (`#lib/paperScan`).
  *
@@ -42,8 +41,7 @@ export type FieldPlacement = z.infer<typeof fieldPlacement>;
  * A code is never printed smaller than its `minSide` (millimetres), so a phone still reads it off
  * paper; the PDF generator grows it further when its content needs more (`#lib/helpers/qrSize`).
  * Its caption (`caption`) goes above it or beside it. A `fixed` box (the page number) always stays
- * at its default: the editor shows it, nothing may be placed over it, and it is never stored. An
- * element marked `scanning` exists only where the conference reads its paper.
+ * at its default: the editor shows it, nothing may be placed over it, and it is never stored.
  */
 type ElementSpec =
 	| { shape: 'text'; align: 'left' | 'center'; lines?: number; default: TextPlacement }
@@ -51,10 +49,9 @@ type ElementSpec =
 			shape: 'box';
 			list?: boolean;
 			fixed?: boolean;
-			scanning?: true;
 			default: BoxPlacement;
 	  }
-	| { shape: 'field'; field: PaperField; scanning: true; default: FieldPlacement }
+	| { shape: 'field'; field: PaperField; default: FieldPlacement }
 	| {
 			shape: 'square';
 			caption: 'above' | 'beside';
@@ -122,7 +119,6 @@ const markerBox = ({ x, y }: { x: number; y: number }) =>
 	({
 		shape: 'box',
 		fixed: true,
-		scanning: true,
 		default: {
 			x: portrait.x(mm(x - MARKER.side / 2)),
 			y: portrait.y(mm(y - MARKER.side / 2)),
@@ -157,7 +153,6 @@ const paperField = ({
 	({
 		shape: 'field',
 		field,
-		scanning: true,
 		default: {
 			x: portrait.x(mm(left)),
 			y: portrait.y(mm(top)),
@@ -465,20 +460,9 @@ export function documentLayoutSchema(document: LayoutDocument) {
 	);
 }
 
-/** Whether an element exists only where the conference reads its paper. */
-const forScanning = (spec: ElementSpec) => 'scanning' in spec && spec.scanning === true;
-
-/**
- * The elements of a document in the order they are declared; those of paper scanning only where
- * the conference reads its paper (`scanning`).
- */
-export const elementsOf = <D extends LayoutDocument>(
-	document: D,
-	{ scanning }: { scanning: boolean } = { scanning: false }
-) =>
-	specsOf(document)
-		.filter(([, spec]) => scanning || !forScanning(spec))
-		.map(([id, spec]) => ({ id, spec }));
+/** The elements of a document in the order they are declared. */
+export const elementsOf = <D extends LayoutDocument>(document: D) =>
+	specsOf(document).map(([id, spec]) => ({ id, spec }));
 
 /** A box as the editor lists it: what it holds, and whether it may be moved. */
 const boxEntry = ({
@@ -671,27 +655,25 @@ export function placementRect({
 
 /**
  * Whether `placement` of the element `id` would cover one of the document's fixed areas (the page
- * number, and the alignment marks where the conference reads its paper: `scanning`); the editor
- * refuses such a move. Texts are left out: their extent depends on the text.
+ * number, the alignment marks); the editor refuses such a move. Texts are left out: their extent
+ * depends on the text.
  */
 export function coversFixedArea({
 	document,
 	id,
 	shape,
 	placement,
-	aspect,
-	scanning = false
+	aspect
 }: {
 	document: LayoutDocument;
 	id: string;
 	shape: ElementSpec['shape'];
 	placement: AnyPlacement;
 	aspect: number;
-	scanning?: boolean;
 }) {
 	if (shape === 'text') return false;
 	const area = areaOf({ placement, aspect });
-	return elementsOf(document, { scanning }).some(({ id: other, spec }) => {
+	return elementsOf(document).some(({ id: other, spec }) => {
 		if (other === id || !isFixed(spec)) return false;
 		const fixed = areaOf({ placement: spec.default, aspect });
 		return (

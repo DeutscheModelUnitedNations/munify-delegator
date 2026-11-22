@@ -57,10 +57,10 @@
 	 * corner, texts change size below. The same editor serves the certificate and the postal
 	 * documents; what each has comes from `DOCUMENT_ELEMENTS`. A certificate's session list shows the
 	 * conference's sessions; while no session is kept on the certificates, it is left off and a hint
-	 * links where they are chosen (its placement stays stored). Where the conference reads its paper
-	 * (`scanning`), the alignment marks show fixed and the fields to read sit on a page each, which a
-	 * template of several pages is paged through for; the texts are on the first page, the footer on
-	 * every one.
+	 * links where they are chosen (its placement stays stored). On the application documents the
+	 * alignment marks show fixed and the fields to read sit on a page each, which a template of
+	 * several pages is paged through for; the texts are on the first page, the footer on every one.
+	 * Each field says live what a scan of the empty form would make of it (`checkFields`).
 	 */
 	interface Props {
 		conferenceId: string;
@@ -68,15 +68,12 @@
 		title: string;
 		/** The sessions the certificates list (`certificateSampleSessions`). */
 		certificateSessions: string[];
-		/** Whether the conference reads its paper (`paperScanning`, as the form has it). */
-		scanning: boolean;
 		/** Prints a sample of the document as laid out here, before it is saved. */
 		testPrint: (layout: Layout) => Promise<void>;
 		onclose: () => void;
 	}
 
-	let { conferenceId, document, title, certificateSessions, scanning, testPrint, onclose }: Props =
-		$props();
+	let { conferenceId, document, title, certificateSessions, testPrint, onclose }: Props = $props();
 
 	// Seeded once: re-reading the conference while someone drags would throw their placement away.
 	const stored = await client.query.conference({
@@ -89,8 +86,7 @@
 	});
 	const kind = untrack(() => document);
 	const templateUrl = stored[templateField[kind]]?.url;
-	const withFields = untrack(() => scanning);
-	const elements = elementsOf(kind, { scanning: withFields });
+	const elements = elementsOf(kind);
 	/** A certificate without sessions to list has no list to place. */
 	const withoutSessions = $derived(kind === 'certificate' && certificateSessions.length === 0);
 	const shown = $derived(
@@ -129,7 +125,7 @@
 
 	// The template read once, for the checks of the fields read off a scan
 	$effect(() => {
-		if (!withFields || !templateUrl || kind === 'certificate') return;
+		if (!templateUrl || kind === 'certificate') return;
 		templatePictures({ url: templateUrl })
 			.then((rendered) => (pictures = rendered))
 			.catch((error) => logger.warn('Could not read the template for the checks', error));
@@ -279,8 +275,7 @@
 			id,
 			shape,
 			placement: next,
-			aspect,
-			scanning: withFields
+			aspect
 		});
 		if (covers) return;
 		layout[id] = next;
@@ -317,8 +312,7 @@
 			id,
 			shape: spec.shape,
 			placement: next,
-			aspect,
-			scanning: withFields
+			aspect
 		});
 		if (!covers) layout[id] = next;
 	}

@@ -123,7 +123,7 @@ test('only those who edit the layouts get codes for a layout being edited (a tes
 		gql(
 			page,
 			`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
-				issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p, layouts: {}, paperScanning: true) { code }
+				issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p, layouts: {}) { code }
 			}`,
 			{
 				c: conferenceId,

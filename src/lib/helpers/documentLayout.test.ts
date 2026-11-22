@@ -267,14 +267,13 @@ describe('elementsByShape', () => {
 describe('the fields read off a scan', () => {
 	const aspect = 595 / 842;
 
-	test('exist only where the conference reads its paper, with the alignment marks, each named as its field', () => {
-		const ids = (scanning: boolean) => elementsOf('mediaConsent', { scanning }).map(({ id }) => id);
-		expect(ids(false)).not.toContain('mediaPhoto');
-		expect(ids(true)).toEqual(
+	test('are on every application document, with the alignment marks, each named as its field', () => {
+		expect(elementsOf('mediaConsent').map(({ id }) => id)).toEqual(
 			expect.arrayContaining(['markerTopLeft', 'mediaPhoto', 'mediaAdvertising', 'mediaSignature'])
 		);
+		expect(elementsOf('certificate').map(({ id }) => id)).not.toContain('markerTopLeft');
 		const { fields } = elementsByShape({
-			elements: elementsOf('contract', { scanning: true }),
+			elements: elementsOf('contract'),
 			layout: defaultLayout('contract')
 		});
 		expect(fields.map(({ id, field, mark }) => [id, field, mark])).toEqual([
@@ -286,7 +285,7 @@ describe('the fields read off a scan', () => {
 
 	test('the alignment marks are fixed: never moved, never stored, and nothing goes over them', () => {
 		const { boxes } = elementsByShape({
-			elements: elementsOf('contract', { scanning: true }),
+			elements: elementsOf('contract'),
 			layout: defaultLayout('contract')
 		});
 		expect(boxes.filter(({ id }) => id.startsWith('marker')).every(({ fixed }) => fixed)).toBe(
@@ -302,18 +301,15 @@ describe('the fields read off a scan', () => {
 		expect(parsed.success && 'markerTopLeft' in parsed.data).toBe(false);
 		const { termsSignature, markerBottomLeft } = defaultLayout('contract');
 		const onMark = { ...termsSignature, x: markerBottomLeft.x, y: markerBottomLeft.y };
-		const covers = (scanning: boolean) =>
+		expect(
 			coversFixedArea({
 				document: 'contract',
 				id: 'termsSignature',
 				shape: 'field',
 				placement: onMark,
-				aspect,
-				scanning
-			});
-		expect(covers(true)).toBe(true);
-		// where the paper is not read, there are no marks
-		expect(covers(false)).toBe(false);
+				aspect
+			})
+		).toBe(true);
 	});
 
 	test('the footer stays clear of the page number and the marks by default', () => {
@@ -325,8 +321,7 @@ describe('the fields read off a scan', () => {
 					id,
 					shape: id === 'code' ? 'square' : 'box',
 					placement: layout[id],
-					aspect,
-					scanning: true
+					aspect
 				})
 			).toBe(false);
 		}

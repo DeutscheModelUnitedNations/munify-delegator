@@ -22,7 +22,7 @@ type Layout = Parameters<typeof pageAreas>[0]['layout'];
 /** How many pages of the template the layout's fields are on, counted to the last one. */
 function pagesWithFields({ document, layout }: { document: PostalDocument; layout: Layout }) {
 	const { fields } = elementsByShape({
-		elements: elementsOf(document, { scanning: true }),
+		elements: elementsOf(document),
 		layout
 	});
 	return Math.max(0, ...fields.map(({ placement }) => placement.page + 1));

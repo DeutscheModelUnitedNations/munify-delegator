@@ -46,7 +46,7 @@ export function pageAreas({
 	const width = size.width / POINTS_PER_MM;
 	const height = size.height / POINTS_PER_MM;
 	const { fields } = elementsByShape({
-		elements: elementsOf(document, { scanning: true }),
+		elements: elementsOf(document),
 		layout
 	});
 	const markers = MARKER_ELEMENTS.map((id) => {

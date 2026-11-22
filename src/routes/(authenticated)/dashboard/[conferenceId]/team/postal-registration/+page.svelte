@@ -33,8 +33,7 @@
 			__args: { id: routeParams.conferenceId },
 			id: true,
 			startConference: true,
-			nextDocumentNumber: true,
-			paperScanning: true
+			nextDocumentNumber: true
 		})
 	);
 
@@ -84,8 +83,8 @@
 	// --- Reading the paper (`#lib/paperScan`) ---
 
 	/** Whether the camera reads the whole page, its fields too, or only the code. */
-	const pageMode = createPersistedState({ key: 'postalRegistrationReadsPages', initial: false });
-	const readsPages = $derived(!!conference?.paperScanning && pageMode.current);
+	const pageMode = createPersistedState({ key: 'postalRegistrationReadsPages', initial: true });
+	const readsPages = $derived(pageMode.current);
 
 	/** What was read off each person's pages so far, by user id: a later page adds to it. */
 	let readings = $state<Record<string, FieldReading[]>>({});
@@ -177,31 +176,29 @@
 	scanPrompt={readsPages ? m.paperScanPrompt() : undefined}
 >
 	{#snippet header()}
-		{#if conference?.paperScanning}
-			<div class="flex flex-wrap items-center gap-3" data-tour="team.postalRegistration.paper">
-				<div class="join" role="group" aria-label={m.paperScanMode()}>
-					<button
-						type="button"
-						class="btn btn-sm join-item {readsPages ? '' : 'btn-active'}"
-						aria-pressed={!readsPages}
-						onclick={() => (pageMode.current = false)}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-qr-code"></i>
-						{m.paperScanModeCode()}
-					</button>
-					<button
-						type="button"
-						class="btn btn-sm join-item {readsPages ? 'btn-active' : ''}"
-						aria-pressed={readsPages}
-						onclick={() => (pageMode.current = true)}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-file-magnifying-glass"></i>
-						{m.paperScanModePage()}
-					</button>
-				</div>
-				<PaperBatch conferenceId={routeParams.conferenceId} />
+		<div class="flex flex-wrap items-center gap-3" data-tour="team.postalRegistration.paper">
+			<div class="join" role="group" aria-label={m.paperScanMode()}>
+				<button
+					type="button"
+					class="btn btn-sm join-item {readsPages ? '' : 'btn-active'}"
+					aria-pressed={!readsPages}
+					onclick={() => (pageMode.current = false)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-qr-code"></i>
+					{m.paperScanModeCode()}
+				</button>
+				<button
+					type="button"
+					class="btn btn-sm join-item {readsPages ? 'btn-active' : ''}"
+					aria-pressed={readsPages}
+					onclick={() => (pageMode.current = true)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-file-magnifying-glass"></i>
+					{m.paperScanModePage()}
+				</button>
 			</div>
-		{/if}
+			<PaperBatch conferenceId={routeParams.conferenceId} />
+		</div>
 	{/snippet}
 
 	{#snippet description()}

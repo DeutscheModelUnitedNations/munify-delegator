@@ -2016,7 +2016,6 @@ type Conference {
   The document number to hand to the next participant who needs one. Participant care only; anybody else gets FORBIDDEN.
   """
   nextDocumentNumber: Int!
-  paperScanning: Boolean!
 
   """Get the papers related to this conference"""
   papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
@@ -2152,7 +2151,6 @@ input ConferenceOrderInputArgument {
   mediaConsentFileId: SortingParameter
   messagingEnabled: SortingParameter
   nametagBinCount: SortingParameter
-  paperScanning: SortingParameter
   participantMaxAge: SortingParameter
   participantMinAge: SortingParameter
   postalApartment: SortingParameter
@@ -2286,7 +2284,6 @@ input ConferenceWhereInputArgument {
   mediaConsentFileId: IDWhereInputArgument
   messagingEnabled: BooleanWhereInputArgument
   nametagBinCount: IntWhereInputArgument
-  paperScanning: BooleanWhereInputArgument
   papers: PaperWhereInputArgument
   participantMaxAge: IntWhereInputArgument
   participantMinAge: IntWhereInputArgument
@@ -4408,7 +4405,7 @@ type Mutation {
   hideChatMessagesOf(chatId: ID!, participantId: ID!, reason: String!): Int!
 
   """
-  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Where the conference reads its paper, each carries where its page's fields are. `layouts` and `paperScanning` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
     conferenceId: ID!
@@ -4416,9 +4413,6 @@ type Mutation {
     """A test print: the layouts being edited."""
     layouts: JSON
     pages: [PrintedPageInput!]!
-
-    """A test print: the switch as it stands."""
-    paperScanning: Boolean
 
     """The holder's user id."""
     userId: ID!
@@ -5078,11 +5072,6 @@ type Mutation {
 
     """How many tables the nametags are handed out at."""
     nametagBinCount: Int
-
-    """
-    Whether the application documents are printed to be read back by a scan: alignment marks in the corners and the signature and media consent fields placed in the layout editor.
-    """
-    paperScanning: Boolean
 
     """
     How old participants are at most on the first conference day; `null` for no upper limit.

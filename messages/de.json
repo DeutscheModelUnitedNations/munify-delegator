@@ -2585,8 +2585,6 @@
 	"paperScanModeCode": "Nur Code",
 	"paperScanModePage": "Ganze Seite",
 	"paperScanPrompt": "Halte die ganze Seite mit allen vier Ecken ins Bild...",
-	"paperScanning": "Unterlagen per Scan auslesen",
-	"paperScanningDescription": "Druckt Ausrichtungsmarken in die Ecken und die Felder, die du in den Vorlagen platzierst (Unterschriften, Kästchen der Medieneinwilligung). Die postalische Anmeldung liest sie dann von gescannten oder fotografierten Seiten.",
 	"paperStartFresh": "Neu beginnen",
 	"paperStatsCharacters": "{count} Zeichen",
 	"paperStatsParagraphs": "{count} Absätze",

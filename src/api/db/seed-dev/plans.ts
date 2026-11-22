@@ -166,8 +166,6 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 5 · Preparation',
 			messagingEnabled: true,
-			// alignment marks and fields on the application documents, read back on the postal page
-			paperScanning: true,
 			longTitle: 'Seed-Konferenz in der Vorbereitung',
 			state: 'PREPARATION',
 			unlockPayments: true,

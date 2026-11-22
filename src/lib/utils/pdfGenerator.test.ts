@@ -10,7 +10,7 @@ import type { PrintedPage } from '#lib/paperScan/pageAreas';
 import { renderPdfPage, type Pixels } from '#lib/paperScan/scanSimulation';
 
 // The postal registration as the generator builds it from DMUN's templates: one signed code per
-// page, the pages in order, and where the paper is read, the alignment marks and the boxes.
+// page, the pages in order, and on the main pages the alignment marks and the boxes.
 
 const downloads: Uint8Array[] = [];
 vi.mock('#lib/utils/downloadHelpers', () => ({
@@ -41,7 +41,7 @@ const dataUrl = (name: string) => {
 };
 
 /** Generates the documents; answers the PDF and the pages the codes were asked for. */
-async function generate({ isOfAge, paperScanning }: { isOfAge: boolean; paperScanning: boolean }) {
+async function generate({ isOfAge }: { isOfAge: boolean }) {
 	const asked: PrintedPage[][] = [];
 	asInTheBrowser();
 	await downloadCompletePostalRegistrationPDF({
@@ -62,8 +62,7 @@ async function generate({ isOfAge, paperScanning }: { isOfAge: boolean; paperSca
 			guardianConsentFile: dataUrl('guardianConsent'),
 			mediaConsentFile: dataUrl('mediaConsent'),
 			termsAndConditionsFile: dataUrl('termsAndConditions'),
-			documentLayouts: null,
-			paperScanning
+			documentLayouts: null
 		}
 	});
 	vi.unstubAllGlobals();
@@ -96,7 +95,7 @@ describe('the postal registration documents', () => {
 			timeout: 60_000
 		},
 		async () => {
-			const { bytes, asked } = await generate({ isOfAge: false, paperScanning: true });
+			const { bytes, asked } = await generate({ isOfAge: false });
 			expect(asked).toHaveLength(1);
 			expect(asked[0].map(({ document, page }) => [document, page])).toEqual([
 				['contract', 0],
@@ -118,24 +117,17 @@ describe('the postal registration documents', () => {
 		}
 	);
 
-	test(
-		'carry the marks on the main pages only where the paper is read',
-		{ timeout: 60_000 },
-		async () => {
-			const read = await generate({ isOfAge: true, paperScanning: true });
-			// an adult's: no guardians' consent
-			expect(read.asked[0].map(({ document }) => document)).toEqual([
-				'contract',
-				'mediaConsent',
-				'mediaConsent',
-				'mediaConsent'
-			]);
-			expect(findMarkers(await renderPdfPage({ bytes: read.bytes, page: 0 }))).not.toBeNull();
-			// the terms carry no marks
-			expect(findMarkers(await renderPdfPage({ bytes: read.bytes, page: 4 }))).toBeNull();
-
-			const plain = await generate({ isOfAge: true, paperScanning: false });
-			expect(findMarkers(await renderPdfPage({ bytes: plain.bytes, page: 0 }))).toBeNull();
-		}
-	);
+	test('carry the marks on the main pages only', { timeout: 60_000 }, async () => {
+		const read = await generate({ isOfAge: true });
+		// an adult's: no guardians' consent
+		expect(read.asked[0].map(({ document }) => document)).toEqual([
+			'contract',
+			'mediaConsent',
+			'mediaConsent',
+			'mediaConsent'
+		]);
+		expect(findMarkers(await renderPdfPage({ bytes: read.bytes, page: 0 }))).not.toBeNull();
+		// the terms carry no marks
+		expect(findMarkers(await renderPdfPage({ bytes: read.bytes, page: 4 }))).toBeNull();
+	});
 });

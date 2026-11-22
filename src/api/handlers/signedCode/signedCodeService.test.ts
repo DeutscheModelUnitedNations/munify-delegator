@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 vi.mock('$app/env/private', () => ({ CERTIFICATE_SECRET: 'a secret that only this test uses' }));
 
 /** The conference as the service reads it. */
-const conference = { paperScanning: false, documentLayouts: null };
+const conference: { documentLayouts: unknown } = { documentLayouts: null };
 vi.mock('#api/db/db', () => ({
 	db: { query: { conference: { findFirst: async () => conference } } }
 }));
@@ -11,6 +11,7 @@ vi.mock('#api/db/db', () => ({
 const { issueCertificateCode, issueLiveCode, issuePrintCodes, scannedUserId, verifyCode } =
 	await import('./signedCodeService');
 const { decodeAreas } = await import('#lib/paperScan/areas');
+const { defaultLayout } = await import('#lib/helpers/documentLayout');
 
 const A4 = { width: 595, height: 842 };
 const issuePrintCode = async ({ now }: { now?: number } = {}) => {
@@ -52,8 +53,7 @@ describe('issued codes', () => {
 });
 
 describe('the codes of the application documents', () => {
-	test('one per page, each carrying the fields on its page where the paper is read', async () => {
-		conference.paperScanning = true;
+	test('one per page, each carrying the fields on its page', async () => {
 		const pages = [
 			{ document: 'mediaConsent', page: 0, ...A4 },
 			{ document: 'mediaConsent', page: 1, ...A4 },
@@ -83,22 +83,45 @@ describe('the codes of the application documents', () => {
 		]);
 	});
 
-	test('carry no fields where the paper is not read, unless a test print says so', async () => {
-		conference.paperScanning = false;
-		const pages = [{ document: 'contract', page: 0, ...A4 }] as const;
+	test("a page without fields carries none; a test print's layout stands in for the stored one", async () => {
 		const read = async (code: string) => {
 			const checked = await verifyCode({ text: code });
-			return checked.valid && checked.claims.kind === 'print' ? checked.claims.areas : null;
+			if (!checked.valid || checked.claims.kind !== 'print') throw new Error('not a print code');
+			return checked.claims.areas && decodeAreas(checked.claims.areas);
 		};
-		const [plain] = await issuePrintCodes({ userId: 'alice', conferenceId: 'mun', pages });
-		expect(await read(plain)).toBeUndefined();
+		// the contract's signature moved to its (template's) second page
+		const layouts = {
+			contract: {
+				...defaultLayout('contract'),
+				termsSignature: { x: 0.1, y: 0.8, width: 0.4, height: 0.03, page: 1 }
+			}
+		};
+		conference.documentLayouts = layouts;
+		const pages = [
+			{ document: 'contract', page: 0, ...A4 },
+			{ document: 'contract', page: 1, ...A4 },
+			{ document: 'contract', page: 2, ...A4 }
+		] as const;
+		const [first, second, third] = await issuePrintCodes({
+			userId: 'alice',
+			conferenceId: 'mun',
+			pages
+		});
+		expect((await read(first))?.areas.map(({ field }) => field)).toEqual([
+			'termsAccepted',
+			'termsPlaceDate'
+		]);
+		expect((await read(second))?.areas.map(({ field }) => field)).toEqual(['termsSignature']);
+		expect(await read(third)).toBeUndefined();
+
 		const [draft] = await issuePrintCodes({
 			userId: 'alice',
 			conferenceId: 'mun',
-			pages,
-			draft: { paperScanning: true }
+			pages: [pages[0]],
+			draft: { layouts: null }
 		});
-		expect(await read(draft)).toEqual(expect.arrayContaining([2]));
+		expect((await read(draft))?.areas).toHaveLength(3);
+		conference.documentLayouts = null;
 	});
 });
 

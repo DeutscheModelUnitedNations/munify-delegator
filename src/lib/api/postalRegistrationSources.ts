@@ -48,8 +48,7 @@ export async function fetchPostalRegistrationSources({
 			guardianConsentFile: { url: true },
 			mediaConsentFile: { url: true },
 			termsAndConditionsFile: { url: true },
-			documentLayouts: true,
-			paperScanning: true
+			documentLayouts: true
 		})
 	]);
 	const issueCodes: IssueDocumentCodes = async (pages) => {

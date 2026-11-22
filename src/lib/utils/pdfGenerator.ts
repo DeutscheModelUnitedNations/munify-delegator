@@ -564,9 +564,8 @@ function drawCodeCaption({
 
 /**
  * Numbers the pages and puts each main page's signed code (`codes`, one per main page), with the
- * person's name and id beside it, where that page's document places it. Where the conference
- * reads its paper (`scanning`), the main pages also get the alignment marks and their fields. The
- * appendix (the terms and conditions) is numbered in roman numerals, where `appendixPageNumber`
+ * person's name and id beside it, where that page's document places it, with the alignment marks
+ * and the page's fields to read off a scan (`#lib/paperScan/drawPaper`). The appendix (the terms and conditions) is numbered in roman numerals, where `appendixPageNumber`
  * says. Codes are plain: printed at home and scanned back, black on white reads best.
  */
 // fallow-ignore-next-line complexity
@@ -576,8 +575,7 @@ async function numerateDocument({
 	participantName,
 	mainPages,
 	codes,
-	appendixPageNumber,
-	scanning
+	appendixPageNumber
 }: {
 	pdfDoc: PDFDocument;
 	participantId: string;
@@ -585,7 +583,6 @@ async function numerateDocument({
 	mainPages: MainPage[];
 	codes: string[];
 	appendixPageNumber: BoxPlacement;
-	scanning: boolean;
 }) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -605,9 +602,7 @@ async function numerateDocument({
 			});
 			continue;
 		}
-		if (scanning) {
-			drawPaperPage({ page, document: at.document, layout: at.layout, pageIndex: at.page });
-		}
+		drawPaperPage({ page, document: at.document, layout: at.layout, pageIndex: at.page });
 		const square = await placeQrCode({
 			pdfDoc,
 			page,
@@ -743,8 +738,7 @@ async function generateCompletePostalRegistrationPDF({
 	guardianAgreement,
 	medialAgreement,
 	termsAndConditions,
-	layouts,
-	scanning
+	layouts
 }: {
 	isOfAge: boolean;
 	participant: ParticipantData;
@@ -756,8 +750,6 @@ async function generateCompletePostalRegistrationPDF({
 	termsAndConditions: string;
 	/** `conference.documentLayouts`: where the team placed the fields; the defaults otherwise. */
 	layouts: unknown;
-	/** `conference.paperScanning`: alignment marks and fields to read off a scan. */
-	scanning: boolean;
 }): Promise<Uint8Array> {
 	const contractLayout = resolveDocumentLayout({ document: 'contract', stored: layouts });
 	const guardianLayout = resolveDocumentLayout({ document: 'guardianConsent', stored: layouts });
@@ -831,8 +823,7 @@ async function generateCompletePostalRegistrationPDF({
 		participantName: participant.name,
 		mainPages,
 		codes,
-		appendixPageNumber: contractLayout.pageNumber,
-		scanning
+		appendixPageNumber: contractLayout.pageNumber
 	});
 
 	// Merge all pages into a single PDF
@@ -851,8 +842,6 @@ interface PostalTemplateFiles {
 	termsAndConditionsFile?: TemplateFile;
 	/** Where the team placed the fields on them (`conference.documentLayouts`). */
 	documentLayouts?: unknown;
-	/** Whether the documents are printed to be read back by a scan (`conference.paperScanning`). */
-	paperScanning: boolean;
 }
 
 /** The template's URL, or a toast naming what is missing and an error when there is none. */
@@ -911,8 +900,7 @@ export async function downloadCompletePostalRegistrationPDF({
 			guardianAgreement: guardianContent,
 			medialAgreement: mediaContent,
 			termsAndConditions: termsContent,
-			layouts: templates.documentLayouts,
-			scanning: templates.paperScanning
+			layouts: templates.documentLayouts
 		});
 
 		downloadPDF({ bytes: pdfBytes, filename: fileName });

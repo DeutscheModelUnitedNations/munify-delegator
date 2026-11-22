@@ -131,11 +131,5 @@ export const conference = snakeCase.table('conference', {
 	 * plain black one (`#lib/helpers/qrStyle`). The application documents' codes are always plain:
 	 * printed at home and scanned back, black on white reads best.
 	 */
-	qrCorporateDesign: boolean().default(true).notNull(),
-	/**
-	 * Whether the application documents are printed to be read back by a scan: alignment marks in
-	 * their corners and the fields placed in the layout editor (signatures, the media consent's
-	 * boxes), which the postal registration reads off scanned pages (`#lib/paperScan`).
-	 */
-	paperScanning: boolean().default(false).notNull()
+	qrCorporateDesign: boolean().default(true).notNull()
 });
