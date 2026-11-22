@@ -8046,16 +8046,21 @@ type StatisticsResult {
 Delegation members and single participants living in one area: a country and the first three digits of a ZIP code.
 """
 type StatisticsResultAddresses {
+  """
+  True when lat/lng are the centre of the country: no ZIP, or one without known coordinates.
+  """
+  atCountryCentre: Boolean
+
   """People living in the area."""
   count: Int!
 
   """Country of the address (alpha-3); null for people without one."""
   country: String
 
-  """Centre of the area; German ZIPs only."""
+  """Centre of the area, or of the country when the area is unknown."""
   lat: Float
 
-  """Centre of the area; German ZIPs only."""
+  """Centre of the area, or of the country when the area is unknown."""
   lng: Float
 
   """

@@ -1,5 +1,6 @@
 import type * as schema from '#api/db/schema/index';
 import { type StatsFilterType, matchesStatsFilter } from './statisticsFilters';
+import { normalizeCountry } from './zipTable';
 
 /**
  * The statistics dashboard reads materialized views (the `statistics_materialized_views`
@@ -461,11 +462,13 @@ export function addressesOf({
 	>();
 	for (const row of addresses) {
 		if (!matchesStatsFilter({ filter, row })) continue;
+		// Older user rows hold alpha-2 codes; `DE` and `DEU` are one country.
+		const country = row.country === null ? null : normalizeCountry(row.country);
 		const group = accumulate({
 			map: groups,
-			key: `${row.country ?? ''}:${row.zipPrefix ?? ''}`,
+			key: `${country ?? ''}:${row.zipPrefix ?? ''}`,
 			create: () => ({
-				country: row.country,
+				country,
 				zipPrefix: row.zipPrefix,
 				count: 0
 			})

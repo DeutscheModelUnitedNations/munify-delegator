@@ -767,3 +767,8 @@ blockquote .blockquote-content {
 	outline: 3px solid var(--color-base-content);
 	outline-offset: 2px;
 }
+
+/* MapLibre popups are white whatever the theme; their text must not follow a dark theme. */
+.maplibregl-popup-content {
+	color: #1b1837;
+}

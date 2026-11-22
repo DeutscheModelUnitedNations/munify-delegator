@@ -352,6 +352,21 @@ describe('addressesOf', () => {
 			{ country: 'DEU', zipPrefix: null, count: 4 }
 		]);
 	});
+
+	test('counts alpha-2 countries of older rows with their alpha-3 code', () => {
+		const address = (country: string, count: number) => ({
+			conferenceId: 'c',
+			applied: true,
+			hasRole: false,
+			country,
+			zipPrefix: '241',
+			count
+		});
+
+		expect(
+			addressesOf({ addresses: [address('DEU', 2), address('DE', 1)], filter: 'ALL' })
+		).toEqual([{ country: 'DEU', zipPrefix: '241', count: 3 }]);
+	});
 });
 
 describe('nationalityDistributionOf', () => {

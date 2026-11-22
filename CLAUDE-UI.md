@@ -476,6 +476,9 @@ input), `columns/`, `grouping/` (`GroupLevel` fetches a level's groups, `GroupRo
   (on screen), `#lib/api/downloadQrPng` (PNG) or `#lib/api/pdfQr` (`drawQr`, vectors in PDFs), so
   all follow the conference's `qrCorporateDesign` (`qrStyle`). Printed codes are sized with
   `minQrSide` (`#lib/helpers/qrSize`: 0.45 mm modules) so phones read them.
+- **Maps** (`#lib/components/map/`): MapLibre via `svelte-maplibre`, basemap from `mapStyle()`
+  (OpenFreeMap Positron/Dark by colour scheme). `PlaceMap` (`lat`, `lng`, optional `name`, `class`
+  sizing it) shows one place; import it lazily (`{#await import(…)}`), MapLibre is large.
 - **`CollapsibleCard`**: `icon`, `title`, `bind:expanded`, optional `badge` snippet at the header's end.
 - **`LoadState`**: `<LoadState {loading} {error}>…</LoadState>`: spinner, error, or children; for
   state loaded by hand rather than an awaited `$derived`.

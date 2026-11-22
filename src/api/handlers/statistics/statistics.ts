@@ -118,11 +118,10 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 			description:
 				'Where the delegation members and single participants the filter selects live, by country and ZIP area.',
 			resolve: async ({ rows, filter }) => {
-				const [addresses, coordinates] = await Promise.all([rows.addresses(), zipCoordinates()]);
-				return addressesOf({ addresses, filter }).map((address) => ({
+				return addressesOf({ addresses: await rows.addresses(), filter }).map((address) => ({
 					...address,
-					...(address.country === 'DEU' && address.zipPrefix !== null
-						? coordinates.get(address.zipPrefix)
+					...(address.country !== null
+						? zipCoordinates({ country: address.country, zipPrefix: address.zipPrefix })
 						: undefined)
 				}));
 			}

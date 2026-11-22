@@ -1,4 +1,6 @@
 <script lang="ts">
+	// MapLibre is large: loaded only when a map shows.
+	const loadPlaceMap = () => import('#lib/components/map/PlaceMap.svelte');
 	import { logger } from '#lib/logger';
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '#lib/components/ActionModal.svelte';
@@ -189,26 +191,13 @@
 		</fieldset>
 	</div>
 	{#if placeLatitude && placeLongitude && !isNaN(parseFloat(placeLatitude)) && !isNaN(parseFloat(placeLongitude))}
-		<div class="h-[200px] w-full overflow-hidden rounded-box">
-			{#await import('sveaflet') then { Map, TileLayer, Marker }}
-				<Map
-					options={{
-						center: [parseFloat(placeLatitude), parseFloat(placeLongitude)],
-						zoom: 15,
-						scrollWheelZoom: false
-					}}
-				>
-					<TileLayer
-						url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}
-						options={{
-							attribution:
-								'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-						}}
-					/>
-					<Marker latLng={[parseFloat(placeLatitude), parseFloat(placeLongitude)]} />
-				</Map>
-			{/await}
-		</div>
+		{#await loadPlaceMap() then { default: PlaceMap }}
+			<PlaceMap
+				lat={parseFloat(placeLatitude)}
+				lng={parseFloat(placeLongitude)}
+				class="h-[200px] w-full overflow-hidden rounded-box"
+			/>
+		{/await}
 	{/if}
 	<fieldset class="fieldset">
 		<legend class="fieldset-legend">{m.calendarPlaceDirections()}</legend>
