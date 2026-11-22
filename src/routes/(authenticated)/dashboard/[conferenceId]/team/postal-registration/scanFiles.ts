@@ -47,7 +47,10 @@ async function* pdfPages(file: File) {
 			canvas.width = Math.round(viewport.width);
 			canvas.height = Math.round(viewport.height);
 			await page.render({ canvas, viewport }).promise;
-			yield { page: number, picture: pictureOf({ source: canvas, ...canvas }) };
+			yield {
+				page: number,
+				picture: pictureOf({ source: canvas, width: canvas.width, height: canvas.height })
+			};
 			page.cleanup();
 		}
 	} finally {
@@ -63,7 +66,10 @@ export async function* pagesOf(file: File): AsyncGenerator<{ page: number; pictu
 	}
 	const bitmap = await createImageBitmap(file);
 	try {
-		yield { page: 1, picture: pictureOf({ source: bitmap, ...bitmap }) };
+		yield {
+			page: 1,
+			picture: pictureOf({ source: bitmap, width: bitmap.width, height: bitmap.height })
+		};
 	} finally {
 		bitmap.close();
 	}
