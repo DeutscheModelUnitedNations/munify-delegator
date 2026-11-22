@@ -53,7 +53,7 @@ describe('drawPaperPage', () => {
 		});
 	});
 
-	test('frames the boxes to tick and draws nothing for the fields to write in', async () => {
+	test('draws nothing for the fields, boxes to tick included: they are only read', async () => {
 		const picture = await drawnContract();
 		const { areas } = pageAreas({
 			document: 'contract',
@@ -62,9 +62,7 @@ describe('drawPaperPage', () => {
 			size: A4
 		});
 		for (const area of areas) {
-			const shade = darkest({ picture, box: area });
-			if (area.field === 'termsAccepted') expect(shade, area.field).toBeLessThan(100);
-			else expect(shade, area.field).toBe(255);
+			expect(darkest({ picture, box: area }), area.field).toBe(255);
 		}
 	});
 });

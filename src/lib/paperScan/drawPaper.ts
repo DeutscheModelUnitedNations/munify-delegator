@@ -1,6 +1,5 @@
 import { rgb, type PDFPage } from 'pdf-lib';
 import { POINTS_PER_MM } from '#lib/helpers/documentLayout';
-import { PAPER_FIELDS } from './fields';
 import { MARKER, type Point } from './markerGeometry';
 import { markerCells, MARKER_CELLS } from './markers';
 import { pageAreas, type PostalDocument } from './pageAreas';
@@ -8,8 +7,8 @@ import { pageAreas, type PostalDocument } from './pageAreas';
 /**
  * What a page of the application documents carries to be read off a scan, drawn into it with
  * pdf-lib (`#lib/utils/pdfGenerator` calls it for every main page where the conference reads its
- * paper): its alignment marks, and a frame for each box to tick. A field to write in (a
- * signature, a name, place and date) is drawn nothing for: it sits on the template's own line.
+ * paper): its alignment marks, nothing else. The fields are only where a scan is read: each sits on
+ * the template's own box or line, and nothing is drawn for it.
  */
 
 /**
@@ -46,7 +45,7 @@ function drawAlignmentMarks({ page, centers }: { page: PDFPage; centers: Point[]
 	}
 }
 
-/** Draws page `pageIndex` (from 0) of a `document`'s template's marks and boxes as `layout` places them. */
+/** Draws the alignment marks of page `pageIndex` (from 0) of a `document`'s template as `layout` places them. */
 export function drawPaperPage({
 	page,
 	document,
@@ -59,22 +58,11 @@ export function drawPaperPage({
 	pageIndex: number;
 }) {
 	const { width, height } = page.getSize();
-	const { markers, areas } = pageAreas({
+	const { markers } = pageAreas({
 		document,
 		layout,
 		page: pageIndex,
 		size: { width, height }
 	});
 	drawAlignmentMarks({ page, centers: markers });
-	for (const area of areas) {
-		if (PAPER_FIELDS[area.field].mark !== 'checkbox') continue;
-		page.drawRectangle({
-			x: area.x * POINTS_PER_MM,
-			y: height - (area.y + area.height) * POINTS_PER_MM,
-			width: area.width * POINTS_PER_MM,
-			height: area.height * POINTS_PER_MM,
-			borderColor: rgb(0, 0, 0),
-			borderWidth: 0.75
-		});
-	}
 }

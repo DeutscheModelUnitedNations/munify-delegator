@@ -8,8 +8,8 @@ import type { Point } from './markerGeometry';
  * Reads the fields of a scanned page: the four markers give where the page lies in the picture
  * (a perspective through their centres, which the code says, which also takes in a page printed smaller, stretched by
  * the printer, scanned crooked or upside down), and each field the share of the paper inside it
- * that is darker than the paper around it. A box's frame (ours) and the line a field is written on
- * (the template's) are kept out by reading inside the box and above the line.
+ * that is darker than the paper around it. A box's frame and the line a field is written on (both
+ * the template's) are kept out by reading inside the box and above the line.
  */
 
 /** What a field holds: ticked or signed, empty, or too little to tell (a person decides). */
@@ -54,7 +54,7 @@ type Box = { x: number; y: number; width: number; height: number };
  */
 function innerBox({ box, mark }: { box: Box; mark: PaperMark }): Box {
 	if (mark === 'checkbox') {
-		// past the frame (ours, and the form's under it) and a scan aligned up to 0.3 mm off
+		// past the form's frame and a scan aligned up to 0.3 mm off
 		const inset = Math.max(0.6, Math.min(box.width, box.height) * 0.2);
 		return {
 			x: box.x + inset,

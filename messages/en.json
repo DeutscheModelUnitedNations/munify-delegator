@@ -1572,7 +1572,7 @@
 	"documentLayoutCode": "QR code with name and ID",
 	"documentLayoutCodeMinimum": "The QR code prints at least {size} mm wide so phones can read it off the paper. When its content needs more room, it grows on its own when printed.",
 	"documentLayoutFieldPage": "Page of {field}",
-	"documentLayoutFieldsHint": "The blue fields are read from scans: put them over the matching places of your template, lines to fill in with their bottom edge on the template's line. Boxes print as a frame, nothing prints for lines. A document counts as received only once all its fields are filled in, the guardians' only for minors. The four alignment marks are fixed; nothing can be placed over them.",
+	"documentLayoutFieldsHint": "The blue fields are read from scans: put them over the matching places of your template, lines to fill in with their bottom edge on the template's line. Nothing is printed for them; they only say where to read. A document counts as received only once all its fields are filled in, the guardians' only for minors. The four alignment marks are fixed; nothing can be placed over them.",
 	"documentLayoutFixed": "fixed, it cannot be moved. The QR code cannot cover it.",
 	"documentLayoutFontSizes": "Font sizes",
 	"documentLayoutHowTo": "How it works",
