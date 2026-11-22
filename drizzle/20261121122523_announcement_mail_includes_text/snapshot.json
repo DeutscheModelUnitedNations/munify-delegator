@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "b8258880-7af8-4b8f-abb0-db7129ff9830",
+  "prevIds": [
+    "43eee5be-47de-43a3-95fb-f26a67e6a8bb"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "announcement",
+        "mail_includes_text"
+      ],
+      "writes": [
+        "s|col|public.announcement.mail_includes_text",
+        "n|col|public.announcement.mail_includes_text",
+        "e|col|public.announcement.mail_includes_text"
+      ],
+      "reads": [
+        "n|tbl|public.announcement",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "announcement",
+        "name": "mail_includes_text",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "true",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

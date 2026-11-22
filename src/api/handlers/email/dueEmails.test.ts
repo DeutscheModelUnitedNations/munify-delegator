@@ -670,6 +670,7 @@ describe('announcements', () => {
 		title: 'Room change',
 		body: 'The GA meets in room 2.',
 		signature: null,
+		includesText: true,
 		mailRevision: 0,
 		attachmentNames: []
 	};

@@ -3,6 +3,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import PdfTemplateHelp from '#lib/components/form/PdfTemplateHelp.svelte';
@@ -13,7 +14,6 @@
 	import {
 		templateOrDefault,
 		testPrintCertificate,
-		testPrintDocumentCode,
 		testPrintParticipant,
 		testPrintRecipient
 	} from './testPrintData';
@@ -72,20 +72,27 @@
 			termsAndConditionsFile: { url: true },
 			documentLayouts: true
 		});
+		const documentLayouts = withDraft({ stored: templates.documentLayouts, draft });
+		// Real codes, of the person printing: a test print scanned back reads like a participant's
+		const { sub: userId } = await getCurrentUser();
 		// a minor's, so the guardian consent is part of it
 		await downloadCompletePostalRegistrationPDF({
 			isOfAge: false,
 			participant: testPrintParticipant(),
-			documentCode: testPrintDocumentCode(),
+			issueCodes: async (pages) => {
+				const codes = await client.mutate.issueDocumentCodes({
+					__args: { conferenceId, userId, pages, layouts: documentLayouts },
+					code: true
+				});
+				return codes.map(({ code }) => code);
+			},
 			recipient: testPrintRecipient($formData),
 			templates: {
 				contractFile: templates.contractFile,
 				guardianConsentFile: templates.guardianConsentFile,
 				mediaConsentFile: templates.mediaConsentFile,
 				termsAndConditionsFile: templates.termsAndConditionsFile,
-				documentLayouts: withDraft({ stored: templates.documentLayouts, draft }),
-				// the switch as it stands in the form, saved or not, so the test print shows it
-				qrCorporateDesign: $formData.qrCorporateDesign
+				documentLayouts
 			},
 			fileName: 'test_postal_registration.pdf'
 		});
@@ -135,8 +142,27 @@
 			!!storedDocuments.termsAndConditionsFile
 	);
 
-	/** Why the postal test print cannot run yet: it is built from all four templates. */
-	const postalTestBlocked = $derived(postalTemplatesStored ? undefined : m.templateTestNeedsAll());
+	/** Whether one of the four templates is picked or removed but not saved yet. */
+	const postalTemplatesChanging = $derived(
+		[
+			$formData.contractBasePDF,
+			$formData.guardianConsentBasePDF,
+			$formData.mediaConsentBasePDF,
+			$formData.termsAndConditionsBasePDF
+		].some((template) => template !== undefined)
+	);
+
+	/**
+	 * Why the postal test print cannot run yet: it is built from all four stored templates, as
+	 * saved.
+	 */
+	const postalTestBlocked = $derived(
+		!postalTemplatesStored
+			? m.templateTestNeedsAll()
+			: postalTemplatesChanging
+				? m.templatePendingBlocks()
+				: undefined
+	);
 
 	/** The document whose layout is being edited. */
 	let arranging = $state<LayoutDocument>();
@@ -179,9 +205,6 @@
 			icon="signature"
 			stored={storedDocuments.contractFile}
 			onplace={() => (arranging = 'contract')}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
 		<TemplateCard
 			{form}
@@ -190,9 +213,6 @@
 			icon="shield-check"
 			stored={storedDocuments.guardianConsentFile}
 			onplace={() => (arranging = 'guardianConsent')}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
 		<TemplateCard
 			{form}
@@ -201,9 +221,6 @@
 			icon="camera"
 			stored={storedDocuments.mediaConsentFile}
 			onplace={() => (arranging = 'mediaConsent')}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
 		<TemplateCard
 			{form}
@@ -211,10 +228,27 @@
 			title={m.termsAndConditions()}
 			icon="file-text"
 			stored={storedDocuments.termsAndConditionsFile}
-			ontest={handleGeneratePostalPDF}
-			printing={loading}
-			testBlocked={postalTestBlocked}
 		/>
+	</div>
+	<!-- the four print as one package: one test print for them all -->
+	<div class="flex flex-wrap items-center gap-3 pt-2">
+		<span class={postalTestBlocked ? 'tooltip' : ''} data-tip={postalTestBlocked}>
+			<button
+				type="button"
+				class="btn btn-sm"
+				disabled={!!postalTestBlocked || loading}
+				onclick={handleGeneratePostalPDF}
+			>
+				<i
+					aria-hidden="true"
+					class="ph-duotone {loading ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"
+				></i>
+				{m.postalTemplateTest()}
+			</button>
+		</span>
+		<span class="text-base-content/60 text-sm"
+			>{postalTestBlocked ?? m.postalTemplateTestHint()}</span
+		>
 	</div>
 </FormSection>
 

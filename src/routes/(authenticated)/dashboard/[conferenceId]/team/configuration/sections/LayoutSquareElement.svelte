@@ -14,20 +14,38 @@
 		scale: number;
 		onmove: (event: PointerEvent) => void;
 		onresize: (event: PointerEvent) => void;
+		/** Picked in the editor: arrow keys move it. */
+		selected?: boolean;
+		/** Picks it (it got the focus). */
+		onselect?: () => void;
 	}
 
-	let { label, placement, captions, caption, scale, onmove, onresize }: Props = $props();
+	let {
+		label,
+		placement,
+		captions,
+		caption,
+		scale,
+		onmove,
+		onresize,
+		selected = false,
+		onselect
+	}: Props = $props();
 </script>
 
 <div
-	class="border-accent bg-accent/10 absolute flex cursor-move items-center justify-center border border-dashed text-black"
+	class="border-accent bg-accent/10 absolute flex cursor-move items-center justify-center border border-dashed text-black {selected
+		? 'ring-primary ring-2'
+		: ''}"
 	style="left: {placement.x * 100}%; top: {placement.y * 100}%; width: {placement.size *
 		100}%; aspect-ratio: 1;"
 	role="button"
-	tabindex="-1"
+	tabindex="0"
 	aria-label={label}
+	aria-pressed={selected}
 	title={label}
 	onpointerdown={onmove}
+	onfocus={onselect}
 >
 	{#if caption === 'above'}
 		{#each captions as text, index (index)}

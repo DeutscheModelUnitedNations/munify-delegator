@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { confirmAllChange, scannedUserWithStatus } from './postalConfirm';
+import { confirmAllChange, postalStatusOf, scannedUserWithStatus } from './postalConfirm';
 
 describe('scannedUserWithStatus', () => {
 	test('needs both the user and the status row', () => {
@@ -28,5 +28,23 @@ describe('confirmAllChange', () => {
 		expect(
 			confirmAllChange({ startConference: start, birthday: new Date('1990-01-01') }).guardianConsent
 		).toBeUndefined();
+	});
+});
+
+describe('postalStatusOf', () => {
+	test('takes the stored status, and nothing in for a person without one', () => {
+		expect(postalStatusOf(null)).toEqual({
+			termsAndConditions: 'PENDING',
+			guardianConsent: 'PENDING',
+			mediaConsent: 'PENDING',
+			mediaConsentStatus: 'NOT_SET'
+		});
+		expect(
+			postalStatusOf({ mediaConsent: 'DONE', mediaConsentStatus: 'ALLOWED_ALL' })
+		).toMatchObject({
+			mediaConsent: 'DONE',
+			mediaConsentStatus: 'ALLOWED_ALL',
+			termsAndConditions: 'PENDING'
+		});
 	});
 });

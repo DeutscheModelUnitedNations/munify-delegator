@@ -38,9 +38,19 @@ async function nametagCode(page: Page) {
 async function documentCode(page: Page, userId: string) {
 	return gql(
 		page,
-		`mutation ($c: ID!, $u: ID!) { issueDocumentCode(conferenceId: $c, userId: $u) { code } }`,
-		{ c: conferenceId, u: userId }
+		`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
+			issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p) { code }
+		}`,
+		{ c: conferenceId, u: userId, p: [{ document: 'contract', page: 0, width: 595, height: 842 }] }
 	);
+}
+
+/** The first code `issueDocumentCodes` answered, or nothing. */
+function firstDocumentCode(result: GraphQLResult) {
+	const codes: unknown = result.data?.issueDocumentCodes;
+	if (!Array.isArray(codes)) return '';
+	const [first]: unknown[] = codes;
+	return typeof first === 'object' && first !== null && 'code' in first ? String(first.code) : '';
 }
 
 const lookup = (page: Page, code: string) =>
@@ -82,7 +92,7 @@ test('the scanner lookup takes a genuine nametag code and refuses a tampered or 
 	// The application documents' code is no nametag
 	const documents = await documentCode(ada, E2E_ATTENDANCE_ADA_ID);
 	expect(documents.errors, JSON.stringify(documents)).toBeUndefined();
-	const wrongKind = await lookup(care, String(documents.data?.issueDocumentCode?.code));
+	const wrongKind = await lookup(care, firstDocumentCode(documents));
 	expect(wrongKind.errors?.[0]?.extensions?.code).toBe('INVALID_INPUT');
 
 	// A printed nametag's barcode is the plain user id, which still counts
@@ -106,6 +116,38 @@ test("nobody but the holder and participant care gets a person's document code",
 	expect(forAda.errors, JSON.stringify(forAda)).toBeUndefined();
 });
 
+test('only those who edit the layouts get codes for a layout being edited (a test print)', async ({
+	browser
+}) => {
+	const draft = (page: Page, userId: string) =>
+		gql(
+			page,
+			`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
+				issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p, layouts: {}) { code }
+			}`,
+			{
+				c: conferenceId,
+				u: userId,
+				p: [
+					{ document: 'contract', page: 0, width: 595, height: 842 },
+					{ document: 'mediaConsent', page: 1, width: 595, height: 842 }
+				]
+			}
+		);
+
+	// the holder may have her codes, but not for a layout of her own making
+	const ada = await (await browser.newContext()).newPage();
+	await loginAs(ada, fixedTestUser(E2E_ATTENDANCE_ADA_ID));
+	expect((await draft(ada, E2E_ATTENDANCE_ADA_ID)).errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
+
+	// participant care edits the layouts: one code per page
+	const care = await (await browser.newContext()).newPage();
+	await loginAs(care, fixedTestUser(E2E_ATTENDANCE_CARE_ID));
+	const own = await draft(care, E2E_ATTENDANCE_CARE_ID);
+	expect(own.errors, JSON.stringify(own)).toBeUndefined();
+	expect(own.data?.issueDocumentCodes).toHaveLength(2);
+});
+
 test("a code's link signs the visitor in first and leads only the team to the person", async ({
 	browser
 }) => {
@@ -113,7 +155,7 @@ test("a code's link signs the visitor in first and leads only the team to the pe
 	await loginAs(ada, fixedTestUser(E2E_ATTENDANCE_ADA_ID));
 	const code = await nametagCode(ada);
 	const documents = await documentCode(ada, E2E_ATTENDANCE_ADA_ID);
-	const printCode = String(documents.data?.issueDocumentCode?.code);
+	const printCode = firstDocumentCode(documents);
 
 	// Signed out, genuine or not, the link only asks for a login
 	const visitor = await (await browser.newContext()).newPage();

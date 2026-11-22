@@ -81,6 +81,7 @@ function dueEmailOf(kind: AutomaticEmailKind): DueEmail {
 			title: 'Raumwechsel',
 			body: 'Die **GV** tagt im [Plenarsaal](https://example.org/plan).\n\n- Einlass ab 9 Uhr',
 			signature: 'Eure Orga',
+			includesText: true,
 			mailRevision: 0,
 			attachmentNames: ['Lageplan.pdf']
 		},
@@ -283,6 +284,28 @@ describe('the announcement mail', () => {
 		expect(text).toContain('Lageplan.pdf');
 		// the Markdown's emphasis is dropped, not shown as asterisks
 		expect(text).not.toContain('**');
+	});
+
+	test('without its text names only the title and sends to the dashboard', () => {
+		overwriteGetLocale(() => 'de');
+		const email = dueEmailOf('ANNOUNCEMENT');
+		const content = emailContent({
+			email: {
+				...email,
+				announcement: email.announcement && { ...email.announcement, includesText: false }
+			},
+			conference,
+			origin: 'https://delegator.example.org'
+		});
+		expect(content.subject).toBe('Raumwechsel | MUN-SH 2027');
+		expect(content.heading).toBe('Raumwechsel');
+		expect(content.blocks).toEqual([
+			{ type: 'paragraph', text: 'Du findest sie auf deinem Dashboard.' }
+		]);
+		const shown = JSON.stringify(content);
+		for (const hidden of ['Plenarsaal', 'Eure Orga', 'Lageplan.pdf'])
+			expect(shown).not.toContain(hidden);
+		expect(content.button?.url).toBe('https://delegator.example.org/dashboard/c1/announcements');
 	});
 });
 

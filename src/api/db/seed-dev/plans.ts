@@ -162,7 +162,7 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'preparation',
 		summary:
-			'PREPARATION: payments, postal and papers unlocked; surveys, invitations, waiting list (vacancies), email log',
+			'PREPARATION: payments, postal and papers unlocked, the paper read by scan; surveys, invitations, waiting list (vacancies), email log',
 		conference: {
 			title: 'Seed 5 · Preparation',
 			messagingEnabled: true,

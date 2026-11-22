@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('$app/env/private', () => ({ CERTIFICATE_SECRET: 'a secret that only this test uses' }));
+vi.mock('#api/db/db', () => ({ db: {} }));
 const { nsaCardExpiry } = await import('./signedCodeService');
 
 describe('nsaCardExpiry', () => {

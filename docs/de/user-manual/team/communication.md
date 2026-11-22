@@ -30,7 +30,7 @@ Unter **Ankündigungen** schreibst du, was Teilnehmende und Team wissen sollen. 
 - **Zielgruppe**: mindestens eine Gruppe, siehe unten.
 - **Wichtigkeit**: **Normal**, **Wichtig** oder **Dringend**. Eine dringende Ankündigung erscheint, solange sie ungelesen ist, zusätzlich als Leiste auf jeder Seite der Konferenz.
 - **Oben anheften**: Angeheftete Ankündigungen stehen bei allen oben.
-- **Zielgruppe per E-Mail benachrichtigen**: Die Zielgruppe bekommt eine E-Mail mit dem ganzen Text, siehe unten.
+- **Zielgruppe per E-Mail benachrichtigen**: Die Zielgruppe bekommt eine E-Mail, siehe unten. Mit **Text in die E-Mail aufnehmen** steht der ganze Text darin; ist es aus, nennt sie nur den Titel.
 - **Sichtbar bis (optional)**: Danach verschwindet die Ankündigung von selbst und steht in der Liste als **Abgelaufen**.
 - **Anhänge**: bis zu fünf Dateien, PDF oder Bild, je höchstens 10 MB.
 
@@ -78,7 +78,7 @@ Die Liste zeigt jede Ankündigung mit ihrem Stand (**Entwurf**, **Geplant**, **V
 
 ### Die E-Mail zur Ankündigung
 
-Ist **Zielgruppe per E-Mail benachrichtigen** an, geht mit dem nächsten automatischen Lauf nach der Veröffentlichung eine E-Mail an alle, die dann zur Zielgruppe gehören, auch bei einer geplanten Ankündigung zu ihrem Zeitpunkt. Die E-Mail enthält Titel, ganzen Text, die Namen der Anhänge und einen Link zu den Ankündigungen. Sie ist 24 Stunden lang fällig. Wer erst danach zur Zielgruppe stößt, findet die Ankündigung nur auf dem Dashboard.
+Ist **Zielgruppe per E-Mail benachrichtigen** an, geht mit dem nächsten automatischen Lauf nach der Veröffentlichung eine E-Mail an alle, die dann zur Zielgruppe gehören, auch bei einer geplanten Ankündigung zu ihrem Zeitpunkt. Die E-Mail enthält Titel, ganzen Text, die Namen der Anhänge und einen Link zu den Ankündigungen; ohne **Text in die E-Mail aufnehmen** nur den Titel und den Link. Sie ist 24 Stunden lang fällig. Wer erst danach zur Zielgruppe stößt, findet die Ankündigung nur auf dem Dashboard.
 
 Diese E-Mail braucht keinen Schalter auf der Seite [E-Mails](#emails): Die Entscheidung fällt an der Ankündigung. Ihre Karte dort trägt **Wird je Ankündigung entschieden**, ihren Text änderst du dort wie jeden anderen.
 

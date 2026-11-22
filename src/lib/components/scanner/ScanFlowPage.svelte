@@ -15,8 +15,10 @@
 		conferenceId: string;
 		/** Explanation at the top of the page */
 		description: Snippet;
-		/** Controls between the description and the scanner */
-		header?: Snippet;
+		/** Controls laid over the camera's top left corner, e.g. what it reads */
+		cameraOverlay?: Snippet;
+		/** Below the scanner, at the end of the page */
+		footer?: Snippet;
 		barcodeFormats: BarcodeFormat[];
 		/** Which codes the scanner takes (see `BarcodeScanner`) */
 		acceptance: ScanAcceptance;
@@ -33,13 +35,18 @@
 		onClose: () => void;
 		/** Body of the scanned person's card */
 		children: Snippet<[user: NonNullable<ScannedUserData<S>['user']>, status: S | null]>;
+		/** What the camera's picture asks for, when not a code */
+		scanPrompt?: string;
+		/** Reads the whole page a code is scanned on (`BarcodeScanner`'s `readPage`). */
+		readPage?: (args: { frame: ImageData; code: string }) => Promise<boolean>;
 	}
 
 	let {
 		flow,
 		conferenceId,
 		description,
-		header,
+		cameraOverlay,
+		footer,
 		barcodeFormats,
 		acceptance,
 		persistKey,
@@ -49,7 +56,9 @@
 		confirmLabel,
 		onConfirm,
 		onClose,
-		children
+		children,
+		scanPrompt,
+		readPage
 	}: Props = $props();
 
 	const HISTORY_LENGTH = 5;
@@ -87,8 +96,6 @@
 <div class="flex w-full min-w-0 flex-col gap-4 md:gap-6 md:p-10">
 	<ScanPageHeader {description} />
 
-	{@render header?.()}
-
 	<!-- The URL holds the person, not the code: a signed code is checked once, as it is scanned -->
 	<BarcodeScanner
 		bind:this={flow.scanner}
@@ -99,8 +106,10 @@
 		{acceptance}
 		{persistKey}
 		{conferenceId}
+		{readPage}
+		{cameraOverlay}
 		manualPlaceholder={m.enterPostalRegistrationCode()}
-		scanPromptText={m.scanPostalRegistrationCodePrompt()}
+		scanPromptText={scanPrompt ?? m.scanPostalRegistrationCodePrompt()}
 	>
 		{#snippet belowCamera()}
 			<ScanHistory
@@ -122,4 +131,6 @@
 			/>
 		{/snippet}
 	</BarcodeScanner>
+
+	{@render footer?.()}
 </div>

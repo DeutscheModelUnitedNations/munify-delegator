@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { pageAreas } from '#lib/paperScan/pageAreas';
 import {
 	DOCUMENT_ELEMENTS,
 	LAYOUT_DOCUMENTS,
@@ -9,8 +10,11 @@ import {
 	documentLayoutSchema,
 	elementsByShape,
 	elementsOf,
+	fieldMinimum,
 	minSquareSize,
 	movePlacement,
+	pageMargin,
+	placementRect,
 	POINTS_PER_MM,
 	resizePlacement,
 	resizeText,
@@ -21,6 +25,65 @@ import {
 } from './documentLayout';
 
 const LANDSCAPE = 842 / 595;
+
+describe('the page margin', () => {
+	const portrait = pageMargin({ width: 595, height: 842 });
+
+	test('keeps a moved box, code or text 10 mm off every edge', () => {
+		const box = { x: 0.5, y: 0.5, width: 0.2, height: 0.1 };
+		expect(
+			movePlacement({ shape: 'box', start: box, dx: -1, dy: -1, aspect: 1, margin: portrait })
+		).toMatchObject({ x: portrait.x, y: portrait.y });
+		const far = movePlacement({
+			shape: 'box',
+			start: box,
+			dx: 1,
+			dy: 1,
+			aspect: 1,
+			margin: portrait
+		});
+		expect(far.x + far.width).toBeCloseTo(1 - portrait.x);
+		expect(far.y + far.height).toBeCloseTo(1 - portrait.y);
+		const text = { x: 0.5, y: 0.5, size: 12 };
+		expect(
+			movePlacement({ shape: 'text', start: text, dx: 1, dy: -1, aspect: 1, margin: portrait })
+		).toMatchObject({ x: 1 - portrait.x, y: portrait.y });
+		expect(portrait.x * 595).toBeCloseTo(10 * POINTS_PER_MM);
+	});
+
+	test('stops a resize at the margin', () => {
+		const field = { x: 0.5, y: 0.5, width: 0.1, height: 0.05, page: 0 };
+		const grown = resizePlacement({
+			shape: 'field',
+			start: field,
+			dx: 1,
+			dy: 1,
+			aspect: 595 / 842,
+			margin: portrait
+		});
+		expect(grown.x + grown.width).toBeCloseTo(1 - portrait.x);
+		expect(grown.y + grown.height).toBeCloseTo(1 - portrait.y);
+	});
+
+	test('every placeable default already keeps it (the page number and the marks stay put)', () => {
+		for (const document of LAYOUT_DOCUMENTS) {
+			const aspect = document === 'certificate' ? LANDSCAPE : 595 / 842;
+			const margin = pageMargin(
+				document === 'certificate' ? { width: 842, height: 595 } : { width: 595, height: 842 }
+			);
+			const layout = defaultLayout(document);
+			for (const { id, spec } of elementsOf(document)) {
+				if ('fixed' in spec && spec.fixed) continue;
+				const rect = placementRect({ shape: spec.shape, placement: layout[id], aspect });
+				const where = `${document}.${id}`;
+				expect(rect.x, where).toBeGreaterThanOrEqual(margin.x - 1e-9);
+				expect(rect.y, where).toBeGreaterThanOrEqual(margin.y - 1e-9);
+				expect(rect.x + rect.width, where).toBeLessThanOrEqual(1 - margin.x + 1e-9);
+				expect(rect.y + rect.height, where).toBeLessThanOrEqual(1 - margin.y + 1e-9);
+			}
+		}
+	});
+});
 
 describe('the document layouts', () => {
 	test('every document is listed, and its defaults pass its own schema', () => {
@@ -119,14 +182,14 @@ describe('the document layouts', () => {
 		);
 	});
 
-	test('every application document has the footer: the page number fixed bottom right, the code above', () => {
+	test('every application document has the footer: the page number fixed bottom right, the code above, both clear of the alignment mark', () => {
 		for (const document of ['contract', 'guardianConsent', 'mediaConsent'] as const) {
 			const { code, pageNumber } = defaultLayout(document);
 			const area = boxInPoints({ placement: pageNumber, width: 595, height: 842 });
-			expect(area.left + area.width).toBeCloseTo(595 - 40);
+			expect(area.left + area.width).toBeCloseTo(595 - 54);
 			expect(area.bottom).toBeCloseTo(20);
 			const square = squareInPoints({ placement: code, width: 595, height: 842 });
-			expect(square.left + square.side).toBeCloseTo(595 - 40);
+			expect(square.left + square.side).toBeCloseTo(595 - 54);
 			expect(square.bottom).toBeGreaterThan(area.top);
 			expect(square.side / POINTS_PER_MM).toBeGreaterThanOrEqual(
 				DOCUMENT_ELEMENTS[document].code.minSide
@@ -258,5 +321,154 @@ describe('elementsByShape', () => {
 		expect(texts).toEqual([]);
 		expect(boxes).toEqual([]);
 		expect(squares.map(({ id }) => id)).toEqual(['qr']);
+	});
+});
+
+describe('the fields read off a scan', () => {
+	const aspect = 595 / 842;
+
+	test('are on every application document, with the alignment marks, each named as its field', () => {
+		expect(elementsOf('mediaConsent').map(({ id }) => id)).toEqual(
+			expect.arrayContaining(['markerTopLeft', 'mediaPhoto', 'mediaAdvertising', 'mediaSignature'])
+		);
+		expect(elementsOf('certificate').map(({ id }) => id)).not.toContain('markerTopLeft');
+		const { fields } = elementsByShape({
+			elements: elementsOf('contract'),
+			layout: defaultLayout('contract')
+		});
+		expect(fields.map(({ id, field, mark }) => [id, field, mark])).toEqual([
+			['termsAccepted', 'termsAccepted', 'checkbox'],
+			['termsPlaceDate', 'termsPlaceDate', 'line'],
+			['termsSignature', 'termsSignature', 'line']
+		]);
+	});
+
+	test('the alignment marks are fixed: never moved, never stored, and nothing goes over them', () => {
+		const { boxes } = elementsByShape({
+			elements: elementsOf('contract'),
+			layout: defaultLayout('contract')
+		});
+		expect(boxes.filter(({ id }) => id.startsWith('marker')).every(({ fixed }) => fixed)).toBe(
+			true
+		);
+		const moved = { x: 0.5, y: 0.5, width: 0.04, height: 0.03 };
+		const layout = resolveDocumentLayout({
+			document: 'contract',
+			stored: { contract: { markerTopRight: moved } }
+		});
+		expect(layout.markerTopRight).toEqual(defaultLayout('contract').markerTopRight);
+		const parsed = documentLayoutSchema('contract').safeParse(defaultLayout('contract'));
+		expect(parsed.success && 'markerTopLeft' in parsed.data).toBe(false);
+		const { termsSignature, markerBottomLeft } = defaultLayout('contract');
+		const onMark = { ...termsSignature, x: markerBottomLeft.x, y: markerBottomLeft.y };
+		expect(
+			coversFixedArea({
+				document: 'contract',
+				id: 'termsSignature',
+				shape: 'field',
+				placement: onMark,
+				aspect
+			})
+		).toBe(true);
+	});
+
+	test('the footer stays clear of the page number and the marks by default', () => {
+		const layout = defaultLayout('contract');
+		for (const id of ['code', 'pageNumber'] as const) {
+			expect(
+				coversFixedArea({
+					document: 'contract',
+					id,
+					shape: id === 'code' ? 'square' : 'box',
+					placement: layout[id],
+					aspect
+				})
+			).toBe(false);
+		}
+	});
+
+	test('are stored with their page and never resized below what can be ticked or signed', () => {
+		const layout = {
+			...defaultLayout('mediaConsent'),
+			mediaPhoto: { x: 0.1, y: 0.1, width: 0.02, height: 0.02, page: 2 }
+		};
+		const parsed = documentLayoutSchema('mediaConsent').safeParse(layout);
+		expect(parsed.success && parsed.data.mediaPhoto).toEqual(layout.mediaPhoto);
+		const minBox = fieldMinimum({ mark: 'checkbox', page: { width: 595, height: 842 } });
+		const shrunk = resizePlacement({
+			shape: 'field',
+			start: layout.mediaPhoto,
+			dx: -1,
+			dy: -1,
+			aspect,
+			minBox
+		});
+		expect(shrunk).toEqual({ ...layout.mediaPhoto, width: minBox.width, height: minBox.height });
+		expect(minBox.width * 595).toBeCloseTo(2.5 * POINTS_PER_MM);
+	});
+
+	test("by default, the media consent's three pages carry its uses, its purposes and its signatures", () => {
+		const fieldsOn = (page: number) =>
+			pageAreas({
+				document: 'mediaConsent',
+				layout: defaultLayout('mediaConsent'),
+				page,
+				size: { width: 595, height: 842 }
+			}).areas.map(({ field }) => field);
+		expect(fieldsOn(0)).toEqual(['mediaPhoto', 'mediaVideo', 'mediaByDmun', 'mediaByOthers']);
+		expect(fieldsOn(1)).toHaveLength(8);
+		expect(fieldsOn(2)).toEqual([
+			'mediaPlaceDate',
+			'mediaSignature',
+			'mediaGuardian1Name',
+			'mediaGuardian2Name',
+			'mediaGuardianPlaceDate',
+			'mediaGuardian1Signature',
+			'mediaGuardian2Signature'
+		]);
+	});
+
+	test('a page carries its marks and its fields, in millimetres of that page', () => {
+		const base = defaultLayout('contract');
+		const layout = { ...base, termsSignature: { ...base.termsSignature, page: 1 } };
+		const first = pageAreas({
+			document: 'contract',
+			layout,
+			page: 0,
+			size: { width: 595, height: 842 }
+		});
+		expect(first.page.width).toBeCloseTo(210, 0);
+		expect(first.markers[0].x).toBeCloseTo(13, 0);
+		expect(first.markers[0].y).toBeCloseTo(31, 0);
+		expect(first.markers[2].x).toBeCloseTo(197, 0);
+		expect(first.areas.map(({ field }) => field)).toEqual(['termsAccepted', 'termsPlaceDate']);
+		expect(first.areas[0].width).toBeCloseTo(3.7);
+		const second = pageAreas({
+			document: 'contract',
+			layout,
+			page: 1,
+			size: { width: 595, height: 842 }
+		});
+		expect(second.areas.map(({ field }) => field)).toEqual(['termsSignature']);
+	});
+});
+
+describe('placementRect', () => {
+	test("is a text's baseline start, a code's square and a box or field as placed", () => {
+		const aspect = 595 / 842;
+		const { name, code, pageNumber, termsSignature: signature } = defaultLayout('contract');
+		expect(placementRect({ shape: 'text', placement: name, aspect })).toEqual({
+			x: name.x,
+			y: name.y,
+			width: 0,
+			height: 0
+		});
+		expect(placementRect({ shape: 'square', placement: code, aspect }).height).toBeCloseTo(
+			code.size * aspect
+		);
+		expect(placementRect({ shape: 'box', placement: pageNumber, aspect })).toEqual(pageNumber);
+		const { page, ...area } = signature;
+		expect(page).toBe(0);
+		expect(placementRect({ shape: 'field', placement: signature, aspect })).toEqual(area);
 	});
 });

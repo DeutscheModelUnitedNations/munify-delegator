@@ -13,6 +13,8 @@ export interface AnnouncementForm {
 	importance: AnnouncementImportance;
 	pinned: boolean;
 	notifyByMail: boolean;
+	/** Whether that mail carries the text; otherwise only the title. */
+	mailIncludesText: boolean;
 	/** A `datetime-local` value in the conference's time zone; empty for "no end". */
 	visibleUntil: string;
 	audiences: readonly Audience[];
@@ -41,6 +43,7 @@ export function announcementValues({
 		importance: form.importance,
 		pinned: form.pinned,
 		notifyByMail: form.notifyByMail,
+		mailIncludesText: form.mailIncludesText,
 		visibleUntil: form.visibleUntil
 			? datetimeLocalToDate({ datetimeLocal: form.visibleUntil, timezone })
 			: null,
