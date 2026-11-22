@@ -168,7 +168,8 @@
 {/snippet}
 
 <Field {form} {name}>
-	<div class="flex w-full flex-col gap-1">
+	<!-- the error line takes no room while there is none: a card lines its buttons up with the page -->
+	<div class="flex w-full flex-col gap-1 [&_.validator-hint:not(:has(*))]:hidden">
 		<Control>
 			{#snippet children({ props })}
 				<Label class={hideLabel ? 'sr-only' : 'label mb-1 whitespace-break-spaces'}>{label}</Label>
