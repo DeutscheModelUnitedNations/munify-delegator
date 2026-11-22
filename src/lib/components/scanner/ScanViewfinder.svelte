@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
 	import type { CameraZoom } from './camera';
 
@@ -17,6 +18,8 @@
 		onswitch: () => void;
 		onstop: () => void;
 		onstart: () => void;
+		/** Laid over the top left corner, under the zoom, whether the camera runs or not. */
+		overlay?: Snippet;
 	}
 
 	let {
@@ -30,7 +33,8 @@
 		onzoom,
 		onswitch,
 		onstop,
-		onstart
+		onstart,
+		overlay
 	}: Props = $props();
 </script>
 
@@ -72,24 +76,6 @@
 				></span>
 			</div>
 		</div>
-
-		{#if zoom && onzoom}
-			<label
-				class="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-white"
-			>
-				<i aria-hidden="true" class="ph-duotone ph-magnifying-glass-plus"></i>
-				<input
-					type="range"
-					class="range range-xs w-24 sm:w-32"
-					min={zoom.min}
-					max={zoom.max}
-					step={zoom.step}
-					value={zoom.value}
-					aria-label={m.cameraZoom()}
-					oninput={(event) => onzoom(event.currentTarget.valueAsNumber)}
-				/>
-			</label>
-		{/if}
 
 		<div class="absolute top-3 right-3 flex gap-2">
 			{#if canSwitchCamera}
@@ -144,4 +130,23 @@
 			</button>
 		</div>
 	{/if}
+
+	<div class="absolute top-3 left-3 flex flex-col items-start gap-2">
+		{#if streaming && zoom && onzoom}
+			<label class="flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-white">
+				<i aria-hidden="true" class="ph-duotone ph-magnifying-glass-plus"></i>
+				<input
+					type="range"
+					class="range range-xs w-24 sm:w-32"
+					min={zoom.min}
+					max={zoom.max}
+					step={zoom.step}
+					value={zoom.value}
+					aria-label={m.cameraZoom()}
+					oninput={(event) => onzoom(event.currentTarget.valueAsNumber)}
+				/>
+			</label>
+		{/if}
+		{@render overlay?.()}
+	</div>
 </div>

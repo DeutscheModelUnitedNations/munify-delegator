@@ -3,7 +3,6 @@
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
 	import formatNames from '#lib/helpers/formatNames';
-	import Modal from '#lib/components/Modal.svelte';
 	import { changesAnything, proposePaperChange } from '#lib/paperScan/proposal';
 	import { pagesByPerson, strayPages, type PersonResult, type ScannedPage } from './paperBatch';
 	import { pagesOf, readScannedPage } from './scanFiles';
@@ -24,7 +23,6 @@
 
 	let { conferenceId }: Props = $props();
 
-	let open = $state(false);
 	let dragging = $state(false);
 	let running = $state(false);
 	let progress = $state({ files: 0, pages: 0 });
@@ -157,69 +155,63 @@
 		page.outcome.kind === 'refused' ? page.outcome.message : m.paperPageWithoutCode();
 </script>
 
-<button type="button" class="btn btn-sm" onclick={() => (open = true)}>
-	<i aria-hidden="true" class="ph-duotone ph-files"></i>
-	{m.paperBatchOpen()}
-</button>
+<section class="flex w-full flex-col gap-3" aria-label={m.paperBatchTitle()}>
+	<label
+		class="border-base-300 hover:border-primary rounded-box flex cursor-pointer items-center gap-3 border-2 border-dashed px-4 py-3 transition-colors {dragging
+			? 'border-primary bg-primary/5'
+			: ''}"
+		ondragover={(event) => {
+			event.preventDefault();
+			dragging = true;
+		}}
+		ondragleave={() => (dragging = false)}
+		{ondrop}
+	>
+		<i aria-hidden="true" class="ph-duotone ph-files text-primary text-3xl"></i>
+		<span class="flex flex-col">
+			<span class="font-medium">{m.paperBatchDrop()}</span>
+			<span class="text-base-content/70 text-xs">{m.paperBatchHint()}</span>
+		</span>
+		<input
+			type="file"
+			class="sr-only"
+			multiple
+			accept="application/pdf,image/*"
+			disabled={running}
+			onchange={(event) => onfiles(event.currentTarget.files)}
+		/>
+	</label>
 
-<Modal bind:open title={m.paperBatchTitle()} fullWidth>
-	<div class="flex w-4xl max-w-full flex-col gap-4">
-		<p class="text-base-content/70 text-sm">{m.paperBatchHint()}</p>
+	{#if running}
+		<div class="flex items-center gap-3" role="status">
+			<span class="loading loading-spinner loading-sm"></span>
+			{m.paperBatchProgress({ files: progress.files, pages: progress.pages })}
+		</div>
+	{/if}
 
-		<label
-			class="border-base-300 hover:border-primary flex cursor-pointer flex-col items-center gap-2 rounded-box border-2 border-dashed p-8 text-center {dragging
-				? 'border-primary bg-primary/5'
-				: ''}"
-			ondragover={(event) => {
-				event.preventDefault();
-				dragging = true;
-			}}
-			ondragleave={() => (dragging = false)}
-			{ondrop}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-upload-simple text-4xl"></i>
-			<span>{m.paperBatchDrop()}</span>
-			<input
-				type="file"
-				class="sr-only"
-				multiple
-				accept="application/pdf,image/*"
-				disabled={running}
-				onchange={(event) => onfiles(event.currentTarget.files)}
-			/>
-		</label>
+	{#if people.length > 0}
+		<section class="flex flex-col gap-2">
+			<h3 class="font-semibold">{m.paperBatchPeople({ count: people.length })}</h3>
+			<ul class="divide-base-300 flex flex-col divide-y">
+				{#each people as person (person.userId)}
+					<PaperBatchPerson {person} />
+				{/each}
+			</ul>
+		</section>
+	{/if}
 
-		{#if running}
-			<div class="flex items-center gap-3" role="status">
-				<span class="loading loading-spinner loading-sm"></span>
-				{m.paperBatchProgress({ files: progress.files, pages: progress.pages })}
-			</div>
-		{/if}
-
-		{#if people.length > 0}
-			<section class="flex flex-col gap-2">
-				<h3 class="font-semibold">{m.paperBatchPeople({ count: people.length })}</h3>
-				<ul class="divide-base-300 flex flex-col divide-y">
-					{#each people as person (person.userId)}
-						<PaperBatchPerson {person} />
-					{/each}
-				</ul>
-			</section>
-		{/if}
-
-		{#if stray.length > 0}
-			<section class="flex flex-col gap-2">
-				<h3 class="font-semibold">{m.paperBatchStray({ count: stray.length })}</h3>
-				<ul class="text-sm">
-					{#each stray as page, index (index)}
-						<li>
-							{page.file}{page.page > 0 ? `, ${m.paperBatchPage({ page: page.page })}` : ''}: {strayReason(
-								page
-							)}
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{/if}
-	</div>
-</Modal>
+	{#if stray.length > 0}
+		<section class="flex flex-col gap-2">
+			<h3 class="font-semibold">{m.paperBatchStray({ count: stray.length })}</h3>
+			<ul class="text-sm">
+				{#each stray as page, index (index)}
+					<li>
+						{page.file}{page.page > 0 ? `, ${m.paperBatchPage({ page: page.page })}` : ''}: {strayReason(
+							page
+						)}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+</section>

@@ -52,6 +52,8 @@
 		result?: Snippet;
 		/** Shown under the camera, e.g. who was scanned before */
 		belowCamera?: Snippet;
+		/** Laid over the camera's top left corner, on and off, e.g. what it reads */
+		cameraOverlay?: Snippet;
 		/**
 		 * Hides the search box and the camera, which keep running, while the result needs the
 		 * person's attention. The search box gets the focus back when they return.
@@ -76,6 +78,7 @@
 		scannedCode = $bindable<string | null>(''),
 		result,
 		belowCamera,
+		cameraOverlay,
 		collapsed = false,
 		readPage
 	}: Props = $props();
@@ -421,6 +424,7 @@
 				onswitch={switchCamera}
 				onstop={turnCameraOff}
 				onstart={startVideo}
+				overlay={cameraOverlay}
 			/>
 		</div>
 		{#if belowCamera}

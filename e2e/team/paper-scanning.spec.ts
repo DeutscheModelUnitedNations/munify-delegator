@@ -88,17 +88,16 @@ test('a batch of scans marks a signed contract in, unattended, and lists the pag
 	expect(await graceStatus(page)).toBe('PENDING');
 
 	const scan = await scannedContract({ page, origin: baseURL ?? 'https://localhost' });
-	await page.getByRole('button', { name: /scans hochladen|upload scans/i }).click();
-	const dialog = page.getByRole('dialog');
-	await dialog
+	const batch = page.getByRole('region', { name: /gescannte unterlagen|scanned documents/i });
+	await batch
 		.locator('input[type="file"]')
 		.setInputFiles({ name: 'stapel.pdf', mimeType: 'application/pdf', buffer: scan });
 
-	await expect(dialog.getByText(/grace/i).first()).toBeVisible({ timeout: 60_000 });
+	await expect(batch.getByText(/grace/i).first()).toBeVisible({ timeout: 60_000 });
 	await expect(
-		dialog.getByText(/verbindliche anmeldung: unterschrieben|binding registration: signed/i)
+		batch.getByText(/verbindliche anmeldung: unterschrieben|binding registration: signed/i)
 	).toBeVisible();
-	await expect(dialog.getByText(/kein code gefunden|no code found/i)).toBeVisible();
+	await expect(batch.getByText(/kein code gefunden|no code found/i)).toBeVisible();
 	await expect.poll(() => graceStatus(page)).toBe('DONE');
 });
 

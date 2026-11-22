@@ -15,8 +15,10 @@
 		conferenceId: string;
 		/** Explanation at the top of the page */
 		description: Snippet;
-		/** Controls between the description and the scanner */
-		header?: Snippet;
+		/** Controls laid over the camera's top left corner, e.g. what it reads */
+		cameraOverlay?: Snippet;
+		/** Below the scanner, at the end of the page */
+		footer?: Snippet;
 		barcodeFormats: BarcodeFormat[];
 		/** Which codes the scanner takes (see `BarcodeScanner`) */
 		acceptance: ScanAcceptance;
@@ -43,7 +45,8 @@
 		flow,
 		conferenceId,
 		description,
-		header,
+		cameraOverlay,
+		footer,
 		barcodeFormats,
 		acceptance,
 		persistKey,
@@ -93,8 +96,6 @@
 <div class="flex w-full min-w-0 flex-col gap-4 md:gap-6 md:p-10">
 	<ScanPageHeader {description} />
 
-	{@render header?.()}
-
 	<!-- The URL holds the person, not the code: a signed code is checked once, as it is scanned -->
 	<BarcodeScanner
 		bind:this={flow.scanner}
@@ -106,6 +107,7 @@
 		{persistKey}
 		{conferenceId}
 		{readPage}
+		{cameraOverlay}
 		manualPlaceholder={m.enterPostalRegistrationCode()}
 		scanPromptText={scanPrompt ?? m.scanPostalRegistrationCodePrompt()}
 	>
@@ -129,4 +131,6 @@
 			/>
 		{/snippet}
 	</BarcodeScanner>
+
+	{@render footer?.()}
 </div>

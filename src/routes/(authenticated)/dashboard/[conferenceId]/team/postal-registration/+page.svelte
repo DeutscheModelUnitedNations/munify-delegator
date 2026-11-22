@@ -175,30 +175,25 @@
 	readPage={readsPages ? readPage : undefined}
 	scanPrompt={readsPages ? m.paperScanPrompt() : undefined}
 >
-	{#snippet header()}
-		<div class="flex flex-wrap items-center gap-3" data-tour="team.postalRegistration.paper">
-			<div class="join" role="group" aria-label={m.paperScanMode()}>
-				<button
-					type="button"
-					class="btn btn-sm join-item {readsPages ? '' : 'btn-active'}"
-					aria-pressed={!readsPages}
-					onclick={() => (pageMode.current = false)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-qr-code"></i>
-					{m.paperScanModeCode()}
-				</button>
-				<button
-					type="button"
-					class="btn btn-sm join-item {readsPages ? 'btn-active' : ''}"
-					aria-pressed={readsPages}
-					onclick={() => (pageMode.current = true)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-file-magnifying-glass"></i>
-					{m.paperScanModePage()}
-				</button>
-			</div>
-			<PaperBatch conferenceId={routeParams.conferenceId} />
-		</div>
+	{#snippet cameraOverlay()}
+		<!-- what the camera reads: the code alone, or the whole page with its boxes and signatures -->
+		<label
+			class="flex cursor-pointer items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-sm text-white"
+			data-tour="team.postalRegistration.paper"
+		>
+			<i aria-hidden="true" class="ph-duotone ph-file-magnifying-glass"></i>
+			{m.paperScanModePage()}
+			<input
+				type="checkbox"
+				class="toggle toggle-sm toggle-primary"
+				bind:checked={pageMode.current}
+				title={m.paperScanMode()}
+			/>
+		</label>
+	{/snippet}
+
+	{#snippet footer()}
+		<PaperBatch conferenceId={routeParams.conferenceId} />
 	{/snippet}
 
 	{#snippet description()}
