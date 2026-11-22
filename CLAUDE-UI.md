@@ -647,6 +647,19 @@ DaisyUI semantic classes only, never hard-coded colours:
 - Status: `text-/bg-success`, `-warning`, `-error`, `-info`
 - Borders: `border-base-200` (light), `border-base-300` (medium)
 
+## Brand (logos, favicons)
+
+Everything with the MUNify / DELEGATOR mark comes from `@deutschemodelunitednations/munify-brand`
+(its `GUIDELINES.md` has the rules); `static/` holds no icon, manifest or splash screen.
+
+- In the UI: `<Logo product="delegator" />` (lockup) or `variant="symbol"`, inline SVG sized by
+  class (`h-5 w-auto`, `size-6`). It fills with `--munify-logo`, which `app.css` sets to white in
+  the dark theme. Inside a link that has an `aria-label`, pass `decorative`.
+- Favicons, app icons, the web app manifest (our fields are the `manifest` option of `munifyBrand`
+  in `vite.config.ts`), light and dark iOS launch images and the social card: the Vite plugin
+  serves them at `/favicon.ico`, `/apple-touch-icon.png` and `/brand/*`, `<BrandHead>` in the
+  root layout links them.
+
 ## Layout Patterns
 
 - Centred page: `flex w-full flex-col items-center` > `w-full max-w-4xl`

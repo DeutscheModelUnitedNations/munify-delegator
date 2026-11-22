@@ -27,7 +27,7 @@
 	import NavigationProgress from '#lib/components/navigation/NavigationProgress.svelte';
 	import { enableViewTransitionApi } from '#lib/helpers/viewTransitionApi.svelte';
 	import { onMount } from 'svelte';
-	import { SPLASH_SCREENS } from '#lib/pwa/splashScreens';
+	import { BrandHead } from '@deutschemodelunitednations/munify-brand';
 
 	let { children }: LayoutProps = $props();
 
@@ -52,23 +52,14 @@
 
 <svelte:head>
 	<title>{dev ? '[dev] ' : ''}MUNify Delegator</title>
-	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-	<link rel="manifest" href="/site.webmanifest" />
-	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#3D7DD2" />
-	<meta name="msapplication-TileColor" content="#FFFFFF" />
-	<!-- The installed app's title bar takes the header's colour (base-100 of the DMUN themes), as in CHASE -->
-	<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF" />
-	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1B1837" />
 	<meta name="mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-title" content="DELEGATOR" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-	{#each SPLASH_SCREENS as screen (screen.file)}
-		<link rel="apple-touch-startup-image" href="/{screen.file}" media={screen.media} />
-	{/each}
 </svelte:head>
+
+<!-- Favicons, manifest, light and dark iOS launch images, social card. The theme colour (white,
+navy) is base-100 of the DMUN themes, so the installed app's title bar takes the header's colour -->
+<BrandHead product="delegator" origin={page.url.origin} />
 
 <!-- The first thing Tab reaches: past the header and navigation, to the layout's <main> -->
 <a
