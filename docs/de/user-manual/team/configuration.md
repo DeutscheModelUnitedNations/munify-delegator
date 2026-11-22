@@ -153,7 +153,7 @@ Der Reiter **Dokumente & Vorlagen** hält alles, woraus DELEGATOR die Papiere de
 - **Postversand-Vorlagen**: je eine PDF für **Verbindliche Anmeldung**, **Einwilligung der Erziehungsberechtigten** (nur für Minderjährige im Paket), **Einwilligung Bildnutzung** und **Teilnahmebedingungen**. Teilnehmende können ihre postalische Anmeldung nur herunterladen, wenn alle vier hinterlegt sind.
 - **Teilnahmezertifikat**: die PDF, auf die die Zertifikate gedruckt werden. Ohne sie lässt sich kein Zertifikat herunterladen.
 
-Jede Vorlage hat eine eigene Karte, die zeigt, ob sie **Hinterlegt** ist, **Fehlt noch**, **Wird beim Speichern hochgeladen** oder **Wird beim Speichern entfernt**. Auf der Karte:
+Jede Vorlage hat eine eigene Karte, die mit dem Symbol unten rechts zeigt (der Name steht, wenn du darauf zeigst), ob sie **Hinterlegt** ist, **Fehlt noch**, **Wird beim Speichern hochgeladen** oder **Wird beim Speichern entfernt**. Auf der Karte:
 
 - **PDF auswählen oder hierher ziehen** (bei einer hinterlegten Vorlage **PDF ersetzen**) nimmt eine Datei bis 10 MB, per Klick oder indem du sie auf die Karte ziehst. Die Karte zeigt die erste Seite und wie viele Seiten die PDF hat. Hochgeladen wird sie erst mit **Einstellungen speichern**.
 - Das Auge (**Hinterlegte Vorlage ansehen**) öffnet die hinterlegte Datei.

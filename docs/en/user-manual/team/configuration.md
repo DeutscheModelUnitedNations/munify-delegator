@@ -153,7 +153,7 @@ The **Documents & Templates** tab holds everything DELEGATOR builds the particip
 - **Postal Templates**: one PDF each for **Binding Registration**, **Parental Agreement** (only included for minors), **Media Usage Agreement** and **Terms & Conditions**. Participants can only download their postal registration when all four are stored.
 - **Certificate of participation**: the PDF the certificates are printed on. Without it no certificate can be downloaded.
 
-Every template has its own card showing whether it is **Stored**, **Missing**, **Uploaded on saving** or **Removed on save**. On the card:
+Every template has its own card whose icon at the bottom right shows (its name appears when you point at it) whether it is **Stored**, **Missing**, **Uploaded on saving** or **Removed on save**. On the card:
 
 - **Choose a PDF or drop it here** (for a stored template **Replace PDF**) takes a file of up to 10 MB, by clicking or by dropping it on the card. The card shows the first page and how many pages the PDF has. It is only uploaded with **Save settings**.
 - The eye (**View the stored template**) opens the stored file.

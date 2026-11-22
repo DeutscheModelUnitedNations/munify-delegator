@@ -96,10 +96,7 @@
 	<div class="flex min-w-0 flex-col gap-3">
 		<div class="flex items-start gap-2">
 			<i aria-hidden="true" class="ph-duotone ph-{icon} text-primary mt-0.5 shrink-0 text-lg"></i>
-			<div class="flex min-w-0 flex-1 flex-col gap-1">
-				<span class="leading-tight font-semibold">{title}</span>
-				<TemplateState {state} />
-			</div>
+			<span class="min-w-0 flex-1 leading-tight font-semibold">{title}</span>
 			{#if stored && !removed}
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- a file in the bucket -->
 				<a
@@ -116,9 +113,10 @@
 			{/if}
 		</div>
 
-		<div class="mt-auto flex flex-wrap gap-2">
+		<div class="mt-auto flex flex-wrap items-center gap-2">
 			{#if onplace}{@render placeButton(onplace)}{/if}
 			{#if ontest}{@render testButton(ontest)}{/if}
+			<span class="ml-auto"><TemplateState {state} /></span>
 		</div>
 	</div>
 </div>
