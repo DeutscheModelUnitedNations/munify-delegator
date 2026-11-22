@@ -883,7 +883,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	// --- Statistics -----------------------------------------------------------------------------
 	StatisticsResult: { visible: ['refreshedAt'] },
 	StatisticsResultAddresses: {
-		visible: ['country', 'lat', 'lng', 'zipPrefix'],
+		visible: ['atCountryCentre', 'country', 'lat', 'lng', 'zipPrefix'],
 		aggregate: ['count']
 	},
 	StatisticsResultAgeCategoryBreakdown: { visible: ['categoryId', 'count'] },
