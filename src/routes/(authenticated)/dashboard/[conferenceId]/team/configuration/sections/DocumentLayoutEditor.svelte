@@ -6,7 +6,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { PAPER_FIELDS } from '#lib/paperScan/fields';
-	import { snapRect, type SnapGuides } from '#lib/helpers/layoutSnap';
+	import { arrowStep, snapRect, type SnapGuides } from '#lib/helpers/layoutSnap';
 	import Modal from '#lib/components/Modal.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
@@ -298,25 +298,18 @@
 	 */
 	function nudge(event: KeyboardEvent) {
 		const id = selected;
-		const steps: Record<string, [number, number]> = {
-			ArrowLeft: [-1, 0],
-			ArrowRight: [1, 0],
-			ArrowUp: [0, -1],
-			ArrowDown: [0, 1]
-		};
-		const step = steps[event.key];
+		const step = arrowStep(event);
 		const spec = elements.find((element) => element.id === id)?.spec;
 		// only while an element of the page has the focus, not a list or a field of the panel
 		const onPage = event.target instanceof Node && !!frame?.contains(event.target);
 		if (!id || !step || !spec || !onPage) return;
 		event.preventDefault();
 		const size = page ?? { width: 595, height: 842 };
-		const millimetres = event.shiftKey ? 5 : 0.5;
 		const next = movePlacement({
 			shape: spec.shape,
 			start: placed[id],
-			dx: (step[0] * millimetres * POINTS_PER_MM) / size.width,
-			dy: (step[1] * millimetres * POINTS_PER_MM) / size.height,
+			dx: (step.x * POINTS_PER_MM) / size.width,
+			dy: (step.y * POINTS_PER_MM) / size.height,
 			aspect
 		});
 		const covers = coversFixedArea({

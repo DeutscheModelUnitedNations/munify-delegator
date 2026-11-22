@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { snapRect, type SnapSteps } from './layoutSnap';
+import { arrowStep, snapRect, type SnapSteps } from './layoutSnap';
 
 const steps: SnapSteps = { threshold: { x: 0.01, y: 0.01 }, grid: { x: 0.005, y: 0.005 } };
 const signature = { x: 0.5, y: 0.8, width: 0.3, height: 0.05 };
@@ -54,5 +54,13 @@ describe('snapRect', () => {
 			dy: 0,
 			guides: { vertical: [], horizontal: [] }
 		});
+	});
+});
+
+describe('arrowStep', () => {
+	test('moves half a millimetre, five with Shift, and only for the arrows', () => {
+		expect(arrowStep({ key: 'ArrowLeft', shiftKey: false })).toEqual({ x: -0.5, y: 0 });
+		expect(arrowStep({ key: 'ArrowDown', shiftKey: true })).toEqual({ x: 0, y: 5 });
+		expect(arrowStep({ key: 'Enter', shiftKey: false })).toBeUndefined();
 	});
 });

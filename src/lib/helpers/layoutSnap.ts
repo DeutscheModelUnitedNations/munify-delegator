@@ -112,3 +112,21 @@ export function snapRect({
 		}
 	};
 }
+
+const ARROWS: Record<string, [number, number]> = {
+	ArrowLeft: [-1, 0],
+	ArrowRight: [1, 0],
+	ArrowUp: [0, -1],
+	ArrowDown: [0, 1]
+};
+
+/**
+ * How far an arrow key moves the picked element, in millimetres: half a millimetre, five with
+ * Shift; `undefined` for any other key.
+ */
+export function arrowStep({ key, shiftKey }: { key: string; shiftKey: boolean }) {
+	const direction = ARROWS[key];
+	if (!direction) return undefined;
+	const millimetres = shiftKey ? 5 : 0.5;
+	return { x: direction[0] * millimetres, y: direction[1] * millimetres };
+}
