@@ -101,7 +101,7 @@ const MAX_SAMPLES = 240;
  * The share of `box` covered in ink, and the share of its width the ink spans. Sampled about once
  * per pixel of the picture, so a small picture is not read finer than it is.
  */
-function inkIn({ picture, toPicture, box }: ReadArgs & { box: Box }) {
+export function inkIn({ picture, toPicture, box }: ReadArgs & { box: Box }) {
 	const paper = paperAround({ picture, toPicture, box });
 	const origin = toPicture({ x: box.x, y: box.y });
 	const across = toPicture({ x: box.x + box.width, y: box.y });

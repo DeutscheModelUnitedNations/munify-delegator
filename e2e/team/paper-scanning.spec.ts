@@ -156,13 +156,25 @@ test('the layout editor places the fields page by page and keeps the marks fixed
 	await expect(onPage('konferenzpresse')).toBeVisible();
 	await expect(onPage('als foto')).toHaveCount(0);
 
-	// a field put on another page shows there, lands on that page's own box, which the check
-	// tells at once, and is saved there
+	// a field put on another page shows there, lands on that page's own box, which the checks
+	// tell at once, and is saved there once moved off it
 	await panel.getByRole('combobox', { name: /als foto/i }).selectOption({ label: 'Seite 2' });
 	await expect(onPage('als foto')).toBeVisible();
 	await expect(onPage('als foto')).toHaveAccessibleName(/als ausgefüllt|unklar|filled in|unclear/i);
 	await expect(panel.getByText(/felder mit problemen|fields with problems/i)).toBeVisible();
-	await editor.getByRole('button', { name: /^speichern$|^save$/i }).click();
+
+	// over the field already there it would not read: the check says so and saving waits
+	await expect(
+		panel.getByRole('button', { name: /als foto.*(überdecken sich|overlap)/i })
+	).toBeVisible();
+	const save = editor.getByRole('button', { name: /^speichern$|^save$/i });
+	await expect(save).toBeDisabled();
+	// moved aside with the arrow keys, it can be saved
+	await onPage('als foto').focus();
+	await page.keyboard.press('Shift+ArrowRight');
+	await page.keyboard.press('Shift+ArrowRight');
+	await expect(save).toBeEnabled();
+	await save.click();
 
 	await expect
 		.poll(async () => {

@@ -568,9 +568,37 @@ function toLayout<D extends LayoutDocument>({
 
 const clamp = ({ value, min, max }: { value: number; min: number; max: number }) =>
 	Math.min(Math.max(value, min), max);
-/** Keeps a box of `size` inside the page when it is moved to `position`. */
-const clampToPage = ({ position, size }: { position: number; size: number }) =>
-	clamp({ value: position, min: 0, max: Math.max(0, 1 - size) });
+/**
+ * Keeps a box of `size` inside the page, `margin` off its edges, when it is moved to `position`.
+ */
+const clampToPage = ({
+	position,
+	size,
+	margin
+}: {
+	position: number;
+	size: number;
+	margin: number;
+}) => clamp({ value: position, min: margin, max: Math.max(margin, 1 - margin - size) });
+
+/**
+ * How far every placed element stays off the page's edges, in millimetres: printers leave a few
+ * millimetres along the edges blank, and a scanner's crop can lose a little more.
+ */
+const PAGE_MARGIN_MM = 10;
+
+/** The room kept along the edges, as fractions of the page's width (`x`) and height (`y`). */
+export type PageMargin = { x: number; y: number };
+
+const NO_MARGIN: PageMargin = { x: 0, y: 0 };
+
+/** `PAGE_MARGIN_MM` on a page of `page` (points), as fractions of it. */
+export function pageMargin(page: { width: number; height: number }): PageMargin {
+	return {
+		x: (PAGE_MARGIN_MM * POINTS_PER_MM) / page.width,
+		y: (PAGE_MARGIN_MM * POINTS_PER_MM) / page.height
+	};
+}
 
 type AnyPlacement = TextPlacement | BoxPlacement | SquarePlacement | FieldPlacement;
 
@@ -581,10 +609,13 @@ type PlacementDrag<P extends AnyPlacement> = {
 	dx: number;
 	dy: number;
 	aspect: number;
+	/** The room to keep along the page's edges (`pageMargin`); none if left out. */
+	margin?: PageMargin;
 };
 
 /**
- * Moves one placement by `dx`/`dy` (fractions of the page), kept on the page. `aspect` is the
+ * Moves one placement by `dx`/`dy` (fractions of the page), kept on the page and `margin` off its
+ * edges (a text by where it is anchored). `aspect` is the
  * page's width over its height, which a square's height depends on.
  */
 export function movePlacement<P extends AnyPlacement>({
@@ -592,26 +623,27 @@ export function movePlacement<P extends AnyPlacement>({
 	start,
 	dx,
 	dy,
-	aspect
+	aspect,
+	margin = NO_MARGIN
 }: PlacementDrag<P>): P {
 	if ((shape === 'box' || shape === 'field') && 'width' in start) {
 		return {
 			...start,
-			x: clampToPage({ position: start.x + dx, size: start.width }),
-			y: clampToPage({ position: start.y + dy, size: start.height })
+			x: clampToPage({ position: start.x + dx, size: start.width, margin: margin.x }),
+			y: clampToPage({ position: start.y + dy, size: start.height, margin: margin.y })
 		};
 	}
 	if (shape === 'square' && 'size' in start) {
 		return {
 			...start,
-			x: clampToPage({ position: start.x + dx, size: start.size }),
-			y: clampToPage({ position: start.y + dy, size: start.size * aspect })
+			x: clampToPage({ position: start.x + dx, size: start.size, margin: margin.x }),
+			y: clampToPage({ position: start.y + dy, size: start.size * aspect, margin: margin.y })
 		};
 	}
 	return {
 		...start,
-		x: clamp({ value: start.x + dx, min: 0, max: 1 }),
-		y: clamp({ value: start.y + dy, min: 0, max: 1 })
+		x: clamp({ value: start.x + dx, min: margin.x, max: 1 - margin.x }),
+		y: clamp({ value: start.y + dy, min: margin.y, max: 1 - margin.y })
 	};
 }
 
@@ -714,7 +746,7 @@ type MinBox = { width: number; height: number };
 
 /**
  * Resizes a box or field (or a square, which stays square, following the larger of the two) from
- * its bottom right corner by `dx`/`dy`, never past the page's edge nor below `minSize` (a square's,
+ * its bottom right corner by `dx`/`dy`, never past `margin` off the page's edge nor below `minSize` (a square's,
  * as a fraction of the page's width) or `minBox` (a field's, `fieldMinimum`). A text keeps its
  * placement: its size is its font's (`resizeText`).
  */
@@ -725,18 +757,21 @@ export function resizePlacement<P extends AnyPlacement>({
 	dy,
 	aspect,
 	minSize = MIN_BOX,
-	minBox = { width: MIN_BOX, height: MIN_BOX }
+	minBox = { width: MIN_BOX, height: MIN_BOX },
+	margin = NO_MARGIN
 }: PlacementDrag<P> & { minSize?: number; minBox?: MinBox }): P {
+	const right = 1 - margin.x;
+	const bottom = 1 - margin.y;
 	if ((shape === 'box' || shape === 'field') && 'width' in start) {
 		return {
 			...start,
-			width: clamp({ value: start.width + dx, min: minBox.width, max: 1 - start.x }),
-			height: clamp({ value: start.height + dy, min: minBox.height, max: 1 - start.y })
+			width: clamp({ value: start.width + dx, min: minBox.width, max: right - start.x }),
+			height: clamp({ value: start.height + dy, min: minBox.height, max: bottom - start.y })
 		};
 	}
 	if (shape === 'square' && 'size' in start) {
 		const grow = Math.max(dx, dy / aspect);
-		const fits = Math.min(1 - start.x, (1 - start.y) / aspect);
+		const fits = Math.min(right - start.x, (bottom - start.y) / aspect);
 		// at its minimum where the page leaves no room for it: the move keeps it on the page
 		const min = Math.max(MIN_BOX, minSize);
 		return {
@@ -756,7 +791,8 @@ export function dragPlacement<P extends AnyPlacement>({
 	dy,
 	aspect,
 	minSize,
-	minBox
+	minBox,
+	margin
 }: {
 	shape: ElementSpec['shape'];
 	start: P;
@@ -764,14 +800,16 @@ export function dragPlacement<P extends AnyPlacement>({
 	dx: number;
 	dy: number;
 	aspect: number;
+	/** The room to keep along the page's edges (`pageMargin`). */
+	margin?: PageMargin;
 	/** A square's smallest size (`minSquareSize`). */
 	minSize?: number;
 	/** A field's smallest size (`fieldMinimum`). */
 	minBox?: MinBox;
 }): P {
 	return resize
-		? resizePlacement({ shape, start, dx, dy, aspect, minSize, minBox })
-		: movePlacement({ shape, start, dx, dy, aspect });
+		? resizePlacement({ shape, start, dx, dy, aspect, minSize, minBox, margin })
+		: movePlacement({ shape, start, dx, dy, aspect, margin });
 }
 
 /** The smallest a field of `mark` may be on a page of `page` (points), as fractions of it. */

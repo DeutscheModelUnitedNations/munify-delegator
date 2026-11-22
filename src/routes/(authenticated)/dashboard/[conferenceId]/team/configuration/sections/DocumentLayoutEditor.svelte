@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
 	import { resolve } from '$app/paths';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { PAPER_FIELDS } from '#lib/paperScan/fields';
 	import { arrowStep, snapRect, type SnapGuides } from '#lib/helpers/layoutSnap';
+	import { scrollKeeping, zoomStep } from '#lib/helpers/layoutZoom';
 	import Modal from '#lib/components/Modal.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
@@ -18,6 +19,7 @@
 		fieldMinimum,
 		minSquareSize,
 		movePlacement,
+		pageMargin,
 		placementRect,
 		POINTS_PER_MM,
 		resizePlacement,
@@ -42,12 +44,14 @@
 		templatePictures,
 		type TemplatePicture
 	} from '#lib/helpers/pdfPages';
-	import { checkFields } from './layoutCheck';
+	import { checkFields, checkLayout } from './layoutCheck';
 	import LayoutBoxElement from './LayoutBoxElement.svelte';
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
 	import LayoutFieldChecks from './LayoutFieldChecks.svelte';
 	import LayoutGuides from './LayoutGuides.svelte';
 	import LayoutPager from './LayoutPager.svelte';
+	import LayoutProblems from './LayoutProblems.svelte';
+	import LayoutZoom from './LayoutZoom.svelte';
 	import LayoutFontSizes from './LayoutFontSizes.svelte';
 	import LayoutSquareElement from './LayoutSquareElement.svelte';
 	import LayoutTextElement from './LayoutTextElement.svelte';
@@ -105,6 +109,10 @@
 	let canvas = $state<HTMLCanvasElement>();
 	let frame = $state<HTMLDivElement>();
 	let frameWidth = $state(0);
+	/** The page scrolls in this when zoomed in. */
+	let viewport = $state<HTMLDivElement>();
+	/** How far the page is zoomed in, the page fitted to the view at 1. */
+	let zoom = $state(1);
 	/** The template page's size in points, known once it is drawn. */
 	let page = $state<{ width: number; height: number }>();
 	/** The page drawn (from 0) and how many the template has. */
@@ -124,12 +132,14 @@
 	const codeMinimum = $derived(
 		elements.flatMap(({ spec }) => (spec.shape === 'square' ? [spec.minSide] : [])).at(0)
 	);
+	/** The room every element keeps along the page's edges, against printers cutting them off. */
+	const margin = $derived(pageMargin(page ?? { width: 595, height: 842 }));
 	/** Pixels per point, so texts show at the size they will print. */
 	const scale = $derived(page ? frameWidth / page.width : 1);
 
 	// The template read once, for the checks of the fields read off a scan
 	$effect(() => {
-		if (!templateUrl || kind === 'certificate') return;
+		if (!templateUrl) return;
 		templatePictures({ url: templateUrl })
 			.then((rendered) => (pictures = rendered))
 			.catch((error) => logger.warn('Could not read the template for the checks', error));
@@ -243,7 +253,7 @@
 			steps: snapSteps,
 			resize
 		});
-		const shift = { shape, start: next, dx: snap.dx, dy: snap.dy, aspect };
+		const shift = { shape, start: next, dx: snap.dx, dy: snap.dy, aspect, margin };
 		const placement = resize
 			? resizePlacement({ ...shift, minBox: active.minBox })
 			: movePlacement(shift);
@@ -264,7 +274,8 @@
 			dy,
 			aspect,
 			minSize: drag.minSize,
-			minBox: drag.minBox
+			minBox: drag.minBox,
+			margin
 		});
 		// Alt places freely
 		const lined = event.altKey
@@ -310,7 +321,8 @@
 			start: placed[id],
 			dx: (step.x * POINTS_PER_MM) / size.width,
 			dy: (step.y * POINTS_PER_MM) / size.height,
-			aspect
+			aspect,
+			margin
 		});
 		const covers = coversFixedArea({
 			document: kind,
@@ -323,10 +335,44 @@
 	}
 
 	/** Picks a field from the list, turning to its page. */
-	function selectField(id: string) {
+	async function selectField(id: string) {
 		const placement = placed[id];
 		if (placement && 'page' in placement) pageIndex = placement.page;
 		selected = id;
+		// zoomed in, the field may be out of view
+		await tick();
+		frame
+			?.querySelector('[aria-pressed="true"]')
+			?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+	}
+
+	/**
+	 * Zooms one step in or out, keeping the spot `anchor` (pixels into the view, its middle unless
+	 * given) where it was.
+	 */
+	async function zoomBy({ step, anchor }: { step: 1 | -1; anchor?: { x: number; y: number } }) {
+		const next = zoomStep({ zoom, step });
+		if (next === zoom || !viewport) return;
+		const view = viewport;
+		const at = anchor ?? { x: view.clientWidth / 2, y: view.clientHeight / 2 };
+		const factor = next / zoom;
+		const scroll = { left: view.scrollLeft, top: view.scrollTop };
+		zoom = next;
+		await tick();
+		view.scrollLeft = scrollKeeping({ scroll: scroll.left, anchor: at.x, factor });
+		view.scrollTop = scrollKeeping({ scroll: scroll.top, anchor: at.y, factor });
+	}
+
+	/** Ctrl or ⌘ with the wheel zooms at the pointer, as in other editors. The maths: `layoutZoom`. */
+	// fallow-ignore-next-line complexity
+	function wheelZoom(event: WheelEvent) {
+		if (!(event.ctrlKey || event.metaKey) || !viewport) return;
+		event.preventDefault();
+		const rect = viewport.getBoundingClientRect();
+		void zoomBy({
+			step: event.deltaY < 0 ? 1 : -1,
+			anchor: { x: event.clientX - rect.left, y: event.clientY - rect.top }
+		});
 	}
 
 	/** Puts a field on another page of the template, where it was on its own. */
@@ -381,6 +427,12 @@
 	const allFields = $derived(byShape.fields);
 	/** What a scan of the empty form would make of each field where it is placed. */
 	const checks = $derived(checkFields({ document: kind, layout: placed, pictures }));
+	/** What would print unreadably: parts over each other or over the template's print. */
+	const problems = $derived(
+		checkLayout({ document: kind, layout: placed, pictures, lines: sample })
+	);
+	/** A code, a mark or a field could not be read any more: saving waits until it is fixed. */
+	const unreadable = $derived(problems.some(({ breaks }) => breaks));
 	/** The fields for the side panel, in the order of their pages. */
 	const fieldRows = $derived(
 		allFields
@@ -417,76 +469,93 @@
 	<div class="grid w-[min(94vw,92rem)] max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
 		<!-- The page and the parts placed on it; positions are fractions of the page. -->
 		<div class="flex min-w-0 flex-col items-center gap-3">
-			{#if pageCount > 1}
-				<LayoutPager bind:page={pageIndex} count={pageCount} />
-			{/if}
-			<div
-				bind:this={frame}
-				bind:clientWidth={frameWidth}
-				class="border-base-300 relative touch-none border bg-white shadow-sm select-none"
-				style="aspect-ratio: {aspect}; width: min(100%, calc((100dvh - 15rem) * {aspect}));"
-				role="application"
-				aria-label={title}
-				onpointermove={follow}
-				onpointerup={end}
-				onpointercancel={end}
-			>
-				<canvas bind:this={canvas} class="absolute inset-0 h-full w-full"></canvas>
-				<LayoutGuides {guides} />
-				{#if rendering}
-					<div class="absolute inset-0 flex items-center justify-center">
-						<span class="loading loading-spinner loading-lg text-primary"></span>
-					</div>
+			<div class="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-2">
+				{#if pageCount > 1}
+					<LayoutPager bind:page={pageIndex} count={pageCount} />
 				{/if}
+				<LayoutZoom {zoom} onzoom={(step) => zoomBy({ step })} />
+			</div>
+			<!-- the page fitted to the view, larger zoomed in, scrolling in it -->
+			<div
+				bind:this={viewport}
+				class="w-full overflow-auto"
+				style="max-height: calc(100dvh - 15rem);"
+				onwheel={wheelZoom}
+			>
+				<div
+					bind:this={frame}
+					bind:clientWidth={frameWidth}
+					class="border-base-300 relative mx-auto touch-none border bg-white shadow-sm select-none"
+					style="aspect-ratio: {aspect}; width: calc(min(100%, (100dvh - 15rem) * {aspect}) * {zoom});"
+					role="application"
+					aria-label={title}
+					onpointermove={follow}
+					onpointerup={end}
+					onpointercancel={end}
+				>
+					<canvas bind:this={canvas} class="absolute inset-0 h-full w-full"></canvas>
+					<!-- the margin nothing is placed in, kept clear of the printer's edge -->
+					<div
+						class="border-base-content/25 pointer-events-none absolute border border-dashed"
+						style="inset: {margin.y * 100}% {margin.x * 100}%;"
+						aria-hidden="true"
+					></div>
+					<LayoutGuides {guides} />
+					{#if rendering}
+						<div class="absolute inset-0 flex items-center justify-center">
+							<span class="loading loading-spinner loading-lg text-primary"></span>
+						</div>
+					{/if}
 
-				{#each texts as { id, align, placement } (id)}
-					<LayoutTextElement
-						label={label(id)}
-						{placement}
-						{align}
-						lines={sample(id)}
-						{scale}
-						selected={selected === id}
-						onselect={() => (selected = id)}
-						onmove={(event) => begin({ event, id })}
-					/>
-				{/each}
-				{#each boxes as { id, placement, list, fixed } (id)}
-					<LayoutBoxElement
-						label={label(id)}
-						{placement}
-						lines={sample(id)}
-						{list}
-						{scale}
-						selected={selected === id}
-						onselect={() => (selected = id)}
-						{...fixed ? {} : dragHandlers(id)}
-					/>
-				{/each}
-				{#each fields as { id, placement, mark } (id)}
-					<LayoutFieldElement
-						label={label(id)}
-						{placement}
-						{mark}
-						check={checks[id] ?? 'unknown'}
-						{scale}
-						selected={selected === id}
-						onselect={() => (selected = id)}
-						{...dragHandlers(id)}
-					/>
-				{/each}
-				{#each squares as { id, placement, caption } (id)}
-					<LayoutSquareElement
-						label={label(id)}
-						{placement}
-						captions={sample(id)}
-						{caption}
-						{scale}
-						selected={selected === id}
-						onselect={() => (selected = id)}
-						{...dragHandlers(id)}
-					/>
-				{/each}
+					{#each texts as { id, align, placement } (id)}
+						<LayoutTextElement
+							label={label(id)}
+							{placement}
+							{align}
+							lines={sample(id)}
+							{scale}
+							selected={selected === id}
+							onselect={() => (selected = id)}
+							onmove={(event) => begin({ event, id })}
+						/>
+					{/each}
+					{#each boxes as { id, placement, list, fixed } (id)}
+						<LayoutBoxElement
+							label={label(id)}
+							{placement}
+							lines={sample(id)}
+							{list}
+							{scale}
+							selected={selected === id}
+							onselect={() => (selected = id)}
+							{...fixed ? {} : dragHandlers(id)}
+						/>
+					{/each}
+					{#each fields as { id, placement, mark } (id)}
+						<LayoutFieldElement
+							label={label(id)}
+							{placement}
+							{mark}
+							check={checks[id] ?? 'unknown'}
+							{scale}
+							selected={selected === id}
+							onselect={() => (selected = id)}
+							{...dragHandlers(id)}
+						/>
+					{/each}
+					{#each squares as { id, placement, caption } (id)}
+						<LayoutSquareElement
+							label={label(id)}
+							{placement}
+							captions={sample(id)}
+							{caption}
+							{scale}
+							selected={selected === id}
+							onselect={() => (selected = id)}
+							{...dragHandlers(id)}
+						/>
+					{/each}
+				</div>
 			</div>
 		</div>
 
@@ -509,6 +578,8 @@
 					</a>
 				</div>
 			{/if}
+
+			<LayoutProblems {problems} {label} onselect={selectField} />
 
 			{#if fieldRows.length > 0}
 				<LayoutFieldChecks
@@ -559,9 +630,14 @@
 			></i>
 			{m.postalTemplateTest()}
 		</button>
-		<button type="button" class="btn btn-primary" onclick={save}>
-			<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
-			{m.save()}
-		</button>
+		<span
+			class={unreadable ? 'tooltip tooltip-left' : ''}
+			data-tip={unreadable ? m.documentLayoutProblemsBlockSave() : undefined}
+		>
+			<button type="button" class="btn btn-primary" disabled={unreadable} onclick={save}>
+				<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
+				{m.save()}
+			</button>
+		</span>
 	{/snippet}
 </Modal>

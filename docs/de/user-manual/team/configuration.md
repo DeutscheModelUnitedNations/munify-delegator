@@ -168,7 +168,7 @@ Eine neue Vorlage gilt sofort für alle Dokumente, die danach erzeugt werden. En
 
 ### Felder auf der Vorlage platzieren {#document-layouts}
 
-Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Person in der Schrift Space Mono auf die erste Seite der PDF, und wohin, legst du mit **Felder platzieren** fest. Das Fenster **Anordnung auf der Vorlage:** mit dem Namen des Dokuments zeigt die Seite, auf der du jedes Feld an seine Stelle ziehst:
+Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Person in der Schrift Space Mono auf die erste Seite der PDF, und wohin, legst du mit **Felder platzieren** fest. Das Fenster **Anordnung auf der Vorlage:** mit dem Namen des Dokuments zeigt die Seite, auf der du jedes Feld an seine Stelle ziehst, bis auf 10 mm an den Rand (die gestrichelte Linie; Drucker lassen den Rand frei). Mit der Lupe über der Seite (oder Strg und dem Mausrad) vergrößerst du sie, um kleine Kästchen genau zu treffen:
 
 | Dokument                                    | Felder                                                                                                                                      |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -182,7 +182,7 @@ Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in de
 Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Jede Seite der postalischen Anmeldung bekommt den signierten QR-Code mit Name und ID daneben dort, wo ihr Dokument ihn platziert, und unten rechts die Seitenzahl, auch die Seiten der Teilnahmebedingungen. Das Zertifikat kann jede Seitengröße haben, auch quer.
 
 :::tip Platz lassen
-Lass auf deiner Vorlage an den Stellen der Felder Platz frei. Das Testdokument zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.
+Lass auf deiner Vorlage an den Stellen der Felder Platz frei. **Lesbarkeit** neben der Seite sagt dir, wo sich Teile überdecken oder auf dem Text der Vorlage liegen. Liegt dabei der QR-Code, eine Markierung oder ein Feld, geht **Speichern** erst, wenn du es verschoben hast. Das Testdokument zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.
 :::
 
 ### Verabschiedete Resolutionen {#resolutions}

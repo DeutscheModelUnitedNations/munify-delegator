@@ -13,6 +13,7 @@ import {
 	fieldMinimum,
 	minSquareSize,
 	movePlacement,
+	pageMargin,
 	placementRect,
 	POINTS_PER_MM,
 	resizePlacement,
@@ -24,6 +25,65 @@ import {
 } from './documentLayout';
 
 const LANDSCAPE = 842 / 595;
+
+describe('the page margin', () => {
+	const portrait = pageMargin({ width: 595, height: 842 });
+
+	test('keeps a moved box, code or text 10 mm off every edge', () => {
+		const box = { x: 0.5, y: 0.5, width: 0.2, height: 0.1 };
+		expect(
+			movePlacement({ shape: 'box', start: box, dx: -1, dy: -1, aspect: 1, margin: portrait })
+		).toMatchObject({ x: portrait.x, y: portrait.y });
+		const far = movePlacement({
+			shape: 'box',
+			start: box,
+			dx: 1,
+			dy: 1,
+			aspect: 1,
+			margin: portrait
+		});
+		expect(far.x + far.width).toBeCloseTo(1 - portrait.x);
+		expect(far.y + far.height).toBeCloseTo(1 - portrait.y);
+		const text = { x: 0.5, y: 0.5, size: 12 };
+		expect(
+			movePlacement({ shape: 'text', start: text, dx: 1, dy: -1, aspect: 1, margin: portrait })
+		).toMatchObject({ x: 1 - portrait.x, y: portrait.y });
+		expect(portrait.x * 595).toBeCloseTo(10 * POINTS_PER_MM);
+	});
+
+	test('stops a resize at the margin', () => {
+		const field = { x: 0.5, y: 0.5, width: 0.1, height: 0.05, page: 0 };
+		const grown = resizePlacement({
+			shape: 'field',
+			start: field,
+			dx: 1,
+			dy: 1,
+			aspect: 595 / 842,
+			margin: portrait
+		});
+		expect(grown.x + grown.width).toBeCloseTo(1 - portrait.x);
+		expect(grown.y + grown.height).toBeCloseTo(1 - portrait.y);
+	});
+
+	test('every placeable default already keeps it (the page number and the marks stay put)', () => {
+		for (const document of LAYOUT_DOCUMENTS) {
+			const aspect = document === 'certificate' ? LANDSCAPE : 595 / 842;
+			const margin = pageMargin(
+				document === 'certificate' ? { width: 842, height: 595 } : { width: 595, height: 842 }
+			);
+			const layout = defaultLayout(document);
+			for (const { id, spec } of elementsOf(document)) {
+				if ('fixed' in spec && spec.fixed) continue;
+				const rect = placementRect({ shape: spec.shape, placement: layout[id], aspect });
+				const where = `${document}.${id}`;
+				expect(rect.x, where).toBeGreaterThanOrEqual(margin.x - 1e-9);
+				expect(rect.y, where).toBeGreaterThanOrEqual(margin.y - 1e-9);
+				expect(rect.x + rect.width, where).toBeLessThanOrEqual(1 - margin.x + 1e-9);
+				expect(rect.y + rect.height, where).toBeLessThanOrEqual(1 - margin.y + 1e-9);
+			}
+		}
+	});
+});
 
 describe('the document layouts', () => {
 	test('every document is listed, and its defaults pass its own schema', () => {

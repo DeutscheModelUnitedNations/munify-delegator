@@ -168,7 +168,7 @@ A new template applies at once to every document generated after it. If you remo
 
 ### Placing fields on the template {#document-layouts}
 
-The templates contain no placeholders. DELEGATOR writes the person's details onto the first page of the PDF in the Space Mono font, and where is up to you with **Place fields**. The window **Layout on the template:** with the document's name shows the page, and you drag each field to its spot:
+The templates contain no placeholders. DELEGATOR writes the person's details onto the first page of the PDF in the Space Mono font, and where is up to you with **Place fields**. The window **Layout on the template:** with the document's name shows the page, and you drag each field to its spot, up to 10 mm from the edge (the dashed line; printers leave the edge blank). The magnifier above the page (or Ctrl and the mouse wheel) zooms in, to hit small boxes exactly:
 
 | Document                         | Fields                                                                                                                                       |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -182,7 +182,7 @@ You resize the check-in list and the QR codes from their bottom right corner, an
 The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the name and ID beside it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
 
 :::tip Leave room
-Leave room on your template where the fields go. The test document shows the result with made-up details and the postal address as it currently stands in the form.
+Leave room on your template where the fields go. **Readability** beside the page tells you where parts overlap or lie on the template's text. Where the QR code, a mark or a field is involved, **Save** only works once you have moved it. The test document shows the result with made-up details and the postal address as it currently stands in the form.
 :::
 
 ### Adopted resolutions {#resolutions}
