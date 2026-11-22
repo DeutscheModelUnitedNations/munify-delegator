@@ -1,1 +1,0 @@
-ALTER TABLE "conference" ADD COLUMN "paper_scanning" boolean DEFAULT false NOT NULL;
