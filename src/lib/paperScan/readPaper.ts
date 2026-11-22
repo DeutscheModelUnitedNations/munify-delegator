@@ -1,6 +1,6 @@
 import { Matrix, solve } from 'ml-matrix';
 import { PAPER_FIELDS, type PaperField, type PaperMark } from './fields';
-import type { PageAreas } from './areas';
+import type { PageAreas, PaperArea } from './areas';
 import { findMarkers, type Picture } from './markers';
 import type { Point } from './markerGeometry';
 
@@ -55,7 +55,7 @@ type Box = { x: number; y: number; width: number; height: number };
 function innerBox({ box, mark }: { box: Box; mark: PaperMark }): Box {
 	if (mark === 'checkbox') {
 		// past the frame (ours, and the form's under it) and a scan aligned up to 0.3 mm off
-		const inset = Math.max(0.6, Math.min(box.width, box.height) * 0.18);
+		const inset = Math.max(0.6, Math.min(box.width, box.height) * 0.2);
 		return {
 			x: box.x + inset,
 			y: box.y + inset,
@@ -166,7 +166,20 @@ export function readPaper({
 	const found = findMarkers(picture);
 	if (!found) return null;
 	const toPicture = perspective({ from: areas.markers, to: found });
-	return areas.areas.map(({ field, ...box }) => {
+	return readAreas({ picture, toPicture, areas: areas.areas });
+}
+
+/**
+ * The fields of `areas` read off `picture`, page millimetres mapped into it by `toPicture`: a scan
+ * (`readPaper`), or the blank template itself, to tell whether its own print would already read
+ * as filled in (the layout editor).
+ */
+export function readAreas({
+	picture,
+	toPicture,
+	areas
+}: ReadArgs & { areas: readonly PaperArea[] }): FieldReading[] {
+	return areas.map(({ field, ...box }) => {
 		const { mark } = PAPER_FIELDS[field];
 		const inner = innerBox({ box, mark });
 		return { field, state: judgeMark({ mark, ...inkIn({ picture, toPicture, box: inner }) }) };

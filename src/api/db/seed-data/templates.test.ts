@@ -6,6 +6,7 @@ import { defaultLayout } from '#lib/helpers/documentLayout';
 import { PAPER_FIELDS } from '#lib/paperScan/fields';
 import { MARKER } from '#lib/paperScan/markerGeometry';
 import { pageAreas, POSTAL_DOCUMENTS } from '#lib/paperScan/pageAreas';
+import { readAreas } from '#lib/paperScan/readPaper';
 import { pdfText, renderPdfPage } from '#lib/paperScan/scanSimulation';
 
 // The layout's defaults put every field where DMUN's own forms (the seed's templates) have it, and
@@ -49,6 +50,22 @@ describe.each(POSTAL_DOCUMENTS)("DMUN's %s", (document) => {
 					expect(line, area.field).toBeDefined();
 				}
 			}
+		}
+	);
+
+	test.each(Array.from({ length: PAGES[document] }, (_, page) => page))(
+		'page %i: the empty form reads empty, field by field',
+		async (page) => {
+			const { size } = await pdfText({ bytes, page });
+			const perMm = 6;
+			const picture = await renderPdfPage({ bytes, page, dpi: perMm * 25.4 });
+			const { areas } = pageAreas({ document, layout: defaultLayout(document), page, size });
+			const readings = readAreas({
+				picture,
+				toPicture: ({ x, y }) => ({ x: x * perMm, y: y * perMm }),
+				areas
+			});
+			for (const { field, state } of readings) expect(state, field).toBe('no');
 		}
 	);
 

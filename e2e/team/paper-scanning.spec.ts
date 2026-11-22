@@ -131,8 +131,18 @@ test('the layout editor places the fields page by page and keeps the marks fixed
 	const editor = page.getByRole('dialog', { name: /einwilligung bildnutzung|media usage/i });
 	await expect(editor.getByText(/seite 1 von 3|page 1 of 3/i)).toBeVisible({ timeout: 30_000 });
 
+	const sheet = editor.getByRole('application');
+	const onPage = (name: string) =>
+		sheet.getByRole('button', { name: new RegExp(`^${name}:`, 'i') });
+	const panel = editor.locator('aside');
+
+	// DMUN's form with the default layout: every field clear, read empty
+	await expect(panel.getByText(/alle felder liegen frei|every field is clear/i)).toBeVisible({
+		timeout: 30_000
+	});
+
 	// the first page: the uses, and the marks shown but fixed
-	await expect(editor.getByRole('button', { name: /^als foto$/i })).toBeVisible();
+	await expect(onPage('als foto')).toBeVisible();
 	await expect(editor.getByRole('img', { name: /ausrichtungsmarke|alignment mark/i })).toHaveCount(
 		4
 	);
@@ -143,12 +153,15 @@ test('the layout editor places the fields page by page and keeps the marks fixed
 	// the second: the purposes
 	await editor.getByRole('button', { name: /nächste seite|next page/i }).click();
 	await expect(editor.getByText(/seite 2 von 3|page 2 of 3/i)).toBeVisible();
-	await expect(editor.getByRole('button', { name: /^konferenzpresse$/i })).toBeVisible();
-	await expect(editor.getByRole('button', { name: /^als foto$/i })).toHaveCount(0);
+	await expect(onPage('konferenzpresse')).toBeVisible();
+	await expect(onPage('als foto')).toHaveCount(0);
 
-	// a field put on another page shows there, and is saved there
-	await editor.getByRole('combobox', { name: /als foto/i }).selectOption({ label: 'Seite 2' });
-	await expect(editor.getByRole('button', { name: /^als foto$/i })).toBeVisible();
+	// a field put on another page shows there, lands on that page's own box, which the check
+	// tells at once, and is saved there
+	await panel.getByRole('combobox', { name: /als foto/i }).selectOption({ label: 'Seite 2' });
+	await expect(onPage('als foto')).toBeVisible();
+	await expect(onPage('als foto')).toHaveAccessibleName(/als ausgefüllt|unklar|filled in|unclear/i);
+	await expect(panel.getByText(/felder mit problemen|fields with problems/i)).toBeVisible();
 	await editor.getByRole('button', { name: /^speichern$|^save$/i }).click();
 
 	await expect

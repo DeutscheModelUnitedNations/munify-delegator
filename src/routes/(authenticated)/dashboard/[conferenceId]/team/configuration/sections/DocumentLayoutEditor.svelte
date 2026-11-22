@@ -37,10 +37,11 @@
 		type LayoutElement,
 		type WrittenElement
 	} from './layoutElements';
-	import { renderTemplatePage } from './templatePage';
+	import { renderTemplatePage, templatePictures, type TemplatePicture } from './templatePage';
+	import { checkFields } from './layoutCheck';
 	import LayoutBoxElement from './LayoutBoxElement.svelte';
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
-	import LayoutFieldPages from './LayoutFieldPages.svelte';
+	import LayoutFieldChecks from './LayoutFieldChecks.svelte';
 	import LayoutGuides from './LayoutGuides.svelte';
 	import LayoutPager from './LayoutPager.svelte';
 	import LayoutFontSizes from './LayoutFontSizes.svelte';
@@ -110,6 +111,10 @@
 	let pageIndex = $state(0);
 	let pageCount = $state(1);
 	let rendering = $state(false);
+	/** The element picked last: highlighted, and moved by the arrow keys. */
+	let selected = $state<string>();
+	/** Every page of the template off screen, to read the fields off as a scan would. */
+	let pictures = $state.raw<TemplatePicture[]>([]);
 
 	const aspect = $derived(page ? page.width / page.height : 595 / 842);
 	const pageWidth = $derived(page?.width ?? 595);
@@ -121,6 +126,14 @@
 	);
 	/** Pixels per point, so texts show at the size they will print. */
 	const scale = $derived(page ? frameWidth / page.width : 1);
+
+	// The template read once, for the checks of the fields read off a scan
+	$effect(() => {
+		if (!withFields || !templateUrl || kind === 'certificate') return;
+		templatePictures({ url: templateUrl })
+			.then((rendered) => (pictures = rendered))
+			.catch((error) => logger.warn('Could not read the template for the checks', error));
+	});
 
 	$effect(() => {
 		const target = canvas;
@@ -179,6 +192,7 @@
 						page: page ?? { width: 595, height: 842 }
 					})
 				: undefined;
+		selected = id;
 		drag = {
 			id,
 			shape: spec.shape,
@@ -278,6 +292,51 @@
 		guides = { vertical: [], horizontal: [] };
 	}
 
+	/**
+	 * Moves the picked element by the arrow keys: half a millimetre, five with Shift, as far as the
+	 * page and the fixed areas let it.
+	 */
+	function nudge(event: KeyboardEvent) {
+		const id = selected;
+		const steps: Record<string, [number, number]> = {
+			ArrowLeft: [-1, 0],
+			ArrowRight: [1, 0],
+			ArrowUp: [0, -1],
+			ArrowDown: [0, 1]
+		};
+		const step = steps[event.key];
+		const spec = elements.find((element) => element.id === id)?.spec;
+		// only while an element of the page has the focus, not a list or a field of the panel
+		const onPage = event.target instanceof Node && !!frame?.contains(event.target);
+		if (!id || !step || !spec || !onPage) return;
+		event.preventDefault();
+		const size = page ?? { width: 595, height: 842 };
+		const millimetres = event.shiftKey ? 5 : 0.5;
+		const next = movePlacement({
+			shape: spec.shape,
+			start: placed[id],
+			dx: (step[0] * millimetres * POINTS_PER_MM) / size.width,
+			dy: (step[1] * millimetres * POINTS_PER_MM) / size.height,
+			aspect
+		});
+		const covers = coversFixedArea({
+			document: kind,
+			id,
+			shape: spec.shape,
+			placement: next,
+			aspect,
+			scanning: withFields
+		});
+		if (!covers) layout[id] = next;
+	}
+
+	/** Picks a field from the list, turning to its page. */
+	function selectField(id: string) {
+		const placement = placed[id];
+		if (placement && 'page' in placement) pageIndex = placement.page;
+		selected = id;
+	}
+
 	/** Puts a field on another page of the template, where it was on its own. */
 	function moveToPage(id: string, target: number) {
 		const placement = layout[id];
@@ -328,6 +387,19 @@
 	const boxes = $derived(byShape.boxes);
 	const squares = $derived(byShape.squares);
 	const allFields = $derived(byShape.fields);
+	/** What a scan of the empty form would make of each field where it is placed. */
+	const checks = $derived(checkFields({ document: kind, layout: placed, pictures }));
+	/** The fields for the side panel, in the order of their pages. */
+	const fieldRows = $derived(
+		allFields
+			.map(({ id, placement }) => ({
+				id,
+				label: label(id),
+				page: placement.page,
+				check: checks[id] ?? 'unknown'
+			}))
+			.toSorted((a, b) => a.page - b.page)
+	);
 	const fields = $derived(allFields.filter(({ placement }) => placement.page === pageIndex));
 	/** Everything on the page shown, to line a dragged element up with. */
 	const onPage = $derived([
@@ -347,112 +419,142 @@
 	);
 </script>
 
-<Modal bind:open {title} fullWidth {onclose}>
-	<div class="flex w-6xl max-w-full flex-col gap-4">
-		<p class="text-base-content/70 text-sm">
-			{withoutSessions ? m.certificateLayoutHintWithoutSessions() : m.certificateLayoutHint()}
-		</p>
-		{#if codeMinimum !== undefined}
-			<p class="text-base-content/70 text-sm">
-				{m.documentLayoutCodeMinimum({ size: codeMinimum })}
-			</p>
-		{/if}
-		{#if allFields.length > 0}
-			<p class="text-base-content/70 text-sm">{m.documentLayoutFieldsHint()}</p>
-		{/if}
-		<p class="text-base-content/70 text-sm">{m.documentLayoutSnapHint()}</p>
-		{#if pageCount > 1}
-			<LayoutPager bind:page={pageIndex} count={pageCount} />
-		{/if}
-		{#if withoutSessions}
-			<div role="note" class="alert alert-info alert-soft text-sm">
-				<i aria-hidden="true" class="ph-duotone ph-list-checks"></i>
-				<span>{m.certificateLayoutNoSessions()}</span>
-				<a
-					class="btn btn-sm btn-ghost"
-					href={resolve('/(authenticated)/dashboard/[conferenceId]/team/attendance', {
-						conferenceId
-					})}
-				>
-					{m.certificateLayoutNoSessionsLink()}
-					<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
-				</a>
-			</div>
-		{/if}
+<svelte:window onkeydown={nudge} />
 
+<Modal bind:open {title} fullWidth {onclose}>
+	<div class="grid w-[min(94vw,92rem)] max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
 		<!-- The page and the parts placed on it; positions are fractions of the page. -->
-		<div
-			bind:this={frame}
-			bind:clientWidth={frameWidth}
-			class="border-base-300 relative mx-auto w-full max-w-4xl touch-none select-none border bg-white"
-			style="aspect-ratio: {aspect};"
-			role="application"
-			aria-label={title}
-			onpointermove={follow}
-			onpointerup={end}
-			onpointercancel={end}
+		<div class="flex min-w-0 flex-col items-center gap-3">
+			{#if pageCount > 1}
+				<LayoutPager bind:page={pageIndex} count={pageCount} />
+			{/if}
+			<div
+				bind:this={frame}
+				bind:clientWidth={frameWidth}
+				class="border-base-300 relative touch-none border bg-white shadow-sm select-none"
+				style="aspect-ratio: {aspect}; width: min(100%, calc((100dvh - 15rem) * {aspect}));"
+				role="application"
+				aria-label={title}
+				onpointermove={follow}
+				onpointerup={end}
+				onpointercancel={end}
+			>
+				<canvas bind:this={canvas} class="absolute inset-0 h-full w-full"></canvas>
+				<LayoutGuides {guides} />
+				{#if rendering}
+					<div class="absolute inset-0 flex items-center justify-center">
+						<span class="loading loading-spinner loading-lg text-primary"></span>
+					</div>
+				{/if}
+
+				{#each texts as { id, align, placement } (id)}
+					<LayoutTextElement
+						label={label(id)}
+						{placement}
+						{align}
+						lines={sample(id)}
+						{scale}
+						selected={selected === id}
+						onselect={() => (selected = id)}
+						onmove={(event) => begin({ event, id })}
+					/>
+				{/each}
+				{#each boxes as { id, placement, list, fixed } (id)}
+					<LayoutBoxElement
+						label={label(id)}
+						{placement}
+						lines={sample(id)}
+						{list}
+						{scale}
+						selected={selected === id}
+						onselect={() => (selected = id)}
+						{...fixed ? {} : dragHandlers(id)}
+					/>
+				{/each}
+				{#each fields as { id, placement, mark } (id)}
+					<LayoutFieldElement
+						label={label(id)}
+						{placement}
+						{mark}
+						check={checks[id] ?? 'unknown'}
+						{scale}
+						selected={selected === id}
+						onselect={() => (selected = id)}
+						{...dragHandlers(id)}
+					/>
+				{/each}
+				{#each squares as { id, placement, caption } (id)}
+					<LayoutSquareElement
+						label={label(id)}
+						{placement}
+						captions={sample(id)}
+						{caption}
+						{scale}
+						selected={selected === id}
+						onselect={() => (selected = id)}
+						{...dragHandlers(id)}
+					/>
+				{/each}
+			</div>
+		</div>
+
+		<!-- What can be set, and what the placement means for a scan -->
+		<aside
+			class="flex min-w-0 flex-col gap-5 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto lg:pr-1"
 		>
-			<canvas bind:this={canvas} class="absolute inset-0 h-full w-full"></canvas>
-			<LayoutGuides {guides} />
-			{#if rendering}
-				<div class="absolute inset-0 flex items-center justify-center">
-					<span class="loading loading-spinner loading-lg text-primary"></span>
+			{#if withoutSessions}
+				<div role="note" class="alert alert-info alert-soft text-sm">
+					<i aria-hidden="true" class="ph-duotone ph-list-checks"></i>
+					<span>{m.certificateLayoutNoSessions()}</span>
+					<a
+						class="btn btn-sm btn-ghost"
+						href={resolve('/(authenticated)/dashboard/[conferenceId]/team/attendance', {
+							conferenceId
+						})}
+					>
+						{m.certificateLayoutNoSessionsLink()}
+						<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
+					</a>
 				</div>
 			{/if}
 
-			{#each texts as { id, align, placement } (id)}
-				<LayoutTextElement
-					label={label(id)}
-					{placement}
-					{align}
-					lines={sample(id)}
-					{scale}
-					onmove={(event) => begin({ event, id })}
+			{#if fieldRows.length > 0}
+				<LayoutFieldChecks
+					fields={fieldRows}
+					pages={pageChoices}
+					{selected}
+					onselect={selectField}
+					onmove={moveToPage}
 				/>
-			{/each}
-			{#each boxes as { id, placement, list, fixed } (id)}
-				<LayoutBoxElement
-					label={label(id)}
-					{placement}
-					lines={sample(id)}
-					{list}
-					{scale}
-					{...fixed ? {} : dragHandlers(id)}
-				/>
-			{/each}
-			{#each fields as { id, placement, mark } (id)}
-				<LayoutFieldElement label={label(id)} {placement} {mark} {scale} {...dragHandlers(id)} />
-			{/each}
-			{#each squares as { id, placement, caption } (id)}
-				<LayoutSquareElement
-					label={label(id)}
-					{placement}
-					captions={sample(id)}
-					{caption}
-					{scale}
-					{...dragHandlers(id)}
-				/>
-			{/each}
-		</div>
+			{/if}
 
-		{#if allFields.length > 0 && pageChoices.length > 1}
-			<LayoutFieldPages
-				fields={allFields.map(({ id, placement }) => ({
-					id,
-					label: label(id),
-					page: placement.page
-				}))}
-				pages={pageChoices}
-				onmove={moveToPage}
-			/>
-		{/if}
+			{#if texts.length > 0}
+				<LayoutFontSizes
+					texts={texts.map(({ id, placement }) => ({ id, label: label(id), size: placement.size }))}
+					onstep={resizeFont}
+				/>
+			{/if}
 
-		{#if texts.length > 0}
-			<LayoutFontSizes
-				texts={texts.map(({ id, placement }) => ({ id, label: label(id), size: placement.size }))}
-				onstep={resizeFont}
-			/>
-		{/if}
+			<details class="collapse-arrow bg-base-200 rounded-box collapse">
+				<summary class="collapse-title text-sm font-semibold">
+					<i aria-hidden="true" class="ph-duotone ph-info"></i>
+					{m.documentLayoutHowTo()}
+				</summary>
+				<div class="collapse-content text-base-content/70 flex flex-col gap-2 text-sm">
+					<p>
+						{withoutSessions ? m.certificateLayoutHintWithoutSessions() : m.certificateLayoutHint()}
+					</p>
+					{#if codeMinimum !== undefined}
+						<p>{m.documentLayoutCodeMinimum({ size: codeMinimum })}</p>
+					{/if}
+					{#if allFields.length > 0}
+						<p>{m.documentLayoutFieldsHint()}</p>
+					{/if}
+					<p>{m.documentLayoutSnapHint()}</p>
+					<p>{m.documentLayoutNudgeHint()}</p>
+				</div>
+			</details>
+		</aside>
 	</div>
 
 	{#snippet action()}

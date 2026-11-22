@@ -16,9 +16,23 @@
 		scale: number;
 		onmove?: (event: PointerEvent) => void;
 		onresize?: (event: PointerEvent) => void;
+		/** Picked in the editor: arrow keys move it. */
+		selected?: boolean;
+		/** Picks it (it got the focus). */
+		onselect?: () => void;
 	}
 
-	let { label, placement, lines, list, scale, onmove, onresize }: Props = $props();
+	let {
+		label,
+		placement,
+		lines,
+		list,
+		scale,
+		onmove,
+		onresize,
+		selected = false,
+		onselect
+	}: Props = $props();
 	const area = $derived(
 		`left: ${placement.x * 100}%; top: ${placement.y * 100}%; width: ${placement.width * 100}%; height: ${placement.height * 100}%; font-size: ${9 * scale}px;`
 	);
@@ -45,13 +59,17 @@
 
 {#if onmove}
 	<div
-		class="border-secondary bg-secondary/10 absolute cursor-move overflow-hidden border border-dashed p-1 text-black"
+		class="border-secondary bg-secondary/10 absolute cursor-move overflow-hidden border border-dashed p-1 text-black {selected
+			? 'ring-primary ring-2'
+			: ''}"
 		style={area}
 		role="button"
-		tabindex="-1"
+		tabindex="0"
 		aria-label={label}
+		aria-pressed={selected}
 		title={label}
 		onpointerdown={onmove}
+		onfocus={onselect}
 	>
 		{@render content()}
 		{#if onresize}
