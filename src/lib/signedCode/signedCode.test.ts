@@ -46,7 +46,10 @@ const print: SignedCodeClaims = {
 	issuedAt
 };
 /** A page of the application documents with its fields (`#lib/paperScan/areas`). */
-const printedPage: SignedCodeClaims = { ...print, areas: Uint8Array.of(8, 52, 11, 154, 4, 0, 1) };
+const printedPage: SignedCodeClaims = {
+	...print,
+	areas: [2100, 2970, 130, 310, 1, 199, 2311, 36, 36]
+};
 const certificate: SignedCodeClaims = {
 	kind: 'certificate',
 	issuedAt,
@@ -114,6 +117,16 @@ describe('signed codes', () => {
 			valid: false,
 			reason: 'forged'
 		});
+	});
+
+	test('a print code whose page data is not whole numbers is no code of ours', async () => {
+		for (const areas of [[-1], [1.5], Array.from({ length: 501 }, () => 1)]) {
+			const code = await sign({ claims: { ...print, areas } });
+			expect(await verifySignedCode({ text: code, keys, now: NOW })).toEqual({
+				valid: false,
+				reason: 'malformed'
+			});
+		}
 	});
 
 	test('a key the deployment does not know is refused as such', async () => {

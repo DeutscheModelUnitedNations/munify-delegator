@@ -4,10 +4,10 @@ import type { Point } from './markerGeometry';
 /**
  * What a page's printed code says about the page (`areas` of a `print` code), so a scan is read
  * the way that page was printed: its size, where its four alignment marks are, and where its
- * fields are. Compact, since every byte makes the code denser: 12-bit numbers, two to three
- * bytes, in tenths of a millimetre (a page up to 40 cm), field codes as they are; first the page's
- * width and height, then the marks' centres (x, y each, corner by corner clockwise from the top
- * left), then per field its code, left, top, width and height.
+ * fields are. A plain list of whole numbers, which the code's CBOR holds as it is: lengths in
+ * tenths of a millimetre, field codes as they are. First the page's width and height, then the
+ * marks' centres (x, y each, corner by corner clockwise from the top left), then per field its
+ * code, left, top, width and height.
  */
 
 /** A field's box on its page, in millimetres from the top left. */
@@ -19,38 +19,14 @@ export type PageAreas = {
 	areas: PaperArea[];
 };
 
-const MAX = 0xfff;
 const HEADER = 10;
 const RECORD = 5;
 
-const tenths = (millimetres: number) => Math.round(Math.min(Math.max(millimetres * 10, 0), MAX));
+const tenths = (millimetres: number) => Math.max(0, Math.round(millimetres * 10));
 
-/** 12-bit numbers as bytes: two in three, an odd last one in two. */
-function pack(values: number[]): Uint8Array {
-	const bytes: number[] = [];
-	for (let index = 0; index < values.length; index += 2) {
-		const [a, b] = [values[index], values[index + 1]];
-		bytes.push(a >> 4);
-		if (b === undefined) bytes.push((a & 0xf) << 4);
-		else bytes.push(((a & 0xf) << 4) | (b >> 8), b & 0xff);
-	}
-	return Uint8Array.from(bytes);
-}
-
-/** The 12-bit numbers `pack` made; `null` for a length it cannot have made. */
-function unpack(bytes: Uint8Array): number[] | null {
-	if (bytes.length % 3 === 1) return null;
-	const values: number[] = [];
-	for (let at = 0; at < bytes.length; at += 3) {
-		values.push((bytes[at] << 4) | (bytes[at + 1] >> 4));
-		if (at + 2 < bytes.length) values.push(((bytes[at + 1] & 0xf) << 8) | bytes[at + 2]);
-	}
-	return values;
-}
-
-/** The bytes a code carries for a page. */
-export function encodeAreas({ page, markers, areas }: PageAreas): Uint8Array {
-	return pack([
+/** The numbers a code carries for a page. */
+export function encodeAreas({ page, markers, areas }: PageAreas): number[] {
+	return [
 		tenths(page.width),
 		tenths(page.height),
 		...markers.flatMap(({ x, y }) => [tenths(x), tenths(y)]),
@@ -61,13 +37,15 @@ export function encodeAreas({ page, markers, areas }: PageAreas): Uint8Array {
 			tenths(width),
 			tenths(height)
 		])
-	]);
+	];
 }
 
-/** What a code's bytes say about its page; `null` for bytes that are none. Unknown fields are left out. */
-export function decodeAreas(bytes: Uint8Array): PageAreas | null {
-	const values = unpack(bytes);
-	if (!values || values.length < HEADER || (values.length - HEADER) % RECORD !== 0) return null;
+/**
+ * What a code's numbers say about its page; `null` for numbers that are none (too few, or not a
+ * whole number of fields). Unknown fields are left out.
+ */
+export function decodeAreas(values: readonly number[]): PageAreas | null {
+	if (values.length < HEADER || (values.length - HEADER) % RECORD !== 0) return null;
 	const mm = values.map((value) => value / 10);
 	const page = { width: mm[0], height: mm[1] };
 	if (page.width === 0 || page.height === 0) return null;

@@ -65,7 +65,7 @@ export type SignedCodeClaims =
 			conferenceId: string;
 			issuedAt: number;
 			/** The page's fields (`encodeAreas`), on a page with any. */
-			areas?: Uint8Array;
+			areas?: number[];
 	  }
 	| {
 			kind: 'nsaCard';
@@ -107,6 +107,11 @@ function claimsMap(claims: SignedCodeClaims): Map<number | string, unknown> {
 
 const isText = (value: unknown): value is string => typeof value === 'string';
 const isBytes = (value: unknown): value is Uint8Array => value instanceof Uint8Array;
+/** A list of whole numbers, none negative and at most 500 (a page's fields: `#lib/paperScan/areas`). */
+const isWholeNumbers = (value: unknown): value is number[] =>
+	Array.isArray(value) &&
+	value.length <= 500 &&
+	value.every((item) => Number.isSafeInteger(item) && item >= 0);
 const isTime = (value: unknown): value is number => Number.isSafeInteger(value);
 /** An id we signed never holds a control character; Postgres refuses a NUL in any query. */
 const isId = (value: unknown): value is string => isText(value) && !/\p{Cc}/u.test(value);
@@ -131,7 +136,7 @@ function printClaims({
 }): SignedCodeClaims | null {
 	const areas = map.get(CLAIM_AREAS);
 	if (areas === undefined) return { kind: 'print', ...claims };
-	return isBytes(areas) ? { kind: 'print', ...claims, areas } : null;
+	return isWholeNumbers(areas) ? { kind: 'print', ...claims, areas } : null;
 }
 
 /** The claims of a code naming a participant (`print`, `live` or `nsaCard`), or `null`. */

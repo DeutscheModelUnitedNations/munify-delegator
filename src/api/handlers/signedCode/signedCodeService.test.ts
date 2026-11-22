@@ -98,7 +98,7 @@ describe('the codes of the application documents', () => {
 			pages,
 			draft: { paperScanning: true }
 		});
-		expect(await read(draft)).toBeInstanceOf(Uint8Array);
+		expect(await read(draft)).toEqual(expect.arrayContaining([2]));
 	});
 });
 

@@ -73,10 +73,10 @@ const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.
 
 /**
  * The side of the footer code by default, in points: larger than its minimum, so the densest
- * page's code (the media consent's purposes, eight fields: about 33 mm) prints at the size the
- * editor shows.
+ * pages' codes (six to eight fields: 34.7 mm) print at the size the editor shows, and still below
+ * the contract's signature line on DMUN's template.
  */
-const FOOTER_CODE = mm(34);
+const FOOTER_CODE = mm(35);
 /**
  * Where the footer sits by default: the right margin and the bottom one, in points. The right one
  * keeps the page number and the code clear of the bottom right alignment mark.

@@ -102,24 +102,26 @@ const signature = (pen: (from: Point, to: Point) => void) => {
 
 describe('encodeAreas', () => {
 	it('round-trips the page, its marks and its fields to a tenth of a millimetre', () => {
-		const odd = { ...areas, areas: [{ ...areas.areas[0], x: 30.04, width: 409.6 }] };
+		const odd = { ...areas, areas: [{ ...areas.areas[0], x: 30.04, width: -1 }] };
 		expect(decodeAreas(encodeAreas(areas))).toEqual(areas);
-		// rounded, and at most 409.5 mm
-		expect(decodeAreas(encodeAreas(odd))?.areas[0]).toMatchObject({ x: 30, width: 409.5 });
+		// rounded, and never below nothing
+		expect(decodeAreas(encodeAreas(odd))?.areas[0]).toMatchObject({ x: 30, width: 0 });
 	});
 
-	it('takes 15 bytes for the page and its marks, 7.5 a field, and refuses other shapes', () => {
-		expect(encodeAreas(areas)).toHaveLength(15 + 4 * 7.5);
-		expect(encodeAreas({ ...areas, areas: areas.areas.slice(1) })).toHaveLength(15 + 3 * 7.5 + 0.5);
-		expect(decodeAreas(new Uint8Array(4))).toBeNull();
-		expect(decodeAreas(new Uint8Array(3))).toBeNull();
+	it('takes ten numbers for the page and its marks, five a field, and refuses other shapes', () => {
+		const values = encodeAreas(areas);
+		expect(values).toHaveLength(10 + 4 * 5);
+		expect(values.slice(0, 4)).toEqual([2100, 2970, 130, 310]);
+		expect(decodeAreas(values.slice(0, 9))).toBeNull();
+		expect(decodeAreas(values.slice(0, 12))).toBeNull();
+		expect(decodeAreas([0, 0, ...values.slice(2)])).toBeNull();
 	});
 
 	it('leaves out a field it does not know', () => {
-		const bytes = encodeAreas(areas);
-		// the first field's code, the eleventh number: its high eight bits
-		bytes[15] = 0x60;
-		expect(decodeAreas(bytes)?.areas.map((area) => area.field)).toEqual([
+		const values = encodeAreas(areas);
+		// the first field's code, the eleventh number
+		values[10] = 99;
+		expect(decodeAreas(values)?.areas.map((area) => area.field)).toEqual([
 			'mediaVideo',
 			'mediaByDmun',
 			'mediaSignature'
