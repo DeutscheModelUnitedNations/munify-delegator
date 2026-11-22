@@ -21,10 +21,8 @@ import {
 import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
 import { drawQr } from '#lib/api/pdfQr';
 import { logger } from '#lib/logger';
-import { markerCells, MARKER_CELLS } from '#lib/paperScan/markers';
-import { MARKER, type Point } from '#lib/paperScan/markerGeometry';
-import { PAPER_FIELDS } from '#lib/paperScan/fields';
-import { pageAreas, type PostalDocument, type PrintedPage } from '#lib/paperScan/pageAreas';
+import { drawPaperPage } from '#lib/paperScan/drawPaper';
+import type { PostalDocument, PrintedPage } from '#lib/paperScan/pageAreas';
 
 /**
  * Signs the codes the pages of a person's application documents carry, one per page in the order
@@ -565,67 +563,6 @@ function drawCodeCaption({
 }
 
 /**
- * The alignment marks (`#lib/paperScan/markers`) centred at `centers` (millimetres), each on white
- * a cell wider than it, so whatever the template has there does not touch it.
- */
-function drawAlignmentMarks({ page, centers }: { page: PDFPage; centers: Point[] }) {
-	const { height } = page.getSize();
-	const cell = (MARKER.side / MARKER_CELLS) * POINTS_PER_MM;
-	const side = MARKER_CELLS * cell;
-	for (const [corner, center] of centers.entries()) {
-		const left = center.x * POINTS_PER_MM - side / 2;
-		const top = height - center.y * POINTS_PER_MM + side / 2;
-		page.drawRectangle({
-			x: left - cell,
-			y: top - side - cell,
-			width: side + 2 * cell,
-			height: side + 2 * cell,
-			color: rgb(1, 1, 1)
-		});
-		markerCells(corner).forEach((row, r) => {
-			row.forEach((black, c) => {
-				if (!black) return;
-				// a hair larger, so no seam shows between neighbouring cells
-				page.drawRectangle({
-					x: left + c * cell,
-					y: top - (r + 1) * cell - 0.02,
-					width: cell + 0.02,
-					height: cell + 0.02,
-					color: rgb(0, 0, 0)
-				});
-			});
-		});
-	}
-}
-
-/**
- * What a page carries to be read off a scan: its alignment marks, and a frame for each box to
- * tick. A field to write in (a signature, a name, place and date) is drawn nothing for: it sits
- * on the template's own line.
- */
-function drawPaperFields({ page, at }: { page: PDFPage; at: MainPage }) {
-	const { width, height } = page.getSize();
-	const { markers, areas } = pageAreas({
-		document: at.document,
-		layout: at.layout,
-		page: at.page,
-		size: { width, height }
-	});
-	drawAlignmentMarks({ page, centers: markers });
-	for (const area of areas) {
-		if (PAPER_FIELDS[area.field].mark !== 'checkbox') continue;
-		page.drawRectangle({
-			x: area.x * POINTS_PER_MM,
-			y: height - (area.y + area.height) * POINTS_PER_MM,
-			width: area.width * POINTS_PER_MM,
-			height: area.height * POINTS_PER_MM,
-			borderColor: rgb(0, 0, 0),
-			borderWidth: 0.75
-		});
-	}
-}
-
-/**
  * Numbers the pages and puts each main page's signed code (`codes`, one per main page), with the
  * person's name and id beside it, where that page's document places it. Where the conference
  * reads its paper (`scanning`), the main pages also get the alignment marks and their fields. The
@@ -668,7 +605,9 @@ async function numerateDocument({
 			});
 			continue;
 		}
-		if (scanning) drawPaperFields({ page, at });
+		if (scanning) {
+			drawPaperPage({ page, document: at.document, layout: at.layout, pageIndex: at.page });
+		}
 		const square = await placeQrCode({
 			pdfDoc,
 			page,

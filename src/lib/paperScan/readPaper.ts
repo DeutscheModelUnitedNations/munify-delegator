@@ -54,7 +54,8 @@ type Box = { x: number; y: number; width: number; height: number };
  */
 function innerBox({ box, mark }: { box: Box; mark: PaperMark }): Box {
 	if (mark === 'checkbox') {
-		const inset = Math.max(0.8, Math.min(box.width, box.height) * 0.18);
+		// past the frame (ours, and the form's under it) and a scan aligned up to 0.3 mm off
+		const inset = Math.max(0.6, Math.min(box.width, box.height) * 0.18);
 		return {
 			x: box.x + inset,
 			y: box.y + inset,

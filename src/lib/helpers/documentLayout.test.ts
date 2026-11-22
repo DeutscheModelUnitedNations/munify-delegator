@@ -349,7 +349,7 @@ describe('the fields read off a scan', () => {
 			minBox
 		});
 		expect(shrunk).toEqual({ ...layout.mediaPhoto, width: minBox.width, height: minBox.height });
-		expect(minBox.width * 595).toBeCloseTo(3.5 * POINTS_PER_MM);
+		expect(minBox.width * 595).toBeCloseTo(2.5 * POINTS_PER_MM);
 	});
 
 	test("by default, the media consent's three pages carry its uses, its purposes and its signatures", () => {
@@ -387,7 +387,7 @@ describe('the fields read off a scan', () => {
 		expect(first.markers[0].y).toBeCloseTo(31, 0);
 		expect(first.markers[2].x).toBeCloseTo(197, 0);
 		expect(first.areas.map(({ field }) => field)).toEqual(['termsAccepted', 'termsPlaceDate']);
-		expect(first.areas[0].width).toBeCloseTo(3.6);
+		expect(first.areas[0].width).toBeCloseTo(3.7);
 		const second = pageAreas({
 			document: 'contract',
 			layout,

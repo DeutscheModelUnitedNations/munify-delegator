@@ -167,18 +167,23 @@ const paperField = ({
 		}
 	}) as const satisfies ElementSpec;
 
-/** A box to tick at `left`/`top` (millimetres), 3.6 mm: the size of the forms' ☐. */
+/**
+ * A box to tick at `left`/`top` (millimetres), by default exactly over the forms' ☐ (2.6 mm), so
+ * the frame we print lies on the form's own and reading skips both.
+ */
 const checkbox = ({
 	field,
 	top,
-	left = 20.1,
+	left = 20.45,
+	size = 2.6,
 	page = 0
 }: {
 	field: PaperField;
 	top: number;
 	left?: number;
+	size?: number;
 	page?: number;
-}) => paperField({ field, left, top, width: 3.6, height: 3.6, page });
+}) => paperField({ field, left, top, width: size, height: size, page });
 
 /** A line to write on from `left` to `right`, `line` millimetres down, with `height` room above it. */
 const writingLine = ({
@@ -199,7 +204,7 @@ const writingLine = ({
 
 /** The smallest a field may be drawn, in millimetres: a box still to tick, a line to write on. */
 const MIN_FIELD_MM: Record<PaperMark, { width: number; height: number }> = {
-	checkbox: { width: 3.5, height: 3.5 },
+	checkbox: { width: 2.5, height: 2.5 },
 	line: { width: 25, height: 4 }
 };
 
@@ -258,7 +263,8 @@ export const DOCUMENT_ELEMENTS = {
 		...nameAndBirthday({ top: 320, gap: 60 }),
 		...footer,
 		...markers,
-		termsAccepted: checkbox({ field: 'termsAccepted', left: 19.9, top: 231.1 }),
+		// the form's ◯, which reading inside its square leaves out
+		termsAccepted: checkbox({ field: 'termsAccepted', left: 20.07, top: 231.1, size: 3.7 }),
 		termsPlaceDate: writingLine({
 			field: 'termsPlaceDate',
 			left: 20,
@@ -331,19 +337,19 @@ export const DOCUMENT_ELEMENTS = {
 		},
 		...markers,
 		// the first page: how the person may be shown
-		mediaPhoto: checkbox({ field: 'mediaPhoto', top: 139.7 }),
-		mediaVideo: checkbox({ field: 'mediaVideo', top: 144.8 }),
-		mediaByDmun: checkbox({ field: 'mediaByDmun', top: 150 }),
-		mediaByOthers: checkbox({ field: 'mediaByOthers', top: 155.1 }),
+		mediaPhoto: checkbox({ field: 'mediaPhoto', top: 140.17 }),
+		mediaVideo: checkbox({ field: 'mediaVideo', top: 145.29 }),
+		mediaByDmun: checkbox({ field: 'mediaByDmun', top: 150.39 }),
+		mediaByOthers: checkbox({ field: 'mediaByOthers', top: 155.51 }),
 		// the second: what for
-		mediaInternal: checkbox({ field: 'mediaInternal', top: 53.9, page: 1 }),
-		mediaDocumentation: checkbox({ field: 'mediaDocumentation', top: 72.7, page: 1 }),
-		mediaPapers: checkbox({ field: 'mediaPapers', top: 86.5, page: 1 }),
-		mediaPress: checkbox({ field: 'mediaPress', top: 100.2, page: 1 }),
-		mediaWebsite: checkbox({ field: 'mediaWebsite', top: 108.9, page: 1 }),
-		mediaSocial: checkbox({ field: 'mediaSocial', top: 127.7, page: 1 }),
-		mediaSearch: checkbox({ field: 'mediaSearch', top: 141.5, page: 1 }),
-		mediaAdvertising: checkbox({ field: 'mediaAdvertising', top: 150.1, page: 1 }),
+		mediaInternal: checkbox({ field: 'mediaInternal', top: 54.29, page: 1 }),
+		mediaDocumentation: checkbox({ field: 'mediaDocumentation', top: 73.17, page: 1 }),
+		mediaPapers: checkbox({ field: 'mediaPapers', top: 86.93, page: 1 }),
+		mediaPress: checkbox({ field: 'mediaPress', top: 100.67, page: 1 }),
+		mediaWebsite: checkbox({ field: 'mediaWebsite', top: 109.33, page: 1 }),
+		mediaSocial: checkbox({ field: 'mediaSocial', top: 128.19, page: 1 }),
+		mediaSearch: checkbox({ field: 'mediaSearch', top: 141.94, page: 1 }),
+		mediaAdvertising: checkbox({ field: 'mediaAdvertising', top: 150.58, page: 1 }),
 		// the third: signed by the person, and for a minor by the guardians
 		mediaPlaceDate: writingLine({
 			field: 'mediaPlaceDate',
@@ -372,7 +378,8 @@ export const DOCUMENT_ELEMENTS = {
 		mediaGuardian2Name: writingLine({
 			field: 'mediaGuardian2Name',
 			left: 84.4,
-			right: 150,
+			// the form's "[Vor- und Nachname" follows the line at once
+			right: 147.5,
 			line: 174,
 			height: 4.5,
 			page: 2
