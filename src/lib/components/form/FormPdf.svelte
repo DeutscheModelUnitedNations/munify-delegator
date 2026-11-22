@@ -74,7 +74,7 @@
 		pageCount = undefined;
 		failed = false;
 		if (!url || !target) return;
-		renderTemplatePage({ url, canvas: target, cssWidth: 200 })
+		renderTemplatePage({ url, canvas: target, cssWidth: 360 })
 			.then((drawn) => {
 				if (source !== url) return;
 				pageCount = drawn.pageCount;

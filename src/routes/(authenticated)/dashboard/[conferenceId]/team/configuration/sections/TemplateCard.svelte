@@ -89,7 +89,7 @@
 
 <!-- the page on the left, as a portrait A4 tile; what it is and what to do with it beside it -->
 <div
-	class="bg-base-100 rounded-box border-base-300 grid grid-cols-[7.5rem_minmax(0,1fr)] gap-4 border p-4"
+	class="bg-base-100 rounded-box border-base-300 grid grid-cols-[13rem_minmax(0,1fr)] gap-4 border p-4"
 >
 	<FormPdf {form} {name} label={title} hideLabel storedUrl={stored?.url ?? null} removable />
 
