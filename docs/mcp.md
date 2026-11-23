@@ -68,12 +68,27 @@ move the old guide.dmun.de in. `graphql_query` reads pages (`guideLibrary`, `gui
 `draftMarkdown` and `versions { markdown }`) and sidebars (`guideOutlineOf`); `createGuidePage` and
 `updateGuidePageDraft` take Markdown (preferred) or TipTap JSON, and refuse (CONFLICT) Markdown
 that would drop callouts, toggles, buttons or embeds unless `replaceRichBlocks: true`;
-`setGuidePageScope`, `ensureGuidePageOf` (committee and agenda item pages) and
-`updateGuideOutlineDraft` change drafts. `publishGuidePage` and `publishGuideOutline` reach
-participants and preview first (read `guidePagePublishPreview` for the conferences a page reaches).
+`setGuidePageScope` and `ensureGuidePageOf` (committee and agenda item pages) change pages.
+
+The sidebar changes one step at a time, so an assistant does not rewrite JSON it only read:
+`addGuideSection`, `updateGuideSection`, `removeGuideSection`, `moveGuideSection` (a section or the
+committee template, among the blocks), `addGuideEntry`, `updateGuideEntry`, `moveGuideEntry`
+(also into the template), `removeGuideEntry`, `setGuideTemplate` and `moveGuideTemplateSlot`.
+Sections are named by id, entries by section and page, never by index, so another person's change
+in between does not hit the wrong entry (a page listed twice in one section is found as its first
+entry). `updateGuideOutlineDraft` still replaces the whole draft. Each of them answers the draft
+and its `draftUpdatedAt`; passed back as `expectedDraftUpdatedAt`, a draft changed since (in the
+app, by someone else) is left alone (CONFLICT), and the app's autosave checks the same way.
+
+The workspace's views read as the team sees them: `guideVisibility` (who sees which section),
+`guideCommitteeMatrix` (the committee template against the committees, with missing pages and
+progress) and `guidePendingChanges` (pages waiting to be published, whether the sidebar changed).
+`publishGuidePage`, `publishGuideOutline` and `publishGuideChanges` (the pending pages, then the
+sidebar, like "publish changes" in the app) reach participants and preview first (read
+`guidePendingChanges` and `guidePagePublishPreview` for the conferences a page reaches).
 `importGuideFile` downloads an image or PDF from the allowed hosts (`GUIDE_IMPORT_HOSTS`, by
 default guide.dmun.de and cdn.dmun.de) and answers its id for `file:<id>` in a page. Deleting
-pages stays in the app.
+pages and restoring sidebar versions stay in the app.
 
 ## Skills
 

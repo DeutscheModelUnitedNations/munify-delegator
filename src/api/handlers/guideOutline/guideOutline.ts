@@ -14,12 +14,7 @@ import {
 	assertCanEditGuideOutline,
 	registerGuideOutlineAbilities
 } from './guideOutlinePermissions';
-import {
-	outlineArgSchema,
-	publishOutline,
-	restoreOutlineVersion,
-	saveOutlineDraft
-} from './guideOutlineService';
+import { publishOutline, restoreOutlineVersion } from './guideOutlineService';
 import { guideFor, readerPage, titledSections } from './guideReaderService';
 
 registerGuideOutlineAbilities();
@@ -241,29 +236,7 @@ schemaBuilder.queryFields((t) => ({
 
 // --- Writing ----------------------------------------------------------------------------------
 
-const OUTLINE_DESCRIPTION =
-	'The whole sidebar as JSON: `{ sections: [{ id, title, audience, entries: [{ pageId, label?, audience? }] }], committeeTemplate?: { position, titleFormat: "COMMITTEE_NAME", slots: [{ type: "page", pageId, label? } | { type: "committeePage", label? } | { type: "agendaItemPages" }] } }`. An audience is `{ type: "everyone" | "delegates" | "nonStateActors" | "supervisors" }` or `{ type: "customRoles", roleIds: [...] }`; supervisors and the team see everything. The template makes one section per committee, for its delegates, at `position` among the sections. Every page has to reach the conference, every role be one of its custom roles.';
-
 schemaBuilder.mutationFields((t) => ({
-	updateGuideOutlineDraft: t.field({
-		extensions: mcpTool({ textArguments: ['outline'], idempotent: true }),
-		description: `Writes a conference's sidebar draft, replacing it whole; participants see it once published. \`editGuide\` in the conference (FORBIDDEN otherwise), INVALID_INPUT for an outline that does not fit. ${OUTLINE_DESCRIPTION}`,
-		type: 'Boolean',
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			outline: t.arg({ type: 'JSON', required: true }).validate(outlineArgSchema)
-		},
-		resolve: async (_root, args, ctx) => {
-			await assertCanEditGuideOutline({ ctx, conferenceId: args.conferenceId });
-			await saveOutlineDraft({
-				conferenceId: args.conferenceId,
-				outline: args.outline,
-				editorId: editorIdOf(ctx)
-			});
-			return true;
-		}
-	}),
-
 	publishGuideOutline: t.field({
 		extensions: mcpTool({ outward: true }),
 		description:

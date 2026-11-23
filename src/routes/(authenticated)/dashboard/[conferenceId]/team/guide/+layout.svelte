@@ -29,8 +29,12 @@
 	// and then edited here, saving itself
 	const draft = createOutlineDraft({ conferenceId, initial: EMPTY_OUTLINE });
 	setOutlineDraft(draft);
-	const seed = await client.query.guideOutlineOf({ __args: { conferenceId }, draft: true });
-	draft.replace(seed ? parseOutline(seed.draft) : EMPTY_OUTLINE);
+	const seed = await client.query.guideOutlineOf({
+		__args: { conferenceId },
+		draft: true,
+		draftUpdatedAt: true
+	});
+	draft.replace(seed ? parseOutline(seed.draft) : EMPTY_OUTLINE, seed ? seed.draftUpdatedAt : null);
 
 	const TABS = [
 		{ id: 'structure', path: '', title: () => m.guideTabStructure(), icon: 'tree-structure' },

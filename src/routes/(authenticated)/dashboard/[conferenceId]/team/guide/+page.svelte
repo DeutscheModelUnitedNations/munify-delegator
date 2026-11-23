@@ -8,7 +8,6 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
-	import { EMPTY_OUTLINE, parseOutline } from '#lib/guide/outline';
 	import GuideSettings from './GuideSettings.svelte';
 	import OutlineVersions from './OutlineVersions.svelte';
 	import { getOutlineDraft } from './outlineDraft.svelte';
@@ -32,14 +31,13 @@
 
 	async function restore(versionId: string) {
 		if (!(await confirmDialog({ text: m.guideRestoreConfirm() }))) return;
-		await draft.flush();
+		if (!(await draft.flush())) return;
 		const promise = Promise.resolve(
 			client.mutate.restoreGuideOutlineVersion({ __args: { conferenceId, versionId } })
 		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		const fresh = await client.query.guideOutlineOf({ __args: { conferenceId }, draft: true });
-		draft.replace(fresh ? parseOutline(fresh.draft) : EMPTY_OUTLINE);
+		await draft.loadStored();
 	}
 
 	const dateTime = (value: Date | string) =>

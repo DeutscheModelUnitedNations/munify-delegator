@@ -114,8 +114,9 @@ them (CONFLICT otherwise); committee and agenda item pages go with their row.
 
 ### Sidebar (outline)
 
-`guide_outline`, one per conference: `conferenceId` (unique), `draft` (jsonb), `published` (jsonb,
-nullable), `publishedAt`, `publishedBy`; `guide_outline_version` keeps every published outline.
+`guide_outline`, one per conference: `conferenceId` (unique), `draft` (jsonb), `draftUpdatedAt`
+(what writes name as `expectedDraftUpdatedAt`; `updatedAt` also moves on publishing), `published`
+(jsonb, nullable), `publishedAt`, `publishedBy`; `guide_outline_version` keeps every published outline.
 The outline is one document (like document layouts: meaningful only whole), validated by a zod
 schema in the service:
 
@@ -229,6 +230,9 @@ as above).
 | `createGuidePage` / `updateGuidePageDraft`                         | Writes a draft from `markdown` **or** `tiptap`; Markdown that would drop rich blocks already in the page is refused unless `replaceRichBlocks: true`             |
 | `publishGuidePage`                                                 | Preview first (conferences reached, diff summary), runs with `confirm: true`                                                                                     |
 | `guideOutline` / `updateGuideOutlineDraft` / `publishGuideOutline` | Sidebar and committee template, publish with preview                                                                                                             |
+| `addGuideSection` … `moveGuideTemplateSlot`                        | The sidebar step by step (sections by id, entries by section + page); each answers `draftUpdatedAt`, refuses (CONFLICT) a stale `expectedDraftUpdatedAt`         |
+| `guideVisibility` / `guideCommitteeMatrix` / `guidePendingChanges` | The workspace's views: who sees what, the template per committee, what waits to be published                                                                     |
+| `publishGuideChanges`                                              | The pending pages, then the sidebar, with preview                                                                                                                |
 | `importGuideFile`                                                  | Server downloads a URL from an allowlist (`GUIDE_IMPORT_HOSTS`, default `guide.dmun.de`, `cdn.dmun.de`), checks type and size, stores it and answers the file id |
 
 Markdown ↔ TipTap extends `reviewMarkdown.ts` with the guide marks/nodes above; reading a page with
@@ -245,9 +249,17 @@ callouts/toggles as Markdown says which blocks were left out.
    text PDF is regenerated, not imported).
 5. Images and other files via `importGuideFile`. Callout emoji become Phosphor icons (❓ →
    `question`, 📍 → `map-pin`, 💡 → `lightbulb`, ⚠️ → `warning`; others by meaning).
-6. Build each conference's sidebar with the committee template, NSA, press, organisational and
-   glossary sections; publish pages, then sidebars, each after the preview.
-7. Hand over a report of every merge and scope decision.
+6. Build each conference's sidebar step by step: `setGuideTemplate` (committee page, agenda item
+   pages, shared pages as `page` slots), then `addGuideSection` for the NSA, press,
+   organisational and glossary sections (audience per section) and `addGuideEntry` per page;
+   `moveGuideSection` puts the template in place. Pass each answer's `draftUpdatedAt` on as
+   `expectedDraftUpdatedAt`, and on CONFLICT read `guideOutlineOf` again.
+7. Check with `guideVisibility` (NSA, press and each custom role see their sections) and
+   `guideCommitteeMatrix` (every committee and agenda item has its page; create missing ones with
+   `ensureGuidePageOf`).
+8. `guidePendingChanges`, show it, then `publishGuideChanges` after the preview (pages first, then
+   the sidebar).
+9. Hand over a report of every merge and scope decision.
 
 ## Phases
 
@@ -291,6 +303,10 @@ What was built differs from the plan in a few places:
 - **Blocks**: tables are not in the editor yet (no TipTap table extension in the project);
   everything else in the block table is.
 - **MCP**: the read tools are the GraphQL queries through `graphql_query` (`guideLibrary`,
-  `guidePage { draftMarkdown }`, `guideOutlineOf`), not tools of their own.
+  `guidePage { draftMarkdown }`, `guideOutlineOf`, and the workspace's views `guideVisibility`,
+  `guideCommitteeMatrix`, `guidePendingChanges`), not tools of their own. The sidebar's single
+  changes (`guideOutlineTools.ts`) find what they name by id and apply `#lib/guide/outlineEditing`
+  through `outlineCommands.ts`; every write of the draft goes through `editOutlineDraft` (row
+  lock, `outlineSchema`, pages and roles of the conference, `draftUpdatedAt` check).
 - **Typst**: the committee text is rendered from the agenda item page on publish; images of types
   Typst 0.10 cannot read (WebP) are left out of the PDF.

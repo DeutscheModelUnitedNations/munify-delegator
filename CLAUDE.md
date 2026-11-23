@@ -457,7 +457,9 @@ bun run preview
   `outlineSchema`) with audiences and a committee template; readers never read the tables:
   `myGuide` / `guideReaderPage` build their part (`guideReaderService.ts`) once `guidePublished`
   and the release are on (the team always, with previews). The team works in one workspace
-  (`team/guide/`: tree + editor, visibility, committee matrix; CLAUDE-UI.md "Guide Components"). Agenda item pages render their
+  (`team/guide/`: tree + editor, visibility, committee matrix; CLAUDE-UI.md "Guide Components"); its views and the sidebar's
+  single changes are API fields too (`guideOutlineTools.ts`, all draft writes through `editOutlineDraft`, which refuses a stale
+  `expectedDraftUpdatedAt`). Agenda item pages render their
   committee text with Typst on publish (`committeeText.ts`). Files in page texts are `file:<id>`,
   kept by `guide_page_file` for the cleanup job. MCP: Markdown ↔ TipTap in `guideMarkdown.ts`
   (shares `#api/services/markdownTokens` with review drafts). `e2e/authorization/guide.spec.ts`.

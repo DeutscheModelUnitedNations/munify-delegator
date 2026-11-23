@@ -14,6 +14,7 @@ import {
 } from '#lib/guide/outline';
 import { z } from 'zod';
 import { guidePageIdsReaching, pageIdsReachingOf } from '../guidePage/guidePageService';
+import { draftChangedSinceSeen, type CommandResult, type Missing } from './outlineCommands';
 
 /** The outline argument: a whole sidebar (`#lib/guide/outline`). */
 export const outlineArgSchema = z.unknown().transform((value, ctx) => {
@@ -60,28 +61,111 @@ async function assertOutlineFits({
 	}
 }
 
-/** Writes the conference's sidebar draft, creating its outline on the first change. */
+/** The outline, if it fits the schema (INVALID_INPUT otherwise): what a change must leave. */
+function validOutline(outline: Outline) {
+	const parsed = outlineArgSchema.safeParse(outline);
+	if (!parsed.success) throw apiError({ code: 'INVALID_INPUT', message: m.guideOutlineInvalid() });
+	return parsed.data;
+}
+
+/**
+ * The `draftUpdatedAt` a write sets: now, but always later than the stored one, so two writes in
+ * one millisecond still tell apart. Stored as UTC without a zone, the way drizzle writes them.
+ */
+function laterThanStored(now: Date) {
+	const utc = now.toISOString().replace('T', ' ').replace('Z', '');
+	return sql`greatest(${utc}::timestamp(3), ${schema.guideOutline.draftUpdatedAt} + interval '1 millisecond')`;
+}
+
+export type DraftEdit<T> = (outline: Outline) => { outline: Outline } & T;
+
+/**
+ * Changes the conference's sidebar draft: reads it (locked, so concurrent changes queue up),
+ * applies `edit`, checks the result (`outlineSchema`, pages and roles of the conference) and
+ * saves it, creating the outline on the first change. With `expectedDraftUpdatedAt` a draft that
+ * changed since is not touched (CONFLICT). Answers what `edit` answered and the stored draft.
+ */
+export async function editOutlineDraft<T extends object>({
+	conferenceId,
+	editorId,
+	expectedDraftUpdatedAt,
+	edit
+}: {
+	conferenceId: string;
+	editorId: string | null;
+	expectedDraftUpdatedAt?: Date | null;
+	edit: DraftEdit<T>;
+}) {
+	const saved = await db.transaction(async (tx) => {
+		const [row] = await tx
+			.select({
+				id: schema.guideOutline.id,
+				draft: schema.guideOutline.draft,
+				draftUpdatedAt: schema.guideOutline.draftUpdatedAt
+			})
+			.from(schema.guideOutline)
+			.where(eq(schema.guideOutline.conferenceId, conferenceId))
+			.for('update');
+		if (draftChangedSinceSeen({ stored: row?.draftUpdatedAt, expected: expectedDraftUpdatedAt })) {
+			throw apiError({ code: 'CONFLICT', message: m.guideOutlineChangedElsewhere() });
+		}
+		const { outline: changed, ...answer } = edit(row ? parseOutline(row.draft) : EMPTY_OUTLINE);
+		const outline = validOutline(changed);
+		await assertOutlineFits({ conferenceId, outline });
+		const now = new Date();
+		const [stored] = row
+			? await tx
+					.update(schema.guideOutline)
+					.set({
+						draft: outline,
+						draftUpdatedById: editorId,
+						draftUpdatedAt: laterThanStored(now),
+						updatedAt: now
+					})
+					.where(eq(schema.guideOutline.id, row.id))
+					.returning({
+						id: schema.guideOutline.id,
+						draftUpdatedAt: schema.guideOutline.draftUpdatedAt
+					})
+			: await tx
+					.insert(schema.guideOutline)
+					.values({ conferenceId, draft: outline, draftUpdatedById: editorId, draftUpdatedAt: now })
+					.returning({
+						id: schema.guideOutline.id,
+						draftUpdatedAt: schema.guideOutline.draftUpdatedAt
+					});
+		return {
+			...answer,
+			created: !row,
+			id: stored.id,
+			draft: outline,
+			draftUpdatedAt: stored.draftUpdatedAt
+		};
+	});
+	guideOutlinePubsub.updated(saved.id);
+	if (saved.created) guideOutlinePubsub.created();
+	const { created: _created, id: _id, ...answer } = saved;
+	return answer;
+}
+
+/** Writes the conference's sidebar draft whole, creating its outline on the first change. */
 export async function saveOutlineDraft({
 	conferenceId,
 	outline,
-	editorId
+	editorId,
+	expectedDraftUpdatedAt
 }: {
 	conferenceId: string;
 	outline: Outline;
 	editorId: string | null;
+	expectedDraftUpdatedAt?: Date | null;
 }) {
-	await assertOutlineFits({ conferenceId, outline });
-	const [row] = await db
-		.insert(schema.guideOutline)
-		.values({ conferenceId, draft: outline, draftUpdatedById: editorId })
-		.onConflictDoUpdate({
-			target: schema.guideOutline.conferenceId,
-			set: { draft: outline, draftUpdatedById: editorId, updatedAt: new Date() }
-		})
-		.returning({ id: schema.guideOutline.id, createdAt: schema.guideOutline.createdAt });
-	if (row) guideOutlinePubsub.updated(row.id);
-	guideOutlinePubsub.created();
-	return row?.id;
+	return editOutlineDraft({
+		conferenceId,
+		editorId,
+		expectedDraftUpdatedAt,
+		edit: () => ({ outline })
+	});
 }
 
 /** The pages an outline names that are not published in the conference, by title. */
@@ -166,7 +250,12 @@ export async function restoreOutlineVersion({
 	if (!version) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	await db
 		.update(schema.guideOutline)
-		.set({ draft: version.outline, draftUpdatedById: editorId, updatedAt: new Date() })
+		.set({
+			draft: version.outline,
+			draftUpdatedById: editorId,
+			draftUpdatedAt: laterThanStored(new Date()),
+			updatedAt: new Date()
+		})
 		.where(whereRows({ table: schema.guideOutline, filter: { id: version.outlineId } }));
 	guideOutlinePubsub.updated(version.outlineId);
 }
@@ -185,4 +274,27 @@ export async function outlineOf({
 	});
 	if (!row) return EMPTY_OUTLINE;
 	return parseOutline(draft ? row.draft : row.published);
+}
+
+const MISSING_MESSAGES: Record<Missing, () => string> = {
+	section: () => m.guideOutlineSectionMissing(),
+	entry: () => m.guideOutlineEntryMissing(),
+	template: () => m.guideOutlineTemplateMissing(),
+	slot: () => m.guideOutlineSlotMissing()
+};
+
+/**
+ * A single change (`outlineCommands`) as an edit of the draft: what it names has to be there
+ * (NOT_FOUND otherwise).
+ */
+export function commandEdit(
+	command: (outline: Outline) => CommandResult
+): DraftEdit<{ sectionId?: string }> {
+	return (outline) => {
+		const result = command(outline);
+		if ('missing' in result) {
+			throw apiError({ code: 'NOT_FOUND', message: MISSING_MESSAGES[result.missing]() });
+		}
+		return result;
+	};
 }

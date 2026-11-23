@@ -24,6 +24,7 @@ import './email/email';
 import './flagCollection/flagCollection';
 import './guidePage/guidePage';
 import './guideOutline/guideOutline';
+import './guideOutline/guideOutlineTools';
 import './nation/nation';
 import './notification/notification';
 import './paper/paper';

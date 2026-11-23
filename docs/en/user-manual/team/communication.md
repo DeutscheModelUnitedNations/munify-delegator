@@ -99,7 +99,7 @@ On the left is the guide as a tree, the way participants see it: the sections wi
 - **Adding:** **+ Add page** at the end of a section searches all pages or creates a new one. Pages that reach this conference but stand in no section are collected under **Not in the guide** at the bottom of the tree.
 - **Sections:** a section's **…** menu renames it and sets who sees it.
 
-The navigation saves itself as a draft while you change it. **Publish changes** at the bottom of the tree shows everything participants don't see yet: the pages the guide uses that are new or changed, and the navigation itself. You pick and publish everything in one step; pages first, then the navigation.
+The navigation saves itself as a draft while you change it. If someone else changed it meanwhile (another tab, another person, an AI assistant), DELEGATOR saves nothing until you choose: **Load the stored one** takes over what is stored, **Keep mine** overwrites it with yours. **Publish changes** at the bottom of the tree shows everything participants don't see yet: the pages the guide uses that are new or changed, and the navigation itself. You pick and publish everything in one step; pages first, then the navigation.
 
 With no page open, the structure tab shows the guide's settings and the earlier versions of the navigation.
 

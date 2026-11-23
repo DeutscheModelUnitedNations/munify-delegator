@@ -163,7 +163,7 @@
 		if (!(await confirmDialog({ text: m.guideDeleteConfirm(), danger: true }))) return;
 		// the draft must not name a page that is gone
 		draft.change(withoutPage({ outline: draft.outline, pageId }));
-		await draft.flush();
+		if (!(await draft.flush())) return;
 		const promise = Promise.resolve(client.mutate.deleteGuidePage({ __args: { id: pageId } }));
 		toast.promise(promise, conflictAwareToastMessages);
 		await promise;

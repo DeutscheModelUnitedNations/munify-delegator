@@ -37,7 +37,8 @@
 
 	/** The pages first: the sidebar may only name published pages. */
 	async function publishAll() {
-		await draft.flush();
+		// a sidebar that could not be saved (changed elsewhere) is not published over
+		if (!(await draft.flush())) throw new Error(m.guideSidebarSaveFailed());
 		for (const page of picked) {
 			await client.mutate.publishGuidePage({ __args: { id: page.id }, draftUpdatedAt: true });
 		}

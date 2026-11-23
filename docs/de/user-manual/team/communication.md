@@ -99,7 +99,7 @@ Links steht der Leitfaden als Baum, so wie die Teilnehmenden ihn sehen: die Absc
 - **Hinzufügen:** **+ Seite hinzufügen** am Ende eines Abschnitts sucht unter allen Seiten oder legt eine neue an. Seiten, die diese Konferenz erreichen, aber in keinem Abschnitt stehen, sammelt **Nicht im Leitfaden** unten im Baum.
 - **Abschnitte:** Über das Menü **…** eines Abschnitts benennst du ihn um und legst fest, wer ihn sieht.
 
-Die Navigation speichert sich beim Ändern als Entwurf. **Änderungen veröffentlichen** unten im Baum zeigt alles, was die Teilnehmenden noch nicht sehen: die Seiten, die der Leitfaden nutzt und die neu oder geändert sind, und die Navigation selbst. Du wählst aus und veröffentlichst alles in einem Schritt; erst die Seiten, dann die Navigation.
+Die Navigation speichert sich beim Ändern als Entwurf. Hat sie inzwischen jemand anderes geändert (ein anderer Tab, eine andere Person, ein KI-Assistent), speichert DELEGATOR nichts, bis du wählst: **Gespeicherte laden** übernimmt den gespeicherten Stand, **Meine behalten** überschreibt ihn mit deinem. **Änderungen veröffentlichen** unten im Baum zeigt alles, was die Teilnehmenden noch nicht sehen: die Seiten, die der Leitfaden nutzt und die neu oder geändert sind, und die Navigation selbst. Du wählst aus und veröffentlichst alles in einem Schritt; erst die Seiten, dann die Navigation.
 
 Ohne geöffnete Seite zeigt die Struktur die Einstellungen des Leitfadens und die früheren Versionen der Navigation.
 

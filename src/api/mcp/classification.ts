@@ -522,6 +522,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			...ROW,
 			'conferenceId',
 			'draft',
+			'draftUpdatedAt',
 			'draftUpdatedById',
 			'published',
 			'publishedAt',
@@ -553,6 +554,19 @@ const FIELDS: Record<string, TypeClassification> = {
 	GuideReaderPage: {
 		visible: ['content', 'entryKey', 'pageId', 'pdfUrl', 'sectionTitle', 'title', 'updatedAt']
 	},
+	GuideOutlineDraftChange: { visible: ['draft', 'draftUpdatedAt', 'sectionId'] },
+	GuideReaderGroupView: { visible: ['roleId', 'roleName', 'type'] },
+	GuideVisibilityRow: { visible: ['cells', 'key', 'kind', 'sectionId', 'title'] },
+	GuideMatrixPage: { visible: ['id', 'state', 'title'] },
+	GuideMatrixCell: {
+		visible: ['agendaItemId', 'committeeId', 'kind', 'pageId', 'state', 'title']
+	},
+	GuideMatrixRow: { visible: ['key', 'kind', 'label', 'number'] },
+	GuideMatrixCommittee: { visible: ['abbreviation', 'id', 'name', 'published', 'total'] },
+	GuideCommitteeMatrixView: { visible: ['hasTemplate'] },
+	GuidePendingPage: { visible: ['id', 'kind', 'state', 'title'] },
+	GuidePendingChanges: { visible: ['sidebarChanged', 'sidebarPublished'] },
+	GuidePublishedChanges: { visible: ['publishedPageIds', 'sidebarPublished'] },
 	Committee: {
 		visible: [
 			...ROW,

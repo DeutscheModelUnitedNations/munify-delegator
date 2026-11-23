@@ -2855,6 +2855,19 @@ export type FoodpreferenceEnum = "OMNIVORE" | "VEGAN" | "VEGETARIAN";
 		
 export type GenderEnum = "DIVERSE" | "FEMALE" | "MALE" | "NO_STATEMENT";
 		
+export type GuideAudienceInput = {
+  roleIds?: ID[] | undefined,
+  type: GuideAudienceType    
+};
+		
+export type GuideAudienceType = "customRoles" | "delegates" | "everyone" | "nonStateActors" | "supervisors";
+		
+export type GuideCommitteeMatrixView = {
+  committees: () => GuideMatrixCommittee[],
+  hasTemplate: Boolean,
+  rows: () => GuideMatrixRow[]    
+};
+		
 export type GuideConferenceTitle = {
   id: ID,
   title: String    
@@ -2884,6 +2897,44 @@ export type GuideMarkdown = {
   omittedBlocks: String[]    
 };
 		
+export type GuideMatrixCell = {
+  agendaItemId: ID | null,
+  committeeId: ID | null,
+  kind: String,
+  pageId: ID | null,
+  state: GuidePageState | null,
+  title: String | null    
+};
+		
+export type GuideMatrixCommittee = {
+  abbreviation: String,
+  id: ID,
+  name: String,
+  published: Int,
+  total: Int    
+};
+		
+export type GuideMatrixPage = {
+  id: ID,
+  state: GuidePageState,
+  title: String    
+};
+		
+export type GuideMatrixRow = {
+  cells: () => GuideMatrixCell[],
+  key: String,
+  kind: String,
+  label: String | null,
+  number: Int | null,
+  page: () => GuideMatrixPage | null    
+};
+		
+export type GuideOutlineDraftChange = {
+  draft: JSON,
+  draftUpdatedAt: DateTime,
+  sectionId: String | null    
+};
+		
 export type GuidePagePublishPreview = {
   firstPublish: Boolean,
   reaches: () => GuideConferenceTitle[],
@@ -2894,7 +2945,33 @@ export type GuidePagePublishPreview = {
   titleChanges: Boolean    
 };
 		
+export type GuidePageState = "CHANGED" | "DRAFT" | "PUBLISHED";
+		
+export type GuidePendingChanges = {
+  pages: () => GuidePendingPage[],
+  sidebarChanged: Boolean,
+  sidebarPublished: Boolean    
+};
+		
+export type GuidePendingPage = {
+  id: ID,
+  kind: String,
+  state: GuidePageState,
+  title: String    
+};
+		
 export type GuidePreviewAudience = "CUSTOM_ROLE" | "DELEGATE" | "EVERYTHING" | "NON_STATE_ACTOR" | "SUPERVISOR";
+		
+export type GuidePublishedChanges = {
+  publishedPageIds: ID[],
+  sidebarPublished: Boolean    
+};
+		
+export type GuideReaderGroupView = {
+  roleId: ID | null,
+  roleName: String | null,
+  type: String    
+};
 		
 export type GuideReaderPage = {
   content: JSON,
@@ -2917,9 +2994,32 @@ export type GuideSectionView = {
   title: String    
 };
 		
+export type GuideTemplateSlotInput = {
+  label?: String | null | undefined,
+  pageId?: ID | null | undefined,
+  type: GuideTemplateSlotType    
+};
+		
+export type GuideTemplateSlotType = "agendaItemPages" | "committeePage" | "page";
+		
 export type GuideView = {
   preview: Boolean,
   sections: () => GuideSectionView[]    
+};
+		
+export type GuideVisibility = "all" | "none" | "own" | "some";
+		
+export type GuideVisibilityRow = {
+  cells: GuideVisibility[],
+  key: String,
+  kind: String,
+  sectionId: String | null,
+  title: String    
+};
+		
+export type GuideVisibilityView = {
+  groups: () => GuideReaderGroupView[],
+  rows: () => GuideVisibilityRow[]    
 };
 		
 export type Guideoutline = {
@@ -2930,6 +3030,7 @@ export type Guideoutline = {
   conferenceId: ID,
   createdAt: DateTime,
   draft: JSON,
+  draftUpdatedAt: DateTime,
   draftUpdatedById: ID | null,
   id: ID,
   published: JSON | null,
@@ -2950,6 +3051,7 @@ export type GuideoutlineOrderInputArgument = {
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   draft?: SortingParameter | null | undefined,
+  draftUpdatedAt?: SortingParameter | null | undefined,
   draftUpdatedById?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   published?: SortingParameter | null | undefined,
@@ -2966,6 +3068,7 @@ export type GuideoutlineWhereInputArgument = {
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   draft?: JSONWhereInputArgument | null | undefined,
+  draftUpdatedAt?: DateTimeWhereInputArgument | null | undefined,
   draftUpdatedById?: IDWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   published?: JSONWhereInputArgument | null | undefined,
@@ -3516,6 +3619,22 @@ export type Mutation = {
     revision: Int,
     version: Int
   }) => Boolean,
+  addGuideEntry: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    label?: String | null | undefined,
+    pageId: ID,
+    position?: Int | null | undefined,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
+  addGuideSection: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    position?: Int | null | undefined,
+    title: String
+  }) => GuideOutlineDraftChange,
   analyzeSchoolSuggestions: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -3925,6 +4044,28 @@ export type Mutation = {
     sourceIds: ID[],
     targetId: ID
   }) => School,
+  moveGuideEntry: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    pageId: ID,
+    position?: Int | null | undefined,
+    sectionId: ID,
+    toSectionId?: ID | null | undefined,
+    toTemplate?: Boolean | null | undefined
+  }) => GuideOutlineDraftChange,
+  moveGuideSection: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    position: Int,
+    sectionId?: ID | null | undefined,
+    template?: Boolean | null | undefined
+  }) => GuideOutlineDraftChange,
+  moveGuideTemplateSlot: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    from: Int,
+    to: Int
+  }) => GuideOutlineDraftChange,
   notifyBadgeFound: (p: {
     id: ID
   }) => SendPersonEmailResult,
@@ -3946,6 +4087,10 @@ export type Mutation = {
     id: ID,
     publishAt?: DateTime | null | undefined
   }) => Announcement,
+  publishGuideChanges: (p: {
+    conferenceId: ID,
+    pageIds?: ID[] | null | undefined
+  }) => GuidePublishedChanges,
   publishGuideOutline: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -3962,6 +4107,17 @@ export type Mutation = {
     invitationId: ID,
     sendEmail?: Boolean | null | undefined
   }) => RegeneratedInvitation,
+  removeGuideEntry: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    pageId: ID,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
+  removeGuideSection: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
   removeTeamFunction: (p: {
     id: ID
   }) => Boolean,
@@ -4132,6 +4288,12 @@ export type Mutation = {
     id: ID,
     scope: GuideScopeKind
   }) => Guidepage,
+  setGuideTemplate: (p: {
+    conferenceId: ID,
+    enabled: Boolean,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    slots?: GuideTemplateSlotInput[] | null | undefined
+  }) => GuideOutlineDraftChange,
   setMessageNotificationEmails: (p: {
     enabled: Boolean
   }) => Boolean,
@@ -4336,10 +4498,19 @@ export type Mutation = {
     assignedCommitteeId: ID,
     id: ID
   }) => Delegationmember,
+  updateGuideEntry: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    label?: String | null | undefined,
+    pageId: ID,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
   updateGuideOutlineDraft: (p: {
     conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
     outline: JSON
-  }) => Boolean,
+  }) => GuideOutlineDraftChange,
   updateGuidePageDraft: (p: {
     content?: JSON | null | undefined,
     expectedDraftUpdatedAt?: DateTime | null | undefined,
@@ -4348,6 +4519,13 @@ export type Mutation = {
     replaceRichBlocks?: Boolean | null | undefined,
     title?: String | null | undefined
   }) => Guidepage,
+  updateGuideSection: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    sectionId: ID,
+    title?: String | null | undefined
+  }) => GuideOutlineDraftChange,
   updateNonStateActor: (p: {
     abbreviation?: String | null | undefined,
     description?: String | null | undefined,
@@ -5500,6 +5678,9 @@ export type Query = {
     conferenceId: ID,
     filter?: StatsFilter | null | undefined
   }) => StatisticsResult,
+  guideCommitteeMatrix: (p: {
+    conferenceId: ID
+  }) => GuideCommitteeMatrixView,
   guideFileUrls: (p: {
     conferenceId: ID,
     fileIds: ID[]
@@ -5523,6 +5704,9 @@ export type Query = {
     search?: GuidepageSearchInputArgument | null | undefined,
     where?: GuidepageWhereInputArgument | null | undefined
   }) => Guidepage[],
+  guidePendingChanges: (p: {
+    conferenceId: ID
+  }) => GuidePendingChanges,
   guideReaderPage: (p: {
     committeeId?: ID | null | undefined,
     conferenceId: ID,
@@ -5532,6 +5716,10 @@ export type Query = {
     previewAs?: GuidePreviewAudience | null | undefined,
     roleId?: ID | null | undefined
   }) => GuideReaderPage | null,
+  guideVisibility: (p: {
+    conferenceId: ID,
+    draft?: Boolean | null | undefined
+  }) => GuideVisibilityView,
   impersonationStatus: () => ImpersonationStatus,
   instanceLink: (p: {
     id: ID

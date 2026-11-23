@@ -3449,6 +3449,32 @@ enum GenderEnum {
   NO_STATEMENT
 }
 
+input GuideAudienceInput {
+  """With `customRoles`: custom roles of the conference (at least one)."""
+  roleIds: [ID!]
+  type: GuideAudienceType!
+}
+
+"""
+Who a section or entry is for; supervisors and the team see everything.
+"""
+enum GuideAudienceType {
+  customRoles
+  delegates
+  everyone
+  nonStateActors
+  supervisors
+}
+
+"""A conference's committee template against its committees."""
+type GuideCommitteeMatrixView {
+  committees: [GuideMatrixCommittee!]!
+
+  """Without one, the committee and agenda item pages."""
+  hasTemplate: Boolean!
+  rows: [GuideMatrixRow!]!
+}
+
 type GuideConferenceTitle {
   id: ID!
   title: String!
@@ -3486,6 +3512,65 @@ type GuideMarkdown {
   omittedBlocks: [String!]!
 }
 
+type GuideMatrixCell {
+  agendaItemId: ID
+  committeeId: ID
+
+  """
+  page, missing (create it with ensureGuidePageOf for the committee or agenda item) or none (the committee has fewer agenda items).
+  """
+  kind: String!
+  pageId: ID
+  state: GuidePageState
+  title: String
+}
+
+type GuideMatrixCommittee {
+  abbreviation: String!
+  id: ID!
+  name: String!
+
+  """Its own pages published as they stand."""
+  published: Int!
+
+  """Its own pages the template asks for."""
+  total: Int!
+}
+
+type GuideMatrixPage {
+  id: ID!
+  state: GuidePageState!
+  title: String!
+}
+
+type GuideMatrixRow {
+  """One per committee, in their order."""
+  cells: [GuideMatrixCell!]!
+  key: String!
+
+  """shared (one page for all), committeePage or agendaItem."""
+  kind: String!
+  label: String
+
+  """The agenda item number (agendaItem)."""
+  number: Int
+
+  """The shared page."""
+  page: GuideMatrixPage
+}
+
+"""The sidebar draft after a change."""
+type GuideOutlineDraftChange {
+  """The whole draft (`#lib/guide/outline`)."""
+  draft: JSON!
+
+  """Pass it as `expectedDraftUpdatedAt` with the next change."""
+  draftUpdatedAt: DateTime!
+
+  """The section a change created."""
+  sectionId: String
+}
+
 """What publishing a page would do."""
 type GuidePagePublishPreview {
   firstPublish: Boolean!
@@ -3501,6 +3586,32 @@ type GuidePagePublishPreview {
   titleChanges: Boolean!
 }
 
+"""Never published, published as it stands, or changed since."""
+enum GuidePageState {
+  CHANGED
+  DRAFT
+  PUBLISHED
+}
+
+"""What publishing the guide’s changes would publish."""
+type GuidePendingChanges {
+  """Pages the draft sidebar uses that are not published as they stand."""
+  pages: [GuidePendingPage!]!
+
+  """The sidebar draft differs from what is published."""
+  sidebarChanged: Boolean!
+
+  """A sidebar was ever published."""
+  sidebarPublished: Boolean!
+}
+
+type GuidePendingPage {
+  id: ID!
+  kind: String!
+  state: GuidePageState!
+  title: String!
+}
+
 """Whose guide a preview shows."""
 enum GuidePreviewAudience {
   CUSTOM_ROLE
@@ -3508,6 +3619,19 @@ enum GuidePreviewAudience {
   EVERYTHING
   NON_STATE_ACTOR
   SUPERVISOR
+}
+
+type GuidePublishedChanges {
+  publishedPageIds: [ID!]!
+  sidebarPublished: Boolean!
+}
+
+type GuideReaderGroupView {
+  roleId: ID
+  roleName: String
+
+  """delegates, nonStateActors, customRole or supervisors."""
+  type: String!
 }
 
 """A page of the guide as its reader reads it."""
@@ -3545,11 +3669,56 @@ type GuideSectionView {
   title: String!
 }
 
+input GuideTemplateSlotInput {
+  """Instead of the page title."""
+  label: String
+
+  """With `page`: the shared page."""
+  pageId: ID
+  type: GuideTemplateSlotType!
+}
+
+"""
+A slot of the committee template: a page shared by all committees, the committee’s own page, or its agenda items’ pages.
+"""
+enum GuideTemplateSlotType {
+  agendaItemPages
+  committeePage
+  page
+}
+
 """A reader's guide of a conference: their sidebar."""
 type GuideView {
   """A team preview: drafts or another reader."""
   preview: Boolean!
   sections: [GuideSectionView!]!
+}
+
+"""
+`all` of it, `some` (entries with their own audience are hidden), `own` (only the section of their own committee), `none`.
+"""
+enum GuideVisibility {
+  all
+  none
+  own
+  some
+}
+
+type GuideVisibilityRow {
+  """One per group, in their order."""
+  cells: [GuideVisibility!]!
+  key: String!
+
+  """section, entry (with its own audience) or template."""
+  kind: String!
+  sectionId: String
+  title: String!
+}
+
+"""Who sees what of a conference's guide sidebar."""
+type GuideVisibilityView {
+  groups: [GuideReaderGroupView!]!
+  rows: [GuideVisibilityRow!]!
 }
 
 type Guideoutline {
@@ -3558,6 +3727,7 @@ type Guideoutline {
   conferenceId: ID!
   createdAt: DateTime!
   draft: JSON!
+  draftUpdatedAt: DateTime!
   draftUpdatedById: ID
   id: ID!
   published: JSON
@@ -3578,6 +3748,7 @@ input GuideoutlineOrderInputArgument {
   conferenceId: SortingParameter
   createdAt: SortingParameter
   draft: SortingParameter
+  draftUpdatedAt: SortingParameter
   draftUpdatedById: SortingParameter
   id: SortingParameter
   published: SortingParameter
@@ -3594,6 +3765,7 @@ input GuideoutlineWhereInputArgument {
   conferenceId: IDWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   draft: JSONWhereInputArgument
+  draftUpdatedAt: DateTimeWhereInputArgument
   draftUpdatedById: IDWhereInputArgument
   id: IDWhereInputArgument
   published: JSONWhereInputArgument
@@ -4280,6 +4452,40 @@ type Mutation {
   The caller agrees to the message service's terms, which a participant has to before they write. It names what it was shown (`messagingTerms`: `version`, `revision`, `contentHash`) and every confirmation's `key`; INVALID_INPUT when that is not the terms as they stand, so nobody accepts a text they have not seen. FORBIDDEN for an AI assistant.
   """
   acceptMessagingTerms(confirmationIds: [String!]!, contentHash: String!, revision: Int!, version: Int!): Boolean!
+
+  """
+  Lists a page in a section, last or before the entry at `position`. The page has to reach the conference (`guideLibrary`). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  addGuideEntry(
+    """Only for these readers of the section (default: all of them)."""
+    audience: GuideAudienceInput
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    label: String
+    pageId: ID!
+    position: Int
+    sectionId: ID!
+  ): GuideOutlineDraftChange!
+
+  """
+  Adds a section to the sidebar, last or at `position` among the blocks (the sections and the committee template, in the sidebar's order); answers its `sectionId`. Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  addGuideSection(
+    """Who it is for (default: everyone)."""
+    audience: GuideAudienceInput
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    position: Int
+    title: String!
+  ): GuideOutlineDraftChange!
 
   """
   Looks for groups of similar school names among the people of the conference's applications (participant care) and brings the suggestions in line with them: a group found again keeps its decision, groups no longer found are removed.
@@ -5042,6 +5248,52 @@ type Mutation {
   ): School!
 
   """
+  Moves the entry of a page (`sectionId`, `pageId`) within its section, into another (`toSectionId`) or into the committee template as a page shared by all committees (`toTemplate: true`), before what stands at `position` once it left (left out or past the end: last). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  moveGuideEntry(
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    pageId: ID!
+    position: Int
+    sectionId: ID!
+    toSectionId: ID
+    toTemplate: Boolean
+  ): GuideOutlineDraftChange!
+
+  """
+  Moves a section (`sectionId`) or the committee template (`template: true`) to `position` among the blocks (the sections and the template, in the sidebar's order; past the end: last). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  moveGuideSection(
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    position: Int!
+    sectionId: ID
+    template: Boolean
+  ): GuideOutlineDraftChange!
+
+  """
+  Moves a slot of the committee template from index `from` to index `to` (past the end: last). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  moveGuideTemplateSlot(
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    from: Int!
+    to: Int!
+  ): GuideOutlineDraftChange!
+
+  """
   Tells the person of a participant row by mail that the badge they lost was handed in to participant care (BADGE_FOUND). Sent right away and logged as sent by hand, by the caller; every call sends it again. NOT_FOUND for a row the caller may not update.
   """
   notifyBadgeFound(
@@ -5089,6 +5341,11 @@ type Mutation {
   ): Announcement!
 
   """
+  Publishes the guide's changes like the workspace's "publish changes": first the pages waiting to be published (`guidePendingChanges`; `pageIds` picks some of them), then the sidebar draft. Participants of every conference a published page reaches read it from now on. Read `guidePendingChanges` (and `guidePagePublishPreview` for shared pages) and show it first. Pages already published stay so when the sidebar fails (CONFLICT, naming pages it uses that are still unpublished). `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  publishGuideChanges(conferenceId: ID!, pageIds: [ID!]): GuidePublishedChanges!
+
+  """
   Publishes a conference's sidebar draft: its participants see these sections from now on (once the conference published its guide). Every page it names has to be published in the conference (CONFLICT, naming them, otherwise). `editGuide` in the conference (FORBIDDEN otherwise).
   """
   publishGuideOutline(conferenceId: ID!): Boolean!
@@ -5125,6 +5382,33 @@ type Mutation {
     """Mails the new link to the invitee."""
     sendEmail: Boolean = false
   ): RegeneratedInvitation!
+
+  """
+  Takes a page out of a section (its first entry there); the page stays. Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  removeGuideEntry(
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    pageId: ID!
+    sectionId: ID!
+  ): GuideOutlineDraftChange!
+
+  """
+  Removes a section with its entries (the pages stay). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  removeGuideSection(
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    sectionId: ID!
+  ): GuideOutlineDraftChange!
 
   """
   Takes a function away from a team member. Project management and team coordinators only (NOT_FOUND otherwise).
@@ -5396,6 +5680,20 @@ type Mutation {
   Sets where a general page's draft is shared, seen from the conference (`scope` reaching it); takes effect with the next publish. Committee and agenda item pages stay in their conference (INVALID_INPUT). `editGuide` in the conference, and the page reaching one of the caller's (NOT_FOUND / FORBIDDEN otherwise).
   """
   setGuidePageScope(conferenceId: ID!, id: ID!, scope: GuideScopeKind!): Guidepage!
+
+  """
+  Switches the committee template on or off. It makes one section per committee, for its delegates. Switched on it starts with the committee's page and its agenda items' pages after the first section, or takes `slots` (which replace the slots it has). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  setGuideTemplate(
+    conferenceId: ID!
+    enabled: Boolean!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    slots: [GuideTemplateSlotInput!]
+  ): GuideOutlineDraftChange!
 
   """
   Whether a mail tells the caller about chat messages they left unread for a while.
@@ -5793,9 +6091,34 @@ type Mutation {
   updateDelegationMemberCommittee(assignedCommitteeId: ID!, id: ID!): Delegationmember!
 
   """
-  Writes a conference's sidebar draft, replacing it whole; participants see it once published. `editGuide` in the conference (FORBIDDEN otherwise), INVALID_INPUT for an outline that does not fit. The whole sidebar as JSON: `{ sections: [{ id, title, audience, entries: [{ pageId, label?, audience? }] }], committeeTemplate?: { position, titleFormat: "COMMITTEE_NAME", slots: [{ type: "page", pageId, label? } | { type: "committeePage", label? } | { type: "agendaItemPages" }] } }`. An audience is `{ type: "everyone" | "delegates" | "nonStateActors" | "supervisors" }` or `{ type: "customRoles", roleIds: [...] }`; supervisors and the team see everything. The template makes one section per committee, for its delegates, at `position` among the sections. Every page has to reach the conference, every role be one of its custom roles.
+  Changes the entry of a page in a section (its first, should the section list the page twice): its label or its own audience. Left out stays, `null` clears (the page title; the section's audience). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
   """
-  updateGuideOutlineDraft(conferenceId: ID!, outline: JSON!): Boolean!
+  updateGuideEntry(
+    """Only for these readers of the section; null: all of them."""
+    audience: GuideAudienceInput
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    label: String
+    pageId: ID!
+    sectionId: ID!
+  ): GuideOutlineDraftChange!
+
+  """
+  Writes a conference's sidebar draft, replacing it whole; participants see it once published. For small changes prefer the single ones (addGuideSection, addGuideEntry, moveGuideEntry, …), which keep the rest as it is. `editGuide` in the conference (FORBIDDEN otherwise), INVALID_INPUT for an outline that does not fit; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT). The whole sidebar as JSON: `{ sections: [{ id, title, audience, entries: [{ pageId, label?, audience? }] }], committeeTemplate?: { position, titleFormat: "COMMITTEE_NAME", slots: [{ type: "page", pageId, label? } | { type: "committeePage", label? } | { type: "agendaItemPages" }] } }`. An audience is `{ type: "everyone" | "delegates" | "nonStateActors" | "supervisors" }` or `{ type: "customRoles", roleIds: [...] }`; supervisors and the team see everything. The template makes one section per committee, for its delegates, at `position` among the sections. Every page has to reach the conference, every role be one of its custom roles.
+  """
+  updateGuideOutlineDraft(
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    outline: JSON!
+  ): GuideOutlineDraftChange!
 
   """
   Writes a page's draft: its title and/or text (as Markdown or TipTap JSON); left out keeps them. Participants read it only once it is published. Markdown over a draft with callouts, toggles, buttons or embeds would drop them: CONFLICT unless `replaceRichBlocks`. CONFLICT as well when the draft changed since `expectedDraftUpdatedAt`. For whoever holds `editGuide` in a conference the page reaches (NOT_FOUND otherwise).
@@ -5817,6 +6140,22 @@ type Mutation {
     replaceRichBlocks: Boolean
     title: String
   ): Guidepage!
+
+  """
+  Renames a section or changes who it is for; what is left out stays. Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  updateGuideSection(
+    """Who it is for."""
+    audience: GuideAudienceInput
+    conferenceId: ID!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    sectionId: ID!
+    title: String
+  ): GuideOutlineDraftChange!
 
   """
   Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `icon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.
@@ -7278,6 +7617,11 @@ type Query {
   ): StatisticsResult!
 
   """
+  The draft's committee template against the committees, as the workspace's committee tab shows it: a row per slot (agenda item pages one per agenda item number), each committee's page state or what is missing, and per committee how many of its own pages are published. `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  guideCommitteeMatrix(conferenceId: ID!): GuideCommitteeMatrixView!
+
+  """
   Download URLs of guide files (`file:<id>` in page texts), for the editor. `editGuide` in the conference (FORBIDDEN otherwise); ids that are no guide file are left out.
   """
   guideFileUrls(conferenceId: ID!, fileIds: [ID!]!): [GuideFileUrl!]!
@@ -7304,6 +7648,11 @@ type Query {
   guidePages(limit: Int, offset: Int, orderBy: GuidepageOrderInputArgument, search: GuidepageSearchInputArgument, where: GuidepageWhereInputArgument): [Guidepage!]!
 
   """
+  What "publish changes" would publish: the pages the draft sidebar uses (with the template, the committee and agenda item pages) that are not published as they stand, and whether the sidebar changed. `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  guidePendingChanges(conferenceId: ID!): GuidePendingChanges!
+
+  """
   One page of the caller's guide (`myGuide`), with the previous and next one; `entryKey` picks one of several places of a page shared by sections. Null when the page is not in their guide.
   """
   guideReaderPage(
@@ -7321,6 +7670,16 @@ type Query {
     previewAs: GuidePreviewAudience
     roleId: ID
   ): GuideReaderPage
+
+  """
+  Who sees what of a conference's guide sidebar, as the workspace's visibility tab shows it: a row per section, per entry with its own audience and for the committee template, a cell per reader group (delegates, NA, each custom role, supervisors). `editGuide` in the conference (FORBIDDEN otherwise).
+  """
+  guideVisibility(
+    conferenceId: ID!
+
+    """The draft (default) or what is published."""
+    draft: Boolean
+  ): GuideVisibilityView!
 
   """Whether the caller is acting as somebody else, and if so who both are."""
   impersonationStatus: ImpersonationStatus!

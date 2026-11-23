@@ -166,6 +166,13 @@ export const guideOutline = snakeCase.table('guide_outline', {
 	...defaultIdAndTimestamps,
 	conferenceId: conferenceRef('cascade').unique(),
 	draft: jsonb().notNull(),
+	/**
+	 * When the draft last changed (`updatedAt` also moves on publishing). Writes that name the one
+	 * they saw (`expectedDraftUpdatedAt`) are refused once it moved on.
+	 */
+	draftUpdatedAt: timestamp({ precision: 3 })
+		.default(sql`CURRENT_TIMESTAMP`)
+		.notNull(),
 	draftUpdatedById: editorRef(),
 	published: jsonb(),
 	publishedAt: timestamp({ precision: 3 }),
