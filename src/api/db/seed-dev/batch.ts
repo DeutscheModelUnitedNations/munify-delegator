@@ -48,6 +48,8 @@ export interface SeedBatch {
 	slackNotification: (typeof schema.slackNotification.$inferInsert)[];
 	waitingListEntry: (typeof schema.waitingListEntry.$inferInsert)[];
 	conferenceParticipant: (typeof schema.conferenceParticipant.$inferInsert)[];
+	postalScan: (typeof schema.postalScan.$inferInsert)[];
+	agreementDetail: (typeof schema.agreementDetail.$inferInsert)[];
 	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
 	attendanceEntry: (typeof schema.attendanceEntry.$inferInsert)[];
 	paymentTransaction: (typeof schema.paymentTransaction.$inferInsert)[];
@@ -119,6 +121,8 @@ export function emptyBatch(): SeedBatch {
 		slackNotification: [],
 		waitingListEntry: [],
 		conferenceParticipant: [],
+		postalScan: [],
+		agreementDetail: [],
 		attendanceSession: [],
 		attendanceEntry: [],
 		paymentTransaction: [],
@@ -247,6 +251,14 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.conferenceParticipant,
 		insert: (rows) => db.insert(s.conferenceParticipant).values(rows)
+	});
+	await insertChunked({
+		rows: batch.postalScan,
+		insert: (rows) => db.insert(s.postalScan).values(rows)
+	});
+	await insertChunked({
+		rows: batch.agreementDetail,
+		insert: (rows) => db.insert(s.agreementDetail).values(rows)
 	});
 	await insertChunked({
 		rows: batch.delegation,

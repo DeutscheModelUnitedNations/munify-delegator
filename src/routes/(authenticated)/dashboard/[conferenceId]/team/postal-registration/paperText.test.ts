@@ -22,9 +22,10 @@ describe('describeNote', () => {
 			describeNote({ kind: 'unclear', document: 'mediaConsent', field: 'mediaGuardian2Name' }),
 			describeNote({ kind: 'incomplete', document: 'guardianConsent' }),
 			describeNote({ kind: 'mediaChoiceUnclear' }),
+			describeNote({ kind: 'detailDiffers', field: 'mediaPhoto' }),
 			describeNote({ kind: 'mediaChoiceDiffers', read: 'NOT_ALLOWED', stored: 'ALLOWED_ALL' })
 		];
-		expect(new Set(notes).size).toBe(5);
+		expect(new Set(notes).size).toBe(6);
 		notes.forEach((note) => expect(note.length).toBeGreaterThan(5));
 	});
 });

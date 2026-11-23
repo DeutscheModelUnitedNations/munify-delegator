@@ -1,5 +1,6 @@
 import { pubsub } from '#api/rumble';
 
+export const agreementDetailPubsub = pubsub({ table: 'agreementDetail' });
 export const announcementPubsub = pubsub({ table: 'announcement' });
 export const announcementAudiencePubsub = pubsub({ table: 'announcementAudience' });
 export const announcementAttachmentPubsub = pubsub({ table: 'announcementAttachment' });
@@ -39,9 +40,11 @@ export const paperVersionPubsub = pubsub({ table: 'paperVersion' });
 export const paymentTransactionPubsub = pubsub({ table: 'paymentTransaction' });
 export const placePubsub = pubsub({ table: 'place' });
 export const possibleDuplicatePubsub = pubsub({ table: 'possibleDuplicate' });
+export const postalScanPubsub = pubsub({ table: 'postalScan' });
 export const resolutionPubsub = pubsub({ table: 'resolution' });
 export const reviewerSnippetPubsub = pubsub({ table: 'reviewerSnippet' });
 export const roleApplicationPubsub = pubsub({ table: 'roleApplication' });
+export const scannerAccessPubsub = pubsub({ table: 'scannerAccess' });
 export const schoolPubsub = pubsub({ table: 'school' });
 export const schoolSuggestionPubsub = pubsub({ table: 'schoolSuggestion' });
 export const schoolSuggestionVariantPubsub = pubsub({ table: 'schoolSuggestionVariant' });

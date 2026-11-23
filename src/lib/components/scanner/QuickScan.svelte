@@ -6,13 +6,8 @@
 	import ScanViewfinder from './ScanViewfinder.svelte';
 	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
 	import { readAimIdentifier } from './aimIdentifier';
-	import {
-		openScannerCamera,
-		stopVideoStream,
-		streamZoom,
-		zoomVideo,
-		type CameraZoom
-	} from './camera';
+	import { openScannerCamera } from './camera';
+	import { createCameraControls } from './cameraControls.svelte.js';
 
 	interface Props {
 		/** Which codes it takes; a refused one is reported, and the camera waits for the next. */
@@ -29,8 +24,7 @@
 	let streaming = $state(false);
 	let starting = $state(true);
 	let handled = $state<string | null>(null);
-	/** The camera's zoom, while it streams with one. */
-	let zoom = $state<CameraZoom>();
+	const controls = createCameraControls(() => videoElem);
 
 	// Created on first use: the polyfill cannot be constructed during SSR
 	let detector: BarcodeDetector | undefined;
@@ -56,13 +50,8 @@
 	}
 
 	function stopVideo() {
-		stopVideoStream(videoElem);
+		controls.stop();
 		streaming = false;
-		zoom = undefined;
-	}
-
-	async function zoomTo(value: number) {
-		zoom = await zoomVideo({ video: videoElem, value });
 	}
 
 	// fallow-ignore-next-line complexity
@@ -74,7 +63,7 @@
 			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;
-			zoom = streamZoom(stream);
+			controls.started(stream);
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : m.cameraFailed());
 			onclose();
@@ -115,8 +104,10 @@
 	scannedCode={handled}
 	scanPromptText={m.quickScanPrompt()}
 	canSwitchCamera={false}
-	{zoom}
-	onzoom={zoomTo}
+	zoom={controls.zoom}
+	onzoom={controls.zoomTo}
+	torch={controls.torch}
+	ontorch={controls.switchLight}
 	onswitch={() => {}}
 	onstop={() => {
 		stopVideo();

@@ -92,4 +92,10 @@ export async function seedPaperScanning(db: NodePgDatabase) {
 			mediaConsentStatus: 'NOT_SET'
 		})
 		.where(eq(schema.conferenceParticipant.id, participantId));
+	await db
+		.delete(schema.postalScan)
+		.where(eq(schema.postalScan.conferenceParticipantId, participantId));
+	await db
+		.delete(schema.agreementDetail)
+		.where(eq(schema.agreementDetail.conferenceParticipantId, participantId));
 }

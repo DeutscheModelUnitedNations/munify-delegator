@@ -9,6 +9,7 @@ import {
 	boxInPoints,
 	defaultLayout,
 	DOCUMENT_ELEMENTS,
+	isHidden,
 	POINTS_PER_MM,
 	resolveDocumentLayout,
 	squareInPoints,
@@ -22,7 +23,8 @@ import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
 import { drawQr } from '#lib/api/pdfQr';
 import { logger } from '#lib/logger';
 import { drawPaperPage } from '#lib/paperScan/drawPaper';
-import type { PostalDocument, PrintedPage } from '#lib/paperScan/pageAreas';
+import { pageAreas, type PostalDocument, type PrintedPage } from '#lib/paperScan/pageAreas';
+import { measurePrintedInk } from './measurePrintedInk';
 
 /**
  * Signs the codes the pages of a person's application documents carry, one per page in the order
@@ -53,6 +55,29 @@ export interface ParticipantCertificateData {
 	sessions?: readonly string[];
 }
 
+/** Writes the holder's name, centred where the layout places it, if it does. */
+function drawCertificateName({
+	page,
+	font,
+	name,
+	placement
+}: {
+	page: PDFPage;
+	font: PDFFont;
+	name: string;
+	placement: TextPlacement;
+}) {
+	if (isHidden(placement)) return;
+	const at = textInPoints({ placement, ...page.getSize() });
+	page.drawText(name, {
+		x: at.x - font.widthOfTextAtSize(name, at.size) / 2,
+		y: at.baseline,
+		size: at.size,
+		font,
+		color: rgb(0, 0, 0)
+	});
+}
+
 /**
  * Draws the check-in sessions the holder was at in the box the layout gives them: a heading, then
  * each session with a checkmark drawn as two lines (no font glyph needed). Sessions they missed are
@@ -62,13 +87,16 @@ function drawCertificateSessions({
 	page,
 	font,
 	sessions,
+	hidden,
 	area
 }: {
 	page: PDFPage;
 	font: PDFFont;
 	sessions: readonly string[];
+	hidden: boolean;
 	area: { left: number; top: number; bottom: number };
 }) {
+	if (hidden) return;
 	const heading = m.certificateSessionsHeading();
 	const layout = layoutCertificateSessions({
 		sessions,
@@ -341,8 +369,9 @@ function createParticipantFormGenerator({
 				{
 					page,
 					participantData,
-					/** Writes one form field value in the custom font where the layout places it. */
+					/** Writes one form field value in the custom font where the layout places it, if it does. */
 					drawField({ text, placement }) {
+						if (isHidden(placement)) return;
 						const at = textInPoints({ placement, width, height });
 						page.drawText(text, {
 							x: at.x,
@@ -431,12 +460,13 @@ function createContractGenerator({
 			// The address the letter goes to, a line at a time, where the envelope's window is.
 			const recipient = textInPoints({ placement: layout.recipient, width, height });
 			const lineHeight = recipient.size * 1.36;
-			[
+			const address = [
 				recipientData.name,
 				recipientData.address,
 				`${recipientData.zip} ${recipientData.city}`,
 				recipientData.country
-			].forEach((line, index) => {
+			];
+			(isHidden(layout.recipient) ? [] : address).forEach((line, index) => {
 				page.drawText(line, {
 					x: recipient.x,
 					y: recipient.baseline - index * lineHeight,
@@ -649,15 +679,7 @@ function createCertificateGenerator({
 			const { width, height } = page.getSize();
 			const black = rgb(0, 0, 0);
 
-			const name = data.fullName;
-			const at = textInPoints({ placement: layout.name, width, height });
-			page.drawText(name, {
-				x: at.x - custfont.widthOfTextAtSize(name, at.size) / 2,
-				y: at.baseline,
-				size: at.size,
-				font: custfont,
-				color: black
-			});
+			drawCertificateName({ page, font: custfont, name: data.fullName, placement: layout.name });
 
 			const verifyUrl = codeLink(data.code);
 			const { left, bottom, side } = await placeQrCode({
@@ -702,6 +724,7 @@ function createCertificateGenerator({
 				page,
 				font: custfont,
 				sessions: data.sessions ?? [],
+				hidden: isHidden(layout.sessions),
 				area: boxInPoints({ placement: layout.sessions, width, height })
 			});
 		},
@@ -806,11 +829,21 @@ async function generateCompletePostalRegistrationPDF({
 			mainPages.push({ document, page, layout });
 		}
 	}
+	// everything but the codes, marks and footers is drawn: what is in a field now is print
+	const sizes = mainPages.map((_, index) => mergedPdfDoc.getPage(index).getSize());
+	const printedInk = await measurePrintedInk({
+		bytes: await mergedPdfDoc.save(),
+		pages: mainPages.map(
+			({ document, page, layout }, index) =>
+				pageAreas({ document, layout, page, size: sizes[index] }).areas
+		)
+	});
 	const codes = await issueCodes(
 		mainPages.map(({ document, page }, index) => ({
 			document,
 			page,
-			...mergedPdfDoc.getPage(index).getSize()
+			...sizes[index],
+			printedInk: printedInk[index]
 		}))
 	);
 

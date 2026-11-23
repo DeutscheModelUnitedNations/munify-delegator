@@ -104,6 +104,23 @@ Every change saves at once, without asking. To correct a wrong click, choose the
 
 If participant care opens the QR code with a phone's camera app, it lands on this page with the person open. This page does not take the code of a digital nametag (**This code is not meant for this scanner.**), nor QR codes not signed by DELEGATOR, nor codes of another conference.
 
+### Storing and reading scans {#scans}
+
+Below the scanner you can **Drop files here or choose them**: PDFs from a scanner's feeder or photos, also of several people mixed. DELEGATOR reads the QR code of every page, stores the pages with the person and enters what is signed and ticked. Every page is stored once, even if you scan it again; when it comes back signed, the new scan replaces the old one. Nothing is set back. Pages that match nobody are not stored, but listed.
+
+The stored scans are on the user card under **Formalities** at **Scans of the documents**. There you can open and delete them and upload more. They are deleted with the person. Only participant care can see them.
+
+What exactly was ticked and signed is below that in **Details of the agreements**, folded away. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
+
+So that you need not upload anything by hand:
+
+- **Watch a folder** (Chrome or Edge on a computer): pick the folder your scanner saves to. While the page is open, every new scan in it is taken in.
+- **Set up a scanner**: make a login and enter it in your scanner, for scan to email or WebDAV. The device then sends the scans directly, even while nobody is signed in. If pages match nobody, you are notified. Make a login of its own for each device, so you can revoke each on its own. A login is for you and this conference only and expires after half a year unless you renew it. Project management sees every login and can revoke it.
+
+:::tip Readable scans
+Scan with at least 200 dpi and so that all four marks in the corners can be seen. With a phone's camera, switch the light on when it is dark.
+:::
+
 ### What the statuses do
 
 - Once **Binding Registration**, **Media Usage Agreement** and, for minors, the **Parental Agreement** are **Done**, the email **Documents received** becomes due.

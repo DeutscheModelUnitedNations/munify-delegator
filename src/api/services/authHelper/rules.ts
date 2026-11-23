@@ -563,3 +563,16 @@ export function releasedIds({
 		.filter((row) => facts.conferences.get(row.conferenceId)?.assignmentReleased)
 		.map((row) => row.id);
 }
+
+/**
+ * The scans the caller handles: those of the people of the conferences they care for participants in
+ * (project management and participant care). None for an AI assistant: a scan holds a signature and
+ * an address, and its file's URL is the whole of it.
+ */
+export function handledScans(args: RuleArgs) {
+	if (args.ctx.mcp) return undefined;
+	return hop(
+		isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }),
+		(participant) => ({ participant })
+	);
+}

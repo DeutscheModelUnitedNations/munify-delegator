@@ -1,8 +1,10 @@
 import { db, schema } from '#api/db/db';
 import {
+	agreementDetailPubsub,
 	conferenceParticipantPubsub,
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
+	postalScanPubsub,
 	singleParticipantPubsub,
 	userPubsub
 } from '#api/pubsub';
@@ -208,6 +210,9 @@ export async function removeParticipation({
 	singleParticipantPubsub.removed();
 	conferenceSupervisorPubsub.removed();
 	conferenceParticipantPubsub.removed();
+	// what hangs on the row went with it
+	agreementDetailPubsub.removed();
+	postalScanPubsub.removed();
 	// how many conferences they took part in may have changed
 	userPubsub.updated(userId);
 }

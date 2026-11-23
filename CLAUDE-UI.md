@@ -226,14 +226,24 @@ click included); no swipe-to-dismiss. Put bits-ui `Dialog.Title` / `Dialog.Close
 `open` (bindable), `direction` (`'top' | 'right' | 'bottom'`, default `'right'`), `class` (max
 width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 
+## Postal Components
+
+`#lib/components/postal/`, on the user card's formalities tab and the postal registration page:
+`PostalScans` (a person's stored scans: open, upload, delete) and `AgreementDetails` (every box and
+line of the documents, filled in by scans, folded into a `CollapsibleCard`: lower priority than the
+statuses on purpose). Both take `conferenceParticipantId` and need a `svelte:boundary`.
+
 ## BarcodeScanner Component
 
 `#lib/components/scanner/BarcodeScanner.svelte`: camera scanning with device switching and manual
 input fallback. Every code read or typed is checked against `acceptance` (`scanAcceptance.ts`,
 signatures included) before it reaches `scannedCode`; refusals are toasted. `QuickScan` (command
 palette camera) takes the same `acceptance`. Both open the camera through `scanner/camera.ts`
-(full HD, continuous focus, a zoom slider in `ScanViewfinder` where the camera zooms): the 640×480
+(full HD, continuous focus, a zoom slider and a light switch in `ScanViewfinder` where the camera
+has them): the 640×480
 browsers give unasked cannot read a signed code printed on paper.
+
+`ScanViewfinder` is at most `--scan-height` tall: 78dvh on a phone, 50dvh from `md` on.
 
 - `scannedCode`: Bindable `string | null`: a bare signed code, or the user id as read/picked; `userIdOfCode` gives the user
 - `acceptance`: `ScanAcceptance`: `conferenceId`, signed code `kinds` (`live`, `print`), `printedNametags` (unsigned 1D barcodes count)

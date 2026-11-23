@@ -12,13 +12,39 @@ const SignedCode = schemaBuilder.simpleObject('SignedCode', {
 
 const PostalDocumentEnum = schemaBuilder.enumType('PostalDocument', { values: POSTAL_DOCUMENTS });
 
+const ClearSpanInput = schemaBuilder.inputType('ClearSpanInput', {
+	description: 'A part of a field, in millimetres from its top.',
+	fields: (t) => ({
+		top: t.float({ required: true }),
+		bottom: t.float({ required: true })
+	})
+});
+
+const PrintedInkInput = schemaBuilder.inputType('PrintedInkInput', {
+	description: 'What a page prints in one of its fields itself, as shares of the field.',
+	fields: (t) => ({
+		field: t.string({ required: true }),
+		ink: t.float({ required: true }),
+		core: t.float({ required: true, description: 'The share of its middle.' }),
+		clear: t.field({
+			type: ClearSpanInput,
+			description: "The part of a line's field between the template's own lines."
+		})
+	})
+});
+
 const PrintedPageInput = schemaBuilder.inputType('PrintedPageInput', {
 	description: 'A page of the application documents.',
 	fields: (t) => ({
 		document: t.field({ type: PostalDocumentEnum, required: true }),
 		page: t.int({ required: true, description: "Which page of the document's template, from 0." }),
 		width: t.float({ required: true, description: 'The page size in points.' }),
-		height: t.float({ required: true })
+		height: t.float({ required: true }),
+		printedInk: t.field({
+			type: [PrintedInkInput],
+			description:
+				'The fields the page prints something in before anybody fills them in. Null when nobody measured it: a person looks at all fields of the page then.'
+		})
 	})
 });
 

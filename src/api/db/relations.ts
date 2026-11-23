@@ -364,6 +364,33 @@ export const relations = defineRelations(schema, (r) => ({
 		school: r.one.school({
 			from: r.conferenceParticipant.schoolId,
 			to: r.school.id
+		}),
+		postalScans: r.many.postalScan({
+			from: r.conferenceParticipant.id,
+			to: r.postalScan.conferenceParticipantId
+		}),
+		agreementDetails: r.many.agreementDetail({
+			from: r.conferenceParticipant.id,
+			to: r.agreementDetail.conferenceParticipantId
+		})
+	},
+	postalScan: {
+		participant: r.one.conferenceParticipant({
+			from: r.postalScan.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
+		file: r.one.storedFile({
+			from: r.postalScan.fileId,
+			to: r.storedFile.id,
+			optional: false
+		})
+	},
+	agreementDetail: {
+		participant: r.one.conferenceParticipant({
+			from: r.agreementDetail.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
 		})
 	},
 	conferenceSupervisor: {
@@ -640,6 +667,10 @@ export const relations = defineRelations(schema, (r) => ({
 		announcementAttachmentOf: r.many.announcementAttachment({
 			from: r.storedFile.id,
 			to: r.announcementAttachment.fileId
+		}),
+		postalScanOf: r.many.postalScan({
+			from: r.storedFile.id,
+			to: r.postalScan.fileId
 		})
 	},
 	place: {

@@ -7,6 +7,8 @@
 	} from '#lib/api/rumbleClient/client';
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
 	import EmailLogSection from '../sections/EmailLogSection.svelte';
+	import AgreementDetails from '#lib/components/postal/AgreementDetails.svelte';
+	import PostalScans from '#lib/components/postal/PostalScans.svelte';
 	import CertificateSection from '../sections/CertificateSection.svelte';
 	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
 	import DocumentNumberRow from '../sections/DocumentNumberRow.svelte';
@@ -204,6 +206,11 @@
 			</div>
 		{/if}
 	</section>
+
+	{#if statusId}
+		<PostalScans {conferenceId} {userId} conferenceParticipantId={statusId} />
+		<AgreementDetails conferenceParticipantId={statusId} />
+	{/if}
 
 	<CertificateSection {userId} {conferenceId} />
 

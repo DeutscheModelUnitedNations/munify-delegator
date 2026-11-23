@@ -118,6 +118,7 @@ bun run preview
 | `mcp-server.md`          | `/mcp` for AI assistants: auth, confinement, classification/redaction, tools                                                                    |
 | `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                         |
 | `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates |
+| `postal-scans.md`        | Reading scanned paper, taking in scans (browser and server), agreement details, scanners delivering by SMTP/WebDAV/folder                       |
 | `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                    |
 | `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                              |
 | `user-manual.md`         | `/docs` manual, help links, tours, generated screenshots                                                                                        |
@@ -555,7 +556,7 @@ participant filter conditions), and `boardState` (`memoizeLast` compares args on
 
 See `.env.example` and `src/env.ts`. Core: `DATABASE_URL` (`DATABASE_POOL_SIZE`, default 20),
 `NODE_ENV`, `PUBLIC_OIDC_AUTHORITY`, `PUBLIC_OIDC_CLIENT_ID`, `OIDC_SCOPES` (incl. `openid`),
-`OIDC_ROLE_CLAIM` (claim name or dot path; `#api/services/oidc/roleClaims.ts`, userinfo fallback) +
+`SCANNER_SMTP_*` + `APP_URL` (scans by email, `docs/architecture/postal-scans.md`), `OIDC_ROLE_CLAIM` (claim name or dot path; `#api/services/oidc/roleClaims.ts`, userinfo fallback) +
 `OIDC_ROLE_MAP` (JSON → `admin`/`member`/`service_user`), `CERTIFICATE_SECRET` (also derives the
 Slack token key — changing it means re-entering tokens), `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`,
 `S3_SECRET_ACCESS_KEY` (`S3_PUBLIC_ENDPOINT`, `S3_REGION`), optional OTel (`OTEL_ENDPOINT_URL` full

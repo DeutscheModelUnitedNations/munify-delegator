@@ -39,6 +39,7 @@ import { addEmails } from './seed-dev/emails';
 import { addMergedMembers } from './seed-dev/schools';
 import { addBulk, bulkScale } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
+import { addPostalScans } from './seed-dev/postalScans';
 import { addResolutions } from './seed-dev/resolutions';
 import { printOverview } from './seed-dev/overview';
 import {
@@ -125,6 +126,7 @@ for (const plan of conferencePlans) {
 	addEmails(cs);
 	await addCalendar(cs);
 	await addResolutions(cs);
+	await addPostalScans(cs);
 	addBulk({ cs, scale });
 	addDuplicateScenarioParticipants(cs);
 }

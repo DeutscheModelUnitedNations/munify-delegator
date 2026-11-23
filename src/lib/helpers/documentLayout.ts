@@ -23,14 +23,25 @@ import { MARKER } from '#lib/paperScan/markerGeometry';
  * - `square`: a code, its top-left corner and its side as a fraction of the page's width;
  * - `field`: a box to tick or a line to sign on, drawn by us and read off a scan, on the page of
  *   its template `page` says (counted from 0).
+ *
+ * What is inserted for a person to read (a text, the certificate's sessions) can be switched off
+ * (`hidden`) where a template has no use for it; its placement is kept for switching it on again.
  */
 
 const fraction = z.number().min(0).max(1);
 
-const textPlacement = z.object({ x: fraction, y: fraction, size: z.number().min(5).max(72) });
-const boxPlacement = z.object({ x: fraction, y: fraction, width: fraction, height: fraction });
+const hidden = z.boolean().optional();
+const area = { x: fraction, y: fraction, width: fraction, height: fraction };
+
+const textPlacement = z.object({
+	x: fraction,
+	y: fraction,
+	size: z.number().min(5).max(72),
+	hidden
+});
+const boxPlacement = z.object({ ...area, hidden });
 const squarePlacement = z.object({ x: fraction, y: fraction, size: fraction });
-const fieldPlacement = boxPlacement.extend({ page: z.number().int().min(0).max(99) });
+const fieldPlacement = z.object({ ...area, page: z.number().int().min(0).max(99) });
 
 export type TextPlacement = z.infer<typeof textPlacement>;
 export type BoxPlacement = z.infer<typeof boxPlacement>;
@@ -70,8 +81,7 @@ const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.
 
 /**
  * The side of the footer code by default, in points: larger than its minimum, so the densest
- * pages' codes (six to eight fields: 34.7 mm) print at the size the editor shows, and still below
- * the contract's signature line on DMUN's template.
+ * pages' codes (six to eight fields: 34.7 mm) print at the size the editor shows.
  */
 const FOOTER_CODE = mm(35);
 /**
@@ -108,6 +118,16 @@ const footer = {
 		}
 	}
 } as const satisfies Record<string, ElementSpec>;
+
+/**
+ * The footer with the code higher up, `top` millimetres into the page, for DMUN's forms whose
+ * signatures reach down to where the footer's code is.
+ */
+const withCodeAt = (top: number) =>
+	({
+		...footer,
+		code: { ...footer.code, default: { ...footer.code.default, y: portrait.y(mm(top)) } }
+	}) as const satisfies Record<string, ElementSpec>;
 
 /**
  * An alignment mark (`#lib/paperScan/markers`) centred `x`/`y` millimetres into the page, fixed
@@ -256,7 +276,8 @@ export const DOCUMENT_ELEMENTS = {
 			default: { x: portrait.x(mm(25)), y: portrait.y(mm(60) + 15), size: 11 }
 		},
 		...nameAndBirthday({ top: 320, gap: 60 }),
-		...footer,
+		// right of the recipient, clear of where a letter is folded
+		...withCodeAt(56),
 		...markers,
 		// the form's ◯, which reading inside its square leaves out
 		termsAccepted: checkbox({ field: 'termsAccepted', left: 20.07, top: 231.1, size: 3.7 }),
@@ -264,67 +285,61 @@ export const DOCUMENT_ELEMENTS = {
 			field: 'termsPlaceDate',
 			left: 20,
 			right: 70.4,
-			line: 246.3,
+			line: 251.9,
 			height: 8
 		}),
 		termsSignature: writingLine({
 			field: 'termsSignature',
 			left: 75.8,
 			right: 184.4,
-			line: 246.3,
+			line: 251.9,
 			height: 8
 		})
 	},
 	guardianConsent: {
-		...nameAndBirthday({ top: 180, gap: 60 }),
+		...nameAndBirthday({ top: 184, gap: 60 }),
 		...footer,
 		...markers,
-		guardianChildName: writingLine({
-			field: 'guardianChildName',
-			left: 45.1,
-			right: 105.2,
-			line: 140.1,
-			height: 4.5
-		}),
 		guardianPlaceDate: writingLine({
 			field: 'guardianPlaceDate',
 			left: 20,
 			right: 74.3,
-			line: 156.9,
+			line: 164.1,
 			height: 8
 		}),
 		guardian1Name: writingLine({
 			field: 'guardian1Name',
 			left: 20,
 			right: 95.6,
-			line: 180.9,
+			line: 182.3,
 			height: 10
 		}),
 		guardian2Name: writingLine({
 			field: 'guardian2Name',
 			left: 104.2,
 			right: 179.8,
-			line: 180.9,
+			line: 182.3,
 			height: 10
 		}),
 		guardian1Signature: writingLine({
 			field: 'guardian1Signature',
 			left: 20,
 			right: 95.6,
-			line: 208.3,
+			line: 204,
 			height: 12
 		}),
 		guardian2Signature: writingLine({
 			field: 'guardian2Signature',
 			left: 104.2,
 			right: 179.8,
-			line: 208.3,
+			line: 204,
 			height: 12
 		})
 	},
 	mediaConsent: {
 		...nameAndBirthday({ top: 225, gap: 42 }),
-		...footer,
+		// the one place free on all three pages
+		...withCodeAt(84),
 		address: {
 			shape: 'text',
 			align: 'left',
@@ -332,25 +347,25 @@ export const DOCUMENT_ELEMENTS = {
 		},
 		...markers,
 		// the first page: how the person may be shown
-		mediaPhoto: checkbox({ field: 'mediaPhoto', top: 140.17 }),
-		mediaVideo: checkbox({ field: 'mediaVideo', top: 145.29 }),
-		mediaByDmun: checkbox({ field: 'mediaByDmun', top: 150.39 }),
-		mediaByOthers: checkbox({ field: 'mediaByOthers', top: 155.51 }),
+		mediaPhoto: checkbox({ field: 'mediaPhoto', top: 138.6 }),
+		mediaVideo: checkbox({ field: 'mediaVideo', top: 146.56 }),
+		mediaByDmun: checkbox({ field: 'mediaByDmun', top: 154.52 }),
+		mediaByOthers: checkbox({ field: 'mediaByOthers', top: 162.52 }),
 		// the second: what for
-		mediaInternal: checkbox({ field: 'mediaInternal', top: 54.29, page: 1 }),
-		mediaDocumentation: checkbox({ field: 'mediaDocumentation', top: 73.17, page: 1 }),
-		mediaPapers: checkbox({ field: 'mediaPapers', top: 86.93, page: 1 }),
-		mediaPress: checkbox({ field: 'mediaPress', top: 100.67, page: 1 }),
-		mediaWebsite: checkbox({ field: 'mediaWebsite', top: 109.33, page: 1 }),
-		mediaSocial: checkbox({ field: 'mediaSocial', top: 128.19, page: 1 }),
-		mediaSearch: checkbox({ field: 'mediaSearch', top: 141.94, page: 1 }),
-		mediaAdvertising: checkbox({ field: 'mediaAdvertising', top: 150.58, page: 1 }),
+		mediaInternal: checkbox({ field: 'mediaInternal', top: 59.44, page: 1 }),
+		mediaDocumentation: checkbox({ field: 'mediaDocumentation', top: 76.28, page: 1 }),
+		mediaPapers: checkbox({ field: 'mediaPapers', top: 88.69, page: 1 }),
+		mediaPress: checkbox({ field: 'mediaPress', top: 101.13, page: 1 }),
+		mediaWebsite: checkbox({ field: 'mediaWebsite', top: 109.09, page: 1 }),
+		mediaSocial: checkbox({ field: 'mediaSocial', top: 125.98, page: 1 }),
+		mediaSearch: checkbox({ field: 'mediaSearch', top: 138.39, page: 1 }),
+		mediaAdvertising: checkbox({ field: 'mediaAdvertising', top: 146.35, page: 1 }),
 		// the third: signed by the person, and for a minor by the guardians
 		mediaPlaceDate: writingLine({
 			field: 'mediaPlaceDate',
 			left: 20,
 			right: 93.2,
-			line: 98.4,
+			line: 103.5,
 			height: 8,
 			page: 2
 		}),
@@ -358,24 +373,25 @@ export const DOCUMENT_ELEMENTS = {
 			field: 'mediaSignature',
 			left: 20,
 			right: 138.1,
-			line: 124,
-			height: 12,
+			line: 127.8,
+			// below the code's caption
+			height: 7.5,
 			page: 2
 		}),
 		mediaGuardian1Name: writingLine({
 			field: 'mediaGuardian1Name',
 			left: 26.6,
 			right: 88.6,
-			line: 162.8,
+			line: 166.5,
 			height: 4.5,
 			page: 2
 		}),
 		mediaGuardian2Name: writingLine({
 			field: 'mediaGuardian2Name',
-			left: 84.4,
+			left: 85.2,
 			// the form's "[Vor- und Nachname" follows the line at once
-			right: 147.5,
-			line: 174,
+			right: 148.3,
+			line: 177.8,
 			height: 4.5,
 			page: 2
 		}),
@@ -383,7 +399,7 @@ export const DOCUMENT_ELEMENTS = {
 			field: 'mediaGuardianPlaceDate',
 			left: 20,
 			right: 97.5,
-			line: 219,
+			line: 228.4,
 			height: 8,
 			page: 2
 		}),
@@ -391,7 +407,7 @@ export const DOCUMENT_ELEMENTS = {
 			field: 'mediaGuardian1Signature',
 			left: 20,
 			right: 95.6,
-			line: 242.9,
+			line: 252.8,
 			height: 10,
 			page: 2
 		}),
@@ -399,7 +415,7 @@ export const DOCUMENT_ELEMENTS = {
 			field: 'mediaGuardian2Signature',
 			left: 104.2,
 			right: 180.9,
-			line: 242.9,
+			line: 252.8,
 			height: 10,
 			page: 2
 		})
@@ -441,6 +457,42 @@ const placementSchema = {
 	square: squarePlacement,
 	field: fieldPlacement
 };
+
+/**
+ * Whether an element is put in for a person to read and can be switched off: a text, or a box that
+ * is not fixed. Codes, marks, the page number and the fields read off a scan always stay.
+ */
+const isInsertion = (spec: ElementSpec) =>
+	spec.shape === 'text' || (spec.shape === 'box' && !isFixed(spec));
+
+/** The insertions of a document, in the order they are declared, and whether `layout` shows each. */
+export function insertionsOf({
+	elements,
+	layout
+}: {
+	elements: readonly { id: string; spec: ElementSpec }[];
+	layout: Readonly<Record<string, AnyPlacement>>;
+}) {
+	return elements
+		.filter(({ spec }) => isInsertion(spec))
+		.map(({ id }) => ({ id, shown: !isHidden(layout[id]) }));
+}
+
+/** Whether an element is switched off. */
+export const isHidden = (placement: AnyPlacement | undefined) =>
+	placement !== undefined && 'hidden' in placement && placement.hidden === true;
+
+/** An insertion's placement, switched on or off; anything else stays as it is. */
+export function withHidden<P extends AnyPlacement>({
+	placement,
+	hidden
+}: {
+	placement: P;
+	hidden: boolean;
+}): P {
+	if ('page' in placement) return placement;
+	return { ...placement, hidden: hidden || undefined };
+}
 
 /** Whether an element stays at its default, whatever was stored. */
 const isFixed = (spec: ElementSpec) => spec.shape === 'box' && spec.fixed === true;
@@ -493,7 +545,8 @@ const fieldEntry = ({
 
 /**
  * The elements of a document by shape, each with its placement in `layout` (the layout editor draws
- * each shape its own way). An element whose placement does not fit its shape is left out.
+ * each shape its own way). An element that is switched off, or whose placement does not fit its shape,
+ * is left out.
  */
 export function elementsByShape({
 	elements,
@@ -507,7 +560,7 @@ export function elementsByShape({
 	const squares: { id: string; placement: SquarePlacement; caption: 'above' | 'beside' }[] = [];
 	for (const { id, spec } of elements) {
 		const placement = layout[id];
-		if (!placement || 'page' in placement) continue;
+		if (!placement || 'page' in placement || isHidden(placement)) continue;
 		if ('width' in placement) {
 			if (spec.shape === 'box') boxes.push(boxEntry({ id, placement, spec }));
 		} else if (spec.shape === 'text') texts.push({ id, align: spec.align, placement });

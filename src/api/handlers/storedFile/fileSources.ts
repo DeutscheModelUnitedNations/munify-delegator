@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { TeamPermission } from '#lib/helpers/teamRoles';
+import { MAX_POSTAL_SCAN_SIZE } from '#lib/paperScan/limits';
 import { MAX_RESOLUTION_FILE_SIZE } from '#lib/helpers/resolutionUpload';
 import { m } from '#lib/paraglide/messages';
 import { filePurpose } from './storageClient';
@@ -69,6 +70,15 @@ const FILE_SOURCES = {
 			mimeTypes: [...PDF, 'image/png', 'image/jpeg', 'image/webp'],
 			maxBytes: 10_000_000,
 			permission: 'editConferenceContent'
+		}
+	},
+	postalScan: {
+		// a person's signed application documents, scanned
+		scan: {
+			column: 'fileId',
+			mimeTypes: [...PDF, 'image/png', 'image/jpeg', 'image/webp'],
+			maxBytes: MAX_POSTAL_SCAN_SIZE,
+			permission: 'manageParticipants'
 		}
 	},
 	resolution: {

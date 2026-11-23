@@ -28,7 +28,8 @@ export const notificationChannel = pgEnum('notification_channel', ['EMAIL', 'SLA
  * What a team member can be told about: the inboxes they answer (participant care; a committee's
  * chairs or consultants, one per function they hold; the trusted persons together, and the chats
  * written to them alone), for participant care a chat being reported, and for a committee's chairs
- * and consultants on the paper team the papers submitted there (one per function they hold).
+ * and consultants on the paper team the papers submitted there (one per function they hold); and
+ * for participant care what their own scanner delivered and could not be matched to anybody.
  */
 export const notificationTopic = pgEnum('notification_topic', [
 	'PARTICIPANT_CARE',
@@ -36,7 +37,8 @@ export const notificationTopic = pgEnum('notification_topic', [
 	'TRUSTED_SHARED',
 	'TRUSTED_PERSONAL',
 	'CHAT_REPORT',
-	'COMMITTEE_PAPERS'
+	'COMMITTEE_PAPERS',
+	'SCAN_PROBLEM'
 ]);
 
 /**
@@ -145,8 +147,8 @@ export const slackNotification = snakeCase.table(
 			.notNull()
 			.references(() => teamMember.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		/**
-		 * The inbox (`inboxKey` in `#lib/helpers/teamNotifications`), `report` for a report, or
-		 * `paper:<id>` for a submitted version of a paper.
+		 * The inbox (`inboxKey` in `#lib/helpers/teamNotifications`), `report` for a report,
+		 * `paper:<id>` for a submitted version of a paper, or `scan` for a scanner's delivery.
 		 */
 		inboxKey: text().notNull(),
 		subjectId: text().notNull()

@@ -3,7 +3,9 @@ import {
 	captureFrame,
 	openScannerCamera,
 	stopVideoStream,
+	streamTorch,
 	streamZoom,
+	switchTorch,
 	zoomStream,
 	zoomVideo
 } from './camera';
@@ -206,5 +208,42 @@ describe('captureFrame', () => {
 
 	it('takes nothing before the video shows a picture', () => {
 		expect(captureFrame(videoOf({ width: 0, height: 0 }).video)).toBeUndefined();
+	});
+});
+
+describe('streamTorch', () => {
+	it('answers whether the light is on, and undefined for a camera without one', () => {
+		const lit = fakeTrack({ capabilities: { torch: true }, settings: { torch: true } });
+		expect(streamTorch(streamOf(lit))).toBe(true);
+		expect(streamTorch(streamOf(fakeTrack({ capabilities: { torch: [false, true] } })))).toBe(
+			false
+		);
+		expect(streamTorch(streamOf(fakeTrack({ capabilities: { torch: false } })))).toBeUndefined();
+		expect(streamTorch(streamOf(fakeTrack({})))).toBeUndefined();
+		expect(streamTorch(streamOf())).toBeUndefined();
+	});
+});
+
+describe('switchTorch', () => {
+	it('switches the light and answers where it stands', async () => {
+		const track = fakeTrack({ capabilities: { torch: true } });
+		const video = videoOf(streamOf(track));
+		expect(await switchTorch({ video, on: true })).toBe(true);
+		expect(await switchTorch({ video, on: false })).toBe(false);
+		expect(track.applied).toEqual([
+			{ advanced: [{ torch: true }] },
+			{ advanced: [{ torch: false }] }
+		]);
+	});
+
+	it('answers where it was when the camera refuses', async () => {
+		const track = fakeTrack({ capabilities: { torch: true }, refuse: true });
+		expect(await switchTorch({ video: videoOf(streamOf(track)), on: true })).toBe(false);
+	});
+
+	it('answers nothing once the camera is off', async () => {
+		expect(await switchTorch({ video: undefined, on: true })).toBeUndefined();
+		expect(await switchTorch({ video: videoOf(null), on: true })).toBeUndefined();
+		expect(await switchTorch({ video: videoOf(streamOf()), on: true })).toBeUndefined();
 	});
 });

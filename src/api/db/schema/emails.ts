@@ -47,7 +47,8 @@ export const emailKind = pgEnum('email_kind', [
 	'UNREAD_MESSAGES',
 	'ANNOUNCEMENT',
 	'CHAT_REPORTED',
-	'PAPER_SUBMITTED'
+	'PAPER_SUBMITTED',
+	'SCAN_PROBLEM'
 ]);
 
 /**

@@ -6,7 +6,8 @@ export type UploadTarget =
 	| { kind: 'conference'; field: ConferenceFileField; conferenceId: string }
 	| { kind: 'place'; field: 'sitePlan'; conferenceId: string }
 	| { kind: 'resolution'; field: 'content'; conferenceId: string }
-	| { kind: 'announcement'; field: 'attachment'; conferenceId: string };
+	| { kind: 'announcement'; field: 'attachment'; conferenceId: string }
+	| { kind: 'postalScan'; field: 'scan'; conferenceId: string };
 
 export type ConferenceFileField =
 	| 'image'

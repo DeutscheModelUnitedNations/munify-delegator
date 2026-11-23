@@ -72,6 +72,106 @@ type AgendaItemPaperGroup {
   papers: [Paper!]!
 }
 
+type Agreementdetail {
+  conferenceParticipantId: ID!
+  createdAt: DateTime!
+  field: AgreementfieldEnum!
+  id: ID!
+
+  """Get the conferenceParticipants related to this agreementDetail"""
+  participant(orderBy: ConferenceparticipantOrderInputArgument, where: ConferenceparticipantWhereInputArgument): Conferenceparticipant!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  source: AgreementsourceEnum!
+  state: AgreementstateEnum!
+  updatedAt: DateTime!
+}
+
+input AgreementdetailOrderInputArgument {
+  conferenceParticipantId: SortingParameter
+  createdAt: SortingParameter
+  field: SortingParameter
+  id: SortingParameter
+  source: SortingParameter
+  state: SortingParameter
+  updatedAt: SortingParameter
+}
+
+"""A column of agreementDetail the search can look at"""
+enum AgreementdetailSearchFieldEnum {
+  conferenceParticipantId
+  id
+}
+
+"""
+Fuzzy search on agreementDetail, ranked by how close the columns are to the term
+"""
+input AgreementdetailSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [AgreementdetailSearchFieldEnum!]
+  term: String!
+}
+
+input AgreementdetailWhereInputArgument {
+  AND: [AgreementdetailWhereInputArgument!]
+  NOT: AgreementdetailWhereInputArgument
+  OR: [AgreementdetailWhereInputArgument!]
+  conferenceParticipantId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  field: AgreementfieldEnum
+  id: IDWhereInputArgument
+  participant: ConferenceparticipantWhereInputArgument
+  source: AgreementsourceEnum
+  state: AgreementstateEnum
+  updatedAt: DateTimeWhereInputArgument
+}
+
+enum AgreementfieldEnum {
+  guardian1Name
+  guardian1Signature
+  guardian2Name
+  guardian2Signature
+  guardianPlaceDate
+  mediaAdvertising
+  mediaByDmun
+  mediaByOthers
+  mediaDocumentation
+  mediaGuardian1Name
+  mediaGuardian1Signature
+  mediaGuardian2Name
+  mediaGuardian2Signature
+  mediaGuardianPlaceDate
+  mediaInternal
+  mediaPapers
+  mediaPhoto
+  mediaPlaceDate
+  mediaPress
+  mediaSearch
+  mediaSignature
+  mediaSocial
+  mediaVideo
+  mediaWebsite
+  termsAccepted
+  termsPlaceDate
+  termsSignature
+}
+
+enum AgreementsourceEnum {
+  MANUAL
+  SCAN
+}
+
+enum AgreementstateEnum {
+  no
+  unclear
+  yes
+}
+
 type Announcement {
   """Get the announcementAttachments related to this announcement"""
   attachments(limit: Int, offset: Int, orderBy: AnnouncementattachmentOrderInputArgument, search: AnnouncementattachmentSearchInputArgument, where: AnnouncementattachmentWhereInputArgument): [Announcementattachment!]!
@@ -1736,6 +1836,12 @@ enum ChatreportstatusEnum {
   RESOLVED
 }
 
+"""A part of a field, in millimetres from its top."""
+input ClearSpanInput {
+  bottom: Float!
+  top: Float!
+}
+
 """
 The applied students of one supervisor from one school, with every member from that school of a delegation the supervisor is linked to through any member, as long as there are at most `conference.maxCollectiveGroupSize` of them: they all get a seat or none.
 """
@@ -2500,6 +2606,9 @@ input ConferenceemailtextWhereInputArgument {
 
 type Conferenceparticipant {
   accessCardId: ID
+
+  """Get the agreementDetails related to this conferenceParticipant"""
+  agreementDetails(limit: Int, offset: Int, orderBy: AgreementdetailOrderInputArgument, search: AgreementdetailSearchInputArgument, where: AgreementdetailWhereInputArgument): [Agreementdetail!]!
   assignedDocumentNumber: Int
 
   """Get the attendanceEntries related to this conferenceParticipant"""
@@ -2533,6 +2642,9 @@ type Conferenceparticipant {
   """
   ofAgeAtConference: Boolean!
   paymentStatus: AdministrativestatusEnum!
+
+  """Get the postalScans related to this conferenceParticipant"""
+  postalScans(limit: Int, offset: Int, orderBy: PostalscanOrderInputArgument, search: PostalscanSearchInputArgument, where: PostalscanWhereInputArgument): [Postalscan!]!
 
   """Get the schools related to this conferenceParticipant"""
   school(orderBy: SchoolOrderInputArgument, where: SchoolWhereInputArgument): School
@@ -2600,6 +2712,7 @@ input ConferenceparticipantWhereInputArgument {
   NOT: ConferenceparticipantWhereInputArgument
   OR: [ConferenceparticipantWhereInputArgument!]
   accessCardId: IDWhereInputArgument
+  agreementDetails: AgreementdetailWhereInputArgument
   assignedDocumentNumber: IntWhereInputArgument
   attendanceEntries: AttendanceentryWhereInputArgument
   conference: ConferenceWhereInputArgument
@@ -2615,6 +2728,7 @@ input ConferenceparticipantWhereInputArgument {
   messagingSuspended: BooleanWhereInputArgument
   nsaCardNumber: IntWhereInputArgument
   paymentStatus: AdministrativestatusEnum
+  postalScans: PostalscanWhereInputArgument
   school: SchoolWhereInputArgument
   schoolId: IDWhereInputArgument
   singleParticipant: SingleparticipantWhereInputArgument
@@ -3189,6 +3303,7 @@ enum EmailkindEnum {
   PHONE_READY_REMINDER
   POSTAL_RECEIVED
   POSTAL_UNLOCKED
+  SCAN_PROBLEM
   SUPERVISOR_ASSIGNMENT_SUMMARY
   SUPERVISOR_CONNECTED
   SUPERVISOR_STUDENT_LINKED
@@ -4122,6 +4237,11 @@ type Mutation {
   ): Roleapplication!
 
   """
+  Makes a scanner login of the caller in the conference, with a password answered this once. What a scanner delivers with it counts as theirs, and they are told when it cannot be matched. FORBIDDEN unless they manage its participants; CONFLICT once they have too many.
+  """
+  createScannerAccess(conferenceId: ID!, name: String!): NewScannerAccess!
+
+  """
   Registers the caller as a single participant applying for a custom role, with their own school. An existing registration in the conference that is not sent in yet is updated instead. CONFLICT outside the registration window (for a new one), when already sent in, or when the caller takes part in the conference otherwise.
   """
   createSingleParticipant(
@@ -4293,6 +4413,9 @@ type Mutation {
   """Deletes a place; schedule entries at it stay, without a place."""
   deletePlace(id: ID!): Boolean!
 
+  """Deletes a scan of somebody’s application documents (participant care)."""
+  deletePostalScan(id: ID!): Boolean!
+
   """
   Deletes a resolution; its PDF is removed by the file cleanup once nothing holds it.
   """
@@ -4305,6 +4428,11 @@ type Mutation {
   Removes a wish from the delegation's ranking and closes the gap it leaves.
   """
   deleteRoleApplication(id: ID!): Boolean!
+
+  """
+  Removes a scanner login: the scanner delivers nothing more. The caller's own, or any of a conference they manage (project management).
+  """
+  deleteScannerAccess(id: ID!): Boolean!
 
   """
   Deletes a school, for a name typed wrongly: everybody naming it is left without a school. Participant care deletes the schools of its people that nobody outside its conferences names; NOT_FOUND otherwise.
@@ -4405,6 +4533,11 @@ type Mutation {
   hideChatMessagesOf(chatId: ID!, participantId: ID!, reason: String!): Int!
 
   """
+  Keeps an uploaded file (`postalScan`/`scan`) as the scan of one page of a person's application documents (participant care) and takes in what was read off it, unattended (`recordPaperReadings` without `confirm`). `code` is the code printed on the page, which says which page it is: the same paper scanned again is kept only if it says more. It has to be one of this person's documents in this conference (INVALID_INPUT otherwise); without one the page is named by its file (`contentKey`, the file's SHA-256 and the page's number). `readings` is null when the fields were not readable; `source` is UPLOAD or FOLDER. Asked without `fileId` first, so nothing is uploaded in vain: null then means that the file is needed, and nothing was changed. Somebody without a part in the conference answers NOT_FOUND.
+  """
+  importPostalScan(code: String, conferenceId: ID!, contentKey: String!, fileId: ID, readings: [PaperReadingInput!], source: PostalscansourceEnum!, userId: ID!): PostalScanOutcome
+
+  """
   The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
@@ -4501,6 +4634,11 @@ type Mutation {
   ): Announcement!
 
   """
+  Takes in what the pages of a person's application documents say, as read off them (participant care): the details of what they agreed to, and the postal statuses those make. `confirm`: a person looked at it, so a choice may replace the stored one; otherwise nothing stored is taken back. A detail set by hand always stays. Answers whether a status changed. Somebody without a part in the conference answers NOT_FOUND.
+  """
+  recordPaperReadings(conferenceId: ID!, confirm: Boolean!, readings: [PaperReadingInput!]!, userId: ID!): Boolean!
+
+  """
   Records a result the caller picked in the search. Picking the same result again moves it to the top instead of listing it twice, and only the newest entries are kept. Every team member records their own searches; FORBIDDEN for anyone else.
   """
   recordSearch(
@@ -4537,6 +4675,9 @@ type Mutation {
   Gives a session another name; one another session of the conference has (ignoring case) is refused with CONFLICT.
   """
   renameAttendanceSession(id: ID!, occasion: String!): Boolean!
+
+  """Lets one of the caller's scanner logins work for another half year."""
+  renewScannerAccess(id: ID!): Boolean!
 
   """
   Mails an announcement that is out to its audience once more, as it reads now (after a correction). CONFLICT unless it is out and notifies by mail.
@@ -4682,6 +4823,11 @@ type Mutation {
   Marks whether an agenda item's papers need more reviewers. Paper reviewers may set it without being able to edit the agenda item otherwise.
   """
   setAgendaItemReviewHelpStatus(agendaItemId: ID!, status: ReviewhelpstatusEnum!): Committeeagendaitem!
+
+  """
+  Sets one detail of what a person agreed to on paper by hand (participant care); scans leave it alone from then on. `null` takes it back, so scans fill it in again. The postal statuses stay as they are.
+  """
+  setAgreementDetail(conferenceParticipantId: ID!, field: AgreementfieldEnum!, state: AgreementstateEnum): Boolean!
 
   """
   Switches all of the caller's notifications on or off, by mail and Slack: those of one conference, or without `conferenceId` those of every conference `myNotificationSettings` lists. NOT_FOUND when they are not on that conference's team.
@@ -5514,6 +5660,14 @@ input NationWhereInputArgument {
   updatedAt: DateTimeWhereInputArgument
 }
 
+"""A login just made, with its password, which is shown this once."""
+type NewScannerAccess {
+  id: ID!
+  name: String!
+  password: String!
+  username: String!
+}
+
 """
 One thing a team member can be told about, and whether mail and Slack tell them: their choice, or the default (both on).
 """
@@ -5553,6 +5707,7 @@ enum NotificationtopicEnum {
   COMMITTEE_INBOX
   COMMITTEE_PAPERS
   PARTICIPANT_CARE
+  SCAN_PROBLEM
   TRUSTED_PERSONAL
   TRUSTED_SHARED
 }
@@ -5663,6 +5818,11 @@ input PaperOrderInputArgument {
   status: SortingParameter
   type: SortingParameter
   updatedAt: SortingParameter
+}
+
+input PaperReadingInput {
+  field: String!
+  state: AgreementstateEnum!
 }
 
 type PaperReviewDraftSave {
@@ -6213,6 +6373,99 @@ enum PostalDocument {
 }
 
 """
+`stored`: kept. `replaced`: kept in place of an earlier scan of the page, which said less. `known`: that one says as much already. `differs`: something there before is missing now; the earlier scan stays.
+"""
+enum PostalScanOutcome {
+  differs
+  known
+  replaced
+  stored
+}
+
+type Postalscan {
+  conferenceParticipantId: ID!
+  createdAt: DateTime!
+  fields: [String!]!
+
+  """Get the storedFiles related to this postalScan"""
+  file(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile!
+  fileId: ID!
+  id: ID!
+  pageKey: String!
+
+  """Get the conferenceParticipants related to this postalScan"""
+  participant(orderBy: ConferenceparticipantOrderInputArgument, where: ConferenceparticipantWhereInputArgument): Conferenceparticipant!
+  readings: JSON
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  source: PostalscansourceEnum!
+  updatedAt: DateTime!
+  uploadedById: ID
+}
+
+input PostalscanOrderInputArgument {
+  conferenceParticipantId: SortingParameter
+  createdAt: SortingParameter
+  fields: SortingParameter
+  fileId: SortingParameter
+  id: SortingParameter
+  pageKey: SortingParameter
+  readings: SortingParameter
+  source: SortingParameter
+  updatedAt: SortingParameter
+  uploadedById: SortingParameter
+}
+
+"""A column of postalScan the search can look at"""
+enum PostalscanSearchFieldEnum {
+  conferenceParticipantId
+  fields
+  fileId
+  id
+  pageKey
+  uploadedById
+}
+
+"""
+Fuzzy search on postalScan, ranked by how close the columns are to the term
+"""
+input PostalscanSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [PostalscanSearchFieldEnum!]
+  term: String!
+}
+
+input PostalscanWhereInputArgument {
+  AND: [PostalscanWhereInputArgument!]
+  NOT: PostalscanWhereInputArgument
+  OR: [PostalscanWhereInputArgument!]
+  conferenceParticipantId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  fields: StringArrayWhereInputArgument
+  file: StoredfileWhereInputArgument
+  fileId: IDWhereInputArgument
+  id: IDWhereInputArgument
+  pageKey: StringWhereInputArgument
+  participant: ConferenceparticipantWhereInputArgument
+  readings: JSONWhereInputArgument
+  source: PostalscansourceEnum
+  updatedAt: DateTimeWhereInputArgument
+  uploadedById: IDWhereInputArgument
+}
+
+enum PostalscansourceEnum {
+  EMAIL
+  FOLDER
+  UPLOAD
+  WEBDAV
+}
+
+"""
 What the connect form shows about the supervisor a connection code names.
 """
 type PreviewConferenceSupervisor {
@@ -6228,6 +6481,19 @@ type PreviewConferenceSupervisor {
   school_name: String
 }
 
+"""
+What a page prints in one of its fields itself, as shares of the field.
+"""
+input PrintedInkInput {
+  """The part of a line's field between the template's own lines."""
+  clear: ClearSpanInput
+
+  """The share of its middle."""
+  core: Float!
+  field: String!
+  ink: Float!
+}
+
 """A page of the application documents."""
 input PrintedPageInput {
   document: PostalDocument!
@@ -6235,6 +6501,11 @@ input PrintedPageInput {
 
   """Which page of the document's template, from 0."""
   page: Int!
+
+  """
+  The fields the page prints something in before anybody fills them in. Null when nobody measured it: a person looks at all fields of the page then.
+  """
+  printedInk: [PrintedInkInput!]
 
   """The page size in points."""
   width: Float!
@@ -6267,6 +6538,12 @@ type Query {
   Whether a person's age on the first conference day fits the conference's range for taking part as `role`, for participant care (`myAgeNotice` for one's own); null when it does or no birthday is known.
   """
   ageNotice(conferenceId: ID!, role: AgeRole!, userId: ID!): AgeNotice
+
+  """Get a single agreementDetail by ID"""
+  agreementDetail(id: ID!): Agreementdetail!
+
+  """List all agreementDetails"""
+  agreementDetails(limit: Int, offset: Int, orderBy: AgreementdetailOrderInputArgument, search: AgreementdetailSearchInputArgument, where: AgreementdetailWhereInputArgument): [Agreementdetail!]!
 
   """Get a single announcement by ID"""
   announcement(id: ID!): Announcement!
@@ -6676,6 +6953,11 @@ type Query {
   myReviewerSnippets: [Reviewersnippet!]!
 
   """
+  The caller's scanner logins in the conference, which scanners deliver postal registration scans with by email or WebDAV. FORBIDDEN unless they manage its participants (project management and participant care).
+  """
+  myScannerAccesses(conferenceId: ID!): [ScannerAccess!]!
+
+  """
   Whether the caller's account address is known in the Slack workspace a conference picked, which is how Slack messages find them; null while it has none. NOT_FOUND when they are not on that team.
   """
   mySlackConnection(conferenceId: ID!): SlackConnection
@@ -6772,6 +7054,12 @@ type Query {
 
   """List all possibleDuplicates"""
   possibleDuplicates(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+
+  """Get a single postalScan by ID"""
+  postalScan(id: ID!): Postalscan!
+
+  """List all postalScans"""
+  postalScans(limit: Int, offset: Int, orderBy: PostalscanOrderInputArgument, search: PostalscanSearchInputArgument, where: PostalscanWhereInputArgument): [Postalscan!]!
 
   """
   Shows whose supervision a participant is about to accept, before they connect. Like `previewDelegation`, the connection code is the authorisation, but the caller has to take part in the conference already (FORBIDDEN otherwise), so an arbitrary signed-in user cannot probe codes. A wrong code answers NOT_FOUND (ten in ten minutes: TOO_MANY_ATTEMPTS).
@@ -6962,6 +7250,9 @@ type Query {
   """
   slackWorkspaces(conferenceId: ID): [SlackWorkspaceInfo!]!
 
+  """Where scanners send their emails; null when this instance takes none."""
+  smtpDelivery: SmtpDelivery
+
   """
   Whether supervisors may sign themselves up to the conference right now: in every stage until it is over. Readable by anyone, so the supervisor page can say so to someone who cannot read the conference; it tells nothing else about it. False for an unknown conference.
   """
@@ -7017,6 +7308,11 @@ type Query {
 
   """Count all teamMembers"""
   teamMembersCount(where: TeammemberWhereInputArgument): Int!
+
+  """
+  Every scanner login of the conference's team, with whose it is. FORBIDDEN unless the caller manages the conference (project management).
+  """
+  teamScannerAccesses(conferenceId: ID!): [TeamScannerAccess!]!
 
   """Get a single user by ID"""
   user(id: ID!): User!
@@ -7380,6 +7676,18 @@ type ScanLookupResult {
 
   """The person's user id."""
   userId: String
+}
+
+"""
+One of the caller's logins for their scanners. Its password is never answered again.
+"""
+type ScannerAccess {
+  """From then on it delivers nothing until it is renewed."""
+  expiresAt: DateTime!
+  id: ID!
+  lastUsedAt: DateTime
+  name: String!
+  username: String!
 }
 
 type School {
@@ -7964,6 +8272,15 @@ type SlackWorkspaceInfo {
 
   """Slack's own name of the workspace."""
   slackTeamName: String!
+}
+
+"""Where scanners send their emails."""
+type SmtpDelivery {
+  host: String!
+  port: Int!
+
+  """`TLS` from the start, or `STARTTLS`."""
+  security: String!
 }
 
 enum SortingParameter {
@@ -8650,6 +8967,9 @@ type Storedfile {
   """Get the conferences related to this storedFile"""
   mediaConsentOf(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
   mimeType: String!
+
+  """Get the postalScans related to this storedFile"""
+  postalScanOf(limit: Int, offset: Int, orderBy: PostalscanOrderInputArgument, search: PostalscanSearchInputArgument, where: PostalscanWhereInputArgument): [Postalscan!]!
   purpose: String!
 
   """Get the resolutions related to this storedFile"""
@@ -8709,6 +9029,7 @@ input StoredfileWhereInputArgument {
   logoOf: ConferenceWhereInputArgument
   mediaConsentOf: ConferenceWhereInputArgument
   mimeType: StringWhereInputArgument
+  postalScanOf: PostalscanWhereInputArgument
   purpose: StringWhereInputArgument
   resolutionOf: ResolutionWhereInputArgument
   sitePlanOf: PlaceWhereInputArgument
@@ -8757,6 +9078,12 @@ input StringWhereInputArgument {
 }
 
 type Subscription {
+  """Get a single agreementDetail by ID"""
+  agreementDetail(id: ID!): Agreementdetail!
+
+  """List all agreementDetails"""
+  agreementDetails(limit: Int, offset: Int, orderBy: AgreementdetailOrderInputArgument, search: AgreementdetailSearchInputArgument, where: AgreementdetailWhereInputArgument): [Agreementdetail!]!
+
   """Get a single announcement by ID"""
   announcement(id: ID!): Announcement!
 
@@ -8948,6 +9275,11 @@ type Subscription {
   """The caller's own review drafts of a conference's papers, newest first."""
   myPaperReviewDrafts(conferenceId: ID!): [Paperreviewdraft!]!
 
+  """
+  The caller's scanner logins in the conference, which scanners deliver postal registration scans with by email or WebDAV. FORBIDDEN unless they manage its participants (project management and participant care).
+  """
+  myScannerAccesses(conferenceId: ID!): [ScannerAccess!]!
+
   """Get a single nation by ID"""
   nation(id: ID!): Nation!
 
@@ -8980,6 +9312,12 @@ type Subscription {
 
   """List all possibleDuplicates"""
   possibleDuplicates(limit: Int, offset: Int, orderBy: PossibleduplicateOrderInputArgument, search: PossibleduplicateSearchInputArgument, where: PossibleduplicateWhereInputArgument): [Possibleduplicate!]!
+
+  """Get a single postalScan by ID"""
+  postalScan(id: ID!): Postalscan!
+
+  """List all postalScans"""
+  postalScans(limit: Int, offset: Int, orderBy: PostalscanOrderInputArgument, search: PostalscanSearchInputArgument, where: PostalscanWhereInputArgument): [Postalscan!]!
 
   """Get a single resolution by ID"""
   resolution(id: ID!): Resolution!
@@ -9078,6 +9416,11 @@ type Subscription {
 
   """Count all teamMembers"""
   teamMembersCount(where: TeammemberWhereInputArgument): Int!
+
+  """
+  Every scanner login of the conference's team, with whose it is. FORBIDDEN unless the caller manages the conference (project management).
+  """
+  teamScannerAccesses(conferenceId: ID!): [TeamScannerAccess!]!
 
   """Get a single user by ID"""
   user(id: ID!): User!
@@ -9467,6 +9810,16 @@ enum TeamInvitationEmailStatus {
   EXISTS
   NEW_USER
   PENDING_INVITATION
+}
+
+"""A scanner login of somebody on the team, for project management."""
+type TeamScannerAccess {
+  expiresAt: DateTime!
+  id: ID!
+  lastUsedAt: DateTime
+  name: String!
+  ownerFamilyName: String
+  ownerGivenName: String
 }
 
 type Teamfunction {

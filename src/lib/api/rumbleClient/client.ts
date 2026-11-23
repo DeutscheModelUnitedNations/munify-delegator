@@ -46,6 +46,58 @@ export type AgendaItemPaperGroup = {
   papers: () => Paper[]    
 };
 		
+export type Agreementdetail = {
+  conferenceParticipantId: ID,
+  createdAt: DateTime,
+  field: AgreementfieldEnum,
+  id: ID,
+  participant: (p?: {
+    orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
+    where?: ConferenceparticipantWhereInputArgument | null | undefined
+  }) => Conferenceparticipant,
+  search_distance: Float | null,
+  source: AgreementsourceEnum,
+  state: AgreementstateEnum,
+  updatedAt: DateTime    
+};
+		
+export type AgreementdetailOrderInputArgument = {
+  conferenceParticipantId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  field?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  source?: SortingParameter | null | undefined,
+  state?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type AgreementdetailSearchFieldEnum = "conferenceParticipantId" | "id";
+		
+export type AgreementdetailSearchInputArgument = {
+  fields?: AgreementdetailSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type AgreementdetailWhereInputArgument = {
+  AND?: AgreementdetailWhereInputArgument[] | undefined,
+  NOT?: AgreementdetailWhereInputArgument | null | undefined,
+  OR?: AgreementdetailWhereInputArgument[] | undefined,
+  conferenceParticipantId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  field?: AgreementfieldEnum | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  participant?: ConferenceparticipantWhereInputArgument | null | undefined,
+  source?: AgreementsourceEnum | null | undefined,
+  state?: AgreementstateEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type AgreementfieldEnum = "guardian1Name" | "guardian1Signature" | "guardian2Name" | "guardian2Signature" | "guardianPlaceDate" | "mediaAdvertising" | "mediaByDmun" | "mediaByOthers" | "mediaDocumentation" | "mediaGuardian1Name" | "mediaGuardian1Signature" | "mediaGuardian2Name" | "mediaGuardian2Signature" | "mediaGuardianPlaceDate" | "mediaInternal" | "mediaPapers" | "mediaPhoto" | "mediaPlaceDate" | "mediaPress" | "mediaSearch" | "mediaSignature" | "mediaSocial" | "mediaVideo" | "mediaWebsite" | "termsAccepted" | "termsPlaceDate" | "termsSignature";
+		
+export type AgreementsourceEnum = "MANUAL" | "SCAN";
+		
+export type AgreementstateEnum = "no" | "unclear" | "yes";
+		
 export type Announcement = {
   attachments: (p?: {
     limit?: Int | null | undefined,
@@ -1350,6 +1402,11 @@ export type ChatreportWhereInputArgument = {
 		
 export type ChatreportstatusEnum = "OPEN" | "RESOLVED";
 		
+export type ClearSpanInput = {
+  bottom: Float,
+  top: Float    
+};
+		
 export type CollectiveGroup = {
   key: String,
   members: () => CollectiveGroupMember[],
@@ -2055,6 +2112,13 @@ export type ConferenceemailtextWhereInputArgument = {
 		
 export type Conferenceparticipant = {
   accessCardId: ID | null,
+  agreementDetails: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AgreementdetailOrderInputArgument | null | undefined,
+    search?: AgreementdetailSearchInputArgument | null | undefined,
+    where?: AgreementdetailWhereInputArgument | null | undefined
+  }) => Agreementdetail[],
   assignedDocumentNumber: Int | null,
   attendanceEntries: (p?: {
     limit?: Int | null | undefined,
@@ -2087,6 +2151,13 @@ export type Conferenceparticipant = {
   nsaCardNumber: Int,
   ofAgeAtConference: Boolean,
   paymentStatus: AdministrativestatusEnum,
+  postalScans: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PostalscanOrderInputArgument | null | undefined,
+    search?: PostalscanSearchInputArgument | null | undefined,
+    where?: PostalscanWhereInputArgument | null | undefined
+  }) => Postalscan[],
   school: (p?: {
     orderBy?: SchoolOrderInputArgument | null | undefined,
     where?: SchoolWhereInputArgument | null | undefined
@@ -2144,6 +2215,7 @@ export type ConferenceparticipantWhereInputArgument = {
   NOT?: ConferenceparticipantWhereInputArgument | null | undefined,
   OR?: ConferenceparticipantWhereInputArgument[] | undefined,
   accessCardId?: IDWhereInputArgument | null | undefined,
+  agreementDetails?: AgreementdetailWhereInputArgument | null | undefined,
   assignedDocumentNumber?: IntWhereInputArgument | null | undefined,
   attendanceEntries?: AttendanceentryWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
@@ -2159,6 +2231,7 @@ export type ConferenceparticipantWhereInputArgument = {
   messagingSuspended?: BooleanWhereInputArgument | null | undefined,
   nsaCardNumber?: IntWhereInputArgument | null | undefined,
   paymentStatus?: AdministrativestatusEnum | null | undefined,
+  postalScans?: PostalscanWhereInputArgument | null | undefined,
   school?: SchoolWhereInputArgument | null | undefined,
   schoolId?: IDWhereInputArgument | null | undefined,
   singleParticipant?: SingleparticipantWhereInputArgument | null | undefined,
@@ -2649,7 +2722,7 @@ export type EmailStatusResult = {
   status: TeamInvitationEmailStatus    
 };
 		
-export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "CHAT_REPORTED" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAPER_SUBMITTED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "ANNOUNCEMENT" | "APPLICATION_DEADLINE_REMINDER" | "APPLICATION_SENT" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "CHASE_INTRO_REMINDER" | "CHAT_REPORTED" | "DELEGATION_CREATED" | "DELEGATION_JOINED" | "DELEGATION_MEMBER_JOINED" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAPER_SUBMITTED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SCAN_PROBLEM" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_CONNECTED" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_PUBLISHED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "UNREAD_MESSAGES" | "WAITING_LIST_REGISTERED" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -3257,6 +3330,10 @@ export type Mutation = {
     delegationId: ID,
     roleId: ID
   }) => Roleapplication,
+  createScannerAccess: (p: {
+    conferenceId: ID,
+    name: String
+  }) => NewScannerAccess,
   createSingleParticipant: (p: {
     conferenceId: ID,
     experience?: String | null | undefined,
@@ -3352,6 +3429,9 @@ export type Mutation = {
   deletePlace: (p: {
     id: ID
   }) => Boolean,
+  deletePostalScan: (p: {
+    id: ID
+  }) => Boolean,
   deleteResolution: (p: {
     id: ID
   }) => Boolean,
@@ -3359,6 +3439,9 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deleteRoleApplication: (p: {
+    id: ID
+  }) => Boolean,
+  deleteScannerAccess: (p: {
     id: ID
   }) => Boolean,
   deleteSchool: (p: {
@@ -3422,6 +3505,15 @@ export type Mutation = {
     participantId: ID,
     reason: String
   }) => Int,
+  importPostalScan: (p: {
+    code?: String | null | undefined,
+    conferenceId: ID,
+    contentKey: String,
+    fileId?: ID | null | undefined,
+    readings?: PaperReadingInput[] | null | undefined,
+    source: PostalscansourceEnum,
+    userId: ID
+  }) => PostalScanOutcome | null,
   issueDocumentCodes: (p: {
     conferenceId: ID,
     layouts?: JSON | null | undefined,
@@ -3471,6 +3563,12 @@ export type Mutation = {
     id: ID,
     publishAt?: DateTime | null | undefined
   }) => Announcement,
+  recordPaperReadings: (p: {
+    conferenceId: ID,
+    confirm: Boolean,
+    readings: PaperReadingInput[],
+    userId: ID
+  }) => Boolean,
   recordSearch: (p: {
     conferenceId: ID,
     label: String,
@@ -3487,6 +3585,9 @@ export type Mutation = {
   renameAttendanceSession: (p: {
     id: ID,
     occasion: String
+  }) => Boolean,
+  renewScannerAccess: (p: {
+    id: ID
   }) => Boolean,
   renotifyAnnouncement: (p: {
     id: ID
@@ -3575,6 +3676,11 @@ export type Mutation = {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
   }) => Committeeagendaitem,
+  setAgreementDetail: (p: {
+    conferenceParticipantId: ID,
+    field: AgreementfieldEnum,
+    state?: AgreementstateEnum | null | undefined
+  }) => Boolean,
   setAllNotificationPreferences: (p: {
     conferenceId?: ID | null | undefined,
     enabled: Boolean
@@ -4089,6 +4195,13 @@ export type NationWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
+export type NewScannerAccess = {
+  id: ID,
+  name: String,
+  password: String,
+  username: String    
+};
+		
 export type NotificationSetting = {
   committeeAbbreviation: String | null,
   committeeName: String | null,
@@ -4104,7 +4217,7 @@ export type NotificationTestResult = "NOT_FOUND" | "SENT" | "UNAVAILABLE";
 		
 export type NotificationchannelEnum = "EMAIL" | "SLACK";
 		
-export type NotificationtopicEnum = "CHAT_REPORT" | "COMMITTEE_INBOX" | "COMMITTEE_PAPERS" | "PARTICIPANT_CARE" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
+export type NotificationtopicEnum = "CHAT_REPORT" | "COMMITTEE_INBOX" | "COMMITTEE_PAPERS" | "PARTICIPANT_CARE" | "SCAN_PROBLEM" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
 		
 export type NsaCard = {
   cardNumber: Int,
@@ -4203,6 +4316,11 @@ export type PaperOrderInputArgument = {
   status?: SortingParameter | null | undefined,
   type?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type PaperReadingInput = {
+  field: String,
+  state: AgreementstateEnum    
 };
 		
 export type PaperReviewDraftSave = {
@@ -4614,6 +4732,70 @@ export type PossibleduplicatestatusEnum = "CONFIRMED" | "DISMISSED" | "OPEN";
 		
 export type PostalDocument = "contract" | "guardianConsent" | "mediaConsent";
 		
+export type PostalScanOutcome = "differs" | "known" | "replaced" | "stored";
+		
+export type Postalscan = {
+  conferenceParticipantId: ID,
+  createdAt: DateTime,
+  fields: String[],
+  file: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile,
+  fileId: ID,
+  id: ID,
+  pageKey: String,
+  participant: (p?: {
+    orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
+    where?: ConferenceparticipantWhereInputArgument | null | undefined
+  }) => Conferenceparticipant,
+  readings: JSON | null,
+  search_distance: Float | null,
+  source: PostalscansourceEnum,
+  updatedAt: DateTime,
+  uploadedById: ID | null    
+};
+		
+export type PostalscanOrderInputArgument = {
+  conferenceParticipantId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  fields?: SortingParameter | null | undefined,
+  fileId?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  pageKey?: SortingParameter | null | undefined,
+  readings?: SortingParameter | null | undefined,
+  source?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  uploadedById?: SortingParameter | null | undefined    
+};
+		
+export type PostalscanSearchFieldEnum = "conferenceParticipantId" | "fields" | "fileId" | "id" | "pageKey" | "uploadedById";
+		
+export type PostalscanSearchInputArgument = {
+  fields?: PostalscanSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type PostalscanWhereInputArgument = {
+  AND?: PostalscanWhereInputArgument[] | undefined,
+  NOT?: PostalscanWhereInputArgument | null | undefined,
+  OR?: PostalscanWhereInputArgument[] | undefined,
+  conferenceParticipantId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  fields?: StringArrayWhereInputArgument | null | undefined,
+  file?: StoredfileWhereInputArgument | null | undefined,
+  fileId?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  pageKey?: StringWhereInputArgument | null | undefined,
+  participant?: ConferenceparticipantWhereInputArgument | null | undefined,
+  readings?: JSONWhereInputArgument | null | undefined,
+  source?: PostalscansourceEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  uploadedById?: IDWhereInputArgument | null | undefined    
+};
+		
+export type PostalscansourceEnum = "EMAIL" | "FOLDER" | "UPLOAD" | "WEBDAV";
+		
 export type PreviewConferenceSupervisor = {
   different_school: Boolean,
   family_name: String | null,
@@ -4622,10 +4804,18 @@ export type PreviewConferenceSupervisor = {
   school_name: String | null    
 };
 		
+export type PrintedInkInput = {
+  clear?: ClearSpanInput | null | undefined,
+  core: Float,
+  field: String,
+  ink: Float    
+};
+		
 export type PrintedPageInput = {
   document: PostalDocument,
   height: Float,
   page: Int,
+  printedInk?: PrintedInkInput[] | undefined,
   width: Float    
 };
 		
@@ -4637,6 +4827,16 @@ export type Query = {
     role: AgeRole,
     userId: ID
   }) => AgeNotice | null,
+  agreementDetail: (p: {
+    id: ID
+  }) => Agreementdetail,
+  agreementDetails: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AgreementdetailOrderInputArgument | null | undefined,
+    search?: AgreementdetailSearchInputArgument | null | undefined,
+    where?: AgreementdetailWhereInputArgument | null | undefined
+  }) => Agreementdetail[],
   announcement: (p: {
     id: ID
   }) => Announcement,
@@ -5026,6 +5226,9 @@ export type Query = {
     conferenceId: ID
   }) => MyReviewStats | null,
   myReviewerSnippets: () => Reviewersnippet[],
+  myScannerAccesses: (p: {
+    conferenceId: ID
+  }) => ScannerAccess[],
   mySlackConnection: (p: {
     conferenceId: ID
   }) => SlackConnection | null,
@@ -5108,6 +5311,16 @@ export type Query = {
     search?: PossibleduplicateSearchInputArgument | null | undefined,
     where?: PossibleduplicateWhereInputArgument | null | undefined
   }) => Possibleduplicate[],
+  postalScan: (p: {
+    id: ID
+  }) => Postalscan,
+  postalScans: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PostalscanOrderInputArgument | null | undefined,
+    search?: PostalscanSearchInputArgument | null | undefined,
+    where?: PostalscanWhereInputArgument | null | undefined
+  }) => Postalscan[],
   previewConferenceSupervisor: (p: {
     conferenceId: ID,
     connectionCode: String
@@ -5237,6 +5450,7 @@ export type Query = {
   slackWorkspaces: (p?: {
     conferenceId?: ID | null | undefined
   }) => SlackWorkspaceInfo[],
+  smtpDelivery: () => SmtpDelivery | null,
   supervisorSignupOpen: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -5323,6 +5537,9 @@ export type Query = {
   teamMembersCount: (p?: {
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Int,
+  teamScannerAccesses: (p: {
+    conferenceId: ID
+  }) => TeamScannerAccess[],
   user: (p: {
     id: ID
   }) => User,
@@ -5551,6 +5768,14 @@ export type ScanLookupResult = {
   singleRoleName: String | null,
   termsAndConditions: AdministrativestatusEnum,
   userId: String | null    
+};
+		
+export type ScannerAccess = {
+  expiresAt: DateTime,
+  id: ID,
+  lastUsedAt: DateTime | null,
+  name: String,
+  username: String    
 };
 		
 export type School = {
@@ -5976,6 +6201,12 @@ export type SlackWorkspaceInfo = {
   slackTeamName: String    
 };
 		
+export type SmtpDelivery = {
+  host: String,
+  port: Int,
+  security: String    
+};
+		
 export type SortingParameter = "asc" | "desc";
 		
 export type StatisticsResult = {
@@ -6283,6 +6514,13 @@ export type Storedfile = {
     where?: ConferenceWhereInputArgument | null | undefined
   }) => Conference[],
   mimeType: String,
+  postalScanOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PostalscanOrderInputArgument | null | undefined,
+    search?: PostalscanSearchInputArgument | null | undefined,
+    where?: PostalscanWhereInputArgument | null | undefined
+  }) => Postalscan[],
   purpose: String,
   resolutionOf: (p?: {
     limit?: Int | null | undefined,
@@ -6342,6 +6580,7 @@ export type StoredfileWhereInputArgument = {
   logoOf?: ConferenceWhereInputArgument | null | undefined,
   mediaConsentOf?: ConferenceWhereInputArgument | null | undefined,
   mimeType?: StringWhereInputArgument | null | undefined,
+  postalScanOf?: PostalscanWhereInputArgument | null | undefined,
   purpose?: StringWhereInputArgument | null | undefined,
   resolutionOf?: ResolutionWhereInputArgument | null | undefined,
   sitePlanOf?: PlaceWhereInputArgument | null | undefined,
@@ -6392,6 +6631,16 @@ export type StringWhereInputArgument = {
 };
 		
 export type Subscription = {
+  agreementDetail: (p: {
+    id: ID
+  }) => Agreementdetail,
+  agreementDetails: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AgreementdetailOrderInputArgument | null | undefined,
+    search?: AgreementdetailSearchInputArgument | null | undefined,
+    where?: AgreementdetailWhereInputArgument | null | undefined
+  }) => Agreementdetail[],
   announcement: (p: {
     id: ID
   }) => Announcement,
@@ -6681,6 +6930,9 @@ export type Subscription = {
   myPaperReviewDrafts: (p: {
     conferenceId: ID
   }) => Paperreviewdraft[],
+  myScannerAccesses: (p: {
+    conferenceId: ID
+  }) => ScannerAccess[],
   nation: (p: {
     id: ID
   }) => Nation,
@@ -6734,6 +6986,16 @@ export type Subscription = {
     search?: PossibleduplicateSearchInputArgument | null | undefined,
     where?: PossibleduplicateWhereInputArgument | null | undefined
   }) => Possibleduplicate[],
+  postalScan: (p: {
+    id: ID
+  }) => Postalscan,
+  postalScans: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PostalscanOrderInputArgument | null | undefined,
+    search?: PostalscanSearchInputArgument | null | undefined,
+    where?: PostalscanWhereInputArgument | null | undefined
+  }) => Postalscan[],
   resolution: (p: {
     id: ID
   }) => Resolution,
@@ -6890,6 +7152,9 @@ export type Subscription = {
   teamMembersCount: (p?: {
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Int,
+  teamScannerAccesses: (p: {
+    conferenceId: ID
+  }) => TeamScannerAccess[],
   user: (p: {
     id: ID
   }) => User,
@@ -7230,6 +7495,15 @@ export type TableviewdefaultWhereInputArgument = {
 };
 		
 export type TeamInvitationEmailStatus = "ALREADY_MEMBER" | "EXISTS" | "NEW_USER" | "PENDING_INVITATION";
+		
+export type TeamScannerAccess = {
+  expiresAt: DateTime,
+  id: ID,
+  lastUsedAt: DateTime | null,
+  name: String,
+  ownerFamilyName: String | null,
+  ownerGivenName: String | null    
+};
 		
 export type Teamfunction = {
   committee: (p?: {
@@ -7804,7 +8078,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScannerAccesses", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "teamScannerAccesses", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

@@ -11,6 +11,8 @@ import {
 	elementsByShape,
 	elementsOf,
 	fieldMinimum,
+	insertionsOf,
+	isHidden,
 	minSquareSize,
 	movePlacement,
 	pageMargin,
@@ -21,6 +23,7 @@ import {
 	resolveDocumentLayout,
 	squareInPoints,
 	textInPoints,
+	withHidden,
 	withMinimumSizes
 } from './documentLayout';
 
@@ -470,5 +473,57 @@ describe('placementRect', () => {
 		const { page, ...area } = signature;
 		expect(page).toBe(0);
 		expect(placementRect({ shape: 'field', placement: signature, aspect })).toEqual(area);
+	});
+});
+
+describe('switching insertions off', () => {
+	const layout = defaultLayout('mediaConsent');
+	const elements = elementsOf('mediaConsent');
+	const off = { ...layout, birthday: withHidden({ placement: layout.birthday, hidden: true }) };
+
+	test('offers what is put in to be read, no code, mark, page number or field', () => {
+		expect(insertionsOf({ elements, layout })).toEqual([
+			{ id: 'name', shown: true },
+			{ id: 'birthday', shown: true },
+			{ id: 'address', shown: true }
+		]);
+		const certificate = insertionsOf({
+			elements: elementsOf('certificate'),
+			layout: defaultLayout('certificate')
+		});
+		expect(certificate.map(({ id }) => id)).toEqual(['name', 'sessions']);
+	});
+
+	test('leaves the element out, keeping its place', () => {
+		expect(elementsByShape({ elements, layout: off }).texts.map(({ id }) => id)).toEqual([
+			'name',
+			'address'
+		]);
+		expect(off.birthday).toMatchObject({ x: layout.birthday.x, y: layout.birthday.y });
+		expect(withHidden({ placement: off.birthday, hidden: false })).toEqual(layout.birthday);
+	});
+
+	test('is stored and read again, also after a move', () => {
+		const moved = movePlacement({
+			shape: 'text',
+			start: off.birthday,
+			dx: 0.1,
+			dy: 0,
+			aspect: 0.7
+		});
+		const stored = documentLayoutSchema('mediaConsent').parse({ ...off, birthday: moved });
+		const read = resolveDocumentLayout({
+			document: 'mediaConsent',
+			stored: { mediaConsent: JSON.parse(JSON.stringify(stored)) }
+		});
+		expect(isHidden(read.birthday)).toBe(true);
+		expect(isHidden(read.name)).toBe(false);
+	});
+
+	test('never reaches a field read off a scan', () => {
+		expect(withHidden({ placement: layout.mediaPhoto, hidden: true })).toBe(layout.mediaPhoto);
+		const stored = { mediaConsent: { mediaPhoto: { ...layout.mediaPhoto, hidden: true } } };
+		const { mediaPhoto } = resolveDocumentLayout({ document: 'mediaConsent', stored });
+		expect(isHidden(mediaPhoto)).toBe(false);
 	});
 });

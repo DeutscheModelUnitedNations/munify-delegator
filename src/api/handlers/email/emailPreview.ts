@@ -7,6 +7,7 @@ import { loadEmailConference } from './emailSnapshot';
 import type { EmailTextOverride } from './emailText';
 import { renderBadgeFoundEmail } from './badgeFoundEmail';
 import { renderPaperSubmittedEmail } from './paperSubmittedEmail';
+import { renderScanProblemEmail, sampleScanProblem } from './scanProblemEmail';
 import { renderTeamInvitationEmail } from './teamInvitationEmail';
 import {
 	loadWording,
@@ -61,6 +62,13 @@ export async function previewEmail({
 				version: 2,
 				role: { id: 'sample', kind: 'NATION', name: null, nationAlpha3Code: 'FRA' }
 			},
+			origin,
+			wording
+		});
+	if (kind === 'SCAN_PROBLEM')
+		return renderScanProblemEmail({
+			recipient: user,
+			notice: sampleScanProblem({ conferenceId, conferenceTitle: conference.title }),
 			origin,
 			wording
 		});

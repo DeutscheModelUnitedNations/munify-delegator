@@ -104,6 +104,23 @@ Jede Änderung speichert sofort, ohne Rückfrage. Einen falschen Klick korrigier
 
 Öffnet die Teilnehmendenbetreuung den QR-Code mit der Kamera-App des Handys, landet sie direkt auf dieser Seite bei der Person. Den Code eines digitalen Namensschilds nimmt diese Seite nicht an (**Dieser Code ist nicht für diesen Scanner gedacht.**), ebenso keine QR-Codes, die nicht von DELEGATOR signiert sind, und keine Codes einer anderen Konferenz.
 
+### Scans speichern und auslesen {#scans}
+
+Unter dem Scanner kannst du **Dateien hierher ziehen oder auswählen**: PDFs aus dem Einzug eines Scanners oder Fotos, auch von mehreren Personen gemischt. DELEGATOR liest den QR-Code jeder Seite, speichert die Seiten bei der Person und trägt ein, was unterschrieben und angekreuzt ist. Jede Seite wird nur einmal gespeichert, auch wenn du sie noch einmal scannst; kommt sie später unterschrieben zurück, ersetzt der neue Scan den alten. Nichts wird zurückgesetzt. Seiten, die niemandem zuzuordnen sind, werden nicht gespeichert, sondern aufgelistet.
+
+Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten** bei **Scans der Unterlagen**. Dort kannst du sie öffnen, löschen und weitere hochladen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
+
+Was im Einzelnen angekreuzt und unterschrieben ist, steht darunter in **Details der Einwilligungen**, eingeklappt. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
+
+Damit du nichts von Hand hochladen musst:
+
+- **Ordner überwachen** (Chrome oder Edge am Computer): Wähle den Ordner, in den dein Scanner speichert. Solange die Seite offen ist, wird jeder neue Scan darin übernommen.
+- **Scanner einrichten**: Lege einen Zugang an und trage ihn in deinem Scanner ein, für „Scan to E-Mail“ oder WebDAV. Das Gerät schickt die Scans dann direkt, auch wenn niemand angemeldet ist. Lassen sich Seiten nicht zuordnen, bekommst du eine Benachrichtigung. Lege für jedes Gerät einen eigenen Zugang an, dann kannst du jeden einzeln widerrufen. Ein Zugang gilt nur für dich und diese Konferenz und läuft nach einem halben Jahr ab, wenn du ihn nicht verlängerst. Die Projektleitung sieht alle Zugänge und kann sie widerrufen.
+
+:::tip Lesbare Scans
+Scanne mit mindestens 200 dpi und so, dass alle vier Marken in den Ecken zu sehen sind. Mit der Handykamera schaltest du bei schlechtem Licht die Taschenlampe ein.
+:::
+
 ### Was die Status bewirken
 
 - Sind **Verbindliche Anmeldung**, **Einwilligung Bildnutzung** und bei Minderjährigen die **Einwilligung der Erziehungsberechtigten** auf **Erledigt**, wird die E-Mail **Unterlagen eingegangen** fällig.

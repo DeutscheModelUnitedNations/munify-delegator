@@ -10,20 +10,42 @@ import {
 	layoutOverlaps,
 	type Extent
 } from '#lib/helpers/layoutExtents';
-import type { Picture } from '#lib/paperScan/markers';
+import type { Picture } from '#lib/paperScan/picture';
 import { pageAreas, POSTAL_DOCUMENTS, type PostalDocument } from '#lib/paperScan/pageAreas';
-import { inkIn, readAreas } from '#lib/paperScan/readPaper';
+import { areasAsPrinted } from '#lib/paperScan/areas';
+import { PAPER_FIELDS } from '#lib/paperScan/fields';
+import { printedInkOf } from '#lib/paperScan/printedInk';
+import { inkIn, MOST_IN_MIDDLE, readAreas } from '#lib/paperScan/readPaper';
 
 /**
  * What the layout editor tells about each field as it is placed: read off the blank template as a
- * scan would be, it must come out empty. `free`: it does; `unclear`: the template's own print
- * touches it, so a scan may be left to a person; `filled`: the template's print alone already
- * reads as ticked or written, so an empty form would count as filled in. `unknown` until the
- * template's page is there.
+ * scan would be, with the print in it known (`printedInkOf`), it must come out empty. `free`: it does,
+ * a box's frame at its edge and the template's lines being kept out; `unclear`: the template's own
+ * print touches it, so its scans are left to a person; `filled`: there is as much print as a mark.
+ * `unknown` until the template's page is there.
  */
 export type FieldCheck = 'free' | 'unclear' | 'filled' | 'unknown';
 
-const VERDICT = { no: 'free', unclear: 'unclear', yes: 'filled' } as const;
+type ReadArgs = Parameters<typeof readAreas>[0];
+
+/** The check of each of `areas` of a blank page. */
+function checkAreas({ picture, toPicture, areas }: ReadArgs): [string, FieldCheck][] {
+	const printedInk = printedInkOf({ picture, toPicture, areas });
+	const printed = areasAsPrinted({ areas, printedInk });
+	const known = readAreas({ picture, toPicture, areas: printed });
+	const plain = readAreas({
+		picture,
+		toPicture,
+		areas: printed.map((area) => ({ ...area, printed: undefined }))
+	});
+	return known.map(({ field, state }, index) => {
+		// more print in a box's middle, in a scan aligned a little off, than a mark may have to show over
+		const middle = printed[index].printed?.core ?? 0;
+		const isBox = PAPER_FIELDS[field].mark === 'checkbox';
+		if (state === 'no' && !(isBox && middle >= MOST_IN_MIDDLE)) return [field, 'free'];
+		return [field, plain[index].state === 'yes' ? 'filled' : 'unclear'];
+	});
+}
 
 const isPostal = (document: string): document is PostalDocument =>
 	POSTAL_DOCUMENTS.some((postal) => postal === document);
@@ -68,12 +90,8 @@ export function checkFields({
 			continue;
 		}
 		const { perMm, picture } = rendered;
-		const readings = readAreas({
-			picture,
-			toPicture: ({ x, y }) => ({ x: x * perMm, y: y * perMm }),
-			areas
-		});
-		for (const { field, state } of readings) checks[field] = VERDICT[state];
+		const toPicture = ({ x, y }: { x: number; y: number }) => ({ x: x * perMm, y: y * perMm });
+		Object.assign(checks, Object.fromEntries(checkAreas({ picture, toPicture, areas })));
 	}
 	return checks;
 }
@@ -94,6 +112,8 @@ export type LayoutProblem = {
 
 /** Ink darker than the paper on more than this share of a part's area: the template prints there. */
 const PRINT_UNDER = 0.004;
+/** … counting what is this much darker than the paper: print, not the edge of a letter beside it. */
+const PRINT_DARKNESS = 0.35;
 
 /** Whether the template's page `rendered` prints under `extent` (a code, or its caption). */
 function printsUnder({ extent, rendered }: { extent: Extent; rendered: RenderedPage }) {
@@ -108,7 +128,8 @@ function printsUnder({ extent, rendered }: { extent: Extent; rendered: RenderedP
 					y: rect.y * toMm.y,
 					width: rect.width * toMm.x,
 					height: rect.height * toMm.y
-				}
+				},
+				faintest: PRINT_DARKNESS
 			}).ink > PRINT_UNDER
 	);
 }

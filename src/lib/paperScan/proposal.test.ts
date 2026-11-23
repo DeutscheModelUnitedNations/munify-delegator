@@ -89,7 +89,7 @@ describe('proposePaperChange', () => {
 		const readings = [
 			...read(['termsAccepted', 'termsSignature']),
 			...read(['termsPlaceDate'], 'no'),
-			...read(GUARDIAN.slice(0, 5)),
+			...read(GUARDIAN.slice(0, -1)),
 			...read(['guardian2Signature'], 'unclear')
 		];
 		expect(propose({ readings, status: { ...pending, termsAndConditions: 'DONE' } })).toEqual({
@@ -173,5 +173,45 @@ describe('proposePaperChange', () => {
 			mediaConsentStatus: 'ALLOWED_ALL'
 		};
 		expect(propose({ readings: mediaConsent(() => 'yes'), status }).change).toEqual({});
+	});
+
+	it('completes a document with what earlier scans told of its other pages', () => {
+		const known = [
+			...USES.map((field) => ({ field, state: 'yes' as const })),
+			{ field: 'termsSignature' as const, state: 'yes' as const }
+		];
+		expect(
+			proposePaperChange({
+				readings: read(MEDIA_SIGNED),
+				known,
+				status: pending,
+				confirm: false,
+				minor: false
+			})
+		).toEqual({ change: { mediaConsent: 'DONE', mediaConsentStatus: 'ALLOWED_ALL' }, notes: [] });
+	});
+
+	it('lets an earlier clear reading stand in for one unclear now, not for an empty one', () => {
+		const known = [{ field: 'termsSignature' as const, state: 'yes' as const }];
+		const contract = (state: FieldState) => [
+			...read(['termsAccepted', 'termsPlaceDate']),
+			...read(['termsSignature'], state)
+		];
+		const change = (state: FieldState) =>
+			proposePaperChange({
+				readings: contract(state),
+				known,
+				status: pending,
+				confirm: false,
+				minor: false
+			}).change;
+		expect(change('unclear')).toEqual({ termsAndConditions: 'DONE' });
+		expect(change('no')).toEqual({});
+	});
+
+	it("does not wait for the child's name, which the form may print itself", () => {
+		expect(
+			propose({ readings: read(GUARDIAN.filter((field) => field !== 'guardianChildName')) }).change
+		).toEqual({ guardianConsent: 'DONE' });
 	});
 });

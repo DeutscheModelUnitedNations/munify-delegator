@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
 	import type { CameraZoom } from './camera';
+	import ScanCameraButtons from './ScanCameraButtons.svelte';
 	import ScanFrame from './ScanFrame.svelte';
 
 	interface Props {
@@ -16,6 +17,9 @@
 		/** The camera's zoom, when it has one: a slider to zoom in on a code printed small. */
 		zoom?: CameraZoom;
 		onzoom?: (value: number) => void;
+		/** Whether the camera's light is on, when it has one to switch. */
+		torch?: boolean;
+		ontorch?: (on: boolean) => void;
 		onswitch: () => void;
 		onstop: () => void;
 		onstart: () => void;
@@ -34,6 +38,8 @@
 		canSwitchCamera,
 		zoom,
 		onzoom,
+		torch,
+		ontorch,
 		onswitch,
 		onstop,
 		onstart,
@@ -49,16 +55,19 @@
 		}
 	}
 	const shaped = $derived(streaming && pictureAspect !== undefined);
-	// As wide as there is room, no taller than half the screen, which keeps a portrait camera small
+	// As wide as there is room, no taller than `--scan-height`: on a phone, held over the paper, most
+	// of the screen; beside the result on a computer half of it, which keeps a portrait camera small
 	const boxStyle = $derived(
-		shaped ? `aspect-ratio: ${pictureAspect}; width: min(100%, 50dvh * ${pictureAspect});` : ''
+		shaped
+			? `aspect-ratio: ${pictureAspect}; width: min(100%, var(--scan-height) * ${pictureAspect});`
+			: ''
 	);
 </script>
 
 <div
-	class="rounded-box relative mx-auto overflow-hidden {shaped
+	class="rounded-box relative mx-auto overflow-hidden [--scan-height:78dvh] md:[--scan-height:50dvh] {shaped
 		? 'bg-black'
-		: 'bg-base-200 h-32 w-full md:aspect-video md:h-auto md:max-h-[40vh] md:min-h-52'}"
+		: 'bg-base-200 h-44 w-full md:aspect-video md:h-auto md:max-h-[40vh] md:min-h-52'}"
 	style={boxStyle}
 >
 	<video
@@ -76,26 +85,7 @@
 	{#if streaming}
 		<ScanFrame {page} />
 
-		<div class="absolute top-3 right-3 flex gap-2">
-			{#if canSwitchCamera}
-				<button
-					class="btn btn-circle btn-sm border-none bg-black/50 text-white hover:bg-black/70"
-					onclick={onswitch}
-					aria-label={m.switchCamera()}
-					title={m.switchCamera()}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-camera-rotate"></i>
-				</button>
-			{/if}
-			<button
-				class="btn btn-circle btn-sm border-none bg-black/50 text-white hover:bg-black/70"
-				onclick={onstop}
-				aria-label={m.stopCamera()}
-				title={m.stopCamera()}
-			>
-				<i aria-hidden="true" class="ph-duotone ph-video-camera-slash"></i>
-			</button>
-		</div>
+		<ScanCameraButtons {canSwitchCamera} {torch} {ontorch} {onswitch} {onstop} />
 
 		<div
 			class="absolute bottom-4 left-1/2 flex max-w-[90%] -translate-x-1/2 items-center gap-2 rounded-full bg-black/60 px-4 py-1.5 text-sm text-white"

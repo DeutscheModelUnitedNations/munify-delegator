@@ -100,6 +100,12 @@ const FIELDS: Record<string, TypeClassification> = {
 		// The number printed on the person's badge, and a sanction against the person.
 		redacted: ['accessCardId', 'messagingSuspended']
 	},
+	// What somebody ticked and signed, like the statuses it makes.
+	Agreementdetail: { visible: [...ROW, 'conferenceParticipantId', 'field', 'state', 'source'] },
+	Postalscan: {
+		visible: [...ROW, 'conferenceParticipantId', 'fileId', 'source', 'fields', 'uploadedById'],
+		redacted: ['pageKey', 'readings']
+	},
 	Conferencesupervisor: {
 		visible: [...ROW, 'conferenceParticipantId', 'plansOwnAttendenceAtConference'],
 		redacted: ['connectionCode']
@@ -271,6 +277,17 @@ const FIELDS: Record<string, TypeClassification> = {
 		]
 	},
 	// A workspace by name; its bot token is no field of the schema at all.
+	// Scanner logins are their owner's, and no assistant gets any (`scannerAccessPermissions`).
+	ScannerAccess: {
+		visible: ['id', 'lastUsedAt', 'expiresAt'],
+		redacted: ['name', 'username']
+	},
+	TeamScannerAccess: {
+		visible: ['id', 'lastUsedAt', 'expiresAt'],
+		redacted: ['name', 'ownerGivenName', 'ownerFamilyName']
+	},
+	NewScannerAccess: { visible: ['id'], redacted: ['name', 'username', 'password'] },
+	SmtpDelivery: { visible: ['host', 'port', 'security'] },
 	SlackWorkspaceInfo: { visible: ['id', 'name', 'slackTeamName', 'conferenceCount'] },
 	Chatmessage: {
 		visible: [
@@ -587,7 +604,8 @@ const FIELDS: Record<string, TypeClassification> = {
 		redacted: ['givenName', 'familyName', 'code']
 	},
 	Storedfile: {
-		// Every stored file is a conference picture, template, site plan or resolution.
+		// Every stored file an assistant reaches is a conference picture, template, site plan or
+		// resolution; scans of somebody's documents are kept from it (`handledScans`).
 		visible: [...ROW, 'fileName', 'key', 'mimeType', 'purpose', 'size', 'uploadedById', 'url'],
 		// A capability to write the file, not something to read.
 		redacted: ['uploadUrl']

@@ -17,6 +17,7 @@
 		elementsOf,
 		coversFixedArea,
 		fieldMinimum,
+		insertionsOf,
 		minSquareSize,
 		movePlacement,
 		pageMargin,
@@ -24,6 +25,7 @@
 		POINTS_PER_MM,
 		resizePlacement,
 		resizeText,
+		withHidden,
 		withMinimumSizes,
 		resolveDocumentLayout,
 		type BoxPlacement,
@@ -49,6 +51,7 @@
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
 	import LayoutFieldChecks from './LayoutFieldChecks.svelte';
 	import LayoutGuides from './LayoutGuides.svelte';
+	import LayoutInsertions from './LayoutInsertions.svelte';
 	import LayoutPager from './LayoutPager.svelte';
 	import LayoutProblems from './LayoutProblems.svelte';
 	import LayoutZoom from './LayoutZoom.svelte';
@@ -68,7 +71,8 @@
 	 * links where they are chosen (its placement stays stored). On the application documents the
 	 * alignment marks show fixed and the fields to read sit on a page each, which a template of
 	 * several pages is paged through for; the texts are on the first page, the footer on every one.
-	 * Each field says live what a scan of the empty form would make of it (`checkFields`).
+	 * What is put in for a person to read (name, birthday, address, recipient, sessions) can be
+	 * switched off. Each field says live what a scan of the empty form would make of it (`checkFields`).
 	 */
 	interface Props {
 		conferenceId: string;
@@ -140,7 +144,7 @@
 	// The template read once, for the checks of the fields read off a scan
 	$effect(() => {
 		if (!templateUrl) return;
-		templatePictures({ url: templateUrl })
+		templatePictures({ source: { url: templateUrl } })
 			.then((rendered) => (pictures = rendered))
 			.catch((error) => logger.warn('Could not read the template for the checks', error));
 	});
@@ -381,6 +385,12 @@
 		if ('page' in placement) layout[id] = { ...placement, page: target };
 	}
 
+	/** Switches what is put in for a person to read on or off; its place is kept. */
+	function show(id: string, shown: boolean) {
+		layout[id] = withHidden({ placement: layout[id], hidden: !shown });
+		if (!shown && selected === id) selected = undefined;
+	}
+
 	function resizeFont(id: string, step: number) {
 		const placement = layout[id];
 		if ('size' in placement) layout[id] = resizeText({ start: placement, step });
@@ -422,6 +432,7 @@
 	const byShape = $derived(elementsByShape({ elements: shown, layout: placed }));
 	// The texts are written on the first page; a field shows on its own page.
 	const texts = $derived(pageIndex === 0 ? byShape.texts : []);
+	const insertions = $derived(insertionsOf({ elements: shown, layout: placed }));
 	const boxes = $derived(byShape.boxes);
 	const squares = $derived(byShape.squares);
 	const allFields = $derived(byShape.fields);
@@ -580,6 +591,11 @@
 			{/if}
 
 			<LayoutProblems {problems} {label} onselect={selectField} />
+
+			<LayoutInsertions
+				insertions={insertions.map((insertion) => ({ ...insertion, label: label(insertion.id) }))}
+				onchange={show}
+			/>
 
 			{#if fieldRows.length > 0}
 				<LayoutFieldChecks

@@ -17,6 +17,8 @@ import { preferencesOfMembers, workspaceOfConference } from './notificationStore
 import { sendSlackDirectMessage, slackEscape } from './slackApi';
 import { decryptSlackToken } from './slackToken';
 import { slackUserOf } from './slackUsers';
+import { nanoid } from '#lib/helpers/nanoid';
+import { scanPageUrl, type ScanProblemNotice } from '#api/handlers/email/scanProblemEmail';
 import {
 	paperSubmissionValues,
 	submittedPaperUrl,
@@ -214,6 +216,30 @@ export const reportSlackText = ({
 export const paperSlackText = ({ paper, url }: { paper: SubmittedPaper; url: string }) =>
 	`${m.slackPaperSubmitted(paperSubmissionValues({ paper, escape: slackEscape }))}\n${slackLink({ url, label: m.slackOpenPaper() })}`;
 
+/** Pages of the member's own scanner came to nothing. */
+export const scanProblemSlackText = ({
+	notice,
+	origin
+}: {
+	notice: ScanProblemNotice;
+	origin: string | undefined;
+}) =>
+	[
+		m.slackScanProblem({
+			conference: slackEscape(notice.conferenceTitle),
+			scanner: slackEscape(notice.scanner)
+		}),
+		...notice.problems().map((line) => `• ${slackEscape(line)}`),
+		...(origin
+			? [
+					slackLink({
+						url: scanPageUrl({ origin, conferenceId: notice.conferenceId }),
+						label: m.slackOpenScanPage()
+					})
+				]
+			: [])
+	].join('\n');
+
 /** Tells everybody answering the inbox of `chat` that a participant wrote there. */
 async function tellInbox({
 	chat,
@@ -310,6 +336,30 @@ async function tellPaper({ paper, origin }: { paper: SubmittedPaper; origin: str
 				})
 			)
 	);
+}
+
+/** Tells a scanner's owner of pages that came to nothing; each delivery tells once. */
+export async function tellScanProblemOnSlack({
+	teamMemberId,
+	notice,
+	origin
+}: {
+	teamMemberId: string;
+	notice: ScanProblemNotice;
+	origin: string | undefined;
+}) {
+	const recipients = await loadRecipients(notice.conferenceId);
+	const member = recipients?.members.find(({ id }) => id === teamMemberId);
+	if (!recipients || !member) return;
+	if (!wantsSlack({ member, key: { topic: 'SCAN_PROBLEM', teamFunctionId: null } })) return;
+	await tell({
+		recipients,
+		member,
+		key: 'scan',
+		subjectId: nanoid(),
+		oncePerSubject: true,
+		text: () => scanProblemSlackText({ notice, origin })
+	});
 }
 
 /** Runs in the background: what was written is written, whether or not Slack hears of it. */

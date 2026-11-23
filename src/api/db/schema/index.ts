@@ -32,6 +32,15 @@ export {
 	supervision
 } from './participants';
 export {
+	postalScanSource,
+	postalScan,
+	agreementField,
+	agreementState,
+	agreementSource,
+	agreementDetail,
+	scannerAccess
+} from './postal';
+export {
 	delegation,
 	delegationMember,
 	singleParticipant,

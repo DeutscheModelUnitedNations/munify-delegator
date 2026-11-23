@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { decodeAreas, encodeAreas, type PageAreas } from './areas';
+import {
+	areasAsPrinted,
+	decodeAreas,
+	encodeAreas,
+	UNKNOWN_PRINT,
+	type PageAreas,
+	type PrintedInk
+} from './areas';
+import { fieldOfCode } from './fields';
 import { MARKER_CELLS, markerCells } from './markers';
 import { MARKER, type Point } from './markerGeometry';
 import { judgeMark, perspective, readPaper } from './readPaper';
@@ -117,6 +125,21 @@ describe('encodeAreas', () => {
 		expect(decodeAreas([0, 0, ...values.slice(2)])).toBeNull();
 	});
 
+	it('carries the print in a field, which a version that knows none leaves out', () => {
+		const [first, ...rest] = areas.areas;
+		const printed = { ...first, printed: { ink: 0.0304, core: 1.2 } };
+		const values = encodeAreas({ ...areas, areas: [printed, ...rest] });
+		expect(values).toHaveLength(10 + 5 * 5);
+		expect(decodeAreas(values)?.areas[0].printed).toEqual({ ink: 0.03, core: 1 });
+		expect(
+			decodeAreas(values)
+				?.areas.slice(1)
+				.some((area) => area.printed)
+		).toBe(false);
+		// the record is one of a field of no known code
+		expect(fieldOfCode(values[10 + 4 * 5])).toBeUndefined();
+	});
+
 	it('leaves out a field it does not know', () => {
 		const values = encodeAreas(areas);
 		// the first field's code, the eleventh number
@@ -154,6 +177,8 @@ describe('judgeMark', () => {
 		expect(judgeMark({ mark: 'checkbox', ink: 0.2, span: 1 })).toBe('yes');
 		expect(judgeMark({ mark: 'checkbox', ink: 0.005, span: 0.1 })).toBe('no');
 		expect(judgeMark({ mark: 'checkbox', ink: 0.04, span: 0.5 })).toBe('unclear');
+		// ink, but none of it in the middle: the frame of a page aligned a little off
+		expect(judgeMark({ mark: 'checkbox', ink: 0.2, span: 0.3, core: 0 })).toBe('unclear');
 		expect(judgeMark({ mark: 'line', ink: 0.02, span: 0.7 })).toBe('yes');
 		expect(judgeMark({ mark: 'line', ink: 0.02, span: 0.1 })).toBe('unclear');
 		expect(judgeMark({ mark: 'line', ink: 0, span: 0 })).toBe('no');
@@ -194,5 +219,89 @@ describe('readPaper', () => {
 		const cut = Math.round(255 * 4);
 		picture.data.fill(255, cut * picture.width * 4);
 		expect(readPaper({ picture, areas })).toBeNull();
+	});
+});
+
+describe('judgeMark against the print in a field', () => {
+	const box = (ink: number, printed?: { ink: number; core: number }) =>
+		judgeMark({ mark: 'checkbox', ink, span: 1, core: ink, printed });
+	const line = (ink: number, printed?: { ink: number; core: number }) =>
+		judgeMark({ mark: 'line', ink, span: 1, printed });
+
+	it('takes only clearly more than the print for a mark', () => {
+		expect(box(0.2)).toBe('yes');
+		expect(box(0.2, { ink: 0.15, core: 0.15 })).toBe('unclear');
+		// unmeasured: a person, whatever is there
+		expect(box(0.9, UNKNOWN_PRINT)).toBe('unclear');
+		expect(line(0.5, UNKNOWN_PRINT)).toBe('unclear');
+		expect(box(0.4, { ink: 0.15, core: 0.15 })).toBe('yes');
+		expect(line(0.02)).toBe('yes');
+		expect(line(0.02, { ink: 0.02, core: 0 })).toBe('unclear');
+		expect(line(0.06, { ink: 0.02, core: 0 })).toBe('yes');
+	});
+
+	it('looks at the middle of a box on its own', () => {
+		const printed = { ink: 0, core: 0.2 };
+		expect(judgeMark({ mark: 'checkbox', ink: 0.3, core: 0.3, span: 1, printed })).toBe('unclear');
+	});
+
+	it('tells a box with its frame at its edge by its middle', () => {
+		const framed = (ink: number, core: number) =>
+			judgeMark({ mark: 'checkbox', ink, core, span: 1, printed: { ink: 0.3, core: 0 } });
+		expect(framed(0.3, 0)).toBe('no');
+		expect(framed(0.42, 0)).toBe('no');
+		expect(framed(0.6, 0)).toBe('unclear');
+		expect(framed(0.35, 0.05)).toBe('unclear');
+		expect(framed(0.35, 0.2)).toBe('yes');
+		// print in the middle itself is no frame
+		const covered = { ink: 0.3, core: 0.3 };
+		expect(judgeMark({ mark: 'checkbox', ink: 0.3, core: 0, span: 1, printed: covered })).toBe(
+			'unclear'
+		);
+	});
+
+	it('never makes a mark of what is none without it', () => {
+		for (const printed of [
+			{ ink: 0.5, core: 0.5 },
+			{ ink: 0.5, core: 0 },
+			{ ink: 0, core: 0.5 }
+		]) {
+			expect(box(0.01, printed)).toBe('no');
+			expect(box(0.05, printed)).not.toBe('yes');
+			expect(line(0.001, printed)).toBe('no');
+			expect(line(0.004, printed)).toBe('unclear');
+		}
+	});
+});
+
+describe('areasAsPrinted', () => {
+	const [, , , signature] = areas.areas;
+	const printed = (print: Omit<PrintedInk, 'field'>) =>
+		areasAsPrinted({
+			areas: [signature],
+			printedInk: [{ field: signature.field, ...print }]
+		})[0];
+
+	it("cuts a line's field to where it is clear, and carries its print", () => {
+		expect(printed({ ink: 0, core: 0, clear: { top: 1, bottom: 6 } })).toEqual({
+			...signature,
+			y: signature.y + 1,
+			height: 5
+		});
+		expect(printed({ ink: 0.2, core: 0 }).printed).toEqual({ ink: 0.2, core: 0 });
+	});
+
+	it('takes no span that is none of the field, nor one for a box', () => {
+		const beyond = { top: 0, bottom: signature.height + 1 };
+		expect(printed({ ink: 0, core: 0, clear: beyond })).toEqual(signature);
+		const [box] = areas.areas;
+		const print = { field: box.field, ink: 0, core: 0, clear: { top: 1, bottom: 2 } };
+		expect(areasAsPrinted({ areas: [box], printedInk: [print] })).toEqual([box]);
+	});
+
+	it('leaves a page nobody measured to a person', () => {
+		expect(areasAsPrinted({ areas: [signature], printedInk: undefined })[0].printed).toEqual(
+			UNKNOWN_PRINT
+		);
 	});
 });

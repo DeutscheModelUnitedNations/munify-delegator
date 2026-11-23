@@ -49,7 +49,8 @@ describe('settingLines', () => {
 				email: true,
 				slack: true
 			},
-			expect.objectContaining({ id: 'tm1:CHAT_REPORT:', topic: 'CHAT_REPORT' })
+			expect.objectContaining({ id: 'tm1:CHAT_REPORT:', topic: 'CHAT_REPORT' }),
+			expect.objectContaining({ id: 'tm1:SCAN_PROBLEM:', topic: 'SCAN_PROBLEM' })
 		]);
 	});
 
@@ -66,7 +67,8 @@ describe('settingLines', () => {
 			{ topic: 'PARTICIPANT_CARE', email: true, slack: true },
 			{ topic: 'COMMITTEE_INBOX', email: true, slack: false },
 			{ topic: 'COMMITTEE_PAPERS', email: true, slack: true },
-			{ topic: 'CHAT_REPORT', email: false, slack: true }
+			{ topic: 'CHAT_REPORT', email: false, slack: true },
+			{ topic: 'SCAN_PROBLEM', email: true, slack: true }
 		]);
 	});
 

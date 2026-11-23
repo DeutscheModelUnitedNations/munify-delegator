@@ -212,7 +212,7 @@ async function certificate(conference: string) {
 /**
  * The application documents' templates are DMUN's own (`templates/`, taken from a real print with
  * what the generator drew removed): the contract, the guardians' consent, the three pages of the
- * media consent and the terms. The layout's defaults put every field where these have it.
+ * media consent and the terms, as of 2026. The layout's defaults put every field where these have it.
  */
 const template = (name: string) =>
 	readFileSync(fileURLToPath(new URL(`./templates/${name}.pdf`, import.meta.url)));

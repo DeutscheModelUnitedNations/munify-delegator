@@ -1,7 +1,8 @@
 import { parseSignedCode } from '#lib/signedCode/signedCode';
 import { decodeAreas, type PageAreas } from './areas';
+import type { PaperField } from './fields';
 import { readPaper, type FieldReading } from './readPaper';
-import type { Picture } from './markers';
+import type { Picture } from './picture';
 
 /** The fields a page's code says it carries; `null` for a code of a page without any. */
 function areasOfCode(code: string): PageAreas | null {
@@ -25,3 +26,7 @@ export function readPageOfCode({
 	const areas = areasOfCode(code);
 	return areas ? readPaper({ picture, areas }) : [];
 }
+
+/** The fields printed on the page whose code is `code`; none for a page without any. */
+export const fieldsOfCode = (code: string): PaperField[] =>
+	areasOfCode(code)?.areas.map(({ field }) => field) ?? [];

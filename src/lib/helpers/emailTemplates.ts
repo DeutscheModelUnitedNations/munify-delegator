@@ -39,6 +39,7 @@ export type EmailPlaceholder =
 	| 'member'
 	| 'supervisor'
 	| 'title'
+	| 'scanner'
 	| 'paperType'
 	| 'delegation'
 	| 'version';
@@ -72,6 +73,7 @@ const P = {
 	supervisor: '{supervisor}',
 	title: '{title}',
 	committee: '{committee}',
+	scanner: '{scanner}',
 	paperType: '{paperType}',
 	delegation: '{delegation}',
 	version: '{version}'
@@ -333,6 +335,18 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 					{ locale }
 				),
 				m.emailAutoPaperReviewedStatus({ status: P.status }, { locale })
+			)
+		})
+	},
+	SCAN_PROBLEM: {
+		placeholders: ['scanner', 'list'],
+		text: (locale) => ({
+			subject: m.emailAutoScanProblemSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoScanProblemHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoScanProblemBody({ scanner: P.scanner, conference: P.conference }, { locale }),
+				'{list}',
+				m.emailAutoScanProblemClosing({}, { locale })
 			)
 		})
 	},

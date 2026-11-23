@@ -41,9 +41,26 @@ async function graceStatus(page: Page) {
 	return result.data?.conferenceParticipants?.[0]?.termsAndConditions;
 }
 
+/** Grace's stored scans and details, as participant care reads them. */
+async function gracePaper(page: Page) {
+	const result = await gql(
+		page,
+		`query {
+			conferenceParticipants(where: {
+				conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${E2E_PAPER_GRACE_ID}" }
+			}) {
+				postalScans { source fields file { fileName } }
+				agreementDetails { field state source }
+			}
+		}`
+	);
+	return result.data?.conferenceParticipants?.[0];
+}
+
 /**
  * A scan as a sheet feeder makes it: Grace's contract page, printed with its code and marks and
- * filled in (box ticked, place, date and signature written), then a blank back.
+ * filled in (box ticked, place, date and signature written), its blank back, then a page of
+ * nobody's.
  */
 async function scannedContract({ page, origin }: { page: Page; origin: string }) {
 	const issued = await gql(
@@ -51,7 +68,11 @@ async function scannedContract({ page, origin }: { page: Page; origin: string })
 		`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
 			issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p) { code }
 		}`,
-		{ c: conferenceId, u: E2E_PAPER_GRACE_ID, p: [{ document: 'contract', page: 0, ...A4 }] }
+		{
+			c: conferenceId,
+			u: E2E_PAPER_GRACE_ID,
+			p: [{ document: 'contract', page: 0, ...A4, printedInk: [] }]
+		}
 	);
 	const code: string = issued.data.issueDocumentCodes[0].code;
 
@@ -73,6 +94,8 @@ async function scannedContract({ page, origin }: { page: Page; origin: string })
 		else pen.write({ x: area.x + 2, line: area.y + area.height, length: area.width * 0.6 });
 	}
 	pdf.addPage([A4.width, A4.height]);
+	const stray = pdf.addPage([A4.width, A4.height]);
+	for (let line = 0; line < 20; line++) stray.drawText('no code', { x: 60, y: 760 - line * 20 });
 	return Buffer.from(await pdf.save());
 }
 
@@ -97,8 +120,111 @@ test('a batch of scans marks a signed contract in, unattended, and lists the pag
 	await expect(
 		batch.getByText(/verbindliche anmeldung: unterschrieben|binding registration: signed/i)
 	).toBeVisible();
-	await expect(batch.getByText(/kein code gefunden|no code found/i)).toBeVisible();
+	// the page of nobody's is named, the blank back is not
+	await expect(
+		batch.getByText(/stapel\.pdf, (seite|page) 3: (kein code gefunden|no code found)/i)
+	).toBeVisible();
+	await expect(batch.getByText(/kein code gefunden|no code found/i)).toHaveCount(1);
 	await expect.poll(() => graceStatus(page)).toBe('DONE');
+
+	// her page is kept as a scan of hers, with the details it says
+	const paper = await gracePaper(page);
+	expect(paper.postalScans).toEqual([
+		{
+			source: 'UPLOAD',
+			fields: ['termsAccepted', 'termsPlaceDate', 'termsSignature'],
+			file: { fileName: 'stapel_1.pdf' }
+		}
+	]);
+	expect(paper.agreementDetails).toContainEqual({
+		field: 'termsSignature',
+		state: 'yes',
+		source: 'SCAN'
+	});
+
+	// the same file again keeps nothing twice
+	await batch
+		.locator('input[type="file"]')
+		.setInputFiles({ name: 'stapel.pdf', mimeType: 'application/pdf', buffer: scan });
+	await expect(batch.getByText(/schon vorhanden|there already/i)).toBeVisible({
+		timeout: 60_000
+	});
+	expect((await gracePaper(page)).postalScans).toHaveLength(1);
+
+	// on her card: the scan, and the details behind a fold, which can be set by hand
+	await page.goto(`/dashboard/${conferenceId}/team/user/${E2E_PAPER_GRACE_ID}`);
+	await waitForHydration(page);
+	await page.getByRole('tab', { name: /formalitäten|formalities/i }).click();
+	const scans = page.getByRole('region', { name: /scans der unterlagen|scans of the documents/i });
+	await expect(scans.getByText('stapel_1.pdf')).toBeVisible();
+	await expect(page.getByLabel(/vertragsbedingungen akzeptiert/i)).toHaveCount(0);
+	await page.getByText(/details der einwilligungen|details of the agreements/i).click();
+	const terms = page.getByLabel(/vertragsbedingungen akzeptiert|terms/i).first();
+	await expect(terms).toHaveValue('yes');
+	await terms.selectOption('no');
+	await expect
+		.poll(async () =>
+			(await gracePaper(page)).agreementDetails.find(
+				(detail: { field: string }) => detail.field === 'termsAccepted'
+			)
+		)
+		.toEqual({ field: 'termsAccepted', state: 'no', source: 'MANUAL' });
+	// the status is the team's own
+	expect(await graceStatus(page)).toBe('DONE');
+
+	await scans.getByRole('button', { name: /löschen|delete/i }).click();
+	await page
+		.getByRole('dialog')
+		.getByRole('button', { name: /^(löschen|delete)$/i })
+		.click();
+	await expect.poll(async () => (await gracePaper(page)).postalScans).toEqual([]);
+});
+
+test('a scanner delivers over WebDAV with a login of its owner', async ({ page, baseURL }) => {
+	test.setTimeout(120_000);
+	await loginAs(page, fixedTestUser(E2E_PAPER_CARE_ID), {
+		startUrl: `/dashboard/${conferenceId}/team/postal-registration`
+	});
+	await waitForHydration(page);
+	await page.getByRole('button', { name: /scanner einrichten|set up a scanner/i }).click();
+	const setup = page.getByRole('dialog');
+	await setup.getByLabel(/name des geräts|name of the device/i).fill('E2E Kopierer');
+	await setup.getByRole('button', { name: /zugang anlegen|make a login/i }).click();
+	const made = setup.getByRole('status');
+	await expect(made).toContainText('E2E Kopierer');
+	const [username, password] = await made.locator('code').allInnerTexts();
+
+	const scan = await scannedContract({ page, origin: baseURL ?? 'https://localhost' });
+	const deliver = (secret: string) =>
+		page.request.put('/api/scans/stapel.pdf', {
+			data: scan,
+			timeout: 90_000,
+			headers: {
+				'content-type': 'application/pdf',
+				authorization: `Basic ${Buffer.from(`${username}:${secret}`).toString('base64')}`
+			}
+		});
+	expect((await deliver('wrong')).status()).toBe(401);
+	const before = (await gracePaper(page)).postalScans.length;
+	expect((await deliver(password)).status()).toBe(201);
+	const { postalScans } = await gracePaper(page);
+	expect(postalScans).toHaveLength(before + 1);
+	expect(postalScans).toContainEqual(expect.objectContaining({ source: 'WEBDAV' }));
+
+	// a device of its own has a login of its own, and revoking one leaves the other
+	await setup.getByLabel(/name des geräts|name of the device/i).fill('E2E Zweitgerät');
+	await setup.getByRole('button', { name: /zugang anlegen|make a login/i }).click();
+	const revoke = (name: string) =>
+		setup.getByRole('button', { name: new RegExp(`(widerrufen|revoke): ${name}`, 'i') });
+	await expect(revoke('E2E Zweitgerät').first()).toBeVisible();
+	await revoke('E2E Kopierer').first().click();
+	await page
+		.getByRole('dialog')
+		.last()
+		.getByRole('button', { name: /^(löschen|delete)$/i })
+		.click();
+	await expect(revoke('E2E Zweitgerät').first()).toBeVisible();
+	await expect.poll(async () => (await deliver(password)).status()).toBe(401);
 });
 
 test('the layout editor places the fields page by page and keeps the marks fixed', async ({
@@ -149,18 +275,23 @@ test('the layout editor places the fields page by page and keeps the marks fixed
 		editor.getByRole('button', { name: /ausrichtungsmarke|alignment mark/i })
 	).toHaveCount(0);
 
+	// what the form has no use for is switched off, its place kept
+	const birthday = panel.getByRole('checkbox', { name: /geburts|birth/i });
+	await expect(birthday).toBeChecked();
+	await expect(sheet.getByRole('button', { name: /geburts|birth/i })).toBeVisible();
+	await birthday.uncheck();
+	await expect(sheet.getByRole('button', { name: /geburts|birth/i })).toHaveCount(0);
+
 	// the second: the purposes
 	await editor.getByRole('button', { name: /nächste seite|next page/i }).click();
 	await expect(editor.getByText(/seite 2 von 3|page 2 of 3/i)).toBeVisible();
 	await expect(onPage('konferenzpresse')).toBeVisible();
 	await expect(onPage('als foto')).toHaveCount(0);
 
-	// a field put on another page shows there, lands on that page's own box, which the checks
-	// tell at once, and is saved there once moved off it
+	// a field put on another page shows there, over that page's own box, and is saved there once
+	// moved off it
 	await panel.getByRole('combobox', { name: /als foto/i }).selectOption({ label: 'Seite 2' });
 	await expect(onPage('als foto')).toBeVisible();
-	await expect(onPage('als foto')).toHaveAccessibleName(/als ausgefüllt|unklar|filled in|unclear/i);
-	await expect(panel.getByText(/felder mit problemen|fields with problems/i)).toBeVisible();
 
 	// over the field already there it would not read: the check says so and saving waits
 	await expect(
@@ -173,6 +304,9 @@ test('the layout editor places the fields page by page and keeps the marks fixed
 	await page.keyboard.press('Shift+ArrowRight');
 	await page.keyboard.press('Shift+ArrowRight');
 	await expect(save).toBeEnabled();
+	// on the form's text, which an empty form would read as filled in: the checks tell at once
+	await expect(onPage('als foto')).toHaveAccessibleName(/als ausgefüllt|unklar|filled in|unclear/i);
+	await expect(panel.getByText(/felder mit problemen|fields with problems/i)).toBeVisible();
 	await save.click();
 
 	await expect
@@ -180,7 +314,8 @@ test('the layout editor places the fields page by page and keeps the marks fixed
 			const result = await gql(page, `query ($c: ID!) { conference(id: $c) { documentLayouts } }`, {
 				c: conferenceId
 			});
-			return result.data?.conference?.documentLayouts?.mediaConsent?.mediaPhoto?.page;
+			const saved = result.data?.conference?.documentLayouts?.mediaConsent;
+			return { page: saved?.mediaPhoto?.page, birthdayHidden: saved?.birthday?.hidden };
 		})
-		.toBe(1);
+		.toEqual({ page: 1, birthdayHidden: true });
 });

@@ -3,7 +3,8 @@ import { rgb, type PDFPage } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { POINTS_PER_MM } from '#lib/helpers/documentLayout';
 import type { Point } from './markerGeometry';
-import type { Picture } from './markers';
+import type { Picture } from './picture';
+import { perspective } from './readPaper';
 
 /**
  * For the tests of paper scanning (Node only): a PDF page as a scanner would see it, the text on it
@@ -144,6 +145,110 @@ export function simulateScan({
 		}
 	}
 	return { width, height, data: out };
+}
+
+/**
+ * `picture` as a phone photographs it: the page seen at an angle (`tilt`, how far the top edge
+ * draws in, as a share of the width), in a frame `margin` larger on a dark desk, a shadow falling
+ * across it (`shadow`, how dark it gets at the bottom right), out of focus by `blur` pixels, noisy.
+ * `covered` names corners (0 top left, clockwise) a thumb or a clip lies on.
+ */
+export function simulatePhoto({
+	picture,
+	tilt = 0,
+	shadow = 0,
+	blur = 0,
+	noise = 0,
+	margin = 0.06,
+	covered = []
+}: {
+	picture: Pixels;
+	tilt?: number;
+	shadow?: number;
+	blur?: number;
+	noise?: number;
+	margin?: number;
+	covered?: readonly number[];
+}): Pixels {
+	const { width, height } = picture;
+	const [ox, oy] = [Math.round(width * margin), Math.round(height * margin)];
+	const [outWidth, outHeight] = [width + 2 * ox, height + 2 * oy];
+	const out = new Uint8ClampedArray(outWidth * outHeight * 4);
+	const random = noiseOf(7);
+	const inset = width * tilt;
+	// the four corners of the page in the photo, and from the photo back to the page
+	const toPage = perspective({
+		from: [
+			{ x: ox + inset, y: oy },
+			{ x: ox + width - inset, y: oy },
+			{ x: ox + width, y: oy + height },
+			{ x: ox, y: oy + height }
+		],
+		to: [
+			{ x: 0, y: 0 },
+			{ x: width, y: 0 },
+			{ x: width, y: height },
+			{ x: 0, y: height }
+		]
+	});
+	const thumbs = covered.map((corner) => ({
+		x: corner === 1 || corner === 2 ? width * 0.94 : width * 0.06,
+		y: corner < 2 ? height * 0.1 : height * 0.9,
+		radius: width * 0.05
+	}));
+	const DESK = 50;
+	const THUMB = 170;
+	/** What lies on the page there instead of it, if anything does. */
+	const covering = ({ x, y }: Point) => {
+		if (x < 0 || y < 0 || x > width - 1 || y > height - 1) return DESK;
+		const under = thumbs.some((t) => Math.hypot(x - t.x, y - t.y) < t.radius);
+		return under ? THUMB : undefined;
+	};
+	for (let y = 0; y < outHeight; y++) {
+		for (let x = 0; x < outWidth; x++) {
+			const page = toPage({ x, y });
+			const covered = covering(page);
+			const light = 1 - shadow * Math.max(0, (x / outWidth + y / outHeight) / 2);
+			const grain = (random() - 0.5) * noise;
+			const at = (y * outWidth + x) * 4;
+			for (let channel = 0; channel < 3; channel++) {
+				const value = covered ?? sample({ picture, x: page.x, y: page.y, channel });
+				out[at + channel] = value * 0.95 * light + grain;
+			}
+			out[at + 3] = 255;
+		}
+	}
+	const photo = { width: outWidth, height: outHeight, data: out };
+	return blur > 0 ? boxBlur({ picture: photo, radius: blur }) : photo;
+}
+
+/** `picture` averaged over `radius` pixels each way, twice, which is close to a lens out of focus. */
+function boxBlur({ picture, radius }: { picture: Pixels; radius: number }): Pixels {
+	const { width, height } = picture;
+	let source = picture.data;
+	for (const [stepX, stepY] of [
+		[1, 0],
+		[0, 1],
+		[1, 0],
+		[0, 1]
+	]) {
+		const target = new Uint8ClampedArray(source.length);
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				for (let channel = 0; channel < 4; channel++) {
+					let sum = 0;
+					for (let offset = -radius; offset <= radius; offset++) {
+						const px = Math.min(width - 1, Math.max(0, x + offset * stepX));
+						const py = Math.min(height - 1, Math.max(0, y + offset * stepY));
+						sum += source[(py * width + px) * 4 + channel];
+					}
+					target[(y * width + x) * 4 + channel] = sum / (2 * radius + 1);
+				}
+			}
+		}
+		source = target;
+	}
+	return { width, height, data: source };
 }
 
 /** A pen on a PDF page, in millimetres from the top left: light blue ballpoint ink. */

@@ -7,7 +7,8 @@ import { readBarcodes } from 'zxing-wasm/reader';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { findMarkers } from '#lib/paperScan/markers';
 import type { PrintedPage } from '#lib/paperScan/pageAreas';
-import { renderPdfPage, type Pixels } from '#lib/paperScan/scanSimulation';
+import { defaultLayout, withHidden } from '#lib/helpers/documentLayout';
+import { pdfText, renderPdfPage, type Pixels } from '#lib/paperScan/scanSimulation';
 
 // The postal registration as the generator builds it from DMUN's templates: one signed code per
 // page, the pages in order, and on the main pages the alignment marks and the boxes.
@@ -31,6 +32,22 @@ function asInTheBrowser() {
 	});
 }
 
+/** The generator's pages rendered as the browser would, to measure the print in their fields. */
+vi.mock('#lib/helpers/pdfPages', () => ({
+	templatePictures: async ({ source }: { source: { data: Uint8Array } }) => {
+		vi.unstubAllGlobals();
+		const perMm = 6;
+		const count = (await PDFDocument.load(source.data)).getPageCount();
+		const pictures = await Promise.all(
+			Array.from({ length: count }, (_, page) =>
+				renderPdfPage({ bytes: source.data, page, dpi: perMm * 25.4 })
+			)
+		);
+		asInTheBrowser();
+		return pictures.map((picture) => ({ width: 596, height: 842, perMm, picture }));
+	}
+}));
+
 const { downloadCompletePostalRegistrationPDF } = await import('./pdfGenerator');
 
 const dataUrl = (name: string) => {
@@ -41,7 +58,13 @@ const dataUrl = (name: string) => {
 };
 
 /** Generates the documents; answers the PDF and the pages the codes were asked for. */
-async function generate({ isOfAge }: { isOfAge: boolean }) {
+async function generate({
+	isOfAge,
+	documentLayouts = null
+}: {
+	isOfAge: boolean;
+	documentLayouts?: unknown;
+}) {
 	const asked: PrintedPage[][] = [];
 	asInTheBrowser();
 	await downloadCompletePostalRegistrationPDF({
@@ -62,7 +85,7 @@ async function generate({ isOfAge }: { isOfAge: boolean }) {
 			guardianConsentFile: dataUrl('guardianConsent'),
 			mediaConsentFile: dataUrl('mediaConsent'),
 			termsAndConditionsFile: dataUrl('termsAndConditions'),
-			documentLayouts: null
+			documentLayouts
 		}
 	});
 	vi.unstubAllGlobals();
@@ -117,6 +140,28 @@ describe('the postal registration documents', () => {
 		}
 	);
 
+	test(
+		'tell the print in their fields: none on the forms as they are, a text put over one',
+		{ timeout: 60_000 },
+		async () => {
+			const printedOn = async (documentLayouts: unknown) =>
+				(await generate({ isOfAge: false, documentLayouts })).asked[0].map(
+					({ printedInk }) => printedInk ?? []
+				);
+			expect((await printedOn(null)).flat()).toEqual([]);
+			const layout = defaultLayout('contract');
+			const { termsSignature } = layout;
+			const [contract] = await printedOn({
+				contract: {
+					...layout,
+					name: { ...layout.name, x: termsSignature.x, y: termsSignature.y + 0.02 }
+				}
+			});
+			const signature = contract.find(({ field }) => field === 'termsSignature');
+			expect(signature?.ink).toBeGreaterThan(0.01);
+		}
+	);
+
 	test('carry the marks on the main pages only', { timeout: 60_000 }, async () => {
 		const read = await generate({ isOfAge: true });
 		// an adult's: no guardians' consent
@@ -129,5 +174,28 @@ describe('the postal registration documents', () => {
 		expect(findMarkers(await renderPdfPage({ bytes: read.bytes, page: 0 }))).not.toBeNull();
 		// the terms carry no marks
 		expect(findMarkers(await renderPdfPage({ bytes: read.bytes, page: 4 }))).toBeNull();
+	});
+
+	test('leave out what the layout switches off, and only there', { timeout: 60_000 }, async () => {
+		const layout = defaultLayout('contract');
+		const off = (id: 'recipient' | 'birthday') =>
+			withHidden({ placement: layout[id], hidden: true });
+		const textOf = async (documentLayouts: unknown) => {
+			const { bytes } = await generate({ isOfAge: true, documentLayouts });
+			const pages = await Promise.all([0, 1].map((page) => pdfText({ bytes, page })));
+			return pages.map(({ texts }) => texts.map(({ text }) => text).join('|'));
+		};
+		const [contract] = await textOf(null);
+		expect(contract).toContain('10.12.2010');
+		expect(contract).toContain('Birkenweg 1');
+
+		const [switched, media] = await textOf({
+			contract: { ...layout, recipient: off('recipient'), birthday: off('birthday') }
+		});
+		expect(switched).not.toContain('10.12.2010');
+		expect(switched).not.toContain('Birkenweg 1');
+		// the name stays, and the media consent keeps its birthday
+		expect(switched).toContain('ADA LOVELACE');
+		expect(media).toContain('10.12.2010');
 	});
 });

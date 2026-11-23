@@ -45,6 +45,8 @@ export function describeNote(note: PaperNote): string {
 			return m.paperNoteIncomplete({ document: documentName[note.document]() });
 		case 'mediaChoiceUnclear':
 			return m.paperNoteMediaChoiceUnclear();
+		case 'detailDiffers':
+			return m.paperNoteDetailDiffers({ field: fieldLabel[note.field]() });
 		case 'mediaChoiceDiffers':
 			return m.paperNoteMediaChoiceDiffers({
 				read: choiceName[note.read](),

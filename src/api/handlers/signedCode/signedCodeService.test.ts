@@ -18,7 +18,7 @@ const issuePrintCode = async ({ now }: { now?: number } = {}) => {
 	const [code] = await issuePrintCodes({
 		userId: 'alice',
 		conferenceId: 'mun',
-		pages: [{ document: 'contract', page: 0, ...A4 }],
+		pages: [{ document: 'contract', page: 0, ...A4, printedInk: [] }],
 		now
 	});
 	return code;
@@ -81,6 +81,44 @@ describe('the codes of the application documents', () => {
 			'termsPlaceDate',
 			'termsSignature'
 		]);
+	});
+
+	test('carry the print in the fields of their page, and of no others', async () => {
+		const printed = (field: string) => ({ field, ink: 0.05, core: 0.02 });
+		const [code] = await issuePrintCodes({
+			userId: 'alice',
+			conferenceId: 'mun',
+			pages: [
+				{
+					document: 'contract',
+					page: 0,
+					...A4,
+					printedInk: [printed('termsAccepted'), printed('mediaPhoto'), printed('anything')]
+				}
+			]
+		});
+		const checked = await verifyCode({ text: code });
+		if (!checked.valid || checked.claims.kind !== 'print') throw new Error('not a print code');
+		const areas = checked.claims.areas && decodeAreas(checked.claims.areas);
+		expect(areas?.areas.map(({ field, printed }) => [field, printed])).toEqual([
+			['termsAccepted', { ink: 0.05, core: 0.02 }],
+			['termsPlaceDate', undefined],
+			['termsSignature', undefined]
+		]);
+	});
+
+	test('leave the fields of a page nobody measured to a person', async () => {
+		const [code] = await issuePrintCodes({
+			userId: 'alice',
+			conferenceId: 'mun',
+			pages: [{ document: 'contract', page: 0, ...A4 }]
+		});
+		const checked = await verifyCode({ text: code });
+		if (!checked.valid || checked.claims.kind !== 'print') throw new Error('not a print code');
+		const areas = checked.claims.areas && decodeAreas(checked.claims.areas);
+		expect(areas?.areas.map(({ printed }) => printed)).toEqual(
+			Array.from({ length: 3 }, () => ({ ink: 1, core: 1 }))
+		);
 	});
 
 	test("a page without fields carries none; a test print's layout stands in for the stored one", async () => {
