@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import type { Outline } from '#lib/guide/outline';
-	import { updateSection } from '#lib/guide/outlineEditing';
+	import { updateSection, updateTopicOverview } from '#lib/guide/outlineEditing';
 	import type { VisibilityRow } from '#lib/guide/workspace';
 	import { getOutlineDraft } from '../outlineDraft.svelte';
 	import AudienceModal from '../tree/AudienceModal.svelte';
+	import TopicReadersModal from '../tree/TopicReadersModal.svelte';
 	import VisibilityTableRow from './VisibilityTableRow.svelte';
 	import { VISIBILITY_CELL } from './visibilityCells';
 
@@ -26,6 +27,7 @@
 	const draft = getOutlineDraft();
 	let editing = $state<number | null>(null);
 	let open = $state(false);
+	let choosingTopicReaders = $state(false);
 	const section = $derived(editing === null ? undefined : outline.sections[editing]);
 </script>
 
@@ -59,6 +61,7 @@
 							editing = index;
 							open = true;
 						}}
+						onEditTopics={() => (choosingTopicReaders = true)}
 					/>
 				{/each}
 			</tbody>
@@ -84,5 +87,14 @@
 		{roles}
 		onChange={(audience) =>
 			draft.change(updateSection({ outline, index, change: (s) => ({ ...s, audience }) }))}
+	/>
+{/if}
+
+{#if choosingTopicReaders && outline.topicOverview}
+	<TopicReadersModal
+		bind:open={choosingTopicReaders}
+		readers={outline.topicOverview.readers}
+		{roles}
+		onChange={(readers) => draft.change(updateTopicOverview({ outline, readers }))}
 	/>
 {/if}

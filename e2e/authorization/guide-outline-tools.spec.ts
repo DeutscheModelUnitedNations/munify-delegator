@@ -161,3 +161,47 @@ test('a change naming a draft that moved on since is refused', async ({ browser 
 	);
 	expect(codeOf(whole), JSON.stringify(whole)).toBe('CONFLICT');
 });
+
+test('the topic overview switches on for the readers named, and only roles of the conference', async ({
+	browser
+}) => {
+	const lead = await signedIn(browser, g.people.contentLeadC);
+	const SET = `mutation ($c: ID!, $on: Boolean!, $title: String, $roles: [ID!], $sup: Boolean) {
+		setGuideTopicOverview(conferenceId: $c, enabled: $on, title: $title, roleIds: $roles, supervisors: $sup) {
+			draft
+		}
+	}`;
+	const on = await gql(lead, SET, { c: g.conferenceC, on: true, title: 'E2E topics', sup: false });
+	expect(on.errors, JSON.stringify(on)).toBeUndefined();
+	expect((on.data?.setGuideTopicOverview as Change).draft).toMatchObject({
+		topicOverview: {
+			title: 'E2E topics',
+			readers: { nonStateActors: true, supervisors: false, roleIds: [] }
+		}
+	});
+
+	const stranger = await gql(lead, SET, {
+		c: g.conferenceC,
+		on: true,
+		roles: ['e2e-not-a-role-of-c']
+	});
+	expect(codeOf(stranger), JSON.stringify(stranger)).toBe('INVALID_INPUT');
+
+	const moved = await gql(
+		lead,
+		`mutation ($c: ID!) { moveGuideSection(conferenceId: $c, topicOverview: true, position: 0) { draft } }`,
+		{ c: g.conferenceC }
+	);
+	expect(moved.errors, JSON.stringify(moved)).toBeUndefined();
+	expect((moved.data?.moveGuideSection as Change).draft).toMatchObject({
+		topicOverview: { position: 0 }
+	});
+
+	const off = await gql(lead, SET, { c: g.conferenceC, on: false });
+	expect(JSON.stringify((off.data?.setGuideTopicOverview as Change).draft)).not.toContain(
+		'topicOverview'
+	);
+
+	const reviewer = await signedIn(browser, g.people.reviewerA);
+	expect(codeOf(await gql(reviewer, SET, { c: g.conferenceA, on: true }))).toBe('FORBIDDEN');
+});

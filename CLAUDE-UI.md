@@ -335,7 +335,8 @@ frame like the assignment) with three tabs: **Structure** (the tree beside the o
 context, saves itself 700 ms after the last change); every tab edits it through the pure functions
 of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
 
-- **`tree/GuideTree`** — sections and the committee template as blocks (`outlineBlocks`), pages not
+- **`tree/GuideTree`** — sections, the committee template (`TreeTemplate`) and the topic overview
+  (`TreeTopics`, readers picked in `TopicReadersModal`) as blocks (`outlineBlocks`), pages not
   in the guide below, `PublishChanges` (pages first, then the sidebar) at the bottom. Rows
   (`TreeRow`) and headings (`TreeHeading`) are native drag sources and targets (`createTreeDrag`
   → `dropInTree`); every move also has a keyboard way in the row's `TreeMenu` ("…", items as
@@ -346,7 +347,8 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
   where the draft lists the page, with label and audience, versions).
 - **`visibility/`** — reader groups as buttons (`aria-pressed`); the group's sidebar from the
   draft (`expandOutline` + `guideForReader`) beside the table of sections × groups
-  (`visibilityRows`, icons from `visibilityCells.ts`, each with screen reader text).
+  (`visibilityRows`, icons from `visibilityCells.ts`, each with screen reader text); the topic
+  overview's row opens `TopicReadersModal`.
 - **`committees/`** — the template as a matrix (`committeeMatrix`): shared pages span the columns,
   missing committee/agenda item pages are created in place (`ensureGuidePageOf`).
 

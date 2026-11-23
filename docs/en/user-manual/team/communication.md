@@ -130,6 +130,8 @@ Changes are a draft until you choose **Publish**. Before that the app shows whic
 
 Every section and entry has an audience: everyone, delegates, non-state actors, single custom roles (e.g. press or ICJ) or supervisors. The committee template shows to the delegates of each committee only. Supervisors and the team see everything.
 
+Non-state actors, custom roles and supervisors often prepare all topics without a committee of their own. That is what the **topic overview** is for (add it at the bottom of the tree): one section with each committee's page and its topics beneath, without the delegate-only pages. It fills itself from the committees. **Who sees the topic overview?** in its menu (or **Visibility** in its row under **Visibility**) picks non-state actors, single custom roles and supervisors. Delegates never see it; supervisors keep the committee sections and get the overview only when you pick them. **Rename** changes its title, and it moves like any section.
+
 Under **Visibility** you pick a group at the top; on the left is exactly their navigation as the draft makes it. The table beside it sets every section against every group: all of it, some entries, their own committee only or nothing; the legend below explains the icons. **Visibility** in a row changes who sees the section.
 
 ### Committees {#guide-committees}

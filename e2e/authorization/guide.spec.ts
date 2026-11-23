@@ -165,8 +165,20 @@ test.describe('reading the guide', () => {
 			c: g.conferenceA,
 			previewAs: 'NON_STATE_ACTOR'
 		});
-		const sections = (preview.data?.myGuide as { sections: { title: string }[] }).sections;
-		expect(sections.map((section) => section.title)).toEqual(['Start', 'For NSAs']);
+		const sections = (
+			preview.data?.myGuide as { sections: { title: string; entries: { pageId: string }[] }[] }
+		).sections;
+		// non-state actors get every committee's topics in the overview, not a committee section
+		expect(sections.map((section) => section.title)).toEqual(['Start', 'For NSAs', 'All topics']);
+		expect(sections[2].entries.map((entry) => entry.pageId)).toEqual([g.pages.committee]);
+
+		// supervisors keep the committee sections and get the overview only when it names them
+		const supervisor = await gql(reviewer, MY_GUIDE, { c: g.conferenceA, previewAs: 'SUPERVISOR' });
+		const supervisorTitles = (
+			supervisor.data?.myGuide as { sections: { title: string }[] }
+		).sections.map((section) => section.title);
+		expect(supervisorTitles).toContain('Guide Committee');
+		expect(supervisorTitles).not.toContain('All topics');
 	});
 
 	test('a conference that has not published its guide shows readers nothing', async ({

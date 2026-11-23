@@ -240,3 +240,41 @@ test('templateCommittees finds each committee’s pages', () => {
 		{ id: 'c-gv', name: 'GV', pageId: null, agendaItemPageIds: [] }
 	]);
 });
+
+describe('the topic overview in the workspace', () => {
+	const withTopics: Outline = {
+		sections: [outline.sections[0]],
+		topicOverview: {
+			position: 1,
+			title: 'Themen',
+			readers: { nonStateActors: true, supervisors: false, roleIds: ['press'] }
+		}
+	};
+
+	test('is one visibility row: never delegates, the groups it names', () => {
+		const rows = visibilityRows({
+			outline: withTopics,
+			groups: [
+				{ type: 'delegates' },
+				{ type: 'nonStateActors' },
+				{ type: 'customRole', roleId: 'press' },
+				{ type: 'customRole', roleId: 'judge' },
+				{ type: 'supervisors' }
+			],
+			titles: { template: 'Vorlage', page: (pageId) => pageId }
+		});
+		expect(rows.at(-1)).toEqual({
+			kind: 'topics',
+			key: 'topics',
+			title: 'Themen',
+			section: null,
+			cells: ['none', 'all', 'all', 'none', 'none']
+		});
+	});
+
+	test('makes the committee and agenda item pages pending', () => {
+		expect(
+			pendingPages({ outline: withTopics, pages, locale: 'de' }).map((page) => page.id)
+		).toEqual(['sr', 'sr1', 'abc']);
+	});
+});

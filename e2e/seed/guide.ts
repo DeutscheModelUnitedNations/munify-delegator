@@ -228,6 +228,12 @@ export async function seedGuide(db: NodePgDatabase) {
 			position: 1,
 			titleFormat: 'COMMITTEE_NAME',
 			slots: [{ type: 'committeePage' }]
+		},
+		// every committee's page and topics, for non-state actors (not for delegates)
+		topicOverview: {
+			position: 3,
+			title: 'All topics',
+			readers: { nonStateActors: true, supervisors: false, roleIds: [] }
 		}
 	};
 	await db.insert(schema.guideOutline).values({

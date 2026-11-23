@@ -178,3 +178,98 @@ test('parseOutline refuses broken documents', () => {
 		}).success
 	).toBe(false);
 });
+
+describe('the topic overview', () => {
+	const withTopics: Outline = {
+		...outline,
+		topicOverview: {
+			// after the template and before "Begriffe": blocks start, template, nsa, press, topics, abc
+			position: 4,
+			title: 'Themen aller Gremien',
+			readers: { nonStateActors: true, supervisors: false, roleIds: ['press'] }
+		}
+	};
+	const topicCommittees = [
+		...committees,
+		{ id: 'hrc', name: 'Menschenrechtsrat', pageId: null, agendaItemPageIds: ['hrc-1'] }
+	];
+	const expanded = expandOutline({ outline: withTopics, committees: topicCommittees });
+	const titlesFor = (reader: GuideReader) =>
+		guideForReader({ sections: expanded, reader }).map((section) => section.title);
+
+	test('stands at its block position with every committee page and its topics', () => {
+		expect(expanded.map((section) => section.title)).toEqual([
+			'Los geht es',
+			'Generalversammlung',
+			'Sicherheitsrat',
+			'Menschenrechtsrat',
+			'Als NA',
+			'Presse',
+			'Themen aller Gremien',
+			'Begriffe'
+		]);
+		const topics = expanded.find((section) => section.key === 'topics');
+		expect(
+			topics?.entries.map(({ pageId, label, indent, committeeId }) => ({
+				pageId,
+				label,
+				indent,
+				committeeId
+			}))
+		).toEqual([
+			// the committee page, named after the committee, its topics beneath
+			{ pageId: 'ga-page', label: 'Generalversammlung', indent: 0, committeeId: 'ga' },
+			{ pageId: 'ga-1', label: null, indent: 1, committeeId: 'ga' },
+			{ pageId: 'ga-2', label: null, indent: 1, committeeId: 'ga' },
+			// no committee page: its topics stand on their own; no pages at all: nothing
+			{ pageId: 'hrc-1', label: null, indent: 0, committeeId: 'hrc' }
+		]);
+	});
+
+	test('is for the readers it names; never for delegates, supervisors only when ticked', () => {
+		const delegate: GuideReader = { kind: 'delegate', committeeId: 'ga', nonStateActor: false };
+		expect(titlesFor(delegate)).not.toContain('Themen aller Gremien');
+		expect(titlesFor({ kind: 'delegate', committeeId: null, nonStateActor: true })).toContain(
+			'Themen aller Gremien'
+		);
+		expect(titlesFor({ kind: 'singleParticipant', roleId: 'press' })).toContain(
+			'Themen aller Gremien'
+		);
+		expect(titlesFor({ kind: 'singleParticipant', roleId: 'judge' })).not.toContain(
+			'Themen aller Gremien'
+		);
+		// supervisors keep the committee sections, and get the overview only when ticked
+		expect(titlesFor({ kind: 'supervisor' })).toContain('Generalversammlung');
+		expect(titlesFor({ kind: 'supervisor' })).not.toContain('Themen aller Gremien');
+		const forSupervisors = expandOutline({
+			outline: {
+				...withTopics,
+				topicOverview: {
+					position: 4,
+					title: 'Themen aller Gremien',
+					readers: { nonStateActors: false, supervisors: true, roleIds: [] }
+				}
+			},
+			committees: topicCommittees
+		});
+		expect(
+			guideForReader({ sections: forSupervisors, reader: { kind: 'supervisor' } }).map(
+				(section) => section.title
+			)
+		).toContain('Themen aller Gremien');
+		expect(titlesFor({ kind: 'everything' })).toContain('Themen aller Gremien');
+	});
+
+	test('its roles count among the outline’s roles', () => {
+		expect(
+			outlineRoleIds({
+				sections: [],
+				topicOverview: {
+					position: 0,
+					title: 'T',
+					readers: { nonStateActors: false, supervisors: false, roleIds: ['judge'] }
+				}
+			})
+		).toEqual(['judge']);
+	});
+});

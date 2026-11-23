@@ -128,7 +128,8 @@ type Outline = {
 		audience: Audience; // who sees the section
 		entries: Array<{ pageId: string; label?: string; audience?: Audience }>;
 	}>;
-	// expanded once per committee, placed at `position` among the sections
+	// expanded once per committee; `position` is its index among the blocks (sections, template,
+	// topic overview), like the overview's
 	committeeTemplate?: {
 		position: number;
 		titleFormat: 'COMMITTEE_NAME';
@@ -137,6 +138,15 @@ type Outline = {
 			| { type: 'committeePage'; label?: string }
 			| { type: 'agendaItemPages' } // one entry per agenda item, indented
 		>;
+	};
+	// one section with every committee's page (labelled with the committee's name) and its agenda
+	// items' pages indented beneath (without a committee page they stand on their own); for
+	// readers without a committee: never delegates, supervisors only when ticked (they keep the
+	// committee sections anyway)
+	topicOverview?: {
+		position: number;
+		title: string;
+		readers: { nonStateActors: boolean; supervisors: boolean; roleIds: string[] };
 	};
 };
 type Audience =
@@ -147,7 +157,8 @@ type Audience =
 	| { type: 'supervisors' };
 ```
 
-The committee sections have the audience "delegates of this committee". Publishing an outline
+The committee sections have the audience "delegates of this committee", the topic overview its
+readers; a page opened from the overview fills `{{Gremium}}` from its own committee. Publishing an outline
 checks that every page it names is published and reaches the conference.
 
 ### What a reader gets
@@ -230,6 +241,7 @@ as above).
 | `createGuidePage` / `updateGuidePageDraft`                         | Writes a draft from `markdown` **or** `tiptap`; Markdown that would drop rich blocks already in the page is refused unless `replaceRichBlocks: true`             |
 | `publishGuidePage`                                                 | Preview first (conferences reached, diff summary), runs with `confirm: true`                                                                                     |
 | `guideOutline` / `updateGuideOutlineDraft` / `publishGuideOutline` | Sidebar and committee template, publish with preview                                                                                                             |
+| `setGuideTopicOverview`                                            | The topic overview on/off, its title and readers (NA, supervisors, custom roles)                                                                                 |
 | `addGuideSection` … `moveGuideTemplateSlot`                        | The sidebar step by step (sections by id, entries by section + page); each answers `draftUpdatedAt`, refuses (CONFLICT) a stale `expectedDraftUpdatedAt`         |
 | `guideVisibility` / `guideCommitteeMatrix` / `guidePendingChanges` | The workspace's views: who sees what, the template per committee, what waits to be published                                                                     |
 | `publishGuideChanges`                                              | The pending pages, then the sidebar, with preview                                                                                                                |

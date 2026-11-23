@@ -3,15 +3,20 @@
 	import type { VisibilityRow } from '#lib/guide/workspace';
 	import { VISIBILITY_CELL } from './visibilityCells';
 
-	/** A section, an entry with its own audience or the template, against every reader group. */
+	/**
+	 * A section, an entry with its own audience, the template or the topic overview, against every
+	 * reader group.
+	 */
 	interface Props {
 		row: VisibilityRow;
 		picked: number;
 		/** Changes who sees a section. */
 		onEdit: (section: number) => void;
+		/** Changes who reads the topic overview. */
+		onEditTopics: () => void;
 	}
 
-	let { row, picked, onEdit }: Props = $props();
+	let { row, picked, onEdit, onEditTopics }: Props = $props();
 	const section = $derived(row.kind === 'section' ? row.section : null);
 </script>
 
@@ -28,7 +33,12 @@
 		</td>
 	{/each}
 	<td>
-		{#if section !== null}
+		{#if row.kind === 'topics'}
+			<button class="btn btn-ghost btn-xs" onclick={onEditTopics}>
+				<i class="ph-duotone ph-eye" aria-hidden="true"></i>
+				{m.guideAudience()}
+			</button>
+		{:else if section !== null}
 			<button class="btn btn-ghost btn-xs" onclick={() => onEdit(section)}>
 				<i class="ph-duotone ph-eye" aria-hidden="true"></i>
 				{m.guideAudience()}

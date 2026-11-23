@@ -71,9 +71,11 @@ that would drop callouts, toggles, buttons or embeds unless `replaceRichBlocks: 
 `setGuidePageScope` and `ensureGuidePageOf` (committee and agenda item pages) change pages.
 
 The sidebar changes one step at a time, so an assistant does not rewrite JSON it only read:
-`addGuideSection`, `updateGuideSection`, `removeGuideSection`, `moveGuideSection` (a section or the
-committee template, among the blocks), `addGuideEntry`, `updateGuideEntry`, `moveGuideEntry`
-(also into the template), `removeGuideEntry`, `setGuideTemplate` and `moveGuideTemplateSlot`.
+`addGuideSection`, `updateGuideSection`, `removeGuideSection`, `moveGuideSection` (a section, the
+committee template or the topic overview, among the blocks), `addGuideEntry`, `updateGuideEntry`, `moveGuideEntry`
+(also into the template), `removeGuideEntry`, `setGuideTemplate`, `moveGuideTemplateSlot` and
+`setGuideTopicOverview` (one section with every committee's page and topics, for non-state
+actors, supervisors and chosen custom roles; never delegates).
 Sections are named by id, entries by section and page, never by index, so another person's change
 in between does not hit the wrong entry (a page listed twice in one section is found as its first
 entry). `updateGuideOutlineDraft` still replaces the whole draft. Each of them answers the draft

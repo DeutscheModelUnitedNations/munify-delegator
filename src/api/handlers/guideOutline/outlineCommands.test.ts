@@ -11,6 +11,7 @@ import {
 	moveBlockTo,
 	moveEntryTo,
 	moveSlot,
+	setOverview,
 	setTemplate,
 	type CommandResult
 } from './outlineCommands';
@@ -241,4 +242,34 @@ test('a draft counts as moved on when its stamp is not the one seen', () => {
 	// nothing named: nothing checked
 	expect(draftChangedSinceSeen({ stored: new Date(), expected: undefined })).toBe(false);
 	expect(draftChangedSinceSeen({ stored: undefined, expected: null })).toBe(false);
+});
+
+describe('the topic overview', () => {
+	test('switched on with a title and readers, changed, moved and switched off', () => {
+		const on = changed(
+			setOverview({
+				outline,
+				enabled: true,
+				defaultTitle: 'Themen aller Gremien',
+				readers: { roleIds: ['press'] }
+			})
+		);
+		expect(on.topicOverview).toEqual({
+			position: 3,
+			title: 'Themen aller Gremien',
+			readers: { nonStateActors: true, supervisors: true, roleIds: ['press'] }
+		});
+		const renamed = changed(
+			setOverview({ outline: on, enabled: true, title: 'Topics', defaultTitle: 'x' })
+		);
+		expect(renamed.topicOverview?.title).toBe('Topics');
+		expect(renamed.topicOverview?.readers.roleIds).toEqual(['press']);
+		const first = changed(moveBlockTo({ outline: on, block: 'topics', position: 0 }));
+		expect(first.topicOverview?.position).toBe(0);
+		expect(first.committeeTemplate?.position).toBe(2);
+		expect(
+			changed(setOverview({ outline: on, enabled: false, defaultTitle: 'x' })).topicOverview
+		).toBeUndefined();
+		expect(moveBlockTo({ outline, block: 'topics', position: 0 })).toEqual({ missing: 'topics' });
+	});
 });

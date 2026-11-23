@@ -1,4 +1,15 @@
-import type { Audience, AudienceType, Outline, OutlineSection, TemplateSlot } from './outline';
+import {
+	outlineBlocks,
+	withBlocks,
+	type Audience,
+	type AudienceType,
+	type Outline,
+	type OutlineSection,
+	type TemplateSlot,
+	type TopicReaders
+} from './outline';
+
+export { outlineBlocks } from './outline';
 
 /**
  * Changes to a sidebar draft as the team's workspace (`team/guide`) makes them: each returns a new
@@ -74,23 +85,14 @@ export function addSection({ outline, title }: { outline: Outline; title: string
 }
 
 /**
- * The outline without the section at `index`; the committee template keeps its place among the
- * remaining sections.
+ * The outline without the section at `index`; the committee template and the topic overview keep
+ * their places among the remaining blocks.
  */
 export function removeSection({ outline, index }: { outline: Outline; index: number }): Outline {
-	const template = outline.committeeTemplate;
-	return {
-		...outline,
-		sections: outline.sections.filter((_, at) => at !== index),
-		...(template
-			? {
-					committeeTemplate: {
-						...template,
-						position: template.position > index ? template.position - 1 : template.position
-					}
-				}
-			: {})
-	};
+	const blocks = outlineBlocks(outline).filter(
+		(block) => block.kind !== 'section' || block.index !== index
+	);
+	return withBlocks({ outline, blocks });
 }
 
 /** The outline with a committee template (empty, after the first section) or without one. */
@@ -113,6 +115,61 @@ export function setTemplateEnabled({
 			position: Math.min(1, outline.sections.length),
 			titleFormat: 'COMMITTEE_NAME',
 			slots
+		}
+	};
+}
+
+/** Who reads a new topic overview: non-state actors and supervisors. */
+const DEFAULT_TOPIC_READERS: TopicReaders = {
+	nonStateActors: true,
+	supervisors: true,
+	roleIds: []
+};
+
+/**
+ * The outline with a topic overview (at the end, titled `title`, for `readers`) or without one.
+ * One that is there already stays as it is.
+ */
+export function setTopicOverviewEnabled({
+	outline,
+	enabled,
+	title,
+	readers = DEFAULT_TOPIC_READERS
+}: {
+	outline: Outline;
+	enabled: boolean;
+	title: string;
+	readers?: TopicReaders;
+}): Outline {
+	if (!enabled) {
+		const { topicOverview: _dropped, ...rest } = outline;
+		return rest;
+	}
+	if (outline.topicOverview) return outline;
+	return {
+		...outline,
+		topicOverview: { position: outlineBlocks(outline).length, title, readers }
+	};
+}
+
+/** The topic overview with a new title or readers (what is not given stays). */
+export function updateTopicOverview({
+	outline,
+	title,
+	readers
+}: {
+	outline: Outline;
+	title?: string;
+	readers?: Partial<TopicReaders>;
+}): Outline {
+	const overview = outline.topicOverview;
+	if (!overview) return outline;
+	return {
+		...outline,
+		topicOverview: {
+			...overview,
+			...(title === undefined ? {} : { title }),
+			readers: { ...overview.readers, ...readers }
 		}
 	};
 }
@@ -164,19 +221,6 @@ export function newSlot({
 
 // --- The workspace tree (`team/guide`) ----------------------------------------------------------
 
-/**
- * One block of the tree, in the order the sidebar shows them: the sections, with the committee
- * template standing where its committee sections go.
- */
-export type OutlineBlock = { kind: 'section'; index: number } | { kind: 'template' };
-
-export function outlineBlocks(outline: Outline): OutlineBlock[] {
-	const blocks: OutlineBlock[] = outline.sections.map((_, index) => ({ kind: 'section', index }));
-	const template = outline.committeeTemplate;
-	if (template) blocks.splice(Math.min(template.position, blocks.length), 0, { kind: 'template' });
-	return blocks;
-}
-
 /** The outline with the block at `from` moved to `to` (indexes into `outlineBlocks`). */
 export function moveBlock({ outline, from, to }: { outline: Outline; from: number; to: number }) {
 	const blocks = outlineBlocks(outline);
@@ -185,13 +229,7 @@ export function moveBlock({ outline, from, to }: { outline: Outline; from: numbe
 	}
 	const [moved] = blocks.splice(from, 1);
 	blocks.splice(to, 0, moved);
-	const sections = blocks.flatMap((block) =>
-		block.kind === 'section' ? [outline.sections[block.index]] : []
-	);
-	const template = outline.committeeTemplate;
-	if (!template) return { ...outline, sections };
-	const position = blocks.findIndex((block) => block.kind === 'template');
-	return { ...outline, sections, committeeTemplate: { ...template, position } };
+	return withBlocks({ outline, blocks });
 }
 
 /** Where an entry is: its section's index and its own. */

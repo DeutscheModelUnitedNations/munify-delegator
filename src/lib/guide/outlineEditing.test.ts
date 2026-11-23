@@ -18,6 +18,8 @@ import {
 	newSlot,
 	removeSection,
 	setTemplateEnabled,
+	setTopicOverviewEnabled,
+	updateTopicOverview,
 	toggleRole,
 	updateSection
 } from './outlineEditing';
@@ -284,4 +286,68 @@ test('placePage puts a new page at the end of a section or the template', () => 
 		pageId: 'new'
 	});
 	expect(placePage({ outline, target: null, pageId: 'new' })).toBe(outline);
+});
+
+describe('the topic overview among the blocks', () => {
+	const base: Outline = {
+		sections: [
+			{ id: 'a', title: 'A', audience: { type: 'everyone' }, entries: [] },
+			{ id: 'b', title: 'B', audience: { type: 'everyone' }, entries: [] }
+		],
+		committeeTemplate: { position: 1, titleFormat: 'COMMITTEE_NAME', slots: [] }
+	};
+	const kinds = (o: Outline) =>
+		outlineBlocks(o).map((block) =>
+			block.kind === 'section' ? o.sections[block.index].id : block.kind
+		);
+
+	test('switched on it stands last, for non-state actors and supervisors', () => {
+		const on = setTopicOverviewEnabled({ outline: base, enabled: true, title: 'Themen' });
+		expect(kinds(on)).toEqual(['a', 'template', 'b', 'topics']);
+		expect(on.topicOverview).toEqual({
+			position: 3,
+			title: 'Themen',
+			readers: { nonStateActors: true, supervisors: true, roleIds: [] }
+		});
+		// once on it stays as it is; off drops it
+		expect(setTopicOverviewEnabled({ outline: on, enabled: true, title: 'X' })).toBe(on);
+		expect(setTopicOverviewEnabled({ outline: on, enabled: false, title: '' }).topicOverview).toBe(
+			undefined
+		);
+	});
+
+	test('it and the template move as blocks, also right next to each other', () => {
+		const on = setTopicOverviewEnabled({ outline: base, enabled: true, title: 'Themen' });
+		const up = moveBlock({ outline: on, from: 3, to: 1 });
+		expect(kinds(up)).toEqual(['a', 'topics', 'template', 'b']);
+		expect(kinds(moveBlock({ outline: up, from: 2, to: 1 }))).toEqual([
+			'a',
+			'template',
+			'topics',
+			'b'
+		]);
+	});
+
+	test('removing a section keeps both where they stand', () => {
+		const on = moveBlock({
+			outline: setTopicOverviewEnabled({ outline: base, enabled: true, title: 'Themen' }),
+			from: 3,
+			to: 0
+		});
+		expect(kinds(on)).toEqual(['topics', 'a', 'template', 'b']);
+		expect(kinds(removeSection({ outline: on, index: 0 }))).toEqual(['topics', 'template', 'b']);
+	});
+
+	test('its title and readers change by what is given', () => {
+		const on = setTopicOverviewEnabled({ outline: base, enabled: true, title: 'Themen' });
+		const changed = updateTopicOverview({
+			outline: on,
+			readers: { supervisors: false, roleIds: ['press'] }
+		});
+		expect(changed.topicOverview).toMatchObject({
+			title: 'Themen',
+			readers: { nonStateActors: true, supervisors: false, roleIds: ['press'] }
+		});
+		expect(updateTopicOverview({ outline: base, title: 'X' })).toBe(base);
+	});
 });

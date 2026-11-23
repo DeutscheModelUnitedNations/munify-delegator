@@ -4058,7 +4058,8 @@ export type Mutation = {
     expectedDraftUpdatedAt?: DateTime | null | undefined,
     position: Int,
     sectionId?: ID | null | undefined,
-    template?: Boolean | null | undefined
+    template?: Boolean | null | undefined,
+    topicOverview?: Boolean | null | undefined
   }) => GuideOutlineDraftChange,
   moveGuideTemplateSlot: (p: {
     conferenceId: ID,
@@ -4293,6 +4294,15 @@ export type Mutation = {
     enabled: Boolean,
     expectedDraftUpdatedAt?: DateTime | null | undefined,
     slots?: GuideTemplateSlotInput[] | null | undefined
+  }) => GuideOutlineDraftChange,
+  setGuideTopicOverview: (p: {
+    conferenceId: ID,
+    enabled: Boolean,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    nonStateActors?: Boolean | null | undefined,
+    roleIds?: ID[] | null | undefined,
+    supervisors?: Boolean | null | undefined,
+    title?: String | null | undefined
   }) => GuideOutlineDraftChange,
   setMessageNotificationEmails: (p: {
     enabled: Boolean

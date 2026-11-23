@@ -37,6 +37,7 @@ import {
 	moveBlockTo,
 	moveEntryTo,
 	moveSlot,
+	setOverview,
 	setTemplate,
 	type BlockRef,
 	type CommandResult
@@ -270,18 +271,31 @@ async function changeDraft({
 	return { ...saved, sectionId: saved.sectionId ?? null };
 }
 
-/** A section or the template, from `sectionId` or `template: true` (exactly one). */
+/**
+ * A section, the template or the topic overview, from `sectionId`, `template: true` or
+ * `topicOverview: true` (exactly one).
+ */
 function blockOf({
 	sectionId,
-	template
+	template,
+	topicOverview
 }: {
 	sectionId?: string | null;
 	template?: boolean | null;
+	topicOverview?: boolean | null;
 }): BlockRef {
-	if (Boolean(sectionId) === Boolean(template)) {
+	const named = [Boolean(sectionId), Boolean(template), Boolean(topicOverview)];
+	if (named.filter(Boolean).length !== 1) {
 		throw apiError({ code: 'INVALID_INPUT', message: m.guideOutlineSectionOrTemplate() });
 	}
-	return sectionId ? { sectionId } : 'template';
+	if (sectionId) return { sectionId };
+	return template ? 'template' : 'topics';
+}
+
+/** Where an entry goes: a section or the template (exactly one). */
+function entryTargetOf(args: { sectionId?: string | null; template?: boolean | null }) {
+	const block = blockOf(args);
+	return block === 'topics' ? 'template' : block;
 }
 
 const CHANGE =
@@ -393,12 +407,13 @@ schemaBuilder.mutationFields((t) => ({
 
 	moveGuideSection: t.field({
 		extensions: mcpTool({ idempotent: true }),
-		description: `Moves a section (\`sectionId\`) or the committee template (\`template: true\`) to \`position\` among the blocks (the sections and the template, in the sidebar's order; past the end: last). ${CHANGE}`,
+		description: `Moves a section (\`sectionId\`), the committee template (\`template: true\`) or the topic overview (\`topicOverview: true\`) to \`position\` among the blocks (the sections, the template and the overview, in the sidebar's order; past the end: last). ${CHANGE}`,
 		type: DraftChange,
 		args: {
 			...commonArgs(t),
 			sectionId: t.arg.id({ required: false }),
 			template: t.arg.boolean({ required: false }),
+			topicOverview: t.arg.boolean({ required: false }),
 			position: t.arg.int({ required: true })
 		},
 		resolve: (_root, args, ctx) =>
@@ -489,7 +504,7 @@ schemaBuilder.mutationFields((t) => ({
 						outline,
 						from: { sectionId: args.sectionId, pageId: args.pageId },
 						to: {
-							block: blockOf({ sectionId: args.toSectionId, template: args.toTemplate }),
+							block: entryTargetOf({ sectionId: args.toSectionId, template: args.toTemplate }),
 							position: args.position ?? undefined
 						}
 					})
@@ -531,6 +546,43 @@ schemaBuilder.mutationFields((t) => ({
 				expected: args.expectedDraftUpdatedAt,
 				command: (outline) =>
 					setTemplate({ outline, enabled: args.enabled, slots: args.slots ?? undefined })
+			})
+	}),
+
+	setGuideTopicOverview: t.field({
+		extensions: mcpTool({ textArguments: ['title'], idempotent: true }),
+		description: `Switches the topic overview on or off: one section listing every committee's page (labelled with the committee's name) with its agenda items' pages beneath, so readers without a committee of their own can prepare all topics. Delegates never see it (they have their committee section); it is for non-state actors, supervisors (besides their committee sections) and the custom roles in \`roleIds\`. A new one stands last (move it with moveGuideSection, \`topicOverview: true\`) and is for non-state actors and supervisors; what is left out stays. ${CHANGE}`,
+		type: DraftChange,
+		args: {
+			...commonArgs(t),
+			enabled: t.arg.boolean({ required: true }),
+			title: t.arg.string({ required: false }).validate(titleArgSchema.nullish()),
+			nonStateActors: t.arg.boolean({ required: false }),
+			supervisors: t.arg.boolean({ required: false }),
+			roleIds: t.arg.idList({
+				required: false,
+				description: 'Custom roles of the conference that read it (replaces the list).'
+			})
+		},
+		resolve: (_root, args, ctx) =>
+			changeDraft({
+				ctx,
+				conferenceId: args.conferenceId,
+				expected: args.expectedDraftUpdatedAt,
+				command: (outline) =>
+					setOverview({
+						outline,
+						enabled: args.enabled,
+						title: args.title ?? undefined,
+						defaultTitle: m.guideTopicOverviewTitle(),
+						readers: {
+							...(typeof args.nonStateActors === 'boolean'
+								? { nonStateActors: args.nonStateActors }
+								: {}),
+							...(typeof args.supervisors === 'boolean' ? { supervisors: args.supervisors } : {}),
+							...(args.roleIds ? { roleIds: [...new Set(args.roleIds)] } : {})
+						}
+					})
 			})
 	}),
 

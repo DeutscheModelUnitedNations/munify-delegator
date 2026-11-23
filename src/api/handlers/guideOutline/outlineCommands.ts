@@ -1,4 +1,10 @@
-import type { Audience, Outline, OutlineSection, TemplateSlot } from '#lib/guide/outline';
+import type {
+	Audience,
+	Outline,
+	OutlineSection,
+	TemplateSlot,
+	TopicReaders
+} from '#lib/guide/outline';
 import {
 	addEntry,
 	addSection,
@@ -10,9 +16,11 @@ import {
 	removeEntry,
 	removeSection,
 	setTemplateEnabled,
+	setTopicOverviewEnabled,
 	updateEntry,
 	updateSection,
 	updateSlots,
+	updateTopicOverview,
 	type EntryAt
 } from '#lib/guide/outlineEditing';
 
@@ -24,12 +32,12 @@ import {
  * A page listed twice in one section is found as its first entry (readers' keys share that limit).
  */
 
-export type Missing = 'section' | 'entry' | 'template' | 'slot';
+export type Missing = 'section' | 'entry' | 'template' | 'slot' | 'topics';
 
 export type CommandResult = { outline: Outline; sectionId?: string } | { missing: Missing };
 
-/** A section or the committee template, as a block of the sidebar. */
-export type BlockRef = { sectionId: string } | 'template';
+/** A section, the committee template or the topic overview, as a block of the sidebar. */
+export type BlockRef = { sectionId: string } | 'template' | 'topics';
 
 const sectionIndexOf = ({ outline, sectionId }: { outline: Outline; sectionId: string }) =>
 	outline.sections.findIndex((section) => section.id === sectionId);
@@ -50,15 +58,22 @@ function entryAt({
 	return entry === -1 ? 'entry' : { section, entry };
 }
 
-/** The block index (`outlineBlocks`) of a section or the template, -1 when it is not there. */
+/** The block index (`outlineBlocks`) of a section, the template or the overview; -1 if none. */
 function blockIndexOf({ outline, block }: { outline: Outline; block: BlockRef }) {
-	const section = block === 'template' ? -1 : sectionIndexOf({ outline, ...block });
-	return outlineBlocks(outline).findIndex((candidate) =>
-		candidate.kind === 'template'
-			? block === 'template'
-			: block !== 'template' && candidate.index === section
+	if (typeof block === 'string') {
+		return outlineBlocks(outline).findIndex((candidate) => candidate.kind === block);
+	}
+	const section = sectionIndexOf({ outline, ...block });
+	return outlineBlocks(outline).findIndex(
+		(candidate) => candidate.kind === 'section' && candidate.index === section
 	);
 }
+
+const MISSING_BLOCK: Record<'template' | 'topics' | 'section', Missing> = {
+	template: 'template',
+	topics: 'topics',
+	section: 'section'
+};
 
 const clamp = ({ value, max }: { value: number; max: number }) =>
 	Math.min(Math.max(value, 0), Math.max(max, 0));
@@ -74,7 +89,7 @@ export function moveBlockTo({
 	position: number;
 }): CommandResult {
 	const from = blockIndexOf({ outline, block });
-	if (from === -1) return { missing: block === 'template' ? 'template' : 'section' };
+	if (from === -1) return { missing: MISSING_BLOCK[typeof block === 'string' ? block : 'section'] };
 	const last = outlineBlocks(outline).length - 1;
 	return { outline: moveBlock({ outline, from, to: clamp({ value: position, max: last }) }) };
 }
@@ -230,7 +245,7 @@ export function moveEntryTo({
 }: {
 	outline: Outline;
 	from: { sectionId: string; pageId: string };
-	to: { block: BlockRef; position?: number };
+	to: { block: { sectionId: string } | 'template'; position?: number };
 }): CommandResult {
 	const at = entryAt({ outline, ...from });
 	if (typeof at === 'string') return { missing: at };
@@ -263,6 +278,28 @@ export function setTemplate({
 	const switched = setTemplateEnabled({ outline, enabled });
 	if (!enabled || !slots) return { outline: switched };
 	return { outline: updateSlots({ outline: switched, change: () => [...slots] }) };
+}
+
+/**
+ * The topic overview switched on (at the end, titled `title`) or off, with a new title or readers
+ * where given (what is left out stays; a new one starts for non-state actors and supervisors).
+ */
+export function setOverview({
+	outline,
+	enabled,
+	title,
+	defaultTitle,
+	readers
+}: {
+	outline: Outline;
+	enabled: boolean;
+	title?: string;
+	defaultTitle: string;
+	readers?: Partial<TopicReaders>;
+}): CommandResult {
+	if (!enabled) return { outline: setTopicOverviewEnabled({ outline, enabled, title: '' }) };
+	const on = setTopicOverviewEnabled({ outline, enabled, title: title ?? defaultTitle });
+	return { outline: updateTopicOverview({ outline: on, title, readers }) };
 }
 
 /** A template slot moved from `from` to `to` (indexes; `to` past the end: last). */

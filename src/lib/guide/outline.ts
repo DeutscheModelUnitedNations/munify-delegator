@@ -41,16 +41,41 @@ const templateSlotSchema = z.discriminatedUnion('type', [
 export type TemplateSlot = z.infer<typeof templateSlotSchema>;
 
 const committeeTemplateSchema = z.object({
-	/** Where the committee sections go among the sections: before the section at this index. */
+	/**
+	 * Where the committee sections go: their index among the sidebar's blocks (the sections, the
+	 * template and the topic overview; `outlineBlocks`).
+	 */
 	position: z.number().int().min(0),
 	titleFormat: z.literal('COMMITTEE_NAME'),
 	slots: z.array(templateSlotSchema).max(100)
 });
 export type CommitteeTemplate = z.infer<typeof committeeTemplateSchema>;
 
+/** Who reads the topic overview besides the team: delegates never (they have their committee). */
+const topicReadersSchema = z.object({
+	nonStateActors: z.boolean(),
+	supervisors: z.boolean(),
+	roleIds: z.array(id).max(100)
+});
+export type TopicReaders = z.infer<typeof topicReadersSchema>;
+
+/**
+ * One section with every committee's page and its agenda items' pages, for the readers who
+ * prepare all topics without a committee of their own (non-state actors, custom roles, and
+ * supervisors if they want it besides the committee sections).
+ */
+const topicOverviewSchema = z.object({
+	/** Its index among the sidebar's blocks, like the template's. */
+	position: z.number().int().min(0),
+	title: z.string().trim().min(1).max(200),
+	readers: topicReadersSchema
+});
+export type TopicOverview = z.infer<typeof topicOverviewSchema>;
+
 export const outlineSchema = z.object({
 	sections: z.array(outlineSectionSchema).max(100),
-	committeeTemplate: committeeTemplateSchema.optional()
+	committeeTemplate: committeeTemplateSchema.optional(),
+	topicOverview: topicOverviewSchema.optional()
 });
 export type Outline = z.infer<typeof outlineSchema>;
 
@@ -81,16 +106,78 @@ export function outlineRoleIds(outline: Outline) {
 		...section.entries.flatMap((entry) => (entry.audience ? [entry.audience] : []))
 	]);
 	return [
-		...new Set(
-			audiences.flatMap((audience) => (audience.type === 'customRoles' ? audience.roleIds : []))
-		)
+		...new Set([
+			...audiences.flatMap((audience) => (audience.type === 'customRoles' ? audience.roleIds : [])),
+			...(outline.topicOverview?.readers.roleIds ?? [])
+		])
 	];
+}
+
+// --- Blocks -----------------------------------------------------------------------------------
+
+/**
+ * One block of the sidebar, in the order it shows them: the sections, with the committee template
+ * (where its committee sections go) and the topic overview standing at their positions.
+ */
+export type OutlineBlock =
+	{ kind: 'section'; index: number } | { kind: 'template' } | { kind: 'topics' };
+
+export function outlineBlocks(outline: Outline): OutlineBlock[] {
+	const blocks: OutlineBlock[] = outline.sections.map((_, index) => ({ kind: 'section', index }));
+	const placed: { block: OutlineBlock; position: number }[] = [];
+	if (outline.committeeTemplate) {
+		placed.push({ block: { kind: 'template' }, position: outline.committeeTemplate.position });
+	}
+	if (outline.topicOverview) {
+		placed.push({ block: { kind: 'topics' }, position: outline.topicOverview.position });
+	}
+	// in ascending order each lands at its own index (on a tie the template comes first)
+	for (const { block, position } of placed.toSorted((a, b) => a.position - b.position)) {
+		blocks.splice(Math.min(position, blocks.length), 0, block);
+	}
+	return blocks;
+}
+
+/**
+ * The outline laid out as `blocks` (taken from `outlineBlocks` of the same outline, reordered or
+ * with sections left out): its sections in that order, the template and the overview at theirs.
+ */
+export function withBlocks({
+	outline,
+	blocks
+}: {
+	outline: Outline;
+	blocks: readonly OutlineBlock[];
+}): Outline {
+	const sections = blocks.flatMap((block) =>
+		block.kind === 'section' ? [outline.sections[block.index]] : []
+	);
+	const positionOf = (kind: 'template' | 'topics') =>
+		Math.max(
+			blocks.findIndex((block) => block.kind === kind),
+			0
+		);
+	const { committeeTemplate, topicOverview } = outline;
+	return {
+		...outline,
+		sections,
+		...(committeeTemplate
+			? { committeeTemplate: { ...committeeTemplate, position: positionOf('template') } }
+			: {}),
+		...(topicOverview
+			? { topicOverview: { ...topicOverview, position: positionOf('topics') } }
+			: {})
+	};
 }
 
 // --- Expanding --------------------------------------------------------------------------------
 
-/** An audience after expanding: the committee sections are for that committee's delegates. */
-export type ResolvedAudience = Audience | { type: 'committee'; committeeId: string };
+/**
+ * An audience after expanding: the committee sections are for that committee's delegates, the
+ * topic overview for its readers.
+ */
+export type ResolvedAudience =
+	Audience | { type: 'committee'; committeeId: string } | ({ type: 'topicReaders' } & TopicReaders);
 
 export type GuideEntry = {
 	/** Unique in the guide: the section and the page (a shared page stands in many sections). */
@@ -100,6 +187,8 @@ export type GuideEntry = {
 	audience: ResolvedAudience | null;
 	/** Agenda item pages sit one level in, under their committee page. */
 	indent: 0 | 1;
+	/** The committee whose page this is, where the section has none (the topic overview). */
+	committeeId?: string | null;
 };
 
 export type GuideSection = {
@@ -157,9 +246,44 @@ function committeeSection({
 	};
 }
 
+/** The topic overview: each committee's page with its agenda items' pages beneath. */
+function topicSection({
+	overview,
+	committees
+}: {
+	overview: TopicOverview;
+	committees: readonly TemplateCommittee[];
+}): GuideSection {
+	const key = 'topics';
+	const entries: GuideEntry[] = [];
+	const add = (entry: Omit<GuideEntry, 'key' | 'audience'>) => {
+		const entryKeyOf = entryKey({ sectionKey: key, pageId: entry.pageId });
+		if (entries.some((existing) => existing.key === entryKeyOf)) return;
+		entries.push({ ...entry, key: entryKeyOf, audience: null });
+	};
+	for (const committee of committees) {
+		const committeeId = committee.id;
+		// without a committee page the agenda item pages stand on their own
+		if (committee.pageId) {
+			add({ pageId: committee.pageId, label: committee.name, indent: 0, committeeId });
+		}
+		const indent = committee.pageId ? 1 : 0;
+		for (const pageId of committee.agendaItemPageIds) {
+			add({ pageId, label: null, indent, committeeId });
+		}
+	}
+	return {
+		key,
+		title: overview.title,
+		audience: { type: 'topicReaders', ...overview.readers },
+		committeeId: null,
+		entries
+	};
+}
+
 /**
- * The outline as a conference's sidebar: its sections, with one section per committee from the
- * template put in at the template's position.
+ * The outline as a conference's sidebar, in block order: its sections, one section per committee
+ * where the template stands, and the topic overview.
  */
 export function expandOutline({
 	outline,
@@ -168,24 +292,34 @@ export function expandOutline({
 	outline: Outline;
 	committees: readonly TemplateCommittee[];
 }): GuideSection[] {
-	const sections: GuideSection[] = outline.sections.map((section) => ({
-		key: section.id,
-		title: section.title,
-		audience: section.audience,
-		committeeId: null,
-		entries: section.entries.map((entry) => ({
-			key: entryKey({ sectionKey: section.id, pageId: entry.pageId }),
-			pageId: entry.pageId,
-			label: entry.label ?? null,
-			audience: entry.audience ?? null,
-			indent: 0
-		}))
-	}));
-	const template = outline.committeeTemplate;
-	if (!template) return sections;
-	const position = Math.min(template.position, sections.length);
-	const expanded = committees.map((committee) => committeeSection({ template, committee }));
-	return [...sections.slice(0, position), ...expanded, ...sections.slice(position)];
+	return outlineBlocks(outline).flatMap((block): GuideSection[] => {
+		if (block.kind === 'section') {
+			const section = outline.sections[block.index];
+			return [
+				{
+					key: section.id,
+					title: section.title,
+					audience: section.audience,
+					committeeId: null,
+					entries: section.entries.map((entry) => ({
+						key: entryKey({ sectionKey: section.id, pageId: entry.pageId }),
+						pageId: entry.pageId,
+						label: entry.label ?? null,
+						audience: entry.audience ?? null,
+						indent: 0
+					}))
+				}
+			];
+		}
+		if (block.kind === 'template') {
+			const template = outline.committeeTemplate;
+			return template
+				? committees.map((committee) => committeeSection({ template, committee }))
+				: [];
+		}
+		const overview = outline.topicOverview;
+		return overview ? [topicSection({ overview, committees })] : [];
+	});
 }
 
 // --- Readers ----------------------------------------------------------------------------------
@@ -201,6 +335,46 @@ export type GuideReader =
 	| { kind: 'delegate'; committeeId: string | null; nonStateActor: boolean }
 	| { kind: 'singleParticipant'; roleId: string };
 
+/** Whether `reader` reads the topic overview: never a delegate of a committee. */
+function topicReaderIncludes({ readers, reader }: { readers: TopicReaders; reader: GuideReader }) {
+	switch (reader.kind) {
+		case 'everything':
+			return true;
+		case 'supervisor':
+			return readers.supervisors;
+		case 'delegate':
+			return reader.nonStateActor && readers.nonStateActors;
+		case 'singleParticipant':
+			return readers.roleIds.includes(reader.roleId);
+	}
+}
+
+type ParticipantReader = Exclude<GuideReader, { kind: 'everything' } | { kind: 'supervisor' }>;
+
+const isDelegate = (reader: ParticipantReader) =>
+	reader.kind === 'delegate' && !reader.nonStateActor;
+
+type AudienceCheck = (args: { audience: ResolvedAudience; reader: ParticipantReader }) => boolean;
+
+/** Who of the participants each kind of audience is for (a table of interchangeable checks). */
+const PARTICIPANT_AUDIENCES: Record<ResolvedAudience['type'], AudienceCheck> = {
+	everyone: () => true,
+	supervisors: () => false,
+	delegates: ({ reader }) => isDelegate(reader),
+	nonStateActors: ({ reader }) => reader.kind === 'delegate' && reader.nonStateActor,
+	customRoles: ({ audience, reader }) =>
+		audience.type === 'customRoles' &&
+		reader.kind === 'singleParticipant' &&
+		audience.roleIds.includes(reader.roleId),
+	committee: ({ audience, reader }) =>
+		audience.type === 'committee' &&
+		reader.kind === 'delegate' &&
+		!reader.nonStateActor &&
+		reader.committeeId === audience.committeeId,
+	topicReaders: ({ audience, reader }) =>
+		audience.type === 'topicReaders' && topicReaderIncludes({ readers: audience, reader })
+};
+
 /** Whether `reader` is in `audience`. */
 function audienceIncludes({
 	audience,
@@ -209,25 +383,11 @@ function audienceIncludes({
 	audience: ResolvedAudience;
 	reader: GuideReader;
 }): boolean {
-	if (reader.kind === 'everything' || reader.kind === 'supervisor') return true;
-	switch (audience.type) {
-		case 'everyone':
-			return true;
-		case 'supervisors':
-			return false;
-		case 'delegates':
-			return reader.kind === 'delegate' && !reader.nonStateActor;
-		case 'nonStateActors':
-			return reader.kind === 'delegate' && reader.nonStateActor;
-		case 'customRoles':
-			return reader.kind === 'singleParticipant' && audience.roleIds.includes(reader.roleId);
-		case 'committee':
-			return (
-				reader.kind === 'delegate' &&
-				!reader.nonStateActor &&
-				reader.committeeId === audience.committeeId
-			);
-	}
+	if (reader.kind === 'everything') return true;
+	// supervisors read everything but the topic overview, which they get only when it says so
+	if (audience.type === 'topicReaders') return topicReaderIncludes({ readers: audience, reader });
+	if (reader.kind === 'supervisor') return true;
+	return PARTICIPANT_AUDIENCES[audience.type]({ audience, reader });
 }
 
 /** The sections and entries `reader` sees, empty sections left out. */

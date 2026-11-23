@@ -5265,7 +5265,7 @@ type Mutation {
   ): GuideOutlineDraftChange!
 
   """
-  Moves a section (`sectionId`) or the committee template (`template: true`) to `position` among the blocks (the sections and the template, in the sidebar's order; past the end: last). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  Moves a section (`sectionId`), the committee template (`template: true`) or the topic overview (`topicOverview: true`) to `position` among the blocks (the sections, the template and the overview, in the sidebar's order; past the end: last). Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
   """
   moveGuideSection(
     conferenceId: ID!
@@ -5277,6 +5277,7 @@ type Mutation {
     position: Int!
     sectionId: ID
     template: Boolean
+    topicOverview: Boolean
   ): GuideOutlineDraftChange!
 
   """
@@ -5693,6 +5694,25 @@ type Mutation {
     """
     expectedDraftUpdatedAt: DateTime
     slots: [GuideTemplateSlotInput!]
+  ): GuideOutlineDraftChange!
+
+  """
+  Switches the topic overview on or off: one section listing every committee's page (labelled with the committee's name) with its agenda items' pages beneath, so readers without a committee of their own can prepare all topics. Delegates never see it (they have their committee section); it is for non-state actors, supervisors (besides their committee sections) and the custom roles in `roleIds`. A new one stands last (move it with moveGuideSection, `topicOverview: true`) and is for non-state actors and supervisors; what is left out stays. Changes the conference's sidebar draft (participants see it once published). `editGuide` in the conference (FORBIDDEN otherwise); NOT_FOUND when what it names is not in the draft; INVALID_INPUT when the result does not fit (pages that do not reach the conference, roles that are not its custom roles). Answers the draft and its `draftUpdatedAt`; with `expectedDraftUpdatedAt` a draft changed since then is left alone (CONFLICT): read `guideOutlineOf` again.
+  """
+  setGuideTopicOverview(
+    conferenceId: ID!
+    enabled: Boolean!
+
+    """
+    The `draftUpdatedAt` last read; refuses (CONFLICT) once the draft moved on.
+    """
+    expectedDraftUpdatedAt: DateTime
+    nonStateActors: Boolean
+
+    """Custom roles of the conference that read it (replaces the list)."""
+    roleIds: [ID!]
+    supervisors: Boolean
+    title: String
   ): GuideOutlineDraftChange!
 
   """

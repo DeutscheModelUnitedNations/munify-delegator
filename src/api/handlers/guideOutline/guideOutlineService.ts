@@ -280,7 +280,8 @@ const MISSING_MESSAGES: Record<Missing, () => string> = {
 	section: () => m.guideOutlineSectionMissing(),
 	entry: () => m.guideOutlineEntryMissing(),
 	template: () => m.guideOutlineTemplateMissing(),
-	slot: () => m.guideOutlineSlotMissing()
+	slot: () => m.guideOutlineSlotMissing(),
+	topics: () => m.guideOutlineTopicsMissing()
 };
 
 /**

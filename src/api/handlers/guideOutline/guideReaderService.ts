@@ -244,7 +244,11 @@ export async function readerPage({
 	const { content, headings } = await resolveForReader({
 		doc: parseGuideDocument(page.content),
 		inGuide: (id) => inGuide.has(id),
-		values: placeholderValues({ guide, committeeId: located.section.committeeId })
+		// in the topic overview each page names its own committee
+		values: placeholderValues({
+			guide,
+			committeeId: located.entry.committeeId ?? located.section.committeeId
+		})
 	});
 	return {
 		pageId,

@@ -130,6 +130,8 @@ Rechts neben dem Text stehen die Einstellungen der Seite: ihre Freigabe, **Im Le
 
 Jeder Abschnitt und jeder Eintrag hat eine Zielgruppe: alle, Delegierte, NA-Vertreter\*innen, einzelne Sonderrollen (z. B. Presse oder IGH) oder Betreuende. Die Gremienvorlage erscheint nur den Delegierten des jeweiligen Gremiums. Betreuende und das Team sehen alles.
 
+NA-Vertreter\*innen, Sonderrollen und Betreuende bereiten oft alle Themen vor, ohne eigenes Gremium. Dafür gibt es die **Themenübersicht** (unten im Baum hinzufügen): ein Abschnitt mit der Seite jedes Gremiums und seinen Themen darunter, ohne die Seiten nur für Delegierte. Sie füllt sich von selbst aus den Gremien. Über **Wer sieht die Themenübersicht?** in ihrem Menü (oder **Zielgruppe** in ihrer Zeile unter **Sichtbarkeit**) wählst du NA-Vertreter\*innen, einzelne Sonderrollen und Betreuende. Delegierte sehen sie nie; Betreuende behalten die Abschnitte der Gremien und bekommen die Übersicht nur, wenn du sie auswählst. Den Titel änderst du über **Umbenennen**, den Platz wie bei jedem Abschnitt.
+
 Unter **Sichtbarkeit** wählst du oben eine Gruppe; links steht dann genau ihre Navigation, wie sie der Entwurf ergibt. Die Tabelle daneben stellt jeden Abschnitt jeder Gruppe gegenüber: ganz, nur einzelne Einträge, nur das eigene Gremium oder gar nicht; die Legende darunter erklärt die Symbole. Über **Sichtbarkeit** in einer Zeile änderst du, wer den Abschnitt sieht.
 
 ### Gremien {#guide-committees}

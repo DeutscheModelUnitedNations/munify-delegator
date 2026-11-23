@@ -6,7 +6,8 @@ import {
 	type GuideReader,
 	type Outline,
 	type TemplateCommittee,
-	type TemplateSlot
+	type TemplateSlot,
+	type TopicReaders
 } from './outline';
 import { outlineBlocks } from './outlineEditing';
 
@@ -63,10 +64,12 @@ export function pendingPages({
 }) {
 	const named = new Set(outlinePageIds(outline));
 	const slots = outline.committeeTemplate?.slots ?? [];
+	// the topic overview lists every committee's page and its agenda items' pages
+	const overview = Boolean(outline.topicOverview);
 	const usesKind = {
 		GENERAL: false,
-		COMMITTEE: slots.some((slot) => slot.type === 'committeePage'),
-		AGENDA_ITEM: slots.some((slot) => slot.type === 'agendaItemPages')
+		COMMITTEE: overview || slots.some((slot) => slot.type === 'committeePage'),
+		AGENDA_ITEM: overview || slots.some((slot) => slot.type === 'agendaItemPages')
 	};
 	return pages
 		.filter((page) => page.state !== 'PUBLISHED' && (named.has(page.id) || usesKind[page.kind]))
@@ -222,7 +225,7 @@ export function groupSees({ audience, group }: { audience: Audience; group: Read
 }
 
 export type VisibilityRow = {
-	kind: 'section' | 'entry' | 'template';
+	kind: 'section' | 'entry' | 'template' | 'topics';
 	key: string;
 	title: string;
 	/** The section a section or entry row is about (to change who sees it). */
@@ -230,9 +233,23 @@ export type VisibilityRow = {
 	cells: Visibility[];
 };
 
+/** Whether `group` reads the topic overview: what it names, never delegates. */
+function groupReadsTopics({ readers, group }: { readers: TopicReaders; group: ReaderGroup }) {
+	switch (group.type) {
+		case 'delegates':
+			return false;
+		case 'nonStateActors':
+			return readers.nonStateActors;
+		case 'customRole':
+			return readers.roleIds.includes(group.roleId);
+		case 'supervisors':
+			return readers.supervisors;
+	}
+}
+
 /**
- * Who sees what: a row per section (the template's committee sections as one row) and one per
- * entry with its own audience, a cell per reader group.
+ * Who sees what: a row per section (the template's committee sections as one row, the topic
+ * overview as one) and one per entry with its own audience, a cell per reader group.
  */
 export function visibilityRows({
 	outline,
@@ -245,6 +262,19 @@ export function visibilityRows({
 	titles: { template: string; page: (pageId: string) => string };
 }): VisibilityRow[] {
 	return outlineBlocks(outline).flatMap((block): VisibilityRow[] => {
+		if (block.kind === 'topics') {
+			const readers = outline.topicOverview?.readers;
+			if (!readers) return [];
+			return [
+				{
+					kind: 'topics',
+					key: 'topics',
+					title: outline.topicOverview?.title ?? '',
+					section: null,
+					cells: groups.map((group) => (groupReadsTopics({ readers, group }) ? 'all' : 'none'))
+				}
+			];
+		}
 		if (block.kind === 'template') {
 			return [
 				{

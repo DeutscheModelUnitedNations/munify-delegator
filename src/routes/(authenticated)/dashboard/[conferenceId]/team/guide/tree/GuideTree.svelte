@@ -7,11 +7,9 @@
 	import { outlinePageIds } from '#lib/guide/outline';
 	import {
 		addEntry,
-		addSection,
 		dropInTree,
 		outlineBlocks,
 		placePage,
-		setTemplateEnabled,
 		type PageTarget
 	} from '#lib/guide/outlineEditing';
 	import {
@@ -25,9 +23,11 @@
 	import { fetchWorkspace, toWorkspace } from '../workspaceData';
 	import NewPageModal from './NewPageModal.svelte';
 	import PublishChanges from './PublishChanges.svelte';
+	import TreeAddBlocks from './TreeAddBlocks.svelte';
 	import TreeRow from './TreeRow.svelte';
 	import TreeSection from './TreeSection.svelte';
 	import TreeTemplate from './TreeTemplate.svelte';
+	import TreeTopics from './TreeTopics.svelte';
 	import { setTreeContext } from './treeContext';
 	import { createTreeDrag, setTreeDrag } from './treeDrag.svelte';
 
@@ -171,7 +171,7 @@
 	{#if blocks.length === 0}
 		<p class="p-2 text-sm opacity-70">{m.guideSidebarEmpty()}</p>
 	{/if}
-	{#each blocks as block, index (block.kind === 'section' ? outline.sections[block.index].id : 'template')}
+	{#each blocks as block, index (block.kind === 'section' ? outline.sections[block.index].id : block.kind)}
 		{#if block.kind === 'section'}
 			<TreeSection
 				section={outline.sections[block.index]}
@@ -179,6 +179,15 @@
 				block={index}
 				blocks={blocks.length}
 			/>
+		{:else if block.kind === 'topics'}
+			{#if outline.topicOverview}
+				<TreeTopics
+					overview={outline.topicOverview}
+					block={index}
+					blocks={blocks.length}
+					{committees}
+				/>
+			{/if}
 		{:else if outline.committeeTemplate}
 			<TreeTemplate
 				template={outline.committeeTemplate}
@@ -190,24 +199,7 @@
 		{/if}
 	{/each}
 
-	<div class="flex flex-wrap gap-1 pt-3">
-		<button
-			class="btn btn-ghost btn-xs"
-			onclick={() => draft.change(addSection({ outline, title: m.guideNewSection() }))}
-		>
-			<i class="ph-duotone ph-plus" aria-hidden="true"></i>
-			{m.guideAddSection()}
-		</button>
-		{#if !outline.committeeTemplate}
-			<button
-				class="btn btn-ghost btn-xs"
-				onclick={() => draft.change(setTemplateEnabled({ outline, enabled: true }))}
-			>
-				<i class="ph-duotone ph-users-three" aria-hidden="true"></i>
-				{m.guideTreeAddTemplate()}
-			</button>
-		{/if}
-	</div>
+	<TreeAddBlocks />
 
 	{#if outside.length > 0}
 		<details class="border-base-300 mt-3 border-t pt-2" open data-testid="guide-tree-outside">
