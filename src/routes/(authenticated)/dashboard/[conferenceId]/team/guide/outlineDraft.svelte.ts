@@ -9,7 +9,7 @@ import { EMPTY_OUTLINE, parseOutline, type Outline } from '#lib/guide/outline';
 const SAVE_DELAY_MS = 700;
 
 /** When the stored draft last changed (`draftUpdatedAt`), null before there is one. */
-type Stamp = Date | string | null;
+type Stamp = Date | null;
 
 /**
  * The sidebar draft the workspace edits (`team/guide`): every tab changes it, and it saves itself
@@ -70,7 +70,7 @@ export function createOutlineDraft({
 					conferenceId,
 					outline: $state.snapshot(outline),
 					// null: whatever is stored (the first save, or after "keep mine")
-					expectedDraftUpdatedAt: seen === null ? undefined : new Date(seen)
+					expectedDraftUpdatedAt: seen ?? undefined
 				},
 				draftUpdatedAt: true
 			});

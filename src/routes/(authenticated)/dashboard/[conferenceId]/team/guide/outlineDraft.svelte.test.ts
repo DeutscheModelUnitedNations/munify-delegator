@@ -30,7 +30,7 @@ const conflict = () =>
 
 function sentStamp(call: number) {
 	const sent: { __args: { expectedDraftUpdatedAt?: Date } } = save.mock.calls[call][0];
-	return sent.__args.expectedDraftUpdatedAt?.toISOString();
+	return sent.__args.expectedDraftUpdatedAt;
 }
 
 beforeEach(() => {
@@ -43,7 +43,7 @@ afterEach(() => vi.useRealTimers());
 
 describe('createOutlineDraft', () => {
 	test('saves the whole outline shortly after the last change', async () => {
-		save.mockResolvedValue({ draftUpdatedAt: '2026-01-01T00:00:01.000Z' });
+		save.mockResolvedValue({ draftUpdatedAt: new Date('2026-01-01T00:00:01.000Z') });
 		const draft = createOutlineDraft({ conferenceId: 'c', initial: empty });
 		draft.change(one);
 		draft.change({ ...one, sections: [] });
@@ -59,25 +59,25 @@ describe('createOutlineDraft', () => {
 
 	test('each save names the stored draft it started from', async () => {
 		save
-			.mockResolvedValueOnce({ draftUpdatedAt: '2026-01-01T00:00:01.000Z' })
-			.mockResolvedValue({ draftUpdatedAt: '2026-01-01T00:00:02.000Z' });
+			.mockResolvedValueOnce({ draftUpdatedAt: new Date('2026-01-01T00:00:01.000Z') })
+			.mockResolvedValue({ draftUpdatedAt: new Date('2026-01-01T00:00:02.000Z') });
 		const draft = createOutlineDraft({
 			conferenceId: 'c',
 			initial: empty,
-			stamp: '2026-01-01T00:00:00.000Z'
+			stamp: new Date('2026-01-01T00:00:00.000Z')
 		});
 		draft.change(one);
 		await draft.flush();
 		draft.change(empty);
 		await draft.flush();
 		expect([sentStamp(0), sentStamp(1)]).toEqual([
-			'2026-01-01T00:00:00.000Z',
-			'2026-01-01T00:00:01.000Z'
+			new Date('2026-01-01T00:00:00.000Z'),
+			new Date('2026-01-01T00:00:01.000Z')
 		]);
 	});
 
 	test('flush saves at once and only when something changed', async () => {
-		save.mockResolvedValue({ draftUpdatedAt: '2026-01-01T00:00:01.000Z' });
+		save.mockResolvedValue({ draftUpdatedAt: new Date('2026-01-01T00:00:01.000Z') });
 		const draft = createOutlineDraft({ conferenceId: 'c', initial: empty });
 		expect(await draft.flush()).toBe(true);
 		expect(save).not.toHaveBeenCalled();
@@ -90,7 +90,7 @@ describe('createOutlineDraft', () => {
 	test('keeps a failed change to save again, and says so', async () => {
 		save
 			.mockRejectedValueOnce(new Error('offline'))
-			.mockResolvedValue({ draftUpdatedAt: '2026-01-01T00:00:01.000Z' });
+			.mockResolvedValue({ draftUpdatedAt: new Date('2026-01-01T00:00:01.000Z') });
 		const draft = createOutlineDraft({ conferenceId: 'c', initial: empty });
 		draft.change(one);
 		expect(await draft.flush()).toBe(false);
@@ -104,11 +104,11 @@ describe('createOutlineDraft', () => {
 	test('a draft changed elsewhere stops saving until the person loads it or keeps theirs', async () => {
 		save
 			.mockRejectedValueOnce(conflict())
-			.mockResolvedValue({ draftUpdatedAt: '2026-01-01T00:00:02.000Z' });
+			.mockResolvedValue({ draftUpdatedAt: new Date('2026-01-01T00:00:02.000Z') });
 		const draft = createOutlineDraft({
 			conferenceId: 'c',
 			initial: empty,
-			stamp: '2026-01-01T00:00:00.000Z'
+			stamp: new Date('2026-01-01T00:00:00.000Z')
 		});
 		draft.change(one);
 		expect(await draft.flush()).toBe(false);
@@ -133,12 +133,12 @@ describe('createOutlineDraft', () => {
 	test('loading the stored draft takes it and its stamp over', async () => {
 		save
 			.mockRejectedValueOnce(conflict())
-			.mockResolvedValue({ draftUpdatedAt: '2026-01-01T00:00:04.000Z' });
-		read.mockResolvedValue({ draft: empty, draftUpdatedAt: '2026-01-01T00:00:03.000Z' });
+			.mockResolvedValue({ draftUpdatedAt: new Date('2026-01-01T00:00:04.000Z') });
+		read.mockResolvedValue({ draft: empty, draftUpdatedAt: new Date('2026-01-01T00:00:03.000Z') });
 		const draft = createOutlineDraft({
 			conferenceId: 'c',
 			initial: empty,
-			stamp: '2026-01-01T00:00:00.000Z'
+			stamp: new Date('2026-01-01T00:00:00.000Z')
 		});
 		draft.change(one);
 		await draft.flush();
@@ -147,13 +147,13 @@ describe('createOutlineDraft', () => {
 		expect(draft.conflicted).toBe(false);
 		draft.change(one);
 		await draft.flush();
-		expect(sentStamp(1)).toBe('2026-01-01T00:00:03.000Z');
+		expect(sentStamp(1)).toEqual(new Date('2026-01-01T00:00:03.000Z'));
 	});
 
 	test('replace takes over an outline saved elsewhere without saving it', async () => {
 		const draft = createOutlineDraft({ conferenceId: 'c', initial: empty });
 		draft.change(one);
-		draft.replace(empty, '2026-01-01T00:00:09.000Z');
+		draft.replace(empty, new Date('2026-01-01T00:00:09.000Z'));
 		await vi.runAllTimersAsync();
 		expect(save).not.toHaveBeenCalled();
 		expect(draft.outline).toEqual(empty);
