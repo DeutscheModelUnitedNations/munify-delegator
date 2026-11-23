@@ -477,7 +477,8 @@ condition in `imports` appending `.ts`, plus keys for Paraglide's `.js` and `…
 
 PDFs `pdf-lib` (custom fonts); barcodes/QR `@bwip-js/browser`, `@svelte-put/qr`,
 `barcode-detector`; TipTap rich text; Leaflet via `sveaflet`; Listmonk (`src/jobs/apis/`); S3 via
-`s3mini`.
+`s3mini`. Logos, favicons, manifest, launch images: `@deutschemodelunitednations/munify-brand`
+(`Logo`, `BrandHead`, the `munifyBrand` Vite plugin; see "Brand" in CLAUDE-UI.md).
 
 ## UI
 

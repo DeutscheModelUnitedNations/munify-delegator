@@ -14,6 +14,17 @@
 
 @import './lib/components/paper/editor/extensions/style.css';
 
+/* The MUNify logos (`Logo` from the brand package) are white on the dark ground: DMUN-Blau never
+   goes on navy. Same condition as the DMUN dark theme: chosen, or the system's without a choice. */
+:root[data-theme='dark'] {
+	--munify-logo: #fff;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--munify-logo: #fff;
+	}
+}
+
 /* Tailwind 4 gives buttons the default cursor; anything clickable shows the pointer again. */
 @layer base {
 	button:not(:disabled),
