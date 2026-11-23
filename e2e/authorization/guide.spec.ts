@@ -140,6 +140,21 @@ test.describe('reading the guide', () => {
 		}
 	});
 
+	test('the guide stays open while the delegate moves through its pages', async ({ browser }) => {
+		// a live update once linked the keyless guide to null in the cache: the next page read
+		// "not yet available" until a reload (src/lib/api/cacheUpdates.ts)
+		const delegate = await signedIn(browser, g.people.delegateA);
+		await delegate.goto(`/dashboard/${g.conferenceA}/guide`);
+		const links = delegate.locator('aside').getByTestId('guide-sidebar').getByRole('link');
+		await expect(links.first()).toBeVisible();
+		await links.nth(1).click();
+		await expect(delegate).toHaveURL(new RegExp(`/guide/${g.pages.committee}`));
+		await expect(delegate.getByTestId('guide-page')).toBeVisible();
+		await links.first().click();
+		await expect(delegate).toHaveURL(new RegExp(`/guide/${g.pages.everywhere}`));
+		await expect(delegate.getByTestId('guide-page')).toBeVisible();
+	});
+
 	test('only the team previews another reader', async ({ browser }) => {
 		const delegate = await signedIn(browser, g.people.delegateA);
 		const refused = await gql(delegate, MY_GUIDE, { c: g.conferenceA, previewAs: 'SUPERVISOR' });
