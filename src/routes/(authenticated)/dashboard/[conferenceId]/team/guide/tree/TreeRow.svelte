@@ -47,7 +47,7 @@
 	class={[
 		'flex items-center gap-1 rounded-sm border-t-2 border-transparent pe-1',
 		tree.isOver(dropKey) && 'border-t-primary',
-		active && 'bg-base-100 font-semibold shadow-[inset_3px_0_0_var(--color-primary)]',
+		active && 'bg-base-100 border-s-primary border-s-4 font-semibold',
 		indent && 'ps-4'
 	]}
 	draggable="true"

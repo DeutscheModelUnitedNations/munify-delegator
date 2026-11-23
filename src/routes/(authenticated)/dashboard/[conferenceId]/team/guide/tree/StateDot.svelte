@@ -8,7 +8,7 @@
 	const LOOK: Record<GuidePageState, { dot: string; label: () => string }> = {
 		PUBLISHED: { dot: 'bg-success', label: () => m.guideStatePublished() },
 		CHANGED: { dot: 'bg-warning', label: () => m.guideStateChanged() },
-		DRAFT: { dot: 'border-base-content/70 border-[1.5px]', label: () => m.guideStateDraft() }
+		DRAFT: { dot: 'border-base-content/70 border-2', label: () => m.guideStateDraft() }
 	};
 </script>
 
