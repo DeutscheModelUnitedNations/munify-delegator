@@ -1,0 +1,1 @@
+ALTER TABLE "announcement" ADD COLUMN "mail_includes_text" boolean DEFAULT true NOT NULL;

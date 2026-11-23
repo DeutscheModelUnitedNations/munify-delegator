@@ -178,7 +178,7 @@ Whatever the team wants you to know is under **Announcements**, right below the 
 - Open attachments with the buttons below the text.
 - The dashboard shows the pinned, the unread and the newest ones. The link below them, such as **Show all 5 announcements**, leads to the full list.
 
-An **urgent** announcement also shows as a red bar on every page of the conference until you have read it. **Read** opens it, and the cross marks it as read and hides the bar. For some announcements you also get a mail with the full text.
+An **urgent** announcement also shows as a red bar on every page of the conference until you have read it. **Read** opens it, and the cross marks it as read and hides the bar. For some announcements you also get a mail, usually with the full text.
 
 The quick links also hold:
 

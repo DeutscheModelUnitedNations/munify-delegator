@@ -16,7 +16,7 @@
 
 	/**
 	 * An image upload: a drop zone that takes a click or a dropped file and previews what was picked,
-	 * falling back to the stored image. Fills the same form field `FormFile` does. With `removable`, a
+	 * falling back to the stored image. Fills a `File` field of the form. With `removable`, a
 	 * stored image can be removed too, which sets the field to `null`.
 	 */
 	interface Props {

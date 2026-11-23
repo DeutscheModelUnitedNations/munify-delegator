@@ -134,6 +134,8 @@ export interface SnapshotAnnouncement {
 	/** Markdown. */
 	body: string;
 	signature: string | null;
+	/** Whether the mail carries text, signature and file names; otherwise only the title. */
+	includesText: boolean;
 	/** Counts the "notify again"s, each of which mails once more. */
 	mailRevision: number;
 	/** The files it comes with, which the mail names and the dashboard offers. */

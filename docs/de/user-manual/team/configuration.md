@@ -153,12 +153,12 @@ Der Reiter **Dokumente & Vorlagen** hält alles, woraus DELEGATOR die Papiere de
 - **Postversand-Vorlagen**: je eine PDF für **Verbindliche Anmeldung**, **Einwilligung der Erziehungsberechtigten** (nur für Minderjährige im Paket), **Einwilligung Bildnutzung** und **Teilnahmebedingungen**. Teilnehmende können ihre postalische Anmeldung nur herunterladen, wenn alle vier hinterlegt sind.
 - **Teilnahmezertifikat**: die PDF, auf die die Zertifikate gedruckt werden. Ohne sie lässt sich kein Zertifikat herunterladen.
 
-Jede Vorlage hat eine eigene Karte, die zeigt, ob sie **Hinterlegt** ist, **Fehlt noch**, **Wird beim Speichern hochgeladen** oder **Wird beim Speichern entfernt**. Auf der Karte:
+Jede Vorlage hat eine eigene Karte, die mit dem Symbol unten rechts zeigt (der Name steht, wenn du darauf zeigst), ob sie **Hinterlegt** ist, **Fehlt noch**, **Wird beim Speichern hochgeladen** oder **Wird beim Speichern entfernt**. Auf der Karte:
 
-- **PDF hochladen** oder **Durch eine neue PDF ersetzen** wählt eine Datei bis 10 MB. Sie wird erst mit **Einstellungen speichern** hochgeladen.
+- **PDF auswählen oder hierher ziehen** (bei einer hinterlegten Vorlage **PDF ersetzen**) nimmt eine Datei bis 10 MB, per Klick oder indem du sie auf die Karte ziehst. Die Karte zeigt die erste Seite und wie viele Seiten die PDF hat. Hochgeladen wird sie erst mit **Einstellungen speichern**.
 - Das Auge (**Hinterlegte Vorlage ansehen**) öffnet die hinterlegte Datei.
 - Der Papierkorb (**Vorlage entfernen**) entfernt sie beim nächsten Speichern, **Entfernen rückgängig machen** nimmt das zurück.
-- **Felder platzieren** und **Testdokument** gehen erst, wenn die Vorlage gespeichert ist („Erst eine Vorlage hochladen und speichern“, „Erst die neue Vorlage speichern“). Das Testdokument der postalischen Anmeldung braucht alle vier Vorlagen.
+- **Felder platzieren** und **Testdokument** gehen erst, wenn die Vorlage gespeichert ist („Erst eine Vorlage hochladen und speichern“, „Erst die neue Vorlage speichern“). Die vier Vorlagen der postalischen Anmeldung haben ein gemeinsames **Testdokument generieren** unter ihren Karten, das alle vier braucht.
 
 Das Fragezeichen neben den Überschriften (**Hilfe zu den PDF-Vorlagen**) erklärt, was auf welcher Vorlage steht.
 
@@ -168,7 +168,7 @@ Eine neue Vorlage gilt sofort für alle Dokumente, die danach erzeugt werden. En
 
 ### Felder auf der Vorlage platzieren {#document-layouts}
 
-Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Person in der Schrift Space Mono auf die erste Seite der PDF, und wohin, legst du mit **Felder platzieren** fest. Das Fenster **Anordnung auf der Vorlage:** mit dem Namen des Dokuments zeigt die Seite, auf der du jedes Feld an seine Stelle ziehst:
+Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Person in der Schrift Space Mono auf die erste Seite der PDF, und wohin, legst du mit **Felder platzieren** fest. Das Fenster **Anordnung auf der Vorlage:** mit dem Namen des Dokuments zeigt die Seite, auf der du jedes Feld an seine Stelle ziehst, bis auf 10 mm an den Rand (die gestrichelte Linie; Drucker lassen den Rand frei). Mit der Lupe über der Seite (oder Strg und dem Mausrad) vergrößerst du sie, um kleine Kästchen genau zu treffen:
 
 | Dokument                                    | Felder                                                                                                                                      |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -177,12 +177,12 @@ Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Per
 | **Einwilligung der Erziehungsberechtigten** | **Name**, **Geburtsdatum**, **QR-Code mit Name und ID**, **Seitenzahl**                                                                     |
 | **Einwilligung Bildnutzung**                | **Name**, **Geburtsdatum**, **Adresse**, **QR-Code mit Name und ID**, **Seitenzahl**                                                        |
 
-Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in der Größe, die Schriftgröße der Texte mit Minus und Plus unter der Seite. **Standard** setzt alles auf die Standardpositionen zurück, die auch gelten, solange du nichts platzierst. **Testdokument generieren** druckt ein Beispiel mit erfundenen Angaben schon mit der ungespeicherten Anordnung. **Speichern** übernimmt sie sofort für alle Dokumente, die danach erzeugt werden.
+Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in der Größe, die Schriftgröße der Texte mit Minus und Plus unter **Schriftgrößen** in der Spalte neben der Seite. **Standard** setzt alles auf die Standardpositionen zurück, die auch gelten, solange du nichts platzierst. **Testdokument generieren** druckt ein Beispiel mit erfundenen Angaben schon mit der ungespeicherten Anordnung. **Speichern** übernimmt sie sofort für alle Dokumente, die danach erzeugt werden.
 
 Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Jede Seite der postalischen Anmeldung bekommt den signierten QR-Code mit Name und ID daneben dort, wo ihr Dokument ihn platziert, und unten rechts die Seitenzahl, auch die Seiten der Teilnahmebedingungen. Das Zertifikat kann jede Seitengröße haben, auch quer.
 
 :::tip Platz lassen
-Lass auf deiner Vorlage an den Stellen der Felder Platz frei. **Testdokument** auf der Karte zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.
+Lass auf deiner Vorlage an den Stellen der Felder Platz frei. **Lesbarkeit** neben der Seite sagt dir, wo sich Teile überdecken oder auf dem Text der Vorlage liegen. Liegt dabei der QR-Code, eine Markierung oder ein Feld, geht **Speichern** erst, wenn du es verschoben hast. Das Testdokument zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.
 :::
 
 ### Verabschiedete Resolutionen {#resolutions}

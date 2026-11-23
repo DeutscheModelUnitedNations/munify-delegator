@@ -21,6 +21,14 @@ import {
 import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
 import { drawQr } from '#lib/api/pdfQr';
 import { logger } from '#lib/logger';
+import { drawPaperPage } from '#lib/paperScan/drawPaper';
+import type { PostalDocument, PrintedPage } from '#lib/paperScan/pageAreas';
+
+/**
+ * Signs the codes the pages of a person's application documents carry, one per page in the order
+ * given (`issueDocumentCodes`).
+ */
+export type IssueDocumentCodes = (pages: PrintedPage[]) => Promise<string[]>;
 
 export interface ParticipantData {
 	id: string;
@@ -488,8 +496,12 @@ function toRomanNumeral(num: number): string {
 	return result;
 }
 
-/** Where one main page's footer goes: its document's layout of the code and the page number. */
-type PageFooter = { code: SquarePlacement; pageNumber: BoxPlacement };
+/** A postal document's layout: every one has the footer (code and page number) and the fields. */
+type PostalLayout =
+	DocumentLayout<'contract'> | DocumentLayout<'guardianConsent'> | DocumentLayout<'mediaConsent'>;
+
+/** One main page: which page of which document's template it is, and that document's layout. */
+type MainPage = { document: PostalDocument; page: number; layout: PostalLayout };
 
 /** The page number, right-aligned in the area the layout keeps for it, its size the area's. */
 function drawPageNumber({
@@ -551,36 +563,36 @@ function drawCodeCaption({
 }
 
 /**
- * Numbers the pages and puts the signed code, with the person's name and id beside it, on every
- * main page, where that page's document places them (`footers`, one per main page). The appendix
- * (the terms and conditions) is numbered in roman numerals, where `appendixPageNumber` says.
+ * Numbers the pages and puts each main page's signed code (`codes`, one per main page), with the
+ * person's name and id beside it, where that page's document places it, with the alignment marks
+ * and the page's fields to read off a scan (`#lib/paperScan/drawPaper`). The appendix (the terms and conditions) is numbered in roman numerals, where `appendixPageNumber`
+ * says. Codes are plain: printed at home and scanned back, black on white reads best.
  */
+// fallow-ignore-next-line complexity
 async function numerateDocument({
 	pdfDoc,
 	participantId,
-	participantCode,
 	participantName,
-	footers,
-	appendixPageNumber,
-	corporate
+	mainPages,
+	codes,
+	appendixPageNumber
 }: {
 	pdfDoc: PDFDocument;
 	participantId: string;
-	participantCode: string;
 	participantName: string;
-	footers: PageFooter[];
+	mainPages: MainPage[];
+	codes: string[];
 	appendixPageNumber: BoxPlacement;
-	corporate: boolean;
 }) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-	const mainPageCount = footers.length;
+	const mainPageCount = mainPages.length;
 	const appendixPageCount = pages.length - mainPageCount;
-	const text = codeLink(participantCode);
 
 	for (const [index, page] of pages.entries()) {
-		const footer = footers.at(index);
-		if (!footer) {
+		const at = mainPages.at(index);
+		const code = codes.at(index);
+		if (!at || !code) {
 			const appendixIndex = index - mainPageCount + 1;
 			drawPageNumber({
 				page,
@@ -590,20 +602,21 @@ async function numerateDocument({
 			});
 			continue;
 		}
+		drawPaperPage({ page, document: at.document, layout: at.layout, pageIndex: at.page });
 		const square = await placeQrCode({
 			pdfDoc,
 			page,
-			text,
-			placement: footer.code,
+			text: codeLink(code),
+			placement: at.layout.code,
 			minSide: DOCUMENT_ELEMENTS.contract.code.minSide,
-			corporate
+			corporate: false
 		});
 		drawCodeCaption({ page, font: helvetica, name: participantName, id: participantId, square });
 		drawPageNumber({
 			page,
 			font: helvetica,
 			text: `${index + 1} / ${mainPageCount}`,
-			placement: footer.pageNumber
+			placement: at.layout.pageNumber
 		});
 	}
 }
@@ -719,18 +732,17 @@ async function appendPages({ target, source }: { target: PDFDocument; source: PD
 async function generateCompletePostalRegistrationPDF({
 	isOfAge,
 	participant,
-	documentCode,
+	issueCodes,
 	recipient,
 	contract,
 	guardianAgreement,
 	medialAgreement,
 	termsAndConditions,
-	layouts,
-	corporate
+	layouts
 }: {
 	isOfAge: boolean;
 	participant: ParticipantData;
-	documentCode: string;
+	issueCodes: IssueDocumentCodes;
 	recipient: RecipientData;
 	contract: string;
 	guardianAgreement: string;
@@ -738,8 +750,6 @@ async function generateCompletePostalRegistrationPDF({
 	termsAndConditions: string;
 	/** `conference.documentLayouts`: where the team placed the fields; the defaults otherwise. */
 	layouts: unknown;
-	/** `conference.qrCorporateDesign`: the codes in the corporate look, or plain. */
-	corporate: boolean;
 }): Promise<Uint8Array> {
 	const contractLayout = resolveDocumentLayout({ document: 'contract', stored: layouts });
 	const guardianLayout = resolveDocumentLayout({ document: 'guardianConsent', stored: layouts });
@@ -747,7 +757,11 @@ async function generateCompletePostalRegistrationPDF({
 
 	// Each main document with the layout its pages' footers follow; the guardian consent only for
 	// a minor
-	const mainDocuments: { generator: PDFPageGenerator; footer: PageFooter }[] = [
+	const mainDocuments: {
+		generator: PDFPageGenerator;
+		document: PostalDocument;
+		layout: PostalLayout;
+	}[] = [
 		{
 			generator: createContractGenerator({
 				pdfDoc: await loadTemplate(contract),
@@ -756,7 +770,8 @@ async function generateCompletePostalRegistrationPDF({
 				participantData: participant,
 				layout: contractLayout
 			}),
-			footer: contractLayout
+			document: 'contract',
+			layout: contractLayout
 		}
 	];
 	if (!isOfAge) {
@@ -767,7 +782,8 @@ async function generateCompletePostalRegistrationPDF({
 				participantData: participant,
 				layout: guardianLayout
 			}),
-			footer: guardianLayout
+			document: 'guardianConsent',
+			layout: guardianLayout
 		});
 	}
 	mainDocuments.push({
@@ -777,18 +793,26 @@ async function generateCompletePostalRegistrationPDF({
 			participantData: participant,
 			layout: mediaLayout
 		}),
-		footer: mediaLayout
+		document: 'mediaConsent',
+		layout: mediaLayout
 	});
 
 	const mergedPdfDoc = await PDFDocument.create();
-	const footers: PageFooter[] = [];
-	for (const { generator, footer } of mainDocuments) {
+	const mainPages: MainPage[] = [];
+	for (const { generator, document, layout } of mainDocuments) {
 		const pdf = await generator.generate();
 		await appendPages({ target: mergedPdfDoc, source: pdf });
 		for (let page = 0; page < pdf.getPageCount(); page++) {
-			footers.push({ code: footer.code, pageNumber: footer.pageNumber });
+			mainPages.push({ document, page, layout });
 		}
 	}
+	const codes = await issueCodes(
+		mainPages.map(({ document, page }, index) => ({
+			document,
+			page,
+			...mergedPdfDoc.getPage(index).getSize()
+		}))
+	);
 
 	await appendPages({ target: mergedPdfDoc, source: await loadTemplate(termsAndConditions) });
 
@@ -796,11 +820,10 @@ async function generateCompletePostalRegistrationPDF({
 	await numerateDocument({
 		pdfDoc: mergedPdfDoc,
 		participantId: participant.id,
-		participantCode: documentCode,
 		participantName: participant.name,
-		footers,
-		appendixPageNumber: contractLayout.pageNumber,
-		corporate
+		mainPages,
+		codes,
+		appendixPageNumber: contractLayout.pageNumber
 	});
 
 	// Merge all pages into a single PDF
@@ -819,8 +842,6 @@ interface PostalTemplateFiles {
 	termsAndConditionsFile?: TemplateFile;
 	/** Where the team placed the fields on them (`conference.documentLayouts`). */
 	documentLayouts?: unknown;
-	/** Whether the codes are in the corporate design (`conference.qrCorporateDesign`). */
-	qrCorporateDesign: boolean;
 }
 
 /** The template's URL, or a toast naming what is missing and an error when there is none. */
@@ -840,15 +861,15 @@ function requireContent({
 export async function downloadCompletePostalRegistrationPDF({
 	isOfAge,
 	participant,
-	documentCode,
+	issueCodes,
 	recipient,
 	templates,
 	fileName = 'postal_registration.pdf'
 }: {
 	isOfAge: boolean;
 	participant: ParticipantData;
-	/** The signed code the documents carry (`issueDocumentCode`), drawn as QR codes of its link. */
-	documentCode: string;
+	/** Signs the codes the pages carry, drawn as QR codes of their links. */
+	issueCodes: IssueDocumentCodes;
 	recipient: RecipientData;
 	templates: PostalTemplateFiles;
 	fileName?: string;
@@ -873,14 +894,13 @@ export async function downloadCompletePostalRegistrationPDF({
 		const pdfBytes = await generateCompletePostalRegistrationPDF({
 			isOfAge,
 			participant,
-			documentCode,
+			issueCodes,
 			recipient,
 			contract: contractContent,
 			guardianAgreement: guardianContent,
 			medialAgreement: mediaContent,
 			termsAndConditions: termsContent,
-			layouts: templates.documentLayouts,
-			corporate: templates.qrCorporateDesign
+			layouts: templates.documentLayouts
 		});
 
 		downloadPDF({ bytes: pdfBytes, filename: fileName });

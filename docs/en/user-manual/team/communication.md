@@ -30,7 +30,7 @@ Under **Announcements** you write what participants and the team should know. Ea
 - **Audience**: at least one group, see below.
 - **Importance**: **Normal**, **Important** or **Urgent**. An urgent announcement also shows as a bar on every page of the conference for as long as it is unread.
 - **Pin to the top**: pinned announcements stay on top for everyone.
-- **Notify the audience by mail**: the audience gets an email with the full text, see below.
+- **Notify the audience by mail**: the audience gets an email, see below. With **Include the text in the mail** it holds the full text; when that is off, it names only the title.
 - **Visible until (optional)**: after that the announcement disappears on its own and shows as **Expired** in the list.
 - **Attachments**: up to five files, PDF or image, 10 MB each at most.
 
@@ -78,7 +78,7 @@ The list shows every announcement with its state (**Draft**, **Scheduled**, **Pu
 
 ### The announcement's email
 
-When **Notify the audience by mail** is on, the next automatic run after publication sends an email to everybody in the audience at that time, for a scheduled announcement at its time. The email holds the title, the full text, the names of the attachments and a link to the announcements. It is owed for 24 hours. Whoever joins the audience after that only finds the announcement on the dashboard.
+When **Notify the audience by mail** is on, the next automatic run after publication sends an email to everybody in the audience at that time, for a scheduled announcement at its time. The email holds the title, the full text, the names of the attachments and a link to the announcements; without **Include the text in the mail** only the title and the link. It is owed for 24 hours. Whoever joins the audience after that only finds the announcement on the dashboard.
 
 This email needs no switch on the [Emails](#emails) page: the decision is made on the announcement. Its card there carries **Decided per announcement**, and you change its text there like any other.
 

@@ -166,6 +166,19 @@
 	 */
 	let savedSettings = $state({ ...initialSettings });
 
+	/**
+	 * Saved, the templates picked or removed are what the server holds: the fields go back to
+	 * "unchanged", so the cards show the stored files. On the data superforms puts back into the
+	 * form once the save is through.
+	 */
+	function clearSavedDocuments(data: ConferenceSettings) {
+		data.contractBasePDF = undefined;
+		data.guardianConsentBasePDF = undefined;
+		data.mediaConsentBasePDF = undefined;
+		data.termsAndConditionsBasePDF = undefined;
+		data.certificateBasePDF = undefined;
+	}
+
 	const form = superForm(defaults(initialSettings, zod4Client(conferenceSettingsFormSchema)), {
 		SPA: true,
 		resetForm: false,
@@ -254,6 +267,7 @@
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
+				clearSavedDocuments(validated.data);
 				savedSettings = { ...savedSettings, ...content };
 				void offerEmailsFor(changedFields);
 				return;
@@ -278,6 +292,10 @@
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
+			clearSavedDocuments(validated.data);
+			validated.data.image = undefined;
+			validated.data.emblem = undefined;
+			validated.data.logo = undefined;
 
 			savedSettings = { ...settings };
 			void offerEmailsFor(changedFields);

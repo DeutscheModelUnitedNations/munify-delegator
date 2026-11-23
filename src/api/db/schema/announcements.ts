@@ -54,6 +54,8 @@ export const announcement = snakeCase.table(
 		editedAt: timestamp({ precision: 3 }),
 		/** Whether its audience is told by mail (`ANNOUNCEMENT`). */
 		notifyByMail: boolean().default(false).notNull(),
+		/** Whether that mail carries the text, signature and file names; otherwise only the title. */
+		mailIncludesText: boolean().default(true).notNull(),
 		/**
 		 * From when the mail is owed: the publication, or the last "notify again". The mail is owed
 		 * for `ANNOUNCEMENT_MAIL_HOURS` from then on.

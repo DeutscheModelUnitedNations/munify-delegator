@@ -91,6 +91,7 @@ type Announcement {
   editedAt: DateTime
   id: ID!
   importance: AnnouncementimportanceEnum!
+  mailIncludesText: Boolean!
   mailRevision: Int!
   mailSince: DateTime
   notifyByMail: Boolean!
@@ -185,6 +186,7 @@ input AnnouncementOrderInputArgument {
   editedAt: SortingParameter
   id: SortingParameter
   importance: SortingParameter
+  mailIncludesText: SortingParameter
   mailRevision: SortingParameter
   mailSince: SortingParameter
   notifyByMail: SortingParameter
@@ -236,6 +238,7 @@ input AnnouncementWhereInputArgument {
   editedAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
   importance: AnnouncementimportanceEnum
+  mailIncludesText: BooleanWhereInputArgument
   mailRevision: IntWhereInputArgument
   mailSince: DateTimeWhereInputArgument
   notifyByMail: BooleanWhereInputArgument
@@ -3818,6 +3821,11 @@ type Mutation {
     conferenceId: ID!
     importance: AnnouncementimportanceEnum
 
+    """
+    Whether that mail carries the text, signature and file names (default); otherwise it names only the title and points to the dashboard.
+    """
+    mailIncludesText: Boolean
+
     """Whether its audience is told by mail once it is out."""
     notifyByMail: Boolean
     pinned: Boolean
@@ -4397,14 +4405,18 @@ type Mutation {
   hideChatMessagesOf(chatId: ID!, participantId: ID!, reason: String!): Int!
 
   """
-  The code printed on a person's application documents in the conference, for the holder themselves and participant care (FORBIDDEN for anybody else). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
-  issueDocumentCode(
+  issueDocumentCodes(
     conferenceId: ID!
+
+    """A test print: the layouts being edited."""
+    layouts: JSON
+    pages: [PrintedPageInput!]!
 
     """The holder's user id."""
     userId: ID!
-  ): SignedCode!
+  ): [SignedCode!]!
 
   """
   A fresh code for the caller's digital nametag in the conference, good for ten minutes, to show as a QR code for the team to scan. A mutation so no client cache can hand back an old, expired one; it writes nothing, so it publishes nothing. Only ever the caller's own id is signed.
@@ -4912,6 +4924,7 @@ type Mutation {
     body: String
     id: ID!
     importance: AnnouncementimportanceEnum
+    mailIncludesText: Boolean
     notifyByMail: Boolean
     pinned: Boolean
 
@@ -5077,7 +5090,7 @@ type Mutation {
     postalZip: String
 
     """
-    Whether the QR codes the app shows and prints are in the corporate design (round blue modules, the emblem where there is room) or plain black squares.
+    Whether the QR codes the app shows and prints are in the corporate design (round blue modules, the emblem where there is room) or plain black squares. The application documents always carry plain ones.
     """
     qrCorporateDesign: Boolean
 
@@ -6193,6 +6206,12 @@ enum PossibleduplicatestatusEnum {
   OPEN
 }
 
+enum PostalDocument {
+  contract
+  guardianConsent
+  mediaConsent
+}
+
 """
 What the connect form shows about the supervisor a connection code names.
 """
@@ -6207,6 +6226,18 @@ type PreviewConferenceSupervisor {
 
   """The supervisor's own school."""
   school_name: String
+}
+
+"""A page of the application documents."""
+input PrintedPageInput {
+  document: PostalDocument!
+  height: Float!
+
+  """Which page of the document's template, from 0."""
+  page: Int!
+
+  """The page size in points."""
+  width: Float!
 }
 
 """

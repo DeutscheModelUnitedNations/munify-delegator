@@ -153,12 +153,12 @@ The **Documents & Templates** tab holds everything DELEGATOR builds the particip
 - **Postal Templates**: one PDF each for **Binding Registration**, **Parental Agreement** (only included for minors), **Media Usage Agreement** and **Terms & Conditions**. Participants can only download their postal registration when all four are stored.
 - **Certificate of participation**: the PDF the certificates are printed on. Without it no certificate can be downloaded.
 
-Every template has its own card showing whether it is **Stored**, **Missing**, **Uploaded on saving** or **Removed on save**. On the card:
+Every template has its own card whose icon at the bottom right shows (its name appears when you point at it) whether it is **Stored**, **Missing**, **Uploaded on saving** or **Removed on save**. On the card:
 
-- **Upload a PDF** or **Replace with a new PDF** picks a file of up to 10 MB. It is only uploaded with **Save settings**.
+- **Choose a PDF or drop it here** (for a stored template **Replace PDF**) takes a file of up to 10 MB, by clicking or by dropping it on the card. The card shows the first page and how many pages the PDF has. It is only uploaded with **Save settings**.
 - The eye (**View the stored template**) opens the stored file.
 - The bin (**Remove template**) removes it on the next save, **Undo removal** takes that back.
-- **Place fields** and **Test document** only work once the template is saved ("Upload and save a template first", "Save the new template first"). The test document of the postal registration needs all four templates.
+- **Place fields** and **Test document** only work once the template is saved ("Upload and save a template first", "Save the new template first"). The four templates of the postal registration share one **Generate test document** below their cards, which needs all four.
 
 The question mark next to the headings (**Help on the PDF templates**) explains what goes on which template.
 
@@ -168,7 +168,7 @@ A new template applies at once to every document generated after it. If you remo
 
 ### Placing fields on the template {#document-layouts}
 
-The templates contain no placeholders. DELEGATOR writes the person's details onto the first page of the PDF in the Space Mono font, and where is up to you with **Place fields**. The window **Layout on the template:** with the document's name shows the page, and you drag each field to its spot:
+The templates contain no placeholders. DELEGATOR writes the person's details onto the first page of the PDF in the Space Mono font, and where is up to you with **Place fields**. The window **Layout on the template:** with the document's name shows the page, and you drag each field to its spot, up to 10 mm from the edge (the dashed line; printers leave the edge blank). The magnifier above the page (or Ctrl and the mouse wheel) zooms in, to hit small boxes exactly:
 
 | Document                         | Fields                                                                                                                                       |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -177,12 +177,12 @@ The templates contain no placeholders. DELEGATOR writes the person's details ont
 | **Parental Agreement**           | **Name**, **Date of Birth**, **QR code with name and ID**, **Page number**                                                                   |
 | **Media Usage Agreement**        | **Name**, **Date of Birth**, **Address**, **QR code with name and ID**, **Page number**                                                      |
 
-You resize the check-in list and the QR codes from their bottom right corner, and change the texts' font size with minus and plus below the page. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
+You resize the check-in list and the QR codes from their bottom right corner, and change the texts' font size with minus and plus under **Font sizes** in the column beside the page. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
 
 The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the name and ID beside it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
 
 :::tip Leave room
-Leave room on your template where the fields go. **Test document** on the card shows the result with made-up details and the postal address as it currently stands in the form.
+Leave room on your template where the fields go. **Readability** beside the page tells you where parts overlap or lie on the template's text. Where the QR code, a mark or a field is involved, **Save** only works once you have moved it. The test document shows the result with made-up details and the postal address as it currently stands in the form.
 :::
 
 ### Adopted resolutions {#resolutions}

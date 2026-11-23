@@ -1,5 +1,10 @@
+import { z } from 'zod';
+import { db } from '#api/db/db';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
+import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
+import { encodeAreas } from '#lib/paperScan/areas';
+import { pageAreas, POSTAL_DOCUMENTS, type PrintedPage } from '#lib/paperScan/pageAreas';
 import type { CertificateJWTPayload } from '#lib/helpers/certificateJwt';
 import {
 	LIVE_CODE_VALIDITY_SECONDS,
@@ -31,17 +36,63 @@ export function issueLiveCode({
 	});
 }
 
-/** The code printed on the application documents of `userId` in the conference. */
-export function issuePrintCode({
+/**
+ * The arguments of `issueDocumentCodes`: up to 60 pages, each of a postal document, a page of its
+ * template (from 0) and its size in points; and for a test print the layouts and switch as the
+ * team is editing them.
+ */
+export const documentCodesArgsSchema = z.looseObject({
+	pages: z
+		.array(
+			z.object({
+				document: z.enum(POSTAL_DOCUMENTS),
+				page: z.number().int().min(0).max(99),
+				width: z.number().min(50).max(5000),
+				height: z.number().min(50).max(5000)
+			}),
+			{ error: () => m.documentCodesInvalidPages() }
+		)
+		.min(1, { error: () => m.documentCodesInvalidPages() })
+		.max(60, { error: () => m.documentCodesInvalidPages() })
+});
+
+/**
+ * The codes printed on the pages of the application documents of `userId` in the conference, one
+ * per page in the order given, each carrying where its page's alignment marks and fields are, from
+ * the stored layouts (`layouts` stand in for them in a test print of a layout being edited).
+ */
+export async function issuePrintCodes({
 	userId,
 	conferenceId,
+	pages,
+	draft,
 	now = Date.now()
 }: {
 	userId: string;
 	conferenceId: string;
+	pages: readonly PrintedPage[];
+	draft?: { layouts: unknown };
 	now?: number;
 }) {
-	return signCode({ kind: 'print', userId, conferenceId, issuedAt: secondsOf(now) });
+	const conference = await db.query.conference.findFirst({
+		where: { id: conferenceId },
+		columns: { documentLayouts: true }
+	});
+	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
+	const layouts = draft ? draft.layouts : conference.documentLayouts;
+	const issuedAt = secondsOf(now);
+	return Promise.all(
+		pages.map(({ document, page, width, height }) => {
+			const fields = pageAreas({
+				document,
+				layout: resolveDocumentLayout({ document, stored: layouts }),
+				page,
+				size: { width, height }
+			});
+			const areas = fields.areas.length > 0 ? encodeAreas(fields) : undefined;
+			return signCode({ kind: 'print', userId, conferenceId, issuedAt, areas });
+		})
+	);
 }
 
 /** The largest card number a card carries; a reprint past it is refused. */

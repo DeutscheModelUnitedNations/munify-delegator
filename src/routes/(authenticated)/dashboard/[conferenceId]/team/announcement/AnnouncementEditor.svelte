@@ -48,6 +48,7 @@
 	let importance = $state<AnnouncementImportance>(seed?.importance ?? 'NORMAL');
 	let pinned = $state(seed?.pinned ?? false);
 	let notifyByMail = $state(seed?.notifyByMail ?? false);
+	let mailIncludesText = $state(seed?.mailIncludesText ?? true);
 	let visibleUntil = $state(
 		seed?.visibleUntil
 			? dateToDatetimeLocal({
@@ -131,6 +132,7 @@
 						importance,
 						pinned,
 						notifyByMail,
+						mailIncludesText,
 						visibleUntil,
 						audiences
 					},
@@ -287,6 +289,20 @@
 						<span class="text-base-content/60 text-xs">{m.announcementNotifyHint()}</span>
 					</span>
 				</label>
+				{#if notifyByMail}
+					<label class="ms-8 flex cursor-pointer items-start gap-3">
+						<input
+							type="checkbox"
+							class="toggle toggle-primary toggle-sm mt-0.5 shrink-0"
+							bind:checked={mailIncludesText}
+							data-testid="announcement-mail-text"
+						/>
+						<span class="flex flex-col gap-0.5">
+							<span class="text-sm font-medium">{m.announcementMailTextLabel()}</span>
+							<span class="text-base-content/60 text-xs">{m.announcementMailTextHint()}</span>
+						</span>
+					</label>
+				{/if}
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-medium">{m.announcementVisibleUntil()}</span>
 					<input type="datetime-local" class="input w-full" bind:value={visibleUntil} />

@@ -29,6 +29,7 @@ export function mailedAnnouncement(row: {
 	title: string;
 	body: string;
 	signature: string | null;
+	mailIncludesText: boolean;
 	mailRevision: number;
 	attachments: { file: { fileName: string | null } }[];
 }): SnapshotAnnouncement {
@@ -37,6 +38,7 @@ export function mailedAnnouncement(row: {
 		title: row.title,
 		body: row.body,
 		signature: row.signature,
+		includesText: row.mailIncludesText,
 		mailRevision: row.mailRevision,
 		attachmentNames: row.attachments.flatMap(({ file }) => (file.fileName ? [file.fileName] : []))
 	};

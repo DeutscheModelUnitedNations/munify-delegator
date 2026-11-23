@@ -10,30 +10,32 @@
 	let { texts, onstep }: Props = $props();
 </script>
 
-<div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-	<span class="text-sm font-semibold">{m.certificateLayoutFontSize()}</span>
-	{#each texts as { id, label, size } (id)}
-		<div class="flex items-center gap-2">
-			<span class="text-sm">{label}</span>
-			<div class="join">
-				<button
-					type="button"
-					class="btn btn-xs join-item"
-					aria-label={m.certificateLayoutSmaller()}
-					onclick={() => onstep(id, -1)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-minus"></i>
-				</button>
-				<span class="btn btn-xs join-item pointer-events-none">{size} pt</span>
-				<button
-					type="button"
-					class="btn btn-xs join-item"
-					aria-label={m.certificateLayoutLarger()}
-					onclick={() => onstep(id, 1)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-plus"></i>
-				</button>
-			</div>
-		</div>
-	{/each}
-</div>
+<section class="flex flex-col gap-2" aria-labelledby="layout-font-sizes">
+	<h3 id="layout-font-sizes" class="text-sm font-semibold">{m.documentLayoutFontSizes()}</h3>
+	<ul class="flex flex-col gap-1">
+		{#each texts as { id, label, size } (id)}
+			<li class="flex items-center justify-between gap-2">
+				<span class="truncate text-sm">{label}</span>
+				<div class="join shrink-0">
+					<button
+						type="button"
+						class="btn btn-xs join-item"
+						aria-label="{label}: {m.certificateLayoutSmaller()}"
+						onclick={() => onstep(id, -1)}
+					>
+						<i aria-hidden="true" class="ph-duotone ph-minus"></i>
+					</button>
+					<span class="btn btn-xs join-item pointer-events-none w-14">{size} pt</span>
+					<button
+						type="button"
+						class="btn btn-xs join-item"
+						aria-label="{label}: {m.certificateLayoutLarger()}"
+						onclick={() => onstep(id, 1)}
+					>
+						<i aria-hidden="true" class="ph-duotone ph-plus"></i>
+					</button>
+				</div>
+			</li>
+		{/each}
+	</ul>
+</section>

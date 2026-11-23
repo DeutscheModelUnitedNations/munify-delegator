@@ -46,9 +46,28 @@ async function addPageCoverage(page: Page, map: libCoverage.CoverageMap) {
 
 /**
  * Playwright's `test`, plus browser coverage of the default `page` when a coverage run asked for
- * it. Pages a test opens on contexts of its own are not recorded.
+ * it. Pages a test opens on contexts of its own are not recorded, and those contexts are closed
+ * after the test: the worker's browser outlives it, and every page left open keeps its live
+ * queries running, which piled up to tens of gigabytes over a run.
  */
-export const test = base.extend<object, { browserCoverage: libCoverage.CoverageMap | undefined }>({
+export const test = base.extend<
+	{ closeOwnContexts: void },
+	{ browserCoverage: libCoverage.CoverageMap | undefined }
+>({
+	closeOwnContexts: [
+		async ({ browser }, use) => {
+			const before = new Set(browser.contexts());
+			await use();
+			await Promise.all(
+				browser
+					.contexts()
+					.filter((context) => !before.has(context))
+					.map((context) => context.close())
+			);
+		},
+		// set up first, so torn down last: after the default page has given its coverage
+		{ auto: true }
+	],
 	browserCoverage: [
 		// eslint-disable-next-line no-empty-pattern -- Playwright requires the destructuring
 		async ({}, use) => {

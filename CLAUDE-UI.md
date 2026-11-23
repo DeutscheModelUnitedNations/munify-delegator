@@ -150,8 +150,11 @@ Long forms (profile, conference settings) group fields with `FormSection` (`titl
 optional `description` on the left, fields on the right, groups separated by a rule, not boxed); lay
 related fields side by side with a `grid` inside. `<FormSection title={m.address()} icon="house">`.
 
-`FormImage`: image upload (drop zone, preview, replace, discard), fills the same `File` field as
-`FormFile`; `storedUrl` previews what the server holds.
+`FormImage`: image upload (drop zone, preview, replace, discard) into a `File` field;
+`storedUrl` previews what the server holds.
+`FormPdf`: the same for a PDF, previewing its first page small with its page count (pdf.js,
+`#lib/helpers/pdfPages`); `hideLabel` where a card titles it (`TemplateCard`), `removable` for a
+stored one; its drop zone takes the page's shape (portrait A4 until drawn), as wide as its container.
 
 ### FormFieldset (Required for Grouping)
 
@@ -166,7 +169,7 @@ Fields take `form`, `name`, `label` (plus as listed):
 
 - `Form` (`form`, `showSubmitButton`, `action`): wrapper with submit button
 - `FormTextInput`: `labelIcon` (snippet), `type`, `step`, `placeholder`
-- `FormTextArea`, `FormCheckbox`, `FormDateTimeInput`, `FormFile`; `FormSelect`: `options`
+- `FormTextArea`, `FormCheckbox`, `FormDateTimeInput`; `FormSelect`: `options`
   (`{ value, label }[]`)
 - `FormSubmitButton` (`form`, `disabled`, `loading`)
 - `AddressRegionField`: `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has no region
@@ -239,6 +242,10 @@ browsers give unasked cannot read a signed code printed on paper.
 - `manualPlaceholder`, `scanPromptText`: Texts for the manual field and while scanning
 - `cameraZIndex`: z-index class of the preview (default `'z-30'`)
 - `extraControls`: Snippet between camera settings and input
+- `readPage`: `({ frame, code }) => Promise<boolean>`: reads the whole page a code is on (the
+  postal registration's "whole page" mode, `#lib/paperScan`). Given, the camera asks for 4K and a
+  code counts only once this answers true for the picture it was read in; `ScanFlowPage` passes it
+  through, with `scanPrompt`
 
 Exposes `reset()` (clears the code, restarts camera or refocuses input); call it via `bind:this`
 after saving. Typical binding into URL state:
