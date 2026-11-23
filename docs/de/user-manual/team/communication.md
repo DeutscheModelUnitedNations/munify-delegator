@@ -140,7 +140,7 @@ Unter **Gremien** steht jeder Schritt der Gremienvorlage als Zeile und jedes Gre
 
 ### Freigeben
 
-Die Teilnehmenden lesen den Leitfaden, sobald der Schalter **Leitfaden veröffentlicht** an und ihre Rollen verteilt sind. Bis dahin verlinkt das Dashboard weiter den externen Leitfaden aus den Einstellungen.
+Die Teilnehmenden lesen den Leitfaden, sobald der Schalter **Leitfaden veröffentlicht** an und ihre Rollen verteilt sind. Bis dahin verlinkt das Dashboard weiter den externen Leitfaden aus den Einstellungen. Den Schalter findest du im Leitfaden und gleichlautend in den [Einstellungen](./configuration) unter Status; beide sind dieselbe Einstellung.
 
 ### KI-Assistenten
 

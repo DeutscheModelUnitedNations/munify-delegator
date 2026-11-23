@@ -95,6 +95,22 @@
 				</span>
 			</span>
 		</label>
+		<!-- the same switch as in the guide workspace (team/guide) -->
+		<label class="flex cursor-pointer items-start gap-3">
+			<input
+				type="checkbox"
+				class="toggle toggle-primary"
+				name="guidePublished"
+				aria-describedby="guide-published-description"
+				bind:checked={$formData.guidePublished}
+			/>
+			<span class="flex flex-col gap-0.5">
+				<span>{m.guidePublishedSwitch()}</span>
+				<span id="guide-published-description" class="text-base-content/60 text-sm">
+					{m.guidePublishedHint()}
+				</span>
+			</span>
+		</label>
 	</div>
 	<!-- the inputs line up at the bottom, whatever their descriptions wrap to -->
 	<div class="grid grid-cols-1 items-end gap-x-4 lg:grid-cols-3">

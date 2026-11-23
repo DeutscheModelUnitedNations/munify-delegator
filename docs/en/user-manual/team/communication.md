@@ -140,7 +140,7 @@ Under **Committees** every step of the committee template is a row and every com
 
 ### Opening it
 
-Participants read the guide once the **Guide published** switch is on and their roles are released. Until then the dashboard keeps linking the external guide from the settings.
+Participants read the guide once the **Guide published** switch is on and their roles are released. Until then the dashboard keeps linking the external guide from the settings. The switch sits in the guide and, with the same name, in the [settings](./configuration) under status; both are the same setting.
 
 ### AI assistants
 
