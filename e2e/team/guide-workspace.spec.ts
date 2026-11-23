@@ -24,7 +24,9 @@ test('the content lead puts a page into the guide and publishes it with the side
 }) => {
 	await openAsContentLead(page);
 	const tree = page.getByTestId('guide-tree');
-	await expect(tree.getByText('Workspace start')).toBeVisible({ timeout: 15_000 });
+	await expect(tree.getByRole('link', { name: /Workspace start/ })).toBeVisible({
+		timeout: 15_000
+	});
 
 	const outside = page.getByTestId('guide-tree-outside');
 	const loose = outside.getByTestId('guide-tree-row').filter({ hasText: 'Workspace loose page' });
@@ -34,7 +36,7 @@ test('the content lead puts a page into the guide and publishes it with the side
 	// out of the bin, into the section
 	await expect(outside).toHaveCount(0);
 	const start = tree.getByTestId('guide-tree-section').filter({ hasText: 'Start' });
-	await expect(start.getByText('Workspace loose page')).toBeVisible();
+	await expect(start.getByRole('link', { name: /Workspace loose page/ })).toBeVisible();
 
 	await page.getByTestId('guide-publish-changes').click();
 	const dialog = page.getByTestId('guide-publish-changes-dialog');
@@ -77,15 +79,17 @@ test('the visibility tab shows each group of readers its own sidebar', async ({ 
 	await openAsContentLead(page, '/visibility');
 	const sidebar = page.getByTestId('guide-reader-sidebar');
 	// delegates (the first group) see their committee's section from the template
-	await expect(sidebar.getByText('Workspace Committee')).toBeVisible({ timeout: 15_000 });
-	await expect(sidebar.getByText('Workspace start')).toBeVisible();
+	await expect(sidebar.getByRole('heading', { name: 'Workspace Committee' })).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(sidebar.getByRole('link', { name: /Workspace start/ })).toBeVisible();
 
 	await page
 		.locator('[data-tour="team.guideVisibility.readers"]')
 		.getByRole('button', { name: /^(NA-Vertreter\*innen|Non-state actors)$/ })
 		.click();
-	await expect(sidebar.getByText('Workspace Committee')).toHaveCount(0);
-	await expect(sidebar.getByText('Workspace start')).toBeVisible();
+	await expect(sidebar.getByRole('heading', { name: 'Workspace Committee' })).toHaveCount(0);
+	await expect(sidebar.getByRole('link', { name: /Workspace start/ })).toBeVisible();
 	await expect(page.getByTestId('guide-visibility-table')).toContainText('Start');
 });
 

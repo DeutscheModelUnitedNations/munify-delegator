@@ -45,39 +45,43 @@
 		<i class="ph-duotone ph-plus" aria-hidden="true"></i>
 		{label}
 	</summary>
-	<div
-		class="dropdown-content bg-base-100 rounded-box border-base-300 z-30 flex w-72 flex-col gap-2 border p-2 shadow-lg"
-	>
-		<input
-			class="input input-sm w-full"
-			placeholder={m.guideTreeSearchPages()}
-			aria-label={m.guideTreeSearchPages()}
-			bind:value={query}
-		/>
-		<ul class="menu max-h-72 w-full flex-nowrap overflow-y-auto p-0">
-			{#each shown as page (page.id)}
-				<li>
-					<button type="button" onclick={() => pick(page.id)}>
-						<StateDot state={page.state} />
-						<span class="min-w-0 flex-1 truncate">{page.title}</span>
-						{#if page.inGuide}<span class="badge badge-ghost badge-xs">{m.guideTreeInGuide()}</span
-							>{/if}
-					</button>
-				</li>
-			{:else}
-				<li class="menu-disabled"><span>{m.guideNoPagesFiltered()}</span></li>
-			{/each}
-		</ul>
-		<button
-			type="button"
-			class="btn btn-sm btn-primary"
-			onclick={() => {
-				open = false;
-				onCreate();
-			}}
+	<!-- the list only while open: a closed menu in every section would carry every page -->
+	{#if open}
+		<div
+			class="dropdown-content bg-base-100 rounded-box border-base-300 z-30 flex w-72 flex-col gap-2 border p-2 shadow-lg"
 		>
-			<i class="ph-duotone ph-file-plus" aria-hidden="true"></i>
-			{m.guideNewPage()}
-		</button>
-	</div>
+			<input
+				class="input input-sm w-full"
+				placeholder={m.guideTreeSearchPages()}
+				aria-label={m.guideTreeSearchPages()}
+				bind:value={query}
+			/>
+			<ul class="menu max-h-72 w-full flex-nowrap overflow-y-auto p-0">
+				{#each shown as page (page.id)}
+					<li>
+						<button type="button" onclick={() => pick(page.id)}>
+							<StateDot state={page.state} />
+							<span class="min-w-0 flex-1 truncate">{page.title}</span>
+							{#if page.inGuide}<span class="badge badge-ghost badge-xs"
+									>{m.guideTreeInGuide()}</span
+								>{/if}
+						</button>
+					</li>
+				{:else}
+					<li class="menu-disabled"><span>{m.guideNoPagesFiltered()}</span></li>
+				{/each}
+			</ul>
+			<button
+				type="button"
+				class="btn btn-sm btn-primary"
+				onclick={() => {
+					open = false;
+					onCreate();
+				}}
+			>
+				<i class="ph-duotone ph-file-plus" aria-hidden="true"></i>
+				{m.guideNewPage()}
+			</button>
+		</div>
+	{/if}
 </details>
