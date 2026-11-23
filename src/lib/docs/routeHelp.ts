@@ -236,9 +236,13 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 		docs: 'user-manual/team/communication#guide-editor',
 		tour: async () => (await import('./tours/team/guidePage.tour')).guidePageTour
 	},
-	'/(authenticated)/dashboard/[conferenceId]/team/guide-sidebar': {
-		docs: 'user-manual/team/communication#guide-sidebar',
-		tour: async () => (await import('./tours/team/guideSidebar.tour')).guideSidebarTour
+	'/(authenticated)/dashboard/[conferenceId]/team/guide/visibility': {
+		docs: 'user-manual/team/communication#guide-visibility',
+		tour: async () => (await import('./tours/team/guideVisibility.tour')).guideVisibilityTour
+	},
+	'/(authenticated)/dashboard/[conferenceId]/team/guide/committees': {
+		docs: 'user-manual/team/communication#guide-committees',
+		tour: async () => (await import('./tours/team/guideCommittees.tour')).guideCommitteesTour
 	},
 	'/(authenticated)/dashboard/[conferenceId]/team/messages': {
 		docs: 'user-manual/team/communication#messages',

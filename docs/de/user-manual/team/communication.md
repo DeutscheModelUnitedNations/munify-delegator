@@ -7,14 +7,14 @@ description: Ankündigungen, Nachrichten, E-Mails, Kalender und Umfragen einer K
 
 Diese Seite zeigt, wie das Team einer Konferenz Teilnehmende erreicht: mit Ankündigungen auf dem Dashboard, mit Chats, mit automatischen E-Mails, mit dem Zeitplan und mit Umfragen. Die Seiten dafür liegen im Team-Bereich in der Gruppe **Kommunikation**. Wie du dich im Team-Bereich bewegst, steht unter [Der Team-Bereich](./overview#the-team-area).
 
-| Seite                                   | Wer sie öffnet                                                           |
-| --------------------------------------- | ------------------------------------------------------------------------ |
-| **Ankündigungen**                       | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt**       |
-| **Leitfaden**, **Leitfaden-Navigation** | **Projektleitung**, **Leitung Inhalt**                                   |
-| **Nachrichten**                         | Jedes Teammitglied. Die Seite zeigt nur die Postfächer, die du betreust. |
-| **E-Mails**                             | **Projektleitung**, **Teilnehmendenbetreuung**                           |
-| **Kalender**                            | **Projektleitung**, **Teilnehmendenbetreuung**                           |
-| **Umfragen**                            | **Projektleitung**, **Teilnehmendenbetreuung**                           |
+| Seite             | Wer sie öffnet                                                           |
+| ----------------- | ------------------------------------------------------------------------ |
+| **Ankündigungen** | **Projektleitung**, **Teilnehmendenbetreuung**, **Leitung Inhalt**       |
+| **Leitfaden**     | **Projektleitung**, **Leitung Inhalt**                                   |
+| **Nachrichten**   | Jedes Teammitglied. Die Seite zeigt nur die Postfächer, die du betreust. |
+| **E-Mails**       | **Projektleitung**, **Teilnehmendenbetreuung**                           |
+| **Kalender**      | **Projektleitung**, **Teilnehmendenbetreuung**                           |
+| **Umfragen**      | **Projektleitung**, **Teilnehmendenbetreuung**                           |
 
 Administrator\*innen des Systems öffnen alle Seiten.
 
@@ -89,11 +89,23 @@ Eine verschickte E-Mail bleibt bei den Empfangenden, auch wenn du die Ankündigu
 
 ## Vorbereitungsleitfaden {#guide}
 
-Der Leitfaden bereitet die Teilnehmenden in der App auf die Konferenz vor: Seiten wie im alten guide.dmun.de, mit einer Navigation je Konferenz. Die Seiten **Leitfaden** und **Leitfaden-Navigation** öffnen **Projektleitung** und **Leitung Inhalt**.
+Der Leitfaden bereitet die Teilnehmenden in der App auf die Konferenz vor: Seiten wie im alten guide.dmun.de, mit einer Navigation je Konferenz. Die Seite **Leitfaden** öffnen **Projektleitung** und **Leitung Inhalt**. Sie hat drei Reiter: **Struktur**, **Sichtbarkeit** und **Gremien**.
+
+### Struktur {#guide-structure}
+
+Links steht der Leitfaden als Baum, so wie die Teilnehmenden ihn sehen: die Abschnitte mit ihren Seiten, dazwischen gestrichelt die **Gremienvorlage**. Ein Punkt zeigt den Stand jeder Seite: grün veröffentlicht, orange seit der Veröffentlichung geändert, leer noch nie veröffentlicht. Ein Klick öffnet die Seite rechts daneben im Editor.
+
+- **Ordnen:** Ziehe Einträge und Abschnitte an ihren Platz, auch zwischen Abschnitten und in die Gremienvorlage. Dasselbe geht ohne Maus über das Menü **…** jeder Zeile (nach oben, nach unten, verschieben nach).
+- **Hinzufügen:** **+ Seite hinzufügen** am Ende eines Abschnitts sucht unter allen Seiten oder legt eine neue an. Seiten, die diese Konferenz erreichen, aber in keinem Abschnitt stehen, sammelt **Nicht im Leitfaden** unten im Baum.
+- **Abschnitte:** Über das Menü **…** eines Abschnitts benennst du ihn um und legst fest, wer ihn sieht.
+
+Die Navigation speichert sich beim Ändern als Entwurf. **Änderungen veröffentlichen** unten im Baum zeigt alles, was die Teilnehmenden noch nicht sehen: die Seiten, die der Leitfaden nutzt und die neu oder geändert sind, und die Navigation selbst. Du wählst aus und veröffentlichst alles in einem Schritt; erst die Seiten, dann die Navigation.
+
+Ohne geöffnete Seite zeigt die Struktur die Einstellungen des Leitfadens und die früheren Versionen der Navigation.
 
 ### Seiten und ihre Freigabe
 
-Unter **Leitfaden** stehen alle Seiten, die diese Konferenz erreichen. Eine Seite wird einmal geschrieben und kann geteilt werden:
+Eine Seite wird einmal geschrieben und kann geteilt werden:
 
 | Freigabe                | Erreicht                                                     |
 | ----------------------- | ------------------------------------------------------------ |
@@ -102,21 +114,27 @@ Unter **Leitfaden** stehen alle Seiten, die diese Konferenz erreichen. Eine Seit
 | **Reihe**               | Jede Konferenz der Reihe (z. B. MUN-SH), in jedem Jahr       |
 | **Nur diese Konferenz** | Nur hier (z. B. Organisatorisches)                           |
 
-Geteilte Seiten erreichen nur Konferenzen, die einer **Konferenzreihe** angehören. Die Reihe legt die Projektleitung oben auf der Seite fest; die Reihen selbst pflegen Systemadministrator\*innen im Kontomenü unter **Konferenzreihen**. Eine geteilte Seite darf das Leitfaden-Team jeder Konferenz bearbeiten, die sie erreicht.
+Geteilte Seiten erreichen nur Konferenzen, die einer **Konferenzreihe** angehören. Die Reihe legt die Projektleitung in den Einstellungen des Leitfadens fest; die Reihen selbst pflegen Systemadministrator\*innen im Kontomenü unter **Konferenzreihen**. Eine geteilte Seite darf das Leitfaden-Team jeder Konferenz bearbeiten, die sie erreicht.
 
-Jedes Gremium und jedes Thema hat eine eigene Seite (**Seiten der Gremien und Themen**). Sie gehören zur Konferenz und füllen die Gremienvorlage der Navigation.
+Jedes Gremium und jedes Thema hat eine eigene Seite. Sie gehören zur Konferenz und füllen die Gremienvorlage.
 
 ### Der Editor {#guide-editor}
 
 Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschriften, Listen, Zitate, Links, Bilder und Dateien zum Herunterladen, Hinweisboxen, Aufklappbereiche, Buttons und Videos. Steht der Cursor in einer Hinweisbox, wählst du in der Leiste ihr Symbol (Suche über alle Phosphor-Icons) und ihre Farbe. Platzhalter setzen beim Lesen den Namen der Konferenz, des Gremiums oder die Liste der Themen ein; die beiden letzten nur in Seiten der Gremienvorlage.
 
+Rechts neben dem Text stehen die Einstellungen der Seite: ihre Freigabe, **Im Leitfaden** (in welchen Abschnitten sie steht, unter welchem Titel und für wen) und ihre Versionen.
+
 Änderungen sind ein Entwurf, bis du **Veröffentlichen** wählst. Vorher zeigt die App, welche Konferenzen die Seite danach erreichen und welche nicht mehr. Jede Veröffentlichung bleibt als Version erhalten; **Wiederherstellen** holt sie in den Entwurf zurück. Beim Veröffentlichen der Seite eines Themas entsteht der **Gremientext** als PDF; die Teilnehmenden laden ihn auf der Seite herunter.
 
-### Die Navigation {#guide-sidebar}
+### Sichtbarkeit {#guide-visibility}
 
-Unter **Leitfaden-Navigation** legst du fest, welche Seiten die Teilnehmenden in welchen Abschnitten lesen. Jeder Abschnitt und jeder Eintrag hat eine Zielgruppe: alle, Delegierte, NA-Vertreter\*innen, einzelne Sonderrollen (z. B. Presse oder IGH) oder Betreuende. Die **Gremienvorlage** wiederholt sich für jedes Gremium und erscheint nur dessen Delegierten: gemeinsame Schritte, die Seite des Gremiums und die Seiten seiner Themen. Betreuende und das Team sehen alles.
+Jeder Abschnitt und jeder Eintrag hat eine Zielgruppe: alle, Delegierte, NA-Vertreter\*innen, einzelne Sonderrollen (z. B. Presse oder IGH) oder Betreuende. Die Gremienvorlage erscheint nur den Delegierten des jeweiligen Gremiums. Betreuende und das Team sehen alles.
 
-Die Vorschau zeigt den Leitfaden so, wie ihn eine Zielgruppe sieht, wahlweise mit den Entwürfen. Auch die Navigation ist ein Entwurf, bis du sie veröffentlichst; alle Seiten darin müssen dann veröffentlicht sein.
+Unter **Sichtbarkeit** wählst du oben eine Gruppe; links steht dann genau ihre Navigation, wie sie der Entwurf ergibt. Die Tabelle daneben stellt jeden Abschnitt jeder Gruppe gegenüber: ganz, nur einzelne Einträge, nur das eigene Gremium oder gar nicht; die Legende darunter erklärt die Symbole. Über **Sichtbarkeit** in einer Zeile änderst du, wer den Abschnitt sieht.
+
+### Gremien {#guide-committees}
+
+Unter **Gremien** steht jeder Schritt der Gremienvorlage als Zeile und jedes Gremium als Spalte. Gemeinsame Seiten gehen über alle Spalten, die Seiten der Gremien und ihrer Themen haben je eine Zelle mit ihrem Stand. Fehlende Seiten legst du mit **Anlegen** an; über jeder Spalte steht, wie viele Seiten des Gremiums veröffentlicht sind. **Nur Offenes** blendet fertige Zeilen aus.
 
 ### Freigeben
 

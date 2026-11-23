@@ -1,7 +1,7 @@
 import type { Tour } from '@deutschemodelunitednations/docs-kit';
 import { m } from '#lib/paraglide/messages';
 
-/** A guide page in the editor. Anchors live in `team/guide/page/[pageId]/+page.svelte`. */
+/** A guide page in the editor. Anchors live in `team/guide/page/[pageId]/` (page and its parts). */
 export const guidePageTour: Tour = {
 	id: 'team.guidePage',
 	steps: [
@@ -22,6 +22,12 @@ export const guidePageTour: Tour = {
 			title: () => m.tourTeamGuidePagePublishTitle(),
 			body: () => m.tourTeamGuidePagePublishBody(),
 			side: 'bottom'
+		},
+		{
+			anchor: 'team.guidePage.entries',
+			title: () => m.tourTeamGuidePageEntriesTitle(),
+			body: () => m.tourTeamGuidePageEntriesBody(),
+			side: 'left'
 		},
 		{
 			anchor: 'team.guidePage.versions',

@@ -24,11 +24,15 @@
 	import VersionList from './VersionList.svelte';
 	import ScopeSection from './ScopeSection.svelte';
 	import PageStatus from './PageStatus.svelte';
+	import GuideEntries from './GuideEntries.svelte';
+	import { withoutPage } from '#lib/guide/outlineEditing';
+	import { getOutlineDraft } from '../../outlineDraft.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 	const conferenceId = untrack(() => params.conferenceId);
 	const pageId = untrack(() => params.pageId);
+	const draft = getOutlineDraft();
 
 	// the text is seeded once: re-reading it while typing would discard the edits
 	const seed = await client.query.guidePage({
@@ -157,6 +161,9 @@
 
 	async function remove() {
 		if (!(await confirmDialog({ text: m.guideDeleteConfirm(), danger: true }))) return;
+		// the draft must not name a page that is gone
+		draft.change(withoutPage({ outline: draft.outline, pageId }));
+		await draft.flush();
 		const promise = Promise.resolve(client.mutate.deleteGuidePage({ __args: { id: pageId } }));
 		toast.promise(promise, conflictAwareToastMessages);
 		await promise;
@@ -176,53 +183,43 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="flex w-full flex-col gap-4">
-	<a
-		class="link link-hover text-sm"
-		href={resolve('/(authenticated)/dashboard/[conferenceId]/team/guide', { conferenceId })}
-	>
-		<i class="ph-duotone ph-arrow-left" aria-hidden="true"></i>
-		{m.guideTeamPages()}
-	</a>
+<div class="flex w-full flex-col gap-4 xl:flex-row xl:items-start">
+	<div class="flex min-w-0 flex-1 flex-col gap-4">
+		<header class="flex flex-col gap-3">
+			<label class="fieldset w-full">
+				<span class="fieldset-legend">{m.guidePageTitle()}</span>
+				<input
+					class="input input-lg w-full"
+					bind:value={title}
+					maxlength="200"
+					oninput={() => (dirty = true)}
+				/>
+			</label>
+			<div class="flex flex-wrap gap-2" data-tour="team.guidePage.publish">
+				<button class="btn" onclick={() => (showPreview = !showPreview)} aria-pressed={showPreview}>
+					<i class="ph-duotone ph-eye" aria-hidden="true"></i>
+					{m.guidePreview()}
+				</button>
+				<button class="btn btn-primary" onclick={save} disabled={saving || !dirty || !title.trim()}>
+					<i class="ph-duotone ph-floppy-disk" aria-hidden="true"></i>
+					{dirty ? m.guideSaveDraft() : m.guideSaved()}
+				</button>
+				<button class="btn btn-success" onclick={() => (publishing = true)} disabled={saving}>
+					<i class="ph-duotone ph-upload-simple" aria-hidden="true"></i>
+					{m.guidePublishPage()}
+				</button>
+			</div>
+		</header>
 
-	<header class="flex flex-wrap items-end gap-3">
-		<label class="fieldset min-w-0 flex-1">
-			<span class="fieldset-legend">{m.guidePageTitle()}</span>
-			<input
-				class="input input-lg w-full"
-				bind:value={title}
-				maxlength="200"
-				oninput={() => (dirty = true)}
-			/>
-		</label>
-		<div class="flex flex-wrap gap-2" data-tour="team.guidePage.publish">
-			<button class="btn" onclick={() => (showPreview = !showPreview)} aria-pressed={showPreview}>
-				<i class="ph-duotone ph-eye" aria-hidden="true"></i>
-				{m.guidePreview()}
-			</button>
-			<button class="btn btn-primary" onclick={save} disabled={saving || !dirty || !title.trim()}>
-				<i class="ph-duotone ph-floppy-disk" aria-hidden="true"></i>
-				{dirty ? m.guideSaveDraft() : m.guideSaved()}
-			</button>
-			<button class="btn btn-success" onclick={() => (publishing = true)} disabled={saving}>
-				<i class="ph-duotone ph-upload-simple" aria-hidden="true"></i>
-				{m.guidePublishPage()}
-			</button>
-		</div>
-	</header>
+		<PageStatus {page} {savedAt} series={seriesName} {year} />
 
-	<PageStatus {page} {savedAt} series={seriesName} {year} />
+		{#if committeePlaceholders.length > 0 && page.kind === 'GENERAL'}
+			<div class="alert alert-info alert-soft text-sm">
+				<i class="ph-duotone ph-info" aria-hidden="true"></i>
+				<span>{m.guideCommitteePlaceholderHint()}</span>
+			</div>
+		{/if}
 
-	<ScopeSection kind={page.kind} scope={page.scope} series={seriesName} {year} onApply={setScope} />
-
-	{#if committeePlaceholders.length > 0 && page.kind === 'GENERAL'}
-		<div class="alert alert-info alert-soft text-sm">
-			<i class="ph-duotone ph-info" aria-hidden="true"></i>
-			<span>{m.guideCommitteePlaceholderHint()}</span>
-		</div>
-	{/if}
-
-	<div class="grid gap-4 {showPreview ? 'xl:grid-cols-2' : ''}">
 		<div data-tour="team.guidePage.editor">
 			{#key editorKey}
 				<GuideEditor
@@ -245,16 +242,28 @@
 		{/if}
 	</div>
 
-	<VersionList versions={page.versions} onRestore={restore} />
-
-	{#if page.kind === 'GENERAL'}
-		<div>
-			<button class="btn btn-error btn-outline btn-sm" onclick={remove}>
-				<i class="ph-duotone ph-trash" aria-hidden="true"></i>
-				{m.guideDeletePage()}
-			</button>
-		</div>
-	{/if}
+	<aside
+		class="border-base-300 flex flex-col gap-6 xl:w-80 xl:shrink-0 xl:border-l xl:ps-4"
+		aria-label={m.guidePageSettings()}
+	>
+		<ScopeSection
+			kind={page.kind}
+			scope={page.scope}
+			series={seriesName}
+			{year}
+			onApply={setScope}
+		/>
+		<GuideEntries {conferenceId} {pageId} kind={page.kind} />
+		<VersionList versions={page.versions} onRestore={restore} />
+		{#if page.kind === 'GENERAL'}
+			<div>
+				<button class="btn btn-error btn-outline btn-sm" onclick={remove}>
+					<i class="ph-duotone ph-trash" aria-hidden="true"></i>
+					{m.guideDeletePage()}
+				</button>
+			</div>
+		{/if}
+	</aside>
 </div>
 
 <PublishDialog {pageId} bind:open={publishing} onPublish={publish} />

@@ -452,7 +452,8 @@ bun run preview
   columns). Each conference has one sidebar (`guide_outline`, draft/published JSON checked by
   `outlineSchema`) with audiences and a committee template; readers never read the tables:
   `myGuide` / `guideReaderPage` build their part (`guideReaderService.ts`) once `guidePublished`
-  and the release are on (the team always, with previews). Agenda item pages render their
+  and the release are on (the team always, with previews). The team works in one workspace
+  (`team/guide/`: tree + editor, visibility, committee matrix; CLAUDE-UI.md "Guide Components"). Agenda item pages render their
   committee text with Typst on publish (`committeeText.ts`). Files in page texts are `file:<id>`,
   kept by `guide_page_file` for the cleanup job. MCP: Markdown ↔ TipTap in `guideMarkdown.ts`
   (shares `#api/services/markdownTokens` with review drafts). `e2e/authorization/guide.spec.ts`.

@@ -182,9 +182,9 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'file-magnifying-glass',
 		translation: () => m.guideEntryPage()
 	},
-	'guide-sidebar': {
-		icon: 'list-bullets',
-		translation: () => m.guideTeamSidebar()
+	visibility: {
+		icon: 'eye',
+		translation: () => m.guideTabVisibility()
 	},
 	notifications: {
 		icon: 'bell',

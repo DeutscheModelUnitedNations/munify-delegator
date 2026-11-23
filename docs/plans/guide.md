@@ -282,7 +282,10 @@ What was built differs from the plan in a few places:
 - **Settings**: the series and the "Guide published" switch sit at the top of the team's
   **Guide** page instead of the conference settings page (`updateConference` takes `seriesId`,
   project management, and `guidePublished`, the content roles).
-- **Routes**: team pages `team/guide`, `team/guide/page/[pageId]`, `team/guide-sidebar`;
+- **Routes**: the team's workspace `team/guide` with the tabs structure (tree beside the editor,
+  `team/guide/page/[pageId]`), `team/guide/visibility` and `team/guide/committees` (it replaced
+  the first version's separate page list and `team/guide-sidebar`; the sidebar draft saves itself
+  and pages and sidebar publish together);
   participants `guide` and `guide/[pageId]` (`?entry=` picks one place of a shared page);
   system admins `dashboard/conference-series`.
 - **Blocks**: tables are not in the editor yet (no TipTap table extension in the project);

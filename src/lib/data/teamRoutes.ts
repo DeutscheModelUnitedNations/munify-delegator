@@ -273,20 +273,13 @@ export const teamRoutes: readonly TeamRoute[] = [
 			'seiten',
 			'pages',
 			'wiki',
-			'gremientext'
+			'gremientext',
+			'navigation',
+			'sidebar',
+			'gliederung',
+			'sichtbarkeit',
+			'gremien'
 		],
-		roles: GUIDE_ROLES
-	},
-	{
-		id: 'guideSidebar',
-		skeleton: TEAM_SKELETONS.guideSidebar,
-		path: teamPath('guide-sidebar'),
-		title: () => m.guideTeamSidebar(),
-		description: () => m.guideTeamSidebarDescription(),
-		icon: 'ph-list-bullets',
-		group: 'info',
-		category: 'communication',
-		keywords: ['leitfaden', 'guide', 'navigation', 'sidebar', 'gliederung', 'outline', 'vorlage'],
 		roles: GUIDE_ROLES
 	},
 	{
@@ -446,7 +439,8 @@ export const teamRoutes: readonly TeamRoute[] = [
  */
 export const participantViewOf = {
 	seats: 'seats',
-	calendar: 'calendar'
+	calendar: 'calendar',
+	guide: 'guide'
 } as const satisfies Partial<Record<string, string>>;
 
 /** Whether the caller may open one page */

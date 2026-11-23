@@ -310,8 +310,8 @@ The preparation guide (`docs/plans/guide.md`) lives in `src/lib/components/guide
 
 - **`GuideReader`** — a reader's guide: sidebar (`GuideSidebarNav`, a `<details>` on phones),
   the open page (`GuidePageArticle` with previous/next, `GuideNeighbour`) and the table of contents
-  (`GuideToc`, xl screens). Takes `hrefOf` for where an entry opens, so the participant route and
-  the team's preview (`team/guide-sidebar`) share it; `preview` passes `myGuide`'s preview args.
+  (`GuideToc`, xl screens). Takes `hrefOf` for where an entry opens; `preview` passes `myGuide`'s
+  preview args (the team's "view as" on the participant route).
 - **`GuideContent` / `GuideNodes`** — renders a page's TipTap JSON for readers, one small
   component per node type in `nodes/` (a lookup, not one big `{#if}` chain); children come in as
   a snippet so the node components never import `GuideNodes` back. Videos (`GuideEmbed`) load
@@ -321,6 +321,27 @@ The preparation guide (`docs/plans/guide.md`) lives in `src/lib/components/guide
   toggles, buttons, embeds, placeholders. Block attributes are changed through `promptDialog`.
 - **`ScopePicker`** — the four sharing modes as a 2×2 grid (series × year); shared modes are
   disabled without a series. `guideLabels.ts` names scopes and their badge colours.
+
+The team's **guide workspace** (`team/guide/`) is one frame (`+layout.svelte`, a `boundaryKey`
+frame like the assignment) with three tabs: **Structure** (the tree beside the open page),
+**Visibility** and **Committees**. The layout holds the sidebar draft (`createOutlineDraft`,
+context, saves itself 700 ms after the last change); every tab edits it through the pure functions
+of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
+
+- **`tree/GuideTree`** — sections and the committee template as blocks (`outlineBlocks`), pages not
+  in the guide below, `PublishChanges` (pages first, then the sidebar) at the bottom. Rows
+  (`TreeRow`) and headings (`TreeHeading`) are native drag sources and targets (`createTreeDrag`
+  → `dropInTree`); every move also has a keyboard way in the row's `TreeMenu` ("…", items as
+  `TreeMenuItem`). Page state shows as `StateDot` (green published, orange changed, ring draft).
+  No sticky or scrolling box around the tree: it would trap its dialogs and menus below the
+  footer.
+- **`page/[pageId]`** — the editor with the page's settings beside it (scope, `GuideEntries`:
+  where the draft lists the page, with label and audience, versions).
+- **`visibility/`** — reader groups as buttons (`aria-pressed`); the group's sidebar from the
+  draft (`expandOutline` + `guideForReader`) beside the table of sections × groups
+  (`visibilityRows`, icons from `visibilityCells.ts`, each with screen reader text).
+- **`committees/`** — the template as a matrix (`committeeMatrix`): shared pages span the columns,
+  missing committee/agenda item pages are created in place (`ensureGuidePageOf`).
 
 ## Chat Components
 

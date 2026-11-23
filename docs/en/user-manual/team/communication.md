@@ -7,14 +7,14 @@ description: Announcements, messages, emails, calendar and surveys of a conferen
 
 This page shows how a conference's team reaches participants: with announcements on the dashboard, with chats, with automatic emails, with the schedule and with surveys. Their pages are in the team area, in the **Communication** group. How to find your way around the team area is under [The team area](./overview#the-team-area).
 
-| Page                         | Who opens it                                                   |
-| ---------------------------- | -------------------------------------------------------------- |
-| **Announcements**            | **Project Management**, **Participant Care**, **Content Lead** |
-| **Guide**, **Guide sidebar** | **Project Management**, **Content Lead**                       |
-| **Messages**                 | Every team member. The page only shows the inboxes you answer. |
-| **Emails**                   | **Project Management**, **Participant Care**                   |
-| **Calendar**                 | **Project Management**, **Participant Care**                   |
-| **Surveys / Polls**          | **Project Management**, **Participant Care**                   |
+| Page                | Who opens it                                                   |
+| ------------------- | -------------------------------------------------------------- |
+| **Announcements**   | **Project Management**, **Participant Care**, **Content Lead** |
+| **Guide**           | **Project Management**, **Content Lead**                       |
+| **Messages**        | Every team member. The page only shows the inboxes you answer. |
+| **Emails**          | **Project Management**, **Participant Care**                   |
+| **Calendar**        | **Project Management**, **Participant Care**                   |
+| **Surveys / Polls** | **Project Management**, **Participant Care**                   |
 
 System administrators open every page.
 
@@ -89,11 +89,23 @@ An email that went out stays with its recipients, even if you edit, take back or
 
 ## Preparation guide {#guide}
 
-The guide prepares participants for the conference inside the app: pages as on the old guide.dmun.de, with a sidebar per conference. The pages **Guide** and **Guide sidebar** are opened by **Project Management** and **Content Lead**.
+The guide prepares participants for the conference inside the app: pages as on the old guide.dmun.de, with a navigation per conference. The page **Guide** is opened by **Project Management** and **Content Lead**. It has three tabs: **Structure**, **Visibility** and **Committees**.
+
+### Structure {#guide-structure}
+
+On the left is the guide as a tree, the way participants see it: the sections with their pages and, dashed, the **committee template**. A dot shows each page's state: green published, orange changed since publishing, empty never published. A click opens the page in the editor beside the tree.
+
+- **Arranging:** drag entries and sections into place, also between sections and into the committee template. The **…** menu of every row does the same without a mouse (up, down, move to).
+- **Adding:** **+ Add page** at the end of a section searches all pages or creates a new one. Pages that reach this conference but stand in no section are collected under **Not in the guide** at the bottom of the tree.
+- **Sections:** a section's **…** menu renames it and sets who sees it.
+
+The navigation saves itself as a draft while you change it. **Publish changes** at the bottom of the tree shows everything participants don't see yet: the pages the guide uses that are new or changed, and the navigation itself. You pick and publish everything in one step; pages first, then the navigation.
+
+With no page open, the structure tab shows the guide's settings and the earlier versions of the navigation.
 
 ### Pages and their scope
 
-**Guide** lists every page reaching this conference. A page is written once and can be shared:
+A page is written once and can be shared:
 
 | Scope                    | Reaches                                                    |
 | ------------------------ | ---------------------------------------------------------- |
@@ -102,21 +114,27 @@ The guide prepares participants for the conference inside the app: pages as on t
 | **Series**               | Every conference of the series (e.g. MUN-SH), every year   |
 | **This conference only** | Only here (e.g. the organisational pages)                  |
 
-Shared pages reach only conferences that belong to a **conference series**. Project management sets the series at the top of the page; system admins keep the series in the account menu under **Conference series**. A shared page may be edited by the guide team of every conference it reaches.
+Shared pages reach only conferences that belong to a **conference series**. Project management sets the series in the guide's settings; system admins keep the series in the account menu under **Conference series**. A shared page may be edited by the guide team of every conference it reaches.
 
-Every committee and every topic has a page of its own (**Committee and topic pages**). They belong to the conference and fill the sidebar's committee template.
+Every committee and every topic has a page of its own. They belong to the conference and fill the committee template.
 
 ### The editor {#guide-editor}
 
 The editor shows the page as it looks. The toolbar has headings, lists, quotes, links, images and downloads, callouts, toggles, buttons and videos. With the cursor in a callout, the toolbar picks its icon (a search over all Phosphor icons) and its colour. Placeholders put in the name of the conference, of the committee or the list of topics when read; the latter two only in pages of the committee template.
 
+Beside the text are the page's settings: its scope, **In the guide** (which sections it stands in, under which title and for whom) and its versions.
+
 Changes are a draft until you choose **Publish**. Before that the app shows which conferences the page reaches afterwards and which it no longer reaches. Every publish stays as a version; **Restore** copies it back into the draft. Publishing a topic's page renders the **committee text** as a PDF, which participants download on the page.
 
-### The sidebar {#guide-sidebar}
+### Visibility {#guide-visibility}
 
-**Guide sidebar** sets which pages participants read in which sections. Every section and entry has an audience: everyone, delegates, non-state actors, single custom roles (e.g. press or ICJ) or supervisors. The **committee template** repeats for every committee and shows to its delegates only: shared steps, the committee's page and its topics' pages. Supervisors and the team see everything.
+Every section and entry has an audience: everyone, delegates, non-state actors, single custom roles (e.g. press or ICJ) or supervisors. The committee template shows to the delegates of each committee only. Supervisors and the team see everything.
 
-The preview shows the guide as an audience sees it, with the drafts if you like. The sidebar too is a draft until you publish it; every page in it has to be published then.
+Under **Visibility** you pick a group at the top; on the left is exactly their navigation as the draft makes it. The table beside it sets every section against every group: all of it, some entries, their own committee only or nothing; the legend below explains the icons. **Visibility** in a row changes who sees the section.
+
+### Committees {#guide-committees}
+
+Under **Committees** every step of the committee template is a row and every committee a column. Shared pages span all columns; the committees' and their topics' pages have a cell each with their state. **Create** adds a missing page; above each column is how many of the committee's pages are published. **Only open items** hides finished rows.
 
 ### Opening it
 
