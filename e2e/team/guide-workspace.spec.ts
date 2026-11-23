@@ -33,8 +33,8 @@ test('the content lead puts a page into the guide and publishes it with the side
 	await loose.locator('summary').click();
 	await loose.getByRole('button', { name: 'Start', exact: true }).click();
 
-	// out of the bin, into the section
-	await expect(outside).toHaveCount(0);
+	// out of the bin (which keeps the series' shared pages), into the section
+	await expect(loose).toHaveCount(0);
 	const start = tree.getByTestId('guide-tree-section').filter({ hasText: 'Start' });
 	await expect(start.getByRole('link', { name: /Workspace loose page/ })).toBeVisible();
 
