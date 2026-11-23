@@ -76,6 +76,7 @@ export type Announcement = {
   editedAt: DateTime | null,
   id: ID,
   importance: AnnouncementimportanceEnum,
+  mailIncludesText: Boolean,
   mailRevision: Int,
   mailSince: DateTime | null,
   notifyByMail: Boolean,
@@ -144,6 +145,7 @@ export type AnnouncementOrderInputArgument = {
   editedAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   importance?: SortingParameter | null | undefined,
+  mailIncludesText?: SortingParameter | null | undefined,
   mailRevision?: SortingParameter | null | undefined,
   mailSince?: SortingParameter | null | undefined,
   notifyByMail?: SortingParameter | null | undefined,
@@ -180,6 +182,7 @@ export type AnnouncementWhereInputArgument = {
   editedAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   importance?: AnnouncementimportanceEnum | null | undefined,
+  mailIncludesText?: BooleanWhereInputArgument | null | undefined,
   mailRevision?: IntWhereInputArgument | null | undefined,
   mailSince?: DateTimeWhereInputArgument | null | undefined,
   notifyByMail?: BooleanWhereInputArgument | null | undefined,
@@ -3569,6 +3572,7 @@ export type Mutation = {
     body: String,
     conferenceId: ID,
     importance?: AnnouncementimportanceEnum | null | undefined,
+    mailIncludesText?: Boolean | null | undefined,
     notifyByMail?: Boolean | null | undefined,
     pinned?: Boolean | null | undefined,
     signature?: String | null | undefined,
@@ -3893,10 +3897,12 @@ export type Mutation = {
     conferenceId: ID,
     url: String
   }) => ImportedGuideFile,
-  issueDocumentCode: (p: {
+  issueDocumentCodes: (p: {
     conferenceId: ID,
+    layouts?: JSON | null | undefined,
+    pages: PrintedPageInput[],
     userId: ID
-  }) => SignedCode,
+  }) => SignedCode[],
   issueNametagCode: (p: {
     conferenceId: ID
   }) => SignedCode,
@@ -4208,6 +4214,7 @@ export type Mutation = {
     body?: String | null | undefined,
     id: ID,
     importance?: AnnouncementimportanceEnum | null | undefined,
+    mailIncludesText?: Boolean | null | undefined,
     notifyByMail?: Boolean | null | undefined,
     pinned?: Boolean | null | undefined,
     signature?: String | null | undefined,
@@ -5118,12 +5125,21 @@ export type PossibleduplicateWhereInputArgument = {
 		
 export type PossibleduplicatestatusEnum = "CONFIRMED" | "DISMISSED" | "OPEN";
 		
+export type PostalDocument = "contract" | "guardianConsent" | "mediaConsent";
+		
 export type PreviewConferenceSupervisor = {
   different_school: Boolean,
   family_name: String | null,
   given_name: String | null,
   school_city: String | null,
   school_name: String | null    
+};
+		
+export type PrintedPageInput = {
+  document: PostalDocument,
+  height: Float,
+  page: Int,
+  width: Float    
 };
 		
 export type ProfileField = "apartment" | "birthday" | "city" | "country" | "emergencyContacts" | "family_name" | "foodPreference" | "gender" | "given_name" | "phone" | "pronouns" | "region" | "street" | "wantsJoinTeamInformation" | "wantsToReceiveGeneralInformation" | "zip";

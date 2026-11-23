@@ -155,7 +155,8 @@ export const conference = snakeCase.table('conference', {
 	/**
 	 * Whether every QR code the app shows or prints for the conference is in the corporate design
 	 * (round modules in DMUN's blue, rounded corner markers, the emblem where there is room) or a
-	 * plain black one (`#lib/helpers/qrStyle`).
+	 * plain black one (`#lib/helpers/qrStyle`). The application documents' codes are always plain:
+	 * printed at home and scanned back, black on white reads best.
 	 */
 	qrCorporateDesign: boolean().default(true).notNull()
 });

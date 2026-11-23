@@ -224,6 +224,10 @@ schemaBuilder.mutationFields((t) => ({
 				notifyByMail: t.arg.boolean({
 					description: 'Whether its audience is told by mail once it is out.'
 				}),
+				mailIncludesText: t.arg.boolean({
+					description:
+						'Whether that mail carries the text, signature and file names (default); otherwise it names only the title and points to the dashboard.'
+				}),
 				visibleUntil: t.arg({ type: 'DateTime' }),
 				audiences: t.arg({ type: [AudienceInput], required: true }),
 				attachmentFileIds: t.arg.idList()
@@ -246,6 +250,7 @@ schemaBuilder.mutationFields((t) => ({
 					importance: args.importance ?? 'NORMAL',
 					pinned: args.pinned ?? false,
 					notifyByMail: args.notifyByMail ?? false,
+					mailIncludesText: args.mailIncludesText ?? true,
 					visibleUntil: args.visibleUntil ?? null
 				},
 				audiences: args.audiences,
@@ -271,6 +276,7 @@ schemaBuilder.mutationFields((t) => ({
 				importance: t.arg({ type: importanceEnum }),
 				pinned: t.arg.boolean(),
 				notifyByMail: t.arg.boolean(),
+				mailIncludesText: t.arg.boolean(),
 				visibleUntil: t.arg({ type: 'DateTime' }),
 				audiences: t.arg({ type: [AudienceInput] }),
 				attachmentFileIds: t.arg.idList()
@@ -292,6 +298,7 @@ schemaBuilder.mutationFields((t) => ({
 					importance: args.importance ?? undefined,
 					pinned: args.pinned ?? undefined,
 					notifyByMail: args.notifyByMail ?? undefined,
+					mailIncludesText: args.mailIncludesText ?? undefined,
 					visibleUntil: args.visibleUntil
 				},
 				audiences: args.audiences ?? undefined,

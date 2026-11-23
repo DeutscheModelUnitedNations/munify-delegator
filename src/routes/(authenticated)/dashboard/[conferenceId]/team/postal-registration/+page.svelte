@@ -16,8 +16,15 @@
 		type StatusChange
 	} from '#lib/components/scanner/scannedUserFlow.svelte.js';
 	import type { PageProps } from './$types';
-	import { confirmAllChange, scannedUserWithStatus } from './postalConfirm';
+	import { confirmAllChange, postalStatusOf, scannedUserWithStatus } from './postalConfirm';
 	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
+	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
+	import { userIdOfCode } from '#lib/components/scanner/scanAcceptance';
+	import { readPageOfCode } from '#lib/paperScan/readScan';
+	import { changesAnything, proposePaperChange } from '#lib/paperScan/proposal';
+	import type { FieldReading } from '#lib/paperScan/readPaper';
+	import PaperReading from './PaperReading.svelte';
+	import PaperBatch from './PaperBatch.svelte';
 
 	let { params: routeParams }: PageProps = $props();
 
@@ -73,6 +80,67 @@
 				})
 		});
 
+	// --- Reading the paper (`#lib/paperScan`) ---
+
+	/** Whether the camera reads the whole page, its fields too, or only the code. */
+	const pageMode = createPersistedState({ key: 'postalRegistrationReadsPages', initial: true });
+	const readsPages = $derived(pageMode.current);
+
+	/** What was read off each person's pages so far, by user id: a later page adds to it. */
+	let readings = $state<Record<string, FieldReading[]>>({});
+	/** How often each code's page could not be read in a picture. */
+	const failedReads: Record<string, number> = {};
+	/** About three seconds of pictures: then the person is shown all the same. */
+	const MAX_FAILED_READS = 10;
+
+	/** Reads the page a code was scanned on; true once read, or once given up on. */
+	// fallow-ignore-next-line complexity
+	async function readPage({ frame, code }: { frame: ImageData; code: string }) {
+		const read = readPageOfCode({ picture: frame, code });
+		if (!read) {
+			const failed = (failedReads[code] ?? 0) + 1;
+			failedReads[code] = failed;
+			if (failed < MAX_FAILED_READS) return false;
+			toast.info(m.paperPageNotReadable());
+		} else {
+			const userId = userIdOfCode(code);
+			readings[userId] = [...(readings[userId] ?? []), ...read];
+		}
+		delete failedReads[code];
+		return true;
+	}
+
+	/** What the scanned person's pages say, against their status as it stands. */
+	// fallow-ignore-next-line complexity
+	const proposal = $derived.by(() => {
+		const current = flow.current;
+		const read = current?.user ? readings[current.user.id] : undefined;
+		if (!readsPages || !current || !read || read.length === 0) return undefined;
+		return proposePaperChange({
+			readings: read,
+			status: postalStatusOf(current.status),
+			confirm: true,
+			minor: !ofAgeAtConference({
+				startConference: conference?.startConference,
+				dateOfBirth: current.user?.birthday
+			})
+		});
+	});
+
+	/** Saves what the paper says and readies the scanner for the next page. */
+	const confirmPaper = () =>
+		flow.runExclusive(async () => {
+			const scanned = scannedUserWithStatus(flow.data);
+			if (scanned && proposal && changesAnything(proposal.change)) {
+				await changeAdministrativestatusEnum({
+					statusId: scanned.status.id,
+					userId: scanned.user.id,
+					change: proposal.change
+				});
+			}
+			flow.reset();
+		});
+
 	const confirmAllStatuses = () =>
 		flow.runExclusive(async () => {
 			const scanned = scannedUserWithStatus(flow.data);
@@ -101,10 +169,37 @@
 	notFoundMessage={m.userNotFoundForPostalRegistration()}
 	drawerTitle={m.postalRegistration()}
 	drawerIcon="ph-envelope-simple"
-	confirmLabel={m.confirmAll()}
-	onConfirm={confirmAllStatuses}
+	confirmLabel={readsPages ? m.paperConfirm() : m.confirmAll()}
+	onConfirm={readsPages ? confirmPaper : confirmAllStatuses}
 	onClose={() => flow.reset()}
+	readPage={readsPages ? readPage : undefined}
+	scanPrompt={readsPages ? m.paperScanPrompt() : undefined}
 >
+	{#snippet cameraOverlay()}
+		<!-- what the camera reads: the code alone, or the whole page with its boxes and signatures -->
+		<label
+			class="flex cursor-pointer items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-sm text-white"
+			data-tour="team.postalRegistration.paper"
+		>
+			<!-- names what is read now, so off plainly means the code alone -->
+			<i
+				aria-hidden="true"
+				class="ph-duotone {readsPages ? 'ph-file-magnifying-glass' : 'ph-qr-code'}"
+			></i>
+			{readsPages ? m.paperScanModePage() : m.paperScanModeCode()}
+			<input
+				type="checkbox"
+				class="toggle toggle-sm toggle-primary"
+				bind:checked={pageMode.current}
+				title={m.paperScanMode()}
+			/>
+		</label>
+	{/snippet}
+
+	{#snippet footer()}
+		<PaperBatch conferenceId={routeParams.conferenceId} />
+	{/snippet}
+
 	{#snippet description()}
 		{m.scanPostalRegistrationCode()}
 		<Kbd hotkey="alt+a" size="xs" />
@@ -139,6 +234,16 @@
 				</p>
 			</div>
 		</div>
+
+		{#if proposal}
+			<div class="bg-info/10 rounded-box mb-4 flex flex-col gap-2 p-3" role="status">
+				<span class="flex items-center gap-2 font-semibold">
+					<i aria-hidden="true" class="ph-duotone ph-file-magnifying-glass"></i>
+					{m.paperReadTitle()}
+				</span>
+				<PaperReading change={proposal.change} notes={proposal.notes} />
+			</div>
+		{/if}
 
 		<!-- Status widgets grid -->
 		<div class="grid grid-cols-1 gap-2 md:gap-4">

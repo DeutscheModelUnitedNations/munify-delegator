@@ -10,12 +10,15 @@
 		type SuperForm
 	} from 'sveltekit-superforms';
 	import { m } from '#lib/paraglide/messages';
-	import FormFile from '#lib/components/form/FormFile.svelte';
+	import FormPdf from '#lib/components/form/FormPdf.svelte';
+	import TemplateState from './TemplateState.svelte';
 
 	/**
 	 * One PDF template of the conference, everything about it in one place: whether one is stored,
-	 * the upload (a field of the settings form, so it saves with the rest), a look at the stored
-	 * file, placing the generated parts on it, and a test print.
+	 * the upload with a preview of its first page (a field of the settings form, so it saves with
+	 * the rest; removing it too), the stored file to open, placing the generated parts on it, and a
+	 * test print where the document is printed on its own (the certificate; the postal documents
+	 * print together, below their cards).
 	 */
 	interface Props {
 		form: SuperForm<A, B>;
@@ -28,15 +31,13 @@
 		stored: { url: string } | null;
 		/** Opens the layout editor; left out for a template nothing is drawn on. */
 		onplace?: () => void;
-		/** Prints a sample from the stored templates. */
-		ontest: () => void;
+		/** Prints a sample from the stored template; left out where the documents print together. */
+		ontest?: () => void;
 		/** A test print is running somewhere on the page. */
-		printing: boolean;
-		/** Why the test print cannot run yet, beyond this template itself (another one missing). */
-		testBlocked?: string;
+		printing?: boolean;
 	}
 
-	let { form, name, title, icon, stored, onplace, ontest, printing, testBlocked }: Props = $props();
+	let { form, name, title, icon, stored, onplace, ontest, printing = false }: Props = $props();
 
 	const file = $derived(fileProxy(form, name));
 	const value = $derived(fieldProxy(form, name));
@@ -45,117 +46,77 @@
 	/** The stored template goes on the next save (the field is `null`). */
 	const removed = $derived($value === null && !!stored);
 
+	const state = $derived(
+		removed ? 'removed' : pending ? 'pending' : stored ? 'stored' : ('missing' as const)
+	);
+
 	/** Why placing and printing are off, if they are. */
 	const blocked = $derived(
 		!stored ? m.templateNeedsSaving() : pending || removed ? m.templatePendingBlocks() : undefined
 	);
-
-	/**
-	 * Through the form itself: the proxies cannot know that the field's schema takes `null`.
-	 * `undefined` takes a removal back and keeps the stored template.
-	 */
-	function setRemoved(remove: boolean) {
-		form.form.update(($form) => ({ ...$form, [name]: remove ? null : undefined }), {
-			taint: true
-		});
-	}
-	const testReason = $derived(blocked ?? testBlocked);
 </script>
 
-<div class="bg-base-100 rounded-box border-base-300 flex flex-col gap-3 border p-4">
-	<div class="flex items-start gap-3">
-		<div
-			class="bg-primary/10 text-primary rounded-box flex h-10 w-10 shrink-0 items-center justify-center"
+{#snippet placeButton(place: () => void)}
+	<span class={blocked ? 'tooltip' : ''} data-tip={blocked}>
+		<button
+			type="button"
+			class="btn btn-sm btn-primary btn-soft"
+			disabled={!!blocked}
+			onclick={place}
 		>
-			<i aria-hidden="true" class="ph-duotone ph-{icon} text-lg"></i>
-		</div>
-		<div class="flex min-w-0 flex-1 flex-col gap-1">
-			<span class="font-semibold leading-tight">{title}</span>
-			{#if removed}
-				<span class="badge badge-error badge-soft badge-sm">
-					<i aria-hidden="true" class="ph-duotone ph-trash"></i>{m.templateRemovalPending()}
-				</span>
-			{:else if pending}
-				<span class="badge badge-info badge-soft badge-sm">
-					<i aria-hidden="true" class="ph-duotone ph-cloud-arrow-up"></i>{m.templatePending()}
-				</span>
-			{:else if stored}
-				<span class="badge badge-success badge-soft badge-sm">
-					<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>{m.templateStored()}
-				</span>
-			{:else}
-				<span class="badge badge-warning badge-soft badge-sm">
-					<i aria-hidden="true" class="ph-duotone ph-warning-circle"></i>{m.templateMissing()}
-				</span>
+			<i aria-hidden="true" class="ph-duotone ph-arrows-out-cardinal"></i>
+			{m.templatePlace()}
+		</button>
+	</span>
+{/snippet}
+
+{#snippet testButton(test: () => void)}
+	<span class={blocked ? 'tooltip' : ''} data-tip={blocked}>
+		<button
+			type="button"
+			class="btn btn-sm btn-ghost"
+			disabled={!!blocked || printing}
+			onclick={test}
+		>
+			<i
+				aria-hidden="true"
+				class="ph-duotone {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"
+			></i>
+			{m.templateTest()}
+		</button>
+	</span>
+{/snippet}
+
+<!-- the page on the left, as a portrait A4 tile; what it is and what to do with it beside it -->
+<div
+	class="bg-base-100 rounded-box border-base-300 grid grid-cols-[13rem_minmax(0,1fr)] gap-4 border p-4"
+>
+	<FormPdf {form} {name} label={title} hideLabel storedUrl={stored?.url ?? null} removable />
+
+	<div class="flex min-w-0 flex-col gap-3">
+		<div class="flex items-start gap-2">
+			<i aria-hidden="true" class="ph-duotone ph-{icon} text-primary mt-0.5 shrink-0 text-lg"></i>
+			<span class="min-w-0 flex-1 leading-tight font-semibold">{title}</span>
+			{#if stored && !removed}
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- a file in the bucket -->
+				<a
+					class="btn btn-ghost btn-sm btn-square shrink-0"
+					href={stored.url}
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label={m.templateView()}
+					title={m.templateView()}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-eye"></i>
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/if}
 		</div>
-		{#if stored}
-			<!-- eslint-disable svelte/no-navigation-without-resolve -- a file in the bucket -->
-			<a
-				class="btn btn-ghost btn-sm btn-square"
-				href={stored.url}
-				target="_blank"
-				rel="noopener noreferrer"
-				aria-label={m.templateView()}
-				title={m.templateView()}
-			>
-				<i aria-hidden="true" class="ph-duotone ph-eye"></i>
-			</a>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{#if removed}
-				<button
-					type="button"
-					class="btn btn-ghost btn-sm btn-square"
-					aria-label={m.templateUndoRemoval()}
-					title={m.templateUndoRemoval()}
-					onclick={() => setRemoved(false)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
-				</button>
-			{:else if !pending}
-				<button
-					type="button"
-					class="btn btn-ghost btn-sm btn-square text-error"
-					aria-label={m.templateRemove()}
-					title={m.templateRemove()}
-					onclick={() => setRemoved(true)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-				</button>
-			{/if}
-		{/if}
-	</div>
 
-	<FormFile
-		{form}
-		{name}
-		label={stored ? m.templateReplace() : m.templateUpload()}
-		accept="application/pdf"
-		inputClass="file-input-sm"
-	/>
-
-	<div class="flex flex-wrap gap-2">
-		{#if onplace}
-			<span class={blocked ? 'tooltip' : ''} data-tip={blocked}>
-				<button type="button" class="btn btn-sm btn-outline" disabled={!!blocked} onclick={onplace}>
-					<i aria-hidden="true" class="ph-duotone ph-arrows-out-cardinal"></i>
-					{m.templatePlace()}
-				</button>
-			</span>
-		{/if}
-		<span class={testReason ? 'tooltip' : ''} data-tip={testReason}>
-			<button
-				type="button"
-				class="btn btn-sm btn-outline"
-				disabled={!!testReason || printing}
-				onclick={ontest}
-			>
-				<i
-					aria-hidden="true"
-					class="ph-duotone {printing ? 'ph-spinner-gap animate-spin' : 'ph-flask'}"
-				></i>
-				{m.templateTest()}
-			</button>
-		</span>
+		<div class="mt-auto flex flex-wrap items-center gap-2">
+			{#if onplace}{@render placeButton(onplace)}{/if}
+			{#if ontest}{@render testButton(ontest)}{/if}
+			<span class="ml-auto"><TemplateState {state} /></span>
+		</div>
 	</div>
 </div>

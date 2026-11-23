@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { dev } from '$app/env';
+	import { Logo } from '@deutschemodelunitednations/munify-brand';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import {
@@ -114,19 +115,13 @@
 		>
 			<!-- Next to the menu button phones need the room for the crumbs, whose first one leads home too -->
 			<a
-				class={[
-					'shrink-0 text-lg leading-none whitespace-nowrap',
-					headerState.openNavCallback !== undefined && 'max-sm:hidden'
-				]}
+				class={['shrink-0', headerState.openNavCallback !== undefined && 'max-sm:hidden']}
 				href={resolve('dashboard')}
 				aria-label="MUNify DELEGATOR"
 			>
-				<!-- On phones the wordmark would take half the row the breadcrumbs need -->
-				<img src="/favicon-32x32.png" alt="" class="size-6 sm:hidden" />
-				<span class="max-sm:hidden">
-					<span class="font-light">MUNify</span>
-					<span class="font-bold">DELEGATOR</span>
-				</span>
+				<!-- On phones the lockup would take half the row the breadcrumbs need: the symbol alone -->
+				<Logo product="delegator" variant="symbol" class="size-6 sm:hidden" decorative />
+				<Logo product="delegator" class="h-5 w-auto max-sm:hidden" decorative />
 			</a>
 
 			<div

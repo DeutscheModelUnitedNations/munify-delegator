@@ -309,6 +309,17 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 	}),
 	ANNOUNCEMENT: ({ email, conference, origin }) => {
 		const announcement = email.announcement;
+		const button = {
+			label: m.emailAutoAnnouncementButton(),
+			url: `${origin}/dashboard/${conference.id}/announcements`
+		};
+		// without its text the mail names the announcement (the heading) and sends to the dashboard
+		if (announcement && !announcement.includesText)
+			return {
+				values: { title: announcement.title },
+				blocks: [{ type: 'paragraph', text: m.emailAutoAnnouncementOnDashboard() }],
+				button
+			};
 		return {
 			values: { title: announcement?.title ?? '' },
 			blocks: [
@@ -323,10 +334,7 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 						]
 					: [])
 			],
-			button: {
-				label: m.emailAutoAnnouncementButton(),
-				url: `${origin}/dashboard/${conference.id}/announcements`
-			}
+			button
 		};
 	},
 	CHAT_REPORTED: ({ conference, origin }) => ({

@@ -23,7 +23,7 @@ export async function downloadPostalRegistration({
 	conferenceId: string;
 }): Promise<void> {
 	try {
-		const { user, conference, documentCode } = await fetchPostalRegistrationSources({
+		const { user, conference, issueCodes } = await fetchPostalRegistrationSources({
 			userId,
 			conferenceId
 		});
@@ -36,7 +36,7 @@ export async function downloadPostalRegistration({
 
 		await downloadPostalRegistrationDocuments({
 			conference,
-			documentCode,
+			issueCodes,
 			recipient: postalRecipient(conference),
 			...participant
 		});

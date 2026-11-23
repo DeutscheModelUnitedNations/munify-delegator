@@ -16,6 +16,12 @@ export const postalRegistrationTour: Tour = {
 			side: 'bottom'
 		},
 		{
+			anchor: 'team.postalRegistration.paper',
+			title: () => m.tourTeamPostalRegistrationPaperTitle(),
+			body: () => m.tourTeamPostalRegistrationPaperBody(),
+			side: 'bottom'
+		},
+		{
 			anchor: 'scanner.camera',
 			title: () => m.tourTeamPostalRegistrationCameraTitle(),
 			body: () => m.tourTeamPostalRegistrationCameraBody(),

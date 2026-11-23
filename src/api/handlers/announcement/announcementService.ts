@@ -54,7 +54,8 @@ const attachmentFileIds = z
 const settings = {
 	importance: z.enum(['NORMAL', 'IMPORTANT', 'URGENT']).nullish(),
 	pinned: z.boolean().nullish(),
-	notifyByMail: z.boolean().nullish()
+	notifyByMail: z.boolean().nullish(),
+	mailIncludesText: z.boolean().nullish()
 };
 
 /** The arguments of `createAnnouncement`. */
@@ -88,6 +89,7 @@ interface AnnouncementValues {
 	importance: AnnouncementImportance;
 	pinned: boolean;
 	notifyByMail: boolean;
+	mailIncludesText: boolean;
 	visibleUntil: Date | null;
 }
 
@@ -329,6 +331,7 @@ export async function duplicateAnnouncement({ id, authorId }: { id: string; auth
 			importance: source.importance,
 			pinned: source.pinned,
 			notifyByMail: source.notifyByMail,
+			mailIncludesText: source.mailIncludesText,
 			visibleUntil: null
 		},
 		audiences: source.audiences,

@@ -145,6 +145,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'visibleUntil',
 			'editedAt',
 			'notifyByMail',
+			'mailIncludesText',
 			'mailSince',
 			'mailRevision',
 			'releaseAnnounced',

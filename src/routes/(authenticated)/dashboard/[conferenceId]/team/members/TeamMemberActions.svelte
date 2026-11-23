@@ -16,8 +16,8 @@
 <div class="flex justify-end gap-2" data-tour="team.members.actions">
 	<button
 		class="btn btn-ghost btn-sm btn-square"
-		title={m.teamFunctions()}
-		aria-label={m.teamFunctions()}
+		title={m.teamMemberEditFunctions()}
+		aria-label={m.teamMemberEditFunctions()}
 		data-testid="team-functions-open"
 		onclick={(e) => {
 			e.stopPropagation();
@@ -29,7 +29,8 @@
 	{#if onImpersonate}
 		<button
 			class="btn btn-sm"
-			title={m.impersonation()}
+			title={m.teamMemberImpersonate()}
+			aria-label={m.teamMemberImpersonate()}
 			onclick={(e) => {
 				e.stopPropagation();
 				onImpersonate();
@@ -40,7 +41,8 @@
 	{/if}
 	<button
 		class="btn btn-sm btn-error"
-		title={m.delete()}
+		title={m.teamMemberRemove()}
+		aria-label={m.teamMemberRemove()}
 		onclick={(e) => {
 			e.stopPropagation();
 			onDelete();

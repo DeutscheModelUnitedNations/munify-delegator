@@ -1,8 +1,14 @@
 import { m } from '#lib/paraglide/messages';
 import type { ElementOf, LayoutDocument } from '#lib/helpers/documentLayout';
+import type { PaperField } from '#lib/paperScan/fields';
+import { fieldLabel } from '#lib/paperScan/fieldLabels';
 
 /** Every element any document has. */
 export type LayoutElement = { [D in LayoutDocument]: ElementOf<D> }[LayoutDocument];
+
+/** The elements that are drawn, not written: the alignment marks and the fields read off a scan. */
+type DrawnElement =
+	PaperField | 'markerTopLeft' | 'markerTopRight' | 'markerBottomRight' | 'markerBottomLeft';
 
 /** What the layout editor calls each element. */
 export const elementLabel: Record<LayoutElement, () => string> = {
@@ -13,14 +19,22 @@ export const elementLabel: Record<LayoutElement, () => string> = {
 	birthday: () => m.birthday(),
 	address: () => m.address(),
 	code: () => m.documentLayoutCode(),
-	pageNumber: () => m.documentLayoutPageNumber()
+	pageNumber: () => m.documentLayoutPageNumber(),
+	markerTopLeft: () => m.documentLayoutMarker(),
+	markerTopRight: () => m.documentLayoutMarker(),
+	markerBottomRight: () => m.documentLayoutMarker(),
+	markerBottomLeft: () => m.documentLayoutMarker(),
+	...fieldLabel
 };
+
+/** The elements that show sample text in the editor. */
+export type WrittenElement = Exclude<LayoutElement, DrawnElement>;
 
 /**
  * The made-up content the editor shows in each text element, line by line. The sessions are the
  * conference's own (`certificateSampleSessions`), which the editor is given.
  */
-export const elementSample: Record<LayoutElement, () => string[]> = {
+export const elementSample: Record<WrittenElement, () => string[]> = {
 	name: () => ['Antonio Guterres'],
 	sessions: () => [],
 	qr: () => [m.certificateVerify()],

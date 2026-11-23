@@ -153,6 +153,7 @@ export async function previewEmail({
 			title: m.emailPreviewAnnouncementTitle({}, { locale }),
 			body: m.emailPreviewAnnouncementBody({}, { locale }),
 			signature: null,
+			includesText: true,
 			mailRevision: 0,
 			attachmentNames: []
 		}

@@ -184,7 +184,7 @@ Was das Team dir mitteilen will, steht unter **Ankündigungen** direkt unter dem
 - Anhänge öffnest du über die Schaltflächen unter dem Text.
 - Das Dashboard zeigt die angehefteten, die ungelesenen und die neuesten. Der Link darunter, etwa **Alle 5 Ankündigungen anzeigen**, führt zur ganzen Liste.
 
-Eine **dringende** Ankündigung erscheint zusätzlich als rote Leiste auf jeder Seite der Konferenz, bis du sie gelesen hast. **Lesen** öffnet sie, das Kreuz markiert sie als gelesen und blendet die Leiste aus. Zu manchen Ankündigungen bekommst du auch eine E-Mail mit dem ganzen Text.
+Eine **dringende** Ankündigung erscheint zusätzlich als rote Leiste auf jeder Seite der Konferenz, bis du sie gelesen hast. **Lesen** öffnet sie, das Kreuz markiert sie als gelesen und blendet die Leiste aus. Zu manchen Ankündigungen bekommst du auch eine E-Mail, meist mit dem ganzen Text.
 
 Im Schnellzugriff findest du außerdem:
 

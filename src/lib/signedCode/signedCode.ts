@@ -29,6 +29,7 @@ const CLAIM_IAT = 6;
 const CLAIM_KIND = 'k';
 const CLAIM_CONFERENCE = 'c';
 const CLAIM_CARD_NUMBER = 'v';
+const CLAIM_AREAS = 'a';
 
 /** How long a live code counts, counted from when it was issued. */
 export const LIVE_CODE_VALIDITY_SECONDS = 10 * 60;
@@ -39,7 +40,9 @@ const CLOCK_SKEW_SECONDS = 2 * 60;
  * What a code says, by kind:
  * - `live`: the digital nametag, renewed while it is shown and good for minutes only, so a
  *   screenshot passed on is of little use;
- * - `print`: the application documents, printed and sent by post, good for as long as the paper;
+ * - `print`: the application documents, printed and sent by post, good for as long as the paper.
+ *   One per page; on a page with fields it carries where its alignment marks and fields are
+ *   (`areas`, `#lib/paperScan/areas`), so a scan is read as that page was printed;
  * - `certificate`: a participation certificate, which anybody may check (`/validateCertificate`);
  * - `nsaCard`: a non-state actor's printed card, which MUNify CHASE's chairs scan to check them in
  *   and out of committees (`docs/plans/chase-link.md`). Good until the day after the conference
@@ -56,7 +59,14 @@ export type SignedCodeClaims =
 			/** Unix seconds */
 			expiresAt: number;
 	  }
-	| { kind: 'print'; userId: string; conferenceId: string; issuedAt: number }
+	| {
+			kind: 'print';
+			userId: string;
+			conferenceId: string;
+			issuedAt: number;
+			/** The page's fields (`encodeAreas`), on a page with any. */
+			areas?: number[];
+	  }
 	| {
 			kind: 'nsaCard';
 			userId: string;
@@ -91,10 +101,17 @@ function claimsMap(claims: SignedCodeClaims): Map<number | string, unknown> {
 	map.set(CLAIM_CONFERENCE, claims.conferenceId);
 	if (claims.kind === 'live' || claims.kind === 'nsaCard') map.set(CLAIM_EXP, claims.expiresAt);
 	if (claims.kind === 'nsaCard') map.set(CLAIM_CARD_NUMBER, claims.cardNumber);
+	if (claims.kind === 'print' && claims.areas) map.set(CLAIM_AREAS, claims.areas);
 	return map;
 }
 
 const isText = (value: unknown): value is string => typeof value === 'string';
+const isBytes = (value: unknown): value is Uint8Array => value instanceof Uint8Array;
+/** A list of whole numbers, none negative and at most 500 (a page's fields: `#lib/paperScan/areas`). */
+const isWholeNumbers = (value: unknown): value is number[] =>
+	Array.isArray(value) &&
+	value.length <= 500 &&
+	value.every((item) => Number.isSafeInteger(item) && item >= 0);
 const isTime = (value: unknown): value is number => Number.isSafeInteger(value);
 /** An id we signed never holds a control character; Postgres refuses a NUL in any query. */
 const isId = (value: unknown): value is string => isText(value) && !/\p{Cc}/u.test(value);
@@ -105,6 +122,21 @@ function certificateOf(map: Map<unknown, unknown>): CertificateJWTPayload | null
 	if (a === undefined) return { n, t, s, e };
 	if (!Array.isArray(a) || !a.every(isText)) return null;
 	return { n, t, s, e, a };
+}
+
+/** A `print` code's claims, the page's fields with them where it has any. */
+function printClaims({
+	map,
+	...claims
+}: {
+	map: Map<unknown, unknown>;
+	userId: string;
+	conferenceId: string;
+	issuedAt: number;
+}): SignedCodeClaims | null {
+	const areas = map.get(CLAIM_AREAS);
+	if (areas === undefined) return { kind: 'print', ...claims };
+	return isWholeNumbers(areas) ? { kind: 'print', ...claims, areas } : null;
 }
 
 /** The claims of a code naming a participant (`print`, `live` or `nsaCard`), or `null`. */
@@ -120,7 +152,7 @@ function participantClaims({
 	const userId = map.get(CLAIM_SUB);
 	const conferenceId = map.get(CLAIM_CONFERENCE);
 	if (!isId(userId) || !isId(conferenceId)) return null;
-	if (kind === KIND_LETTERS.print) return { kind: 'print', userId, conferenceId, issuedAt };
+	if (kind === KIND_LETTERS.print) return printClaims({ map, userId, conferenceId, issuedAt });
 	const expiresAt = map.get(CLAIM_EXP);
 	if (!isTime(expiresAt)) return null;
 	if (kind === KIND_LETTERS.live)
@@ -203,8 +235,6 @@ function candidates(text: string): string[] {
 }
 
 const STRICT = { rejectStreaming: true, rejectDuplicateKeys: true, preferMap: true };
-
-const isBytes = (value: unknown): value is Uint8Array => value instanceof Uint8Array;
 
 /** The key id of a protected header we accept: EdDSA, and a one-byte `kid`. */
 function kidOf(header: Uint8Array) {
