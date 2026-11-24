@@ -292,14 +292,15 @@ test('a scanner login is its owner’s alone, and only for who manages participa
 	browser
 }) => {
 	const make = 'mutation { createScannerAccess(name: "E2E fremd") { id } }';
-	await loginAs(page, fixedTestUser(E2E_PAPER_CARE_ID), { startUrl: '/my-account/scanners' });
+	// signed in elsewhere first: `loginAs` takes landing under /my-account for the profile it asks to complete
+	await loginAs(page, fixedTestUser(E2E_PAPER_CARE_ID), { startUrl: '/dashboard' });
 	const id = (await gql(page, make)).data.createScannerAccess.id;
 
 	const other = await browser.newContext({ ignoreHTTPSErrors: true });
 	const participant = await other.newPage();
-	await loginAs(participant, fixedTestUser(E2E_PAPER_GRACE_ID), {
-		startUrl: '/my-account/scanners'
-	});
+	await loginAs(participant, fixedTestUser(E2E_PAPER_GRACE_ID), { startUrl: '/dashboard' });
+	await participant.goto('/my-account/scanners');
+	await waitForHydration(participant);
 	await expect(participant.getByTestId('scanners-none')).toBeVisible();
 	await expect(
 		participant.getByRole('button', { name: /zugang anlegen|make a login/i })

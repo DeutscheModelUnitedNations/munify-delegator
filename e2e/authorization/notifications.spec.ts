@@ -73,7 +73,7 @@ test('everybody is offered exactly the topics they can be told about, all on', a
 }) => {
 	const carePage = await signedIn(browser, care.id);
 	const careSettings = await settingsOf(carePage);
-	expect(topicsOf(careSettings)).toEqual(['PARTICIPANT_CARE', 'CHAT_REPORT']);
+	expect(topicsOf(careSettings)).toEqual(['PARTICIPANT_CARE', 'CHAT_REPORT', 'SCAN_PROBLEM']);
 	expect(careSettings?.settings.every((setting) => setting.email && setting.slack)).toBe(true);
 	// no workspace picked yet
 	expect(careSettings?.slackWorkspaceName).toBeNull();
