@@ -811,7 +811,7 @@ export type AttendancesessionWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type AttendancesessionmodeEnum = "CHECK" | "RECORD";
+export type AttendancesessionmodeEnum = "BADGE" | "CHECK" | "RECORD";
 		
 export type BigInt = unknown;
 		
@@ -1706,7 +1706,6 @@ export type Conference = {
   mediaConsentFileId: ID | null,
   messagingEnabled: Boolean,
   nametagBinCount: Int,
-  nextDocumentNumber: Int,
   papers: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3214,6 +3213,7 @@ export type Mutation = {
     userId: ID
   }) => Singleparticipant,
   createAttendanceEntry: (p: {
+    accessCardId?: String | null | undefined,
     conferenceId: ID,
     sessionId: ID,
     userId: ID
@@ -5742,6 +5742,7 @@ export type SavedPaperReviewDraft = {
 export type ScanIssue = "alreadyScanned" | "guardianConsentOpen" | "notInConference" | "paymentOpen" | "surveyOptionMissing" | "teamMember" | "termsOpen";
 		
 export type ScanLookupResult = {
+  accessCardId: String | null,
   birthday: String | null,
   checkPassed: Boolean,
   committeeAbbreviation: String | null,

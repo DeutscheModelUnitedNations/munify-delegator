@@ -13,8 +13,8 @@ export const say = (message: object) =>
 
 /** Runs until `work` is done; what it throws ends the process, which its owner is told by that. */
 export function runProcess(work: () => Promise<void>) {
-	// the app is gone: nobody waits for the rest
-	process.on('disconnect', () => process.exit());
+	// the app is gone: nobody waits for the rest, nor kills what hangs exiting (it does now and then)
+	process.on('disconnect', () => process.kill(process.pid, 'SIGKILL'));
 	work().then(
 		() => process.exit(0),
 		(error: unknown) => {

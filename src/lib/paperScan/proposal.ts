@@ -6,19 +6,22 @@ import type { FieldReading, FieldState } from './readPaper';
  * everything it asks for is clearly there: ticked, written in and signed, by the guardians too
  * where the person is a minor. The media consent's boxes give the photo status once the form is
  * in. Nothing is ever set back: a field read as empty or unclear only leaves a note, so a misread
- * never undoes what the team set.
+ * never undoes what the team set. What a person set by hand counts over what is read, and a document
+ * the team marked as a problem is taken as in only by a person.
  */
 
 type Administrative = 'DONE' | 'PROBLEM' | 'PENDING';
 type MediaChoice = 'ALLOWED_ALL' | 'PARTIALLY_ALLOWED' | 'NOT_ALLOWED';
 
-/** The postal status as it stands. */
-export type PostalStatus = {
+/** What the team says of each document. */
+export type DocumentStatuses = {
 	termsAndConditions: Administrative;
 	guardianConsent: Administrative;
 	mediaConsent: Administrative;
-	mediaConsentStatus: MediaChoice | 'NOT_SET';
 };
+
+/** The postal status as it stands. */
+export type PostalStatus = DocumentStatuses & { mediaConsentStatus: MediaChoice | 'NOT_SET' };
 
 /** What the scan changes (`upsertConferenceParticipant`'s fields). */
 export type PaperChange = {
@@ -33,13 +36,14 @@ export type PaperDocument = 'contract' | 'guardianConsent' | 'mediaConsent';
 
 /**
  * Why something was not changed: a field it asks for left empty (`missing`) or not read with
- * certainty (`unclear`), a document only partly scanned (`incomplete`), the media consent's boxes
+ * certainty (`unclear`), a document only partly scanned (`incomplete`), one complete that is marked as
+ * a problem, which a person decides (`rejected`), the media consent's boxes
  * not all read with certainty, or (left alone without a person) a choice or a detail
  * (`./agreementDetails`) other than the one stored.
  */
 export type PaperNote =
 	| { kind: 'missing' | 'unclear'; document: PaperDocument; field: PaperField }
-	| { kind: 'incomplete'; document: PaperDocument }
+	| { kind: 'incomplete' | 'rejected'; document: PaperDocument }
 	| { kind: 'mediaChoiceUnclear' }
 	| { kind: 'detailDiffers'; field: PaperField }
 	| { kind: 'mediaChoiceDiffers'; read: MediaChoice; stored: MediaChoice };
@@ -101,7 +105,7 @@ const DOCUMENTS = [
 	}
 ] as const satisfies readonly {
 	document: PaperDocument;
-	status: keyof PaperChange;
+	status: keyof DocumentStatuses;
 	required: readonly PaperField[];
 	forMinors: readonly PaperField[];
 	others: readonly PaperField[];
@@ -126,12 +130,26 @@ export function combineReadings({
 	return states.size === 1 ? only : 'unclear';
 }
 
-/** A field as a person's details already have it. */
-type KnownField = { field: PaperField; state: FieldState };
+/** The documents that `set` newly marks as a problem. */
+export function rejectedDocuments({
+	before,
+	set
+}: {
+	before: Pick<PostalStatus, keyof DocumentStatuses>;
+	set: Partial<DocumentStatuses>;
+}): PaperDocument[] {
+	return DOCUMENTS.filter(
+		({ status }) => set[status] === 'PROBLEM' && before[status] !== 'PROBLEM'
+	).map(({ document }) => document);
+}
+
+/** A field as a person's details already have it: told by an earlier scan, or set by hand. */
+type KnownField = { field: PaperField; state: FieldState; source: 'SCAN' | 'MANUAL' };
 
 /**
  * The readings with what earlier scans told of the fields these say nothing certain of, so pages
- * scanned one after the other complete a document together.
+ * scanned one after the other complete a document together; and with what a person set, whatever was
+ * read.
  */
 function withKnown({
 	readings,
@@ -140,7 +158,8 @@ function withKnown({
 	readings: readonly FieldReading[];
 	known: readonly KnownField[];
 }): FieldReading[] {
-	const missing = known.filter(({ field, state }) => {
+	const missing = known.filter(({ field, state, source }) => {
+		if (source === 'MANUAL') return true;
 		const read = combineReadings({ readings, field });
 		return state !== 'unclear' && (read === undefined || read === 'unclear');
 	});
@@ -204,7 +223,7 @@ function mediaChange({
 	readings: readonly FieldReading[];
 	status: PostalStatus;
 	confirm: boolean;
-	/** Whether the media consent is complete in what was scanned. */
+	/** Whether the media consent is complete in what is known of it, and may be taken as in. */
 	complete: boolean;
 }): { change: PaperChange; notes: PaperNote[] } {
 	const choice = mediaChoice(readings);
@@ -221,8 +240,8 @@ function mediaChange({
  * left. `known` are the details earlier scans left (`./agreementDetails`): they complete a document
  * some of which was scanned now. `minor`: the person is under age at the conference, so their
  * guardians have to sign the media consent too. `confirm`: a person looks at it before it is saved
- * (the camera), so a media choice other than the stored one is proposed; without one (a batch of
- * scans) it is left and noted.
+ * (the camera), so a media choice other than the stored one, or a document marked as a problem, is
+ * proposed; without one (a batch of scans) it is left and noted.
  */
 export function proposePaperChange({
 	readings,
@@ -244,13 +263,17 @@ export function proposePaperChange({
 		if (!scannedAny({ readings, rule })) continue;
 		const state = documentState({ readings: together, rule, minor });
 		notes.push(...state.notes);
-		if (state.complete && status[rule.status] !== 'DONE') change[rule.status] = 'DONE';
+		// the team saw something in it that no scan tells
+		const rejected = state.complete && !confirm && status[rule.status] === 'PROBLEM';
+		if (rejected) notes.push({ kind: 'rejected', document: rule.document });
+		const complete = state.complete && !rejected;
+		if (complete && status[rule.status] !== 'DONE') change[rule.status] = 'DONE';
 		if (rule.document === 'mediaConsent') {
 			const media = mediaChange({
 				readings: together,
 				status,
 				confirm,
-				complete: state.complete
+				complete
 			});
 			Object.assign(change, media.change);
 			notes.push(...media.notes);

@@ -91,7 +91,7 @@ Wer eine Betreuungsnotiz trägt und sich mit einem neuen Konto wieder anmeldet, 
 **Was eine Bestätigung bewirkt.**
 
 - Die Notizen folgen der Person: Die Teilnehmendenkarte zeigt oben neben der eigenen Notiz jede **Notiz auf dem verknüpften Konto**, und die Warnung in der [Sichtung](./assignment#sighting) zählt sie mit.
-- Der Reiter **Konferenzen** der Teilnehmendenkarte listet auch die Konferenzen der verknüpften Konten, markiert mit dem Namen des anderen Kontos.
+- Der Reiter **Verlauf** der Teilnehmendenkarte listet auch die Konferenzen der verknüpften Konten, markiert mit dem Namen des anderen Kontos.
 - Bestätigungen gelten weiter: Sind A und B dieselbe Person und B und C, dann auch A und C. DELEGATOR legt solche Paare selbst an und bestätigt sie. Sie tragen den Hinweis **Über andere bestätigte Konten verknüpft** und haben keine eigenen Knöpfe. Öffnest du eines der Paare, die jemand bestätigt hat, wieder oder verwirfst es, nimmt DELEGATOR die so entstandenen Paare zurück.
 - Solange ein Paar offen oder bestätigt ist, darf die Teilnehmendenbetreuung Name und Notizen auch des anderen Kontos lesen, ohne dessen Kontaktdaten.
 

@@ -1,7 +1,15 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { createCanvas } from '@napi-rs/canvas';
-import { PDFDict, PDFDocument, PDFName, PDFRawStream, rgb } from 'pdf-lib';
+import {
+	PDFArray,
+	PDFDict,
+	PDFDocument,
+	PDFName,
+	PDFRawStream,
+	rgb,
+	type PDFObject
+} from 'pdf-lib';
 import { describe, expect, test, vi } from 'vitest';
 import { pdfText, renderPdfPage } from '#lib/paperScan/scanSimulation';
 import { bytesSource, type ScanSource } from '../source';
@@ -137,6 +145,137 @@ describe('pdfPages', () => {
 		pdf.addPage([600, 300]).drawPage(form);
 		const [{ bytes }] = await cutAll(bytesSource(await saved(pdf)));
 		expect(await picturesIn(bytes)).toEqual([50]);
+	});
+
+	/** The marks (`/Mark`) of the objects anywhere in a file, by which a test tells them apart. */
+	async function marksIn(bytes: Uint8Array) {
+		const { context } = await PDFDocument.load(bytes);
+		const marks = new Set<string>();
+		const look = (object: unknown) => {
+			if (object instanceof PDFArray) return object.asArray().forEach(look);
+			const dict = object instanceof PDFRawStream ? object.dict : object;
+			if (!(dict instanceof PDFDict)) return;
+			const mark = dict.get(PDFName.of('Mark'));
+			if (mark) marks.add(String(mark));
+			dict.values().forEach(look);
+		};
+		for (const [, object] of context.enumerateIndirectObjects()) look(object);
+		return [...marks].sort();
+	}
+
+	/** A page whose content is `content`, and a resource dictionary it shares with another page. */
+	async function drawing({
+		content,
+		resources
+	}: {
+		content: string;
+		resources: (context: PDFDocument['context']) => Record<string, Record<string, PDFObject>>;
+	}) {
+		const pdf = await stack([100, 200]);
+		const listed = resources(pdf.context);
+		const shared = pdf.context.register(
+			pdf.context.obj(
+				Object.fromEntries(
+					Object.entries(listed).map(([key, entries]) => [key, pdf.context.obj(entries)])
+				)
+			)
+		);
+		const [page] = pdf.getPages();
+		page.node.set(PDFName.of('Resources'), shared);
+		page.node.set(PDFName.of('Contents'), pdf.context.register(pdf.context.stream(content)));
+		const [{ bytes }] = await cutAll(bytesSource(await saved(pdf)));
+		return marksIn(bytes);
+	}
+
+	test('takes only the fonts, patterns, states and colours along that a page names', async () => {
+		const kinds = ['Font', 'Pattern', 'ExtGState', 'Shading', 'ColorSpace', 'Properties'];
+		const marks = await drawing({
+			content:
+				'/OC /Properties1 BDC /ExtGState1 gs /ColorSpace1 cs /Pattern1 scn /Shading1 sh BT /Font1\u00009 Tf ET EMC',
+			resources: (context) =>
+				Object.fromEntries(
+					kinds.map((kind) => [
+						kind,
+						Object.fromEntries(
+							[1, 2].map((number) => [
+								`${kind}${number}`,
+								context.register(context.obj({ Mark: `${kind}${number}` }))
+							])
+						)
+					])
+				)
+		});
+		expect(marks).toEqual(kinds.map((kind) => `/${kind}1`).sort());
+	});
+
+	test('takes what a form, a pattern and the letters of a font draw with, and no more', async () => {
+		const marks = await drawing({
+			content: '/Form1 Do /Pattern1 scn BT /Font1 9 Tf ET /State1 gs',
+			resources: (context) => {
+				const marked = (Mark: string) => context.register(context.obj({ Mark }));
+				const own = (kind: string) => ({
+					Resources: { ExtGState: { Own: marked(`${kind}Own`), Other: marked(`${kind}Other`) } }
+				});
+				const stream = (content: string, dict: Parameters<typeof context.stream>[1]) =>
+					context.register(context.stream(content, dict));
+				return {
+					XObject: {
+						// without resources of its own: the page's
+						Form1: stream('/OfForm gs', { Subtype: 'Form', Mark: 'Form1' }),
+						Form2: stream('', { Subtype: 'Form', Mark: 'Form2' })
+					},
+					Pattern: {
+						Pattern1: stream('/Own gs', { PatternType: 1, Mark: 'Pattern1', ...own('Pattern') })
+					},
+					Font: {
+						Font1: context.register(
+							context.obj({
+								Subtype: 'Type3',
+								Mark: 'Font1',
+								CharProcs: { a: stream('/Own gs', {}) },
+								...own('Font')
+							})
+						)
+					},
+					ExtGState: {
+						OfForm: marked('OfForm'),
+						OfMask: marked('OfMask'),
+						Unused: marked('Unused'),
+						State1: context.register(
+							context.obj({
+								Mark: 'State1',
+								SMask: { G: stream('/OfMask gs', { Subtype: 'Form', Mark: 'Mask' }) }
+							})
+						)
+					}
+				};
+			}
+		});
+		expect(marks).toEqual(
+			['Form1', 'Pattern1', 'PatternOwn', 'Font1', 'FontOwn', 'OfForm', 'OfMask', 'State1', 'Mask']
+				.map((mark) => `/${mark}`)
+				.sort()
+		);
+	});
+
+	test('takes nothing along that is not drawn: what made a picture, or other fields of a form', async () => {
+		const pdf = await stack([100, 200]);
+		const [first] = pdf.getPages();
+		const mark = (Mark: string) => pdf.context.register(pdf.context.obj({ Mark }));
+		for (const [, object] of pdf.context.enumerateIndirectObjects()) {
+			if (!(object instanceof PDFRawStream)) continue;
+			object.dict.set(PDFName.of('PieceInfo'), mark('PieceInfo'));
+			object.dict.set(PDFName.of('Metadata'), mark('Metadata'));
+		}
+		const widget = pdf.context.obj({
+			Subtype: 'Widget',
+			Mark: 'Widget',
+			Rect: [0, 0, 10, 10],
+			Kids: [mark('Kid')]
+		});
+		first.node.set(PDFName.of('Annots'), pdf.context.obj([widget]));
+		const [{ bytes }] = await cutAll(bytesSource(await saved(pdf)));
+		expect(await marksIn(bytes)).toEqual(['/Widget']);
 	});
 
 	test('follows no link to another page, and keeps what was drawn on a page', async () => {

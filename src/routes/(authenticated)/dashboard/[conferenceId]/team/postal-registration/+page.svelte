@@ -37,8 +37,7 @@
 		await client.liveQuery.conference({
 			__args: { id: routeParams.conferenceId },
 			id: true,
-			startConference: true,
-			nextDocumentNumber: true
+			startConference: true
 		})
 	);
 
@@ -323,14 +322,18 @@
 		{#if postalRegistrationDetails}
 			{@const conferenceParticipantId = postalRegistrationDetails.id}
 			<LoadBoundary>
-				<div class="mt-6 flex flex-col gap-4">
-					<PostalScans
-						conferenceId={routeParams.conferenceId}
-						userId={userDetails.id}
-						{conferenceParticipantId}
-					/>
-					<AgreementDetails {conferenceParticipantId} />
-				</div>
+				<section class="mt-6 flex flex-col gap-3">
+					<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
+					<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
+						<PostalScans
+							conferenceId={routeParams.conferenceId}
+							userId={userDetails.id}
+							{conferenceParticipantId}
+							unfolded
+						/>
+						<AgreementDetails {conferenceParticipantId} />
+					</div>
+				</section>
 			</LoadBoundary>
 		{/if}
 	{/snippet}

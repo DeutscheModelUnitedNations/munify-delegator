@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { client } from '#lib/api/rumbleClient/client';
-	import { calendarDayFields, calendarDaysOf } from '#lib/api/calendarDays';
 	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
 	import type { Seat } from '#lib/components/calendar/calendarNow';
 	import { ownTrackIds, personalCalendarDays } from '#lib/components/calendar/personalCalendar';
+	import { fetchPersonalSchedule } from './personalSchedule';
 
 	/**
 	 * The schedule as this person sees it, so participant care can tell where they have to be at
@@ -21,27 +20,7 @@
 	let { conferenceId, userId, seat }: Props = $props();
 
 	const [conference, calendarDays, answers] = $derived(
-		await Promise.all([
-			client.liveQuery.conference({
-				__args: { id: conferenceId },
-				timezone: true,
-				showCalendar: true
-			}),
-			client.liveQuery.calendarDays({
-				__args: calendarDaysOf(conferenceId),
-				...calendarDayFields,
-				entries: { ...calendarDayFields.entries, surveyOptions: { id: true } }
-			}),
-			client.liveQuery.surveyAnswers({
-				__args: {
-					where: {
-						user: { id: { eq: userId } },
-						question: { conferenceId: { eq: conferenceId } }
-					}
-				},
-				option: { id: true }
-			})
-		])
+		await fetchPersonalSchedule({ conferenceId, userId })
 	);
 
 	const days = $derived(

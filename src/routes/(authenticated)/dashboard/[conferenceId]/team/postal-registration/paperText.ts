@@ -43,6 +43,8 @@ export function describeNote(note: PaperNote): string {
 			});
 		case 'incomplete':
 			return m.paperNoteIncomplete({ document: documentName[note.document]() });
+		case 'rejected':
+			return m.paperNoteRejected({ document: documentName[note.document]() });
 		case 'mediaChoiceUnclear':
 			return m.paperNoteMediaChoiceUnclear();
 		case 'detailDiffers':

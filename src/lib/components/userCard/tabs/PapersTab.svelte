@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages';
-	import { client } from '#lib/api/rumbleClient/client';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations';
+	import { fetchPapers, paperStatusBadge } from './papers';
 
 	interface Props {
 		userId: string;
@@ -12,36 +12,10 @@
 
 	let { userId, conferenceId }: Props = $props();
 
-	// Drafts are the author's own business; the admin card only shows submitted work.
-	const papers = $derived(
-		await client.liveQuery.papers({
-			__args: {
-				where: {
-					conference: { id: { eq: conferenceId } },
-					author: { id: { eq: userId } },
-					NOT: { status: 'DRAFT' }
-				}
-			},
-			id: true,
-			type: true,
-			status: true,
-			firstSubmittedAt: true,
-			agendaItem: { id: true, title: true, committee: { id: true, abbreviation: true } },
-			versions: { id: true, reviews: { id: true } }
-		})
-	);
+	const papers = $derived(await fetchPapers({ userId, conferenceId }));
 
 	const totalReviews = (paper: (typeof papers)[number]) =>
 		paper.versions.reduce((sum, v) => sum + v.reviews.length, 0);
-
-	const statusBadges: Partial<Record<string, string>> = {
-		ACCEPTED: 'badge-success',
-		CHANGES_REQUESTED: 'badge-error',
-		SUBMITTED: 'badge-info',
-		REVISED: 'badge-accent'
-	};
-
-	const statusBadge = (status: string) => statusBadges[status] ?? 'badge-ghost';
 </script>
 
 {#if papers.length === 0}
@@ -65,7 +39,7 @@
 				<div class="flex items-start justify-between gap-2">
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2">
-							<span class="badge badge-sm {statusBadge(paper.status)}">
+							<span class="badge badge-sm {paperStatusBadge(paper.status)}">
 								{translatePaperStatus(paper.status)}
 							</span>
 							<span class="font-bold">{translatePaperType(paper.type)}</span>

@@ -35,6 +35,8 @@ describe('createPageReader', () => {
 		const reader = createPageReader();
 		for (let number = 0; number < 3; number++) expect(await reader.read(scan)).toBe(page);
 		expect(first.tell).toHaveBeenCalledTimes(2);
+		// one that hung ending itself would keep all it took
+		expect(first.stop).toHaveBeenCalledOnce();
 		expect(second.tell).toHaveBeenCalledExactlyOnceWith(scan);
 	});
 

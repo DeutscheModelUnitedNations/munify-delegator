@@ -5,9 +5,10 @@
 	import { toast } from 'svelte-sonner';
 	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator';
 	import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
+	import CollapsibleRow from './CollapsibleRow.svelte';
 	import { certificateContentsOf, documentFileName } from '../tabs/statusDownloads';
 
-	/** The person's participation certificate, generated when it is asked for. */
+	/** The person's participation certificate as a list row, generated when it is asked for. */
 	interface Props {
 		userId: string;
 		conferenceId: string;
@@ -55,17 +56,11 @@
 	};
 </script>
 
-<section class="flex flex-col gap-3">
-	<h3 class="text-lg font-bold">{m.certificate()}</h3>
-	<div class="bg-base-200 rounded-box flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-		<i
-			aria-hidden="true"
-			class="ph-duotone ph-certificate text-base-content/60 w-6 text-center text-lg"
-		></i>
-		<span class="grow font-semibold">{m.certificate()}</span>
+<CollapsibleRow icon="certificate" title={m.certificate()}>
+	{#snippet actions()}
 		<button class="btn btn-sm" onclick={downloadCertificate}>
 			<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
 			{m.downloadCertificate()}
 		</button>
-	</div>
-</section>
+	{/snippet}
+</CollapsibleRow>

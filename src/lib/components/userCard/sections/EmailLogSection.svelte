@@ -4,6 +4,7 @@
 	import EmailLogTable from '#lib/components/EmailLogTable.svelte';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { canManageEmails } from '#lib/helpers/teamAccess';
+	import { fetchParticipantStatus } from '../tabs/participantStatus';
 	import OwedEmails from './OwedEmails.svelte';
 
 	/**
@@ -14,11 +15,22 @@
 	interface Props {
 		userId: string;
 		conferenceId: string;
-		/** Changes with the person's statuses, which decide what they are owed. */
-		statusRevision: string;
 	}
 
-	let { userId, conferenceId, statusRevision }: Props = $props();
+	let { userId, conferenceId }: Props = $props();
+
+	const statuses = $derived(await fetchParticipantStatus({ userId, conferenceId }));
+	const status = $derived(statuses.at(0));
+	/** The person's statuses, which decide what mails they are owed, as one value. */
+	const statusRevision = $derived(
+		[
+			status?.paymentStatus,
+			status?.termsAndConditions,
+			status?.guardianConsent,
+			status?.mediaConsent,
+			status?.didAttend
+		].join()
+	);
 
 	const mayManage = $derived(canManageEmails(await fetchTeamAccess(conferenceId)));
 

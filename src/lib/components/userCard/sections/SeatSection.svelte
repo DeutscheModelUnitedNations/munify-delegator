@@ -2,10 +2,10 @@
 	import { m } from '#lib/paraglide/messages';
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
-	import DelegationSeat from '../sections/DelegationSeat.svelte';
-	import SingleSeat from '../sections/SingleSeat.svelte';
-	import SupervisorSeat from '../sections/SupervisorSeat.svelte';
-	import SupervisedBy from '../sections/SupervisedBy.svelte';
+	import DelegationSeat from './DelegationSeat.svelte';
+	import SingleSeat from './SingleSeat.svelte';
+	import SupervisorSeat from './SupervisorSeat.svelte';
+	import SupervisedBy from './SupervisedBy.svelte';
 
 	/**
 	 * What the person holds in the conference, whatever kind it is: a delegation's role, a single
@@ -31,7 +31,6 @@
 		<SingleSeat {singleParticipantId} />
 	{/if}
 	{#if delegationId || singleParticipantId}
-		<div class="divider my-0"></div>
 		<SupervisedBy {userId} {conferenceId} />
 	{/if}
 	{#if supervisorId}

@@ -1,11 +1,13 @@
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import { type Transaction, db, schema } from '#api/db/db';
+import { lockConference } from '#api/db/lockConference';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, max, or } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
-import { conferenceParticipantPubsub } from '#api/pubsub';
+import { agreementDetailPubsub, conferenceParticipantPubsub } from '#api/pubsub';
+import { forgetRejectedDetails } from '#api/handlers/agreementDetail/agreementDetailService';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 import type { ParticipantStatusTarget } from './conferenceParticipantPermissions';
 
@@ -86,19 +88,70 @@ export async function changeParticipantSchool({
 	);
 }
 
-/** "Assign the next free number" is resolved per conference, as in the legacy resolver. */
-async function documentNumberOf(args: {
+/**
+ * The document number to write, undefined to keep the one stored. Numbers of a conference are handed
+ * out one at a time (the conference stays locked until the transaction ends), so two people working
+ * through letters at once never get the same one. "The next one" leaves a person who has a number
+ * with it: the number is on their papers already. Refuses (CONFLICT) a number another participant of
+ * the conference has.
+ */
+export async function documentNumberToWrite({
+	tx,
+	conferenceId,
+	existingId,
+	args
+}: {
+	tx: Transaction;
 	conferenceId: string;
-	assignedDocumentNumber?: number | null;
-	assignNextDocumentNumber?: boolean | null;
+	existingId: string | undefined;
+	args: Pick<StatusUpdateArgs, 'assignedDocumentNumber' | 'assignNextDocumentNumber'>;
 }) {
-	if (!args.assignNextDocumentNumber) return args.assignedDocumentNumber ?? undefined;
-	return nextDocumentNumber(args.conferenceId);
+	if (args.assignNextDocumentNumber) {
+		await lockConference({ tx, conferenceId });
+		if (existingId && (await hasDocumentNumber({ tx, id: existingId }))) return undefined;
+		return nextDocumentNumber({ tx, conferenceId });
+	}
+	const number = args.assignedDocumentNumber ?? undefined;
+	if (number === undefined) return undefined;
+	await lockConference({ tx, conferenceId });
+	await assertDocumentNumberFree({ tx, conferenceId, number, ownId: existingId });
+	return number;
+}
+
+async function hasDocumentNumber({ tx, id }: { tx: Transaction; id: string }) {
+	const own = await tx.query.conferenceParticipant.findFirst({
+		where: { id },
+		columns: { assignedDocumentNumber: true }
+	});
+	return typeof own?.assignedDocumentNumber === 'number';
+}
+
+/** Refuses a document number another participant of the conference has. */
+async function assertDocumentNumberFree({
+	tx,
+	conferenceId,
+	number,
+	ownId
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	number: number;
+	ownId: string | undefined;
+}) {
+	const holder = await tx.query.conferenceParticipant.findFirst({
+		where: {
+			conferenceId,
+			assignedDocumentNumber: number,
+			...(ownId ? { id: { ne: ownId } } : {})
+		},
+		columns: { id: true }
+	});
+	if (holder) throw apiError({ code: 'CONFLICT', message: m.documentNumberTaken() });
 }
 
 /** One past the highest document number of the conference. */
-async function nextDocumentNumber(conferenceId: string) {
-	const [highest] = await db
+async function nextDocumentNumber({ tx, conferenceId }: { tx: Transaction; conferenceId: string }) {
+	const [highest] = await tx
 		.select({ value: max(schema.conferenceParticipant.assignedDocumentNumber) })
 		.from(schema.conferenceParticipant)
 		.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }));
@@ -152,7 +205,8 @@ export function statusFields(args: StatusUpdateArgs) {
 /**
  * Writes the given fields of a participant's status where `assertCanUpsertParticipantStatus`
  * pointed: the existing row, or a new one for the user. Left out and `null` both keep a field.
- * Refuses (CONFLICT) an access card another participant of the conference carries. Returns the
+ * Refuses (CONFLICT) an access card another participant of the conference carries and a document
+ * number another one has. A document newly marked as a problem loses what scans told of it. Returns the
  * row's id.
  */
 export async function upsertParticipantStatus({
@@ -168,28 +222,40 @@ export async function upsertParticipantStatus({
 	const accessCardId = args.accessCardId ?? undefined;
 	await assertAccessCardFree({ conferenceId, accessCardId, ownId: existingId });
 
-	const values = {
-		...statusFields(args),
-		assignedDocumentNumber: await documentNumberOf({ conferenceId, ...args }),
-		accessCardId
-	};
+	const { id, forgotten } = await db.transaction(async (tx) => {
+		const values = {
+			...statusFields(args),
+			assignedDocumentNumber: await documentNumberToWrite({ tx, conferenceId, existingId, args }),
+			accessCardId
+		};
 
-	if ('existingId' in target) {
-		await db
-			.update(schema.conferenceParticipant)
-			.set({ ...values, updatedAt: new Date() })
-			.where(whereRows({ table: schema.conferenceParticipant, filter: { id: target.existingId } }));
-		conferenceParticipantPubsub.updated(target.existingId);
-		return target.existingId;
-	}
-	const created = await db
-		.insert(schema.conferenceParticipant)
-		.values({ ...values, userId: target.userId, conferenceId })
-		.returning({ id: schema.conferenceParticipant.id })
-		.then(assertFirstEntryExists);
-	conferenceParticipantPubsub.created();
-	conferenceParticipantPubsub.updated(created.id);
-	return created.id;
+		if ('existingId' in target) {
+			const { termsAndConditions, guardianConsent, mediaConsent } = values;
+			const forgotten = await forgetRejectedDetails({
+				tx,
+				participantId: target.existingId,
+				set: { termsAndConditions, guardianConsent, mediaConsent }
+			});
+			await tx
+				.update(schema.conferenceParticipant)
+				.set({ ...values, updatedAt: new Date() })
+				.where(
+					whereRows({ table: schema.conferenceParticipant, filter: { id: target.existingId } })
+				);
+			return { id: target.existingId, forgotten };
+		}
+		const created = await tx
+			.insert(schema.conferenceParticipant)
+			.values({ ...values, userId: target.userId, conferenceId })
+			.returning({ id: schema.conferenceParticipant.id })
+			.then(assertFirstEntryExists);
+		return { id: created.id, forgotten: false };
+	});
+
+	if (forgotten) agreementDetailPubsub.removed();
+	if (!existingId) conferenceParticipantPubsub.created();
+	conferenceParticipantPubsub.updated(id);
+	return id;
 }
 
 /**

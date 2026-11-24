@@ -1,5 +1,6 @@
 import type { PaperField } from './fields';
 import type { FieldReading, FieldState } from './readPaper';
+import type { StoredReadings } from './intake/rescan';
 import { combineReadings, type PaperDocument } from './proposal';
 
 /**
@@ -70,6 +71,12 @@ export const AGREEMENT_FIELDS: readonly AgreementField[] = AGREEMENT_GROUPS.flat
 	({ fields }) => fields
 );
 
+/** The details of these documents. */
+export const fieldsOfDocuments = (documents: readonly PaperDocument[]) =>
+	AGREEMENT_GROUPS.filter(({ document }) => documents.includes(document)).flatMap<AgreementField>(
+		({ fields }) => fields
+	);
+
 /** A detail as it is stored. */
 export interface StoredDetail {
 	field: AgreementField;
@@ -128,4 +135,27 @@ export function planDetails({
 		if (verdict === 'differs') differing.push(field);
 	}
 	return { write, differing };
+}
+
+/**
+ * The details only a removed scan (read as `removed`) told of: read off it, not set by a person, and
+ * said by none of the person's `remaining` scans.
+ */
+export function detailsToForget({
+	removed,
+	remaining,
+	stored
+}: {
+	removed: StoredReadings;
+	remaining: readonly StoredReadings[];
+	stored: readonly StoredDetail[];
+}): AgreementField[] {
+	const fields = new Set((removed ?? []).map(({ field }) => field));
+	const told = remaining.flatMap((readings) => readings ?? []);
+	return stored
+		.filter(({ field, state, source }) => {
+			if (source === 'MANUAL' || !fields.has(field)) return false;
+			return !told.some((reading) => reading.field === field && reading.state === state);
+		})
+		.map(({ field }) => field);
 }

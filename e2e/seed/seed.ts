@@ -35,6 +35,7 @@ import { seedSeatPlanning } from './seatPlanning';
 import { seedSeats } from './seats';
 import { seedAttendance } from './attendance';
 import { seedPaperScanning } from './paperScanning';
+import { seedDocumentNumbers } from './documentNumbers';
 import { seedEmailPace } from './emailPace';
 import { seedMcp } from './mcp';
 import { seedReviewDrafts } from './reviewDrafts';
@@ -1052,6 +1053,7 @@ export default async function seed() {
 	await seedSeats(db);
 	await seedAttendance(db);
 	await seedPaperScanning(db);
+	await seedDocumentNumbers(db);
 	await seedEmailPace(db);
 	await seedLateSupervisor(db);
 	await seedMakeSupervisor(db);

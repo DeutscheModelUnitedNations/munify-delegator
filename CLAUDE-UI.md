@@ -226,12 +226,33 @@ click included); no swipe-to-dismiss. Put bits-ui `Dialog.Title` / `Dialog.Close
 `open` (bindable), `direction` (`'top' | 'right' | 'bottom'`, default `'right'`), `class` (max
 width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 
+## User Card
+
+`#lib/components/userCard/` (`UserCardDrawer` as a panel, `team/user/[userId]` as a page):
+
+- **`UserCardSidebar`** stands beside every tab (above them on a small screen): name, `AgeBadge`, stage, role,
+  `UserCardActions`, care notes, `OpenFormalities`, `PersonFacts`. What the team looks up at a glance goes
+  there, not into a tab. `person` ("All details") is opened from it and is no tab of the bar.
+- **Tabs** (`userCardTabs.ts`, tested): overview, registration & seat, formalities, on site, papers,
+  history. The card opens on the overview, which leads with the phase's work (`overviewLead`);
+  below it `OverviewTile`s, each fetching its own few fields, with the way to the full tab.
+- **Values are text, never disabled inputs.** `Fact` is one row of a `<dl>`: a click copies the value,
+  `href` opens it. `matters` says an empty value is missing; pass `wholePerson` (`readsWholePerson`), since
+  masked columns come back empty too. A form shows only while editing (`PersonForm`).
+- **Statuses**: `formalitiesOf` / `isOpen` (`formalities.ts`) decide what is open, `FormalityRow` →
+  `StatusRow` changes one: the active button carries the text (`short` where the label is long).
+  Rarely needed rows fold in `CollapsibleRow` (`value`, `warning`, `actions`, `unfolded`).
+- No container queries around it: a `container-type` would trap the modals its sections open.
+
 ## Postal Components
 
 `#lib/components/postal/`, on the user card's formalities tab and the postal registration page:
-`PostalScans` (a person's stored scans: open, upload, delete) and `AgreementDetails` (every box and
-line of the documents, filled in by scans, folded into a `CollapsibleCard`: lower priority than the
-statuses on purpose). Both take `conferenceParticipantId` and need a `svelte:boundary`.
+`PostalScans` (a "Scans" row with the count and `UploadScanButton`, folded below it the person's
+stored scans: open, delete; `unfolded` lists them right away) and `AgreementDetails` (every box and line of the documents, filled in by scans,
+folded in a `CollapsibleRow`, `userCard/sections/`: lower priority than the statuses on purpose) are
+rows of a user card list (`bg-base-200 rounded-box divide-y`) without a heading of their own, beside
+the statuses. Both take `conferenceParticipantId`, `PostalScans` also `conferenceId` and `userId`, and
+need a `svelte:boundary`.
 
 ## BarcodeScanner Component
 

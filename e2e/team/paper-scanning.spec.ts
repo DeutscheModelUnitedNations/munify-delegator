@@ -180,7 +180,8 @@ test('a batch of scans marks a signed contract in, unattended, and ignores pages
 	await page.goto(`/dashboard/${conferenceId}/team/user/${E2E_PAPER_GRACE_ID}`);
 	await waitForHydration(page);
 	await page.getByRole('tab', { name: /formalitäten|formalities/i }).click();
-	const scans = page.getByRole('region', { name: /scans der unterlagen|scans of the documents/i });
+	await page.getByRole('button', { name: /^scans/i }).click();
+	const scans = page.getByRole('list', { name: /scans der unterlagen|scans of the documents/i });
 	await expect(scans.getByText('stapel_1.pdf')).toBeVisible();
 	await expect(page.getByLabel(/vertragsbedingungen akzeptiert/i)).toHaveCount(0);
 	await page.getByText(/details der einwilligungen|details of the agreements/i).click();

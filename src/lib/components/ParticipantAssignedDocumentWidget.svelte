@@ -7,6 +7,7 @@
 
 	interface Props {
 		assignedDocumentNumber?: number;
+		/** Without a number, the next free one is assigned. */
 		onSave: (number?: number) => Promise<void>;
 		disabledShortcut?: boolean;
 	}
@@ -15,6 +16,9 @@
 
 	let editing = $state(false);
 	let assignedDocumentNumberLocal = $state<number>();
+
+	/** A number is on the person's papers already: only a typed one replaces it. */
+	const mayAssignNext = $derived(editing && !assignedDocumentNumber);
 
 	const onSaveFn = async (number?: number) => {
 		await onSave(number);
@@ -33,7 +37,7 @@
 	onMount(() => {
 		if (!disabledShortcut) {
 			hotkeys('alt+n', () => {
-				if (editing) {
+				if (mayAssignNext) {
 					onSaveFn();
 				}
 			});
@@ -52,6 +56,7 @@
 		<i aria-hidden="true" class="ph-duotone ph-hash mr-2"></i>
 		{m.documentNumber()}
 	</h3>
+	<p class="text-base-content/70 text-sm">{m.documentNumberHint()}</p>
 	{#if editing}
 		<div class="join min-w-0">
 			<input
@@ -82,19 +87,21 @@
 			>
 				<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
 			</button>
-			<button
-				class="btn join-item tooltip {disabledShortcut ? 'btn-square' : ''}"
-				data-tip={m.saveNextDocumentNumber()}
-				onclick={() => {
-					onSaveFn();
-				}}
-				aria-label={m.a11ySaveAndNext()}
-			>
-				<i aria-hidden="true" class="ph-duotone ph-arrow-line-right"></i>
-				{#if !disabledShortcut}
-					<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
-				{/if}
-			</button>
+			{#if mayAssignNext}
+				<button
+					class="btn join-item tooltip {disabledShortcut ? 'btn-square' : ''}"
+					data-tip={m.saveNextDocumentNumber()}
+					onclick={() => {
+						onSaveFn();
+					}}
+					aria-label={m.saveNextDocumentNumber()}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-arrow-line-right"></i>
+					{#if !disabledShortcut}
+						<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
+					{/if}
+				</button>
+			{/if}
 		</div>
 	{:else}
 		<div class="flex justify-between gap-2 items-center">

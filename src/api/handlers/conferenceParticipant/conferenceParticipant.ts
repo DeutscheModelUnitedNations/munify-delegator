@@ -80,7 +80,7 @@ schemaBuilder.mutationFields((t) => ({
 			]
 		}),
 		description:
-			"Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries CONFLICT.",
+			"Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries or a document number another one has CONFLICT.",
 		type: ConferenceParticipantRef,
 		args: {
 			id: t.arg.id(),
@@ -96,7 +96,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignedDocumentNumber: t.arg.int(),
 			assignNextDocumentNumber: t.arg.boolean({
 				description:
-					'Gives the person the number after the highest one in the conference, instead of `assignedDocumentNumber`.'
+					'Gives the person the number after the highest one in the conference, instead of `assignedDocumentNumber`. A person who has a number keeps it.'
 			}),
 			accessCardId: t.arg.string()
 		},

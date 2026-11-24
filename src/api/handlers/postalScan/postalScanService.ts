@@ -1,14 +1,18 @@
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, schema, type Transaction } from '#api/db/db';
-import { postalScanPubsub, storedFilePubsub } from '#api/pubsub';
+import { agreementDetailPubsub, postalScanPubsub, storedFilePubsub } from '#api/pubsub';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
+import { detailsToForget } from '#lib/paperScan/agreementDetails';
 import type { PaperField } from '#lib/paperScan/fields';
 import { judgeRescan, type KeptOutcome, type StoredReadings } from '#lib/paperScan/intake/rescan';
 import { pageKeyOf } from '#lib/paperScan/intake/scanFile';
 import { fieldsOfCode } from '#lib/paperScan/readScan';
-import { paperReadingsSchema } from '#api/handlers/agreementDetail/agreementDetailService';
+import {
+	forgetScannedDetails,
+	paperReadingsSchema
+} from '#api/handlers/agreementDetail/agreementDetailService';
 import { verifyCode } from '#api/handlers/signedCode/signedCodeService';
 
 /** Where a person in the app may say a scan came from; scanners deliver by themselves. */
@@ -136,8 +140,44 @@ export async function keepPostalScan({
 	return kept.outcome;
 }
 
-/** Deletes a scan; its file follows with the next `file-cleanup`. */
+/**
+ * Deletes a scan, and the details only it told of; the statuses stay as they are. Its file follows with
+ * the next `file-cleanup`.
+ */
 export async function deletePostalScan(id: string) {
-	await db.delete(schema.postalScan).where(eq(schema.postalScan.id, id));
+	const forgotten = await db.transaction(async (tx) => {
+		const scan = await tx.query.postalScan.findFirst({
+			where: { id },
+			columns: { conferenceParticipantId: true }
+		});
+		if (!scan) return false;
+		const participantId = scan.conferenceParticipantId;
+		// no delivery of the same person's pages in between
+		await tx
+			.select({ id: schema.conferenceParticipant.id })
+			.from(schema.conferenceParticipant)
+			.where(eq(schema.conferenceParticipant.id, participantId))
+			.for('update');
+		const [removed] = await tx
+			.delete(schema.postalScan)
+			.where(eq(schema.postalScan.id, id))
+			.returning({ readings: schema.postalScan.readings });
+		if (!removed) return false;
+		const remaining = await tx.query.postalScan.findMany({
+			where: { conferenceParticipantId: participantId },
+			columns: { readings: true }
+		});
+		const stored = await tx.query.agreementDetail.findMany({
+			where: { conferenceParticipantId: participantId },
+			columns: { field: true, state: true, source: true }
+		});
+		const fields = detailsToForget({
+			removed: removed.readings,
+			remaining: remaining.map(({ readings }) => readings),
+			stored
+		});
+		return forgetScannedDetails({ tx, participantId, fields });
+	});
 	postalScanPubsub.removed();
+	if (forgotten) agreementDetailPubsub.removed();
 }

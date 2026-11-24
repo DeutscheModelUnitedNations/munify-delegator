@@ -2,7 +2,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 
-	/** The number on the person's postal documents, as a row of the user card's documents list. */
+	/** The number the person's postal documents are filed under, as a row of the user card's documents list. */
 	interface Props {
 		assignedDocumentNumber?: number;
 		/** Without a number, the next free one is assigned. */
@@ -33,15 +33,16 @@
 	};
 </script>
 
-<div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-	<i aria-hidden="true" class="ph-duotone ph-hash text-base-content/60 w-6 text-center text-lg"></i>
-	<div class="flex min-w-48 grow flex-col">
-		<span class="font-semibold">{m.documentNumber()}</span>
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5">
+	<i aria-hidden="true" class="ph-duotone ph-hash text-base-content/60 w-5 text-center"></i>
+	<div class="flex min-w-24 grow flex-col text-sm">
+		<span>{m.documentNumber()}</span>
 		{#if !editing}
 			{#if assignedDocumentNumber}
-				<span class="font-mono text-sm font-bold"># {assignedDocumentNumber}</span>
+				<span class="font-mono font-bold"># {assignedDocumentNumber}</span>
+				<span class="text-base-content/70 text-xs">{m.documentNumberHint()}</span>
 			{:else}
-				<span class="text-warning text-sm">{m.statusPending()}</span>
+				<span class="text-warning">{m.statusPending()}</span>
 			{/if}
 		{/if}
 	</div>
@@ -75,11 +76,7 @@
 	{:else}
 		<div class="join">
 			{#if !assignedDocumentNumber}
-				<button
-					class="btn btn-sm join-item"
-					onclick={() => save()}
-					aria-label={m.a11ySaveAndNext()}
-				>
+				<button class="btn btn-sm join-item" onclick={() => save()}>
 					<i aria-hidden="true" class="ph-duotone ph-arrow-line-right"></i>
 					{m.saveNextDocumentNumber()}
 				</button>

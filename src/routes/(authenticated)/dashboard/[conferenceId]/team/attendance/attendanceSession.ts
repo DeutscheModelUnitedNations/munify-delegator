@@ -13,7 +13,7 @@ export interface ScanLogEntry {
 }
 
 /** What the backend knows as a session's mode. */
-export type ServerMode = 'CHECK' | 'RECORD';
+export type ServerMode = 'CHECK' | 'RECORD' | 'BADGE';
 
 export interface ScanSession {
 	id: string;
@@ -143,7 +143,9 @@ export type Shown =
 			state: 'person';
 			/** The person as the server found them, with its check of them. */
 			person: FoundPerson;
-			awaiting: 'ack' | 'decide' | null;
+			awaiting: 'badge' | 'ack' | 'decide' | null;
+			/** The access card number as typed so far, starting from the one the person carries. */
+			badgeInput: string;
 	  };
 
 export type ShownPerson = Extract<Shown, { state: 'person' }>;
@@ -152,17 +154,20 @@ export const isShownPerson = (value: Shown | null): value is ShownPerson =>
 	value?.state === 'person';
 
 /**
- * What a scanned person waits for: nothing when all is clear, and with open points either an
- * acknowledgement or, where the scan is recorded only on purpose (`decides`, the check mode), the
- * decision whether to record it anyway.
+ * What a scanned person waits for: their access card (badge mode), nothing when all is clear, and
+ * with open points either an acknowledgement or, where the scan is recorded only on purpose
+ * (`decides`, the check mode), the decision whether to record it anyway.
  */
 export function scanStep({
+	badgeMode = false,
 	passed,
 	decides = false
 }: {
+	badgeMode?: boolean;
 	passed: boolean;
 	decides?: boolean;
 }): ShownPerson['awaiting'] {
+	if (badgeMode) return 'badge';
 	if (passed) return null;
 	return decides ? 'decide' : 'ack';
 }
@@ -178,6 +183,7 @@ export function personShown({
 	return {
 		state: 'person',
 		person,
-		awaiting
+		awaiting,
+		badgeInput: person.accessCardId ?? ''
 	};
 }

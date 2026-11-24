@@ -17,14 +17,14 @@ const none: UserCardTabFlags = {
 };
 
 describe('visibleUserCardTabs', () => {
-	it('offers only the person and their history to somebody without a part', () => {
-		expect(visibleUserCardTabs(none)).toEqual(['person', 'history']);
+	it('offers only the history and the details to somebody without a part', () => {
+		expect(visibleUserCardTabs(none)).toEqual(['history', 'person']);
 	});
 
 	it('offers registration and formalities to an applicant before the assignment', () => {
 		expect(
 			visibleUserCardTabs({ ...none, registered: true, holdsPart: true, participant: true })
-		).toEqual(['person', 'registration', 'seat', 'formalities', 'history']);
+		).toEqual(['overview', 'registration', 'formalities', 'history', 'person']);
 	});
 
 	it('offers everything to a seated delegate', () => {
@@ -37,101 +37,68 @@ describe('visibleUserCardTabs', () => {
 				access: true,
 				delegate: true
 			})
-		).toEqual([
-			'person',
-			'registration',
-			'seat',
-			'formalities',
-			'conference',
-			'surveys',
-			'calendar',
-			'papers',
-			'history'
-		]);
+		).toEqual(['overview', 'registration', 'formalities', 'onSite', 'papers', 'history', 'person']);
 	});
 
 	it('offers the registration tab to somebody only on the waiting list', () => {
 		expect(visibleUserCardTabs({ ...none, waiting: true })).toEqual([
-			'person',
+			'overview',
 			'registration',
-			'history'
+			'history',
+			'person'
 		]);
 	});
 
-	it('offers a team member their seat but no surveys or calendar', () => {
-		expect(visibleUserCardTabs({ ...none, holdsPart: true, access: true, team: true })).toEqual([
-			'person',
-			'seat',
-			'history'
-		]);
+	it('offers a team member nothing on site, unless they have a participant row', () => {
+		const team = { ...none, holdsPart: true, access: true, team: true };
+		expect(visibleUserCardTabs(team)).toEqual(['overview', 'registration', 'history', 'person']);
+		expect(visibleUserCardTabs({ ...team, participant: true })).toContain('onSite');
 	});
 });
 
 describe('shownUserCardTab', () => {
-	it('opens the registration of somebody waiting for a seat', () => {
-		expect(
-			shownUserCardTab({
-				picked: null,
-				visible: ['person', 'registration', 'seat', 'formalities', 'history'],
-				state: 'PREPARATION',
-				waiting: true
-			})
-		).toBe('registration');
-	});
+	const visible = visibleUserCardTabs({ ...none, registered: true, holdsPart: true });
 
-	const tabs = visibleUserCardTabs({ ...none, registered: true, holdsPart: true });
+	it('opens on the overview', () => {
+		expect(shownUserCardTab({ picked: null, visible })).toBe('overview');
+	});
 
 	it('keeps the picked tab when the person has it', () => {
-		expect(shownUserCardTab({ picked: 'seat', visible: tabs, state: 'ACTIVE' })).toBe('seat');
+		expect(shownUserCardTab({ picked: 'registration', visible })).toBe('registration');
+		expect(shownUserCardTab({ picked: 'person', visible })).toBe('person');
 	});
 
-	it('falls back when the picked tab is not offered for this person', () => {
-		expect(
-			shownUserCardTab({ picked: 'papers', visible: tabs, state: 'PARTICIPANT_REGISTRATION' })
-		).toBe('registration');
+	it('falls back to the overview when the picked tab is not offered for this person', () => {
+		expect(shownUserCardTab({ picked: 'papers', visible })).toBe('overview');
 	});
 
-	it('suggests the tab of the conference state when nothing was picked', () => {
-		const all = visibleUserCardTabs({
-			...none,
-			registered: true,
-			holdsPart: true,
-			participant: true,
-			access: true
-		});
-		expect(shownUserCardTab({ picked: null, visible: all, state: 'PREPARATION' })).toBe(
-			'formalities'
-		);
-		expect(shownUserCardTab({ picked: null, visible: all, state: 'ACTIVE' })).toBe('conference');
-	});
-
-	it('takes the first tab when the suggested one is not offered', () => {
-		expect(
-			shownUserCardTab({ picked: null, visible: ['person', 'history'], state: 'ACTIVE' })
-		).toBe('person');
+	it('shows the details of somebody without an overview', () => {
+		expect(shownUserCardTab({ picked: null, visible: ['history', 'person'] })).toBe('person');
 	});
 });
 
 describe('nextUserCardTabToPrefetch', () => {
-	const visible = ['person', 'registration', 'seat', 'formalities', 'history'] as const;
+	const visible = ['overview', 'registration', 'formalities', 'history', 'person'] as const;
 
 	it('loads the tab after the shown one first, then the one before it', () => {
 		const loaded = new Set<(typeof visible)[number]>();
-		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('formalities');
-		loaded.add('formalities');
-		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('registration');
-		loaded.add('registration');
-		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('history');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'formalities', loaded })).toBe('history');
 		loaded.add('history');
-		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('person');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'formalities', loaded })).toBe(
+			'registration'
+		);
+		loaded.add('registration');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'formalities', loaded })).toBe('person');
+		loaded.add('person');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'formalities', loaded })).toBe('overview');
 	});
 
 	it('never picks the shown tab, and stops once every other tab is loaded', () => {
 		expect(
 			nextUserCardTabToPrefetch({
 				visible,
-				shown: 'person',
-				loaded: new Set(['registration', 'seat', 'formalities', 'history'])
+				shown: 'overview',
+				loaded: new Set(['registration', 'formalities', 'history', 'person'])
 			})
 		).toBeUndefined();
 	});
@@ -139,7 +106,7 @@ describe('nextUserCardTabToPrefetch', () => {
 	it('only offers tabs this card has', () => {
 		expect(
 			nextUserCardTabToPrefetch({
-				visible: ['person', 'history'],
+				visible: ['history', 'person'],
 				shown: 'person',
 				loaded: new Set()
 			})

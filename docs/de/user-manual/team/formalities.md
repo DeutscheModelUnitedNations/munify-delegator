@@ -14,7 +14,7 @@ Bevor jemand an der Konferenz teilnimmt, müssen der Beitrag bezahlt und die Unt
 | **Anmeldung vor Ort**     | Namensschild-Tische und QR-Code für den Eingang | **Projektleitung**, **Teilnehmendenbetreuung** |
 | **Einlass & Anwesenheit** | Scanner: Personen prüfen und Check-ins erfassen | das ganze Team                                 |
 
-Was auf diesen Seiten der **Teilnehmendenbetreuung** vorbehalten ist, darf auch die **Projektleitung**. Alle Status einer Person findest du außerdem in ihrer [Teilnehmendenkarte](./participants#user-card): Zahlung und Unterlagen im Reiter **Formalitäten**, Zugangsausweis und Anwesenheit im Reiter **Zugang & Anwesenheit**.
+Was auf diesen Seiten der **Teilnehmendenbetreuung** vorbehalten ist, darf auch die **Projektleitung**. Alle Status einer Person findest du außerdem in ihrer [Teilnehmendenkarte](./participants#user-card): Zahlung und Unterlagen im Reiter **Formalitäten**, Zugangsausweis und Anwesenheit im Reiter **Vor Ort**.
 
 ## Zahlungen {#payments}
 
@@ -55,7 +55,7 @@ Beide E-Mails werden nur für Personen mit Platz fällig, sobald die Zuteilung f
 
 ### Rückgängig machen
 
-Auf der Seite **Beitragszahlung** lässt sich eine bestätigte Referenz nicht zurücksetzen: Sie zeigt dann **Die Transaktion wurde mit Überweisung vom … als erhalten markiert!** und nur noch **Schließen**. Den Status einer Person änderst du in ihrer Teilnehmendenkarte im Reiter **Formalitäten** unter **Beitragszahlung**. Darunter stehen ihre **Zahlungsreferenzen**, mit wem sie geteilt sind und ob sie eingegangen sind.
+Auf der Seite **Beitragszahlung** lässt sich eine bestätigte Referenz nicht zurücksetzen: Sie zeigt dann **Die Transaktion wurde mit Überweisung vom … als erhalten markiert!** und nur noch **Schließen**. Den Status einer Person änderst du in ihrer Teilnehmendenkarte im Reiter **Formalitäten** bei **Beitragszahlung**. Daneben unter **Unterlagen** stehen ihre **Zahlungsreferenzen**, mit wem sie geteilt sind und ob sie eingegangen sind.
 
 :::warning Was sich nicht zurückholen lässt
 Der Status in der Teilnehmendenkarte gilt nur für diese eine Person, die Referenz bleibt als erhalten markiert. Eine E-Mail, die schon verschickt ist, holt das Zurücksetzen nicht zurück. Steht die Person wieder auf **Ausstehend**, kann sie eine neue Referenz erstellen.
@@ -82,7 +82,7 @@ Auf jeder Seite steht ein QR-Code, der die Person und die Konferenz nennt und vo
 | **Einwilligung der Erziehungsberechtigten** | wie oben, nur bei Minderjährigen. Bei Volljährigen steht dort **Keine Einwilligung der Erziehungsberechtigten benötigt**.                       |
 | **Einwilligung Bildnutzung**                | **Ausstehend**, **Problem**, **Erledigt**                                                                                                       |
 | **Fotostatus**                              | **Noch nicht festgelegt**, **Keine Fotos erlaubt**, **Teilweise erlaubt – Einwilligung im Einzelnen prüfen**, **Fotos uneingeschränkt erlaubt** |
-| **Dokumentennummer**                        | eine Zahl je Person                                                                                                                             |
+| **Ablagenummer**                            | eine Zahl je Person                                                                                                                             |
 
 Der **Fotostatus** sagt, was die Person auf der Einwilligung zur Bildnutzung angekreuzt hat. Er steht in den Daten für die gedruckten Namensschilder auf der Seite [Downloads](./maintenance#downloads).
 
@@ -92,12 +92,12 @@ Der **Fotostatus** sagt, was die Person auf der Einwilligung zur Bildnutzung ang
 2. Scanne den QR-Code auf einer Seite des Briefs. Neben dem Scanner öffnet sich die Person mit Name, Geburtsdatum und allen Status. Vergleiche sie mit dem Brief.
 3. Sind alle nötigen Dokumente unterschrieben da und erlaubt die Person Fotos ohne Einschränkung, klicke **Alle bestätigen** (Alt+A). Das setzt **Verbindliche Anmeldung** und **Einwilligung Bildnutzung** auf **Erledigt**, bei Minderjährigen auch die **Einwilligung der Erziehungsberechtigten**, und den **Fotostatus** auf **Fotos uneingeschränkt erlaubt**.
 4. Hat die Person Fotos eingeschränkt, setze die Dokumente einzeln auf **Erledigt** und danach den **Fotostatus**: Alt+1 für keine Fotos, Alt+2 für teilweise, Alt+3 für uneingeschränkt.
-5. Hat die Person noch keine **Dokumentennummer**, ist das Feld schon offen. **Nächste Nummer speichern** (Alt+N) vergibt die Zahl nach der höchsten Nummer der Konferenz. Du kannst auch eine eigene eintragen und speichern.
+5. Hat die Person noch keine **Ablagenummer**, ist das Feld schon offen. **Nächste Ablagenummer vergeben** (Alt+N) vergibt die Zahl nach der höchsten Nummer der Konferenz. Du kannst auch eine eigene eintragen und speichern.
 6. Fehlt ein Dokument oder ist es fehlerhaft, setze nur dieses auf **Problem** und die anderen einzeln auf **Erledigt**.
 7. Esc schließt die Person, der Scanner ist bereit für den nächsten Brief.
 
-:::tip Die Dokumentennummer auf den Brief schreiben
-Schreib die vergebene **Dokumentennummer** auf die Blätter und hefte sie in der Reihenfolge ihres Eingangs ab. So musst du die Briefe nicht nach Namen sortieren: Brauchst du später ein Original, steht seine Nummer in der Teilnehmendenkarte der Person, und du findest es im Ordner sofort.
+:::tip Die Ablagenummer auf den Brief schreiben
+Schreib die vergebene **Ablagenummer** auf die Blätter und hefte sie in der Reihenfolge ihres Eingangs ab. So musst du die Briefe nicht nach Namen sortieren: Brauchst du später ein Original, steht seine Nummer in der Teilnehmendenkarte der Person, und du findest es im Ordner sofort.
 :::
 
 Jede Änderung speichert sofort, ohne Rückfrage. Einen falschen Klick korrigierst du, indem du den richtigen Status wählst, hier oder in der Teilnehmendenkarte.
@@ -108,9 +108,9 @@ Jede Änderung speichert sofort, ohne Rückfrage. Einen falschen Klick korrigier
 
 Unter dem Scanner kannst du **Dateien hierher ziehen oder auswählen**: PDFs aus dem Einzug eines Scanners oder Fotos, auch von mehreren Personen gemischt. DELEGATOR liest den QR-Code jeder Seite, speichert die Seiten bei der Person und trägt ein, was unterschrieben und angekreuzt ist. Jede Seite wird nur einmal gespeichert, auch wenn du sie noch einmal scannst; kommt sie später unterschrieben zurück, ersetzt der neue Scan den alten. Nichts wird zurückgesetzt. Seiten ohne QR-Code werden übersprungen; andere, die niemandem zuzuordnen sind, werden nicht gespeichert, sondern aufgelistet.
 
-Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten** bei **Scans der Unterlagen**. Dort kannst du sie öffnen, löschen und weitere hochladen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
+Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten** in der Liste **Unterlagen** bei **Scans**. Dort kannst du sie öffnen und löschen und mit **Scan hochladen** weitere hinzufügen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
 
-Was im Einzelnen angekreuzt und unterschrieben ist, steht darunter in **Details der Einwilligungen**, eingeklappt. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
+Was im Einzelnen angekreuzt und unterschrieben ist, steht in der letzten Zeile der Liste, **Details der Einwilligungen**, eingeklappt. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
 
 Damit du nichts von Hand hochladen musst:
 
@@ -201,20 +201,21 @@ Die Seite **Einlass & Anwesenheit** scannt Teilnehmende bei jedem Anlass, an dem
 
 ### Sitzungen {#sessions}
 
-Es gibt drei Arten zu scannen:
+Es gibt vier Arten zu scannen:
 
-| Art          | Was ein Scan tut                                                                                                                                     |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Prüfen**   | Zeigt die Person und offene Punkte. Ohne offene Punkte wird erfasst und es geht gleich weiter, mit offenen Punkten nur auf ausdrücklichen Wunsch.    |
-| **Erfassen** | Erfasst nur, dass die Person gescannt wurde, ohne anzuhalten und ohne zu prüfen.                                                                     |
-| **Info**     | Zeigt die Person und offene Punkte wie beim Prüfen, speichert aber nichts. Für Ansprechpersonen bei Fragen von Teilnehmenden. Braucht keine Sitzung. |
+| Art               | Was ein Scan tut                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Prüfen**        | Zeigt die Person und offene Punkte. Ohne offene Punkte wird erfasst und es geht gleich weiter, mit offenen Punkten nur auf ausdrücklichen Wunsch.            |
+| **Erfassen**      | Erfasst nur, dass die Person gescannt wurde, ohne anzuhalten und ohne zu prüfen.                                                                             |
+| **Badge-basiert** | Zeigt die Person und offene Punkte wie beim Prüfen und wartet, bis ihre **Zugangsausweis-Nr.** eingegeben ist. Ausweis und Scan werden zusammen gespeichert. |
+| **Info**          | Zeigt die Person und offene Punkte wie beim Prüfen, speichert aber nichts. Für Ansprechpersonen bei Fragen von Teilnehmenden. Braucht keine Sitzung.         |
 
 **Eine Sitzung starten** dürfen nur **Teilnehmendenbetreuung** und **Projektleitung**:
 
 1. Klicke unter **Sitzungen** auf **Neue Sitzung**.
-2. Wähle die **Art der Sitzung**.
-3. Beim Prüfen kannst du unter **Erwartete Umfrageauswahl** Optionen einer Umfrage ankreuzen. Wer keine davon gewählt hat, bekommt beim Scan **Hat … nicht gewählt** als offenen Punkt. So prüfst du etwa beim Einstieg in einen Bus, wer sich für diese Exkursion angemeldet hat.
-4. Gib den **Sitzungsname** ein und klicke **Sitzung starten**.
+2. Gib den **Sitzungsname** ein und wähle die **Art der Sitzung**.
+3. Außer beim Erfassen kannst du unter **Erwartete Umfrageauswahl** Optionen einer Umfrage ankreuzen. Wer keine davon gewählt hat, bekommt beim Scan **Hat … nicht gewählt** als offenen Punkt. So prüfst du etwa beim Einstieg in einen Bus, wer sich für diese Exkursion angemeldet hat.
+4. Klicke **Sitzung starten**.
 
 Art und erwartete Umfrageauswahl stehen ab dem Start fest. Ein Sitzungsname gilt in der Konferenz nur einmal, ohne Rücksicht auf Groß- und Kleinschreibung. Ist er schon vergeben, antwortet DELEGATOR **Es gibt bereits eine Sitzung mit diesem Namen. Tritt ihr bei oder wähle einen anderen Namen.**
 
@@ -237,7 +238,7 @@ Nicht angenommen werden der QR-Code der Anmeldeunterlagen und NSA-Karten (**Dies
 
 ### Was ein Scan zeigt und bewirkt
 
-Beim Prüfen und bei **Info** erscheint neben der Kamera die Person: Name, Geburtsdatum, Rolle und Gremium, die Status **Beitragszahlung**, **Verbindliche Anmeldung** und **Anwesenheit**, dann **Alles in Ordnung** oder **Offene Punkte** mit der Liste.
+Beim Prüfen, bei **Badge-basiert** und bei **Info** erscheint neben der Kamera die Person: Name, Geburtsdatum, Rolle und Gremium, die Status **Beitragszahlung**, **Verbindliche Anmeldung** und **Anwesenheit**, dann **Alles in Ordnung** oder **Offene Punkte** mit der Liste.
 
 - **Alles in Ordnung** beim Prüfen: Der Scan ist erfasst, der Scanner ist sofort bereit. Im Modus **Info** wird auch dann nichts erfasst.
 - **Offene Punkte** beim Prüfen: **Verwerfen** (Esc) erfasst nichts, **Trotzdem erfassen** (Alt+A) erfasst die Person mit dem Vermerk, dass es offene Punkte gab.
@@ -253,7 +254,7 @@ Was der Scanner melden kann:
 | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | **Anwesenheit erfasst**                                                            | Der Scan ist gespeichert.                                                        |
 | **Diese teilnehmende Person wurde in dieser Sitzung bereits gescannt**             | Sie wurde schon erfasst, an diesem oder einem anderen Gerät. Es bleibt ein Scan. |
-| **Kein\*e Teilnehmer\*in mit dieser ID gefunden.**                                 | Beim Prüfen und bei **Info**: Der Code gehört zu niemandem in dieser Konferenz.  |
+| **Kein\*e Teilnehmer\*in mit dieser ID gefunden.**                                 | Außer beim Erfassen: Der Code gehört zu niemandem in dieser Konferenz.           |
 | **Diese Person nimmt nicht an der Konferenz teil.**                                | Beim Erfassen: Der Code gehört zu niemandem, der in dieser Konferenz teilnimmt.  |
 | **Teammitglieder werden nicht eingescannt; der Scanner erfasst nur Teilnehmende.** | Ein Teammitglied wurde beim Erfassen gescannt.                                   |
 | **Netzwerkfehler — automatischer erneuter Versuch**                                | Der Scan wartet auf dem Gerät und wird wieder gesendet.                          |
@@ -269,7 +270,7 @@ Ein Scan setzt die **Anwesenheit** einer Person nicht auf **Anwesend**. Sie ents
 Die Codes prüft das Gerät selbst, der Scanner erkennt falsche Codes also auch offline. Dafür muss die Seite einmal online gewesen sein, sonst steht dort **Die Prüfung der Codes ist noch nicht verfügbar (bisher keine Verbindung). Gleich noch einmal versuchen.**
 
 - **Erfassen** funktioniert offline. Die Scans warten im Browser des Geräts und gehen raus, sobald es wieder Verbindung hat, auch nach einem Neuladen der Seite. Eine offline gestartete Sitzung entsteht mit dem ersten gesendeten Scan.
-- **Prüfen** und **Info** brauchen eine Verbindung: **Prüfen braucht eine Verbindung. Im Modus „Erfassen“ geht es auch offline.**
+- **Prüfen**, **Badge-basiert** und **Info** brauchen eine Verbindung: **Prüfen braucht eine Verbindung. Im Modus „Erfassen“ geht es auch offline.**
 - Wurde der Name einer offline gestarteten Sitzung inzwischen vergeben, warten ihre Scans, bis du sie umbenennst.
 - **Backup herunterladen** speichert die Scans dieses Geräts in der Sitzung als Datei.
 
@@ -284,16 +285,16 @@ Für die Teilnehmendenbetreuung steht unter dem Scanner die Liste **Gescannte Pe
 - Der Papierkorb entfernt einen Scan nach der Rückfrage **Den Scan von … aus dieser Sitzung entfernen? Die Person kann danach wieder gescannt werden.**
 - **CSV exportieren** lädt alle Scans der Sitzung herunter, unabhängig von der Suche, mit **Zeitstempel**, **Vorname**, **Nachname**, **E-Mail**, **Zugangsausweis-Nr.**, **Prüfung bestanden**, **Gescannt von** und **Benutzer-ID**. Bei Sitzungen der Art **Erfassen** bleibt **Prüfung bestanden** leer.
 
-Alle Scans einer Person über alle Sitzungen stehen in ihrer Teilnehmendenkarte im Reiter **Zugang & Anwesenheit** im **Anwesenheitsprotokoll**.
+Alle Scans einer Person über alle Sitzungen stehen in ihrer Teilnehmendenkarte im Reiter **Vor Ort** im **Anwesenheitsprotokoll**.
 
 ### Zugangsausweise und ein verlorener Ausweis {#access-cards}
 
-Im Reiter **Zugang & Anwesenheit** der Teilnehmendenkarte trägt die Teilnehmendenbetreuung die **Zugangsausweis-Nr.** ein. Eine Nummer gehört in einer Konferenz nur einer Person: **Dieser Zugangsausweis gehört bereits jemand anderem.** Die Befehlspalette (Strg+K) findet Personen auch über ihre Ausweisnummer.
+Im Reiter **Vor Ort** der Teilnehmendenkarte trägt die Teilnehmendenbetreuung die **Zugangsausweis-Nr.** ein, am Einlass jede\*r im Team in einer Sitzung der Art **Badge-basiert**. Eine Nummer gehört in einer Konferenz nur einer Person: **Dieser Zugangsausweis gehört bereits jemand anderem.** Die Befehlspalette (Strg+K) findet Personen auch über ihre Ausweisnummer.
 
 Gibt jemand einen gefundenen Ausweis ab:
 
 1. Tippe oder scanne die Nummer in die Befehlspalette und öffne die Person.
-2. Klicke im Reiter **Zugang & Anwesenheit** neben der Nummer auf **Ausweis gefunden** und bestätige **Benachrichtigung senden?**.
+2. Klicke im Reiter **Vor Ort** neben der Nummer auf **Ausweis gefunden** und bestätige **Benachrichtigung senden?**.
 3. Die E-Mail **Zugangsausweis gefunden** geht sofort raus, auch wenn sonst nichts automatisch verschickt wird. Sie bittet die Person, den Ausweis bei der Teilnehmendenbetreuung abzuholen.
 
 Jede Bestätigung verschickt die E-Mail erneut. Ihren Text änderst du auf der Seite [E-Mails](./communication#emails).
@@ -306,7 +307,7 @@ Ist die Konferenz **Nach der Konferenz**, laden Teilnehmende ihr Teilnahmezertif
 
 Ein Zertifikat bekommt nur, wessen **Anwesenheit** auf **Anwesend** steht. Für alle anderen gibt es keines, das Dashboard sagt ihnen, dass es noch nicht zur Verfügung steht. Die Anwesenheit setzt kein Scan, sondern:
 
-- die Teilnehmendenkarte im Reiter **Zugang & Anwesenheit** mit **Anwesend** oder **Abwesend**,
+- die Teilnehmendenkarte im Reiter **Vor Ort** mit **Anwesend** oder **Abwesend**,
 - der [Import](./maintenance#import) von Anwesenheitsdaten,
 - der [Helfer](./maintenance#helper), der alle Teilnehmenden auf einmal auf **Anwesend** oder **Abwesend** setzt.
 

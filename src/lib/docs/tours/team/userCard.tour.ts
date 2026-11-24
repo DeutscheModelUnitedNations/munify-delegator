@@ -13,19 +13,19 @@ export const userCardTour: Tour = {
 			anchor: 'team.userCard.header',
 			title: () => m.tourTeamUserCardHeaderTitle(),
 			body: () => m.tourTeamUserCardHeaderBody(),
-			side: 'bottom'
+			side: 'right'
 		},
 		{
 			anchor: 'team.userCard.actions',
 			title: () => m.tourTeamUserCardActionsTitle(),
 			body: () => m.tourTeamUserCardActionsBody(),
-			side: 'left'
+			side: 'right'
 		},
 		{
 			anchor: 'team.userCard.status',
 			title: () => m.tourTeamUserCardStatusTitle(),
 			body: () => m.tourTeamUserCardStatusBody(),
-			side: 'bottom'
+			side: 'right'
 		},
 		{
 			anchor: 'team.userCard.tabs',

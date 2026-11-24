@@ -10,26 +10,22 @@
 
 	let { tabs, activeTab, onTabChange }: Props = $props();
 
-	const TAB_META: Record<UserCardTab, { icon: string; label: () => string }> = {
-		person: { icon: 'ph-user', label: () => m.userCardTabPerson() },
-		registration: { icon: 'ph-note-pencil', label: () => m.userCardTabRegistration() },
-		seat: { icon: 'ph-chair', label: () => m.userCardTabSeat() },
+	type BarTab = Exclude<UserCardTab, 'person'>;
+	const isBarTab = (tab: UserCardTab): tab is BarTab => tab !== 'person';
+
+	const TAB_META: Record<BarTab, { icon: string; label: () => string }> = {
+		overview: { icon: 'ph-squares-four', label: () => m.overview() },
+		registration: { icon: 'ph-chair', label: () => m.userCardTabRegistrationSeat() },
 		formalities: { icon: 'ph-clipboard-text', label: () => m.userCardTabFormalities() },
-		conference: { icon: 'ph-calendar-check', label: () => m.accessAndAttendance() },
-		surveys: { icon: 'ph-chart-pie', label: () => m.survey() },
-		calendar: { icon: 'ph-calendar-dots', label: () => m.calendar() },
+		onSite: { icon: 'ph-calendar-check', label: () => m.userCardTabOnSite() },
 		papers: { icon: 'ph-file-text', label: () => m.userCardTabPapers() },
 		history: { icon: 'ph-clock-counter-clockwise', label: () => m.userCardTabHistory() }
 	};
 </script>
 
-<div
-	class="overflow-x-auto px-3 sm:px-5 md:px-10 lg:px-16"
-	data-vaul-no-drag
-	data-tour="team.userCard.tabs"
->
+<div class="overflow-x-auto" data-vaul-no-drag data-tour="team.userCard.tabs">
 	<div role="tablist" class="tabs tabs-border flex-nowrap">
-		{#each tabs as tab (tab)}
+		{#each tabs.filter(isBarTab) as tab (tab)}
 			{@const meta = TAB_META[tab]}
 			<button
 				role="tab"

@@ -34,7 +34,8 @@ export function createPageReader() {
 			process.tell(scan);
 			try {
 				const { page, leaving } = await process.next();
-				if (leaving) process = undefined;
+				// it ends by itself, but now and then hangs doing so, with all it took
+				if (leaving) stop();
 				return page;
 			} catch (error) {
 				stop();

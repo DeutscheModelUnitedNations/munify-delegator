@@ -6,6 +6,9 @@ import { createScanProcess, ProcessEndedError } from './scanProcess';
 const { fork } = vi.hoisted(() => ({ fork: vi.fn() }));
 vi.mock('node:child_process', () => ({ fork }));
 vi.mock('$app/env', () => ({ dev: false }));
+vi.mock('./scanSandbox', () => ({
+	sandboxCommand: (nodeArgs: string[]) => ({ execPath: 'sandbox', execArgv: ['node', ...nodeArgs] })
+}));
 
 function start() {
 	const child = Object.assign(new EventEmitter(), {
@@ -37,6 +40,8 @@ describe('createScanProcess', () => {
 		expect(file).toMatch(/build\/compute\/scanReader\.mjs$/);
 		expect(Object.keys(options.env)).toEqual(['NODE_ENV']);
 		expect(options.serialization).toBe('advanced');
+		expect(options.execPath).toBe('sandbox');
+		expect(options.execArgv).toEqual(['node', expect.stringMatching(/^--max-old-space-size=/)]);
 		vi.unstubAllEnvs();
 	});
 

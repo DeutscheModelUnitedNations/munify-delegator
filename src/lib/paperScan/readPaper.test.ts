@@ -291,9 +291,20 @@ describe('areasAsPrinted', () => {
 		expect(printed({ ink: 0.2, core: 0 }).printed).toEqual({ ink: 0.2, core: 0 });
 	});
 
-	it('takes no span that is none of the field, nor one for a box', () => {
-		const beyond = { top: 0, bottom: signature.height + 1 };
-		expect(printed({ ink: 0, core: 0, clear: beyond })).toEqual(signature);
+	it('leaves a line said to be clear where it cannot be to a person', () => {
+		for (const clear of [
+			{ top: 0, bottom: signature.height + 1 },
+			{ top: -1, bottom: 6 },
+			{ top: 6, bottom: 1 },
+			// no room to write: what would be read lies outside of it
+			{ top: 0, bottom: 0.1 },
+			{ top: 1, bottom: 5.9 }
+		]) {
+			expect(printed({ ink: 0, core: 0, clear })).toEqual({ ...signature, printed: UNKNOWN_PRINT });
+		}
+	});
+
+	it('takes no span for a box', () => {
 		const [box] = areas.areas;
 		const print = { field: box.field, ink: 0, core: 0, clear: { top: 1, bottom: 2 } };
 		expect(areasAsPrinted({ areas: [box], printedInk: [print] })).toEqual([box]);

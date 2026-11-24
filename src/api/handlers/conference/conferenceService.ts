@@ -3,7 +3,7 @@ import { assertAgeRangeInOrder, assertConferenceDatesInOrder } from './conferenc
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 import { m } from '#lib/paraglide/messages';
-import { and, eq, inArray, max, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { whereRows } from '#api/db/whereRows';
 import { nullToUndefined } from '#api/services/args';
@@ -94,15 +94,6 @@ export async function countOfferedSeats(conferenceId: string) {
 	]);
 
 	return committeeSeats.seats + nsaSeats.seats;
-}
-
-/** The document number to hand to the next participant who needs one: one above the highest. */
-export async function nextDocumentNumber(conferenceId: string) {
-	const [highest] = await db
-		.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
-		.from(schema.conferenceParticipant)
-		.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }));
-	return (highest?.max ?? 0) + 1;
 }
 
 type ConferenceInsert = typeof schema.conference.$inferInsert;

@@ -38,12 +38,19 @@ export type PrintedInk = {
 
 /** Print nobody could measure: whatever is in such a field, a person looks at it. */
 export const UNKNOWN_PRINT = { ink: 1, core: 1 };
+/** Below this height (millimetres) there is no room to write between two lines. */
+export const LEAST_ROOM = 5;
 /** Less than this (shares) is none, as a code carries it. */
 const LEAST_PRINT = 0.001;
 
+/** Whether `span` lies in `area` and leaves room to write. */
+const hasRoom = ({ span, area }: { span: ClearSpan; area: PaperArea }) =>
+	span.top >= 0 && span.bottom <= area.height && span.bottom - span.top >= LEAST_ROOM;
+
 /**
  * The fields of a page as `printedInk` says it is printed: a line's field only where it is clear, and
- * each with the print in it. Without it (`undefined`: not measured) each has `UNKNOWN_PRINT`.
+ * each with the print in it. Without it (`undefined`: not measured) each has `UNKNOWN_PRINT`, and so has a
+ * line's field said to be clear where it cannot be: whoever prints says so.
  */
 export function areasAsPrinted({
 	areas,
@@ -57,15 +64,11 @@ export function areasAsPrinted({
 		const found = printedInk.find(({ field }) => field === area.field);
 		if (!found) return area;
 		const { ink, core, clear } = found;
-		const isClear =
-			clear &&
-			PAPER_FIELDS[area.field].mark === 'line' &&
-			clear.top >= 0 &&
-			clear.top < clear.bottom &&
-			clear.bottom <= area.height;
+		const span = PAPER_FIELDS[area.field].mark === 'line' ? clear : undefined;
+		if (span && !hasRoom({ span, area })) return { ...area, printed: UNKNOWN_PRINT };
 		return {
 			...area,
-			...(isClear ? { y: area.y + clear.top, height: clear.bottom - clear.top } : {}),
+			...(span ? { y: area.y + span.top, height: span.bottom - span.top } : {}),
 			...(ink >= LEAST_PRINT || core >= LEAST_PRINT ? { printed: { ink, core } } : {})
 		};
 	});

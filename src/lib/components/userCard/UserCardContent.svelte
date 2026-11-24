@@ -23,66 +23,44 @@
 		<UserCardBody {userId} {conferenceId} {mode} bind:activeTab />
 
 		{#snippet pending()}
-			<div class="flex h-full flex-col">
-				<!-- The header's layout (UserCardHeader), so nothing jumps when the data arrives -->
+			<!-- The side column's and the tabs' layout (UserCardBody), so nothing jumps when the data arrives -->
+			<div
+				class="flex min-h-0 flex-1 flex-col {mode === 'drawer'
+					? 'overflow-hidden lg:flex-row'
+					: 'xl:flex-row xl:items-start xl:gap-2'}"
+			>
 				<div
-					class="flex items-center gap-3 px-3 pt-2 pb-1 sm:px-5 sm:pt-3 sm:pb-2 md:px-10 lg:px-16"
+					class="bg-base-200 flex shrink-0 flex-col gap-3 p-4 {mode === 'drawer'
+						? 'lg:w-80'
+						: 'xl:w-80'}"
 				>
-					<div
-						class="border-base-300 bg-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-2 border p-2.5 sm:gap-3 sm:p-4"
-					>
-						<div
-							class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start sm:gap-y-1.5"
-						>
-							<div
-								class="skeleton hidden h-14 w-14 rounded-full sm:col-start-1 sm:row-span-3 sm:row-start-1 sm:block"
-							></div>
-							<div
-								class="col-span-2 col-start-1 row-start-1 flex items-center gap-3 sm:col-span-1 sm:col-start-2 {mode ===
-								'drawer'
-									? 'max-sm:pr-8'
-									: ''}"
-							>
-								<div class="skeleton h-7 w-52 max-w-full sm:h-9 sm:w-64"></div>
-								<div class="skeleton h-4 w-4 shrink-0 rounded-full"></div>
-								<div class="skeleton h-5 w-20 shrink-0 rounded-full"></div>
-							</div>
-							<div class="col-start-1 row-start-2 sm:col-start-2">
-								<div class="skeleton h-4 w-36 rounded-full"></div>
-							</div>
-							<div
-								class="col-span-2 col-start-1 row-start-3 flex flex-wrap gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2"
-							>
-								<div class="skeleton h-4 w-48 rounded-full"></div>
-								<div class="skeleton h-4 w-32 rounded-full"></div>
-							</div>
-							<div
-								class="col-start-2 row-start-2 flex items-center gap-1 sm:col-start-3 sm:row-start-1"
-							>
-								<div class="skeleton rounded-box h-8 w-8"></div>
-								<div class="skeleton rounded-box h-8 w-8"></div>
-								{#if mode === 'drawer'}
-									<div class="skeleton rounded-box h-8 w-8"></div>
-								{/if}
-							</div>
-						</div>
-						<div
-							class="border-base-content/10 flex gap-2 overflow-hidden border-t pt-1.5 sm:flex-wrap sm:pt-2"
-						>
-							{#each [20, 24, 28, 20, 24] as width, i (i)}
-								<div class="skeleton h-4 shrink-0 rounded-full" style:width="{width * 4}px"></div>
-							{/each}
-						</div>
+					<div class="skeleton h-8 w-52 max-w-full"></div>
+					<div class="flex gap-2">
+						<div class="skeleton h-5 w-28 rounded-full"></div>
+						<div class="skeleton h-5 w-20 rounded-full"></div>
 					</div>
-				</div>
-				<div class="flex gap-4 px-3 py-2 sm:px-5 md:px-10 lg:px-16">
-					{#each Array.from({ length: 5 }, (_, i) => i) as i (i)}
-						<div class="skeleton h-5 w-5 rounded-full sm:w-20"></div>
+					<div class="skeleton h-4 w-36 rounded-full"></div>
+					<div class="flex gap-1">
+						<div class="skeleton rounded-box h-8 w-8"></div>
+						<div class="skeleton rounded-box h-8 w-8"></div>
+					</div>
+					{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}
+						<div class="flex gap-3">
+							<div class="skeleton h-4 w-20 rounded-full"></div>
+							<div class="skeleton h-4 flex-1 rounded-full"></div>
+						</div>
 					{/each}
 				</div>
-				<div class="flex flex-col gap-3 p-3 sm:p-5 md:px-10 md:py-6 lg:px-16">
-					<div class="skeleton h-24 w-full"></div>
-					<div class="skeleton h-24 w-full"></div>
+				<div class="flex min-w-0 flex-1 flex-col">
+					<div class="flex gap-4 px-3 py-4 sm:px-5">
+						{#each Array.from({ length: 5 }, (_, i) => i) as i (i)}
+							<div class="skeleton h-5 w-5 rounded-full sm:w-20"></div>
+						{/each}
+					</div>
+					<div class="flex flex-col gap-3 p-3 sm:p-5">
+						<div class="skeleton h-24 w-full"></div>
+						<div class="skeleton h-24 w-full"></div>
+					</div>
 				</div>
 			</div>
 		{/snippet}

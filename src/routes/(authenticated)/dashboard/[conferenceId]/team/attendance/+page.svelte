@@ -6,7 +6,6 @@
 	import { toast } from 'svelte-sonner';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import { onDestroy, onMount, untrack } from 'svelte';
-	import { slide } from 'svelte/transition';
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { canWriteAccessCards } from '#lib/helpers/teamAccess';
@@ -14,11 +13,11 @@
 	import AttendanceQueueEntry from './AttendanceQueueEntry.svelte';
 	import ScanCheckResult from './ScanCheckResult.svelte';
 	import SessionTable from './SessionTable.svelte';
+	import NewSessionForm from './NewSessionForm.svelte';
 	import SessionPeople from './SessionPeople.svelte';
 	import { sessionNamed } from './sessionRows';
 	import { modeIcons, modeLabels, type SessionMode } from './sessionModes';
 	import EditableIdentityField from './EditableIdentityField.svelte';
-	import SurveyOptionPicker from '#lib/components/survey/SurveyOptionPicker.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
 		neverReachedServer,
@@ -92,6 +91,7 @@
 	/** What the active session does, fixed when it started; see `attendanceSessionMode`. */
 	let sessionMode = $state<SessionMode>('RECORD');
 	const checking = $derived(sessionMode !== 'RECORD');
+	const badgeOn = $derived(sessionMode === 'BADGE');
 
 	/** The form's choice; every new session starts out on the check. */
 	let setupMode = $state<ServerMode>('CHECK');
@@ -470,10 +470,12 @@
 	function recordScan(person: FoundPerson) {
 		// The check records somebody with open points only when told to
 		const awaiting = scanStep({
+			badgeMode: badgeOn,
 			passed: person.check.passed,
 			decides: sessionMode === 'CHECK'
 		});
-		if (awaiting !== 'decide') {
+		// With cards the scan is logged once the card is stored
+		if (awaiting === null || awaiting === 'ack') {
 			logScan({ userId: person.user.id, passed: person.check.passed, label: personLabel(person) });
 		}
 		return awaiting;
@@ -605,6 +607,8 @@
 
 	/** Closes the result. A card that was waited for is not stored then, and nothing is logged. */
 	function closeResult() {
+		// A card on its way is stored or refused first
+		if (busy) return;
 		shown = null;
 		if (heldCode !== null) release();
 	}
@@ -642,7 +646,7 @@
 		shown = { ...current, person };
 	}
 
-	/** Acknowledge the open points, or record despite them. */
+	/** Store the card and the scan, acknowledge the open points, or record despite them. */
 	async function confirmResult() {
 		const current = shown;
 		if (!isShownPerson(current) || current.awaiting === null) return;
@@ -650,12 +654,73 @@
 	}
 
 	const confirmations: Record<NonNullable<ShownPerson['awaiting']>, (c: ShownPerson) => unknown> = {
+		badge: storeBadge,
 		decide: recordAnyway,
 		ack: () => {
 			shown = null;
 			release();
 		}
 	};
+
+	/** The card and the scan are stored together, so a refused card logs nothing. */
+	async function saveBadge({
+		person,
+		accessCardId
+	}: {
+		person: FoundPerson;
+		accessCardId: string;
+	}) {
+		const session = await ensureSessionStarted();
+		if (!session) throw new Error('No session is running');
+		const timestamp = new Date().toISOString();
+		const created = await client.mutate.createAttendanceEntry({
+			__args: { userId: person.user.id, conferenceId, sessionId: session.id, accessCardId },
+			id: true,
+			checkPassed: true
+		});
+		logSynced({
+			userId: person.user.id,
+			timestamp,
+			checkPassed: created.checkPassed ?? null,
+			label: personLabel(person)
+		});
+	}
+
+	async function storeBadge(current: ShownPerson) {
+		if (busy) return;
+		const accessCardId = current.badgeInput.trim();
+		if (!accessCardId) {
+			toast.error(m.scanBadgeRequired());
+			return;
+		}
+		busy = true;
+		try {
+			await saveBadge({ person: current.person, accessCardId });
+		} catch (err) {
+			// Stays on the person, so the number can be corrected or tried again
+			toast.error(
+				scanErrorText({ err, offlineText: m.scanCheckOffline(), fallback: m.genericToastError() })
+			);
+			return;
+		} finally {
+			busy = false;
+		}
+
+		toast.success(m.scanBadgeSaved());
+		shown = null;
+		release();
+	}
+
+	/** Counts a scan that was stored right away, and keeps it in the local backup. */
+	function logSynced(entry: Omit<ScanLogEntry, 'synced'>) {
+		const session = sessionStore.current;
+		// Scanned again, the person only got another card: still one scan
+		if (!session || hasScanOf({ entries: session.entries, userId: entry.userId })) return;
+		totalScansCounter += 1;
+		syncedScansCounter += 1;
+		session.entries.push({ ...entry, synced: true });
+		sessionStore.current = session;
+	}
 
 	// --- Queue processor ---
 
@@ -887,74 +952,13 @@
 {/snippet}
 
 {#snippet setupForm()}
-	{@const modes = [
-		{ mode: 'CHECK', icon: 'ph-user-check', label: m.scanModeCheck(), hint: m.scanModeCheckHint() },
-		{
-			mode: 'RECORD',
-			icon: 'ph-lightning',
-			label: m.scanModeRecord(),
-			hint: m.scanModeRecordHint()
-		}
-	] as const}
-	<section
-		class="bg-base-200 flex flex-col gap-3 rounded-box p-3 md:p-4"
-		aria-label={m.scanNewSession()}
-		transition:slide={{ duration: 200 }}
-	>
-		<!-- What a scan does: the choice comes first, its explanation right under it -->
-		<div class="flex flex-col gap-1">
-			<div
-				class="grid grid-cols-3 gap-1 rounded-field bg-base-100/40 p-1"
-				role="group"
-				aria-label={m.scanSessionType()}
-			>
-				{#each modes as option (option.mode)}
-					<button
-						class="btn btn-sm h-auto min-w-0 flex-col gap-0.5 py-1.5 sm:flex-row sm:gap-2 {setupMode ===
-						option.mode
-							? 'btn-primary'
-							: 'btn-ghost'}"
-						aria-pressed={setupMode === option.mode}
-						onclick={() => (setupMode = option.mode)}
-					>
-						<i aria-hidden="true" class="ph-duotone {option.icon}"></i>
-						<span class="max-w-full truncate text-xs sm:text-sm">{option.label}</span>
-					</button>
-				{/each}
-			</div>
-			<p class="px-1 text-xs text-base-content/60">
-				{modes.find((option) => option.mode === setupMode)?.hint}
-			</p>
-		</div>
-
-		{#if setupMode !== 'RECORD'}
-			<SurveyOptionPicker
-				{conferenceId}
-				bind:selected={setupSurveyOptionIds}
-				collapsible
-				legend={m.sessionSurveyOptions()}
-				noneLabel={m.sessionSurveyOptionsNone()}
-				hint={m.sessionSurveyOptionsHint()}
-			/>
-		{/if}
-
-		<div class="flex flex-col gap-2 sm:flex-row">
-			<input
-				class="input w-full min-w-0 sm:flex-1"
-				type="text"
-				bind:value={occasion}
-				aria-label={m.sessionOccasion()}
-				placeholder={m.sessionOccasionPlaceholder()}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') startSession();
-				}}
-			/>
-			<button class="btn btn-primary" onclick={startSession} disabled={!occasion.trim()}>
-				<i aria-hidden="true" class="ph-duotone ph-play"></i>
-				{m.startSession()}
-			</button>
-		</div>
-	</section>
+	<NewSessionForm
+		{conferenceId}
+		bind:occasion
+		bind:mode={setupMode}
+		bind:surveyOptionIds={setupSurveyOptionIds}
+		onStart={startSession}
+	/>
 {/snippet}
 
 {#snippet activeSessionBar()}
@@ -1059,6 +1063,7 @@
 			canEdit={maySetUpSessions}
 			person={shown.person}
 			awaiting={shown.awaiting}
+			bind:badgeInput={shown.badgeInput}
 			{busy}
 			onConfirm={confirmResult}
 			onRecordAnyway={recordAnyway}

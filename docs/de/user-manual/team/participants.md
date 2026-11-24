@@ -25,7 +25,7 @@ Wer sich beworben hat, keinen Platz bekam und dann auf die Warteliste ging, beh�
 
 ### Spalten und Status
 
-Sichtbar sind anfangs Name, **E-Mail**, **Teilnahmeart**, **Nation**, **Gremium**, **Beitragszahlung**, **Postalische Anmeldung**, **Anwesenheit** und **Zugelassen**. Weitere Spalten blendest du über die Spaltenauswahl ein, etwa **Schule / Institution**, **Delegationsleiter\*in**, **Zugewiesene Rolle** (bei Einzelteilnehmenden), **Anwesenheitsplanung** (bei Betreuenden), **Dokumentennummer**, **Zugangsausweis-Nr.**, **Konferenzalter** oder **Geburtstag während der Konferenz**.
+Sichtbar sind anfangs Name, **E-Mail**, **Teilnahmeart**, **Nation**, **Gremium**, **Beitragszahlung**, **Postalische Anmeldung**, **Anwesenheit** und **Zugelassen**. Weitere Spalten blendest du über die Spaltenauswahl ein, etwa **Schule / Institution**, **Delegationsleiter\*in**, **Zugewiesene Rolle** (bei Einzelteilnehmenden), **Anwesenheitsplanung** (bei Betreuenden), **Ablagenummer**, **Zugangsausweis-Nr.**, **Konferenzalter** oder **Geburtstag während der Konferenz**.
 
 - **Nation** zeigt den Staat oder den nichtstaatlichen Akteur der Delegation, **Gremium** das Gremium des Mitglieds.
 - **Zugelassen** heißt: Die Person hat einen Platz. Bei Delegationsmitgliedern hat die Delegation eine Rolle, bei Einzelteilnehmenden die Person selbst, Betreuende zählen, sobald eine von ihnen betreute Person einen Platz hat, das Team zählt immer. Das Team sieht das, sobald die Zuteilung [übernommen](./assignment#finish-and-release) ist. Teilnehmende sehen ihre Rolle erst nach der Freigabe.
@@ -56,15 +56,17 @@ Die Teilnehmendenkarte bündelt alles, was die Konferenz über eine Person weiß
 
 Gehört die Person nicht zur angezeigten Konferenz, steht oben ein Hinweis, dass die Daten zu ihrem Konto gehören und nicht zu dieser Konferenz.
 
-### Kopf der Karte
+### Die linke Spalte
 
-Oben stehen Name, Pronomen und ein Abzeichen, wie weit die Person gekommen ist: **Warteliste**, **Angemeldet, nicht beworben**, **Beworben**, **Kein Platz erhalten**, **Platz erhalten** oder **Teilgenommen**. Darunter siehst du ihre Rolle in der Konferenz und ihre E-Mail-Adresse und Telefonnummer zum Schreiben, Anrufen oder Kopieren.
+Links steht in jedem Reiter, wer die Person ist: Name, Pronomen, ihr Alter zu Beginn der Konferenz (**minderjährig** ist hervorgehoben) und ein Abzeichen, wie weit sie gekommen ist: **Warteliste**, **Angemeldet, nicht beworben**, **Beworben**, **Kein Platz erhalten**, **Platz erhalten** oder **Teilgenommen**. Darunter siehst du ihre Rolle in der Konferenz, Telefonnummer, E-Mail-Adresse und **Notfallkontakte**, Geburtsdatum, Geschlecht, **Ernährungsweise**, **Schule** und **Betreuer\*innen**. Ein Klick auf eine Angabe kopiert sie, Telefonnummer und E-Mail-Adresse rufen an oder schreiben und haben einen Knopf zum Kopieren. Was die Person nicht eingetragen hat, obwohl ihr es braucht, steht als **fehlt** da. Auf einem schmalen Bildschirm steht die Spalte über den Reitern.
 
 - **Mögliches Doppelkonto** und **Bestätigtes Doppelkonto** führen zur Seite [Plausibilität](./maintenance#duplicates), auf der ihr entscheidet, ob zwei Konten derselben Person gehören.
-- Die Statusleiste zeigt **Beitragszahlung**, **Verbindliche Anmeldung**, bei Minderjährigen die **Einwilligung der Erziehungsberechtigten**, die **Einwilligung Bildnutzung**, den Zugangsausweis und die **Anwesenheit**. Ein Klick öffnet den Reiter, in dem du den Wert änderst.
-- **Globale Notizen** stehen gelb hervorgehoben im Kopf, damit sie niemand übersieht. Notizen auf Konten, die als dieselbe Person bestätigt sind, erscheinen darunter als **Notiz auf dem verknüpften Konto (…)**.
+- Sobald die Person einen Platz hat, steht hier, welche Formalitäten noch offen sind: **Beitragszahlung**, **Verbindliche Anmeldung**, bei Minderjährigen die **Einwilligung der Erziehungsberechtigten**, die **Einwilligung Bildnutzung** und, sobald sie vorliegt, der **Fotostatus**. Ein Klick öffnet den Reiter **Formalitäten**. Was erledigt ist, ist zusammengeklappt.
+- **Globale Notizen** stehen gelb hervorgehoben in der Spalte, damit sie niemand übersieht. Notizen auf Konten, die als dieselbe Person bestätigt sind, erscheinen darunter als **Notiz auf dem verknüpften Konto (…)**.
 
-Rechts oben findest du die Aktionen:
+- **Alle Angaben** zeigt alles, was die Person über sich eingetragen hat.
+
+Unter dem Namen findest du die Aktionen:
 
 - **Namensschild generieren** (nur wenn die Person etwas hat, das auf einem Namensschild steht) öffnet **Namensschild und Länderschild**: **Vorausgefüllt im Badge-Generator öffnen** oder **CSV herunterladen**.
 - **Stellvertretung** meldet dich als diese Person an, wenn du das darfst. Mehr dazu unter [Stellvertretung](./overview#impersonation).
@@ -76,28 +78,26 @@ Notizen gehören zum Konto, nicht zur Konferenz. Sie sind in allen Konferenzen d
 
 ### Die Reiter
 
-Welche Reiter eine Karte hat, hängt davon ab, wie die Person dabei ist. Die Karte öffnet vor und in der Bewerbungsphase auf **Bewerbung**, in der Vorbereitung auf **Formalitäten** und während und nach der Konferenz auf **Zugang & Anwesenheit**. Wechselst du zu einer anderen Person, bleibt der Reiter offen, den du zuletzt gewählt hast, wenn sie ihn auch hat.
+Welche Reiter eine Karte hat, hängt davon ab, wie die Person dabei ist. Die Karte öffnet auf der **Übersicht**, die mit dem beginnt, was in der Phase der Konferenz ansteht: der Bewerbung, den offenen Formalitäten oder Anwesenheit und Zugangsausweis. Wechselst du zu einer anderen Person, bleibt der Reiter offen, den du zuletzt gewählt hast, wenn sie ihn auch hat.
 
-| Reiter                     | Wann er erscheint                                                                       |
-| -------------------------- | --------------------------------------------------------------------------------------- |
-| **Person**                 | immer                                                                                   |
-| **Bewerbung**              | bei einer Anmeldung oder einem Eintrag auf der Warteliste                               |
-| **Platz**                  | bei einer Anmeldung oder einer Rolle im Team                                            |
-| **Formalitäten**           | sobald die Person einen Teilnahmestatus hat                                             |
-| **Zugang & Anwesenheit**   | mit Teilnahmestatus und Platz (Betreuende: sobald eine betreute Person einen Platz hat) |
-| **Umfragen**, **Kalender** | mit Platz, nicht im Team                                                                |
-| **Papiere**                | bei Delegationsmitgliedern                                                              |
-| **Konferenzen**            | immer                                                                                   |
+| Reiter                | Wann er erscheint                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Übersicht**         | bei einer Anmeldung, einem Eintrag auf der Warteliste oder einer Rolle im Team                       |
+| **Bewerbung & Platz** | bei einer Anmeldung, einem Eintrag auf der Warteliste oder einer Rolle im Team                       |
+| **Formalitäten**      | sobald die Person einen Teilnahmestatus hat                                                          |
+| **Vor Ort**           | mit Platz (Betreuende: sobald eine betreute Person einen Platz hat); im Team nur mit Teilnahmestatus |
+| **Papiere**           | bei Delegationsmitgliedern                                                                           |
+| **Verlauf**           | immer                                                                                                |
 
-#### Person
+#### Alle Angaben
 
-**Bürgerlicher Name**, **Persönliche Daten** (Geburtsdatum, Geschlecht, Pronomen, Ernährungsweise) und **Kontakt** (E-Mail, Telefonnummer, Adresse, Notfallkontakte), jeweils mit einem Knopf zum Kopieren. Darunter stehen die **Schule der Person** und das **Konto**: **Anmeldename**, **Sprache der E-Mails**, **Konto angelegt** und die **Newsletter**, die die Person abonniert hat.
+**Persönliche Daten** und **Kontakt** als Text, darunter die **Schule der Person** und das **Konto**: **Anmeldename**, **Sprache der E-Mails**, **Konto angelegt** und die **Newsletter**, die die Person abonniert hat. Fehlt ein Teil der Adresse, steht dabei, welcher.
 
 Die Angaben der Person ändert nur sie selbst in ihrem Konto. **Bearbeiten** siehst du nur auf deiner eigenen Karte oder als Administrator\*in. Die E-Mail-Adresse kommt vom Anmeldekonto und lässt sich hier nicht ändern. Namen und Geburtsdatum korrigiert die Teilnehmendenbetreuung beim Einlass im [Scanner](./formalities#scanner).
 
 **Schule ändern** neben der Schule wählt eine bestehende Schule, trägt eine neue ein oder entfernt sie. Das ist die Schule dieser Person in dieser Konferenz. Sie zählt in den Zahlen pro Schule und in den [Schulregeln](./assignment) der Zuteilung. Der Name der Schule führt zu [ihrer Seite](#schools).
 
-#### Bewerbung
+#### Bewerbung & Platz
 
 Was die Person eingereicht hat und was das Team daraus gemacht hat:
 
@@ -107,42 +107,39 @@ Was die Person eingereicht hat und was das Team daraus gemacht hat:
 - Die **Sichtung**: Sterne, Markierungen und Notiz aus der [Sichtung](./assignment#sighting), nur zum Ansehen. Der Knopf **Sichtung** öffnet die Bewerbung dort.
 - Der Eintrag auf der **Warteliste**: seit wann, mit welcher Schule, Motivation, Erfahrung und **Wünsche**. Wartet die Person noch, führt **Platz zuweisen** zur Seite **Plätze** (siehe [Einen Platz von der Warteliste vergeben](#seating-from-the-waiting-list)).
 
-#### Platz
-
-Was die Person in der Konferenz hat: die Rolle ihrer Delegation und ihr Gremium, ihre Einzelrolle, die Personen, die sie betreut, oder ihre Rolle im Team. Bei Delegationsmitgliedern und Einzelteilnehmenden stehen hier außerdem ihre **Betreuer\*innen**. Die Aktionen beschreiben die Abschnitte [Delegationen](#delegations) und [Betreuende](#supervisors).
+Dazu, was die Person in der Konferenz hat: die Rolle ihrer Delegation und ihr Gremium, ihre Einzelrolle, die Personen, die sie betreut, oder ihre Rolle im Team. Bei Delegationsmitgliedern und Einzelteilnehmenden stehen hier außerdem ihre **Betreuer\*innen**. Die Aktionen beschreiben die Abschnitte [Delegationen](#delegations) und [Betreuende](#supervisors).
 
 #### Formalitäten
 
 Alles, was vor der Konferenz erledigt sein muss. Wie Zahlungen und die postalische Anmeldung ablaufen, steht unter [Zahlungen](./formalities#payments) und [Postalische Anmeldung](./formalities#postal-registration).
 
-- **Beitragszahlung**: der Status (**Ausstehend**, **Problem**, **Erledigt**) und die **Zahlungsreferenzen** der Person, auch wer für sie bezahlt hat.
-- **Unterlagen**: **Verbindliche Anmeldung**, **Einwilligung der Erziehungsberechtigten** (nur bei Minderjährigen am ersten Konferenztag, nie bei Betreuenden), **Einwilligung Bildnutzung**, je mit **Ausstehend**, **Problem** oder **Erledigt**, dazu der **Fotostatus** (**Noch nicht festgelegt**, **Keine Fotos erlaubt**, **Teilweise erlaubt – Einwilligung im Einzelnen prüfen**, **Fotos uneingeschränkt erlaubt**) und die **Dokumentennummer** der Unterlagen. **Nächste Nummer speichern** vergibt die Nummer nach der höchsten der Konferenz. **Dokumente für postalische Anmeldung herunterladen** erzeugt die Unterlagen der Person als PDF.
+- **Status**: **Beitragszahlung**, **Verbindliche Anmeldung**, **Einwilligung der Erziehungsberechtigten** (nur bei Minderjährigen am ersten Konferenztag, nie bei Betreuenden), **Einwilligung Bildnutzung**, je mit **Ausstehend**, **Problem** oder **Erledigt**, dazu der **Fotostatus** (**Noch nicht festgelegt**, **Keine Fotos erlaubt**, **Teilweise erlaubt – Einwilligung im Einzelnen prüfen**, **Fotos uneingeschränkt erlaubt**).
+- **Unterlagen**: die **Ablagenummer**, unter der die Originale abgeheftet sind, und zum Aufklappen die **Zahlungsreferenzen** der Person, auch wer für sie bezahlt hat, und die **Scans**. **Nächste Ablagenummer vergeben** vergibt die Nummer nach der höchsten der Konferenz. **Dokumente für postalische Anmeldung herunterladen** erzeugt die Unterlagen der Person als PDF.
 - **Teilnahmezertifikat** mit **Zertifikat herunterladen**.
-- **E-Mails zum Verschicken** und **E-Mails** (siehe unten).
 
 :::warning Status ändern macht E-Mails fällig
-Ist die Zuteilung freigegeben und hat die Person einen Platz, macht ein Status E-Mails fällig: **Erledigt** bei der Zahlung die Bestätigung des Zahlungseingangs, vollständige Unterlagen die Bestätigung der postalischen Anmeldung, und **Problem** bei Zahlung, Teilnahmebedingungen, Bildnutzung oder Einwilligung der Erziehungsberechtigten je eine E-Mail zu diesem Problem. Sie gehen beim nächsten automatischen Lauf raus, wenn diese Art auf **Automatisch verschicken** steht. Sonst warten sie auf der Seite [E-Mails](./communication#emails) und hier in der Karte.
+Ist die Zuteilung freigegeben und hat die Person einen Platz, macht ein Status E-Mails fällig: **Erledigt** bei der Zahlung die Bestätigung des Zahlungseingangs, vollständige Unterlagen die Bestätigung der postalischen Anmeldung, und **Problem** bei Zahlung, Teilnahmebedingungen, Bildnutzung oder Einwilligung der Erziehungsberechtigten je eine E-Mail zu diesem Problem. Sie gehen beim nächsten automatischen Lauf raus, wenn diese Art auf **Automatisch verschicken** steht. Sonst warten sie auf der Seite [E-Mails](./communication#emails) und in der Karte im Reiter **Verlauf**.
 :::
 
-**E-Mails zum Verschicken** zeigt der Teilnehmendenbetreuung, was die Person gerade bekommen sollte, mit **Wird automatisch verschickt** oder **Ausgeschaltet** und wann sie zuletzt verschickt wurde. **Verschicken** (bzw. **Erneut verschicken**) fragt **Diese E-Mail verschicken?** und schickt sie sofort, in der Sprache der Person und mit dem Text der Konferenz. Das hilft, wenn eine E-Mail ausgeschaltet ist, nicht angekommen ist, oder eine Erinnerung schon früher rausgehen soll. Eine von Hand verschickte E-Mail gilt als verschickt, nur eine Erinnerung geht zu ihrem Termin trotzdem noch automatisch raus. **E-Mails** darunter listet jede E-Mail, die die Konferenz der Person geschickt hat oder schicken wollte, auch fehlgeschlagene.
-
-#### Zugang & Anwesenheit
+#### Vor Ort
 
 - **Anwesenheit**: **Anwesend** oder **Abwesend**. Nach der Konferenz bekommt nur, wer anwesend war, ein Zertifikat, und erst dann wird die E-Mail zum Zertifikat fällig.
 - **Zugangsausweis-Nr.**: die Nummer des Zugangsausweises, gespeichert mit **Speichern** (Diskettensymbol). Trägt schon eine andere Person diese Nummer, lehnt DELEGATOR ab.
 - **Ausweis gefunden** schickt der Person nach **Benachrichtigung senden?** sofort eine E-Mail, dass ihr Zugangsausweis bei der Teilnehmendenbetreuung auf sie wartet. Jede Bestätigung schickt sie erneut.
 - **NSA-Karte** (nur bei Mitgliedern eines nichtstaatlichen Akteurs): **Drucken** erzeugt die Karte mit ihrer aktuellen Nummer. **Neue Karte** und dann **Frühere Karten ungültig machen** ist für eine verlorene Karte: Die neue bekommt die nächste Nummer, frühere Karten lassen sich nicht mehr scannen.
 - **Anwesenheitsprotokoll**: jeder Scan der Person mit Check-in, Zeit und wer gescannt hat. **Anwesenheitseintrag löschen** entfernt einen Scan. Mehr dazu unter [Check-in](./formalities#check-in).
-
-#### Umfragen, Kalender, Papiere
-
 - **Umfragen**: die Antworten der Person auf die [Umfragen](./communication#surveys). Du kannst für sie antworten oder mit **Antwort zurückziehen** die Antwort löschen. Die Teilnehmendenbetreuung darf dabei auch volle Optionen wählen und nach der Frist antworten.
 - **Kalender**: der Zeitplan, wie die Person ihn sieht, mit den Terminen ihrer Umfrageauswahl.
-- **Papiere**: die Papiere der Person mit **Versionen** und **Bewertungen**, und **Zum Papier-Hub** (siehe [Papier-Hub](./paper-hub)).
 
-#### Konferenzen
+#### Papiere
 
-Alle anderen Konferenzen, in denen die Person dabei war, mit Rolle und Zeitraum. Konten, die als dieselbe Person bestätigt sind, bringen ihre Konferenzen mit, gekennzeichnet mit **als …** und dem Namen des anderen Kontos. Der Name einer Konferenz öffnet die Karte der Person in dieser Konferenz.
+Die Papiere der Person mit **Versionen** und **Bewertungen**, und **Zum Papier-Hub** (siehe [Papier-Hub](./paper-hub)).
+
+#### Verlauf
+
+**E-Mails zum Verschicken** zeigt der Teilnehmendenbetreuung, was die Person gerade bekommen sollte, mit **Wird automatisch verschickt** oder **Ausgeschaltet** und wann sie zuletzt verschickt wurde. **Verschicken** (bzw. **Erneut verschicken**) fragt **Diese E-Mail verschicken?** und schickt sie sofort, in der Sprache der Person und mit dem Text der Konferenz. Das hilft, wenn eine E-Mail ausgeschaltet ist, nicht angekommen ist, oder eine Erinnerung schon früher rausgehen soll. Eine von Hand verschickte E-Mail gilt als verschickt, nur eine Erinnerung geht zu ihrem Termin trotzdem noch automatisch raus. **E-Mails** darunter listet jede E-Mail, die die Konferenz der Person geschickt hat oder schicken wollte, auch fehlgeschlagene.
+
+**Konferenzen** sind alle anderen, in denen die Person dabei war, mit Rolle und Zeitraum. Konten, die als dieselbe Person bestätigt sind, bringen ihre Konferenzen mit, gekennzeichnet mit **als …** und dem Namen des anderen Kontos. Der Name einer Konferenz öffnet die Karte der Person in dieser Konferenz.
 
 ### Teilnahme entfernen {#removing-a-participation}
 
@@ -151,14 +148,14 @@ Alle anderen Konferenzen, in denen die Person dabei war, mit Rolle und Zeitraum.
 DELEGATOR löscht dann die Delegationsmitgliedschaft, die Einzelanmeldung oder die Betreuung der Person in dieser Konferenz und ihren Teilnahmestatus mit allen Formalitäten. Nennen Papiere oder Zahlungen die Person, bleibt ihr Teilnahmestatus, damit diese Unterlagen ihr zugeordnet bleiben. Das Konto, die globalen Notizen und ein Eintrag auf der Warteliste bleiben.
 
 :::warning Delegationsmitglieder lieber über die Delegation entfernen
-**Teilnehmende\*n entfernen** bestimmt keine neue Delegationsleitung und löscht keine leere Delegation. Für Delegationsmitglieder nimm deshalb **Mitglied entfernen** im Reiter **Platz** (siehe [Delegationen](#delegations)).
+**Teilnehmende\*n entfernen** bestimmt keine neue Delegationsleitung und löscht keine leere Delegation. Für Delegationsmitglieder nimm deshalb **Mitglied entfernen** im Reiter **Bewerbung & Platz** (siehe [Delegationen](#delegations)).
 :::
 
 ## Delegationen, Einzelteilnehmende und Betreuende {#delegations}
 
-Eine Delegation hat keine eigene Karte. Du bearbeitest sie in der Karte eines ihrer Mitglieder, in den Reitern **Bewerbung** und **Platz**.
+Eine Delegation hat keine eigene Karte. Du bearbeitest sie in der Karte eines ihrer Mitglieder, im Reiter **Bewerbung & Platz**.
 
-Im Reiter **Bewerbung**:
+Im Reiter **Bewerbung & Platz**:
 
 - **Eintrittscode** mit Knopf zum Kopieren. **Code erneuern** vergibt nach einer Rückfrage einen neuen Code, der alte funktioniert dann nicht mehr.
 - **Beworbene Rollen**: Mit **Nach vorne** änderst du die Reihenfolge der Wünsche, mit **Löschen** entfernst du einen Wunsch.
@@ -169,7 +166,7 @@ Im Reiter **Bewerbung**:
 Das lässt sich nicht rückgängig machen. Alle Mitglieder verlieren ihre Anmeldung, und die Papiere der Delegation sind weg. Geht nur eine Person, entferne nur sie.
 :::
 
-Im Reiter **Platz**:
+Ebenfalls dort:
 
 - Die Rolle der Delegation und das Gremium der Person, oder **Noch keine Zuteilung** mit **Bewerbung abgeschlossen** bzw. **Bewerbung noch nicht abgeschlossen**.
 - **Gremienzuteilung** (nur bei Staaten): Für jedes Mitglied wählst du ein Gremium, in dem der Staat sitzt. Ist das Gremium für die Delegation schon voll, tauscht DELEGATOR: Das Mitglied, dessen Platz am längsten nicht geändert wurde, bekommt den Platz, den die Person verlässt. **Zurücksetzen** nimmt allen Mitgliedern ihr Gremium, **Fertig** schließt das Fenster.
@@ -181,13 +178,13 @@ Rolle und Gremium einer Delegation wechselst du auf der Seite [Plätze](#seats) 
 
 ### Einzelteilnehmende {#single-participants}
 
-Im Reiter **Bewerbung** stehen die beworbenen Rollen und die Texte, in der Bewerbungsphase mit **Bewerbungsstatus zurücksetzen**. Im Reiter **Platz** steht die Einzelrolle oder **Noch keine Zuteilung**.
+Im Reiter **Bewerbung & Platz** stehen die beworbenen Rollen und die Texte, in der Bewerbungsphase mit **Bewerbungsstatus zurücksetzen**, außerdem die Einzelrolle oder **Noch keine Zuteilung**.
 
 ### Betreuende {#supervisors}
 
-- Im Reiter **Bewerbung** steht der **Verbindungscode**, mit dem sich Schüler\*innen mit der Betreuung verbinden. **Code erneuern** vergibt einen neuen Code. Wer schon verbunden ist, bleibt verbunden.
-- Im Reiter **Platz** schaltest du, ob die Person selbst zur Konferenz kommt (**Betreuer\*in plant eigene Anwesenheit**). Darunter stehen unter **Delegationen** die betreuten Delegationen mit Eintrittscode und Mitgliedern und unter **Einzelteilnehmende** die betreuten Einzelpersonen. **Betreuung entfernen** löst eine Verbindung nach einer Rückfrage.
-- In der Karte einer Schülerin oder eines Schülers verbindest du im Reiter **Platz** mit **Betreuung hinzufügen** eine Betreuung: Suche sie in der Liste und klicke auf **+**. Betreuende und Teammitglieder lassen sich nicht betreuen.
+- Im Reiter **Bewerbung & Platz** steht der **Verbindungscode**, mit dem sich Schüler\*innen mit der Betreuung verbinden. **Code erneuern** vergibt einen neuen Code. Wer schon verbunden ist, bleibt verbunden.
+- Im Reiter **Bewerbung & Platz** schaltest du, ob die Person selbst zur Konferenz kommt (**Betreuer\*in plant eigene Anwesenheit**). Darunter stehen unter **Delegationen** die betreuten Delegationen mit Eintrittscode und Mitgliedern und unter **Einzelteilnehmende** die betreuten Einzelpersonen. **Betreuung entfernen** löst eine Verbindung nach einer Rückfrage.
+- In der Karte einer Schülerin oder eines Schülers verbindest du im Reiter **Bewerbung & Platz** mit **Betreuung hinzufügen** eine Betreuung: Suche sie in der Liste und klicke auf **+**. Betreuende und Teammitglieder lassen sich nicht betreuen.
 
 Eine neue Verbindung macht zwei E-Mails fällig: an die Betreuung, wer dazugekommen ist, und an die Schülerin oder den Schüler, wer sie betreut. Ab dann sieht die Betreuung die Daten und den Stand der Person.
 
@@ -242,7 +239,7 @@ Verborgene und platzierte Einträge zeigt die Tabelle, wenn du die Filter **Vers
 
 ### Einen Platz von der Warteliste vergeben {#seating-from-the-waiting-list}
 
-1. Klicke in der Warteliste bei der Person auf **Platz zuweisen** (oder in ihrer Karte im Reiter **Bewerbung**).
+1. Klicke in der Warteliste bei der Person auf **Platz zuweisen** (oder in ihrer Karte im Reiter **Bewerbung & Platz**).
 2. Die Seite **Plätze** öffnet sich mit dem Hinweis **Person zuweisen:** und dem Namen. Die **+** der freien Plätze sind hervorgehoben.
 3. Klicke auf den freien Platz. Im Fenster ist die Person schon ausgewählt.
 4. Klicke **Teilnehmende\*n hinzufügen**.
@@ -298,7 +295,7 @@ Löschen lässt sich nicht rückgängig machen, und die Personen verlieren ihre 
 ### Jemand sagt kurz vor der Konferenz ab
 
 1. Öffne die Karte der Person, die absagt.
-2. Ist sie Delegationsmitglied, klicke im Reiter **Platz** bei ihr auf **Mitglied entfernen**. Eine neue Delegationsleitung wird bestimmt, eine leere Delegation mitsamt ihren Papieren gelöscht. Sonst nimm **Teilnehmende\*n entfernen** unter **Weitere Aktionen**.
+2. Ist sie Delegationsmitglied, klicke im Reiter **Bewerbung & Platz** bei ihr auf **Mitglied entfernen**. Eine neue Delegationsleitung wird bestimmt, eine leere Delegation mitsamt ihren Papieren gelöscht. Sonst nimm **Teilnehmende\*n entfernen** unter **Weitere Aktionen**.
 3. Öffne die **Warteliste**. Die erste Zeile (**Platz** 1) wartet am längsten.
 4. Lies in ihrer Karte Motivation und **Wünsche** und klicke **Platz zuweisen**.
 5. Setze sie auf den frei gewordenen Platz, wie unter [Einen Platz von der Warteliste vergeben](#seating-from-the-waiting-list) beschrieben.
@@ -316,14 +313,14 @@ Teilnahmestatus, Betreuung und Schule bleiben bei der Person. Ohne **Plätze tau
 
 - Name, Kontakt, Adresse, Ernährungsweise und Notfallkontakte ändert die Person selbst in ihrem Konto. Bitte sie darum. Administrator\*innen können sie auch in der Karte mit **Bearbeiten** ändern.
 - Namen und Geburtsdatum korrigiert die Teilnehmendenbetreuung beim Einlass im [Scanner](./formalities#scanner).
-- Die Schule änderst du im Reiter **Person** mit **Schule ändern**.
+- Die Schule änderst du unter **Alle Angaben** mit **Schule ändern**.
 - Status und Unterlagen änderst du im Reiter **Formalitäten**. Denk daran, dass das [E-Mails fällig machen](#user-card) kann.
 
 ### Einer Betreuung fehlen Schüler\*innen
 
-1. Öffne die Karte der Betreuung. Im Reiter **Platz** stehen die Delegationen und Einzelteilnehmenden, die sie schon betreut.
-2. Fehlt jemand, schick der Betreuung ihren **Verbindungscode** aus dem Reiter **Bewerbung**, damit die Schüler\*innen sich selbst verbinden.
-3. Oder öffne die Karte der Schülerin oder des Schülers, klicke im Reiter **Platz** auf **Betreuung hinzufügen** und wähle die Betreuung mit **+**.
+1. Öffne die Karte der Betreuung. Im Reiter **Bewerbung & Platz** stehen die Delegationen und Einzelteilnehmenden, die sie schon betreut.
+2. Fehlt jemand, schick der Betreuung ihren **Verbindungscode** aus dem Reiter **Bewerbung & Platz**, damit die Schüler\*innen sich selbst verbinden.
+3. Oder öffne die Karte der Schülerin oder des Schülers, klicke im Reiter **Bewerbung & Platz** auf **Betreuung hinzufügen** und wähle die Betreuung mit **+**.
 4. Prüfe in der Karte der Betreuung, dass alle dort stehen.
 
 Bei einer Delegation verbindest du jedes Mitglied einzeln. Jede Verbindung macht die beiden E-Mails an Betreuung und Schüler\*in fällig.

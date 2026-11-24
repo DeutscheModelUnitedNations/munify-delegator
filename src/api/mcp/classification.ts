@@ -459,7 +459,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'messagingEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
-			'nextDocumentNumber',
 			'participantMaxAge',
 			'participantMinAge',
 			'postalApartment',
@@ -891,7 +890,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'userId'
 		],
-		redacted: ['birthday', 'familyName', 'givenName']
+		redacted: ['accessCardId', 'birthday', 'familyName', 'givenName']
 	},
 
 	// --- Statistics -----------------------------------------------------------------------------

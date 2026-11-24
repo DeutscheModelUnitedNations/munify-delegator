@@ -31,6 +31,8 @@ export interface FoundPerson {
 		termsAndConditions: 'DONE' | 'PROBLEM' | 'PENDING';
 		guardianConsent: 'DONE' | 'PROBLEM' | 'PENDING';
 	};
+	/** The access card the person carries, known only in a session that hands out cards. */
+	accessCardId: string | null;
 	/** The titles of the survey options the session expects that the person picked none of. */
 	missingSurveyOptions: string[];
 	/** The server's check: what is open, whether it passed, and whether a scan may be recorded anyway. */
@@ -77,6 +79,7 @@ export async function loadScannedPerson({
 		nonStateActorIcon: true,
 		committeeAbbreviation: true,
 		singleRoleName: true,
+		accessCardId: true,
 		didAttend: true,
 		paymentStatus: true,
 		termsAndConditions: true,
@@ -113,6 +116,7 @@ export async function loadScannedPerson({
 			termsAndConditions: found.termsAndConditions,
 			guardianConsent: found.guardianConsent
 		},
+		accessCardId: orNull(found.accessCardId),
 		missingSurveyOptions: [...found.missingSurveyOptions],
 		check: {
 			issues: [...found.issues],

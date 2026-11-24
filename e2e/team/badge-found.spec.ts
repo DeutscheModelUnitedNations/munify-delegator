@@ -58,7 +58,7 @@ test('participant care notifies someone of their found badge from the user card'
 	});
 	const before = await badgeMailsToAda(page);
 
-	const accessTab = page.getByRole('tab', { name: /zugang|access/i });
+	const accessTab = page.getByRole('tab', { name: /vor ort|on site/i });
 	await expect(accessTab).toBeVisible({ timeout: 15_000 });
 	await accessTab.click();
 

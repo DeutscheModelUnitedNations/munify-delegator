@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { agreementField, agreementState } from '#api/db/schema/index';
-import { AGREEMENT_FIELDS, planDetails, type StoredDetail } from './agreementDetails';
+import {
+	AGREEMENT_FIELDS,
+	detailsToForget,
+	fieldsOfDocuments,
+	planDetails,
+	type StoredDetail
+} from './agreementDetails';
 import { PAPER_FIELDS } from './fields';
 import type { FieldReading } from './readPaper';
 
@@ -99,5 +105,53 @@ describe('planDetails', () => {
 				]
 			})
 		).toEqual({ write: [{ field: 'mediaPhoto', state: 'yes' }], differing: ['mediaVideo'] });
+	});
+});
+
+test('fieldsOfDocuments names every field of the documents given', () => {
+	expect(fieldsOfDocuments(['contract'])).toEqual([
+		'termsAccepted',
+		'termsPlaceDate',
+		'termsSignature'
+	]);
+	expect(fieldsOfDocuments(['mediaConsent'])).toHaveLength(19);
+	expect(fieldsOfDocuments([])).toEqual([]);
+});
+
+describe('detailsToForget', () => {
+	const stored: StoredDetail[] = [
+		{ field: 'termsAccepted', state: 'yes', source: 'SCAN' },
+		{ field: 'termsPlaceDate', state: 'yes', source: 'MANUAL' },
+		{ field: 'termsSignature', state: 'yes', source: 'SCAN' },
+		{ field: 'mediaPhoto', state: 'yes', source: 'SCAN' }
+	];
+	const removed = [
+		{ field: 'termsAccepted', state: 'yes' },
+		{ field: 'termsPlaceDate', state: 'yes' },
+		{ field: 'termsSignature', state: 'yes' }
+	] as const;
+
+	test('takes what the scan told, and neither what a person set nor what it did not tell', () => {
+		expect(detailsToForget({ removed: [...removed], remaining: [], stored })).toEqual([
+			'termsAccepted',
+			'termsSignature'
+		]);
+	});
+
+	test('keeps what another scan says as well, not what it read differently', () => {
+		const remaining = [
+			null,
+			[
+				{ field: 'termsAccepted', state: 'yes' as const },
+				{ field: 'termsSignature', state: 'unclear' as const }
+			]
+		];
+		expect(detailsToForget({ removed: [...removed], remaining, stored })).toEqual([
+			'termsSignature'
+		]);
+	});
+
+	test('takes nothing for a scan that could not be read', () => {
+		expect(detailsToForget({ removed: null, remaining: [], stored })).toEqual([]);
 	});
 });

@@ -1057,6 +1057,7 @@ input AttendancesessionWhereInputArgument {
 }
 
 enum AttendancesessionmodeEnum {
+  BADGE
   CHECK
   RECORD
 }
@@ -2117,11 +2118,6 @@ type Conference {
   mediaConsentFileId: ID
   messagingEnabled: Boolean!
   nametagBinCount: Int!
-
-  """
-  The document number to hand to the next participant who needs one. Participant care only; anybody else gets FORBIDDEN.
-  """
-  nextDocumentNumber: Int!
 
   """Get the papers related to this conference"""
   papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
@@ -3980,9 +3976,17 @@ type Mutation {
   ): Singleparticipant!
 
   """
-  Records a scan of the person in a scanner session. A second scan in the same session is refused with ALREADY_SCANNED. Whether the check passed is decided here, as things stand when the scan is written; a session that only records checks nothing.
+  Records a scan of the person in a scanner session. A second scan in the same session is refused with ALREADY_SCANNED. Whether the check passed is decided here, as things stand when the scan is written; a session that only records checks nothing. In a session that hands out access cards (`BADGE`) the scan stores the card with it; scanned again, the person gets the new card and keeps the first scan.
   """
-  createAttendanceEntry(conferenceId: ID!, sessionId: ID!, userId: ID!): Attendanceentry!
+  createAttendanceEntry(
+    """
+    The card handed to the person: required in a session that hands out cards, refused (INVALID_INPUT) in any other. One another participant carries is refused with CONFLICT.
+    """
+    accessCardId: String
+    conferenceId: ID!
+    sessionId: ID!
+    userId: ID!
+  ): Attendanceentry!
 
   """Adds an empty day to the conference's schedule."""
   createCalendarDay(conferenceId: ID!, date: Date!, name: String!): Calendarday!
@@ -5527,13 +5531,13 @@ type Mutation {
   upsertConferenceEmailText(body: String, conferenceId: ID!, heading: String, kind: EmailkindEnum!, locale: String!, subject: String): Boolean!
 
   """
-  Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries CONFLICT.
+  Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries or a document number another one has CONFLICT.
   """
   upsertConferenceParticipant(
     accessCardId: String
 
     """
-    Gives the person the number after the highest one in the conference, instead of `assignedDocumentNumber`.
+    Gives the person the number after the highest one in the conference, instead of `assignedDocumentNumber`. A person who has a number keeps it.
     """
     assignNextDocumentNumber: Boolean
     assignedDocumentNumber: Int
@@ -7600,6 +7604,11 @@ enum ScanIssue {
 What the entrance scanner shows of a scanned person: who they are, what they are in the conference and what is still open. When nothing was found, every field but `found` is empty, false or PENDING.
 """
 type ScanLookupResult {
+  """
+  The access card they carry; only told for a session that hands out cards (`BADGE`).
+  """
+  accessCardId: String
+
   """The calendar day as an ISO date."""
   birthday: String
 

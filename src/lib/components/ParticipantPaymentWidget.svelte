@@ -4,6 +4,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { resolve } from '$app/paths';
 	import formatNames from '#lib/helpers/formatNames';
+	import CollapsibleRow from './userCard/sections/CollapsibleRow.svelte';
 
 	interface Props {
 		userId: string;
@@ -92,22 +93,21 @@
 	</div>
 {/snippet}
 
-<div class="flex items-start gap-4 px-4 py-3">
-	<i
-		aria-hidden="true"
-		class="ph-duotone ph-money-wavy text-base-content/60 w-6 pt-0.5 text-center text-lg"
-	></i>
-	<div class="flex min-w-0 grow flex-col gap-2">
-		<span class="font-semibold">{m.paymentReferences()}</span>
-		{#if transactions.length === 0}
-			<span class="text-warning text-sm">
-				<i aria-hidden="true" class="ph-duotone ph-warning mr-1"></i>
-				{m.noPaymentReferences()}
-			</span>
-		{:else}
-			{#each transactions as transaction (transaction.id)}
-				{@render transactionRow(transaction)}
-			{/each}
-		{/if}
+{#snippet references()}
+	<div class="flex flex-col gap-2">
+		{#each transactions as transaction (transaction.id)}
+			{@render transactionRow(transaction)}
+		{/each}
 	</div>
-</div>
+{/snippet}
+
+<!-- Nothing to unfold where there is none -->
+<CollapsibleRow
+	icon="money-wavy"
+	title={m.paymentReferences()}
+	value={transactions.length > 0
+		? m.userCardPaymentReferencesCount({ count: transactions.length })
+		: m.noPaymentReferences()}
+	warning={transactions.length === 0}
+	children={transactions.length > 0 ? references : undefined}
+/>

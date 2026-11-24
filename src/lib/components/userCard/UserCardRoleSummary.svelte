@@ -55,7 +55,6 @@
 		<span>{member.assignedCommittee.abbreviation}</span>
 	{/if}
 	{#if member.isHeadDelegate}
-		{@render separator()}
 		{@render labelled('ph-medal', m.headDelegate())}
 	{/if}
 {/snippet}

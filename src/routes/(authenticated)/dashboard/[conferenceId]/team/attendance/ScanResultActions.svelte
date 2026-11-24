@@ -9,6 +9,7 @@
 		/** Whether the server lets the person be recorded despite the open points. */
 		mayRecordAnyway: boolean;
 		busy: boolean;
+		/** Stores the access card, or acknowledges the open points. */
 		onConfirm: () => void;
 		/** Records the person despite the open points (check mode). */
 		onRecordAnyway: () => void;
@@ -36,8 +37,16 @@
 	{:else}
 		<button class="btn flex-1 btn-primary" onclick={onConfirm} disabled={busy}>
 			<i aria-hidden="true" class="ph-duotone ph-check"></i>
-			{m.scanContinue()}
-			<Kbd hotkey="alt+a" />
+			{awaiting === 'badge' ? m.saveAndNext() : m.scanContinue()}
+			<Kbd hotkey={awaiting === 'badge' ? 'enter' : 'alt+a'} />
 		</button>
+		<!-- Open points are acknowledged with the main button; only a card still to be stored can be given up -->
+		{#if awaiting === 'badge'}
+			<button class="btn btn-error" onclick={onClose} disabled={busy}>
+				<i aria-hidden="true" class="ph-duotone ph-x"></i>
+				{m.cancel()}
+				<Kbd hotkey="Esc" />
+			</button>
+		{/if}
 	{/if}
 </footer>

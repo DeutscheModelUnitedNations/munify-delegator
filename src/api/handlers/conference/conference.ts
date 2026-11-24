@@ -7,7 +7,6 @@ import {
 	countOfferedSeats,
 	countSeatedParticipants,
 	countWaitingList,
-	nextDocumentNumber,
 	seedConference,
 	seedingDataSchema,
 	updateConference
@@ -16,7 +15,6 @@ import { conferenceSettingSchemas, documentLayoutArgsSchema } from './conference
 import {
 	assertCanClaimConferenceFiles,
 	assertCanReadConference,
-	assertCanReadNextDocumentNumber,
 	assertCanSeedConference,
 	assertCanSetDocumentLayout,
 	assertCanUpdateConference,
@@ -51,16 +49,6 @@ export const ConferenceRef = object({
 			description: "How many entries the conference's waiting list holds, hidden ones included.",
 			type: 'Int',
 			resolve: (conference) => countWaitingList(conference.id)
-		}),
-
-		nextDocumentNumber: t.field({
-			description:
-				'The document number to hand to the next participant who needs one. Participant care only; anybody else gets FORBIDDEN.',
-			type: 'Int',
-			resolve: async (conference, _args, ctx) => {
-				await assertCanReadNextDocumentNumber({ ctx, conferenceId: conference.id });
-				return nextDocumentNumber(conference.id);
-			}
 		})
 	})
 });

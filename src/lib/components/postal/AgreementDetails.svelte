@@ -1,6 +1,7 @@
 <!--
 	@component
-	What the person agreed to on paper in detail, box by box and line by line, as scans fill it in.
+	What the person agreed to on paper in detail, box by box and line by line, as scans fill it in: one
+	row of a user card list (`bg-base-200 rounded-box divide-y`).
 	Folded away: the team works with the statuses, and nobody has to keep this up. A detail can be set
 	by hand all the same, which no scan changes from then on.
 -->
@@ -9,7 +10,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
-	import CollapsibleCard from '#lib/components/CollapsibleCard.svelte';
+	import CollapsibleRow from '#lib/components/userCard/sections/CollapsibleRow.svelte';
 	import {
 		AGREEMENT_FIELDS,
 		AGREEMENT_GROUPS,
@@ -47,12 +48,11 @@
 	}
 </script>
 
-<CollapsibleCard icon="list-checks" title={m.agreementDetails()}>
-	{#snippet badge()}
-		<span class="badge badge-ghost badge-sm">
-			{m.agreementDetailsCount({ count: details.length, total: AGREEMENT_FIELDS.length })}
-		</span>
-	{/snippet}
+<CollapsibleRow
+	icon="list-checks"
+	title={m.agreementDetails()}
+	value={m.agreementDetailsCount({ count: details.length, total: AGREEMENT_FIELDS.length })}
+>
 	<p class="text-base-content/70 mb-3 text-sm">{m.agreementDetailsHint()}</p>
 	<div class="flex flex-col gap-4">
 		{#each AGREEMENT_GROUPS as group (group.id)}
@@ -92,4 +92,4 @@
 			</section>
 		{/each}
 	</div>
-</CollapsibleCard>
+</CollapsibleRow>

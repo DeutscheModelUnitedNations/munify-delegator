@@ -1,25 +1,20 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
-	import type {
-		AdministrativestatusEnum,
-		MediaconsentstatusEnum
-	} from '#lib/api/rumbleClient/client';
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
-	import EmailLogSection from '../sections/EmailLogSection.svelte';
 	import AgreementDetails from '#lib/components/postal/AgreementDetails.svelte';
 	import PostalScans from '#lib/components/postal/PostalScans.svelte';
 	import CertificateSection from '../sections/CertificateSection.svelte';
-	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
+	import FormalityRow from '../sections/FormalityRow.svelte';
 	import DocumentNumberRow from '../sections/DocumentNumberRow.svelte';
 	import { toast } from 'svelte-sonner';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 	import {
 		downloadPostalRegistrationDocuments,
 		fetchPostalRegistrationSources
 	} from '#lib/api/postalRegistrationSources';
 	import { postalRecipient } from '#lib/api/postalRegistrationData';
 	import { careTeamPostalParticipant, documentFileName, hasPostalAddress } from './statusDownloads';
+	import { formalitiesOf, needsGuardian } from '../formalities';
 	import {
 		changeParticipantStatus,
 		fetchStatusWithAge,
@@ -27,8 +22,8 @@
 	} from './participantStatus';
 
 	/**
-	 * What has to be settled before the conference: payment, the signed agreements and the postal
-	 * documents, the certificate afterwards, and the automatic mails that told the person about them.
+	 * What has to be settled before the conference: payment and the signed agreements with their
+	 * buttons, beside them the papers behind them, what is rarely needed folded.
 	 */
 	interface Props {
 		userId: string;
@@ -41,56 +36,14 @@
 	const data = $derived(await fetchStatusWithAge({ userId, conferenceId }));
 	const status = $derived(data.statuses.at(0));
 	const statusId = $derived(status?.id);
-	/** What decides which mails the person is owed, as one value. */
-	const statusRevision = $derived(
-		[
-			status?.paymentStatus,
-			status?.termsAndConditions,
-			status?.guardianConsent,
-			status?.mediaConsent,
-			status?.didAttend
-		].join()
-	);
-
-	const isAdult = $derived(
-		ofAgeAtConference({
-			startConference: data.conference.startConference,
-			dateOfBirth: data.user.birthday
+	const guardian = $derived(
+		needsGuardian({
+			isConferenceSupervisor,
+			birthday: data.user.birthday,
+			startConference: data.conference.startConference
 		})
 	);
-
-	const administrativeOptions: StatusOption<AdministrativestatusEnum>[] = [
-		{ value: 'PENDING', label: m.statusPending(), icon: 'hourglass-medium', tone: 'warning' },
-		{ value: 'PROBLEM', label: m.statusProblem(), icon: 'warning', tone: 'error' },
-		{ value: 'DONE', label: m.statusDone(), icon: 'check', tone: 'success' }
-	];
-
-	const mediaConsentOptions: StatusOption<MediaconsentstatusEnum>[] = [
-		{
-			value: 'NOT_SET',
-			label: m.mediaConsentStatusNotSet(),
-			icon: 'clipboard',
-			tone: 'warning'
-		},
-		{
-			value: 'NOT_ALLOWED',
-			label: m.mediaConsentStatusNotAllowed(),
-			icon: 'camera-slash',
-			tone: 'error'
-		},
-		{
-			value: 'PARTIALLY_ALLOWED',
-			label: m.mediaConsentStatusPartiallyAllowed(),
-			icon: 'magnifying-glass',
-			tone: 'warning'
-		},
-		{
-			value: 'ALLOWED_ALL',
-			label: m.mediaConsentStatusAllowedAll(),
-			icon: 'camera',
-			tone: 'success'
-		}
-	];
+	const formalities = $derived(formalitiesOf({ status, needsGuardian: guardian }));
 
 	const change = (input: StatusChange) =>
 		changeParticipantStatus({ target: { id: statusId, conferenceId, userId }, input });
@@ -126,78 +79,19 @@
 	};
 </script>
 
-<div class="flex flex-col gap-6">
-	<section class="flex flex-col gap-3">
-		<h3 class="text-lg font-bold">{m.payment()}</h3>
-		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-			<StatusRow
-				title={m.status()}
-				icon="money"
-				active={status?.paymentStatus ?? 'PENDING'}
-				options={administrativeOptions}
-				change={(paymentStatus) => change({ paymentStatus })}
-			/>
-			<ParticipantPaymentWidget {userId} {conferenceId} />
-		</div>
-	</section>
-
-	<section class="flex flex-col gap-3">
-		<div class="flex flex-wrap items-center justify-between gap-2">
-			<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
-			<button class="btn btn-sm" onclick={downloadPostalDocs}>
-				<i aria-hidden="true" class="ph-duotone ph-file-pdf"></i>
-				{m.downloadPostalDocuments()}
-			</button>
-		</div>
-		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-			<StatusRow
-				title={m.userAgreement()}
-				icon="signature"
-				active={status?.termsAndConditions ?? 'PENDING'}
-				options={administrativeOptions}
-				change={(termsAndConditions) => change({ termsAndConditions })}
-			/>
-			{#if !isConferenceSupervisor}
-				{#if isAdult}
-					<div class="flex items-center gap-4 px-4 py-3">
-						<i
-							aria-hidden="true"
-							class="ph-duotone ph-shield-check text-base-content/60 w-6 text-center text-lg"
-						></i>
-						<div class="flex flex-col">
-							<span class="font-semibold">{m.guardianAgreement()}</span>
-							<span class="text-base-content/60 text-sm">{m.guardianAgreementNotNeeded()}</span>
-						</div>
-					</div>
-				{:else}
-					<StatusRow
-						title={m.guardianAgreement()}
-						icon="shield-check"
-						active={status?.guardianConsent ?? 'PENDING'}
-						options={administrativeOptions}
-						change={(guardianConsent) => change({ guardianConsent })}
-					/>
-				{/if}
+<div class="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+	<section class="flex min-w-0 flex-col gap-3">
+		<h3 class="text-lg font-bold">{m.userCardStatuses()}</h3>
+		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y py-1">
+			{#each formalities as formality (formality.key)}
+				<FormalityRow formality={formality.key} {status} {change} />
+			{/each}
+			{#if !isConferenceSupervisor && !guardian}
+				<p class="text-base-content/60 flex items-center gap-3 px-4 py-2 text-sm">
+					<i aria-hidden="true" class="ph-duotone ph-shield-check w-5 text-center"></i>
+					<span>{m.guardianAgreement()}: {m.guardianAgreementNotNeeded()}</span>
+				</p>
 			{/if}
-			<StatusRow
-				title={m.mediaAgreement()}
-				icon="camera"
-				active={status?.mediaConsent ?? 'PENDING'}
-				options={administrativeOptions}
-				change={(mediaConsent) => change({ mediaConsent })}
-			/>
-			<StatusRow
-				title={m.mediaConsentStatus()}
-				icon="camera-slash"
-				active={status?.mediaConsentStatus ?? 'NOT_SET'}
-				options={mediaConsentOptions}
-				change={(mediaConsentStatus) => change({ mediaConsentStatus })}
-			/>
-			<DocumentNumberRow
-				assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
-				onSave={(number) =>
-					change({ assignedDocumentNumber: number, assignNextDocumentNumber: !number })}
-			/>
 		</div>
 		{#if !status}
 			<div class="alert alert-info">
@@ -207,12 +101,24 @@
 		{/if}
 	</section>
 
-	{#if statusId}
-		<PostalScans {conferenceId} {userId} conferenceParticipantId={statusId} />
-		<AgreementDetails conferenceParticipantId={statusId} />
-	{/if}
-
-	<CertificateSection {userId} {conferenceId} />
-
-	<EmailLogSection {userId} {conferenceId} {statusRevision} />
+	<section class="flex min-w-0 flex-col gap-3">
+		<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
+		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y py-1">
+			<DocumentNumberRow
+				assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
+				onSave={(number) =>
+					change({ assignedDocumentNumber: number, assignNextDocumentNumber: !number })}
+			/>
+			<ParticipantPaymentWidget {userId} {conferenceId} />
+			{#if statusId}
+				<PostalScans {conferenceId} {userId} conferenceParticipantId={statusId} />
+				<AgreementDetails conferenceParticipantId={statusId} />
+			{/if}
+			<CertificateSection {userId} {conferenceId} />
+		</div>
+		<button class="btn btn-sm self-start" onclick={downloadPostalDocs}>
+			<i aria-hidden="true" class="ph-duotone ph-file-pdf"></i>
+			{m.downloadPostalDocuments()}
+		</button>
+	</section>
 </div>

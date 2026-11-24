@@ -1249,44 +1249,34 @@ const downloads = {
 
 // --- Pages below the entries --------------------------------------------------------------------
 
-/** A person's card as a page: back and name, then the card's header, tabs and sections */
+/** A person's card as a page: back and name, then the card's side column beside tabs and tiles */
 const userPage = {
 	name: 'user',
 	nodes: [
 		{
-			class: 'mx-auto flex w-full max-w-5xl flex-col',
+			class: 'mx-auto flex w-full max-w-7xl flex-col',
 			children: [
 				{ class: 'mb-3 flex items-center gap-2', children: [block('h-8 w-20'), block('h-7 w-48')] },
 				{
-					class: 'flex flex-col gap-4',
+					class: 'flex flex-col gap-2 xl:flex-row xl:items-start',
 					children: [
 						{
-							class: 'border-base-200 rounded-box flex flex-col gap-4 border p-4',
+							class: 'bg-base-200 flex shrink-0 flex-col gap-3 p-4 xl:w-80',
 							children: [
-								{
-									class: 'flex items-center gap-4',
-									children: [
-										block('h-14 w-14 shrink-0 rounded-full'),
-										{
-											class: 'flex grow flex-col gap-2',
-											children: [
-												block('h-7 w-56 max-w-full sm:h-9'),
-												block('h-3 w-40 rounded-full')
-											]
-										},
-										block('h-8 w-8'),
-										block('h-8 w-8')
-									]
-								},
-								{
-									class: 'flex flex-wrap gap-2',
-									children: times(5, block('h-6 w-24 rounded-full'))
-								}
+								block('h-8 w-56 max-w-full'),
+								block('h-5 w-40 rounded-full'),
+								block('h-4 w-36 rounded-full'),
+								...times(8, block('h-4 w-full rounded-full'))
 							]
 						},
-						{ class: 'flex gap-4', children: times(5, block('h-5 w-12 rounded-full sm:w-20')) },
-						block('h-24 w-full'),
-						block('h-24 w-full')
+						{
+							class: 'flex min-w-0 grow flex-col gap-4 px-3 sm:px-5',
+							children: [
+								{ class: 'flex gap-4', children: times(5, block('h-5 w-12 rounded-full sm:w-20')) },
+								block('h-24 w-full'),
+								block('h-24 w-full')
+							]
+						}
 					]
 				}
 			]

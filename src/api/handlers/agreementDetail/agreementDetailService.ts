@@ -1,14 +1,20 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, schema, type Transaction } from '#api/db/db';
 import { agreementDetailPubsub, conferenceParticipantPubsub } from '#api/pubsub';
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import { m } from '#lib/paraglide/messages';
-import { planDetails, type AgreementField } from '#lib/paperScan/agreementDetails';
+import {
+	fieldsOfDocuments,
+	planDetails,
+	type AgreementField
+} from '#lib/paperScan/agreementDetails';
 import { PAPER_FIELDS } from '#lib/paperScan/fields';
 import {
 	changesAnything,
 	proposePaperChange,
+	rejectedDocuments,
+	type DocumentStatuses,
 	type PaperChange,
 	type PaperNote
 } from '#lib/paperScan/proposal';
@@ -142,6 +148,55 @@ export async function applyPaperReadings({
 	if (changesAnything(proposal.change)) conferenceParticipantPubsub.updated(participantId);
 	const differs = differing.map((field) => ({ kind: 'detailDiffers' as const, field }));
 	return { change: proposal.change, notes: [...proposal.notes, ...differs] };
+}
+
+/**
+ * Deletes details read off scans; what a person set stays. Answers whether there were any, for the
+ * caller to announce once committed (`agreementDetailPubsub.removed()`).
+ */
+export async function forgetScannedDetails({
+	tx,
+	participantId,
+	fields
+}: {
+	tx: Transaction;
+	participantId: string;
+	fields: readonly AgreementField[];
+}): Promise<boolean> {
+	if (fields.length === 0) return false;
+	const table = schema.agreementDetail;
+	const rows = await tx
+		.delete(table)
+		.where(
+			and(
+				eq(table.conferenceParticipantId, participantId),
+				inArray(table.field, [...fields]),
+				ne(table.source, 'MANUAL')
+			)
+		)
+		.returning({ id: table.id });
+	return rows.length > 0;
+}
+
+/**
+ * Before the statuses in `set` are written: forgets what scans told of the documents it newly marks as a
+ * problem, so a later scan completes none of them with it. Answers whether anything was forgotten, for
+ * the caller to announce once committed.
+ */
+export async function forgetRejectedDetails({
+	tx,
+	participantId,
+	set
+}: {
+	tx: Transaction;
+	participantId: string;
+	set: Partial<DocumentStatuses>;
+}): Promise<boolean> {
+	if (!Object.values(set).includes('PROBLEM')) return false;
+	const before = await lockParticipant({ tx, participantId });
+	if (!before) return false;
+	const fields = fieldsOfDocuments(rejectedDocuments({ before, set }));
+	return forgetScannedDetails({ tx, participantId, fields });
 }
 
 /**

@@ -44,15 +44,15 @@
 	}
 </script>
 
-<div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5">
 	<i
 		aria-hidden="true"
-		class="ph-duotone ph-identification-card text-base-content/60 w-6 text-center text-lg"
+		class="ph-duotone ph-identification-card text-base-content/60 w-5 text-center"
 	></i>
-	<div class="flex min-w-48 grow flex-col">
-		<span class="font-semibold">{m.accessCardId()}</span>
+	<div class="flex min-w-32 grow flex-col text-sm">
+		<span>{m.accessCardId()}</span>
 		{#if !accessCardId}
-			<span class="text-base-content/60 text-sm">{m.noAccessCard()}</span>
+			<span class="text-base-content/60">{m.noAccessCard()}</span>
 		{/if}
 	</div>
 	<div class="flex flex-wrap items-center gap-2">

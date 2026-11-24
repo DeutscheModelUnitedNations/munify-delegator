@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { client } from '#lib/api/rumbleClient/client';
 	import PersonNameButton from '../PersonNameButton.svelte';
 	import { openUserCard } from '../userCardState.svelte';
 	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
 	import AssignSupervisorModal from '../AssignSupervisorModal.svelte';
 	import { uniqueSupervisorsByFamilyName } from '../tabs/supervisorList';
 	import { removeSupervision } from './removeSupervision';
+	import { fetchSupervisors } from './supervisorsOf';
 
 	interface Props {
 		userId: string;
@@ -14,45 +14,6 @@
 	}
 
 	let { userId, conferenceId }: Props = $props();
-
-	const supervisorSelection = {
-		id: true,
-		plansOwnAttendenceAtConference: true,
-		connectionCode: true,
-		user: { id: true, givenName: true, familyName: true }
-	} as const;
-
-	/** Supervisors reach a participant through either kind of registration, so both are asked. */
-	async function fetchSupervisors({
-		userId,
-		conferenceId
-	}: {
-		userId: string;
-		conferenceId: string;
-	}) {
-		const forUser = {
-			where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
-		};
-		const [student, delegationMembers, singleParticipants] = await Promise.all([
-			client.liveQuery.user({
-				__args: { id: userId },
-				id: true,
-				givenName: true,
-				familyName: true
-			}),
-			client.liveQuery.delegationMembers({
-				__args: forUser,
-				id: true,
-				supervisors: supervisorSelection
-			}),
-			client.liveQuery.singleParticipants({
-				__args: forUser,
-				id: true,
-				supervisors: supervisorSelection
-			})
-		]);
-		return { student, delegationMembers, singleParticipants };
-	}
 
 	const registrations = $derived(await fetchSupervisors({ userId, conferenceId }));
 

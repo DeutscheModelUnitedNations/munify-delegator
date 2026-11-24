@@ -12,7 +12,7 @@ import {
 
 type GraphQLResult = {
 	data?: Record<string, Record<string, unknown> | null> | null;
-	errors?: { message: string }[];
+	errors?: { message: string; extensions?: { code?: string } }[];
 };
 
 async function gql(page: Page, query: string, variables: Record<string, unknown> = {}) {
@@ -25,7 +25,7 @@ async function gql(page: Page, query: string, variables: Record<string, unknown>
 
 const conferenceId = E2E_ATTENDANCE_CONFERENCE_ID;
 
-async function startSession(page: Page, mode: 'CHECK' | 'RECORD') {
+async function startSession(page: Page, mode: 'CHECK' | 'RECORD' | 'BADGE') {
 	const id = crypto.randomUUID();
 	const result = await gql(
 		page,
@@ -57,6 +57,31 @@ const record = (page: Page, sessionId: string) =>
 		}`,
 		{ u: E2E_ATTENDANCE_ADA_ID, c: conferenceId, s: sessionId }
 	);
+
+/** Records Ada's scan, handing her the card. */
+const recordCard = (page: Page, sessionId: string, accessCardId: string) =>
+	gql(
+		page,
+		`mutation ($u: ID!, $c: ID!, $s: ID!, $card: String!) {
+			createAttendanceEntry(userId: $u, conferenceId: $c, sessionId: $s, accessCardId: $card) {
+				id checkPassed
+			}
+		}`,
+		{ u: E2E_ATTENDANCE_ADA_ID, c: conferenceId, s: sessionId, card: accessCardId }
+	);
+
+/** The card Ada carries, as a session's lookup tells it. */
+async function adasCard(page: Page, sessionId: string) {
+	const result = await gql(
+		page,
+		`query ($c: ID!, $code: String!, $s: ID) {
+			scanLookup(conferenceId: $c, code: $code, sessionId: $s) { accessCardId }
+		}`,
+		{ c: conferenceId, code: E2E_ATTENDANCE_ADA_ID, s: sessionId }
+	);
+	expect(result.errors, JSON.stringify(result)).toBeUndefined();
+	return result.data?.scanLookup?.accessCardId;
+}
 
 test.beforeEach(async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ATTENDANCE_CARE_ID));
@@ -100,4 +125,37 @@ test('the scanner cannot hand in a verdict of its own', async ({ page }) => {
 		{ u: E2E_ATTENDANCE_ADA_ID, c: conferenceId, s: sessionId }
 	);
 	expect(result.errors?.[0]?.message).toMatch(/checkPassed/);
+});
+
+test('a badge session stores the card with the scan, and a second scan replaces it', async ({
+	page
+}) => {
+	const sessionId = await startSession(page, 'BADGE');
+	const card = `CARD-${sessionId.slice(0, 8)}`;
+
+	const first = await recordCard(page, sessionId, ` ${card} `);
+	expect(first.data?.createAttendanceEntry).toMatchObject({ checkPassed: false });
+	expect(await adasCard(page, sessionId)).toBe(card);
+
+	const again = await recordCard(page, sessionId, `${card}-2`);
+	expect(again.data?.createAttendanceEntry?.id).toBe(first.data?.createAttendanceEntry?.id);
+	expect(await adasCard(page, sessionId)).toBe(`${card}-2`);
+
+	// told only where cards are handed out
+	expect(await adasCard(page, await startSession(page, 'CHECK'))).toBeNull();
+});
+
+test('a badge session takes no scan without a card, and no other session takes one', async ({
+	page
+}) => {
+	const badge = await startSession(page, 'BADGE');
+	const without = await record(page, badge);
+	expect(without.errors?.[0]?.extensions?.code, JSON.stringify(without)).toBe('INVALID_INPUT');
+	const blank = await recordCard(page, badge, '  ');
+	expect(blank.errors?.[0]?.extensions?.code, JSON.stringify(blank)).toBe('INVALID_INPUT');
+
+	for (const mode of ['CHECK', 'RECORD'] as const) {
+		const result = await recordCard(page, await startSession(page, mode), 'CARD');
+		expect(result.errors?.[0]?.extensions?.code, JSON.stringify(result)).toBe('INVALID_INPUT');
+	}
 });

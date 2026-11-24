@@ -1,12 +1,13 @@
 import { dev } from '$app/env';
 import { fork, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
+import { sandboxCommand } from './scanSandbox';
 
 /**
  * The processes delivered scans are split and read in (`scanSplitter.worker`, `scanReader.worker`). Whoever
  * made a PDF decides what opening it takes, and drawing a page leaks native memory, so this happens apart
  * from the app: what it takes ends with the process, and so does what makes it crash. They know nothing of
- * the app but what they are sent.
+ * the app but what they are sent, and where the system can, they reach nothing else (`./scanSandbox`).
  */
 
 /** A process that says nothing for so long while it is asked something has hung. */
@@ -23,11 +24,15 @@ export class ProcessEndedError extends Error {
 }
 
 function start(name: string): ChildProcess {
-	const [file, execArgv] = dev
-		? [join(process.cwd(), 'src/api/handlers/postalScan', `${name}.worker.ts`), ['--import', 'tsx']]
-		: [join(process.cwd(), 'build/compute', `${name}.mjs`), []];
+	const nodeArgs = [`--max-old-space-size=${HEAP_MB}`];
+	const [file, command] = dev
+		? [
+				join(process.cwd(), 'src/api/handlers/postalScan', `${name}.worker.ts`),
+				{ execPath: process.execPath, execArgv: ['--import', 'tsx', ...nodeArgs] }
+			]
+		: [join(process.cwd(), 'build/compute', `${name}.mjs`), sandboxCommand(nodeArgs)];
 	return fork(file, [], {
-		execArgv: [...execArgv, `--max-old-space-size=${HEAP_MB}`],
+		...command,
 		stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
 		// bytes go as they are
 		serialization: 'advanced',

@@ -6,17 +6,11 @@
 	import { toast } from 'svelte-sonner';
 	import formatNames from '#lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import UserCardStatusStrip from './UserCardStatusStrip.svelte';
-	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
-	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
-	import CareNotes from './CareNotes.svelte';
-	import ContactButtons from './ContactButtons.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import Modal from '../Modal.svelte';
 	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { closeUserCard } from './userCardState.svelte';
-	import type { ParticipationStage, UserCardRoles } from './userCardRoles';
-	import type { UserCardTab } from './userCardTabs';
+	import type { UserCardRoles } from './userCardRoles';
 	import {
 		badgeSeatOf,
 		badgeSessionBody,
@@ -26,18 +20,16 @@
 	import BadgeGeneratorLinks from '../BadgeGeneratorLinks.svelte';
 	import { personBadge } from '#lib/helpers/badgeCsv';
 
+	/** What can be done with the person, whatever tab is open: badge, impersonation, the rarer ones. */
 	interface Props extends UserCardRoles {
 		userId: string;
 		conferenceId: string;
 		givenName?: string | null;
 		familyName?: string | null;
 		pronouns?: string | null;
-		gender?: string | null;
 		mode: 'drawer' | 'page';
-		/** How far the person has come in the conference, if they apply for a seat */
-		stage: ParticipationStage | undefined;
-		/** Opens a tab of the card, where a status pill is changed */
-		onOpenTab: (tab: UserCardTab) => void;
+		/** Opens the editor of the care team's note */
+		onEditNote: () => void;
 	}
 
 	let {
@@ -46,26 +38,13 @@
 		givenName,
 		familyName,
 		pronouns,
-		gender,
 		mode,
-		stage,
-		onOpenTab,
+		onEditNote,
 		delegationMember,
 		singleParticipant,
 		conferenceSupervisor,
 		teamMember
 	}: Props = $props();
-
-	let displayName = $derived(
-		formatNames({
-			givenName: givenName ?? undefined,
-			familyName: familyName ?? undefined,
-			options: {
-				givenNameFirst: false,
-				delimiter: ', '
-			}
-		})
-	);
 
 	let confirmDisplayName = $derived(
 		formatNames({ givenName: givenName ?? undefined, familyName: familyName ?? undefined })
@@ -77,60 +56,6 @@
 			userId
 		})
 	);
-
-	const genderIcon = $derived.by(() => {
-		switch (gender) {
-			case 'MALE':
-				return 'gender-male';
-			case 'FEMALE':
-				return 'gender-female';
-			case 'DIVERSE':
-				return 'gender-intersex';
-			default:
-				return 'user';
-		}
-	});
-
-	const initials = $derived(
-		[givenName, familyName]
-			.map((name) => name?.trim().at(0))
-			.filter(Boolean)
-			.join('')
-			.toUpperCase()
-	);
-
-	const STAGES: Record<ParticipationStage, { label: () => string; badge: string; icon: string }> = {
-		waitingList: {
-			label: () => m.userCardStageWaitingList(),
-			badge: 'badge-info',
-			icon: 'ph-clock-countdown'
-		},
-		registered: {
-			label: () => m.userCardStageRegistered(),
-			badge: 'badge-warning',
-			icon: 'ph-pencil-line'
-		},
-		applied: {
-			label: () => m.userCardStageApplied(),
-			badge: 'badge-info',
-			icon: 'ph-paper-plane-tilt'
-		},
-		notSeated: {
-			label: () => m.userCardStageNotSeated(),
-			badge: 'badge-error',
-			icon: 'ph-x-circle'
-		},
-		seated: {
-			label: () => m.userCardStageSeated(),
-			badge: 'badge-success',
-			icon: 'ph-chair'
-		},
-		attended: {
-			label: () => m.userCardStageAttended(),
-			badge: 'badge-success',
-			icon: 'ph-calendar-check'
-		}
-	};
 
 	const isParticipant = $derived(
 		!!delegationMember || !!singleParticipant || !!conferenceSupervisor
@@ -209,7 +134,6 @@
 		];
 	};
 
-	let careNoteOpen = $state(false);
 	let badgeModalOpen = $state(false);
 	let actionsOpen = $state(false);
 	let actionsMenu = $state<HTMLDetailsElement>();
@@ -254,145 +178,76 @@
 	};
 </script>
 
-<div class="flex items-center gap-3 px-3 pt-2 pb-1 sm:px-5 sm:pt-3 sm:pb-2 md:px-10 lg:px-16">
-	<div
-		class="border-base-300 from-primary/10 to-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-2 border bg-linear-to-br p-2.5 sm:gap-3 sm:p-4"
-		data-tour="team.userCard.header"
-	>
-		<!-- On a phone the actions sit beside the role summary, under the full-width name -->
-		<div
-			class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start sm:gap-y-1.5"
-		>
-			<!-- Initials, so a card is recognisable at a glance -->
-			<div
-				class="avatar avatar-placeholder hidden sm:col-start-1 sm:row-span-3 sm:row-start-1 sm:flex"
+<!-- Pulled out by the first button's padding, so its icon lines up with the name above -->
+<div class="-ml-2 flex items-center gap-1" data-tour="team.userCard.actions">
+	<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
+	{#if badgeSeat}
+		<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
+			<button
+				class="btn btn-ghost btn-sm btn-square"
+				aria-label={m.generateBadge()}
+				onclick={() => (badgeModalOpen = true)}
 			>
-				<div class="bg-primary/20 text-primary w-14 rounded-full text-xl font-bold">
-					<span>{initials}</span>
-				</div>
-			</div>
-
-			<!-- Clear of the drawer's close button, which a phone puts over the card -->
-			<div
-				class="col-span-2 col-start-1 row-start-1 flex flex-wrap items-center gap-x-3 gap-y-1 sm:col-span-1 sm:col-start-2 {mode ===
-				'drawer'
-					? 'max-sm:pr-8'
-					: ''}"
-			>
-				<h2 class="text-xl font-bold break-words sm:text-3xl">{displayName}</h2>
-				<i aria-hidden="true" class="ph-duotone ph-{genderIcon} text-base-content/50"></i>
-				{#if pronouns}
-					<span class="text-base-content/60 text-sm">({pronouns})</span>
-				{/if}
-				{#if stage}
-					{@const shown = STAGES[stage]}
-					<span class="badge badge-soft gap-1.5 max-sm:badge-sm {shown.badge}">
-						<i aria-hidden="true" class="ph-duotone {shown.icon} text-xs"></i>
-						{shown.label()}
-					</span>
-				{/if}
-				<PossibleDuplicateBadge {userId} {conferenceId} />
-			</div>
-
-			<div class="col-start-1 row-start-2 min-w-0 sm:col-start-2">
-				<UserCardRoleSummary
-					{delegationMember}
-					{singleParticipant}
-					{conferenceSupervisor}
-					{teamMember}
-				/>
-			</div>
-
-			<div class="col-span-2 col-start-1 row-start-3 min-w-0 sm:col-span-1 sm:col-start-2">
-				<ContactButtons {userId} />
-			</div>
-
-			<!-- Action buttons -->
-			<div
-				class="col-start-2 row-start-2 flex items-center gap-1 sm:col-start-3 sm:row-start-1"
-				data-tour="team.userCard.actions"
-			>
-				<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
-				{#if badgeSeat}
-					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
-						<button
-							class="btn btn-ghost btn-sm btn-square"
-							aria-label={m.generateBadge()}
-							onclick={() => (badgeModalOpen = true)}
-						>
-							<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
-						</button>
-					</div>
-				{/if}
-
-				<ImpersonationButton {userId} iconOnly />
-
-				<!-- The rarer actions, the destructive one last -->
-				<!-- A <details> opens on click only, never because focus moved into it -->
-				<details class="dropdown dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
-					<summary
-						class="btn btn-ghost btn-sm btn-square list-none"
-						aria-label={m.userCardMoreActions()}
-						title={m.userCardMoreActions()}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-dots-three-vertical"></i>
-					</summary>
-					<ul
-						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
-					>
-						<li>
-							<button onclick={menuAction(() => (careNoteOpen = true))}>
-								<i aria-hidden="true" class="ph-duotone ph-note"></i>
-								{m.editGlobalNotes()}
-							</button>
-						</li>
-						<li>
-							<button onclick={menuAction(copyUserId)}>
-								<i aria-hidden="true" class="ph-duotone ph-copy"></i>
-								{m.copyUserId()}
-							</button>
-						</li>
-						{#if isParticipant}
-							<li>
-								<button
-									class="text-error"
-									onclick={menuAction(() => {
-										deleteConfirmInput = '';
-										deleteModalOpen = true;
-									})}
-								>
-									<i aria-hidden="true" class="ph-duotone ph-user-minus"></i>
-									{m.deleteParticipant()}
-								</button>
-							</li>
-						{/if}
-					</ul>
-				</details>
-
-				{#if mode === 'drawer'}
-					<div class="divider divider-horizontal mx-0"></div>
-					<a
-						href={fullPageUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="btn btn-ghost btn-sm btn-square"
-						title={m.userCardOpenFullPage()}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
-					</a>
-				{/if}
-			</div>
+				<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
+			</button>
 		</div>
+	{/if}
 
-		<UserCardStatusStrip
-			{userId}
-			{conferenceId}
-			isConferenceSupervisor={!!conferenceSupervisor}
-			{onOpenTab}
-		/>
+	<ImpersonationButton {userId} iconOnly />
 
-		<CareNotes {userId} bind:editing={careNoteOpen} />
-	</div>
+	<!-- The rarer actions, the destructive one last -->
+	<!-- A <details> opens on click only, never because focus moved into it -->
+	<details class="dropdown" bind:open={actionsOpen} bind:this={actionsMenu}>
+		<summary
+			class="btn btn-ghost btn-sm btn-square list-none"
+			aria-label={m.userCardMoreActions()}
+			title={m.userCardMoreActions()}
+		>
+			<i aria-hidden="true" class="ph-duotone ph-dots-three-vertical"></i>
+		</summary>
+		<ul
+			class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
+		>
+			<li>
+				<button onclick={menuAction(onEditNote)}>
+					<i aria-hidden="true" class="ph-duotone ph-note"></i>
+					{m.editGlobalNotes()}
+				</button>
+			</li>
+			<li>
+				<button onclick={menuAction(copyUserId)}>
+					<i aria-hidden="true" class="ph-duotone ph-copy"></i>
+					{m.copyUserId()}
+				</button>
+			</li>
+			{#if isParticipant}
+				<li>
+					<button
+						class="text-error"
+						onclick={menuAction(() => {
+							deleteConfirmInput = '';
+							deleteModalOpen = true;
+						})}
+					>
+						<i aria-hidden="true" class="ph-duotone ph-user-minus"></i>
+						{m.deleteParticipant()}
+					</button>
+				</li>
+			{/if}
+		</ul>
+	</details>
+
+	{#if mode === 'drawer'}
+		<a
+			href={fullPageUrl}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="btn btn-ghost btn-sm btn-square"
+			title={m.userCardOpenFullPage()}
+		>
+			<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
+		</a>
+	{/if}
 </div>
 
 <svelte:window onclick={closeActionsOutside} />

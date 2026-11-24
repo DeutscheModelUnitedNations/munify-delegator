@@ -4,6 +4,8 @@
 	export interface StatusOption<S> {
 		value: S;
 		label: string;
+		/** What the button says while it is the active one, where the label is too long for it */
+		short?: string;
 		icon: string;
 		tone: StatusTone;
 	}
@@ -11,9 +13,9 @@
 
 <script lang="ts" generics="S">
 	/**
-	 * One status of a person as a list row: what it is, what it currently says in words, and the
-	 * buttons to change it. The postal registration page keeps the large `StatusWidget` for quick
-	 * clicking; the user card reads better with the state spelled out.
+	 * One status of a person as a list row: what it is, and the buttons to change it, the active one
+	 * saying what it currently is. The postal registration page keeps the large `StatusWidget` for
+	 * quick clicking.
 	 */
 	interface Props {
 		title: string;
@@ -25,20 +27,12 @@
 
 	let { title, icon, active, options, change }: Props = $props();
 
-	const toneText: Record<StatusTone, string> = {
-		success: 'text-success',
-		warning: 'text-warning',
-		error: 'text-error',
-		neutral: 'text-base-content/60'
-	};
 	const toneButton: Record<StatusTone, string> = {
 		success: 'btn-success',
 		warning: 'btn-warning',
 		error: 'btn-error',
 		neutral: 'btn-neutral'
 	};
-
-	const current = $derived(options.find((option) => option.value === active));
 
 	let pending = $state<S>();
 
@@ -53,29 +47,23 @@
 	};
 </script>
 
-<div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5">
 	<i
 		aria-hidden="true"
-		class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-base-content/60 w-6 text-center text-lg"
+		class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-base-content/60 w-5 text-center"
 	></i>
-	<div class="flex min-w-48 grow flex-col">
-		<span class="font-semibold">{title}</span>
-		{#if current}
-			<span class="text-sm {toneText[current.tone]}">
-				<i aria-hidden="true" class="ph-duotone ph-{current.icon.replace(/^ph-/, '')} mr-1"></i>
-				{current.label}
-			</span>
-		{/if}
-	</div>
-	<div class="join">
+	<span class="min-w-32 flex-1 text-sm">{title}</span>
+	<!-- As wide for every status, so the buttons of a list stand in one line -->
+	<div class="join w-56 max-w-full" role="group" aria-label={title}>
 		{#each options as option (option.value)}
+			{@const shown = option.value === active}
 			<button
-				class="btn btn-sm join-item tooltip w-24 {option.value === active
-					? toneButton[option.tone]
-					: ''}"
-				data-tip={option.label}
+				class="btn btn-sm join-item {shown
+					? `min-w-0 flex-1 px-2 ${toneButton[option.tone]}`
+					: 'btn-square'}"
+				title={option.label}
 				aria-label={option.label}
-				aria-pressed={option.value === active}
+				aria-pressed={shown}
 				disabled={pending !== undefined}
 				onclick={() => select(option.value)}
 			>
@@ -83,6 +71,9 @@
 					<i aria-hidden="true" class="ph-fill animate-spin ph-spinner-gap"></i>
 				{:else}
 					<i aria-hidden="true" class="ph-fill ph-{option.icon.replace(/^ph-/, '')}"></i>
+				{/if}
+				{#if shown}
+					<span class="truncate">{option.short ?? option.label}</span>
 				{/if}
 			</button>
 		{/each}

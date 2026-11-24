@@ -1,4 +1,10 @@
-import { areasAsPrinted, type ClearSpan, type PaperArea, type PrintedInk } from './areas';
+import {
+	areasAsPrinted,
+	LEAST_ROOM,
+	type ClearSpan,
+	type PaperArea,
+	type PrintedInk
+} from './areas';
 import { PAPER_FIELDS } from './fields';
 import type { Point } from './markerGeometry';
 import { fieldInk, inkIn, INK_OF } from './readPaper';
@@ -30,8 +36,6 @@ const ROW = 0.1;
 const LINE_SHARE = 0.4;
 /** A field's edges as far as this (millimetres) are not read anyway, a line there does not matter. */
 const UNREAD = { top: 0.2, bottom: 1.5 };
-/** Below this height (millimetres) there is no room to write between two lines. */
-const LEAST_ROOM = 5;
 
 /** Where the template's lines run across `area`: from and to, in millimetres from its top. */
 function linesAcross({ picture, toPicture, area }: Page & { area: PaperArea }) {

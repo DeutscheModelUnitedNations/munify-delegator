@@ -32,6 +32,8 @@ each field's print (`printedInkOf`, on the page before codes and marks) and the 
   line may lie inside it.
 - **Boxes**: told by their middle. A frame inside the box is fine as long as the middle stays clear of it in
   a scan aligned 0.3 mm off; that takes a placement up to about 0.3 mm off.
+- **A span to write in** below 5 mm (`LEAST_ROOM`), or not inside its field, is refused: the client names it,
+  and the code signs it. Such a field is left to a person.
 - **Other print** raises what counts as a mark; less is "unclear". No mark is ever made of it.
 - **Not measured** (the browser could not render): every field of the page is left to a person
   (`UNKNOWN_PRINT`). `issueDocumentCodes` takes `printedInk: []` for a page without any.
@@ -57,9 +59,11 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
 
 - **Splitting** (`pdf/`): a PDF is read by its table, object by object, from a `ScanSource` (ranges of a bucket
   object, a `Blob`): 2.7 GB with 3,000 pages take 5 s and 110 MB. Only a file with a broken table is read as a
-  whole, up to 100 MB. A page comes out the same bytes each time, with nothing of another: only the pictures it
-  draws (scanners list those of every page on each), and nothing that leads to other pages. Encrypted files are
-  not opened. The latest objects read are kept (96 MB), so a page's picture is read
+  whole, up to 100 MB. A page comes out the same bytes each time, with nothing of another: only the pictures, fonts,
+  patterns, states and colours its content names (scanners list those of every page on each), likewise of the
+  forms, patterns and Type3 fonts it draws with, and nothing that leads to other pages. What one such thing
+  holds itself comes whole: the letters of a font, the shapes JBIG2 pictures share (`JBIG2Globals`). Encrypted
+  files are not opened. The latest objects read are kept (96 MB), so a page's picture is read
   once though it is asked for twice. Nothing unpacks to more than any scan has (64 MB for tables and object
   streams, 16 MB for a page's content, which is then a broken page), and an object said to lie beyond the end
   is not there, rather than a read that fails the whole file.
@@ -67,8 +71,15 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
   pdf.js on `@napi-rs/canvas` leaks native memory (80 MB at 300 dpi) that no garbage collection frees, and
   whoever made a PDF decides what opening it takes. A process ends once it takes 600 MB (`tookTooMuch`), and
   the next goes on. They get none of the app's environment; the splitter asks the app for the parts of the file
-  it needs, and cuts the next page once one is stored. **Measure memory under a cap**
+  it needs, and cuts the next page once one is stored. Exiting by themselves they hang now and then (Node 26),
+  so whoever is done with one kills it. **Measure memory under a cap**
   (`systemd-run --user --scope -p MemoryMax=2G …`).
+- **They run in a sandbox** (`scanSandbox.ts`): Landlock, set up by `setpriv` before Node starts. They write
+  nothing, read only programs, libraries and their own code, and cannot look into the app's process, whose
+  environment holds the secrets. The network is not kept from them. It needs util-linux 2.40 and a kernel with
+  Landlock (both there in the image under Docker's default seccomp profile); without, a warning is logged and
+  they run as before. What a worker newly loads from disk has to lie in a path listed there: try it in the
+  image. Development has no sandbox.
 - They are built by `build:compute`, with pdf.js and the code reader bundled in and what they load (wasm,
   fonts) copied to `build/compute/scanReaderFiles`. Only `@napi-rs/canvas` (native code) is a runtime
   dependency. pdf.js decodes JBIG2 and JPEG 2000, which office scanners write, with wasm files: without
@@ -102,9 +113,12 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
   (`handledScans`).
 - `agreementDetail`: one row per field (`AGREEMENT_FIELDS`), `yes`/`no`/`unclear`, `SCAN` or `MANUAL`.
   Scans fill it in (`planDetails`): unattended, nothing clear is taken back and no choice changed, what
-  a person set is never touched. The statuses on `conferenceParticipant` stay what the team works
+  a person set is never touched and counts over what is read when the statuses are made. The statuses on `conferenceParticipant` stay what the team works
   with; setting a detail changes no status. Details from earlier scans complete a document whose pages
   come one after the other (`proposePaperChange`'s `known`).
+- **A document marked as a problem is only taken as in by a person** (`confirm`): unattended it stays, with a
+  note. Newly marking one forgets what scans told of it (`forgetRejectedDetails`), and deleting a scan forgets
+  what only it told (`detailsToForget`); what a person set stays, and so do the other statuses.
 - `applyPaperReadings` writes details and statuses together, under a lock on the participant row.
 
 The dev seed (`seed-dev/postalScans.ts`, `scannerAccesses.ts`) has scans and details in every state for the

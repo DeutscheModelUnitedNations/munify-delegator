@@ -14,7 +14,7 @@ Before anyone takes part in the conference, their fee has to be paid and their d
 | **On-site check-in**      | nametag tables and the QR code for the entrance  | **Project Management**, **Participant Care** |
 | **Entrance & Attendance** | scanner: checking people and recording check-ins | the whole team                               |
 
-Whatever these pages leave to **Participant Care**, **Project Management** may do as well. You also find all of a person's statuses on their [user card](./participants#user-card): payment and documents in the **Formalities** tab, access card and attendance in the **Access & Attendance** tab.
+Whatever these pages leave to **Participant Care**, **Project Management** may do as well. You also find all of a person's statuses on their [user card](./participants#user-card): payment and documents in the **Formalities** tab, access card and attendance in the **On site** tab.
 
 ## Payments {#payments}
 
@@ -55,7 +55,7 @@ Both emails only become due for people with a seat once the assignment is releas
 
 ### Undoing
 
-The **Fee Payment** page cannot reset a confirmed reference: it then shows **The payment was already marked as received with transaction on …!** and only **Close**. You change a person's status on their user card in the **Formalities** tab under **Fee Payment**. Below it are their **Payment References**, whom they are shared with and whether they arrived.
+The **Fee Payment** page cannot reset a confirmed reference: it then shows **The payment was already marked as received with transaction on …!** and only **Close**. You change a person's status on their user card in the **Formalities** tab at **Fee Payment**. Next to it, under **Documents**, are their **Payment References**, whom they are shared with and whether they arrived.
 
 :::warning What cannot be taken back
 The status on the user card applies to this one person only, the reference stays marked as received. Resetting does not take back an email that was already sent. Once the person is back on **Pending**, they can create a new reference.
@@ -82,7 +82,7 @@ Every page carries a QR code that names the person and the conference and is sig
 | **Parental Agreement**    | as above, for minors only. For adults it says **No parental consent required**.                                                            |
 | **Media Usage Agreement** | **Pending**, **Problem**, **Done**                                                                                                         |
 | **Media Status**          | **Not set yet**, **No photos allowed**, **Partially allowed – check the consent form for details**, **Photos allowed without restriction** |
-| **Document number**       | a number per person                                                                                                                        |
+| **Filing number**         | a number per person                                                                                                                        |
 
 The **Media Status** says what the person ticked on the media usage agreement. It is part of the data for the printed nametags on the [Downloads](./maintenance#downloads) page.
 
@@ -92,12 +92,12 @@ The **Media Status** says what the person ticked on the media usage agreement. I
 2. Scan the QR code on one page of the letter. Next to the scanner, the person opens with their name, birthday and all statuses. Compare them with the letter.
 3. If all required documents are there and signed and the person allows photos without restriction, click **Confirm all** (Alt+A). This sets **Binding Registration** and **Media Usage Agreement** to **Done**, for minors the **Parental Agreement** too, and the **Media Status** to **Photos allowed without restriction**.
 4. If the person restricted photos, set the documents to **Done** one by one and then the **Media Status**: Alt+1 for no photos, Alt+2 for partially, Alt+3 for without restriction.
-5. If the person has no **Document number** yet, the field is already open. **Save next number** (Alt+N) gives the number after the highest one in the conference. You can also enter one yourself and save it.
+5. If the person has no **Filing number** yet, the field is already open. **Assign next filing number** (Alt+N) gives the number after the highest one in the conference. You can also enter one yourself and save it.
 6. If a document is missing or faulty, set only that one to **Problem** and the others to **Done** one by one.
 7. Esc closes the person, and the scanner is ready for the next letter.
 
-:::tip Write the document number on the letter
-Write the **Document number** you assigned on the sheets and file them in the order they arrived. That way you need not sort the letters by name: if you need an original later, its number is in the person's user card and you find it in the folder at once.
+:::tip Write the filing number on the letter
+Write the **Filing number** you assigned on the sheets and file them in the order they arrived. That way you need not sort the letters by name: if you need an original later, its number is in the person's user card and you find it in the folder at once.
 :::
 
 Every change saves at once, without asking. To correct a wrong click, choose the right status, here or on the user card.
@@ -108,9 +108,9 @@ If participant care opens the QR code with a phone's camera app, it lands on thi
 
 Below the scanner you can **Drop files here or choose them**: PDFs from a scanner's feeder or photos, also of several people mixed. DELEGATOR reads the QR code of every page, stores the pages with the person and enters what is signed and ticked. Every page is stored once, even if you scan it again; when it comes back signed, the new scan replaces the old one. Nothing is set back. Pages without a QR code are skipped; others that match nobody are not stored, but listed.
 
-The stored scans are on the user card under **Formalities** at **Scans of the documents**. There you can open and delete them and upload more. They are deleted with the person. Only participant care can see them.
+The stored scans are on the user card under **Formalities** in the **Documents** list at **Scans**. There you can open and delete them and add more with **Upload a scan**. They are deleted with the person. Only participant care can see them.
 
-What exactly was ticked and signed is below that in **Details of the agreements**, folded away. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
+What exactly was ticked and signed is in the last row of the list, **Details of the agreements**, folded away. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
 
 So that you need not upload anything by hand:
 
@@ -201,20 +201,21 @@ The **Entrance & Attendance** page scans participants at every occasion where th
 
 ### Sessions {#sessions}
 
-There are three ways to scan:
+There are four ways to scan:
 
-| Type       | What a scan does                                                                                                                                |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Check**  | Shows the person and open points. Without any, the scan is recorded and the next one continues right away, with open points only when asked to. |
-| **Record** | Only records that the person was scanned, without stopping and without checking.                                                                |
-| **Info**   | Shows the person and open points like the check, but stores nothing. For contact persons helping confused participants. Needs no session.       |
+| Type            | What a scan does                                                                                                                                |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Check**       | Shows the person and open points. Without any, the scan is recorded and the next one continues right away, with open points only when asked to. |
+| **Record**      | Only records that the person was scanned, without stopping and without checking.                                                                |
+| **Badge based** | Shows the person and open points like the check and waits until their **Access Card ID** is entered. Card and scan are stored together.         |
+| **Info**        | Shows the person and open points like the check, but stores nothing. For contact persons helping confused participants. Needs no session.       |
 
 Only **Participant Care** and **Project Management** may **start a session**:
 
 1. Under **Sessions**, click **New session**.
-2. Choose the **Type of session**.
-3. For a check, you can tick options of a survey under **Expected survey choice**. Whoever picked none of them gets **Has not chosen …** as an open point when scanned. This way you check, for example when boarding a bus, who signed up for this excursion.
-4. Enter the **Session Name** and click **Start Session**.
+2. Enter the **Session Name** and choose the **Type of session**.
+3. Except with **Record**, you can tick options of a survey under **Expected survey choice**. Whoever picked none of them gets **Has not chosen …** as an open point when scanned. This way you check, for example when boarding a bus, who signed up for this excursion.
+4. Click **Start Session**.
 
 Type and expected survey choice are fixed from the start. A session name exists only once per conference, regardless of upper and lower case. If it is taken, DELEGATOR answers **There is already a session with this name. Join it or choose another name.**
 
@@ -237,7 +238,7 @@ If someone on the team opens a nametag's code with a phone's camera app, partici
 
 ### What a scan shows and does
 
-With **Check** and **Info**, the person appears next to the camera: name, birthday, role and committee, the statuses **Fee Payment**, **Binding Registration** and **Attendance**, then **Everything is in order** or **Open points** with the list.
+With **Check**, **Badge based** and **Info**, the person appears next to the camera: name, birthday, role and committee, the statuses **Fee Payment**, **Binding Registration** and **Attendance**, then **Everything is in order** or **Open points** with the list.
 
 - **Everything is in order** in a **Check** session: the scan is recorded, and the scanner is ready right away. In **Info** mode nothing is recorded then either.
 - **Open points** during a check: **Dismiss** (Esc) records nothing, **Record anyway** (Alt+A) records the person with the note that there were open points.
@@ -253,7 +254,7 @@ What the scanner can report:
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | **Attendance recorded**                                                     | The scan is stored.                                                            |
 | **This participant was already scanned in this session**                    | They were recorded already, on this or another device. It stays one scan.      |
-| **No participant found with this ID.**                                      | With **Check** and **Info**: the code belongs to nobody in this conference.    |
+| **No participant found with this ID.**                                      | With all but **Record**: the code belongs to nobody in this conference.        |
 | **This user does not take part in the conference.**                         | With **Record**: the code belongs to nobody who takes part in this conference. |
 | **Team members are not scanned in; the scanner records participants only.** | A team member was scanned with **Record**.                                     |
 | **Network error — retrying automatically**                                  | The scan waits on the device and is sent again.                                |
@@ -269,7 +270,7 @@ A scan does not set a person's **Attendance** to **Present**. Attendance decides
 The device checks the codes itself, so the scanner detects false codes offline too. For that, the page must have been online once, otherwise it says **The check for codes is not available yet (no connection so far). Try again in a moment.**
 
 - **Record** works offline. The scans wait in the device's browser and go out once it is connected again, also after reloading the page. A session started offline comes into being with the first scan sent.
-- **Check** and **Info** need a connection: **Checking needs a connection. Record mode also works offline.**
+- **Check**, **Badge based** and **Info** need a connection: **Checking needs a connection. Record mode also works offline.**
 - If the name of a session started offline was taken in the meantime, its scans wait until you rename it.
 - **Download Backup** saves this device's scans in the session as a file.
 
@@ -284,16 +285,16 @@ For participant care, the **Scanned people** list of the running session is belo
 - The bin removes a scan after asking **Remove the scan of … from this session? They can be scanned again afterwards.**
 - **Export CSV** downloads every scan of the session, whatever the search, with **Time Stamp**, **Given Name**, **Family Name**, **E-mail**, **Access Card ID**, **Check passed**, **Scanned by** and **User ID**. For sessions of the type **Record**, **Check passed** stays empty.
 
-All scans of a person across all sessions are in the **Attendance Log** in the **Access & Attendance** tab of their user card.
+All scans of a person across all sessions are in the **Attendance Log** in the **On site** tab of their user card.
 
 ### Access cards and a lost card {#access-cards}
 
-In the **Access & Attendance** tab of the user card, participant care enters the **Access Card ID**. A number belongs to one person per conference: **This access card belongs to somebody else already.** The command palette (Ctrl+K) also finds people by their card number.
+In the **On site** tab of the user card, participant care enters the **Access Card ID**; at the entrance, everybody on the team does in a session of the type **Badge based**. A number belongs to one person per conference: **This access card belongs to somebody else already.** The command palette (Ctrl+K) also finds people by their card number.
 
 When someone hands in a found card:
 
 1. Type or scan the number into the command palette and open the person.
-2. In the **Access & Attendance** tab, click **Badge found** next to the number and confirm **Send notification?**.
+2. In the **On site** tab, click **Badge found** next to the number and confirm **Send notification?**.
 3. The email **Badge found** goes out at once, even if nothing else is sent automatically. It asks the person to collect the card from participant care.
 
 Every confirmation sends the email again. You change its text on the [Emails](./communication#emails) page.
@@ -306,7 +307,7 @@ Once the conference is **After the conference**, participants download their cer
 
 Only people whose **Attendance** is **Present** get a certificate. Everybody else gets none, and the dashboard tells them it is not available yet. No scan sets attendance. These do:
 
-- the user card in the **Access & Attendance** tab, with **Present** or **Absent**,
+- the user card in the **On site** tab, with **Present** or **Absent**,
 - the [Import](./maintenance#import) of attendance data,
 - the [Helper](./maintenance#helper), which sets all participants to **Present** or **Absent** at once.
 
