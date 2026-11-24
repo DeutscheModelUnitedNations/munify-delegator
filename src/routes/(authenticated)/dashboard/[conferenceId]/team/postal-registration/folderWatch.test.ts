@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { createFolderTracker, type ListedFile } from './folderWatch';
+import { createFolderTracker, listScans, type ListedFile, type ScanFolder } from './folderWatch';
 
 const file = (name: string, size = 10, lastModified = 1): ListedFile => ({
 	name,
@@ -30,5 +30,33 @@ describe('createFolderTracker', () => {
 		const listed = [file('notes.txt'), file('a.pdf', 0), file('.DS_Store'), file('b.JPG')];
 		tracker.take(listed);
 		expect(tracker.take(listed)).toEqual([file('b.JPG')]);
+	});
+});
+
+describe('listScans', () => {
+	const scan = (name: string) => new File(['%PDF'], name, { type: 'application/pdf' });
+	const readable = (name: string) => ({
+		kind: 'file' as const,
+		name,
+		getFile: async () => scan(name)
+	});
+	const folder: ScanFolder = {
+		async *values() {
+			yield readable('Stapel.pdf');
+			yield readable('Foto.JPG');
+			yield readable('notes.txt');
+			yield { kind: 'directory', name: 'archive.pdf' };
+			yield {
+				kind: 'file',
+				name: 'busy.pdf',
+				getFile: async () => {
+					throw new DOMException('locked', 'NoModificationAllowedError');
+				}
+			};
+		}
+	};
+
+	test('lists the scans, but no other file, folder, or one that cannot be read right now', async () => {
+		expect((await listScans(folder)).map(({ name }) => name)).toEqual(['Stapel.pdf', 'Foto.JPG']);
 	});
 });

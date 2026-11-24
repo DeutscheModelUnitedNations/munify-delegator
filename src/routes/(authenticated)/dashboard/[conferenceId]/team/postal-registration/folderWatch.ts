@@ -52,8 +52,15 @@ export function createFolderTracker(initial: readonly ListedFile[]) {
 	};
 }
 
+/** A folder as the browser hands it over (`FileSystemDirectoryHandle`), as far as it is read. */
+export interface ScanFolder {
+	values(): AsyncIterable<
+		{ kind: 'file'; name: string; getFile(): Promise<File> } | { kind: 'directory'; name: string }
+	>;
+}
+
 /** The scans lying in a folder; one written or removed right now is left for the next time. */
-export async function listScans(folder: FileSystemDirectoryHandle): Promise<File[]> {
+export async function listScans(folder: ScanFolder): Promise<File[]> {
 	const files: File[] = [];
 	for await (const entry of folder.values()) {
 		if (entry.kind !== 'file' || !SCAN_NAME.test(entry.name)) continue;

@@ -64,10 +64,10 @@
 	}
 
 	async function upload(files: FileList | null) {
-		if (!files?.length || uploading) return;
+		if (uploading) return;
 		uploading = true;
 		try {
-			for (const file of files) await uploadOne(file);
+			for (const file of files ?? []) await uploadOne(file);
 		} finally {
 			uploading = false;
 		}
