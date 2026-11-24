@@ -12,10 +12,10 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
 import { makeSeedCustomConferenceRole } from '../../src/api/db/seed-data/conferenceRole';
 import { makeSeedSingleParticipant } from '../../src/api/db/seed-data/singleParticipant';
+import { makeSeedTeamMember } from '../../src/api/db/seed-data/teamMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertConference } from './conference';
 import { upsertParticipant } from './participant';
-import { upsertTeamMember } from './teamMember';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 
 export const E2E_PAPER_CONFERENCE_ID = 'e2e00000conference0000017';
@@ -93,7 +93,19 @@ async function seedPart({
 			termsAndConditionsFileId: null
 		})
 		.where(eq(schema.conference.id, conferenceId));
-	await upsertTeamMember(db, conferenceId, E2E_PAPER_CARE_ID, 'PARTICIPANT_CARE');
+	// a team row of its own in each conference: `upsertTeamMember` keys it by the user alone, which would
+	// move one row between them (and a team row's conference never changes)
+	const care = {
+		...makeSeedTeamMember({ conferenceId, userId: E2E_PAPER_CARE_ID, role: 'PARTICIPANT_CARE' }),
+		id: `e2e-team-${conferenceId.slice(-2)}-${E2E_PAPER_CARE_ID}`
+	};
+	await db
+		.insert(schema.teamMember)
+		.values(care)
+		.onConflictDoUpdate({
+			target: [schema.teamMember.conferenceId, schema.teamMember.userId],
+			set: { role: care.role }
+		});
 
 	const role = {
 		...makeSeedCustomConferenceRole({ conferenceId }),
