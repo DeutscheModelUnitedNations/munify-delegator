@@ -1,7 +1,5 @@
-import { PDFDocument } from 'pdf-lib';
-
 /**
- * Scans as files: what kind one is, its pages cut out of it, and how a page is named.
+ * Scans as files: what kind one is, and how a page of it is named.
  */
 
 export type ScanFileType = 'application/pdf' | 'image/jpeg' | 'image/png' | 'image/webp';
@@ -19,6 +17,8 @@ const startsWith = ({
 const ascii = (text: string) => [...text].map((char) => char.charCodeAt(0));
 /** How far into a file scanners put the `%PDF`: some write a line or two before it. */
 const PDF_WITHIN = 1024;
+/** How much of a file tells what it is. */
+export const SIGNATURE_WITHIN = PDF_WITHIN + 8;
 
 /**
  * What a file is, by its first bytes: scanners send anything as `application/octet-stream`.
@@ -67,26 +67,6 @@ export async function pageKeyOf({
 	return `code:${await hashOf(new TextEncoder().encode(code))}`;
 }
 
-/** Page `page` (from 1) of a file that is `type`, as a file of its own; the file itself when it is all. */
-export async function cutPage({
-	bytes,
-	type,
-	page,
-	pageCount
-}: {
-	bytes: Uint8Array<ArrayBuffer>;
-	type: ScanFileType;
-	page: number;
-	pageCount: number;
-}): Promise<Uint8Array<ArrayBuffer>> {
-	if (type !== 'application/pdf' || pageCount === 1) return bytes;
-	const source = await PDFDocument.load(bytes, { ignoreEncryption: true });
-	const cut = await PDFDocument.create();
-	const [copy] = await cut.copyPages(source, [page - 1]);
-	cut.addPage(copy);
-	return new Uint8Array(await cut.save());
-}
-
 const EXTENSION: Record<ScanFileType, string> = {
 	'application/pdf': '.pdf',
 	'image/jpeg': '.jpg',
@@ -94,18 +74,8 @@ const EXTENSION: Record<ScanFileType, string> = {
 	'image/webp': '.webp'
 };
 
-/** What page `page` cut out of the file `name` is called. */
-export function cutName({
-	name,
-	type,
-	page,
-	pageCount
-}: {
-	name: string;
-	type: ScanFileType;
-	page: number;
-	pageCount: number;
-}) {
+/** What page `page` cut out of the file `name` is called; a picture is its only page. */
+export function cutName({ name, type, page }: { name: string; type: ScanFileType; page: number }) {
 	const base = name.replace(/\.[^.]*$/, '').trim() || 'scan';
-	return `${base}${pageCount === 1 ? '' : `_${page}`}${EXTENSION[type]}`;
+	return `${base}${type === 'application/pdf' ? `_${page}` : ''}${EXTENSION[type]}`;
 }

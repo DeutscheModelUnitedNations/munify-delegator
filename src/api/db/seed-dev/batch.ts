@@ -50,6 +50,7 @@ export interface SeedBatch {
 	conferenceParticipant: (typeof schema.conferenceParticipant.$inferInsert)[];
 	postalScan: (typeof schema.postalScan.$inferInsert)[];
 	agreementDetail: (typeof schema.agreementDetail.$inferInsert)[];
+	scannerAccess: (typeof schema.scannerAccess.$inferInsert)[];
 	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
 	attendanceEntry: (typeof schema.attendanceEntry.$inferInsert)[];
 	paymentTransaction: (typeof schema.paymentTransaction.$inferInsert)[];
@@ -123,6 +124,7 @@ export function emptyBatch(): SeedBatch {
 		conferenceParticipant: [],
 		postalScan: [],
 		agreementDetail: [],
+		scannerAccess: [],
 		attendanceSession: [],
 		attendanceEntry: [],
 		paymentTransaction: [],
@@ -291,6 +293,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.teamMember,
 		insert: (rows) => db.insert(s.teamMember).values(rows)
+	});
+	await insertChunked({
+		rows: batch.scannerAccess,
+		insert: (rows) => db.insert(s.scannerAccess).values(rows)
 	});
 	await insertChunked({
 		rows: batch.teamMemberInvitation,

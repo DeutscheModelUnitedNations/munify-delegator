@@ -341,10 +341,10 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 	SCAN_PROBLEM: {
 		placeholders: ['scanner', 'list'],
 		text: (locale) => ({
-			subject: m.emailAutoScanProblemSubject({ conference: P.conference }, { locale }),
+			subject: m.emailAutoScanProblemSubject({}, { locale }),
 			heading: m.emailAutoScanProblemHeading({}, { locale }),
 			body: paragraphs(
-				m.emailAutoScanProblemBody({ scanner: P.scanner, conference: P.conference }, { locale }),
+				m.emailAutoScanProblemBody({ scanner: P.scanner }, { locale }),
 				'{list}',
 				m.emailAutoScanProblemClosing({}, { locale })
 			)

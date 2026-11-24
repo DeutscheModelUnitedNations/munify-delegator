@@ -1,25 +1,30 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { MAX_POSTAL_SCAN_SIZE } from '#lib/paperScan/limits';
+import { MAX_SCAN_FILE_SIZE } from '#lib/paperScan/limits';
 import { IntakeBusyError } from './intakeGate';
-import { NotAllowedToDeliverError } from './scanIngest';
+import { NotAllowedToDeliverError, ScanRefusedError, type IncomingScan } from './scanIngest';
 import { serveScanFolder } from './webdav';
 
-const { findDeliverer, ingestScans } = vi.hoisted(() => ({
+const { findDeliverer, ingestScan } = vi.hoisted(() => ({
 	findDeliverer: vi.fn(),
-	ingestScans: vi.fn()
+	ingestScan: vi.fn()
 }));
 vi.mock('#api/handlers/scannerAccess/scannerAccessService', () => ({ findDeliverer }));
 vi.mock('#api/handlers/scannerAccess/scannerAccessPermissions', () => ({
-	mayDeliver: async ({ role }: { role: string }) => role === 'PARTICIPANT_CARE'
+	mayDeliver: async ({ userId }: { userId: string }) => userId === 'ada'
 }));
 vi.mock('./scanIngest', () => ({
-	ingestScans,
-	NotAllowedToDeliverError: class NotAllowedToDeliverError extends Error {}
+	ingestScan,
+	NotAllowedToDeliverError: class NotAllowedToDeliverError extends Error {},
+	ScanRefusedError: class ScanRefusedError extends Error {
+		constructor(readonly status: number) {
+			super();
+		}
+	}
 }));
 
 const received: { name: string; bytes: Uint8Array }[] = [];
-const deliverer = { accessId: 'a', role: 'PARTICIPANT_CARE' };
+const deliverer = { accessId: 'a', userId: 'ada' };
 
 function send({
 	method,
@@ -48,7 +53,12 @@ function send({
 beforeEach(() => {
 	vi.resetAllMocks();
 	findDeliverer.mockResolvedValue(deliverer);
-	ingestScans.mockImplementation(async ({ receive }) => received.push(...(await receive())));
+	ingestScan.mockImplementation(async ({ open }: { open: () => IncomingScan }) => {
+		const { name, body } = open();
+		const chunks: Uint8Array[] = [];
+		for await (const chunk of body) chunks.push(chunk);
+		received.push({ name, bytes: new Uint8Array(Buffer.concat(chunks)) });
+	});
 	received.length = 0;
 });
 
@@ -64,9 +74,9 @@ describe('signing in', () => {
 	test('is refused for a wrong login, and once its owner may not deliver any more', async () => {
 		findDeliverer.mockResolvedValue(undefined);
 		expect((await send({ method: 'PUT', body: 'x' })).status).toBe(401);
-		findDeliverer.mockResolvedValue({ ...deliverer, role: 'MEMBER' });
+		findDeliverer.mockResolvedValue({ ...deliverer, userId: 'left-the-team' });
 		expect((await send({ method: 'PUT', body: 'x' })).status).toBe(401);
-		expect(ingestScans).not.toHaveBeenCalled();
+		expect(ingestScan).not.toHaveBeenCalled();
 	});
 });
 
@@ -78,26 +88,66 @@ describe('PUT', () => {
 			body: '%PDF'
 		});
 		expect(answered.status).toBe(201);
-		expect(ingestScans).toHaveBeenCalledWith(
-			expect.objectContaining({ deliverer, source: 'WEBDAV' })
-		);
+		expect(ingestScan).toHaveBeenCalledWith(expect.objectContaining({ deliverer }));
 		expect(received).toEqual([{ name: 'Stapel 1.pdf', bytes: new TextEncoder().encode('%PDF') }]);
 	});
 
-	test('takes an empty file for a trial, and refuses one too large', async () => {
-		expect((await send({ method: 'PUT', body: '' })).status).toBe(201);
-		const large = { 'content-length': String(MAX_POSTAL_SCAN_SIZE + 1) };
+	test('refuses a file said to be too large, unread', async () => {
+		const large = { 'content-length': String(MAX_SCAN_FILE_SIZE + 1) };
 		expect((await send({ method: 'PUT', body: 'x', headers: large })).status).toBe(413);
-		expect(received).toEqual([]);
+		expect(ingestScan).not.toHaveBeenCalled();
+	});
+
+	test('reads on only as it is taken, and stops where it is not', async () => {
+		let sent = 0;
+		const body = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				sent += 1;
+				controller.enqueue(new Uint8Array(1000));
+			}
+		});
+		ingestScan.mockImplementationOnce(async ({ open }: { open: () => IncomingScan }) => {
+			let taken = 0;
+			for await (const chunk of open().body) {
+				taken += chunk.length;
+				if (taken === 5000) throw new ScanRefusedError(413);
+			}
+		});
+		const request = new Request('https://example.org/api/scans/a.pdf', {
+			method: 'PUT',
+			body,
+			// undici wants it for a stream; not in the DOM's types
+			...{ duplex: 'half' },
+			headers: { authorization: `Basic ${btoa('scan-1:secret')}` }
+		});
+		expect((await serveScanFolder({ request, path: '/api/scans/a.pdf' })).status).toBe(413);
+		expect(sent).toBeLessThan(10);
+	});
+
+	test('gives up an upload of which nothing comes any more', async () => {
+		vi.useFakeTimers();
+		const body = new ReadableStream<Uint8Array>({ pull: () => new Promise(() => {}) });
+		const request = new Request('https://example.org/api/scans/a.pdf', {
+			method: 'PUT',
+			body,
+			...{ duplex: 'half' },
+			headers: { authorization: `Basic ${btoa('scan-1:secret')}` }
+		});
+		const answered = serveScanFolder({ request, path: '/api/scans/a.pdf' });
+		await vi.advanceTimersByTimeAsync(60_001);
+		expect((await answered).status).toBe(503);
+		vi.useRealTimers();
 	});
 
 	test('asks to come back while too many wait, and says when it failed', async () => {
-		ingestScans.mockRejectedValueOnce(new IntakeBusyError());
+		ingestScan.mockRejectedValueOnce(new IntakeBusyError());
 		const busy = await send({ method: 'PUT', body: 'x' });
 		expect([busy.status, busy.headers.get('retry-after')]).toEqual([503, '60']);
-		ingestScans.mockRejectedValueOnce(new NotAllowedToDeliverError());
+		ingestScan.mockRejectedValueOnce(new NotAllowedToDeliverError());
 		expect((await send({ method: 'PUT', body: 'x' })).status).toBe(403);
-		ingestScans.mockRejectedValueOnce(new Error('S3 is down'));
+		ingestScan.mockRejectedValueOnce(new ScanRefusedError(415));
+		expect((await send({ method: 'PUT', body: 'x' })).status).toBe(415);
+		ingestScan.mockRejectedValueOnce(new Error('S3 is down'));
 		expect((await send({ method: 'PUT', body: 'x' })).status).toBe(500);
 	});
 });
@@ -125,6 +175,6 @@ describe('the folder', () => {
 		['COPY', 405]
 	])('answers %s with %i, as devices ask around an upload', async (method, status) => {
 		expect((await send({ method })).status).toBe(status);
-		expect(ingestScans).not.toHaveBeenCalled();
+		expect(ingestScan).not.toHaveBeenCalled();
 	});
 });

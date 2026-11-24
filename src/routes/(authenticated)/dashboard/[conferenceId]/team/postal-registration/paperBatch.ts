@@ -2,7 +2,7 @@ import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import formatNames from '#lib/helpers/formatNames';
 import { planDetails, type StoredDetail } from '#lib/paperScan/agreementDetails';
 import { readingsOf, unreadableOf, type PersonPages } from '#lib/paperScan/intake/people';
-import type { KeptPage } from '#lib/paperScan/intake/takeScan';
+import type { KeptPage } from '#lib/paperScan/intake/takePage';
 import {
 	proposePaperChange,
 	type PaperChange,
@@ -124,5 +124,15 @@ export function personReport({
 		notes: [...notes, ...differing.map((field) => ({ kind: 'detailDiffers' as const, field }))],
 		missing: !row,
 		...outcomes
+	};
+}
+
+/** Asks for each person once: what they had before their first page, which the report compares with. */
+export function oncePerPerson<T>(ask: (who: { userId: string }) => Promise<T>) {
+	const answers = new Map<string, Promise<T>>();
+	return (who: { userId: string }) => {
+		const answer = answers.get(who.userId) ?? ask(who);
+		answers.set(who.userId, answer);
+		return answer;
 	};
 }

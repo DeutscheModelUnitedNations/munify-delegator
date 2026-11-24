@@ -66,6 +66,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.myAccount(),
 		icon: 'user'
 	},
+	scanners: {
+		translation: () => m.scanners(),
+		icon: 'printer'
+	},
 	configuration: {
 		translation: () => m.settings(),
 		icon: 'gear-six'

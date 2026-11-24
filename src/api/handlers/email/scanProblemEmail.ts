@@ -4,7 +4,7 @@ import { m } from '#lib/paraglide/messages';
 import { wantsNotification } from '#lib/helpers/teamNotifications';
 import { preferencesOfMembers } from '#api/handlers/notification/notificationStore';
 import { nanoid } from '#lib/helpers/nanoid';
-import { describeScanProblem } from '#lib/paperScan/intake/people';
+import { describeScanProblem } from '#lib/paperScan/intake/problems';
 import type { SnapshotUser } from './dueEmails';
 import {
 	loadWording,
@@ -43,7 +43,7 @@ export const sampleScanProblem = ({
 	conferenceId,
 	conferenceTitle,
 	scanner: m.scannerAccessNameSample(),
-	problems: () => [describeScanProblem({ file: 'scan.pdf', pages: [3, 4], reason: 'noCode' })]
+	problems: () => [describeScanProblem({ file: 'scan.pdf', pages: [3, 4], reason: 'unreadable' })]
 });
 
 /** Where the paper is scanned again. */
@@ -88,7 +88,7 @@ export async function sendScanProblemEmail({
 	teamMemberId: string;
 	notice: ScanProblemNotice;
 	origin: string | undefined;
-}) {
+}): Promise<'sent' | 'unwanted' | 'failed'> {
 	const member = await db.query.teamMember.findFirst({
 		where: { id: teamMemberId },
 		columns: { id: true },
@@ -106,7 +106,7 @@ export async function sendScanProblemEmail({
 			}
 		}
 	});
-	if (!member) return;
+	if (!member) return 'unwanted';
 	const preferences = await preferencesOfMembers({
 		teamMemberIds: [teamMemberId],
 		channel: 'EMAIL'
@@ -117,7 +117,7 @@ export async function sendScanProblemEmail({
 		channel: 'EMAIL',
 		mailByDefault: member.user.messageNotificationEmails
 	});
-	if (!wanted) return;
+	if (!wanted) return 'unwanted';
 	const wording = await loadWording(notice.conferenceId);
 	const error = await sendByHand({
 		conferenceId: notice.conferenceId,
@@ -128,5 +128,8 @@ export async function sendScanProblemEmail({
 		sentById: null,
 		render: () => renderScanProblemEmail({ recipient: member.user, notice, origin, wording })
 	});
-	if (error) logger.warn('Telling a scan problem by mail failed', { teamMemberId, error });
+	if (error === undefined) return 'sent';
+	// an unreachable mail server gives no reason, which is a failure all the same
+	logger.warn('Telling a scan problem by mail failed', { teamMemberId, error });
+	return 'failed';
 }

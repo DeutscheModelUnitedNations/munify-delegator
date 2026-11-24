@@ -40,6 +40,7 @@ import { addMergedMembers } from './seed-dev/schools';
 import { addBulk, bulkScale } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
 import { addPostalScans } from './seed-dev/postalScans';
+import { addScannerAccesses } from './seed-dev/scannerAccesses';
 import { addResolutions } from './seed-dev/resolutions';
 import { printOverview } from './seed-dev/overview';
 import {
@@ -97,6 +98,7 @@ for (const account of devAccounts) {
 addReviewerSnippets(batch);
 addMessagingAccountSettings(batch);
 addSlackWorkspaces(batch);
+addScannerAccesses(batch);
 addDuplicateScenarioAccounts(batch);
 
 for (const plan of conferencePlans) {

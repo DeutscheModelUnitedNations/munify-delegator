@@ -1,6 +1,5 @@
 import { db } from '#api/db/db';
 import type { ApiContext } from '#api/rumble';
-import { assertTeamPermission, hasTeamPermission } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { isAccountActive } from '#api/services/oidc/managementApi';
 import { apiError } from '#api/services/errors';
@@ -9,111 +8,95 @@ import { m } from '#lib/paraglide/messages';
 import type { Deliverer } from './scannerAccessService';
 
 /**
- * Scanner logins are personal: each belongs to a team member who manages the conference's
- * participants (project management and participant care), who alone makes and renews it. The
- * conference's project management (`manageConference`) sees whose there are and removes any. The
- * table has no abilities: nothing reads it but the fields here, and the password's hash never
- * leaves the API. A system admin who is on no team has no scanner either.
+ * Scanner logins are personal: what a scanner delivers is what its owner might have uploaded by hand, so
+ * it may do no more than they may. A page is kept where they manage the participants (project management
+ * and participant care) of the conference it is of; nothing is ever read. Nobody but the owner sees or
+ * changes a login. The table has no abilities: nothing reads it but the fields here, and the password's
+ * hash never leaves the API. A system admin's role is in their session only, which a scanner has none of:
+ * it delivers where they are on the team.
  */
 
-/** Whether a team role may manage the conference's participants, and so deliver scans. */
-const mayDeliverScans = (role: string) =>
-	(rolesWithTeamPermission('manageParticipants') ?? []).some((allowed) => allowed === role);
-
-/**
- * Whether a login may deliver now: not expired, its owner still caring for the conference's
- * participants, and their account not suspended. Asked at sign-in, and again for every delivery.
- */
-export async function mayDeliver({ role, expiresAt, userId }: Deliverer) {
-	return mayDeliverScans(role) && expiresAt > new Date() && (await isAccountActive(userId));
+/** A conference a scanner may deliver into, and its owner's place on the team there. */
+export interface DeliveryConference {
+	conferenceId: string;
+	teamMemberId: string;
 }
 
 /**
- * The caller's own membership of the conference's team; FORBIDDEN unless it lets them manage its
- * participants, and for an AI assistant.
+ * The conferences whose participants somebody manages, the latest first: those their scanners may deliver
+ * into. Asked anew for each delivery, so a role handed back counts at once.
  */
-export async function assertOwnScannerTeamMember({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
+export async function conferencesToDeliverInto(userId: string): Promise<DeliveryConference[]> {
+	const roles = rolesWithTeamPermission('manageParticipants') ?? [];
+	const memberships = await db.query.teamMember.findMany({
+		where: { userId, role: { in: [...roles] } },
+		columns: { id: true, conferenceId: true },
+		with: { conference: { columns: { startConference: true } } }
+	});
+	return memberships
+		.toSorted((a, b) => +b.conference.startConference - +a.conference.startConference)
+		.map(({ id, conferenceId }) => ({ conferenceId, teamMemberId: id }));
+}
+
+/**
+ * Whether a login may deliver now: not expired, its owner managing the participants of some conference,
+ * and their account not suspended. Asked at sign-in, and again for every delivery.
+ */
+export async function mayDeliver({ expiresAt, userId }: Pick<Deliverer, 'expiresAt' | 'userId'>) {
+	if (expiresAt <= new Date()) return false;
+	const conferences = await conferencesToDeliverInto(userId);
+	return conferences.length > 0 && (await isAccountActive(userId));
+}
+
+/** The caller, whose logins these are; FORBIDDEN for an AI assistant. */
+export function assertOwnScannerAccesses(ctx: ApiContext) {
 	ctx.mustBeLoggedIn();
 	const userId = callerUserId(ctx);
-	const member = userId
-		? await db.query.teamMember.findFirst({
-				where: { conferenceId, userId },
-				columns: { id: true, role: true }
-			})
-		: undefined;
-	if (!member || !mayDeliverScans(member.role)) {
-		throw apiError({ code: 'FORBIDDEN', message: m.scannerAccessNotAllowed() });
-	}
-	return { teamMemberId: member.id };
+	if (!userId) throw apiError({ code: 'FORBIDDEN', message: m.scannerAccessNotAllowed() });
+	return { userId };
+}
+
+/** Whether the caller has any use for a scanner: they manage the participants of some conference. */
+export async function canUseScanners(ctx: ApiContext) {
+	const userId = callerUserId(ctx);
+	return userId !== undefined && (await conferencesToDeliverInto(userId)).length > 0;
 }
 
 /**
- * Like `assertOwnScannerTeamMember`, and FORBIDDEN while impersonating: a login would outlive the
- * impersonation, in somebody else's name.
+ * The caller, who makes a login; FORBIDDEN unless they manage the participants of some conference, and
+ * while impersonating: a login would outlive the impersonation, in somebody else's name.
  */
-export async function assertCanCreateScannerAccess({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
-	if (ctx.oidc.impersonator) {
+export async function assertCanCreateScannerAccess(ctx: ApiContext) {
+	const own = assertOwnScannerAccesses(ctx);
+	if (ctx.oidc.impersonator || !(await canUseScanners(ctx))) {
 		throw apiError({ code: 'FORBIDDEN', message: m.scannerAccessNotAllowed() });
 	}
-	return assertOwnScannerTeamMember({ ctx, conferenceId });
+	return own;
 }
 
-/** A login's owner and conference; NOT_FOUND for one that does not exist. */
-async function ownerOf(id: string) {
+/** Whether a login is the caller's own. */
+async function isOwn({ ctx, id }: { ctx: ApiContext; id: string }) {
+	const { userId } = assertOwnScannerAccesses(ctx);
 	const access = await db.query.scannerAccess.findFirst({
-		where: { id },
-		columns: { teamMemberId: true }
+		where: { id, userId },
+		columns: { id: true }
 	});
-	const owner =
-		access &&
-		(await db.query.teamMember.findFirst({
-			where: { id: access.teamMemberId },
-			columns: { userId: true, conferenceId: true }
-		}));
-	if (!owner) throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
-	return owner;
+	return access !== undefined;
 }
 
 /** Refuses (NOT_FOUND) unless the scanner login is the caller's own, and they are themselves. */
 export async function assertCanRenewScannerAccess({ ctx, id }: { ctx: ApiContext; id: string }) {
-	ctx.mustBeLoggedIn();
-	const { userId } = await ownerOf(id);
-	if (userId !== callerUserId(ctx) || ctx.oidc.impersonator) {
+	if (ctx.oidc.impersonator || !(await isOwn({ ctx, id }))) {
 		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	}
 }
 
 /**
- * Refuses (NOT_FOUND) unless the scanner login is the caller's own, or of a conference they manage
- * (`manageConference`, project management).
+ * Refuses (NOT_FOUND) unless the scanner login is the caller's own. A system admin impersonating its
+ * owner removes it for them.
  */
 export async function assertCanDeleteScannerAccess({ ctx, id }: { ctx: ApiContext; id: string }) {
-	ctx.mustBeLoggedIn();
-	const { userId, conferenceId } = await ownerOf(id);
-	if (userId === callerUserId(ctx)) return;
-	if (await hasTeamPermission({ ctx, conferenceId, permission: 'manageConference' })) return;
-	throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
-}
-
-/** Refuses (FORBIDDEN) unless the caller manages the conference (project management). */
-export async function assertCanSeeTeamScannerAccesses({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'manageConference' });
+	if (!(await isOwn({ ctx, id }))) {
+		throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
+	}
 }

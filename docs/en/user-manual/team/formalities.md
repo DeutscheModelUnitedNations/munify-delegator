@@ -106,7 +106,7 @@ If participant care opens the QR code with a phone's camera app, it lands on thi
 
 ### Storing and reading scans {#scans}
 
-Below the scanner you can **Drop files here or choose them**: PDFs from a scanner's feeder or photos, also of several people mixed. DELEGATOR reads the QR code of every page, stores the pages with the person and enters what is signed and ticked. Every page is stored once, even if you scan it again; when it comes back signed, the new scan replaces the old one. Nothing is set back. Pages that match nobody are not stored, but listed.
+Below the scanner you can **Drop files here or choose them**: PDFs from a scanner's feeder or photos, also of several people mixed. DELEGATOR reads the QR code of every page, stores the pages with the person and enters what is signed and ticked. Every page is stored once, even if you scan it again; when it comes back signed, the new scan replaces the old one. Nothing is set back. Pages without a QR code are skipped; others that match nobody are not stored, but listed.
 
 The stored scans are on the user card under **Formalities** at **Scans of the documents**. There you can open and delete them and upload more. They are deleted with the person. Only participant care can see them.
 
@@ -115,7 +115,7 @@ What exactly was ticked and signed is below that in **Details of the agreements*
 So that you need not upload anything by hand:
 
 - **Watch a folder** (Chrome or Edge on a computer): pick the folder your scanner saves to. While the page is open, every new scan in it is taken in.
-- **Set up a scanner**: make a login and enter it in your scanner, for scan to email or WebDAV. The device then sends the scans directly, even while nobody is signed in. If pages match nobody, you are notified. Make a login of its own for each device, so you can revoke each on its own. A login is for you and this conference only and expires after half a year unless you renew it. Project management sees every login and can revoke it.
+- **Set up a scanner** (in your account under **Scanners**): make a login and enter it in your scanner, if it can upload over WebDAV. The device then sends the scans directly, even while nobody is signed in. If pages match nobody, you are notified. Make a login of its own for each device, so you can revoke each on its own. A login is yours and works for every conference whose participants you look after; you can scan pages of several conferences mixed. It expires after half a year unless you renew it.
 
 :::tip Readable scans
 Scan with at least 200 dpi and so that all four marks in the corners can be seen. With a phone's camera, switch the light on when it is dark.

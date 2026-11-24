@@ -130,7 +130,7 @@ async function claim({
 	});
 }
 
-/** Tells one member, and takes the claim back when the message did not reach them. */
+/** Tells one member, and takes the claim back when the message did not reach them; whether it did. */
 async function tell({
 	recipients,
 	member,
@@ -145,9 +145,9 @@ async function tell({
 	subjectId: string;
 	oncePerSubject: boolean;
 	text: () => string;
-}) {
+}): Promise<boolean> {
 	const claimed = await claim({ teamMemberId: member.id, key, subjectId, oncePerSubject });
-	if (!claimed) return;
+	if (!claimed) return false;
 	const unclaim = async () => {
 		await db.delete(schema.slackNotification).where(eq(schema.slackNotification.id, claimed));
 	};
@@ -157,15 +157,20 @@ async function tell({
 			user: member.user
 		});
 		// not in the workspace (or Slack did not answer): told once they are, with the next message
-		if (!slackUserId) return await unclaim();
+		if (!slackUserId) {
+			await unclaim();
+			return false;
+		}
 		await sendSlackDirectMessage({
 			token: await decryptSlackToken(recipients.workspace.botTokenCiphertext),
 			slackUserId,
 			text: runWithLocale({ locale: localeOfUser(member.user.locale), fn: text })
 		});
+		return true;
 	} catch (error) {
 		await unclaim();
 		logger.error('Sending a Slack notification failed', { error, teamMemberId: member.id });
+		return false;
 	}
 }
 
@@ -225,10 +230,7 @@ export const scanProblemSlackText = ({
 	origin: string | undefined;
 }) =>
 	[
-		m.slackScanProblem({
-			conference: slackEscape(notice.conferenceTitle),
-			scanner: slackEscape(notice.scanner)
-		}),
+		m.slackScanProblem({ scanner: slackEscape(notice.scanner) }),
 		...notice.problems().map((line) => `• ${slackEscape(line)}`),
 		...(origin
 			? [
@@ -338,7 +340,7 @@ async function tellPaper({ paper, origin }: { paper: SubmittedPaper; origin: str
 	);
 }
 
-/** Tells a scanner's owner of pages that came to nothing; each delivery tells once. */
+/** Tells a scanner's owner of pages that came to nothing; each delivery tells once. Answers whether it reached them. */
 export async function tellScanProblemOnSlack({
 	teamMemberId,
 	notice,
@@ -347,12 +349,12 @@ export async function tellScanProblemOnSlack({
 	teamMemberId: string;
 	notice: ScanProblemNotice;
 	origin: string | undefined;
-}) {
+}): Promise<boolean> {
 	const recipients = await loadRecipients(notice.conferenceId);
 	const member = recipients?.members.find(({ id }) => id === teamMemberId);
-	if (!recipients || !member) return;
-	if (!wantsSlack({ member, key: { topic: 'SCAN_PROBLEM', teamFunctionId: null } })) return;
-	await tell({
+	if (!recipients || !member) return false;
+	if (!wantsSlack({ member, key: { topic: 'SCAN_PROBLEM', teamFunctionId: null } })) return false;
+	return tell({
 		recipients,
 		member,
 		key: 'scan',

@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { customAlphabet } from 'nanoid';
 import { z } from 'zod';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -15,7 +15,7 @@ export const scannerNameSchema = z.string().trim().min(1).max(60);
 const VALID_DAYS = 180;
 const expiry = () => new Date(Date.now() + VALID_DAYS * 24 * 60 * 60_000);
 
-/** How many logins a team member may have in a conference, one for each device. */
+/** How many logins somebody may have, one for each device. */
 const MAX_ACCESSES = 25;
 
 /**
@@ -31,27 +31,18 @@ const hashOf = (password: string) => createHash('sha256').update(password).diges
 /** Announces a changed login to the lists of them, which listen to any: they are no rows of their own. */
 const announceChange = () => scannerAccessPubsub.updated();
 
-/** The logins of a team member, the newest first. */
-export async function scannerAccessesOf(teamMemberId: string) {
+/** Somebody's logins, the newest first. */
+export async function scannerAccessesOf(userId: string) {
 	return db.query.scannerAccess.findMany({
-		where: { teamMemberId },
+		where: { userId },
 		columns: { id: true, name: true, username: true, lastUsedAt: true, expiresAt: true },
 		orderBy: { createdAt: 'desc' }
 	});
 }
 
 /** Makes a login. Its password is answered here and never again. CONFLICT once there are too many. */
-export async function createScannerAccess({
-	teamMemberId,
-	name
-}: {
-	teamMemberId: string;
-	name: string;
-}) {
-	const existing = await db.$count(
-		schema.scannerAccess,
-		eq(schema.scannerAccess.teamMemberId, teamMemberId)
-	);
+export async function createScannerAccess({ userId, name }: { userId: string; name: string }) {
+	const existing = await db.$count(schema.scannerAccess, eq(schema.scannerAccess.userId, userId));
 	if (existing >= MAX_ACCESSES) {
 		throw apiError({ code: 'CONFLICT', message: m.scannerAccessTooMany({ max: MAX_ACCESSES }) });
 	}
@@ -59,7 +50,7 @@ export async function createScannerAccess({
 	const row = await db
 		.insert(schema.scannerAccess)
 		.values({
-			teamMemberId,
+			userId,
 			name,
 			username: `scan-${keypadText(USERNAME_LENGTH)}`,
 			passwordHash: hashOf(password),
@@ -69,25 +60,6 @@ export async function createScannerAccess({
 		.then(assertFirstEntryExists);
 	scannerAccessPubsub.created();
 	return { ...row, name, password };
-}
-
-/** The logins of everybody on a conference's team, with whose they are, the last used first. */
-export async function teamScannerAccesses(conferenceId: string) {
-	const { scannerAccess: access, teamMember: member, user } = schema;
-	return db
-		.select({
-			id: access.id,
-			name: access.name,
-			lastUsedAt: access.lastUsedAt,
-			expiresAt: access.expiresAt,
-			ownerGivenName: user.givenName,
-			ownerFamilyName: user.familyName
-		})
-		.from(access)
-		.innerJoin(member, eq(member.id, access.teamMemberId))
-		.innerJoin(user, eq(user.id, member.userId))
-		.where(eq(member.conferenceId, conferenceId))
-		.orderBy(sql`${access.lastUsedAt} desc nulls last`, access.id);
 }
 
 /** Lets a login work for as long again, its password unchanged. */
@@ -104,15 +76,11 @@ export async function deleteScannerAccess(id: string) {
 	scannerAccessPubsub.removed();
 }
 
-/** Whose login a scanner signed in with, and the conference it delivers for. */
+/** Whose login a scanner signed in with. */
 export interface Deliverer {
 	accessId: string;
 	accessName: string;
-	teamMemberId: string;
 	userId: string;
-	conferenceId: string;
-	/** The team member's role, which says whether they may deliver scans. */
-	role: string;
 	expiresAt: Date;
 }
 
@@ -120,22 +88,11 @@ export interface Deliverer {
 async function loadDeliverer(where: { id: string } | { username: string }) {
 	const access = await db.query.scannerAccess.findFirst({
 		where,
-		columns: { id: true, name: true, teamMemberId: true, passwordHash: true, expiresAt: true }
+		columns: { id: true, name: true, userId: true, passwordHash: true, expiresAt: true }
 	});
 	if (!access) return undefined;
-	const member = await db.query.teamMember.findFirst({
-		where: { id: access.teamMemberId },
-		columns: { userId: true, conferenceId: true, role: true }
-	});
-	if (!member) return undefined;
-	const { id, name, teamMemberId, passwordHash, expiresAt } = access;
-	const deliverer: Deliverer = {
-		accessId: id,
-		accessName: name,
-		teamMemberId,
-		expiresAt,
-		...member
-	};
+	const { id, name, userId, passwordHash, expiresAt } = access;
+	const deliverer: Deliverer = { accessId: id, accessName: name, userId, expiresAt };
 	return { deliverer, passwordHash };
 }
 

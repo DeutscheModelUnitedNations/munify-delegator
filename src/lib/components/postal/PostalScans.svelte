@@ -30,7 +30,6 @@
 				where: { conferenceParticipantId: { eq: conferenceParticipantId } },
 				orderBy: { createdAt: 'desc' }
 			},
-			id: true,
 			source: true,
 			updatedAt: true,
 			fields: true,
@@ -43,7 +42,6 @@
 	const sourceLabel: Record<PostalscansourceEnum, () => string> = {
 		UPLOAD: () => m.postalScanSourceUpload(),
 		FOLDER: () => m.postalScanSourceFolder(),
-		EMAIL: () => m.postalScanSourceEmail(),
 		WEBDAV: () => m.postalScanSourceWebdav()
 	};
 

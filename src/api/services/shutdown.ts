@@ -12,6 +12,7 @@ import { logger } from '#lib/logger';
 const CLOSE_TIMEOUT_MS = 2000;
 
 const closers: Array<() => Promise<unknown>> = [];
+const lastWork: Array<() => Promise<unknown>> = [];
 let shuttingDown = false;
 
 /**
@@ -27,13 +28,19 @@ export function closeOnShutdown(close: () => Promise<unknown>) {
 	closers.push(close);
 }
 
-/** Closes everything registered, waiting at most `timeoutMs`. */
+/** Does something while the connections are still open, before any is closed. */
+export function beforeShutdown(work: () => Promise<unknown>) {
+	lastWork.push(work);
+}
+
+const runAll = (tasks: readonly (() => Promise<unknown>)[], failure: string) =>
+	Promise.all(tasks.map((task) => task().catch((error: unknown) => logger.warn(failure, error))));
+
+/** Does the last work, then closes everything registered, waiting at most `timeoutMs`. */
 export async function closeAll(timeoutMs = CLOSE_TIMEOUT_MS) {
 	shuttingDown = true;
-	const closed = Promise.all(
-		closers.map((close) =>
-			close().catch((error: unknown) => logger.warn('Closing a connection failed', error))
-		)
+	const closed = runAll(lastWork, 'The last work before the shutdown failed').then(() =>
+		runAll(closers, 'Closing a connection failed')
 	);
 	await Promise.race([closed, new Promise((done) => setTimeout(done, timeoutMs).unref())]);
 }

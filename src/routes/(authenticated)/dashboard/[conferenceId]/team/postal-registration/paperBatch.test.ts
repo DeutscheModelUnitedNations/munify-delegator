@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { PersonPages } from '#lib/paperScan/intake/people';
-import { personReport, withResult, type PersonResult } from './paperBatch';
+import { oncePerPerson, personReport, withResult, type PersonResult } from './paperBatch';
 
 const result = (changes: Partial<PersonResult>): PersonResult => ({
 	userId: 'ada',
@@ -47,6 +47,7 @@ describe('withResult', () => {
 
 describe('personReport', () => {
 	const person: PersonPages = {
+		conferenceId: 'conf',
 		userId: 'ada',
 		pages: [
 			{
@@ -109,4 +110,18 @@ describe('personReport', () => {
 			missing: true
 		});
 	});
+});
+
+test('oncePerPerson asks for each person once', async () => {
+	const asked: string[] = [];
+	const ask = oncePerPerson(async ({ userId }) => {
+		asked.push(userId);
+		return `${userId}'s row`;
+	});
+	expect([await ask({ userId: 'ada' }), await ask({ userId: 'bob' })]).toEqual([
+		"ada's row",
+		"bob's row"
+	]);
+	expect(await ask({ userId: 'ada' })).toBe("ada's row");
+	expect(asked).toEqual(['ada', 'bob']);
 });

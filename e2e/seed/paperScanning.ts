@@ -1,9 +1,11 @@
 /**
  * Fixtures for the paper scanning spec (e2e/team/paper-scanning.spec.ts).
  *
- * A conference of its own, with participant care and Grace, an adult single participant
- * with a seat. Every run resets her postal status to nothing in, and the conference to no
- * templates and the default layouts, since the spec scans her pages and uploads templates.
+ * A conference of its own, with participant care and Grace, an adult single participant with a seat, and
+ * a second one with the same participant care and Alan, whose pages come in one stack with hers.
+ * Every run resets their postal status to nothing in, removes the scanner logins, and resets the
+ * conferences to no templates and the default layouts, since the spec scans their pages and uploads
+ * templates.
  */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
@@ -17,18 +19,69 @@ import { upsertTeamMember } from './teamMember';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 
 export const E2E_PAPER_CONFERENCE_ID = 'e2e00000conference0000017';
+export const E2E_PAPER_SECOND_CONFERENCE_ID = 'e2e00000conference0000018';
 export const E2E_PAPER_CARE_ID = 'e2e-paper-care';
 export const E2E_PAPER_GRACE_ID = 'e2e-paper-grace';
-const GRACE_SINGLE_PARTICIPANT_ID = 'e2e00000papersingle000001';
-const GRACE_ROLE_ID = 'e2e00000paperrole00000001';
+export const E2E_PAPER_ALAN_ID = 'e2e-paper-alan';
+
+/** Who takes part where, in a seat of the conference's own role. */
+const PARTS = [
+	{
+		userId: E2E_PAPER_GRACE_ID,
+		conferenceId: E2E_PAPER_CONFERENCE_ID,
+		title: 'E2E Paper Scanning Conference',
+		roleId: 'e2e00000paperrole00000001',
+		singleParticipantId: 'e2e00000papersingle000001'
+	},
+	{
+		userId: E2E_PAPER_ALAN_ID,
+		conferenceId: E2E_PAPER_SECOND_CONFERENCE_ID,
+		title: 'E2E Second Paper Conference',
+		roleId: 'e2e00000paperrole00000002',
+		singleParticipantId: 'e2e00000papersingle000002'
+	}
+];
 
 export async function seedPaperScanning(db: NodePgDatabase) {
-	const { id: conferenceId } = await upsertConference(db, {
-		id: E2E_PAPER_CONFERENCE_ID,
-		title: 'E2E Paper Scanning Conference',
-		state: 'PREPARATION',
-		nations: {}
-	});
+	await upsertUsers(db, [
+		{
+			...makeSeedUser(),
+			...COMPLETE_PROFILE,
+			id: E2E_PAPER_CARE_ID,
+			givenName: 'E2E',
+			familyName: 'PaperCare'
+		},
+		// adults: their documents have no guardians' consent, their media consent no guardians' part
+		{
+			...makeSeedUser(),
+			...COMPLETE_PROFILE,
+			id: E2E_PAPER_GRACE_ID,
+			givenName: 'Grace',
+			familyName: 'Hopper',
+			birthday: new Date('1990-12-09')
+		},
+		{
+			...makeSeedUser(),
+			...COMPLETE_PROFILE,
+			id: E2E_PAPER_ALAN_ID,
+			givenName: 'Alan',
+			familyName: 'Turing',
+			birthday: new Date('1991-06-23')
+		}
+	]);
+	await db.delete(schema.scannerAccess).where(eq(schema.scannerAccess.userId, E2E_PAPER_CARE_ID));
+	for (const part of PARTS) await seedPart({ db, part });
+}
+
+/** A conference with participant care and one person in it, nothing of whose paper is in yet. */
+async function seedPart({
+	db,
+	part: { userId, conferenceId, title, roleId, singleParticipantId }
+}: {
+	db: NodePgDatabase;
+	part: (typeof PARTS)[number];
+}) {
+	await upsertConference(db, { id: conferenceId, title, state: 'PREPARATION', nations: {} });
 	await db
 		.update(schema.conference)
 		.set({
@@ -40,30 +93,11 @@ export async function seedPaperScanning(db: NodePgDatabase) {
 			termsAndConditionsFileId: null
 		})
 		.where(eq(schema.conference.id, conferenceId));
-
-	await upsertUsers(db, [
-		{
-			...makeSeedUser(),
-			...COMPLETE_PROFILE,
-			id: E2E_PAPER_CARE_ID,
-			givenName: 'E2E',
-			familyName: 'PaperCare'
-		},
-		// an adult: her documents have no guardians' consent, her media consent no guardians' part
-		{
-			...makeSeedUser(),
-			...COMPLETE_PROFILE,
-			id: E2E_PAPER_GRACE_ID,
-			givenName: 'Grace',
-			familyName: 'Hopper',
-			birthday: new Date('1990-12-09')
-		}
-	]);
 	await upsertTeamMember(db, conferenceId, E2E_PAPER_CARE_ID, 'PARTICIPANT_CARE');
 
 	const role = {
 		...makeSeedCustomConferenceRole({ conferenceId }),
-		id: GRACE_ROLE_ID,
+		id: roleId,
 		name: 'E2E Paper Role'
 	};
 	await db
@@ -71,10 +105,10 @@ export async function seedPaperScanning(db: NodePgDatabase) {
 		.values(role)
 		.onConflictDoUpdate({ target: schema.conferenceRole.id, set: role });
 
-	const participantId = await upsertParticipant(db, conferenceId, E2E_PAPER_GRACE_ID);
+	const participantId = await upsertParticipant(db, conferenceId, userId);
 	const single = {
 		...makeSeedSingleParticipant({ conferenceParticipantId: participantId, applied: true }),
-		id: GRACE_SINGLE_PARTICIPANT_ID,
+		id: singleParticipantId,
 		assignedRoleId: role.id
 	};
 	await db
@@ -82,7 +116,6 @@ export async function seedPaperScanning(db: NodePgDatabase) {
 		.values(single)
 		.onConflictDoUpdate({ target: schema.singleParticipant.id, set: single });
 
-	// nothing of her paper in yet
 	await db
 		.update(schema.conferenceParticipant)
 		.set({

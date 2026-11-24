@@ -11,20 +11,17 @@
 		access: {
 			id: string;
 			name: string;
-			username?: string;
+			username: string;
 			lastUsedAt?: Date | null;
 			expiresAt: Date;
 		};
-		/** Whose it is, in a list of several people's. */
-		owner?: string;
-		/** Their own logins only: lets it work for longer. */
-		renewable?: boolean;
+		/** Lets it work for longer. */
+		renewable: boolean;
 	}
 
-	let { access, owner, renewable = false }: Props = $props();
+	let { access, renewable }: Props = $props();
 
 	let revoking = $state(false);
-	const label = $derived(owner ? `${access.name} · ${owner}` : access.name);
 	const expired = $derived(access.expiresAt <= new Date());
 	const lastUsed = $derived(
 		access.lastUsedAt?.toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' })
@@ -52,9 +49,9 @@
 <li class="flex flex-wrap items-center gap-2 px-4 py-2">
 	<i aria-hidden="true" class="ph-duotone ph-printer text-primary text-2xl"></i>
 	<span class="flex min-w-40 grow flex-col">
-		<span class="truncate font-medium">{label}</span>
+		<span class="truncate font-medium">{access.name}</span>
 		<span class="text-base-content/60 text-xs">
-			{#if access.username}<span class="font-mono">{access.username}</span> ·{/if}
+			<span class="font-mono">{access.username}</span> ·
 			{lastUsed ? m.scannerSetupLastUsed({ date: lastUsed }) : m.scannerSetupNeverUsed()} ·
 			<span class={[expired && 'text-error font-semibold']}>
 				{expired ? m.scannerSetupExpired() : m.scannerSetupExpires({ date: until })}
@@ -66,7 +63,7 @@
 			type="button"
 			class="btn btn-ghost btn-sm"
 			onclick={renew}
-			aria-label="{m.scannerSetupRenew()}: {label}"
+			aria-label="{m.scannerSetupRenew()}: {access.name}"
 		>
 			{m.scannerSetupRenew()}
 		</button>
@@ -75,7 +72,7 @@
 		type="button"
 		class="btn btn-ghost btn-sm text-error"
 		onclick={() => (revoking = true)}
-		aria-label="{m.scannerSetupDelete()}: {label}"
+		aria-label="{m.scannerSetupDelete()}: {access.name}"
 	>
 		<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 		{m.scannerSetupDelete()}
@@ -84,7 +81,7 @@
 
 {#if revoking}
 	<ConfirmDeleteModal
-		title={m.scannerSetupRevokeTitle({ name: label })}
+		title={m.scannerSetupRevokeTitle({ name: access.name })}
 		text={m.scannerSetupRevokeConfirm()}
 		onConfirm={revoke}
 		onClose={() => (revoking = false)}

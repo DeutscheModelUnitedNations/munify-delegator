@@ -214,15 +214,16 @@ async function certificate(conference: string) {
  * what the generator drew removed): the contract, the guardians' consent, the three pages of the
  * media consent and the terms, as of 2026. The layout's defaults put every field where these have it.
  */
-const template = (name: string) =>
-	readFileSync(fileURLToPath(new URL(`./templates/${name}.pdf`, import.meta.url)));
+export const applicationTemplate = (
+	name: 'contract' | 'guardianConsent' | 'mediaConsent' | 'termsAndConditions'
+) => readFileSync(fileURLToPath(new URL(`./templates/${name}.pdf`, import.meta.url)));
 
 export async function conferenceTemplatePdfs(conference: string) {
 	return {
-		contract: template('contract'),
-		guardianConsent: template('guardianConsent'),
-		mediaConsent: template('mediaConsent'),
-		termsAndConditions: template('termsAndConditions'),
+		contract: applicationTemplate('contract'),
+		guardianConsent: applicationTemplate('guardianConsent'),
+		mediaConsent: applicationTemplate('mediaConsent'),
+		termsAndConditions: applicationTemplate('termsAndConditions'),
 		certificate: await certificate(conference)
 	};
 }

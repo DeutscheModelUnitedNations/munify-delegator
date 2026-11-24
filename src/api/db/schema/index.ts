@@ -38,7 +38,10 @@ export {
 	agreementState,
 	agreementSource,
 	agreementDetail,
-	scannerAccess
+	scannerAccess,
+	scanDelivery,
+	scanTaskKind,
+	scanTask
 } from './postal';
 export {
 	delegation,

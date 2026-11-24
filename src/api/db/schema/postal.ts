@@ -1,8 +1,19 @@
-import { snakeCase, pgEnum, text, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+	snakeCase,
+	pgEnum,
+	text,
+	timestamp,
+	integer,
+	bigint,
+	jsonb,
+	index,
+	uniqueIndex
+} from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
 import { participantRef } from './participants';
+import { isNull } from 'drizzle-orm';
+import type { PageResult } from '../../../lib/paperScan/intake/problems';
 import { fileRef } from './storedFile';
-import { teamMember } from './team';
 import { user } from './users';
 
 /**
@@ -10,13 +21,8 @@ import { user } from './users';
  * automation read off them, and the logins scanners deliver with.
  */
 
-/** Where a scan came from: dropped in, a watched folder, a scanner's email or its WebDAV upload. */
-export const postalScanSource = pgEnum('postal_scan_source', [
-	'UPLOAD',
-	'FOLDER',
-	'EMAIL',
-	'WEBDAV'
-]);
+/** Where a scan came from: dropped in, a watched folder, or a scanner's WebDAV upload. */
+export const postalScanSource = pgEnum('postal_scan_source', ['UPLOAD', 'FOLDER', 'WEBDAV']);
 
 /**
  * A scanned page of a person's documents. It hangs on their part in the conference and goes with it;
@@ -112,18 +118,18 @@ export const agreementDetail = snakeCase.table(
 );
 
 /**
- * A login a team member's scanner delivers scans with, by email or WebDAV, for their conference.
- * What it delivers counts as theirs while they may manage its participants, and it goes with their
- * place on the team. Only a hash of the password is kept; it is random, so it needs no slow one. No
- * relations, so it stays out of the GraphQL schema (as `slackWorkspace`).
+ * A login somebody's scanner delivers scans with, over WebDAV, into every conference whose participants
+ * they manage: each page says which it is of, and is kept as if they uploaded it. Only a hash of the
+ * password is kept; it is random, so it needs no slow one. No relations, so it stays out of the GraphQL
+ * schema (as `slackWorkspace`).
  */
 export const scannerAccess = snakeCase.table(
 	'scanner_access',
 	{
 		...defaultIdAndTimestamps,
-		teamMemberId: text()
+		userId: text()
 			.notNull()
-			.references(() => teamMember.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		/** What they call the device. */
 		name: text().notNull(),
 		username: text().notNull(),
@@ -134,6 +140,65 @@ export const scannerAccess = snakeCase.table(
 	},
 	(table) => [
 		uniqueIndex('scanner_access_username_key').on(table.username),
-		index('scanner_access_team_member_id_idx').on(table.teamMemberId)
+		index('scanner_access_user_id_idx').on(table.userId)
+	]
+);
+
+/**
+ * A file a scanner delivered that is being taken in (`scanQueue`), stored as it came and as large as it may
+ * be. It may hold pages of anybody, so nobody reads it; its object is no `stored_file` and goes as soon as it
+ * was split into pages. It goes with its owner's account. No relations, so it stays out of the GraphQL schema
+ * (as `scannerAccess`).
+ */
+export const scanDelivery = snakeCase.table(
+	'scan_delivery',
+	{
+		...defaultIdAndTimestamps,
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		/** What the device was called: its login may be revoked while the file waits. */
+		accessName: text().notNull(),
+		fileName: text().notNull(),
+		/** The object's key in the bucket. */
+		key: text().notNull().unique(),
+		size: bigint({ mode: 'number' }).notNull()
+	},
+	(table) => [index('scan_delivery_user_id_idx').on(table.userId)]
+);
+
+/** Splitting a delivered file into pages, taking a page in, and telling what came of them all. */
+export const scanTaskKind = pgEnum('scan_task_kind', ['SPLIT', 'PAGE', 'FINISH']);
+
+/**
+ * What is to be done for a delivered file, each by whoever comes first: it is split, which makes a task of
+ * every page, and once those are done its owner is told. Done tasks stay until then, for what they tell.
+ */
+export const scanTask = snakeCase.table(
+	'scan_task',
+	{
+		...defaultIdAndTimestamps,
+		deliveryId: text()
+			.notNull()
+			.references(() => scanDelivery.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		kind: scanTaskKind().notNull(),
+		/** Which page, from 1; 0 for what is of the whole file. */
+		page: integer().notNull().default(0),
+		/** The page, until it is done; from then on whatever kept it points at it. */
+		fileId: fileRef(),
+		/** The hold of the process at it, which loses it once `dueAt` passed. */
+		heldBy: text(),
+		/** How often it was begun. */
+		attempts: integer().notNull().default(0),
+		/** From then on it is to be done: later while a process has it, or after it failed. */
+		dueAt: timestamp({ precision: 3 }).notNull(),
+		doneAt: timestamp({ precision: 3 }),
+		/** What there is to tell of it, once done (`PageResult`). */
+		result: jsonb().$type<Omit<PageResult, 'page'>>()
+	},
+	(table) => [
+		uniqueIndex('scan_task_delivery_id_kind_page_key').on(table.deliveryId, table.kind, table.page),
+		index('scan_task_due_at_idx').on(table.dueAt).where(isNull(table.doneAt)),
+		index('scan_task_file_id_idx').on(table.fileId)
 	]
 );

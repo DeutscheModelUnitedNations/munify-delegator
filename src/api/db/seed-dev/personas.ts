@@ -206,6 +206,10 @@ const conferenceStatuses: Statuses = {
 	'dev-supervisor': doneAndPresent({ accessCardId: 'CARD-0005' })
 };
 
+/** The personas' statuses in a conference of this state. */
+export const personaStatuses = (state: ConferenceSeed['plan']['conference']['state']) =>
+	state === 'PREPARATION' ? preparationStatuses : conferenceStatuses;
+
 /** Whose status rows the tables above may describe, in a typed order to walk them in. */
 const STATUS_HOLDERS: DevAccountSub[] = [
 	'dev-head-delegate',
@@ -377,7 +381,7 @@ function addPersonaStatuses({ cs, nsaPartner }: { cs: ConferenceSeed; nsaPartner
 	if (!cs.plan.with.participantStatus) return;
 
 	const preparing = cs.plan.conference.state === 'PREPARATION';
-	const statuses = preparing ? preparationStatuses : conferenceStatuses;
+	const statuses = personaStatuses(cs.plan.conference.state);
 	for (const userId of STATUS_HOLDERS) {
 		const status = statuses[userId];
 		if (!status) continue;

@@ -2,10 +2,12 @@ import { client } from '#lib/api/rumbleClient/client';
 import type { PostalscansourceEnum } from '#lib/api/rumbleClient/client';
 import { uploadFile } from '#lib/api/uploadFile';
 import { m } from '#lib/paraglide/messages';
-import { readPages } from '#lib/paperScan/intake/pages';
-import { describeScanProblem } from '#lib/paperScan/intake/people';
+import { readScanPage } from '#lib/paperScan/intake/pages';
+import { describeScanProblem } from '#lib/paperScan/intake/problems';
 import { keptOutcomeSchema, type KeptOutcome } from '#lib/paperScan/intake/rescan';
-import { takeScan, type KeepArgs } from '#lib/paperScan/intake/takeScan';
+import { blobSource } from '#lib/paperScan/intake/source';
+import type { KeepArgs } from '#lib/paperScan/intake/takePage';
+import { takeScan } from '#lib/paperScan/intake/takeScan';
 import { browserPlatform, checkCode } from './browserScan';
 
 /**
@@ -17,12 +19,12 @@ export async function keepScan({
 		userId,
 		page: { code, readings },
 		contentKey,
-		cut
+		file: { name, type, bytes }
 	},
 	source,
 	conferenceId
 }: {
-	args: Pick<KeepArgs<unknown>, 'userId' | 'page' | 'contentKey' | 'cut'>;
+	args: Pick<KeepArgs<unknown>, 'userId' | 'page' | 'contentKey' | 'file'>;
 	source: PostalscansourceEnum;
 	conferenceId: string;
 }): Promise<KeptOutcome> {
@@ -37,7 +39,6 @@ export async function keepScan({
 	const known = await take();
 	if (known) return known;
 
-	const { name, type, bytes } = await cut();
 	const fileId = await uploadFile({
 		file: new File([bytes], name, { type }),
 		target: { kind: 'postalScan', field: 'scan', conferenceId }
@@ -62,13 +63,13 @@ export async function uploadScanFor({
 	userId: string;
 }) {
 	const { people, problems } = await takeScan({
-		file: { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) },
-		conferenceId,
-		owner: userId,
+		file: { name: file.name, source: blobSource(file) },
+		conferenceIds: new Set([conferenceId]),
+		owner: { userId, conferenceId },
 		ports: {
-			read: (scan) => readPages({ scan, platform: browserPlatform }),
+			read: (scan) => readScanPage({ scan, platform: browserPlatform }),
 			check: checkCode,
-			participants: async (userIds) => new Map(userIds.map((id) => [id, true])),
+			participant: async () => true,
 			keep: async (args) => ({ outcome: await keepScan({ args, source: 'UPLOAD', conferenceId }) })
 		}
 	});

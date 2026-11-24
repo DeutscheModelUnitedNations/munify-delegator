@@ -19,11 +19,6 @@ const numberOr = (fallback: number) =>
 		.transform((value) => (value === undefined || value === '' ? fallback : Number(value)))
 		.pipe(z.number());
 
-/** A port, or none. */
-const optionalPort = unlessEmpty(
-	z.string().transform(Number).pipe(z.number().int().min(1).max(65535)).optional()
-);
-
 /**
  * A variable that must be set when the app runs, but not while SvelteKit analyses it during
  * `vite build`, which happens without the deployment's environment.
@@ -146,23 +141,6 @@ export const variables = defineEnvVars({
 	SMTP_FROM_ADDRESS: { schema: z.string().email().default('noreply@munify.cloud') },
 	SMTP_FROM_NAME: { schema: z.string().default('MUNify Delegator') },
 
-	// The mailbox scanners email postal registration scans to (`#api/handlers/postalScan/smtpReceiver`):
-	// the port the app listens on (unset: none), and the host and port people type into a scanner.
-	SCANNER_SMTP_PORT: {
-		schema: optionalPort
-	},
-	SCANNER_SMTP_HOST: { schema: unlessEmpty(z.string().optional()) },
-	SCANNER_SMTP_PUBLIC_PORT: {
-		schema: optionalPort
-	},
-	// `starttls` and `implicit` need the certificate; `proxy`: TLS ends in front of the app, and the
-	// port must be reachable for that proxy only.
-	SCANNER_SMTP_TLS: {
-		schema: unlessEmpty(z.enum(['starttls', 'implicit', 'proxy']).default('starttls'))
-	},
-	// Files holding the certificate chain and its key, PEM.
-	SCANNER_SMTP_TLS_CERT: { schema: unlessEmpty(z.string().optional()) },
-	SCANNER_SMTP_TLS_KEY: { schema: unlessEmpty(z.string().optional()) },
 	// The app's public address, for links in what is sent outside a request (a scanner's delivery).
 	APP_URL: { schema: unlessEmpty(z.string().url().optional()) },
 

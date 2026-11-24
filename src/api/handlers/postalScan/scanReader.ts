@@ -1,26 +1,49 @@
-import { runComputeWorker } from '#api/services/computeWorker';
 import type { ReadPage, ScanContent } from '#lib/paperScan/intake/pages';
+import { createScanProcess, type ScanProcess } from './scanProcess';
 
-/** A file's pages as the worker answers them, or why it could not be opened. */
-export type ScanReading = { pages: ReadPage[] } | { failed: string };
+/** What the reading process is sent: a page. */
+export type ReaderQuestion = ScanContent;
+/** What it read of it, and whether it took too much memory to go on. */
+export interface ReaderAnswer {
+	page: ReadPage;
+	leaving: boolean;
+}
 
-/** Two hundred pages take a few minutes. */
-const TIMEOUT_MS = 5 * 60_000;
-/** In MB: a page at 300 dpi is 35, and several are held at once. */
-const MAX_MEMORY_MB = 1024;
+/** A process nobody asks anything for so long is let go. */
+const IDLE_MS = 30_000;
 
 /**
- * Reads a delivered scan on a worker thread, so a stack of pages does not block the event loop.
- * Throws for a file that cannot be opened.
+ * Reads pages in a process of their own, kept for as many as it has memory for. Asked one page at a time;
+ * throws `ProcessEndedError` for a page that ends the process.
  */
-export async function readScan(scan: ScanContent): Promise<ReadPage[]> {
-	const reading = await runComputeWorker<ScanReading>({
-		source: ['postalScan', 'scanReader.worker.ts'],
-		bundle: 'scanReader',
-		data: scan,
-		timeoutMs: TIMEOUT_MS,
-		resourceLimits: { maxOldGenerationSizeMb: MAX_MEMORY_MB }
-	});
-	if ('failed' in reading) throw new Error(reading.failed);
-	return reading.pages;
+export function createPageReader() {
+	let process: ScanProcess<ReaderQuestion, ReaderAnswer> | undefined;
+	let idle: ReturnType<typeof setTimeout> | undefined;
+
+	function stop() {
+		clearTimeout(idle);
+		process?.stop();
+		process = undefined;
+	}
+
+	return {
+		async read(scan: ScanContent): Promise<ReadPage> {
+			clearTimeout(idle);
+			if (process?.ended) process = undefined;
+			process ??= createScanProcess<ReaderQuestion, ReaderAnswer>('scanReader');
+			process.tell(scan);
+			try {
+				const { page, leaving } = await process.next();
+				if (leaving) process = undefined;
+				return page;
+			} catch (error) {
+				stop();
+				throw error;
+			} finally {
+				idle = setTimeout(stop, IDLE_MS);
+				idle.unref();
+			}
+		},
+		stop
+	};
 }

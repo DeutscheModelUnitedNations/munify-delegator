@@ -4237,9 +4237,9 @@ type Mutation {
   ): Roleapplication!
 
   """
-  Makes a scanner login of the caller in the conference, with a password answered this once. What a scanner delivers with it counts as theirs, and they are told when it cannot be matched. FORBIDDEN unless they manage its participants; CONFLICT once they have too many.
+  Makes a scanner login of the caller, with a password answered this once. What a scanner delivers with it counts as theirs, and they are told when it cannot be matched. FORBIDDEN unless they manage the participants of some conference; CONFLICT once they have too many.
   """
-  createScannerAccess(conferenceId: ID!, name: String!): NewScannerAccess!
+  createScannerAccess(name: String!): NewScannerAccess!
 
   """
   Registers the caller as a single participant applying for a custom role, with their own school. An existing registration in the conference that is not sent in yet is updated instead. CONFLICT outside the registration window (for a new one), when already sent in, or when the caller takes part in the conference otherwise.
@@ -4430,7 +4430,7 @@ type Mutation {
   deleteRoleApplication(id: ID!): Boolean!
 
   """
-  Removes a scanner login: the scanner delivers nothing more. The caller's own, or any of a conference they manage (project management).
+  Removes one of the caller's scanner logins: the scanner delivers nothing more.
   """
   deleteScannerAccess(id: ID!): Boolean!
 
@@ -5588,6 +5588,16 @@ type MyReviewStats {
   totalReviews: Int!
 }
 
+"""The caller's scanners."""
+type MyScanners {
+  accesses: [ScannerAccess!]!
+
+  """
+  Whether they manage the participants of some conference (project management and participant care), so a scanner of theirs could deliver.
+  """
+  allowed: Boolean!
+}
+
 """
 One table of the nametag handout: a run of consecutive letters of the nation names. Bins nobody is sent to have no range.
 """
@@ -6459,7 +6469,6 @@ input PostalscanWhereInputArgument {
 }
 
 enum PostalscansourceEnum {
-  EMAIL
   FOLDER
   UPLOAD
   WEBDAV
@@ -6953,9 +6962,9 @@ type Query {
   myReviewerSnippets: [Reviewersnippet!]!
 
   """
-  The caller's scanner logins in the conference, which scanners deliver postal registration scans with by email or WebDAV. FORBIDDEN unless they manage its participants (project management and participant care).
+  The caller's scanner logins, which scanners deliver postal registration scans with over WebDAV, into every conference whose participants they manage.
   """
-  myScannerAccesses(conferenceId: ID!): [ScannerAccess!]!
+  myScanners: MyScanners!
 
   """
   Whether the caller's account address is known in the Slack workspace a conference picked, which is how Slack messages find them; null while it has none. NOT_FOUND when they are not on that team.
@@ -7250,9 +7259,6 @@ type Query {
   """
   slackWorkspaces(conferenceId: ID): [SlackWorkspaceInfo!]!
 
-  """Where scanners send their emails; null when this instance takes none."""
-  smtpDelivery: SmtpDelivery
-
   """
   Whether supervisors may sign themselves up to the conference right now: in every stage until it is over. Readable by anyone, so the supervisor page can say so to someone who cannot read the conference; it tells nothing else about it. False for an unknown conference.
   """
@@ -7308,11 +7314,6 @@ type Query {
 
   """Count all teamMembers"""
   teamMembersCount(where: TeammemberWhereInputArgument): Int!
-
-  """
-  Every scanner login of the conference's team, with whose it is. FORBIDDEN unless the caller manages the conference (project management).
-  """
-  teamScannerAccesses(conferenceId: ID!): [TeamScannerAccess!]!
 
   """Get a single user by ID"""
   user(id: ID!): User!
@@ -8272,15 +8273,6 @@ type SlackWorkspaceInfo {
 
   """Slack's own name of the workspace."""
   slackTeamName: String!
-}
-
-"""Where scanners send their emails."""
-type SmtpDelivery {
-  host: String!
-  port: Int!
-
-  """`TLS` from the start, or `STARTTLS`."""
-  security: String!
 }
 
 enum SortingParameter {
@@ -9276,9 +9268,9 @@ type Subscription {
   myPaperReviewDrafts(conferenceId: ID!): [Paperreviewdraft!]!
 
   """
-  The caller's scanner logins in the conference, which scanners deliver postal registration scans with by email or WebDAV. FORBIDDEN unless they manage its participants (project management and participant care).
+  The caller's scanner logins, which scanners deliver postal registration scans with over WebDAV, into every conference whose participants they manage.
   """
-  myScannerAccesses(conferenceId: ID!): [ScannerAccess!]!
+  myScanners: MyScanners!
 
   """Get a single nation by ID"""
   nation(id: ID!): Nation!
@@ -9416,11 +9408,6 @@ type Subscription {
 
   """Count all teamMembers"""
   teamMembersCount(where: TeammemberWhereInputArgument): Int!
-
-  """
-  Every scanner login of the conference's team, with whose it is. FORBIDDEN unless the caller manages the conference (project management).
-  """
-  teamScannerAccesses(conferenceId: ID!): [TeamScannerAccess!]!
 
   """Get a single user by ID"""
   user(id: ID!): User!
@@ -9810,16 +9797,6 @@ enum TeamInvitationEmailStatus {
   EXISTS
   NEW_USER
   PENDING_INVITATION
-}
-
-"""A scanner login of somebody on the team, for project management."""
-type TeamScannerAccess {
-  expiresAt: DateTime!
-  id: ID!
-  lastUsedAt: DateTime
-  name: String!
-  ownerFamilyName: String
-  ownerGivenName: String
 }
 
 type Teamfunction {

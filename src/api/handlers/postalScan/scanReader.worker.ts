@@ -2,16 +2,18 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parentPort, workerData } from 'node:worker_threads';
 import { createCanvas, loadImage, type Canvas } from '@napi-rs/canvas';
 import { prepareZXingModule, readBarcodes } from 'zxing-wasm/reader';
-import { readPages, type ScanContent, type ScanPlatform } from '#lib/paperScan/intake/pages';
-import type { ScanReading } from './scanReader';
+import { readScanPage, type ScanPlatform } from '#lib/paperScan/intake/pages';
+import type { ReaderAnswer, ReaderQuestion } from './scanReader';
+import { createInbox, runProcess, say, tookTooMuch } from './scanProcessWorker';
 
 /**
- * Reads one delivered scan off the main thread, started by `./scanReader`: the shared reading
- * (`#lib/paperScan/intake/pages`) on Node's canvas, pdf.js and code reader. Development runs this
- * file directly, production the bundle `bun run build:compute` writes to `build/compute/`.
+ * Reads pages of delivered scans in a process of its own (`./scanReader`), one after the other: the shared
+ * reading (`#lib/paperScan/intake/pages`) on Node's canvas, pdf.js and code reader. Drawing a page leaks
+ * native memory no garbage collection reaches (some 80 MB at 300 dpi), so it ends once it took too much.
+ * Development runs this file directly, production the bundle `bun run build:compute` writes to
+ * `build/compute/`.
  */
 const require = createRequire(import.meta.url);
 
@@ -23,16 +25,13 @@ const codeReader = bundled
 	? join(copied, 'zxing_reader.wasm')
 	: require.resolve('zxing-wasm/reader/zxing_reader.wasm');
 
-const scan: ScanContent = workerData;
-
-/** More pages than this are no application documents, whoever scanned them. */
-const MAX_PAGES = 200;
-
-prepareZXingModule({
+/** Loaded first: failing that is no page's fault. */
+const codeReaderLoaded = prepareZXingModule({
 	overrides: {
 		// by default it would be fetched from a CDN
 		wasmBinary: new Uint8Array(readFileSync(codeReader)).buffer
-	}
+	},
+	fireImmediately: true
 });
 
 const platform: ScanPlatform<Canvas> = {
@@ -59,6 +58,10 @@ const platform: ScanPlatform<Canvas> = {
 		};
 	},
 	createCanvas: ({ width, height }) => createCanvas(width, height),
+	releaseCanvas(canvas) {
+		canvas.width = 0;
+		canvas.height = 0;
+	},
 	// TYPE-SAFETY-EXCEPTION: pdf.js renders into any canvas with a 2D context; it is typed for the
 	// browser's, and Node's (@napi-rs/canvas) is the one it uses there.
 	forPdf: (canvas) => canvas as unknown as HTMLCanvasElement,
@@ -79,12 +82,14 @@ const platform: ScanPlatform<Canvas> = {
 	}
 };
 
-async function run(): Promise<ScanReading> {
-	try {
-		return { pages: await readPages({ scan, platform, maxPages: MAX_PAGES }) };
-	} catch (error) {
-		return { failed: error instanceof Error ? error.message : String(error) };
-	}
-}
+const nextQuestion = createInbox<ReaderQuestion>();
 
-void run().then((reading) => parentPort?.postMessage(reading));
+runProcess(async () => {
+	await codeReaderLoaded;
+	for (;;) {
+		const page = await readScanPage({ scan: await nextQuestion(), platform });
+		const leaving = tookTooMuch();
+		await say({ page, leaving } satisfies ReaderAnswer);
+		if (leaving) return;
+	}
+});

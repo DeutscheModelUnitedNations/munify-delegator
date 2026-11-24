@@ -1,29 +1,8 @@
-import { m } from '#lib/paraglide/messages';
 import type { PaperField } from '../fields';
 import type { FieldReading } from '../readPaper';
 import { fieldsOfCode } from '../readScan';
 import type { SignedCodeCheck } from '#lib/signedCode/signedCode';
 import type { ReadPage } from './pages';
-
-/** Why a page (0: the whole file) came to nothing, or not to all it could. */
-export type ScanProblemReason =
-	| 'noCode'
-	| 'otherCode'
-	| 'otherPerson'
-	| 'notRegistered'
-	| 'unreadable'
-	| 'differs'
-	| 'fileUnreadable'
-	| 'fileTypeUnknown'
-	| 'fileTooLarge';
-
-/** One thing a delivery's owner is told about. */
-export interface ScanProblem {
-	file: string;
-	/** From 1; empty for the whole file. */
-	pages: number[];
-	reason: ScanProblemReason;
-}
 
 /** A person's page: its number in the file (from 1), its code, and the fields on it, read. */
 export interface PersonPage {
@@ -35,9 +14,10 @@ export interface PersonPage {
 	readings: FieldReading[] | null;
 }
 
-/** A person's pages of one file. */
+/** A person's pages of one file, of their documents in one conference. */
 export interface PersonPages {
 	userId: string;
+	conferenceId: string;
 	pages: PersonPage[];
 }
 
@@ -52,14 +32,20 @@ export const unreadableOf = ({ pages }: PersonPages): number[] =>
 /** Checks a code's signature. */
 export type CheckCode = (text: string) => Promise<SignedCodeCheck | null>;
 
-/** The person a page is of: its first code that is ours, for the conference's documents. */
+/** Whom a person said a file is of. */
+export interface ScanOwner {
+	userId: string;
+	conferenceId: string;
+}
+
+/** The person a page is of: its first code that is ours, for documents of one of the conferences. */
 async function personOf({
 	page,
-	conferenceId,
+	conferenceIds,
 	check
 }: {
 	page: ReadPage;
-	conferenceId: string;
+	conferenceIds: ReadonlySet<string>;
 	check: CheckCode;
 }) {
 	let ours = false;
@@ -68,8 +54,9 @@ async function personOf({
 		ours ||= checked !== null;
 		if (!checked?.valid) continue;
 		const { claims, code } = checked;
-		if (claims.kind === 'print' && claims.conferenceId === conferenceId) {
-			return { userId: claims.userId, code, fields: fieldsOfCode(code), readings };
+		if (claims.kind === 'print' && conferenceIds.has(claims.conferenceId)) {
+			const { userId, conferenceId } = claims;
+			return { userId, conferenceId, code, fields: fieldsOfCode(code), readings };
 		}
 	}
 	return ours ? 'otherCode' : 'noCode';
@@ -78,54 +65,26 @@ async function personOf({
 const NO_CODE = { code: null, fields: [], readings: null };
 
 /**
- * The people a file's pages belong to, in the order they first come up, and the pages that are
- * nobody's: without a code of ours (an empty back is left out), or with one of another kind or
- * conference.
- * With an `owner`, who a person said the file is of, a page without a code is theirs.
+ * Whose a page is, told by its own code whatever the pages around it are, or why it is nobody's: no document
+ * (`blank`, `noCode`), of another kind or conference (`otherCode`), or not readable. With an `owner`, who a
+ * person said it is of, a page without a code is theirs.
  */
-export async function peopleOfPages({
-	pages,
-	conferenceId,
+export async function placePage({
+	page,
+	conferenceIds,
 	check,
 	owner
 }: {
-	pages: readonly ReadPage[];
-	conferenceId: string;
+	page: ReadPage;
+	/** The conferences pages are taken of. */
+	conferenceIds: ReadonlySet<string>;
 	check: CheckCode;
-	owner?: string;
-}) {
-	const people = new Map<string, PersonPages>();
-	const stray: Record<'noCode' | 'otherCode', number[]> = { noCode: [], otherCode: [] };
-	for (const page of pages) {
-		const found = await personOf({ page, conferenceId, check });
-		if (page.blank && typeof found === 'string') continue;
-		const person = found === 'noCode' && owner ? { ...NO_CODE, userId: owner } : found;
-		if (typeof person === 'string') {
-			stray[person].push(page.page);
-			continue;
-		}
-		const { userId, ...read } = person;
-		const theirs = people.get(userId) ?? { userId, pages: [] };
-		theirs.pages.push({ page: page.page, ...read });
-		people.set(userId, theirs);
-	}
-	return { people: [...people.values()], stray };
-}
-
-const REASONS: Record<ScanProblemReason, () => string> = {
-	noCode: () => m.scanProblemNoCode(),
-	otherCode: () => m.scanProblemOtherCode(),
-	otherPerson: () => m.scanProblemOtherPerson(),
-	notRegistered: () => m.scanProblemNotRegistered(),
-	unreadable: () => m.scanProblemUnreadable(),
-	differs: () => m.scanProblemDiffers(),
-	fileUnreadable: () => m.scanProblemFileUnreadable(),
-	fileTypeUnknown: () => m.scanProblemFileType(),
-	fileTooLarge: () => m.scanProblemFileTooLarge()
-};
-
-/** What a person is told of a problem, in the locale it is asked in. */
-export function describeScanProblem({ file, pages, reason }: ScanProblem) {
-	const where = pages.length === 0 ? file : m.scanProblemPages({ file, pages: pages.join(', ') });
-	return `${where}: ${REASONS[reason]()}`;
+	owner?: ScanOwner;
+}): Promise<(PersonPage & ScanOwner) | 'blank' | 'noCode' | 'otherCode' | 'pageUnreadable'> {
+	const found = await personOf({ page, conferenceIds, check });
+	if (typeof found !== 'string') return { ...found, page: page.page };
+	if (page.blank) return 'blank';
+	if (found === 'otherCode') return 'otherCode';
+	if (owner !== undefined) return { ...NO_CODE, ...owner, page: page.page };
+	return page.error === undefined ? 'noCode' : 'pageUnreadable';
 }

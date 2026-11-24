@@ -54,7 +54,7 @@ export function addSlackWorkspaces(batch: SeedBatch) {
 
 /**
  * The team's notification choices where there are inboxes to answer: participant care hears of
- * its inbox on Slack only and of reports by mail only, the chair (`dev-team-member`) gets no mails
+ * its inbox on Slack only, of reports by mail only and of scans nobody was found for by mail only, the chair (`dev-team-member`) gets no mails
  * about their committee and no Slack about the trusted persons' shared chat, the consultant
  * (`dev-team-reviewer`) no Slack about the second committee. Everything else is the default.
  * `dev-team-content-lead` switched the old unread-messages mail off (`addMessagingAccountSettings`),
@@ -90,6 +90,7 @@ export function addNotifications(cs: ConferenceSeed) {
 		});
 	choice({ userId: 'dev-team-care', topic: 'PARTICIPANT_CARE', channel: 'EMAIL', enabled: false });
 	choice({ userId: 'dev-team-care', topic: 'CHAT_REPORT', channel: 'SLACK', enabled: false });
+	choice({ userId: 'dev-team-care', topic: 'SCAN_PROBLEM', channel: 'SLACK', enabled: false });
 	choice({
 		userId: 'dev-team-member',
 		topic: 'COMMITTEE_INBOX',

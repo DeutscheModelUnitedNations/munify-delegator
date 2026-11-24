@@ -6,56 +6,43 @@ export class IntakeBusyError extends Error {
 	}
 }
 
-/** Who delivers, as the gate shares its places out. */
-export interface IntakeKeys {
-	conferenceId: string;
-	teamMemberId: string;
-}
-
 /**
- * Lets deliveries in: only so many at once are read into memory (`places`), of them only so many of
- * one conference and of one person, so nobody keeps the others out. One without a place waits before
- * anything of it is read, in the order they came, and is turned away after `patienceMs`. Those let in
- * are worked on one at a time.
+ * Lets deliveries in: only so many at once are read into memory (`places`), of them only so many of one
+ * person, so nobody keeps the others out. One without a place waits before anything of it is read, in the
+ * order they came, and is turned away after `patienceMs`.
  */
 export function createIntakeGate({
 	places,
-	perConference,
-	perMember,
+	perPerson,
 	patienceMs
 }: {
 	places: number;
-	perConference: number;
-	perMember: number;
+	perPerson: number;
 	patienceMs: number;
 }) {
-	const inside: IntakeKeys[] = [];
-	const waiting: { keys: IntakeKeys; enter: () => void }[] = [];
-	let last: Promise<unknown> = Promise.resolve();
+	const inside: string[] = [];
+	const waiting: { userId: string; enter: () => void }[] = [];
 
-	const count = (matches: (keys: IntakeKeys) => boolean) => inside.filter(matches).length;
-	const hasPlace = ({ conferenceId, teamMemberId }: IntakeKeys) =>
-		inside.length < places &&
-		count((keys) => keys.conferenceId === conferenceId) < perConference &&
-		count((keys) => keys.teamMemberId === teamMemberId) < perMember;
+	const hasPlace = (userId: string) =>
+		inside.length < places && inside.filter((other) => other === userId).length < perPerson;
 
 	function admitWaiting() {
 		for (const next of [...waiting]) {
-			if (!hasPlace(next.keys)) continue;
+			if (!hasPlace(next.userId)) continue;
 			waiting.splice(waiting.indexOf(next), 1);
-			inside.push(next.keys);
+			inside.push(next.userId);
 			next.enter();
 		}
 	}
 
-	async function enter(keys: IntakeKeys) {
-		if (hasPlace(keys)) {
-			inside.push(keys);
+	async function enter(userId: string) {
+		if (hasPlace(userId)) {
+			inside.push(userId);
 			return;
 		}
 		await new Promise<void>((resolve, reject) => {
 			const entry = {
-				keys,
+				userId,
 				enter: () => {
 					clearTimeout(timer);
 					resolve();
@@ -69,36 +56,22 @@ export function createIntakeGate({
 		});
 	}
 
-	function leave(keys: IntakeKeys) {
-		inside.splice(inside.indexOf(keys), 1);
+	function leave(userId: string) {
+		inside.splice(inside.indexOf(userId), 1);
 		admitWaiting();
 	}
 
 	return {
 		/**
-		 * Takes in a delivery: `receive` reads it once it has a place, `work` runs in turn. Throws
-		 * `IntakeBusyError` when there is no place for it in time.
+		 * Receives a delivery: `work` reads it once it has a place. Throws `IntakeBusyError` when there is
+		 * no place for it in time.
 		 */
-		async run<D, T>({
-			keys,
-			receive,
-			work
-		}: {
-			keys: IntakeKeys;
-			receive: () => Promise<D>;
-			work: (delivery: D) => Promise<T>;
-		}): Promise<T> {
-			// of its own, so it is this delivery that leaves, not another of the same person
-			const own = { ...keys };
-			await enter(own);
+		async run<T>({ userId, work }: { userId: string; work: () => Promise<T> }): Promise<T> {
+			await enter(userId);
 			try {
-				const delivery = await receive();
-				const done = last.then(() => work(delivery));
-				// the next one runs whether or not this one failed
-				last = done.catch(() => undefined);
-				return await done;
+				return await work();
 			} finally {
-				leave(own);
+				leave(userId);
 			}
 		}
 	};

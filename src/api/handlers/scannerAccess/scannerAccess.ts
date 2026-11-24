@@ -1,20 +1,18 @@
 import { schemaBuilder } from '#api/rumble';
 import { scannerAccessPubsub, teamMemberPubsub } from '#api/pubsub';
-import { smtpDelivery } from '#api/handlers/postalScan/smtpConfig';
 import {
 	assertCanCreateScannerAccess,
 	assertCanDeleteScannerAccess,
 	assertCanRenewScannerAccess,
-	assertCanSeeTeamScannerAccesses,
-	assertOwnScannerTeamMember
+	assertOwnScannerAccesses,
+	canUseScanners
 } from './scannerAccessPermissions';
 import {
 	createScannerAccess,
 	deleteScannerAccess,
 	renewScannerAccess,
 	scannerAccessesOf,
-	scannerNameSchema,
-	teamScannerAccesses
+	scannerNameSchema
 } from './scannerAccessService';
 
 const ScannerAccessRef = schemaBuilder.simpleObject('ScannerAccess', {
@@ -32,18 +30,6 @@ const ScannerAccessRef = schemaBuilder.simpleObject('ScannerAccess', {
 	})
 });
 
-const TeamScannerAccessRef = schemaBuilder.simpleObject('TeamScannerAccess', {
-	description: 'A scanner login of somebody on the team, for project management.',
-	fields: (t) => ({
-		id: t.id(),
-		name: t.string(),
-		ownerGivenName: t.string({ nullable: true }),
-		ownerFamilyName: t.string({ nullable: true }),
-		lastUsedAt: t.field({ type: 'DateTime', nullable: true }),
-		expiresAt: t.field({ type: 'DateTime' })
-	})
-});
-
 const NewScannerAccessRef = schemaBuilder.simpleObject('NewScannerAccess', {
 	description: 'A login just made, with its password, which is shown this once.',
 	fields: (t) => ({
@@ -54,60 +40,38 @@ const NewScannerAccessRef = schemaBuilder.simpleObject('NewScannerAccess', {
 	})
 });
 
-const SmtpDeliveryRef = schemaBuilder.simpleObject('SmtpDelivery', {
-	description: 'Where scanners send their emails.',
+const MyScannersRef = schemaBuilder.simpleObject('MyScanners', {
+	description: "The caller's scanners.",
 	fields: (t) => ({
-		host: t.string(),
-		port: t.int(),
-		security: t.string({ description: '`TLS` from the start, or `STARTTLS`.' })
+		allowed: t.boolean({
+			description:
+				'Whether they manage the participants of some conference (project management and participant care), so a scanner of theirs could deliver.'
+		}),
+		accesses: t.field({ type: [ScannerAccessRef] })
 	})
 });
 
-type Subscriptions = Parameters<typeof scannerAccessPubsub.registerOnInstance>[0]['instance'];
-
-/** Makes a field hear of every change of a login, and of who is on a team. */
-function listenToAccesses(instance: Subscriptions) {
-	for (const table of [scannerAccessPubsub, teamMemberPubsub]) {
-		for (const action of ['created', 'removed', 'updated'] as const) {
-			table.registerOnInstance({ instance, action });
-		}
-	}
-}
-
 schemaBuilder.queryFields((t) => ({
-	myScannerAccesses: t.field({
+	myScanners: t.field({
 		description:
-			"The caller's scanner logins in the conference, which scanners deliver postal registration scans with by email or WebDAV. FORBIDDEN unless they manage its participants (project management and participant care).",
-		type: [ScannerAccessRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
+			"The caller's scanner logins, which scanners deliver postal registration scans with over WebDAV, into every conference whose participants they manage.",
+		type: MyScannersRef,
 		smartSubscription: true,
-		subscribe: listenToAccesses,
-		resolve: async (_root, { conferenceId }, ctx) => {
-			const { teamMemberId } = await assertOwnScannerTeamMember({ ctx, conferenceId });
-			return scannerAccessesOf(teamMemberId);
-		}
-	}),
-
-	teamScannerAccesses: t.field({
-		description:
-			"Every scanner login of the conference's team, with whose it is. FORBIDDEN unless the caller manages the conference (project management).",
-		type: [TeamScannerAccessRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		smartSubscription: true,
-		subscribe: listenToAccesses,
-		resolve: async (_root, { conferenceId }, ctx) => {
-			await assertCanSeeTeamScannerAccesses({ ctx, conferenceId });
-			return teamScannerAccesses(conferenceId);
-		}
-	}),
-
-	smtpDelivery: t.field({
-		description: 'Where scanners send their emails; null when this instance takes none.',
-		type: SmtpDeliveryRef,
-		nullable: true,
-		resolve: (_root, _args, ctx) => {
-			ctx.mustBeLoggedIn();
-			return smtpDelivery();
+		// they are no rows of their own: any change of a login, and of who is on a team
+		subscribe: (instance) => {
+			for (const table of [scannerAccessPubsub, teamMemberPubsub]) {
+				for (const action of ['created', 'removed', 'updated'] as const) {
+					table.registerOnInstance({ instance, action });
+				}
+			}
+		},
+		resolve: async (_root, _args, ctx) => {
+			const { userId } = assertOwnScannerAccesses(ctx);
+			const [allowed, accesses] = await Promise.all([
+				canUseScanners(ctx),
+				scannerAccessesOf(userId)
+			]);
+			return { allowed, accesses };
 		}
 	})
 }));
@@ -115,15 +79,14 @@ schemaBuilder.queryFields((t) => ({
 schemaBuilder.mutationFields((t) => ({
 	createScannerAccess: t.field({
 		description:
-			'Makes a scanner login of the caller in the conference, with a password answered this once. What a scanner delivers with it counts as theirs, and they are told when it cannot be matched. FORBIDDEN unless they manage its participants; CONFLICT once they have too many.',
+			'Makes a scanner login of the caller, with a password answered this once. What a scanner delivers with it counts as theirs, and they are told when it cannot be matched. FORBIDDEN unless they manage the participants of some conference; CONFLICT once they have too many.',
 		type: NewScannerAccessRef,
 		args: {
-			conferenceId: t.arg.id({ required: true }),
 			name: t.arg.string({ required: true }).validate(scannerNameSchema)
 		},
-		resolve: async (_root, { conferenceId, name }, ctx) => {
-			const { teamMemberId } = await assertCanCreateScannerAccess({ ctx, conferenceId });
-			return createScannerAccess({ teamMemberId, name });
+		resolve: async (_root, { name }, ctx) => {
+			const { userId } = await assertCanCreateScannerAccess(ctx);
+			return createScannerAccess({ userId, name });
 		}
 	}),
 
@@ -139,8 +102,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteScannerAccess: t.field({
-		description:
-			"Removes a scanner login: the scanner delivers nothing more. The caller's own, or any of a conference they manage (project management).",
+		description: "Removes one of the caller's scanner logins: the scanner delivers nothing more.",
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, { id }, ctx) => {

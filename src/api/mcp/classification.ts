@@ -282,12 +282,8 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: ['id', 'lastUsedAt', 'expiresAt'],
 		redacted: ['name', 'username']
 	},
-	TeamScannerAccess: {
-		visible: ['id', 'lastUsedAt', 'expiresAt'],
-		redacted: ['name', 'ownerGivenName', 'ownerFamilyName']
-	},
+	MyScanners: { visible: ['allowed'] },
 	NewScannerAccess: { visible: ['id'], redacted: ['name', 'username', 'password'] },
-	SmtpDelivery: { visible: ['host', 'port', 'security'] },
 	SlackWorkspaceInfo: { visible: ['id', 'name', 'slackTeamName', 'conferenceCount'] },
 	Chatmessage: {
 		visible: [

@@ -1,23 +1,23 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
+	import { resolve } from '$app/paths';
 	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
-	import Modal from '#lib/components/Modal.svelte';
-	import LoadBoundary from '#lib/components/LoadBoundary.svelte';
 	import { browserPlatform, checkCode } from '#lib/components/postal/browserScan';
 	import { keepScan } from '#lib/components/postal/uploadScan';
-	import { readPages } from '#lib/paperScan/intake/pages';
+	import { readScanPage } from '#lib/paperScan/intake/pages';
 	import {
 		describeScanProblem,
 		type ScanProblem,
 		type ScanProblemReason
-	} from '#lib/paperScan/intake/people';
-	import { takeScan, type KeepArgs, type KeptPage } from '#lib/paperScan/intake/takeScan';
-	import { personReport, withResult, type PersonResult } from './paperBatch';
+	} from '#lib/paperScan/intake/problems';
+	import { blobSource } from '#lib/paperScan/intake/source';
+	import type { KeepArgs, KeptPage } from '#lib/paperScan/intake/takePage';
+	import { takeScan } from '#lib/paperScan/intake/takeScan';
+	import { oncePerPerson, personReport, withResult, type PersonResult } from './paperBatch';
 	import FolderWatch from './FolderWatch.svelte';
 	import PaperBatchPerson from './PaperBatchPerson.svelte';
-	import ScannerSetup from './ScannerSetup.svelte';
 
 	/**
 	 * Takes in a batch of scanned application documents, unattended (`takeScan`): every page's code
@@ -34,7 +34,6 @@
 
 	let dragging = $state(false);
 	let running = $state(false);
-	let setupOpen = $state(false);
 	let progress = $state({ files: 0, pages: 0 });
 	let problems = $state<ScanProblem[]>([]);
 	let people = $state<PersonResult[]>([]);
@@ -44,11 +43,10 @@
 	/** Said on the person's own line: unreadable fields, and who is not registered. */
 	const ON_PERSONS_LINE: readonly ScanProblemReason[] = ['unreadable', 'notRegistered'];
 
-	/** The people's status rows, with their names, to propose against, by user. */
-	async function participants(userIds: string[]) {
-		if (userIds.length === 0) return new Map<string, never>();
-		const rows = await client.query.conferenceParticipants({
-			__args: { where: { conferenceId: { eq: conferenceId }, userId: { in: userIds } } },
+	/** A person's status row, with their name, to propose against. */
+	async function participant({ userId }: { userId: string }) {
+		const [row] = await client.query.conferenceParticipants({
+			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 			userId: true,
 			termsAndConditions: true,
 			guardianConsent: true,
@@ -58,11 +56,10 @@
 			user: { givenName: true, familyName: true, birthday: true },
 			conference: { startConference: true }
 		});
-		return new Map(rows.map((row) => [row.userId, row]));
+		return row;
 	}
 
-	type Row =
-		Awaited<ReturnType<typeof participants>> extends ReadonlyMap<string, infer R> ? R : never;
+	type Row = NonNullable<Awaited<ReturnType<typeof participant>>>;
 
 	/** Keeps a page and what it says; a failure is the person's line of the report's to tell. */
 	async function keep({
@@ -81,18 +78,14 @@
 	}
 
 	async function take({ file, source }: { file: File; source: Source }) {
-		const taken = await takeScan({
-			file: { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) },
-			conferenceId,
+		const taken = await takeScan<Row>({
+			file: { name: file.name, source: blobSource(file) },
+			conferenceIds: new Set([conferenceId]),
 			ports: {
-				read: (scan) =>
-					readPages({
-						scan,
-						platform: browserPlatform,
-						onPage: () => (progress.pages += 1)
-					}),
+				read: (scan) => readScanPage({ scan, platform: browserPlatform }),
+				onPage: () => (progress.pages += 1),
 				check: checkCode,
-				participants,
+				participant: oncePerPerson(participant),
 				keep: (args) => keep({ args, source }),
 				onUnreadable: (error) => logger.warn('Reading a scanned file failed', error)
 			}
@@ -172,10 +165,10 @@
 
 	<div class="flex flex-wrap items-center gap-2">
 		<FolderWatch onscans={runFolder} />
-		<button class="btn btn-sm" onclick={() => (setupOpen = true)}>
+		<a class="btn btn-sm" href={resolve('my-account/scanners')}>
 			<i aria-hidden="true" class="ph-duotone ph-printer"></i>
 			{m.scannerSetupButton()}
-		</button>
+		</a>
 	</div>
 
 	{#if running}
@@ -207,11 +200,3 @@
 		</section>
 	{/if}
 </section>
-
-{#if setupOpen}
-	<Modal open wide title={m.scannerSetupTitle()} onclose={() => (setupOpen = false)}>
-		<LoadBoundary>
-			<ScannerSetup {conferenceId} />
-		</LoadBoundary>
-	</Modal>
-{/if}

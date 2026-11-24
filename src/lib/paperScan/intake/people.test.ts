@@ -1,12 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { SignedCodeCheck, SignedCodeClaims } from '#lib/signedCode/signedCode';
-import {
-	describeScanProblem,
-	peopleOfPages,
-	readingsOf,
-	unreadableOf,
-	type CheckCode
-} from './people';
+import { placePage, readingsOf, unreadableOf, type CheckCode } from './people';
 import type { ReadPage } from './pages';
 
 const CONFERENCE = 'conf';
@@ -27,93 +21,88 @@ const check: CheckCode = async (text) => {
 	if (text === 'elsewhere') {
 		return valid({ ...base, kind: 'print', conferenceId: 'other' }, text);
 	}
-	return valid({ ...base, kind: 'print' }, text);
+	// somebody in another conference that is scanned for: `ada@second`
+	const [userId, conferenceId = CONFERENCE] = text.split('@');
+	return valid({ ...base, kind: 'print', userId, conferenceId }, text);
 };
 
-const page = ({
-	number,
+const place = ({
 	codes = [],
-	blank = false,
-	readings = [signed]
-}: {
-	number: number;
-	codes?: string[];
-	blank?: boolean;
-	readings?: ReadPage['codes'][number]['readings'];
-}): ReadPage => ({ page: number, blank, codes: codes.map((text) => ({ text, readings })) });
+	owner,
+	...page
+}: Partial<Pick<ReadPage, 'blank' | 'error'>> & { codes?: string[]; owner?: string }) =>
+	placePage({
+		page: {
+			page: 3,
+			blank: false,
+			codes: codes.map((text) => ({ text, readings: [signed] })),
+			...page
+		},
+		conferenceIds: new Set([CONFERENCE, 'second']),
+		check,
+		owner: owner === undefined ? undefined : { userId: owner, conferenceId: CONFERENCE }
+	});
 
-const people = (pages: ReadPage[], owner?: string) =>
-	peopleOfPages({ pages, conferenceId: CONFERENCE, check, owner });
-
-describe('peopleOfPages', () => {
-	test("gathers each person's pages, and names those whose fields were not readable", async () => {
-		const result = await people([
-			page({ number: 1, codes: ['ada'] }),
-			page({ number: 2, blank: true }),
-			page({ number: 3, codes: ['bob'], readings: [] }),
-			page({ number: 4, codes: ['ada'], readings: null })
-		]);
-		expect(result.stray).toEqual({ noCode: [], otherCode: [] });
-		const [ada, bob] = result.people;
-		expect(ada).toMatchObject({
+describe('placePage', () => {
+	test('tells whose a page is by its code, in whichever of the conferences', async () => {
+		expect(await place({ codes: ['ada'] })).toMatchObject({
 			userId: 'ada',
-			pages: [
-				{ page: 1, code: 'ada', readings: [signed] },
-				{ page: 4, code: 'ada', readings: null }
-			]
+			conferenceId: CONFERENCE,
+			page: 3,
+			code: 'ada',
+			readings: [signed]
 		});
-		expect(bob).toMatchObject({ userId: 'bob', pages: [{ page: 3, readings: [] }] });
-		expect([readingsOf(ada), unreadableOf(ada)]).toEqual([[signed], [4]]);
-		expect([readingsOf(bob), unreadableOf(bob)]).toEqual([[], []]);
+		expect(await place({ codes: ['ada@second'] })).toMatchObject({
+			userId: 'ada',
+			conferenceId: 'second'
+		});
 	});
 
 	test('takes the code that is ours where a page shows several', async () => {
-		const result = await people([page({ number: 1, codes: ['forged', 'nothing', 'ada'] })]);
-		expect(result.people.map(({ userId }) => userId)).toEqual(['ada']);
+		expect(await place({ codes: ['forged', 'nothing', 'ada'] })).toMatchObject({ userId: 'ada' });
 	});
 
-	test("names pages without a code, and with a forged, another kind's or conference's one", async () => {
-		const result = await people([
-			page({ number: 1 }),
-			page({ number: 2, codes: ['forged'] }),
-			page({ number: 3, codes: ['elsewhere'] }),
-			page({ number: 4, codes: ['nametag'] }),
-			// a code, but none of ours
-			page({ number: 5, codes: ['nothing'] })
-		]);
-		expect(result).toEqual({ people: [], stray: { noCode: [1, 5], otherCode: [2, 3, 4] } });
+	test.each([
+		['forged', 'otherCode'],
+		['elsewhere', 'otherCode'],
+		['nametag', 'otherCode'],
+		// a code, but none of ours
+		['nothing', 'noCode']
+	])('says why a page with a code “%s” is nobody’s: %s', async (code, reason) => {
+		expect(await place({ codes: [code] })).toBe(reason);
+	});
+
+	test('tells an empty back, a page without a code and one that could not be read apart', async () => {
+		expect(await place({ blank: true })).toBe('blank');
+		expect(await place({})).toBe('noCode');
+		expect(await place({ error: 'broken picture' })).toBe('pageUnreadable');
 	});
 
 	test('gives a page without a code of ours to whom the file was said to be of', async () => {
-		const result = await people(
-			[
-				page({ number: 1 }),
-				page({ number: 2, codes: ['nothing'] }),
-				page({ number: 3, codes: ['bob'] }),
-				page({ number: 4, codes: ['elsewhere'] }),
-				page({ number: 5, blank: true })
-			],
-			'ada'
-		);
-		expect(result.stray).toEqual({ noCode: [], otherCode: [4] });
-		expect(
-			result.people.map(({ userId, pages }) => [userId, pages.map(({ page }) => page)])
-		).toEqual([
-			['ada', [1, 2]],
-			['bob', [3]]
-		]);
-		// nothing was to be read on them
-		expect(unreadableOf(result.people[0])).toEqual([]);
+		for (const page of [{}, { codes: ['nothing'] }, { error: 'broken picture' }]) {
+			expect(await place({ ...page, owner: 'ada' })).toMatchObject({
+				userId: 'ada',
+				code: null,
+				readings: null
+			});
+		}
+		expect(await place({ codes: ['bob'], owner: 'ada' })).toMatchObject({ userId: 'bob' });
+		expect(await place({ codes: ['elsewhere'], owner: 'ada' })).toBe('otherCode');
+		expect(await place({ blank: true, owner: 'ada' })).toBe('blank');
 	});
 });
 
-describe('describeScanProblem', () => {
-	test('names the file and its pages', () => {
-		const line = describeScanProblem({ file: 'a.pdf', pages: [2, 3], reason: 'noCode' });
-		expect(line).toContain('a.pdf');
-		expect(line).toContain('2, 3');
-		expect(describeScanProblem({ file: 'a.tif', pages: [], reason: 'fileTypeUnknown' })).toMatch(
-			/^a\.tif: /
-		);
-	});
+test('a person’s pages together, and those whose fields were not readable', () => {
+	const page = { code: 'ada', fields: [] };
+	const person = {
+		userId: 'ada',
+		conferenceId: CONFERENCE,
+		pages: [
+			{ ...page, page: 1, readings: [signed] },
+			{ ...page, page: 4, readings: null },
+			{ ...page, page: 5, code: null, readings: null }
+		]
+	};
+	expect(readingsOf(person)).toEqual([signed]);
+	expect(unreadableOf(person)).toEqual([4]);
 });

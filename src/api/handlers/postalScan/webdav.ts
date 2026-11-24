@@ -1,9 +1,9 @@
 import { findDeliverer, type Deliverer } from '#api/handlers/scannerAccess/scannerAccessService';
 import { mayDeliver } from '#api/handlers/scannerAccess/scannerAccessPermissions';
 import { logger } from '#lib/logger';
-import { MAX_POSTAL_SCAN_SIZE } from '#lib/paperScan/limits';
+import { MAX_SCAN_FILE_SIZE } from '#lib/paperScan/limits';
 import { IntakeBusyError } from './intakeGate';
-import { ingestScans, NotAllowedToDeliverError } from './scanIngest';
+import { ingestScan, NotAllowedToDeliverError, ScanRefusedError } from './scanIngest';
 
 /**
  * A WebDAV folder to drop scans into, for scanners that upload to one: a scanner login signs in
@@ -14,8 +14,8 @@ import { ingestScans, NotAllowedToDeliverError } from './scanIngest';
 
 const ALLOWED = 'OPTIONS, HEAD, GET, PUT, DELETE, PROPFIND, PROPPATCH, MKCOL, MOVE, LOCK, UNLOCK';
 
-/** How long an upload may take once it is its turn. */
-const RECEIVE_MS = 3 * 60_000;
+/** An upload of which nothing comes for so long is given up. */
+const SILENCE_MS = 60_000;
 
 const answer = (status: number, headers: Record<string, string> = {}) =>
 	new Response(null, { status, headers });
@@ -63,31 +63,43 @@ function nameOf(path: string) {
 	}
 }
 
-/** Refuses to wait for a body for ever, so a stalled upload keeps no place. */
-function inTime<T>(body: Promise<T>) {
+/** A request's body as it comes in. One that stops coming is given up, so it keeps no place. */
+async function* bodyOf({ body }: Request): AsyncGenerator<Uint8Array> {
+	if (!body) return;
+	const reader = body.getReader();
+	try {
+		for (;;) {
+			const { done, value } = await inTime(reader.read());
+			if (done) return;
+			yield value;
+		}
+	} finally {
+		// what is left is not waited for; all of it read, this is nothing
+		void reader.cancel().catch(() => undefined);
+	}
+}
+
+/** Refuses to wait for a part of a body for ever. */
+function inTime<T>(part: Promise<T>) {
 	return new Promise<T>((resolve, reject) => {
-		const timer = setTimeout(() => reject(new IntakeBusyError()), RECEIVE_MS);
-		body.then(resolve, reject).finally(() => clearTimeout(timer));
+		const timer = setTimeout(() => reject(new IntakeBusyError()), SILENCE_MS);
+		part.then(resolve, reject).finally(() => clearTimeout(timer));
 	});
 }
 
 async function put({ request, path, deliverer }: FolderRequest) {
-	if (Number(request.headers.get('content-length') ?? 0) > MAX_POSTAL_SCAN_SIZE) return answer(413);
+	if (Number(request.headers.get('content-length') ?? 0) > MAX_SCAN_FILE_SIZE) return answer(413);
 	try {
-		await ingestScans({
+		// read only once it is its turn: until then it stays with the scanner
+		await ingestScan({
 			deliverer,
-			// read only once it is its turn: until then it stays with the scanner
-			receive: async () => {
-				const bytes = new Uint8Array(await inTime(request.arrayBuffer()));
-				// devices try the folder with an empty file, or make one before they fill it
-				return bytes.length === 0 ? [] : [{ name: nameOf(path), bytes }];
-			},
-			source: 'WEBDAV'
+			open: () => ({ name: nameOf(path), body: bodyOf(request) })
 		});
 		return answer(201);
 	} catch (error) {
 		if (error instanceof IntakeBusyError) return answer(503, { 'Retry-After': '60' });
 		if (error instanceof NotAllowedToDeliverError) return answer(403);
+		if (error instanceof ScanRefusedError) return answer(error.status);
 		logger.error('Taking in a scan uploaded over WebDAV failed', error);
 		return answer(500);
 	}

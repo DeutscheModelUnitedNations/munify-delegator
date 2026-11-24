@@ -14,7 +14,7 @@ const signed = { field: 'termsSignature', state: 'yes' } as const;
 const take = (readings: Parameters<typeof takeInPage>[0]['readings']) =>
 	takeInPage({
 		participantId: 'ada',
-		source: 'EMAIL',
+		source: 'WEBDAV',
 		uploadedById: 'care',
 		page: { pageKey: 'code:1', fields: ['termsSignature'] },
 		readings,

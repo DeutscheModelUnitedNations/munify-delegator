@@ -61,6 +61,10 @@ export const browserPlatform: ScanPlatform<HTMLCanvasElement> = {
 		canvas.height = height;
 		return canvas;
 	},
+	releaseCanvas(canvas) {
+		canvas.width = 0;
+		canvas.height = 0;
+	},
 	forPdf: (canvas) => canvas,
 	pictureOf: (canvas) => context2d(canvas).getImageData(0, 0, canvas.width, canvas.height),
 	readCodes(picture) {

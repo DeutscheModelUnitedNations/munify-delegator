@@ -1,6 +1,6 @@
 import { dev } from '$app/env';
 import { join } from 'node:path';
-import { Worker, type ResourceLimits } from 'node:worker_threads';
+import { Worker } from 'node:worker_threads';
 
 /**
  * Runs CPU-bound work on a worker thread, so it does not block the event loop: the worker gets its
@@ -11,8 +11,7 @@ export function runComputeWorker<T>({
 	source,
 	bundle,
 	data,
-	timeoutMs,
-	resourceLimits
+	timeoutMs
 }: {
 	/** The worker's file, under `src/api/handlers`. */
 	source: string[];
@@ -21,18 +20,15 @@ export function runComputeWorker<T>({
 	data: unknown;
 	/** Longer work is abandoned, so a pathological input cannot hang. */
 	timeoutMs: number;
-	resourceLimits?: ResourceLimits;
 }) {
 	return new Promise<T>((resolve, reject) => {
 		const worker = dev
 			? new Worker(join(process.cwd(), 'src', 'api', 'handlers', ...source), {
 					workerData: data,
-					execArgv: ['--import', 'tsx'],
-					resourceLimits
+					execArgv: ['--import', 'tsx']
 				})
 			: new Worker(join(process.cwd(), 'build', 'compute', `${bundle}.mjs`), {
-					workerData: data,
-					resourceLimits
+					workerData: data
 				});
 		const timer = setTimeout(() => {
 			void worker.terminate();

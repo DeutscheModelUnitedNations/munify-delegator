@@ -14,10 +14,11 @@ describe('fileReferenceColumns', () => {
 				schema.place.sitePlanFileId,
 				schema.resolution.fileId,
 				schema.announcementAttachment.fileId,
-				schema.postalScan.fileId
+				schema.postalScan.fileId,
+				schema.scanTask.fileId
 			])
 		);
-		expect(columns).toHaveLength(12);
+		expect(columns).toHaveLength(13);
 	});
 });
 

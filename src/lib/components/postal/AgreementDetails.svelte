@@ -28,7 +28,6 @@
 	const details = $derived(
 		await client.liveQuery.agreementDetails({
 			__args: { where: { conferenceParticipantId: { eq: conferenceParticipantId } } },
-			id: true,
 			field: true,
 			state: true,
 			source: true

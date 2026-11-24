@@ -186,9 +186,6 @@ export default defineConfig({
 				// the schema in-process instead. See src/api/graphql.remote.ts.
 				remoteFunctions: true
 			},
-			// `crossSiteFormHandle` (`src/api/services/crossSiteForms.ts`) does the check instead, for
-			// every route but the one scanners upload to: SvelteKit has no exception for a route.
-			csrf: { trustedOrigins: ['*'] },
 			// OpenTelemetry: `src/instrumentation.server.ts` (picked up on its own) sets up the exporter
 			// before the app loads, and SvelteKit emits spans for handle, loads and remote functions
 			// into it. Both are inert unless OTEL_ENDPOINT_URL is set.

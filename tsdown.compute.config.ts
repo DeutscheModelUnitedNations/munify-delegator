@@ -1,9 +1,9 @@
 import { defineConfig } from 'tsdown';
 
 /**
- * The worker threads the server starts for CPU-bound work, so neither the matching
- * (`#api/handlers/assignment/matching`) nor reading scans (`#api/handlers/postalScan/scanReader`)
- * blocks the event loop. SvelteKit's build does not bundle worker entry points, so
+ * What the server starts for CPU-bound work, so neither the matching (a worker thread,
+ * `#api/handlers/assignment/matching`) nor splitting and reading scans (processes,
+ * `#api/handlers/postalScan/scanProcess`) blocks the event loop. SvelteKit's build does not bundle worker entry points, so
  * they are built on their own into the adapter's output directory. Run it after `vite build`: the
  * adapter empties `build/` first, and `clean` is off so this does not do the same to the app.
  *
@@ -13,7 +13,8 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
 	entry: {
 		matching: 'src/api/handlers/assignment/matching.worker.ts',
-		scanReader: 'src/api/handlers/postalScan/scanReader.worker.ts'
+		scanReader: 'src/api/handlers/postalScan/scanReader.worker.ts',
+		scanSplitter: 'src/api/handlers/postalScan/scanSplitter.worker.ts'
 	},
 	outDir: 'build/compute',
 	format: 'esm',

@@ -1,6 +1,12 @@
 import { devAccounts } from '../seed-data/devAccounts';
 import { duplicateScenarios } from './duplicateScenarios';
-import { conferencePlans, invitationTokens, joinCodes, seedConferenceId } from './plans';
+import {
+	conferencePlans,
+	invitationTokens,
+	joinCodes,
+	scannerLogin,
+	seedConferenceId
+} from './plans';
 
 /** The console guide after seeding: which conference is which, and whom to sign in as. */
 export function printOverview() {
@@ -36,6 +42,11 @@ export function printOverview() {
 	for (const [state, token] of Object.entries(invitationTokens)) {
 		line(`  ${state.padEnd(8)} /auth/accept-invitation?token=${token}`);
 	}
+	line();
+	line(
+		'Scanner login (dev-team-care, every conference; WebDAV: /api/scans/<file>, built app only)'
+	);
+	line(`  ${scannerLogin.username} / ${scannerLogin.password}`);
 	line();
 	line('Possible duplicates (plausibility page of "Seed 2", sign in as dev-team-care)');
 	for (const scenario of duplicateScenarios) {

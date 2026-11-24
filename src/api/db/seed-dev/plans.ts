@@ -1,3 +1,4 @@
+import { defaultLayout, withHidden } from '#lib/helpers/documentLayout';
 import type * as schema from '../schema';
 
 /**
@@ -162,7 +163,7 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'preparation',
 		summary:
-			'PREPARATION: payments, postal and papers unlocked, the paper read by scan; surveys, invitations, waiting list (vacancies), email log',
+			'PREPARATION: payments, postal and papers unlocked, scans of the paper from every source with their details (complete, unsigned, unclear, unreadable); surveys, invitations, waiting list (vacancies), email log',
 		conference: {
 			title: 'Seed 5 · Preparation',
 			messagingEnabled: true,
@@ -285,7 +286,7 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'second',
 		summary:
-			'PREPARATION: a second, smaller conference - dev-admin takes part in none, so its management dashboard shows without a role; no seat limit per school',
+			'PREPARATION: a second, smaller conference - dev-admin takes part in none, so its management dashboard shows without a role; no seat limit per school; the birthday switched off on the guardians’ consent',
 		conference: {
 			title: 'Seed 9 · Second conference',
 			longTitle: 'Zweite Seed-Konferenz',
@@ -293,7 +294,15 @@ export const conferencePlans: ConferencePlan[] = [
 			unlockPayments: true,
 			unlockPostals: true,
 			maxCollectiveGroupSize: null,
-			maxGuaranteedSeatsPerForeignSchool: null
+			maxGuaranteedSeatsPerForeignSchool: null,
+			documentLayouts: {
+				guardianConsent: {
+					birthday: withHidden({
+						placement: defaultLayout('guardianConsent').birthday,
+						hidden: true
+					})
+				}
+			}
 		},
 		days: { applicationDeadline: -25, startConference: 21, endConference: 24 },
 		assigned: true,
@@ -371,6 +380,9 @@ export const invitationTokens = {
 	revoked: 'DevSeedRevokedInvitation00000001',
 	used: 'DevSeedUsedInvitation00000000001'
 } as const;
+
+/** A scanner's login of `dev-team-care`, to deliver scans with over WebDAV. */
+export const scannerLogin = { username: 'scan-seedcare', password: 'seedscannerpass2' } as const;
 
 export const COMMITTEE_CATALOG = [
 	{ name: 'Generalversammlung', abbreviation: 'GV' },

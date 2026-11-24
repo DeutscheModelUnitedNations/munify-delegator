@@ -13,8 +13,7 @@ import { paraglideMiddleware } from '#lib/paraglide/server';
 import { impersonationHandle } from '#api/handlers/user/userPermissions';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
-import { startSmtpReceiver } from '#api/handlers/postalScan/smtpReceiver';
-import { crossSiteFormHandle } from '#api/services/crossSiteForms';
+import { startScanQueue } from '#api/handlers/postalScan/scanQueue';
 import { resumeLinkWorker } from '#api/handlers/chaseLink/linkWorker';
 import { LINK_TOKEN_HEADER } from '#api/handlers/chaseLink/linkAuth';
 import { isLinkCall } from '#api/handlers/chaseLink/linkCaller';
@@ -37,20 +36,16 @@ if (!building && SENTRY_DSN) {
 	Sentry.pinoIntegration.untrackLogger(graphqlLogger);
 }
 
-// Picks the CHASE link up again (`docs/plans/chase-link.md`) and takes in scans by email; never in
-// the way of starting.
+// Picks the CHASE link up again (`docs/plans/chase-link.md`) and takes in scans that were delivered;
+// never in the way of starting.
 export const init: ServerInit = async () => {
 	if (building) return;
 	await resumeLinkWorker().catch((error) => logger.error('Resuming the CHASE link failed', error));
-	try {
-		startSmtpReceiver();
-	} catch (error) {
-		logger.error('Starting the SMTP receiver failed', error);
-	}
+	startScanQueue();
 };
 
 // creating a handle to use the paraglide middleware
-const paraglideHandle: Handle = ({ event, resolve }) =>
+const localisedHandle: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
 		const render = () =>
 			resolve(event, {
@@ -70,6 +65,14 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 			? runWithLocale({ locale: requested, fn: render })
 			: render();
 	});
+
+/** Scanners upload gigabytes here, which are passed on as they come in (`#api/handlers/postalScan/webdav`). */
+const SCAN_ROUTE = '/api/scans/[...path]';
+
+// Paraglide clones the request, and what is not read of a clone is kept in memory: all of an upload.
+// Scanners are answered nothing in words anyway.
+const paraglideHandle: Handle = (input) =>
+	input.event.route.id === SCAN_ROUTE ? input.resolve(input.event) : localisedHandle(input);
 
 /**
  * An error the app's own code threw while answering a request (a hook, a load, an endpoint) as one
@@ -95,8 +98,6 @@ const linkHandle: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
-	// before anything reads the session
-	crossSiteFormHandle,
 	linkHandle,
 	// Protects the authenticated routes, serves both callback routes and puts the validated session
 	// on `event.locals.oidc`. Everything auth-related used to be spread across route loads.

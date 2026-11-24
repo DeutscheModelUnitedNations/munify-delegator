@@ -3331,7 +3331,6 @@ export type Mutation = {
     roleId: ID
   }) => Roleapplication,
   createScannerAccess: (p: {
-    conferenceId: ID,
     name: String
   }) => NewScannerAccess,
   createSingleParticipant: (p: {
@@ -4136,6 +4135,11 @@ export type MyReviewStats = {
   totalReviews: Int    
 };
 		
+export type MyScanners = {
+  accesses: () => ScannerAccess[],
+  allowed: Boolean    
+};
+		
 export type NametagBin = {
   fromLetter: String | null,
   index: Int,
@@ -4794,7 +4798,7 @@ export type PostalscanWhereInputArgument = {
   uploadedById?: IDWhereInputArgument | null | undefined    
 };
 		
-export type PostalscansourceEnum = "EMAIL" | "FOLDER" | "UPLOAD" | "WEBDAV";
+export type PostalscansourceEnum = "FOLDER" | "UPLOAD" | "WEBDAV";
 		
 export type PreviewConferenceSupervisor = {
   different_school: Boolean,
@@ -5226,9 +5230,7 @@ export type Query = {
     conferenceId: ID
   }) => MyReviewStats | null,
   myReviewerSnippets: () => Reviewersnippet[],
-  myScannerAccesses: (p: {
-    conferenceId: ID
-  }) => ScannerAccess[],
+  myScanners: () => MyScanners,
   mySlackConnection: (p: {
     conferenceId: ID
   }) => SlackConnection | null,
@@ -5450,7 +5452,6 @@ export type Query = {
   slackWorkspaces: (p?: {
     conferenceId?: ID | null | undefined
   }) => SlackWorkspaceInfo[],
-  smtpDelivery: () => SmtpDelivery | null,
   supervisorSignupOpen: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -5537,9 +5538,6 @@ export type Query = {
   teamMembersCount: (p?: {
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Int,
-  teamScannerAccesses: (p: {
-    conferenceId: ID
-  }) => TeamScannerAccess[],
   user: (p: {
     id: ID
   }) => User,
@@ -6199,12 +6197,6 @@ export type SlackWorkspaceInfo = {
   id: ID,
   name: String,
   slackTeamName: String    
-};
-		
-export type SmtpDelivery = {
-  host: String,
-  port: Int,
-  security: String    
 };
 		
 export type SortingParameter = "asc" | "desc";
@@ -6930,9 +6922,7 @@ export type Subscription = {
   myPaperReviewDrafts: (p: {
     conferenceId: ID
   }) => Paperreviewdraft[],
-  myScannerAccesses: (p: {
-    conferenceId: ID
-  }) => ScannerAccess[],
+  myScanners: () => MyScanners,
   nation: (p: {
     id: ID
   }) => Nation,
@@ -7152,9 +7142,6 @@ export type Subscription = {
   teamMembersCount: (p?: {
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Int,
-  teamScannerAccesses: (p: {
-    conferenceId: ID
-  }) => TeamScannerAccess[],
   user: (p: {
     id: ID
   }) => User,
@@ -7495,15 +7482,6 @@ export type TableviewdefaultWhereInputArgument = {
 };
 		
 export type TeamInvitationEmailStatus = "ALREADY_MEMBER" | "EXISTS" | "NEW_USER" | "PENDING_INVITATION";
-		
-export type TeamScannerAccess = {
-  expiresAt: DateTime,
-  id: ID,
-  lastUsedAt: DateTime | null,
-  name: String,
-  ownerFamilyName: String | null,
-  ownerGivenName: String | null    
-};
 		
 export type Teamfunction = {
   committee: (p?: {
@@ -8078,7 +8056,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScannerAccesses", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "teamScannerAccesses", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

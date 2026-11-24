@@ -3,9 +3,11 @@ import { PDFDocument } from 'pdf-lib';
 import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import {
+	E2E_PAPER_ALAN_ID,
 	E2E_PAPER_CARE_ID,
 	E2E_PAPER_CONFERENCE_ID,
-	E2E_PAPER_GRACE_ID
+	E2E_PAPER_GRACE_ID,
+	E2E_PAPER_SECOND_CONFERENCE_ID
 } from '../seed/paperScanning';
 import { drawQr } from '../../src/lib/api/pdfQr';
 import { defaultLayout, squareInPoints } from '../../src/lib/helpers/documentLayout';
@@ -41,13 +43,17 @@ async function graceStatus(page: Page) {
 	return result.data?.conferenceParticipants?.[0]?.termsAndConditions;
 }
 
-/** Grace's stored scans and details, as participant care reads them. */
+/** Somebody's stored scans and details, as participant care reads them. */
 async function gracePaper(page: Page) {
+	return paperOf({ page, conferenceId, userId: E2E_PAPER_GRACE_ID });
+}
+
+async function paperOf({ page, ...who }: { page: Page; conferenceId: string; userId: string }) {
 	const result = await gql(
 		page,
 		`query {
 			conferenceParticipants(where: {
-				conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${E2E_PAPER_GRACE_ID}" }
+				conferenceId: { eq: "${who.conferenceId}" }, userId: { eq: "${who.userId}" }
 			}) {
 				postalScans { source fields file { fileName } }
 				agreementDetails { field state source }
@@ -58,25 +64,48 @@ async function gracePaper(page: Page) {
 }
 
 /**
- * A scan as a sheet feeder makes it: Grace's contract page, printed with its code and marks and
- * filled in (box ticked, place, date and signature written), its blank back, then a page of
- * nobody's.
+ * A scan as a sheet feeder makes it: each person's contract page (Grace's only, by default), of the conference they are in, printed with
+ * its code and marks and filled in (box ticked, place, date and signature written), its blank back, then
+ * a page without a code.
  */
-async function scannedContract({ page, origin }: { page: Page; origin: string }) {
+async function scannedContract({
+	page,
+	origin,
+	of = [{ conferenceId, userId: E2E_PAPER_GRACE_ID }]
+}: {
+	page: Page;
+	origin: string;
+	of?: { conferenceId: string; userId: string }[];
+}) {
+	const pdf = await PDFDocument.create();
+	for (const person of of) await addContract({ page, origin, pdf, person });
+	return Buffer.from(await pdf.save());
+}
+
+async function addContract({
+	page,
+	origin,
+	pdf,
+	person
+}: {
+	page: Page;
+	origin: string;
+	pdf: PDFDocument;
+	person: { conferenceId: string; userId: string };
+}) {
 	const issued = await gql(
 		page,
 		`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
 			issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p) { code }
 		}`,
 		{
-			c: conferenceId,
-			u: E2E_PAPER_GRACE_ID,
+			c: person.conferenceId,
+			u: person.userId,
 			p: [{ document: 'contract', page: 0, ...A4, printedInk: [] }]
 		}
 	);
 	const code: string = issued.data.issueDocumentCodes[0].code;
 
-	const pdf = await PDFDocument.create();
 	const sheet = pdf.addPage([A4.width, A4.height]);
 	const layout = defaultLayout('contract');
 	drawPaperPage({ page: sheet, document: 'contract', layout, pageIndex: 0 });
@@ -96,10 +125,9 @@ async function scannedContract({ page, origin }: { page: Page; origin: string })
 	pdf.addPage([A4.width, A4.height]);
 	const stray = pdf.addPage([A4.width, A4.height]);
 	for (let line = 0; line < 20; line++) stray.drawText('no code', { x: 60, y: 760 - line * 20 });
-	return Buffer.from(await pdf.save());
 }
 
-test('a batch of scans marks a signed contract in, unattended, and lists the page without a code', async ({
+test('a batch of scans marks a signed contract in, unattended, and ignores pages without a code', async ({
 	page,
 	baseURL
 }) => {
@@ -120,11 +148,8 @@ test('a batch of scans marks a signed contract in, unattended, and lists the pag
 	await expect(
 		batch.getByText(/verbindliche anmeldung: unterschrieben|binding registration: signed/i)
 	).toBeVisible();
-	// the page of nobody's is named, the blank back is not
-	await expect(
-		batch.getByText(/stapel\.pdf, (seite|page) 3: (kein code gefunden|no code found)/i)
-	).toBeVisible();
-	await expect(batch.getByText(/kein code gefunden|no code found/i)).toHaveCount(1);
+	// neither the blank back nor the page without a code is a problem
+	await expect(batch.getByText(/kein code|no code/i)).toHaveCount(0);
 	await expect.poll(() => graceStatus(page)).toBe('DONE');
 
 	// her page is kept as a scan of hers, with the details it says
@@ -180,14 +205,20 @@ test('a batch of scans marks a signed contract in, unattended, and lists the pag
 	await expect.poll(async () => (await gracePaper(page)).postalScans).toEqual([]);
 });
 
-test('a scanner delivers over WebDAV with a login of its owner', async ({ page, baseURL }) => {
+test('a scanner delivers over WebDAV with a login of its owner, for all their conferences', async ({
+	page,
+	baseURL
+}) => {
 	test.setTimeout(120_000);
 	await loginAs(page, fixedTestUser(E2E_PAPER_CARE_ID), {
 		startUrl: `/dashboard/${conferenceId}/team/postal-registration`
 	});
 	await waitForHydration(page);
-	await page.getByRole('button', { name: /scanner einrichten|set up a scanner/i }).click();
-	const setup = page.getByRole('dialog');
+	// the logins are on the profile, whatever conference they deliver into
+	await page.getByRole('link', { name: /scanner einrichten|set up a scanner/i }).click();
+	await expect(page).toHaveURL(/\/my-account\/scanners$/);
+	await waitForHydration(page);
+	const setup = page.locator('#main-content');
 	await setup.getByLabel(/name des geräts|name of the device/i).fill('E2E Kopierer');
 	await setup.getByRole('button', { name: /zugang anlegen|make a login/i }).click();
 	const made = setup.getByRole('status');
@@ -195,9 +226,9 @@ test('a scanner delivers over WebDAV with a login of its owner', async ({ page, 
 	const [username, password] = await made.locator('code').allInnerTexts();
 
 	const scan = await scannedContract({ page, origin: baseURL ?? 'https://localhost' });
-	const deliver = (secret: string) =>
+	const deliver = (secret: string, data = scan) =>
 		page.request.put('/api/scans/stapel.pdf', {
-			data: scan,
+			data,
 			timeout: 90_000,
 			headers: {
 				'content-type': 'application/pdf',
@@ -207,9 +238,38 @@ test('a scanner delivers over WebDAV with a login of its owner', async ({ page, 
 	expect((await deliver('wrong')).status()).toBe(401);
 	const before = (await gracePaper(page)).postalScans.length;
 	expect((await deliver(password)).status()).toBe(201);
+	// it is taken in after the scanner was answered
+	await expect
+		.poll(async () => (await gracePaper(page)).postalScans.length, { timeout: 60_000 })
+		.toBe(before + 1);
 	const { postalScans } = await gracePaper(page);
-	expect(postalScans).toHaveLength(before + 1);
 	expect(postalScans).toContainEqual(expect.objectContaining({ source: 'WEBDAV' }));
+
+	// a stack of several people and conferences: each page is its person's
+	const mixed = await scannedContract({
+		page,
+		origin: baseURL ?? 'https://localhost',
+		of: [
+			{ conferenceId: E2E_PAPER_SECOND_CONFERENCE_ID, userId: E2E_PAPER_ALAN_ID },
+			{ conferenceId, userId: E2E_PAPER_GRACE_ID }
+		]
+	});
+	expect((await deliver(password, mixed)).status()).toBe(201);
+	await expect
+		.poll(async () => (await gracePaper(page)).postalScans.length, { timeout: 60_000 })
+		.toBe(before + 2);
+	const alan = await paperOf({
+		page,
+		conferenceId: E2E_PAPER_SECOND_CONFERENCE_ID,
+		userId: E2E_PAPER_ALAN_ID
+	});
+	expect(alan.postalScans).toEqual([
+		{
+			source: 'WEBDAV',
+			fields: ['termsAccepted', 'termsPlaceDate', 'termsSignature'],
+			file: { fileName: 'stapel_1.pdf' }
+		}
+	]);
 
 	// a device of its own has a login of its own, and revoking one leaves the other
 	await setup.getByLabel(/name des geräts|name of the device/i).fill('E2E Zweitgerät');
@@ -225,6 +285,33 @@ test('a scanner delivers over WebDAV with a login of its owner', async ({ page, 
 		.click();
 	await expect(revoke('E2E Zweitgerät').first()).toBeVisible();
 	await expect.poll(async () => (await deliver(password)).status()).toBe(401);
+});
+
+test('a scanner login is its owner’s alone, and only for who manages participants', async ({
+	page,
+	browser
+}) => {
+	const make = 'mutation { createScannerAccess(name: "E2E fremd") { id } }';
+	await loginAs(page, fixedTestUser(E2E_PAPER_CARE_ID), { startUrl: '/my-account/scanners' });
+	const id = (await gql(page, make)).data.createScannerAccess.id;
+
+	const other = await browser.newContext({ ignoreHTTPSErrors: true });
+	const participant = await other.newPage();
+	await loginAs(participant, fixedTestUser(E2E_PAPER_GRACE_ID), {
+		startUrl: '/my-account/scanners'
+	});
+	await expect(participant.getByTestId('scanners-none')).toBeVisible();
+	await expect(
+		participant.getByRole('button', { name: /zugang anlegen|make a login/i })
+	).toHaveCount(0);
+	const codeOf = async (query: string) =>
+		(await gql(participant, query)).errors?.[0]?.extensions?.code;
+	expect(await codeOf(make)).toBe('FORBIDDEN');
+	expect(await codeOf(`mutation { renewScannerAccess(id: "${id}") }`)).toBe('NOT_FOUND');
+	expect(await codeOf(`mutation { deleteScannerAccess(id: "${id}") }`)).toBe('NOT_FOUND');
+	const own = await gql(participant, '{ myScanners { allowed accesses { id } } }');
+	expect(own.data.myScanners).toEqual({ allowed: false, accesses: [] });
+	await other.close();
 });
 
 test('the layout editor places the fields page by page and keeps the marks fixed', async ({

@@ -145,6 +145,7 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 	'/(authenticated)/my-account/notifications': {
 		docs: 'user-manual/team/communication#notifications'
 	},
+	'/(authenticated)/my-account/scanners': { docs: 'user-manual/team/formalities#scans' },
 
 	// Team: the team itself
 	'/(authenticated)/dashboard/[conferenceId]/team/members': {

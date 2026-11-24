@@ -104,6 +104,47 @@ export function createStorage(config: StorageConfig) {
 			await internal.putObject(key, bytes, mimeType);
 		},
 
+		/**
+		 * Stores what comes in, of any size and as it comes: a few MB of it are in memory. Answers how much
+		 * it was. What fails in between leaves nothing behind.
+		 */
+		async putStream({
+			key,
+			mimeType,
+			body
+		}: {
+			key: string;
+			mimeType: string;
+			body: AsyncIterable<Uint8Array>;
+		}): Promise<number> {
+			let size = 0;
+			let uploadId: string | undefined;
+			const parts: { partNumber: number; etag: string }[] = [];
+			try {
+				for await (const { bytes, last } of inParts(body)) {
+					size += bytes.length;
+					if (last && !uploadId) {
+						await internal.putObject(key, bytes, mimeType);
+						return size;
+					}
+					uploadId ??= await internal.getMultipartUploadId(key, mimeType);
+					parts.push(await internal.uploadPart(key, uploadId, bytes, parts.length + 1));
+				}
+				if (uploadId) await internal.completeMultipartUpload(key, uploadId, parts);
+				return size;
+			} catch (error) {
+				if (uploadId) await internal.abortMultipartUpload(key, uploadId).catch(() => undefined);
+				throw error;
+			}
+		},
+
+		/** The object's bytes from `from` up to (without) `to`. Throws where they are not there. */
+		async readRange({ key, from, to }: { key: string; from: number; to: number }) {
+			const response = await internal.getObjectRaw(key, false, from, to);
+			if (response.status !== 206) throw new Error(`Reading a part answered ${response.status}`);
+			return new Uint8Array(await response.arrayBuffer());
+		},
+
 		/** Deletes the objects; a key with nothing under it counts as deleted. */
 		async delete(keys: string[]) {
 			if (keys.length === 0) return;
@@ -125,6 +166,30 @@ export function createStorage(config: StorageConfig) {
 }
 
 export type Storage = ReturnType<typeof createStorage>;
+
+/** How much of a stream is stored at a time: S3 takes no less than 5 MB, and 10,000 parts at most. */
+const PART_SIZE = 8 * 1024 * 1024;
+
+/** A stream in parts of one size, and which is the last. */
+async function* inParts(body: AsyncIterable<Uint8Array>) {
+	let part = new Uint8Array(PART_SIZE);
+	let filled = 0;
+	for await (const chunk of body) {
+		for (let at = 0; at < chunk.length;) {
+			// a full one is not the last while there is more
+			if (filled === PART_SIZE) {
+				yield { bytes: part, last: false };
+				part = new Uint8Array(PART_SIZE);
+				filled = 0;
+			}
+			const taken = chunk.subarray(at, at + PART_SIZE - filled);
+			part.set(taken, filled);
+			filled += taken.length;
+			at += taken.length;
+		}
+	}
+	yield { bytes: part.subarray(0, filled), last: true };
+}
 
 /**
  * `inline` with the file's name: in full as UTF-8 (`filename*`, RFC 6266), and as plain ASCII for
@@ -162,4 +227,17 @@ export function objectKey({
 	uniqueId: string;
 }) {
 	return `conferences/${conferenceId}/${purpose}/${uniqueId}`;
+}
+
+/** Where a file goes that belongs to a person, not (yet) to a conference. */
+export function userObjectKey({
+	userId,
+	purpose,
+	uniqueId
+}: {
+	userId: string;
+	purpose: string;
+	uniqueId: string;
+}) {
+	return `users/${userId}/${purpose}/${uniqueId}`;
 }
