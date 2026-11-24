@@ -100,7 +100,9 @@ test('mail starts off for whoever switched the unread mails off before, Slack on
 	browser
 }) => {
 	const settings = await settingsOf(await signedIn(browser, quiet.id));
+	// participant care's topics: their inbox, chat reports and scan problems
 	expect(settings?.settings.map(({ email, slack }) => ({ email, slack }))).toEqual([
+		{ email: false, slack: true },
 		{ email: false, slack: true },
 		{ email: false, slack: true }
 	]);
@@ -132,7 +134,8 @@ test('a choice is stored for the caller alone', async ({ browser }) => {
 	expect(saved.errors).toBeUndefined();
 	expect((await settingsOf(carePage))?.settings).toEqual([
 		expect.objectContaining({ topic: 'PARTICIPANT_CARE', email: true, slack: true }),
-		expect.objectContaining({ topic: 'CHAT_REPORT', email: true, slack: false })
+		expect.objectContaining({ topic: 'CHAT_REPORT', email: true, slack: false }),
+		expect.objectContaining({ topic: 'SCAN_PROBLEM', email: true, slack: true })
 	]);
 	// project management answers the same inbox and keeps their own choices
 	const managementSettings = await settingsOf(await signedIn(browser, management.id));
