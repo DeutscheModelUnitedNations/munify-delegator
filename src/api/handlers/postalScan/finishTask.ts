@@ -6,6 +6,7 @@ import { tellScanProblems } from './scanProblemNotice';
 import {
 	hasPagesLeft,
 	releaseTask,
+	renewHold,
 	removeDelivery,
 	resultsOf,
 	type ScanTask
@@ -35,6 +36,8 @@ export async function finishDelivery(task: ScanTask) {
 	if (await hasPagesLeft(task.deliveryId)) {
 		return releaseTask({ of: task, delayMs: LOOK_AGAIN_MS });
 	}
+	// another process has it by now (this one was too slow), which tells them: never twice
+	if (!(await renewHold(task))) return;
 	const results = await resultsOf(task.deliveryId);
 	const problems = problemsOfDelivery({ file: task.fileName, results });
 	if (problems.length > 0) {

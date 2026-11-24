@@ -12,8 +12,9 @@ import type { ScanSource } from '../source';
 import { BrokenTableError, name, parseIndirect, readTable, unpack, type ObjectTable } from './xref';
 
 /**
- * The objects of a PDF, each read when asked for. What is asked for again (a font all pages share) is read
- * again: only what the source keeps anyway is kept.
+ * The objects of a PDF, each read when asked for. The latest read are kept, up to `KEPT_BYTES`: a page asks
+ * for its picture twice (whether it is a form, then to copy it), and pages share fonts. Nothing read is
+ * changed, so one object may be handed out again.
  */
 export interface PdfObjects {
 	root: PDFObject | undefined;
@@ -27,6 +28,10 @@ const MAX_OBJECT = 256 * 1024 * 1024;
 const MAX_HOPS = 32;
 /** Object streams unpacked and kept: the objects of a page lie in one or two. */
 const STREAMS_KEPT = 4;
+/** Objects read and kept, together: a few scanned pages' pictures. */
+const KEPT_BYTES = 96 * 1024 * 1024;
+/** Larger ones are read again when asked for again. */
+const KEPT_EACH = 48 * 1024 * 1024;
 
 /** Where the object beginning at `at` ends: where the next begins. */
 function endOf({ starts, at }: { starts: readonly number[]; at: number }) {
@@ -50,12 +55,33 @@ function createReader({
 	context: PDFContext;
 }) {
 	const streams = new Map<number, { offsets: number[]; bytes: Uint8Array<ArrayBuffer> }>();
+	/** The latest objects read, the latest used last. */
+	const kept = new Map<number, { object: PDFObject; size: number }>();
+	let keptBytes = 0;
+
+	function keep({ number, object, size }: { number: number; object: PDFObject; size: number }) {
+		if (size > KEPT_EACH) return;
+		kept.set(number, { object, size });
+		keptBytes += size;
+		for (const [oldest, { size: freed }] of kept) {
+			if (keptBytes <= KEPT_BYTES) break;
+			kept.delete(oldest);
+			keptBytes -= freed;
+		}
+	}
 
 	async function readAt({ number, at }: { number: number; at: number }) {
+		const known = kept.get(number);
+		if (known) {
+			kept.delete(number);
+			kept.set(number, known);
+			return known.object;
+		}
 		const to = endOf({ starts: table.starts, at });
 		if (to - at > MAX_OBJECT) throw new BrokenTableError('An object larger than any page');
 		const read = parseIndirect({ bytes: await source.read({ from: at, to }), context });
 		if (read.number !== number) throw new BrokenTableError('Another object where one should be');
+		keep({ number, object: read.object, size: to - at });
 		return read.object;
 	}
 

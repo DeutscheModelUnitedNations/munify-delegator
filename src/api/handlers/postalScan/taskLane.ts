@@ -26,26 +26,31 @@ function keepHolding(task: ScanTask) {
 }
 
 /**
- * Works through tasks of some kinds, one after the other in this process, people taking turns. `work` does
+ * Works through tasks of some kinds in this process, `parallel` at a time, people taking turns. `work` does
  * one; what it throws is tried again later, and `giveUp` ends one that failed too often.
  */
 export function createTaskLane({
 	kinds,
 	work,
 	giveUp,
-	isEnding
+	isEnding,
+	parallel = 1
 }: {
 	kinds: readonly TaskKind[];
 	work: (task: ScanTask) => Promise<void>;
 	giveUp: (task: ScanTask) => Promise<void>;
 	isEnding: () => boolean;
+	parallel?: number;
 }) {
-	/** When each person's last task was done, counting up. */
+	/** When each person's last task was begun, counting up. */
 	const lastServed = new Map<string, number>();
 	let served = 0;
-	let current: ScanTask | undefined;
-	let working = false;
-	let woken = false;
+	/** What is worked on now. */
+	const current = new Set<ScanTask>();
+	/** How many work through the queue. */
+	let running = 0;
+	/** Counts up with each wake, so a runner that drained the queue looks again for what came meanwhile. */
+	let wakes = 0;
 
 	async function attempt(task: ScanTask) {
 		// one that takes its process down is never heard of but by its attempts
@@ -70,11 +75,14 @@ export function createTaskLane({
 
 	/** Lets go of what is worked on, so another process has it at once. */
 	async function release() {
-		const task = current;
-		current = undefined;
-		if (!task) return;
-		await releaseTask({ of: task }).catch((error: unknown) =>
-			logger.warn('Letting go of a delivered scan failed', error)
+		const tasks = [...current];
+		current.clear();
+		await Promise.all(
+			tasks.map((task) =>
+				releaseTask({ of: task }).catch((error: unknown) =>
+					logger.warn('Letting go of a delivered scan failed', error)
+				)
+			)
 		);
 	}
 
@@ -84,7 +92,7 @@ export function createTaskLane({
 			const task = await claimTask({ kinds, lastServed });
 			if (!task) return;
 			lastServed.set(task.userId, ++served);
-			current = task;
+			current.add(task);
 			// the process was told to end while it claimed
 			if (isEnding()) return release();
 			const stopHolding = keepHolding(task);
@@ -92,29 +100,31 @@ export function createTaskLane({
 				await attempt(task);
 			} finally {
 				stopHolding();
-				current = undefined;
+				current.delete(task);
 			}
+		}
+	}
+
+	/** One of those working through the queue, until nothing is due. */
+	async function runner() {
+		running += 1;
+		try {
+			for (let seen = -1; seen !== wakes && !isEnding();) {
+				seen = wakes;
+				await drain();
+			}
+		} catch (error) {
+			if (!isEnding()) logger.error('Working through the delivered scans failed', error);
+		} finally {
+			running -= 1;
 		}
 	}
 
 	return {
 		/** Has the lane work, in the background; what is queued meanwhile is included. */
 		wake() {
-			woken = true;
-			if (working) return;
-			working = true;
-			void (async () => {
-				try {
-					while (woken) {
-						woken = false;
-						await drain();
-					}
-				} catch (error) {
-					if (!isEnding()) logger.error('Working through the delivered scans failed', error);
-				} finally {
-					working = false;
-				}
-			})();
+			wakes += 1;
+			while (running < parallel && !isEnding()) void runner();
 		},
 		release
 	};

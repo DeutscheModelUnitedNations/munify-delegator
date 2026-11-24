@@ -34,6 +34,14 @@ const codeReaderLoaded = prepareZXingModule({
 	fireImmediately: true
 });
 
+/** A picture's pixels as the code reader takes them: its own where they are such already. */
+function pixelsOf(data: ArrayLike<number>) {
+	if (data instanceof Uint8ClampedArray && data.buffer instanceof ArrayBuffer) {
+		return new Uint8ClampedArray(data.buffer, data.byteOffset, data.length);
+	}
+	return Uint8ClampedArray.from(data);
+}
+
 const platform: ScanPlatform<Canvas> = {
 	async openPdf(data) {
 		const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
@@ -73,7 +81,13 @@ const platform: ScanPlatform<Canvas> = {
 	},
 	async readCodes({ data, width, height }) {
 		const found = await readBarcodes(
-			{ data: new Uint8ClampedArray(data), width, height, colorSpace: 'srgb' },
+			// the picture's own pixels where they are some already: a copy is 35 MB at 300 dpi
+			{
+				data: pixelsOf(data),
+				width,
+				height,
+				colorSpace: 'srgb'
+			},
 			{ formats: ['QRCode'], tryHarder: true }
 		);
 		return found

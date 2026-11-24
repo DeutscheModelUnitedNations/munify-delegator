@@ -105,8 +105,9 @@ export function createStorage(config: StorageConfig) {
 		},
 
 		/**
-		 * Stores what comes in, of any size and as it comes: a few MB of it are in memory. Answers how much
-		 * it was. What fails in between leaves nothing behind.
+		 * Stores what comes in, of any size and as it comes: a part is sent while the next comes in, so two
+		 * parts (16 MB) of it are in memory. Answers how much it was. What fails in between leaves nothing
+		 * behind.
 		 */
 		async putStream({
 			key,
@@ -120,6 +121,18 @@ export function createStorage(config: StorageConfig) {
 			let size = 0;
 			let uploadId: string | undefined;
 			const parts: { partNumber: number; etag: string }[] = [];
+			/** The part being sent, while the next comes in. */
+			let sending: Promise<void> | undefined;
+			const send = (bytes: Uint8Array, partNumber: number) => {
+				const id = uploadId;
+				if (!id) throw new Error('No upload to send a part of');
+				const sent = internal.uploadPart(key, id, bytes, partNumber).then((part) => {
+					parts.push(part);
+				});
+				// failing, it is told when awaited; until then it is no unhandled rejection
+				sent.catch(() => undefined);
+				return sent;
+			};
 			try {
 				for await (const { bytes, last } of inParts(body)) {
 					size += bytes.length;
@@ -128,11 +141,17 @@ export function createStorage(config: StorageConfig) {
 						return size;
 					}
 					uploadId ??= await internal.getMultipartUploadId(key, mimeType);
-					parts.push(await internal.uploadPart(key, uploadId, bytes, parts.length + 1));
+					await sending;
+					sending = send(bytes, parts.length + 1);
 				}
-				if (uploadId) await internal.completeMultipartUpload(key, uploadId, parts);
+				await sending;
+				if (uploadId) {
+					parts.sort((a, b) => a.partNumber - b.partNumber);
+					await internal.completeMultipartUpload(key, uploadId, parts);
+				}
 				return size;
 			} catch (error) {
+				await sending?.catch(() => undefined);
 				if (uploadId) await internal.abortMultipartUpload(key, uploadId).catch(() => undefined);
 				throw error;
 			}

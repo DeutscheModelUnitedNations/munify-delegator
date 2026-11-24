@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { createPageReader } from './scanReader';
+import { createPageReader, createPageReaders } from './scanReader';
 
 const { createScanProcess } = vi.hoisted(() => ({ createScanProcess: vi.fn() }));
 vi.mock('./scanProcess', () => ({ createScanProcess }));
@@ -62,5 +62,36 @@ describe('createPageReader', () => {
 		await createPageReader().read(scan);
 		await vi.advanceTimersByTimeAsync(30_001);
 		expect(first.stop).toHaveBeenCalledOnce();
+	});
+});
+
+describe('createPageReaders', () => {
+	test('reads as many pages at once as it has processes, each in one of its own', async () => {
+		vi.useRealTimers();
+		const answers: ((value: { page: typeof page; leaving: boolean }) => void)[] = [];
+		const processes = Array.from({ length: 2 }, () => {
+			const process = {
+				ended: false,
+				tell: vi.fn(),
+				stop: vi.fn(),
+				next: vi.fn(
+					() =>
+						new Promise<{ page: typeof page; leaving: boolean }>((answer) => answers.push(answer))
+				)
+			};
+			createScanProcess.mockReturnValueOnce(process);
+			return process;
+		});
+		const readers = createPageReaders(2);
+		const reads = [readers.read(scan), readers.read(scan), readers.read(scan)];
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		expect(processes.map(({ tell }) => tell.mock.calls.length)).toEqual([1, 1]);
+		// the third waits for one to be free
+		answers.shift()?.({ page, leaving: false });
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		for (const answer of answers.splice(0)) answer({ page, leaving: false });
+		expect(await Promise.all(reads)).toEqual([page, page, page]);
+		expect(createScanProcess).toHaveBeenCalledTimes(2);
+		readers.stop();
 	});
 });

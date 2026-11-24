@@ -63,43 +63,75 @@ function nameOf(path: string) {
 	}
 }
 
+/**
+ * The Node request a body is read off when SvelteKit refused it: `BODY_SIZE_LIMIT` holds for every route,
+ * and a scan may be far larger. It refuses one said to be larger before it reads anything, so then nothing
+ * else reads the connection, and it is read here. One it took on (smaller, or of no said length) is read
+ * through `request.body`, which it ends with a 413 past the limit.
+ */
+export type Connection = { listenerCount(event: string): number } & AsyncIterable<Uint8Array> & {
+		readableEnded: boolean;
+		destroyed: boolean;
+	};
+
+/** Whether nothing reads `connection` yet: SvelteKit refused the body without touching it. */
+const untouched = (connection: Connection | undefined): connection is Connection =>
+	connection !== undefined &&
+	connection.listenerCount('data') === 0 &&
+	!connection.readableEnded &&
+	!connection.destroyed;
+
 /** A request's body as it comes in. One that stops coming is given up, so it keeps no place. */
-async function* bodyOf({ body }: Request): AsyncGenerator<Uint8Array> {
-	if (!body) return;
-	const reader = body.getReader();
+async function* bodyOf({
+	request,
+	connection
+}: {
+	request: Request;
+	connection?: Connection;
+}): AsyncGenerator<Uint8Array> {
+	const chunks: AsyncIterable<Uint8Array> | null = untouched(connection)
+		? connection
+		: request.body;
+	if (!chunks) return;
+	const iterator = chunks[Symbol.asyncIterator]();
+	let silence: ReturnType<typeof setTimeout> | undefined;
 	try {
 		for (;;) {
-			const { done, value } = await inTime(reader.read());
+			const next = iterator.next();
+			// one timer, wound up again for each part: a large file comes in hundreds of thousands
+			const { done, value } = await new Promise<IteratorResult<Uint8Array>>((resolve, reject) => {
+				if (silence) silence.refresh();
+				else silence = setTimeout(() => reject(new IntakeBusyError()), SILENCE_MS);
+				next.then(resolve, reject);
+			});
 			if (done) return;
 			yield value;
 		}
 	} finally {
+		clearTimeout(silence);
 		// what is left is not waited for; all of it read, this is nothing
-		void reader.cancel().catch(() => undefined);
+		void Promise.resolve(iterator.return?.()).catch(() => undefined);
 	}
 }
 
-/** Refuses to wait for a part of a body for ever. */
-function inTime<T>(part: Promise<T>) {
-	return new Promise<T>((resolve, reject) => {
-		const timer = setTimeout(() => reject(new IntakeBusyError()), SILENCE_MS);
-		part.then(resolve, reject).finally(() => clearTimeout(timer));
-	});
-}
+/** SvelteKit's refusal of a body larger than `BODY_SIZE_LIMIT`, as the stream it took on fails with. */
+const isTooLarge = (error: unknown) =>
+	error instanceof Error && 'status' in error && error.status === 413;
 
-async function put({ request, path, deliverer }: FolderRequest) {
+async function put({ request, path, deliverer, connection }: FolderRequest) {
 	if (Number(request.headers.get('content-length') ?? 0) > MAX_SCAN_FILE_SIZE) return answer(413);
 	try {
 		// read only once it is its turn: until then it stays with the scanner
 		await ingestScan({
 			deliverer,
-			open: () => ({ name: nameOf(path), body: bodyOf(request) })
+			open: () => ({ name: nameOf(path), body: bodyOf({ request, connection }) })
 		});
 		return answer(201);
 	} catch (error) {
 		if (error instanceof IntakeBusyError) return answer(503, { 'Retry-After': '60' });
 		if (error instanceof NotAllowedToDeliverError) return answer(403);
 		if (error instanceof ScanRefusedError) return answer(error.status);
+		if (isTooLarge(error)) return answer(413);
 		logger.error('Taking in a scan uploaded over WebDAV failed', error);
 		return answer(500);
 	}
@@ -109,6 +141,7 @@ interface FolderRequest {
 	request: Request;
 	path: string;
 	deliverer: Deliverer;
+	connection?: Connection;
 }
 
 /** What each method is answered, once signed in. */
@@ -126,8 +159,19 @@ const ANSWERS: Record<string, (args: FolderRequest) => Response | Promise<Respon
 	GET: () => answer(404)
 };
 
-/** Answers one request to the folder at `path` (as in the URL). */
-export async function serveScanFolder({ request, path }: { request: Request; path: string }) {
+/**
+ * Answers one request to the folder at `path` (as in the URL). `connection` is the Node request under it
+ * (adapter-node's `platform.req`), which a body too large for SvelteKit is read off.
+ */
+export async function serveScanFolder({
+	request,
+	path,
+	connection
+}: {
+	request: Request;
+	path: string;
+	connection?: Connection;
+}) {
 	if (request.method === 'OPTIONS') return answer(200, { DAV: '1, 2', Allow: ALLOWED });
 	const login = basicLogin(request);
 	const deliverer = login && (await findDeliverer(login));
@@ -135,5 +179,5 @@ export async function serveScanFolder({ request, path }: { request: Request; pat
 		return answer(401, { 'WWW-Authenticate': 'Basic realm="DELEGATOR scans", charset="UTF-8"' });
 	}
 	if (!Object.hasOwn(ANSWERS, request.method)) return answer(405, { Allow: ALLOWED });
-	return ANSWERS[request.method]({ request, path, deliverer });
+	return ANSWERS[request.method]({ request, path, deliverer, connection });
 }

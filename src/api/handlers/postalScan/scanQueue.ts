@@ -1,8 +1,9 @@
+import { SCAN_READERS } from '$app/env/private';
 import { beforeShutdown, isShuttingDown } from '#api/services/shutdown';
 import { logger } from '#lib/logger';
 import { finishDelivery } from './finishTask';
 import { takeInPageTask } from './pageTask';
-import { createPageReader } from './scanReader';
+import { createPageReaders } from './scanReader';
 import { finishPage, finishSplit, removeDelivery, type ScanTask } from './scanTaskService';
 import { splitDelivery } from './splitTask';
 import { createTaskLane } from './taskLane';
@@ -11,7 +12,7 @@ import { createTaskLane } from './taskLane';
  * Takes in the files scanners delivered, as uploading them by hand would: a file is split into pages, each
  * page is taken in by itself, and its owner told of what came to nothing once all are. One may be gigabytes:
  * no more than a page of it is in memory. Files are split beside the pages taken in, so the first pages of
- * one are there while it is still split, in every app process one of each at a time. A page taken in again
+ * one are there while it is still split: in every app process one split at a time, and `SCAN_READERS` pages. A page taken in again
  * changes nothing (it is stored once), so what failed, or whose process died, is simply tried again.
  */
 
@@ -29,7 +30,8 @@ const logGivenUp = ({ kind, deliveryId, page, attempts }: ScanTask) =>
 		attempts
 	});
 
-const reader = createPageReader();
+/** Reading is what takes long: as many pages at once as there are processes for it (`SCAN_READERS`). */
+const reader = createPageReaders(SCAN_READERS);
 
 const splitting = createTaskLane({
 	kinds: ['SPLIT'],
@@ -47,6 +49,7 @@ const splitting = createTaskLane({
 const pages = createTaskLane({
 	kinds: ['PAGE', 'FINISH'],
 	isEnding,
+	parallel: SCAN_READERS,
 	work: (task) =>
 		task.kind === 'FINISH' ? finishDelivery(task) : takeInPageTask({ task, reader }),
 	async giveUp(task) {

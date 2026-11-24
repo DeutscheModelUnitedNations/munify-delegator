@@ -52,6 +52,49 @@ beforeEach(() => {
 });
 
 describe('createTaskLane', () => {
+	test('works on as many tasks at once as it may, and on no more', async () => {
+		const waiting = Array.from({ length: 5 }, (_, index) => task({ id: `t${index}` }));
+		mocks.claimTask.mockImplementation(async () => waiting.shift());
+		let busy = 0;
+		let most = 0;
+		work.mockImplementation(async () => {
+			busy += 1;
+			most = Math.max(most, busy);
+			await new Promise((done) => setTimeout(done, 10));
+			busy -= 1;
+		});
+		const lane = createTaskLane({
+			kinds: ['PAGE'],
+			work,
+			giveUp,
+			isEnding: () => ending,
+			parallel: 2
+		});
+		lane.wake();
+		lane.wake();
+		await vi.waitFor(() => expect(work).toHaveBeenCalledTimes(5));
+		await vi.waitFor(() => expect(busy).toBe(0));
+		expect(most).toBe(2);
+	});
+
+	test('lets go of everything it works on when the process ends', async () => {
+		const held = [task({ id: 'a' }), task({ id: 'b' })];
+		mocks.claimTask.mockImplementation(async () => held.shift());
+		work.mockImplementation(() => new Promise(() => {}));
+		const lane = createTaskLane({
+			kinds: ['PAGE'],
+			work,
+			giveUp,
+			isEnding: () => ending,
+			parallel: 2
+		});
+		lane.wake();
+		await vi.waitFor(() => expect(work).toHaveBeenCalledTimes(2));
+		ending = true;
+		await lane.release();
+		expect(mocks.releaseTask.mock.calls.map(([{ of }]) => of.id).toSorted()).toEqual(['a', 'b']);
+	});
+
 	test('does one task after the other until nothing is due, telling whose turn it was', async () => {
 		const turns: [string, number][][] = [];
 		const waiting = [task({ userId: 'ada' }), task({ userId: 'bob' })];

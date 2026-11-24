@@ -115,7 +115,17 @@ describe('splitDelivery', () => {
 		expect(state.left).toBe(true);
 	});
 
+	test('asks whether it still holds the file only now and then', async () => {
+		splitsInto(Array.from({ length: 50 }, (_, index) => page(index + 1)));
+		await split();
+		expect(mocks.renewHold).not.toHaveBeenCalled();
+		expect(mocks.addPage).toHaveBeenCalledTimes(50);
+	});
+
 	test('stops where somebody else has the file, or the process is about to end', async () => {
+		// every page takes a while
+		let clock = 0;
+		vi.spyOn(Date, 'now').mockImplementation(() => (clock += 20_000));
 		mocks.renewHold.mockResolvedValueOnce(true).mockResolvedValue(false);
 		expect(splitsInto([page(1), page(2), page(3)])).toEqual({ left: false });
 		await split();
@@ -127,6 +137,7 @@ describe('splitDelivery', () => {
 		splitsInto([page(1)]);
 		await split();
 		expect(mocks.addPage).not.toHaveBeenCalled();
+		vi.restoreAllMocks();
 	});
 
 	test('keeps the file of a split that is not its own to finish', async () => {

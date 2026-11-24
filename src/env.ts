@@ -143,6 +143,13 @@ export const variables = defineEnvVars({
 
 	// The app's public address, for links in what is sent outside a request (a scanner's delivery).
 	APP_URL: { schema: unlessEmpty(z.string().url().optional()) },
+	/**
+	 * Pages of delivered scans each app instance reads at once, each in a process of its own of up to some
+	 * 0.7 GB (`docs/architecture/postal-scans.md`). Reading is CPU-bound: about one per spare core.
+	 */
+	SCAN_READERS: {
+		schema: numberOr(2).pipe(z.number().int().min(1, 'must be at least 1').max(16))
+	},
 
 	// Object storage (any S3-compatible service) for every uploaded file. The endpoint names the
 	// bucket, path style (`https://s3.example.org/delegator`) or virtual-hosted

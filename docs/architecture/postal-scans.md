@@ -59,7 +59,10 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
   object, a `Blob`): 2.7 GB with 3,000 pages take 5 s and 110 MB. Only a file with a broken table is read as a
   whole, up to 100 MB. A page comes out the same bytes each time, with nothing of another: only the pictures it
   draws (scanners list those of every page on each), and nothing that leads to other pages. Encrypted files are
-  not opened.
+  not opened. The latest objects read are kept (96 MB), so a page's picture is read
+  once though it is asked for twice. Nothing unpacks to more than any scan has (64 MB for tables and object
+  streams, 16 MB for a page's content, which is then a broken page), and an object said to lie beyond the end
+  is not there, rather than a read that fails the whole file.
 - **Delivered scans are split and read in processes of their own** (`scanProcess.ts`): drawing a page with
   pdf.js on `@napi-rs/canvas` leaks native memory (80 MB at 300 dpi) that no garbage collection frees, and
   whoever made a PDF decides what opening it takes. A process ends once it takes 600 MB (`tookTooMuch`), and
@@ -82,6 +85,9 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
   is refused.
 - **Each page stands by itself.** A page is told by its own code, whatever is around it, and one that cannot be
   cut, read or stored keeps no other from it (`PageError`, `ReadPage.error`).
+- **An empty page is told before any code is looked for** (`isBlank`): the back of a sheet scanned on both
+  sides, half of a stack, would otherwise go through every variant of `findCodes` (some 0.4 s each). A printed
+  page's marks alone are far more ink than that allows (`pipeline.test.ts`).
 - **Pages without a code are ignored**, as no documents, except where a person said whose the file is. Only a
   file without any is told of (`noCode`). So a page whose code cannot be read in a stack goes unnoticed.
 - **Pages that are nobody's are not stored**: of another conference, not registered, not readable. In the
@@ -128,7 +134,7 @@ app takes WebDAV, and folders through the browser (an SMB folder is one, once a 
   `node build/index.js`.
 - **Folder**: `FolderWatch.svelte`, Chromium only, polls while the page is open.
 
-A file goes to the bucket as it comes in (`storeStream`, parts of 8 MB), whatever its size, and is queued; then
+A file goes to the bucket as it comes in (`storeStream`, parts of 8 MB, one sent while the next comes in), whatever its size, and is queued; then
 the scanner is answered: what it was told arrived is never lost, and it waits for no page to be read.
 `intakeGate` lets 20 uploads come in at once, four of a person; the others are not read from the socket until
 it is their turn, and told to come back (503) after a minute, or at once while 500 files or 100 GB of the person
@@ -136,13 +142,18 @@ wait. What is no scan (415) or too large (413: 20 GB, 40 MB for a picture) is re
 route may clone the request**: what is not read of a clone is kept in memory (Paraglide's handle is left out).
 
 `scanQueue` then works through `scan_task`s (`scanTaskService`): a file's `SPLIT` makes a `PAGE` of each page as it
-goes, and a `FINISH` once it is through. Each app process does one `SPLIT` and one `PAGE` or `FINISH` at a time,
+goes, and a `FINISH` once it is through. Each app process does one `SPLIT` and `SCAN_READERS` (default 2) `PAGE`s or `FINISH`es at a time, each page read
+in a reader process of its own (`createPageReaders`),
 woken by a delivery and once a minute; people take turns (`deliveryTurns`), a split after 200 pages. A split goes
 on after the last page it made, and deletes the file once it is through: only its pages are kept. `FINISH` waits for
 the pages, tells the owner once of all that came to nothing, and removes the delivery.
 
 A process holds its task (`FOR UPDATE SKIP LOCKED`, then `held_by` and `due_at`, 5 minutes, renewed each minute), so
-replicas share the queue and another takes over from one that died; whoever lost the hold changes nothing more. On
+replicas share the queue and another takes over from one that died; whoever lost the hold changes nothing more (a
+split asks every 15 s, a `FINISH` before it tells anybody). **Every time of the queue is the database's** (`now()`),
+so replicas whose clocks differ take no hold that has not run out. A `FINISH` is due once the last page is done, or
+at once where the pages were done while the file was split; it is looked at again after 5 minutes for the one whose
+last page was done just as the split ended. On
 SIGTERM it lets go at once, and that attempt does not count. What fails (bucket, database, a process that ended) is
 tried again after 2, 4, 8 and 16 minutes, then given up: a page is told of as failed, a split leaves its pages.
 Taking a page in twice changes nothing. A revoked or expired login delivers nothing more, but what is queued is
@@ -158,7 +169,12 @@ removed by `file-cleanup` once a day old.
 `APP_URL` puts the link into the notifications. WebDAV needs no setup, but what is in front of it decides how
 large a file may be:
 
-- `BODY_SIZE_LIMIT` (64 MB in the image) is for every route: SvelteKit has no limit for one alone.
+- `BODY_SIZE_LIMIT` (64 MB in the image) holds for every route, and SvelteKit has no limit for one alone. It
+  refuses a body said to be larger (`Content-Length`) before it reads anything, so `webdav.ts` reads such a PUT
+  off the Node request (`platform.req`), which nothing else reads then: a scanner that says how large its file
+  is may send up to 20 GB. One that sends without a length (chunked) is cut off at `BODY_SIZE_LIMIT` and told 413. Outside the built app (`vite dev`) there is no limit.
+- `SCAN_READERS` pages are read at once per instance, each process up to some 0.7 GB (600 MB resident before it
+  hands over, plus the page in hand). Reading is CPU-bound: set it to the cores an instance has to spare.
 - Node gives up a request after 5 minutes (`server.requestTimeout`, no variable), so a file must be through by
   then: some 3.7 GB at 100 Mbit/s. A proxy has limits of its own (Traefik: `readTimeout`, 60 s by default).
 - The bucket should drop unfinished multipart uploads (a lifecycle rule): those of a process that died are left.

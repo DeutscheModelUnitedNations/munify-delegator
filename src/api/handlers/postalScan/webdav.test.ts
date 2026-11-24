@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { Readable } from 'node:stream';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { MAX_SCAN_FILE_SIZE } from '#lib/paperScan/limits';
 import { IntakeBusyError } from './intakeGate';
@@ -122,6 +123,42 @@ describe('PUT', () => {
 		});
 		expect((await serveScanFolder({ request, path: '/api/scans/a.pdf' })).status).toBe(413);
 		expect(sent).toBeLessThan(10);
+	});
+
+	/** A PUT whose body SvelteKit refused, as its stream fails past `BODY_SIZE_LIMIT`. */
+	const refusedBody = () =>
+		new Request('https://example.org/api/scans/big.pdf', {
+			method: 'PUT',
+			body: new ReadableStream({
+				start: (controller) =>
+					controller.error(Object.assign(new Error('Too large'), { status: 413 }))
+			}),
+			...{ duplex: 'half' },
+			headers: { authorization: `Basic ${btoa('scan-1:secret')}` }
+		});
+
+	test('reads a file larger than BODY_SIZE_LIMIT off the connection nothing else reads', async () => {
+		const connection = Readable.from([Buffer.from('%PDF'), Buffer.from('-1.7')]);
+		const answered = await serveScanFolder({
+			request: refusedBody(),
+			path: '/api/scans/big.pdf',
+			connection
+		});
+		expect(answered.status).toBe(201);
+		expect(received).toEqual([{ name: 'big.pdf', bytes: new TextEncoder().encode('%PDF-1.7') }]);
+	});
+
+	test('reads the body SvelteKit took on, and says 413 where it gave up on it', async () => {
+		const connection = Readable.from([Buffer.from('never')]);
+		// SvelteKit reads it
+		connection.on('data', () => undefined);
+		const answered = await serveScanFolder({
+			request: refusedBody(),
+			path: '/api/scans/big.pdf',
+			connection
+		});
+		expect(answered.status).toBe(413);
+		expect(received).toEqual([]);
 	});
 
 	test('gives up an upload of which nothing comes any more', async () => {

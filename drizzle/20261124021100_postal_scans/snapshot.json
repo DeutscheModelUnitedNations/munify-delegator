@@ -2,7 +2,7 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "f5a2d449-f229-428f-8239-e21096923594",
+  "id": "c282a67c-9b8f-4e8a-b6ce-07f4bd1243cb",
   "prevIds": [
     "b8258880-7af8-4b8f-abb0-db7129ff9830"
   ],
@@ -76,6 +76,23 @@
       ]
     },
     {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "scan_task_kind"
+      ],
+      "writes": [
+        "s|enum|public.scan_task_kind",
+        "n|enum|public.scan_task_kind",
+        "e|enum|public.scan_task_kind",
+        "n|type|public.scan_task_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
       "statementType": "alter_enum",
       "statementTarget": [
         "enum",
@@ -143,6 +160,46 @@
       "reads": [
         "n|sch|public",
         "n|enum|public.postal_scan_source"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_delivery"
+      ],
+      "writes": [
+        "s|tbl|public.scan_delivery",
+        "n|tbl|public.scan_delivery",
+        "e|tbl|public.scan_delivery",
+        "n|rel|public.scan_delivery",
+        "n|type|public.scan_delivery",
+        "n|rel|public.scan_delivery_pkey",
+        "n|rel|public.scan_delivery_key_key"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_task"
+      ],
+      "writes": [
+        "s|tbl|public.scan_task",
+        "n|tbl|public.scan_task",
+        "e|tbl|public.scan_task",
+        "n|rel|public.scan_task",
+        "n|type|public.scan_task",
+        "n|rel|public.scan_task_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.scan_task_kind"
       ]
     },
     {
@@ -231,6 +288,88 @@
       "statementTarget": [
         "index",
         "public",
+        "scan_delivery",
+        "scan_delivery_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.scan_delivery_user_id_idx",
+        "n|idx|public.scan_delivery_user_id_idx",
+        "e|idx|public.scan_delivery_user_id_idx",
+        "n|rel|public.scan_delivery_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scan_delivery",
+        "n|sch|public",
+        "n|col|public.scan_delivery.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_task",
+        "scan_task_delivery_id_kind_page_key"
+      ],
+      "writes": [
+        "s|idx|public.scan_task_delivery_id_kind_page_key",
+        "n|idx|public.scan_task_delivery_id_kind_page_key",
+        "e|idx|public.scan_task_delivery_id_kind_page_key",
+        "n|rel|public.scan_task_delivery_id_kind_page_key"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|col|public.scan_task.delivery_id",
+        "n|col|public.scan_task.kind",
+        "n|col|public.scan_task.page"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_task",
+        "scan_task_due_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.scan_task_due_at_idx",
+        "n|idx|public.scan_task_due_at_idx",
+        "e|idx|public.scan_task_due_at_idx",
+        "n|rel|public.scan_task_due_at_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|col|public.scan_task.due_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_task",
+        "scan_task_file_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.scan_task_file_id_idx",
+        "n|idx|public.scan_task_file_id_idx",
+        "e|idx|public.scan_task_file_id_idx",
+        "n|rel|public.scan_task_file_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|col|public.scan_task.file_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
         "scanner_access",
         "scanner_access_username_key"
       ],
@@ -252,18 +391,18 @@
         "index",
         "public",
         "scanner_access",
-        "scanner_access_team_member_id_idx"
+        "scanner_access_user_id_idx"
       ],
       "writes": [
-        "s|idx|public.scanner_access_team_member_id_idx",
-        "n|idx|public.scanner_access_team_member_id_idx",
-        "e|idx|public.scanner_access_team_member_id_idx",
-        "n|rel|public.scanner_access_team_member_id_idx"
+        "s|idx|public.scanner_access_user_id_idx",
+        "n|idx|public.scanner_access_user_id_idx",
+        "e|idx|public.scanner_access_user_id_idx",
+        "n|rel|public.scanner_access_user_id_idx"
       ],
       "reads": [
         "n|tbl|public.scanner_access",
         "n|sch|public",
-        "n|col|public.scanner_access.team_member_id"
+        "n|col|public.scanner_access.user_id"
       ]
     },
     {
@@ -363,22 +502,91 @@
       "statementTarget": [
         "table",
         "public",
+        "scan_delivery"
+      ],
+      "writes": [
+        "s|fk|public.scan_delivery.scan_delivery_user_id_user_id_fkey",
+        "n|fk|public.scan_delivery.scan_delivery_user_id_user_id_fkey",
+        "e|fk|public.scan_delivery.scan_delivery_user_id_user_id_fkey",
+        "n|con|public.scan_delivery.scan_delivery_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scan_delivery",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.scan_delivery.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_task"
+      ],
+      "writes": [
+        "s|fk|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey",
+        "n|fk|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey",
+        "e|fk|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey",
+        "n|con|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|tbl|public.scan_delivery",
+        "n|sch|public",
+        "n|col|public.scan_task.delivery_id",
+        "n|col|public.scan_delivery.id",
+        "e|uniqueness|public.scan_delivery.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_task"
+      ],
+      "writes": [
+        "s|fk|public.scan_task.scan_task_file_id_stored_file_id_fkey",
+        "n|fk|public.scan_task.scan_task_file_id_stored_file_id_fkey",
+        "e|fk|public.scan_task.scan_task_file_id_stored_file_id_fkey",
+        "n|con|public.scan_task.scan_task_file_id_stored_file_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|tbl|public.stored_file",
+        "n|sch|public",
+        "n|col|public.scan_task.file_id",
+        "n|col|public.stored_file.id",
+        "e|uniqueness|public.stored_file.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
         "scanner_access"
       ],
       "writes": [
-        "s|fk|public.scanner_access.scanner_access_team_member_id_team_member_id_fkey",
-        "n|fk|public.scanner_access.scanner_access_team_member_id_team_member_id_fkey",
-        "e|fk|public.scanner_access.scanner_access_team_member_id_team_member_id_fkey",
-        "n|con|public.scanner_access.scanner_access_team_member_id_team_member_id_fkey"
+        "s|fk|public.scanner_access.scanner_access_user_id_user_id_fkey",
+        "n|fk|public.scanner_access.scanner_access_user_id_user_id_fkey",
+        "e|fk|public.scanner_access.scanner_access_user_id_user_id_fkey",
+        "n|con|public.scanner_access.scanner_access_user_id_user_id_fkey"
       ],
       "reads": [
         "n|tbl|public.scanner_access",
         "n|sch|public",
-        "n|tbl|public.team_member",
+        "n|tbl|public.user",
         "n|sch|public",
-        "n|col|public.scanner_access.team_member_id",
-        "n|col|public.team_member.id",
-        "e|uniqueness|public.team_member.id"
+        "n|col|public.scanner_access.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
       ]
     }
   ],
@@ -397,6 +605,24 @@
       "row": {
         "schema": "public",
         "name": "postal_scan",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scan_delivery",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scan_task",
         "isRlsEnabled": false,
         "entityType": "tables"
       }
@@ -480,8 +706,20 @@
         "values": [
           "UPLOAD",
           "FOLDER",
-          "EMAIL",
           "WEBDAV"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scan_task_kind",
+        "values": [
+          "SPLIT",
+          "PAGE",
+          "FINISH"
         ],
         "entityType": "enums"
       }
@@ -762,6 +1000,326 @@
       "op": "create",
       "row": {
         "schema": "public",
+        "table": "scan_delivery",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "access_name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "file_name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "size",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "delivery_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "kind",
+        "type": "scan_task_kind",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "page",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "file_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "held_by",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "attempts",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "due_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "done_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "result",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
         "table": "scanner_access",
         "name": "id",
         "type": "text",
@@ -811,7 +1369,7 @@
       "row": {
         "schema": "public",
         "table": "scanner_access",
-        "name": "team_member_id",
+        "name": "user_id",
         "type": "text",
         "typeSchema": null,
         "notNull": true,
@@ -992,6 +1550,116 @@
       "op": "create",
       "row": {
         "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_user_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_delivery_id_kind_page_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "delivery_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "kind",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "page",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_due_at_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "due_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "(\"done_at\" is null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_file_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "file_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
         "table": "scanner_access",
         "name": "scanner_access_username_key",
         "nameExplicit": true,
@@ -1017,11 +1685,11 @@
       "row": {
         "schema": "public",
         "table": "scanner_access",
-        "name": "scanner_access_team_member_id_idx",
+        "name": "scanner_access_user_id_idx",
         "nameExplicit": true,
         "columns": [
           {
-            "value": "team_member_id",
+            "value": "user_id",
             "isExpression": false,
             "asc": true,
             "nullsFirst": false,
@@ -1120,14 +1788,74 @@
       "op": "create",
       "row": {
         "schema": "public",
-        "table": "scanner_access",
-        "name": "scanner_access_team_member_id_team_member_id_fkey",
+        "table": "scan_delivery",
+        "name": "scan_delivery_user_id_user_id_fkey",
         "nameExplicit": false,
         "columns": [
-          "team_member_id"
+          "user_id"
         ],
         "schemaTo": "public",
-        "tableTo": "team_member",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_delivery_id_scan_delivery_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "delivery_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "scan_delivery",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_file_id_stored_file_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "file_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "stored_file",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "scanner_access_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
         "columnsTo": [
           "id"
         ],
@@ -1166,6 +1894,32 @@
       "op": "create",
       "row": {
         "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
         "table": "scanner_access",
         "name": "scanner_access_pkey",
         "columns": [
@@ -1173,6 +1927,20 @@
         ],
         "nameExplicit": false,
         "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_key_key",
+        "nameExplicit": false,
+        "columns": [
+          "key"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
       }
     },
     {

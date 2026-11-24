@@ -77,6 +77,31 @@ describe('putStream', () => {
 		expect(stored).toEqual(Array.from({ length: 320 }, (_, index) => index % 251));
 	});
 
+	test('reads the next part while one is sent, and never more than that', async () => {
+		let read = 0;
+		async function* counted(size: number) {
+			for await (const chunk of body(size)) {
+				read += chunk.length;
+				yield chunk;
+			}
+		}
+		const readWhileSending: number[] = [];
+		s3.uploadPart.mockImplementation(async (_key, _id, _part, partNumber) => {
+			const before = read;
+			await new Promise((done) => setTimeout(done, 20));
+			readWhileSending.push(read - before);
+			return { partNumber, etag: `e${partNumber}` };
+		});
+		await storage().putStream({ key: 'k', mimeType: 'application/pdf', body: counted(40 * MB) });
+		// the next part, as far as the first chunk of the one after it
+		expect(readWhileSending.slice(0, 3).every((each) => each > 0 && each <= 8 * MB + 65_536)).toBe(
+			true
+		);
+		expect(s3.completeMultipartUpload.mock.calls[0][2]).toEqual(
+			[1, 2, 3, 4, 5].map((partNumber) => ({ partNumber, etag: `e${partNumber}` }))
+		);
+	});
+
 	test('leaves nothing behind of one that fails', async () => {
 		s3.uploadPart.mockRejectedValueOnce(new Error('S3 is down'));
 		await expect(put(20 * MB)).rejects.toThrow('S3 is down');

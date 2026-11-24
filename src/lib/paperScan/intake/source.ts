@@ -47,7 +47,11 @@ export function bufferedSource(source: ScanSource): ScanSource {
 
 	return {
 		size: source.size,
-		async read({ from, to }) {
+		async read(range) {
+			// nothing is read beyond the end, which a broken table may point to
+			const from = Math.min(Math.max(0, range.from), source.size);
+			const to = Math.min(Math.max(from, range.to), source.size);
+			if (to === from) return new Uint8Array(0);
 			const first = Math.floor(from / BLOCK);
 			const last = Math.floor((Math.max(to, from + 1) - 1) / BLOCK);
 			if (last - first >= 4) return source.read({ from, to });

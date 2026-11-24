@@ -262,4 +262,69 @@ describe('pdfPages', () => {
 		expect(bytes.length).toBeGreaterThan(5_000_000);
 		expect(readBytes).toBeLessThan(bytes.length / 5);
 	});
+
+	/** A page as a PDF read off a source that refuses anything outside the file, as the bucket does. */
+	const strictly = (bytes: Uint8Array<ArrayBuffer>): ScanSource => ({
+		size: bytes.length,
+		read: async ({ from, to }) => {
+			if (from < 0 || to > bytes.length || from >= to) throw new Error('416');
+			return bytes.subarray(from, to);
+		}
+	});
+
+	/** Each page cut, or `n!` where that failed for the page alone. */
+	async function outcomes(source: ScanSource) {
+		const pages: (number | string)[] = [];
+		for await (const { page, cut } of pdfPages({ source })) {
+			pages.push(
+				await cut().then(
+					() => page,
+					(error) => (error instanceof PageError ? `${page}!` : 'other')
+				)
+			);
+		}
+		return pages;
+	}
+
+	test('refuses a page whose content unpacks to too much, and cuts the others', async () => {
+		const pdf = await stack([100, 200, 300]);
+		// a few kB that unpack to 20 MB
+		const bomb = pdf.context.register(pdf.context.flateStream(new Uint8Array(20 << 20).fill(32)));
+		pdf.getPage(1).node.set(PDFName.of('Contents'), bomb);
+		expect(await outcomes(strictly(await saved(pdf)))).toEqual([1, '2!', 3]);
+	});
+
+	test('takes an object said to lie beyond the end of the file as not there', async () => {
+		const text = Buffer.from(await saved(await stack([100, 200]), false)).toString('latin1');
+		const entries = [...text.matchAll(/^(\d{10}) 00000 n/gm)];
+		const last = entries.at(-1);
+		if (!last) throw new Error('no table');
+		const broken = text.replace(last[0], `9${'0'.repeat(9)} 00000 n`);
+		const pages = await outcomes(strictly(latin1(broken)));
+		expect(pages).toHaveLength(2);
+		expect(pages).not.toContain('other');
+	});
+
+	test('reads a page’s picture once, though it is asked for twice', async () => {
+		const canvas = createCanvas(900, 900);
+		const context = canvas.getContext('2d');
+		const noise = context.createImageData(900, 900);
+		for (let at = 0; at < noise.data.length; at++) noise.data[at] = (at * 7919) % 251;
+		context.putImageData(noise, 0, 0);
+		const jpeg = canvas.toBuffer('image/jpeg', 95);
+		const pdf = await PDFDocument.create();
+		pdf.addPage([600, 600]).drawImage(await pdf.embedJpg(jpeg));
+		const bytes = await saved(pdf, false);
+		let readBytes = 0;
+		const source: ScanSource = {
+			size: bytes.length,
+			read: async ({ from, to }) => {
+				readBytes += to - from;
+				return bytes.subarray(from, to);
+			}
+		};
+		await cutAll(source);
+		expect(jpeg.length).toBeGreaterThan(600_000);
+		expect(readBytes).toBeLessThan(jpeg.length * 1.5);
+	});
 });

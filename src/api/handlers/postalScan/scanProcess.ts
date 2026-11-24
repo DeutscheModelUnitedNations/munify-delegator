@@ -69,7 +69,6 @@ export function createScanProcess<I extends object, O extends object>(name: stri
 			if (message) return Promise.resolve(message);
 			if (ended) return Promise.reject(new ProcessEndedError(name));
 			return new Promise<O>((resolve, reject) => {
-				waiting = { resolve, reject };
 				const silence = setTimeout(() => child.kill('SIGKILL'), SILENCE_MS);
 				const done = () => clearTimeout(silence);
 				waiting = {

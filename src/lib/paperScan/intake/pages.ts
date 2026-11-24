@@ -131,10 +131,13 @@ async function readPicture({
 	picture: Picture;
 	readCodes: CodeReader;
 }): Promise<ReadPage> {
+	// an empty back, half of a stack scanned on both sides, is told at a glance: no code is printed on so
+	// little ink, and looking for one in every variant of the picture takes many times as long
+	if (isBlank(picture)) return { page: 1, blank: true, codes: [] };
 	const codes = await findCodes({ picture, read: readCodes });
 	return {
 		page: 1,
-		blank: codes.length === 0 && isBlank(picture),
+		blank: false,
 		codes: codes.map(({ rawValue }) => ({
 			text: rawValue,
 			readings: readPageOfCode({ picture, code: rawValue })

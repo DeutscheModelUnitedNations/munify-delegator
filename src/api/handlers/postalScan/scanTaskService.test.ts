@@ -111,15 +111,21 @@ describe.skipIf(!url)('the tasks of delivered scans', () => {
 		expect(await claim(['SPLIT', 'PAGE', 'FINISH'])).toBeUndefined();
 	});
 
-	test('has a file finished at once when its last page is done', async () => {
-		const { finishPage, releaseTask } = await load();
+	test('has a file finished once its last page is done, and not before', async () => {
+		const { finishPage } = await load();
 		await splitInto(1);
-		// looked at while the page was not done
-		const early = await claimed('FINISH');
-		await releaseTask({ of: early, delayMs: 60_000 });
 		expect(await claim(['FINISH'])).toBeUndefined();
 		await finishPage({ of: await claimed('PAGE'), result: {} });
 		expect((await claimed('FINISH')).attempts).toBe(1);
+	});
+
+	test('has a file finished at once whose pages were done while it was split', async () => {
+		const { addPage, finishSplit } = await load();
+		await deliver({ userId: a });
+		const split = await claimed('SPLIT');
+		await addPage({ deliveryId: split.deliveryId, page: 1, result: { ignored: 'blank' } });
+		expect(await finishSplit({ of: split })).toBe(true);
+		expect((await claimed('FINISH')).kind).toBe('FINISH');
 	});
 
 	test('lets go of a page’s file once it is done, so it is cleaned up where nothing kept it', async () => {

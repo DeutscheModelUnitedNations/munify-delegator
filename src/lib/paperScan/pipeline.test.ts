@@ -12,6 +12,7 @@ import { readPaper } from './readPaper';
 import type { Point } from './markerGeometry';
 import { areasAsPrinted, type PaperArea } from './areas';
 import { printedInkOf } from './printedInk';
+import { isBlank } from './intake/blank';
 import { penOn, renderPdfPage, simulatePhoto, simulateScan, type Pixels } from './scanSimulation';
 
 // A page of DMUN's own forms, printed with its marks, filled in by pen, scanned the ways scans
@@ -275,4 +276,21 @@ describe('a picture too poor to tell', () => {
 		const picture = await renderPdfPage({ bytes, dpi: 100 });
 		expect(readPaper({ picture: simulatePhoto({ picture, covered: [0, 2] }), areas })).toBeNull();
 	});
+});
+
+// A blank page is not searched for a code (`readScanPage`): what a printed page carries besides its text, its
+// marks alone, must never look blank, however faintly it is scanned.
+test('a page with nothing but its marks is no blank page', { timeout: 30_000 }, async () => {
+	const pdf = await PDFDocument.create();
+	const page = pdf.addPage([595.28, 841.89]);
+	drawPaperPage({ page, document: 'contract', layout: defaultLayout('contract'), pageIndex: 0 });
+	const bytes = await pdf.save();
+	for (const { scan } of SCANS) {
+		expect(isBlank(scan(await renderPdfPage({ bytes, dpi: 100 })))).toBe(false);
+	}
+	const empty = await PDFDocument.create();
+	empty.addPage([595.28, 841.89]);
+	expect(
+		isBlank(simulateScan({ picture: await renderPdfPage({ bytes: await empty.save(), dpi: 100 }) }))
+	).toBe(true);
 });

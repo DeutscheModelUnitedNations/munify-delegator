@@ -110,9 +110,23 @@ function unpredict({ bytes, columns }: { bytes: Uint8Array; columns: number }) {
 	return plain;
 }
 
+/**
+ * A stream decoded, refused where it comes to more than `limit` bytes: a few MB may unpack to gigabytes,
+ * outside the heap a process is limited to. Only as much as that is decoded.
+ */
+export function decodeWithin({ stream, limit }: { stream: PDFRawStream; limit: number }) {
+	const bytes = decodePDFRawStream(stream).getBytes(limit + 1);
+	if (bytes.length > limit) throw new BrokenTableError('A stream that unpacks to too much');
+	// the same bytes, whichever kind of array pdf-lib handed them in
+	return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.length);
+}
+
+/** No table or object stream of a scan unpacks to more. */
+const MAX_UNPACKED = 64 * 1024 * 1024;
+
 /** A stream unpacked, with the rows of a table as they are. */
 export function unpack(stream: PDFRawStream) {
-	const bytes = decodePDFRawStream(stream).decode();
+	const bytes = decodeWithin({ stream, limit: MAX_UNPACKED });
 	const parms = stream.dict.get(name('DecodeParms'));
 	const only = parms instanceof PDFArray ? parms.get(0) : parms;
 	if (!(only instanceof PDFDict) || (numberIn({ dict: only, key: 'Predictor' }) ?? 1) < 10)
@@ -304,7 +318,8 @@ export async function readTable({
 	}
 	const used = new Map<number, ObjectPlace>();
 	for (const [number, place] of places) {
-		if (!place) continue;
+		// what lies beyond the end is not there: reading it would fail the whole file, not its page
+		if (!place || ('at' in place && (place.at < 0 || place.at >= source.size))) continue;
 		used.set(number, place);
 		if ('at' in place) starts.push(place.at);
 	}

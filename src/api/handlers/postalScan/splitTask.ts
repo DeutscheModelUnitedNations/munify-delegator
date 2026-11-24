@@ -19,6 +19,8 @@ import {
 
 /** So many pages are split before somebody else's file may have its turn. */
 const TURN = 200;
+/** How often the split asks whether it still holds the file: not for every page, which is a write. */
+const CHECK_HOLD_MS = 15_000;
 
 /** The file as it lies in the bucket. */
 const sourceOf = ({ key, size }: ScanTask): ScanSource => ({
@@ -69,6 +71,13 @@ export async function splitDelivery({
 }) {
 	const from = (await lastSplitPage(task.deliveryId)) + 1;
 	const pages = splitScan({ source: sourceOf(task), from });
+	let checkedAt = Date.now();
+	/** Whether it still holds the file, asked now and then; the lane renews the hold meanwhile. */
+	const stillHeld = async () => {
+		if (Date.now() - checkedAt < CHECK_HOLD_MS) return true;
+		checkedAt = Date.now();
+		return renewHold(task);
+	};
 	for (;;) {
 		const { done, value } = await pages.next();
 		if (done) {
@@ -77,7 +86,7 @@ export async function splitDelivery({
 			return;
 		}
 		// somebody else has the file by now, who goes on from here
-		if (isEnding() || !(await renewHold(task))) return void (await pages.return('ended'));
+		if (isEnding() || !(await stillHeld())) return void (await pages.return('ended'));
 		await queuePage({ task, cut: value });
 		onPage();
 		if (value.page - from + 1 >= TURN) {

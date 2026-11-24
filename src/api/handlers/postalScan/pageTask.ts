@@ -5,7 +5,7 @@ import { readStoredFile } from '#api/handlers/storedFile/storedFileService';
 import { logger } from '#lib/logger';
 import { scanFileType } from '#lib/paperScan/intake/scanFile';
 import { takePage, type KeepArgs, type KeptPage } from '#lib/paperScan/intake/takePage';
-import type { createPageReader } from './scanReader';
+import type { ReadPage, ScanContent } from '#lib/paperScan/intake/pages';
 import { finishPage, type ScanTask } from './scanTaskService';
 import { takeInPage } from './takeInPage';
 
@@ -47,7 +47,7 @@ export async function takeInPageTask({
 	reader
 }: {
 	task: ScanTask;
-	reader: Pick<ReturnType<typeof createPageReader>, 'read'>;
+	reader: { read: (scan: ScanContent) => Promise<ReadPage> };
 }) {
 	const bytes = task.pageKey === null ? null : await readStoredFile(task.pageKey);
 	const type = bytes && scanFileType(bytes);

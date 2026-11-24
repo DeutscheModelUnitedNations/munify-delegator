@@ -1,5 +1,4 @@
 import {
-	decodePDFRawStream,
 	PDFArray,
 	PDFDict,
 	PDFDocument,
@@ -13,7 +12,7 @@ import {
 } from 'pdf-lib';
 import { PageError } from '../errors';
 import { entryOf, streamsOf, type PdfObjects } from './objects';
-import { name } from './xref';
+import { decodeWithin, name } from './xref';
 
 /**
  * A page as a file of its own. A stack may hold pages of several people, so nothing of one page comes along
@@ -32,6 +31,8 @@ const DOCUMENT_PARTS = ['Page', 'Pages', 'Catalog'].map(name);
 const MAX_OBJECTS = 20_000;
 const MAX_BYTES = 256 * 1024 * 1024;
 const MAX_DEPTH = 64;
+/** No content of a scanned page says more: a picture and a few lines of text. */
+const MAX_CONTENT = 16 * 1024 * 1024;
 
 /** A page and, for what it does not say itself, those it is among. */
 export interface PageDicts {
@@ -49,7 +50,7 @@ function drawnBy(streams: readonly (PDFObject | undefined)[]) {
 	let text = '';
 	for (const stream of streams) {
 		if (!(stream instanceof PDFRawStream)) throw new PageError('A page without content');
-		text += `${new TextDecoder('latin1').decode(decodePDFRawStream(stream).decode())}\n`;
+		text += `${new TextDecoder('latin1').decode(decodeWithin({ stream, limit: MAX_CONTENT }))}\n`;
 	}
 	const names = text.matchAll(/\/([^\s/[\]()<>{}%]+)\s+Do\b/g);
 	return new Set([...names].map(([, drawn]) => PDFName.of(drawn)));

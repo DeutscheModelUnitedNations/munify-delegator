@@ -5,6 +5,7 @@ import type { ScanTask } from './scanTaskService';
 const mocks = vi.hoisted(() => ({
 	hasPagesLeft: vi.fn(),
 	releaseTask: vi.fn(),
+	renewHold: vi.fn(),
 	removeDelivery: vi.fn(),
 	resultsOf: vi.fn(),
 	tellScanProblems: vi.fn(),
@@ -38,6 +39,7 @@ const conferences = [{ conferenceId: 'conf', teamMemberId: 'member' }];
 beforeEach(() => {
 	vi.resetAllMocks();
 	mocks.hasPagesLeft.mockResolvedValue(false);
+	mocks.renewHold.mockResolvedValue(true);
 	mocks.resultsOf.mockResolvedValue([]);
 	mocks.conferencesToDeliverInto.mockResolvedValue(conferences);
 	mocks.deleteObject.mockResolvedValue(undefined);
@@ -63,6 +65,14 @@ describe('problemsOfDelivery', () => {
 });
 
 describe('finishDelivery', () => {
+	test('tells nothing and removes nothing once another process has it', async () => {
+		mocks.renewHold.mockResolvedValue(false);
+		mocks.resultsOf.mockResolvedValue([{ page: 1, problem: { reason: 'failed' } }]);
+		await finishDelivery(task);
+		expect(mocks.tellScanProblems).not.toHaveBeenCalled();
+		expect(mocks.removeDelivery).not.toHaveBeenCalled();
+	});
+
 	test('waits for the pages', async () => {
 		mocks.hasPagesLeft.mockResolvedValue(true);
 		await finishDelivery(task);

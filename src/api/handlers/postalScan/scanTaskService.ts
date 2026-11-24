@@ -15,6 +15,17 @@ import { inTurn } from './deliveryTurns';
 
 /** How long a task is held unless that is renewed: how long one waits whose process died. */
 const HOLD_MS = 5 * 60_000;
+/**
+ * When a file's FINISH is looked at while pages are still to be done: the last of them makes it due at once,
+ * this is for one whose last page was done just while the split ended.
+ */
+const FINISH_FALLBACK_MS = 5 * 60_000;
+
+/**
+ * The database's time `ms` from now. Every time of the queue is the database's, so replicas whose clocks
+ * differ take no hold that has not run out.
+ */
+const inMs = (ms: number) => sql<Date>`now() + make_interval(secs => ${ms / 1000})`;
 
 const task = schema.scanTask;
 const delivery = schema.scanDelivery;
@@ -34,7 +45,7 @@ export async function queueDelivery({
 		const id = nanoid();
 		const { name: fileName, key, size } = file;
 		await tx.insert(delivery).values({ id, userId, accessName, fileName, key, size });
-		await tx.insert(task).values({ deliveryId: id, kind: 'SPLIT', dueAt: new Date() });
+		await tx.insert(task).values({ deliveryId: id, kind: 'SPLIT', dueAt: inMs(0) });
 	});
 }
 
@@ -48,15 +59,36 @@ export async function countDeliveries(userId: string) {
 }
 
 const due = (kinds: readonly TaskKind[]) =>
-	and(isNull(task.doneAt), lte(task.dueAt, new Date()), inArray(task.kind, [...kinds]));
+	and(isNull(task.doneAt), lte(task.dueAt, sql`now()`), inArray(task.kind, [...kinds]));
+
+const pageFile = schema.storedFile;
+
+/** What a held task is loaded with: the file it is of, and its page's. */
+const taskColumns = {
+	id: task.id,
+	kind: task.kind,
+	page: task.page,
+	attempts: task.attempts,
+	fileId: task.fileId,
+	pageKey: pageFile.key,
+	pageType: pageFile.mimeType,
+	pageName: pageFile.fileName,
+	deliveryId: delivery.id,
+	userId: delivery.userId,
+	accessName: delivery.accessName,
+	fileName: delivery.fileName,
+	key: delivery.key,
+	size: delivery.size
+};
 
 /** Holds the next task of somebody, if any is due: of the file that came first, in order. */
 async function holdNextOf({ userId, kinds }: { userId: string; kinds: readonly TaskKind[] }) {
 	return db.transaction(async (tx) => {
 		const [next] = await tx
-			.select({ id: task.id })
+			.select(taskColumns)
 			.from(task)
 			.innerJoin(delivery, eq(delivery.id, task.deliveryId))
+			.leftJoin(pageFile, eq(pageFile.id, task.fileId))
 			.where(and(due(kinds), eq(delivery.userId, userId)))
 			.orderBy(asc(delivery.createdAt), asc(delivery.id), asc(task.page))
 			.limit(1)
@@ -65,9 +97,9 @@ async function holdNextOf({ userId, kinds }: { userId: string; kinds: readonly T
 		const heldBy = nanoid();
 		await tx
 			.update(task)
-			.set({ heldBy, attempts: sql`${task.attempts} + 1`, dueAt: new Date(Date.now() + HOLD_MS) })
+			.set({ heldBy, attempts: sql`${task.attempts} + 1`, dueAt: inMs(HOLD_MS) })
 			.where(eq(task.id, next.id));
-		return { id: next.id, heldBy };
+		return { ...next, attempts: next.attempts + 1, heldBy };
 	});
 }
 
@@ -90,40 +122,10 @@ export async function claimTask({
 		.groupBy(delivery.userId)
 		.orderBy(min(delivery.createdAt));
 	for (const userId of inTurn({ people: waiting.map((row) => row.userId), lastServed })) {
-		const hold = await holdNextOf({ userId, kinds });
-		// its delivery may be gone just now: there may be more behind it
-		const claimed = hold && (await loadTask(hold));
+		const claimed = await holdNextOf({ userId, kinds });
 		if (claimed) return claimed;
 	}
 	return undefined;
-}
-
-/** A task held, with the file it is of. */
-async function loadTask({ id, heldBy }: { id: string; heldBy: string }) {
-	const page = schema.storedFile;
-	const rows = await db
-		.select({
-			id: task.id,
-			kind: task.kind,
-			page: task.page,
-			attempts: task.attempts,
-			fileId: task.fileId,
-			pageKey: page.key,
-			pageType: page.mimeType,
-			pageName: page.fileName,
-			deliveryId: delivery.id,
-			userId: delivery.userId,
-			accessName: delivery.accessName,
-			fileName: delivery.fileName,
-			key: delivery.key,
-			size: delivery.size
-		})
-		.from(task)
-		.innerJoin(delivery, eq(delivery.id, task.deliveryId))
-		.leftJoin(page, eq(page.id, task.fileId))
-		.where(eq(task.id, id));
-	const row = rows.at(0);
-	return row && { ...row, heldBy };
 }
 
 export type ScanTask = NonNullable<Awaited<ReturnType<typeof claimTask>>>;
@@ -137,7 +139,7 @@ const held = ({ id, heldBy }: Held) => and(eq(task.id, id), eq(task.heldBy, held
 export async function renewHold(of: Held): Promise<boolean> {
 	const renewed = await db
 		.update(task)
-		.set({ dueAt: new Date(Date.now() + HOLD_MS) })
+		.set({ dueAt: inMs(HOLD_MS) })
 		.where(held(of))
 		.returning({ id: task.id });
 	return renewed.length > 0;
@@ -147,7 +149,7 @@ export async function renewHold(of: Held): Promise<boolean> {
 export async function postponeTask({ of, delayMs }: { of: Held; delayMs: number }) {
 	await db
 		.update(task)
-		.set({ heldBy: null, dueAt: new Date(Date.now() + delayMs) })
+		.set({ heldBy: null, dueAt: inMs(delayMs) })
 		.where(held(of));
 }
 
@@ -158,7 +160,7 @@ export async function releaseTask({ of, delayMs = 0 }: { of: Held; delayMs?: num
 		.set({
 			heldBy: null,
 			attempts: sql`greatest(${task.attempts} - 1, 0)`,
-			dueAt: new Date(Date.now() + delayMs)
+			dueAt: inMs(delayMs)
 		})
 		.where(held(of));
 }
@@ -167,15 +169,15 @@ export async function releaseTask({ of, delayMs = 0 }: { of: Held; delayMs?: num
 async function markDone({ tx, of, result }: { tx: Transaction; of: Held; result?: TaskResult }) {
 	const done = await tx
 		.update(task)
-		.set({ doneAt: new Date(), heldBy: null, fileId: null, result })
+		.set({ doneAt: sql`now()`, heldBy: null, fileId: null, result })
 		.where(held(of))
 		.returning({ id: task.id });
 	return done.length > 0;
 }
 
 /** Whether pages of a file are still to be taken in. */
-export async function hasPagesLeft(deliveryId: string) {
-	const [left] = await db
+export async function hasPagesLeft(deliveryId: string, tx: Transaction | typeof db = db) {
+	const [left] = await tx
 		.select({ id: task.id })
 		.from(task)
 		.where(and(eq(task.deliveryId, deliveryId), eq(task.kind, 'PAGE'), isNull(task.doneAt)))
@@ -189,7 +191,7 @@ export async function finishPage({ of, result }: { of: ScanTask; result: TaskRes
 	if (!done || (await hasPagesLeft(of.deliveryId))) return;
 	await db
 		.update(task)
-		.set({ dueAt: new Date() })
+		.set({ dueAt: inMs(0) })
 		.where(and(eq(task.deliveryId, of.deliveryId), eq(task.kind, 'FINISH'), isNull(task.heldBy)));
 }
 
@@ -211,21 +213,28 @@ export async function addPage({
 	deliveryId: string;
 	page: number;
 } & ({ fileId: string } | { result: TaskResult })) {
-	const now = new Date();
-	const done = 'result' in cut ? { doneAt: now, result: cut.result } : { fileId: cut.fileId };
+	const done = 'result' in cut ? { doneAt: inMs(0), result: cut.result } : { fileId: cut.fileId };
 	await db
 		.insert(task)
-		.values({ deliveryId, kind: 'PAGE', page, dueAt: now, ...done })
+		.values({ deliveryId, kind: 'PAGE', page, dueAt: inMs(0), ...done })
 		.onConflictDoNothing();
 }
 
-/** Marks a file as split, with what there is to tell of that; then it is finished once its pages are done. */
+/**
+ * Marks a file as split, with what there is to tell of that; then it is finished once its pages are done: at
+ * once where they are, else when the last is (`finishPage`).
+ */
 export async function finishSplit({ of, result }: { of: ScanTask; result?: TaskResult }) {
 	return db.transaction(async (tx) => {
 		if (!(await markDone({ tx, of, result }))) return false;
+		const waits = await hasPagesLeft(of.deliveryId, tx);
 		await tx
 			.insert(task)
-			.values({ deliveryId: of.deliveryId, kind: 'FINISH', dueAt: new Date() })
+			.values({
+				deliveryId: of.deliveryId,
+				kind: 'FINISH',
+				dueAt: inMs(waits ? FINISH_FALLBACK_MS : 0)
+			})
 			.onConflictDoNothing();
 		return true;
 	});

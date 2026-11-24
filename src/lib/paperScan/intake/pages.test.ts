@@ -3,6 +3,14 @@ import type { Picture } from '../picture';
 import { readScanPage, type ScanPlatform } from './pages';
 
 const empty: Picture = { width: 10, height: 10, data: new Uint8ClampedArray(400).fill(255) };
+/** A page with lines on it. */
+const inked: Picture = {
+	width: 100,
+	height: 100,
+	data: Uint8ClampedArray.from({ length: 100 * 100 * 4 }, (_, at) =>
+		((at >> 2) % 100) % 4 === 0 ? 20 : 250
+	)
+};
 
 /** A platform on which a picture opens, unless told otherwise. */
 const platform = (overrides: Partial<ScanPlatform<object>>): ScanPlatform<object> => ({
@@ -28,6 +36,12 @@ describe('readScanPage', () => {
 		expect(await read({})).toEqual([{ page: 1, blank: true, codes: [] }][0]);
 	});
 
+	test('looks for no code on an empty page, which takes long', async () => {
+		const readCodes = vi.fn(async () => []);
+		await read({ readCodes });
+		expect(readCodes).not.toHaveBeenCalled();
+	});
+
 	test('frees what the page was drawn on, also when that fails', async () => {
 		const releaseCanvas = vi.fn();
 		await read({ releaseCanvas });
@@ -42,7 +56,7 @@ describe('readScanPage', () => {
 
 	test('says what is wrong with a page that cannot be opened or read', async () => {
 		const broken = { page: 1, blank: false, codes: [] };
-		expect(await read({ readCodes: failing('broken picture') })).toEqual({
+		expect(await read({ pictureOf: () => inked, readCodes: failing('broken picture') })).toEqual({
 			...broken,
 			error: 'broken picture'
 		});
