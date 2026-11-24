@@ -53,19 +53,21 @@
 	const nameOf = (scan: { fields: string[]; file: { fileName?: string | null } }) =>
 		pageLabel(scan.fields) ?? scan.file.fileName ?? m.postalScanUntitled();
 
-	// fallow-ignore-next-line complexity
+	const uploadError = (error: unknown) =>
+		error instanceof Error ? error.message : m.genericToastError();
+
+	/** Uploads one file; what fails is toasted, and the next is uploaded all the same. */
+	async function uploadOne(file: File) {
+		const promise = uploadScanFor({ file, conferenceId, userId });
+		toast.promise(promise, { ...genericPromiseToastMessages, error: uploadError });
+		await promise.catch(() => undefined);
+	}
+
 	async function upload(files: FileList | null) {
-		if (!files || files.length === 0 || uploading) return;
+		if (!files?.length || uploading) return;
 		uploading = true;
 		try {
-			for (const file of files) {
-				const promise = uploadScanFor({ file, conferenceId, userId });
-				toast.promise(promise, {
-					...genericPromiseToastMessages,
-					error: (error) => (error instanceof Error ? error.message : m.genericToastError())
-				});
-				await promise.catch(() => undefined);
-			}
+			for (const file of files) await uploadOne(file);
 		} finally {
 			uploading = false;
 		}

@@ -32,19 +32,22 @@
 		const tracker = createFolderTracker(await listScans(handle));
 		if (current !== round) return;
 		folder = handle.name;
-		// fallow-ignore-next-line complexity
+		const watching = () => current === round;
+		/** Hands on what came since it looked last. */
+		const takeNew = async () => {
+			const files = tracker.take(await listScans(handle));
+			if (watching() && files.length > 0) await onscans(files);
+		};
+		/** The folder cannot be read any more: removed, or its permission taken back. */
+		const lost = (error: unknown) => {
+			logger.warn('Reading the watched folder failed', error);
+			if (!watching()) return;
+			stop();
+			toast.error(m.scanFolderLost());
+		};
 		const look = async () => {
-			try {
-				const files = tracker.take(await listScans(handle));
-				if (current === round && files.length > 0) await onscans(files);
-			} catch (error) {
-				logger.warn('Reading the watched folder failed', error);
-				if (current === round) {
-					stop();
-					toast.error(m.scanFolderLost());
-				}
-			}
-			if (current === round) timer = setTimeout(look, INTERVAL_MS);
+			await takeNew().catch(lost);
+			if (watching()) timer = setTimeout(look, INTERVAL_MS);
 		};
 		timer = setTimeout(look, INTERVAL_MS);
 	}
