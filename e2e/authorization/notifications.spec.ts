@@ -289,7 +289,8 @@ test('the page lists the topics and a switch saves', async ({ browser }) => {
 	await expect(page).toHaveURL(/\/my-account\/notifications$/);
 
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
-	await expect(section.getByTestId('notification-row')).toHaveCount(2);
+	// their inbox, chat reports and scan problems
+	await expect(section.getByTestId('notification-row')).toHaveCount(3);
 	await expect(section.getByTestId('slack-connection')).toBeVisible();
 
 	const mailForCare = section.getByRole('checkbox', {
@@ -323,7 +324,7 @@ test('a conference is switched off and on at once', async ({ browser }) => {
 	await page.goto('/my-account/notifications');
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
 	const switches = section.getByRole('checkbox');
-	await expect(switches).toHaveCount(4);
+	await expect(switches).toHaveCount(6);
 
 	await section
 		.getByRole('button', { name: `Alle Benachrichtigungen für ${fixture.title} ausschalten` })
@@ -331,6 +332,7 @@ test('a conference is switched off and on at once', async ({ browser }) => {
 	await expect
 		.poll(async () => (await settingsOf(page))?.settings)
 		.toEqual([
+			expect.objectContaining({ email: false, slack: false }),
 			expect.objectContaining({ email: false, slack: false }),
 			expect.objectContaining({ email: false, slack: false })
 		]);
