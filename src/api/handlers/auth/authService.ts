@@ -11,6 +11,17 @@ interface SessionUser {
 	phone?: string | null;
 }
 
+/** Who a session is of; the claims a provider left out are null, the email empty. */
+export function identityOf(user: SessionUser) {
+	return {
+		sub: user.sub,
+		email: user.email ?? '',
+		preferred_username: user.preferred_username ?? null,
+		family_name: user.family_name ?? null,
+		given_name: user.given_name ?? null
+	};
+}
+
 /** Provider extras the library's parsed user does not model; null when omitted or reshaped. */
 const providerExtras = z.object({
 	password: z.boolean().nullable().catch(null),
@@ -35,11 +46,7 @@ export function offlineUserOf({
 }) {
 	const extras = providerExtras.parse(claims);
 	return {
-		sub: user.sub,
-		email: user.email ?? '',
-		preferred_username: user.preferred_username ?? null,
-		family_name: user.family_name ?? null,
-		given_name: user.given_name ?? null,
+		...identityOf(user),
 		locale: user.locale ?? null,
 		phone: user.phone ?? null,
 		hasPassword: extras.password,

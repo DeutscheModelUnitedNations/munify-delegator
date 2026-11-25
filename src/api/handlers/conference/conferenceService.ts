@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db';
+import { db, schema, type Transaction } from '#api/db/db';
 import { assertAgeRangeInOrder, assertConferenceDatesInOrder } from './conferenceSettings';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
@@ -270,6 +270,42 @@ export const seedingDataSchema = jsonDocument({
 type ConferenceSeedingData = z.output<typeof seedingDataSchema>;
 
 /**
+ * Seats a nation, which the seeding document names by alpha-2, in a committee: it becomes a nation
+ * role of the conference (once, however many committees seat it) and is linked to the committee.
+ */
+async function seatNation({
+	tx,
+	conferenceId,
+	committeeId,
+	alpha2
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	committeeId: string;
+	alpha2: string;
+}) {
+	const nation = await tx.query.nation.findFirst({
+		where: { alpha2Code: alpha2.toLowerCase() },
+		columns: { alpha3Code: true }
+	});
+	if (!nation) return;
+	await tx
+		.insert(schema.conferenceRole)
+		.values({ conferenceId, kind: 'NATION', nationAlpha3Code: nation.alpha3Code })
+		.onConflictDoNothing();
+	const role = await tx.query.conferenceRole
+		.findFirst({
+			where: { conferenceId, nationAlpha3Code: nation.alpha3Code },
+			columns: { id: true }
+		})
+		.then(assertFindFirstExists);
+	await tx
+		.insert(schema.committeeToRole)
+		.values({ a: committeeId, b: role.id })
+		.onConflictDoNothing();
+}
+
+/**
  * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
  * document. Refuses (INVALID_INPUT) a document naming nations there are no rows for, listing them
  * all. Returns the conference's id.
@@ -322,32 +358,8 @@ export async function seedConference(data: ConferenceSeedingData) {
 				.returning()
 				.then(assertFirstEntryExists);
 
-			// The seeding document names nations by alpha-2; each one seated becomes a nation role
-			// of the conference (once, however many committees seat it) and is linked to the committee.
 			for (const alpha2 of nations) {
-				const nation = await tx.query.nation.findFirst({
-					where: { alpha2Code: alpha2.toLowerCase() },
-					columns: { alpha3Code: true }
-				});
-				if (!nation) continue;
-				await tx
-					.insert(schema.conferenceRole)
-					.values({
-						conferenceId: conference.id,
-						kind: 'NATION',
-						nationAlpha3Code: nation.alpha3Code
-					})
-					.onConflictDoNothing();
-				const role = await tx.query.conferenceRole
-					.findFirst({
-						where: { conferenceId: conference.id, nationAlpha3Code: nation.alpha3Code },
-						columns: { id: true }
-					})
-					.then(assertFindFirstExists);
-				await tx
-					.insert(schema.committeeToRole)
-					.values({ a: row.id, b: role.id })
-					.onConflictDoNothing();
+				await seatNation({ tx, conferenceId: conference.id, committeeId: row.id, alpha2 });
 			}
 		}
 

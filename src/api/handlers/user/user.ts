@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { identityOf } from '#api/handlers/auth/authService';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
 import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
@@ -296,17 +297,10 @@ schemaBuilder.queryFields((t) => ({
 			if (!user || !impersonator) {
 				return { isImpersonating: false, originalUser: null, impersonatedUser: null };
 			}
-			const identity = (person: typeof user | typeof impersonator) => ({
-				sub: person.sub,
-				email: person.email ?? '',
-				preferred_username: person.preferred_username ?? null,
-				given_name: person.given_name ?? null,
-				family_name: person.family_name ?? null
-			});
 			return {
 				isImpersonating: true,
-				originalUser: identity(impersonator),
-				impersonatedUser: identity(user)
+				originalUser: identityOf(impersonator),
+				impersonatedUser: identityOf(user)
 			};
 		}
 	})

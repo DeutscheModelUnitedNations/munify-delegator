@@ -1,5 +1,28 @@
 import { describe, expect, test } from 'vitest';
-import { offlineUserOf } from './authService';
+import { identityOf, offlineUserOf } from './authService';
+
+describe('identityOf', () => {
+	test('names who a session is of, and nothing else of them', () => {
+		const identity = {
+			sub: 'u1',
+			email: 'a@b.de',
+			preferred_username: 'ab',
+			family_name: 'B',
+			given_name: 'A'
+		};
+		expect(identityOf({ ...identity, locale: 'de', phone: '+49123' })).toEqual(identity);
+	});
+
+	test('fills what the provider left out', () => {
+		expect(identityOf({ sub: 'u1' })).toEqual({
+			sub: 'u1',
+			email: '',
+			preferred_username: null,
+			family_name: null,
+			given_name: null
+		});
+	});
+});
 
 describe('offlineUserOf', () => {
 	test('fills the missing parts of the parsed user with null, and the email with an empty string', () => {
