@@ -1,13 +1,13 @@
 import { dev } from '$app/env';
 import { fork, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
-import { sandboxCommand } from './scanSandbox';
+import { mayOpenScans, sandboxCommand } from './scanSandbox';
 
 /**
  * The processes delivered scans are split and read in (`scanSplitter.worker`, `scanReader.worker`). Whoever
  * made a PDF decides what opening it takes, and drawing a page leaks native memory, so this happens apart
  * from the app: what it takes ends with the process, and so does what makes it crash. They know nothing of
- * the app but what they are sent, and where the system can, they reach nothing else (`./scanSandbox`).
+ * the app but what they are sent, and reach nothing else (`./scanSandbox`).
  */
 
 /** A process that says nothing for so long while it is asked something has hung. */
@@ -22,6 +22,9 @@ export class ProcessEndedError extends Error {
 		this.name = 'ProcessEndedError';
 	}
 }
+
+/** Whether the processes may be started here; development has no sandbox. */
+export const canOpenScans = async () => dev || (await mayOpenScans());
 
 function start(name: string): ChildProcess {
 	const nodeArgs = [`--max-old-space-size=${HEAP_MB}`];

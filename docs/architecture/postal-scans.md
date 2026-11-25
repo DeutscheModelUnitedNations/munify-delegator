@@ -77,9 +77,12 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
 - **They run in a sandbox** (`scanSandbox.ts`): Landlock, set up by `setpriv` before Node starts. They write
   nothing, read only programs, libraries and their own code, and cannot look into the app's process, whose
   environment holds the secrets. The network is not kept from them. It needs util-linux 2.40 and a kernel with
-  Landlock (both there in the image under Docker's default seccomp profile); without, a warning is logged and
-  they run as before. What a worker newly loads from disk has to lie in a path listed there: try it in the
-  image. Development has no sandbox.
+  Landlock (both there in the image under Docker's default seccomp profile). **Without, nothing is opened**:
+  an error is logged once, and what was delivered waits as it came, no attempt counted, until the sandbox
+  works (tried again with each delivery and once a minute) or another replica takes it.
+  `SCANS_WITHOUT_SANDBOX=true` opens scans all the same where there is none (a warning; the e2e suite, as CI's
+  `setpriv` is older), and uses it where there is. What a worker newly loads from disk has to lie in a path
+  listed there: try it in the image. Development has no sandbox.
 - They are built by `build:compute`, with pdf.js and the code reader bundled in and what they load (wasm,
   fonts) copied to `build/compute/scanReaderFiles`. Only `@napi-rs/canvas` (native code) is a runtime
   dependency. pdf.js decodes JBIG2 and JPEG 2000, which office scanners write, with wasm files: without
@@ -199,6 +202,9 @@ large a file may be:
   refuses a body said to be larger (`Content-Length`) before it reads anything, so `webdav.ts` reads such a PUT
   off the Node request (`platform.req`), which nothing else reads then: a scanner that says how large its file
   is may send up to 20 GB. One that sends without a length (chunked) is cut off at `BODY_SIZE_LIMIT` and told 413. Outside the built app (`vite dev`) there is no limit.
+- Delivered scans need the sandbox ("They run in a sandbox" above). To try it in the app's container:
+  `setpriv --no-new-privs --landlock-access fs --landlock-rule path-beneath:execute,read-file,read-dir:/usr
+--landlock-rule path-beneath:execute,read-file,read-dir:/lib node --version`.
 - `SCAN_READERS` pages are read at once per instance, each process up to some 0.7 GB (600 MB resident before it
   hands over, plus the page in hand). Reading is CPU-bound: set it to the cores an instance has to spare.
 - Node gives up a request after 5 minutes (`server.requestTimeout`, no variable), so a file must be through by

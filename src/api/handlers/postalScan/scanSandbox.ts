@@ -1,4 +1,5 @@
-import { spawnSync } from 'node:child_process';
+import { SCANS_WITHOUT_SANDBOX } from '$app/env/private';
+import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { logger } from '#lib/logger';
@@ -44,26 +45,68 @@ const landlock = () => [
 	...reachable().flatMap(([path, access]) => ['--landlock-rule', `path-beneath:${access}:${path}`])
 ];
 
-/** Tried once: not every system has it. */
-let available: boolean | undefined;
+/** How long the test may take: far longer than it does, unless the system is overloaded. */
+const TEST_TIMEOUT_MS = 10_000;
 
-function isAvailable(prefix: readonly string[]) {
-	const { status, error, stderr } = spawnSync(SETPRIV, [...prefix, process.execPath, '--version'], {
-		env: {},
-		timeout: 10_000,
-		encoding: 'utf8'
+/** Why Node does not start in the sandbox; `undefined` when it does. */
+const testSandbox = () =>
+	new Promise<string | undefined>((resolve) => {
+		const command = [...landlock(), process.execPath, '--version'];
+		const options = { env: {}, timeout: TEST_TIMEOUT_MS, killSignal: 'SIGKILL' } as const;
+		execFile(SETPRIV, command, options, (error, _stdout, stderr) => {
+			if (!error) resolve(undefined);
+			else if (error.killed) resolve('The test took too long');
+			else resolve(stderr.trim() || error.message);
+		});
 	});
-	if (status === 0) return true;
-	logger.warn('Scans are opened without a sandbox: this system has no Landlock for it', {
-		reason: error?.message ?? stderr
-	});
-	return false;
+
+let available = false;
+/** What was logged last, so what stays the same is told once. */
+let toldReason: string | undefined;
+let testing: Promise<boolean> | undefined;
+
+/**
+ * Tries the sandbox. Only that it works is remembered: what failed may have been a system too busy just
+ * then, and is tried again the next time.
+ */
+async function isAvailable() {
+	available ||= await (testing ??= test().finally(() => (testing = undefined)));
+	return available;
 }
 
-/** How `fork` starts Node with `nodeArgs`: in the sandbox, or as it is where there is none. */
+async function test() {
+	const reason = await testSandbox();
+	if (reason !== undefined && reason !== toldReason) tell(reason);
+	toldReason = reason;
+	return reason === undefined;
+}
+
+function tell(reason: string) {
+	if (SCANS_WITHOUT_SANDBOX) {
+		logger.warn('Scans are opened without a sandbox: this system has no Landlock for it', {
+			reason
+		});
+	} else {
+		logger.error('Delivered scans wait: this system has no sandbox to open them in', { reason });
+	}
+}
+
+/**
+ * Whether scans may be opened: in the sandbox, or without one where the deployment says so
+ * (`SCANS_WITHOUT_SANDBOX`). Asked before anything is started; what is logged says why not.
+ */
+export async function mayOpenScans() {
+	return (await isAvailable()) || SCANS_WITHOUT_SANDBOX;
+}
+
+/**
+ * How `fork` starts Node with `nodeArgs`: in the sandbox, or as it is where the deployment allows that.
+ * Throws without either, or before `mayOpenScans` was asked.
+ */
 export function sandboxCommand(nodeArgs: readonly string[]) {
-	const prefix = landlock();
-	available ??= isAvailable(prefix);
-	if (!available) return { execPath: process.execPath, execArgv: [...nodeArgs] };
-	return { execPath: SETPRIV, execArgv: [...prefix, process.execPath, ...nodeArgs] };
+	if (available) {
+		return { execPath: SETPRIV, execArgv: [...landlock(), process.execPath, ...nodeArgs] };
+	}
+	if (!SCANS_WITHOUT_SANDBOX) throw new Error('There is no sandbox to open scans in');
+	return { execPath: process.execPath, execArgv: [...nodeArgs] };
 }

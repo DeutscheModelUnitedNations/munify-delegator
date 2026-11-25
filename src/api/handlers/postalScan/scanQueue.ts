@@ -3,6 +3,7 @@ import { beforeShutdown, isShuttingDown } from '#api/services/shutdown';
 import { logger } from '#lib/logger';
 import { finishDelivery } from './finishTask';
 import { takeInPageTask } from './pageTask';
+import { canOpenScans } from './scanProcess';
 import { createPageReaders } from './scanReader';
 import { finishPage, finishSplit, removeDelivery, type ScanTask } from './scanTaskService';
 import { splitDelivery } from './splitTask';
@@ -60,10 +61,16 @@ const pages = createTaskLane({
 	}
 });
 
-/** Has this process work through the queue, in the background. */
+/**
+ * Has this process work through the queue, in the background. Where scans may not be opened (no sandbox),
+ * all waits as it came, untouched, for a process that may.
+ */
 export function wakeScanQueue() {
-	splitting.wake();
-	pages.wake();
+	void canOpenScans().then((can) => {
+		if (!can) return;
+		splitting.wake();
+		pages.wake();
+	});
 }
 
 let stopped: Promise<unknown> | undefined;

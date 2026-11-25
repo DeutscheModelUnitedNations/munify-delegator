@@ -163,6 +163,11 @@ export const variables = defineEnvVars({
 	SCAN_READERS: {
 		schema: numberOr(2).pipe(z.number().int().min(1, 'must be at least 1').max(16))
 	},
+	/**
+	 * Opens delivered scans also where the system has no Landlock to sandbox that with; without this they
+	 * wait in the queue there. Whoever gets a crafted file in may then read the app's secrets.
+	 */
+	SCANS_WITHOUT_SANDBOX: { schema: unlessEmpty(z.stringbool().default(false)) },
 
 	// Object storage (any S3-compatible service) for every uploaded file. The endpoint names the
 	// bucket, path style (`https://s3.example.org/delegator`) or virtual-hosted
