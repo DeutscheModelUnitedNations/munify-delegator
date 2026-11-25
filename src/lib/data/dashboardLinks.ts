@@ -19,6 +19,8 @@ export interface DashboardLinkContext {
 	unlockPayments?: boolean;
 	unlockPostals?: boolean;
 	linkToPreparationGuide?: string | null;
+	/** Whether the guide inside the app is open to the caller: published, roles released. */
+	guideOpen?: boolean;
 	isOpenPaperSubmission?: boolean;
 	showCalendar?: boolean;
 	linkToPaperInbox?: string | null;
@@ -134,10 +136,15 @@ const dashboardLinks: DashboardLink[] = [
 		icon: 'book-bookmark',
 		getTitle: () => m.preparation(),
 		getDescription: () => m.preparationDescription(),
-		getHref: (ctx) => ({ externalUrl: ctx.linkToPreparationGuide ?? '' }),
-		external: true,
+		// the guide inside the app once it is open, the old external guide until then
+		getHref: (ctx) =>
+			ctx.guideOpen
+				? resolve('/(authenticated)/dashboard/[conferenceId]/guide', {
+						conferenceId: ctx.conferenceId
+					})
+				: { externalUrl: ctx.linkToPreparationGuide ?? '' },
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => !!ctx.linkToPreparationGuide,
+		isVisible: (ctx) => !!ctx.guideOpen || !!ctx.linkToPreparationGuide,
 		isDisabled: () => false
 	},
 	{

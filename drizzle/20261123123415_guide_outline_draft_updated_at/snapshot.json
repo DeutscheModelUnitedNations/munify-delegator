@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "6444b9e2-a28f-4f5e-abcc-aca64789174f",
+  "prevIds": [
+    "995d12b9-4b40-4278-8a73-e5bc13697b14"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "guide_outline",
+        "draft_updated_at"
+      ],
+      "writes": [
+        "s|col|public.guide_outline.draft_updated_at",
+        "n|col|public.guide_outline.draft_updated_at",
+        "e|col|public.guide_outline.draft_updated_at"
+      ],
+      "reads": [
+        "n|tbl|public.guide_outline",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "guide_outline",
+        "name": "draft_updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

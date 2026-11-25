@@ -102,6 +102,12 @@
 										{m.slackWorkspaces()}
 									</a>
 								</li>
+								<li>
+									<a href={resolve('dashboard/conference-series')}>
+										<i aria-hidden="true" class="ph-duotone ph-stack w-4"></i>
+										{m.conferenceSeriesTitle()}
+									</a>
+								</li>
 							</ul>
 						</details>
 					</li>

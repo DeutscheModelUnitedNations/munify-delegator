@@ -130,6 +130,7 @@ The cards under **Quick Links** on the participants' dashboard, such as **Fee Pa
 - **Paper Submission Open**: participants create papers on their committees' agenda items in the [Paper Hub](../participant/paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
 - **Show calendar for participants**: participants see the [schedule](./communication#calendar). The team always sees it.
 - **Messages between delegations**: unlocks the direct chats between participants of different delegations once the assignment is released (see [Messages](./communication#messages)). Participants always reach the team and their own delegation. Switched off, existing direct chats stay readable, but nobody writes anything new there.
+- **Guide published**: participants read the [preparation guide](./communication#guide) in the app once their roles are released; until then the dashboard links the **preparation guide** link. The same switch sits in the guide itself.
 
 :::tip Release first, then the paperwork
 **Participation fee unlocked** and **Postal registration unlocked** only become due once the assignment is released. If you allow payments before that, saving offers no emails. After the release they go out with the next automatic run if the kind is set to automatic. Otherwise they wait on the [Emails](./communication#emails) page until you send them.

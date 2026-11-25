@@ -123,6 +123,12 @@ Im Schnellzugriff findest du außerdem, sobald das Team es eingerichtet hat:
 
 Solange die Konferenz vorbereitet wird, bittet dich ein Hinweis, MUNify DELEGATOR auf deinem Smartphone einzurichten (siehe [Auf der Konferenz](#at-the-conference)). Mit **Erledigt, ausblenden** verschwindet er auf diesem Gerät.
 
+## Vorbereitungsleitfaden {#guide}
+
+Sobald die Rollen verteilt sind und das Team den Leitfaden freigegeben hat, führt dich die Karte **Vorbereitung** auf dem Dashboard zum Leitfaden in der App. Links steht die Navigation mit den Abschnitten für dich: als Delegierte\*r die Schritte deines Gremiums und seine Themen, als NA-Vertreter\*in oder in einer Sonderrolle die Seiten für dich. Betreuende sehen alle Abschnitte. Rechts führt **Auf dieser Seite** zu den Überschriften, unten **Zurück** und **Weiter** durch die Seiten. Bei einem Thema lädst du den Gremientext als PDF herunter. Videos laden erst, wenn du sie anklickst.
+
+Vorher verlinkt die Karte den Leitfaden auf einer externen Seite, wenn die Konferenz einen angegeben hat.
+
 ## Zahlung {#payment}
 
 Die Karte **Beitragszahlung** öffnet die Zahlungsseite, sobald das Team die Zahlung freischaltet. Je nach Einstellung der Konferenz bekommst du dann eine E-Mail. Den Teilnahmebeitrag zahlst du per Überweisung:

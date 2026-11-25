@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { PAGE_SKELETON, type SkeletonNode } from '#lib/components/navigation/skeletonShapes';
 import { teamRoutes, teamSkeletonForPath } from './teamRoutes';
-import { ASSIGNMENT_TAB_SKELETONS, TEAM_SKELETONS } from './teamSkeletons';
+import { ASSIGNMENT_TAB_SKELETONS, GUIDE_TAB_SKELETONS, TEAM_SKELETONS } from './teamSkeletons';
 
 const blockCount = (nodes: readonly SkeletonNode[]): number =>
 	nodes.reduce((count, node) => count + (node.children ? blockCount(node.children) : 1), 0);
@@ -30,6 +30,13 @@ describe('teamSkeletonForPath', () => {
 		expect(teamSkeletonForPath('team/assignment/unknown').name).toBe('assignmentSighting');
 	});
 
+	test('gives each guide tab the whole workspace with its own body', () => {
+		expect(teamSkeletonForPath('team/guide').name).toBe('guideWorkspace-structure');
+		expect(teamSkeletonForPath('team/guide/page/abc').name).toBe('guideWorkspace-page');
+		expect(teamSkeletonForPath('team/guide/visibility').name).toBe('guideWorkspace-visibility');
+		expect(teamSkeletonForPath('team/guide/committees').name).toBe('guideWorkspace-committees');
+	});
+
 	test('falls back to the generic skeleton for a path no entry owns', () => {
 		expect(teamSkeletonForPath('team/nothing-here')).toBe(PAGE_SKELETON);
 	});
@@ -38,7 +45,8 @@ describe('teamSkeletonForPath', () => {
 test('every skeleton draws something', () => {
 	for (const skeleton of [
 		...Object.values(TEAM_SKELETONS),
-		...Object.values(ASSIGNMENT_TAB_SKELETONS)
+		...Object.values(ASSIGNMENT_TAB_SKELETONS),
+		...Object.values(GUIDE_TAB_SKELETONS)
 	]) {
 		expect(blockCount(skeleton.nodes), skeleton.name).toBeGreaterThan(3);
 	}
