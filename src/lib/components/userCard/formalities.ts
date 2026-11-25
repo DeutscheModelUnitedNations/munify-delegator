@@ -55,6 +55,30 @@ export function formalitiesOf({
 	];
 }
 
+/**
+ * Whether what the consent allows is shown: once a paper has come in that says it, or somebody has set
+ * it all the same.
+ */
+export const photoStatusShown = ({
+	mediaConsent,
+	mediaConsentStatus
+}: Pick<FormalityStatuses, 'mediaConsent' | 'mediaConsentStatus'>) =>
+	mediaConsent !== 'PENDING' || mediaConsentStatus !== 'NOT_SET';
+
+/** How many of the signed papers are settled; the photo consent is one with what it allows. */
+export function postalProgress(formalities: readonly Formality[]) {
+	const papers = formalities.filter(
+		({ key }) => key !== 'paymentStatus' && key !== 'mediaConsentStatus'
+	);
+	const photosOpen = formalities.some(
+		(formality) => formality.key === 'mediaConsentStatus' && isOpen(formality)
+	);
+	const open = papers.filter(
+		(formality) => isOpen(formality) || (formality.key === 'mediaConsent' && photosOpen)
+	);
+	return { done: papers.length - open.length, total: papers.length };
+}
+
 /** Whether a guardian has to consent: adults at the conference and supervisors sign for themselves. */
 export const needsGuardian = ({
 	isConferenceSupervisor,
@@ -68,28 +92,3 @@ export const needsGuardian = ({
 
 /** Whether a formality still needs somebody to do something. */
 export const isOpen = (formality: Formality) => formality.state !== 'done';
-
-/**
- * What the team does with a person at this point, which the overview leads with: judging the
- * application until they have a seat, settling the formalities until the conference runs, then
- * letting them in. Nothing for somebody who has none of it, like the team.
- */
-export function overviewLead({
-	state,
-	access,
-	participant,
-	applicant
-}: {
-	state: 'PRE' | 'PARTICIPANT_REGISTRATION' | 'PREPARATION' | 'ACTIVE' | 'POST';
-	/** A confirmed place at the conference */
-	access: boolean;
-	/** The person has a `conferenceParticipant` row */
-	participant: boolean;
-	/** A delegation, a single participation, or a place on the waiting list */
-	applicant: boolean;
-}): 'application' | 'formalities' | 'onSite' | undefined {
-	if (access && participant) {
-		return state === 'ACTIVE' || state === 'POST' ? 'onSite' : 'formalities';
-	}
-	return applicant ? 'application' : undefined;
-}

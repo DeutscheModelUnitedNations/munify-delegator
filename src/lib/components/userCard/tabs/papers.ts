@@ -1,15 +1,23 @@
 import { client } from '#lib/api/rumbleClient/client';
 
 /** The person's papers. Drafts are the author's own business; the card only shows submitted work. */
-export function fetchPapers({ userId, conferenceId }: { userId: string; conferenceId: string }) {
+export function submittedPapersOf({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}) {
+	return {
+		conference: { id: { eq: conferenceId } },
+		author: { id: { eq: userId } },
+		NOT: { status: 'DRAFT' }
+	} as const;
+}
+
+export function fetchPapers(person: { userId: string; conferenceId: string }) {
 	return client.liveQuery.papers({
-		__args: {
-			where: {
-				conference: { id: { eq: conferenceId } },
-				author: { id: { eq: userId } },
-				NOT: { status: 'DRAFT' }
-			}
-		},
+		__args: { where: submittedPapersOf(person) },
 		id: true,
 		type: true,
 		status: true,

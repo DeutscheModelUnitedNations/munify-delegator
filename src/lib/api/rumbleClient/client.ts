@@ -2150,6 +2150,9 @@ export type Conferenceparticipant = {
   nsaCardNumber: Int,
   ofAgeAtConference: Boolean,
   paymentStatus: AdministrativestatusEnum,
+  postalConfirmedDetails: String | null,
+  postalConfirmedOfAge: Boolean | null,
+  postalInfoRead: Boolean,
   postalScans: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -2196,13 +2199,16 @@ export type ConferenceparticipantOrderInputArgument = {
   messagingSuspended?: SortingParameter | null | undefined,
   nsaCardNumber?: SortingParameter | null | undefined,
   paymentStatus?: SortingParameter | null | undefined,
+  postalConfirmedDetails?: SortingParameter | null | undefined,
+  postalConfirmedOfAge?: SortingParameter | null | undefined,
+  postalInfoRead?: SortingParameter | null | undefined,
   schoolId?: SortingParameter | null | undefined,
   termsAndConditions?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined,
   userId?: SortingParameter | null | undefined    
 };
 		
-export type ConferenceparticipantSearchFieldEnum = "accessCardId" | "conferenceId" | "id" | "schoolId" | "userId";
+export type ConferenceparticipantSearchFieldEnum = "accessCardId" | "conferenceId" | "id" | "postalConfirmedDetails" | "schoolId" | "userId";
 		
 export type ConferenceparticipantSearchInputArgument = {
   fields?: ConferenceparticipantSearchFieldEnum[] | undefined,
@@ -2230,6 +2236,9 @@ export type ConferenceparticipantWhereInputArgument = {
   messagingSuspended?: BooleanWhereInputArgument | null | undefined,
   nsaCardNumber?: IntWhereInputArgument | null | undefined,
   paymentStatus?: AdministrativestatusEnum | null | undefined,
+  postalConfirmedDetails?: StringWhereInputArgument | null | undefined,
+  postalConfirmedOfAge?: BooleanWhereInputArgument | null | undefined,
+  postalInfoRead?: BooleanWhereInputArgument | null | undefined,
   postalScans?: PostalscanWhereInputArgument | null | undefined,
   school?: SchoolWhereInputArgument | null | undefined,
   schoolId?: IDWhereInputArgument | null | undefined,
@@ -3167,6 +3176,7 @@ export type Mutation = {
   autoAssignSingleParticipants: (p: {
     conferenceId: ID
   }) => Int,
+  completePostalGuide: () => User,
   connectToConferenceSupervisor: (p: {
     conferenceId: ID,
     connectionCode: String,
@@ -3969,6 +3979,12 @@ export type Mutation = {
     sitePlanFileId?: ID | null | undefined,
     websiteUrl?: String | null | undefined
   }) => Place,
+  updatePostalProgress: (p: {
+    conferenceId: ID,
+    confirmedDetails?: String | null | undefined,
+    confirmedOfAge?: Boolean | null | undefined,
+    infoRead?: Boolean | null | undefined
+  }) => Conferenceparticipant,
   updateResolution: (p: {
     committeeId?: ID | null | undefined,
     id: ID,
@@ -7783,6 +7799,7 @@ export type User = {
     where?: UserreferenceinpaymenttransactionWhereInputArgument | null | undefined
   }) => Userreferenceinpaymenttransaction[],
   phone: String | null,
+  postalGuideCompletedAt: DateTime | null,
   preferredUsername: String,
   pronouns: String | null,
   recordedAttendanceEntries: (p?: {
@@ -7853,6 +7870,7 @@ export type UserOrderInputArgument = {
   locale?: SortingParameter | null | undefined,
   messageNotificationEmails?: SortingParameter | null | undefined,
   phone?: SortingParameter | null | undefined,
+  postalGuideCompletedAt?: SortingParameter | null | undefined,
   preferredUsername?: SortingParameter | null | undefined,
   pronouns?: SortingParameter | null | undefined,
   region?: SortingParameter | null | undefined,
@@ -7902,6 +7920,7 @@ export type UserWhereInputArgument = {
   papers?: PaperWhereInputArgument | null | undefined,
   paymentTransactionsReferences?: UserreferenceinpaymenttransactionWhereInputArgument | null | undefined,
   phone?: StringWhereInputArgument | null | undefined,
+  postalGuideCompletedAt?: DateTimeWhereInputArgument | null | undefined,
   preferredUsername?: StringWhereInputArgument | null | undefined,
   pronouns?: StringWhereInputArgument | null | undefined,
   recordedAttendanceEntries?: AttendanceentryWhereInputArgument | null | undefined,

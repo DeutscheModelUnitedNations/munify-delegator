@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db';
+import { db, schema, type Transaction } from '#api/db/db';
 import { isInvitedAddress } from './invitationValidity';
 import { teamMemberInvitationPubsub, teamMemberPubsub } from '#api/pubsub';
 import type { TeamRole } from '#api/services/authHelper/rules';
@@ -146,6 +146,40 @@ function findPendingInvitation({ conferenceId, email }: { conferenceId: string; 
 	});
 }
 
+/**
+ * Revokes the address's expired invitation, which inviting it again replaces: the unique index on
+ * open invitations counts it, and it would stay listed beside its successor. Answers the revoked
+ * ids, to publish after the transaction.
+ */
+async function revokeExpiredInvitations({
+	tx,
+	conferenceId,
+	email
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	email: string;
+}) {
+	const now = new Date();
+	const revoked = await tx
+		.update(schema.teamMemberInvitation)
+		.set({ revokedAt: now })
+		.where(
+			whereRows({
+				table: schema.teamMemberInvitation,
+				filter: {
+					conferenceId,
+					email,
+					usedAt: { isNull: true },
+					revokedAt: { isNull: true },
+					expiresAt: { lte: now }
+				}
+			})
+		)
+		.returning({ id: schema.teamMemberInvitation.id });
+	return revoked.map(({ id }) => id);
+}
+
 /** Turns the unique index on open invitations, in a race the checks lost, into its error. */
 async function refusingSecondPending<T>(write: Promise<T>) {
 	try {
@@ -208,7 +242,8 @@ async function addKnownUser({
 }): Promise<CreatedInvitation> {
 	const { conferenceId, callerId } = context;
 	const now = new Date();
-	const { teamMemberId, invitationId } = await db.transaction(async (tx) => {
+	const { teamMemberId, invitationId, revokedIds } = await db.transaction(async (tx) => {
+		const revokedIds = await revokeExpiredInvitations({ tx, conferenceId, email });
 		const member = await tx
 			.insert(schema.teamMember)
 			.values({ conferenceId, userId: user.id, role })
@@ -228,11 +263,12 @@ async function addKnownUser({
 			})
 			.returning({ id: schema.teamMemberInvitation.id })
 			.then(assertFirstEntryExists);
-		return { teamMemberId: member.id, invitationId: invitation.id };
+		return { teamMemberId: member.id, invitationId: invitation.id, revokedIds };
 	});
 	teamMemberPubsub.created();
 	teamMemberPubsub.updated(teamMemberId);
 	teamMemberInvitationPubsub.created();
+	teamMemberInvitationPubsub.updated(revokedIds);
 
 	return { id: invitationId, email, role, token: null, expiresAt: now, addedDirectly: true };
 }
@@ -249,21 +285,27 @@ async function inviteUnknownUser({
 }): Promise<CreatedInvitation> {
 	const token = makeInvitationToken();
 	const expiresAt = getInvitationExpiryDate();
-	const record = await refusingSecondPending(
-		db
-			.insert(schema.teamMemberInvitation)
-			.values({
-				email,
-				role,
-				token: hashToken(token),
-				expiresAt,
-				conferenceId: context.conferenceId,
-				invitedById: context.callerId
-			})
-			.returning({ id: schema.teamMemberInvitation.id })
-			.then(assertFirstEntryExists)
+	const { record, revokedIds } = await refusingSecondPending(
+		db.transaction(async (tx) => {
+			const { conferenceId, callerId } = context;
+			const revokedIds = await revokeExpiredInvitations({ tx, conferenceId, email });
+			const record = await tx
+				.insert(schema.teamMemberInvitation)
+				.values({
+					email,
+					role,
+					token: hashToken(token),
+					expiresAt,
+					conferenceId,
+					invitedById: callerId
+				})
+				.returning({ id: schema.teamMemberInvitation.id })
+				.then(assertFirstEntryExists);
+			return { record, revokedIds };
+		})
 	);
 	teamMemberInvitationPubsub.created();
+	teamMemberInvitationPubsub.updated(revokedIds);
 
 	mailInvitation({ context, invitation: { id: record.id, email, role }, token, expiresAt });
 

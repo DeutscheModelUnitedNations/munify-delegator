@@ -3,7 +3,7 @@
 	import { untrack } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import RoleChoiceGrid from '#lib/components/registration/RoleChoiceGrid.svelte';
-	import FlowStep from './FlowStep.svelte';
+	import FlowStep from '#lib/components/flowSteps/FlowStep.svelte';
 	import ApplicationTextsSteps from './ApplicationTextsSteps.svelte';
 
 	/** Applying alone: a role, then the questions. */

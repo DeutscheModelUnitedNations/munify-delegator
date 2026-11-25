@@ -11,6 +11,8 @@
 	} from '#lib/data/dashboardLinks';
 	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
 	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import LoadError from '#lib/components/LoadError.svelte';
+	import NextEntries from './NextEntries.svelte';
 	import PhoneReadyHint from './PhoneReadyHint.svelte';
 
 	interface Props {
@@ -60,6 +62,21 @@
 	const visibleLinks = $derived(getLinksForUserType({ userType, ctx: linkContext }));
 </script>
 
+{#snippet nextEntries()}
+	<!-- A schedule that fails to load leaves the rest of the dashboard standing -->
+	<svelte:boundary>
+		<NextEntries {conferenceId} />
+		{#snippet failed(_error, reset)}
+			<LoadError onretry={reset} />
+		{/snippet}
+	</svelte:boundary>
+{/snippet}
+
+<!-- On site, where to be comes first; before that, what is left to do does -->
+{#if conference.state === 'ACTIVE'}
+	{@render nextEntries()}
+{/if}
+
 <PhoneReadyHint {conferenceId} conferenceState={conference.state} />
 
 <DashboardSection
@@ -90,3 +107,7 @@
 		{/each}
 	</DashboardLinksGrid>
 </DashboardSection>
+
+{#if conference.state === 'PREPARATION'}
+	{@render nextEntries()}
+{/if}

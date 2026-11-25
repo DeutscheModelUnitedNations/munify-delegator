@@ -17,11 +17,18 @@ test('a team member can mark a participant payment status as done from the parti
 	await expect(statusTab).toBeVisible({ timeout: 15_000 });
 	await statusTab.click();
 
-	const paymentDoneButton = page
-		.locator('div:has(> i.ph-money)')
-		.getByRole('button', { name: /^(erledigt|done)$/i });
-	await expect(paymentDoneButton).toBeVisible({ timeout: 15_000 });
-	await paymentDoneButton.click();
+	// The state is text that opens the menu of states; an open one has a button that settles it
+	const payment = (state: string) =>
+		page.getByRole('button', {
+			name: new RegExp(`^(beitragszahlung|fee payment): (${state})$`, 'i')
+		});
+	const menu = page.getByRole('group', { name: /^(beitragszahlung|fee payment)$/i });
 
-	await expect(paymentDoneButton).toHaveClass(/btn-success/, { timeout: 15_000 });
+	await payment('ausstehend|pending|problem|erledigt|done').first().click({ timeout: 15_000 });
+	await menu.getByRole('button', { name: /^problem$/i }).click();
+	await expect(payment('problem')).toBeVisible({ timeout: 15_000 });
+
+	await payment('erledigt|done').click();
+	await expect(payment('problem')).toHaveCount(0, { timeout: 15_000 });
+	await expect(payment('erledigt|done')).toHaveCount(1);
 });

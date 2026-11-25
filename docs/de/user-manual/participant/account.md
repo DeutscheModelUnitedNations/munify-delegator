@@ -9,7 +9,7 @@ Mit einem Konto nimmst du an allen Konferenzen teil. Diese Seite erklärt, was n
 
 ## Deine persönlichen Daten {#profile}
 
-Deine Daten findest du unter **Mein Konto**: Klicke oben rechts auf deinen Kreis mit den Initialen und dann auf **Mein Konto**. Beim ersten Anmelden und immer, wenn etwas fehlt, schickt dich DELEGATOR mit dem Hinweis **Daten vervollständigen** dorthin. Nach dem **Speichern** geht es dort weiter, wo du hinwolltest.
+Deine Daten findest du unter **Mein Konto**: Klicke oben rechts auf das Personensymbol und dann auf **Mein Konto**. Beim ersten Anmelden und immer, wenn etwas fehlt, schickt dich DELEGATOR mit dem Hinweis **Daten vervollständigen** dorthin. Nach dem **Speichern** geht es dort weiter, wo du hinwolltest.
 
 Unter **Persönliche Daten** fragt DELEGATOR:
 

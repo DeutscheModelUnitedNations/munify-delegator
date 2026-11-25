@@ -155,14 +155,14 @@ Ein Klick auf eine Zeile öffnet die Teilnehmendenkarte der Person. Am Ende jede
 2. **E-Mails prüfen** zeigt für jede Adresse, was passieren wird:
    - **Konto vorhanden**: Die Person hat schon ein Konto und kommt sofort ins Team.
    - **Neue\*r Benutzer\*in**: Die Person bekommt eine Einladung per E-Mail.
-   - **Ausstehende Einladung** oder **Bereits Mitglied**: Die Adresse lässt sich nicht noch einmal einladen.
+   - **Ausstehende Einladung** oder **Bereits Mitglied**: Die Adresse lässt sich nicht noch einmal einladen. Eine abgelaufene Einladung zählt nicht als ausstehend, die neue ersetzt sie.
 
    Ist für den Server eine Domain der Organisation eingestellt, tragen Adressen anderer Domains das Zeichen **Extern**, und über der Liste steht eine Warnung. Eingeladen werden sie trotzdem.
 
 3. Wähle für jede Adresse die **Rolle**. Vorausgewählt ist **Mitglied**. Hake ab, wen du nicht einladen willst.
 4. **Einladungen senden** führt alles aus. Eine Meldung zählt, wie viele Personen direkt hinzugefügt und wie viele Einladungen verschickt wurden. Was bei einer Adresse nicht klappt, meldet DELEGATOR einzeln mit dem Grund, die anderen Adressen gehen trotzdem durch.
 
-DELEGATOR lehnt eine Adresse ab, wenn sie keine gültige E-Mail-Adresse ist, die Person schon im Team ist, für sie schon eine offene Einladung besteht oder sie schon an der Konferenz teilnimmt. Teamkoordinator\*innen können niemanden zur **Projektleitung** einladen. Für solche Adressen kommt eine Fehlermeldung, die übrigen Einladungen gehen raus.
+DELEGATOR lehnt eine Adresse ab, wenn sie keine gültige E-Mail-Adresse ist, die Person schon im Team ist, für sie schon eine offene, noch gültige Einladung besteht oder sie schon an der Konferenz teilnimmt. Teamkoordinator\*innen können niemanden zur **Projektleitung** einladen. Für solche Adressen kommt eine Fehlermeldung, die übrigen Einladungen gehen raus.
 
 :::warning Konto vorhanden heißt sofort im Team
 Wer schon ein Konto hat, ist nach **Einladungen senden** sofort im Team, ohne Einladungsmail und ohne etwas bestätigen zu müssen. Die Person sieht die Seiten ihrer Rolle ab sofort. Ob sie davon erfährt, hängt an der [Willkommensmail](#welcome-mail).
@@ -184,7 +184,7 @@ Klickt die Person auf den Link, meldet sie sich an oder legt ein Konto an und la
 Der Reiter **Ausstehende Einladungen** listet jede Einladung, die weder angenommen noch widerrufen ist, mit **E-Mail**, **Rolle**, **Status** (**Konto vorhanden** oder **Neue\*r Benutzer\*in**), **Gültig bis** und **Eingeladen von**. Abgelaufene Einladungen stehen blass mit dem Hinweis **abgelaufen** darin. 30 Tage nach ihrem Ablauf löscht DELEGATOR sie.
 
 - **Link kopieren** erzeugt einen neuen Link, wieder sieben Tage gültig, und kopiert ihn, damit du ihn selbst verschickst.
-- **Einladung erneut senden** erzeugt ebenfalls einen neuen Link und schickt ihn mit der Einladungsmail.
+- **Einladung erneut senden** erzeugt ebenfalls einen neuen Link und schickt ihn mit der Einladungsmail. Bei abgelaufenen Einladungen heißt der Knopf **Erneut einladen**.
 - **Einladung widerrufen** macht die Einladung unbrauchbar. Sie verschwindet aus der Liste.
 
 :::note Ein neuer Link ersetzt den alten
@@ -301,7 +301,7 @@ Mit der **Stellvertretung** siehst und bedienst du DELEGATOR so, als wärst du e
 
 **So geht es:**
 
-1. Öffne die Teilnehmendenkarte der Person. Darfst du für sie handeln, steht im Kopf der Karte der Knopf mit dem Detektiv (**Stellvertretung**). Administrator\*innen finden ihn auch in der Mitgliedertabelle im [Teammanagement](#team-management).
+1. Öffne die Teilnehmendenkarte der Person. Darfst du für sie handeln, steht neben dem Namen unter **Weitere Aktionen** die **Stellvertretung** (Detektiv). Administrator\*innen finden sie auch in der Mitgliedertabelle im [Teammanagement](#team-management).
 2. Ein Klick lädt DELEGATOR neu und zeigt dir die Konferenzübersicht so, wie die Person sie sieht.
 3. Oben in der Kopfzeile steht jetzt ein gelber Knopf mit dem Detektiv. Fährst du darüber, steht dort **Du agierst als: …** mit der Adresse der Person und deiner eigenen.
 4. Ein Klick auf diesen Knopf beendet die Stellvertretung und bringt dich als du selbst zurück zur Konferenzübersicht.
@@ -350,7 +350,7 @@ Solange eine CHASE-Instanz verbunden ist, sieht jedes Teammitglied auf dem Dashb
 
 Administrator\*innen finden auf der Karte und auf der Seite **Verbindung zu CHASE** den Knopf **Jetzt synchronisieren**. Er lässt DELEGATOR alles aus CHASE neu lesen und bittet CHASE, dasselbe mit DELEGATOR zu tun. Normalerweise braucht es ihn nicht, denn beide Seiten hören Änderungen sofort. Ist CHASE gerade nicht erreichbar, gleicht DELEGATOR trotzdem auf seiner Seite ab und sagt das in der Meldung.
 
-Die Seite **Verbindung zu CHASE** öffnen Administrator\*innen im Menü hinter ihren Initialen oben rechts unter **Administration**. Sie zeigt, mit welcher Adresse DELEGATOR verbunden ist, **Letzte Meldung von CHASE**, **Letzter Abgleich** und den letzten Fehler, dazu **CHASE öffnen**. Ohne Verbindung erklärt sie, welche Einstellungen des Servers dafür nötig sind.
+Die Seite **Verbindung zu CHASE** öffnen Administrator\*innen im Menü hinter dem Personensymbol oben rechts unter **Administration**. Sie zeigt, mit welcher Adresse DELEGATOR verbunden ist, **Letzte Meldung von CHASE**, **Letzter Abgleich** und den letzten Fehler, dazu **CHASE öffnen**. Ohne Verbindung erklärt sie, welche Einstellungen des Servers dafür nötig sind.
 
 :::note Wenn die Verbindung endet
 Entfernt die Administration die Verbindung aus der Konfiguration, endet sie beim nächsten Start des Servers. Die Resolutionen aus CHASE bleiben dann als gewöhnliche Resolutionen erhalten und lassen sich wieder löschen.

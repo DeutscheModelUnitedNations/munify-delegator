@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { formalitiesOf, isOpen, needsGuardian } from '../formalities';
-	import { fetchStatusWithAge } from '../tabs/participantStatus';
-	import { FORMALITY_META } from '../sections/formalityOptions';
+	import { isOpen } from '../formalities';
+	import { fetchStatusWithAge, personFormalities } from '../tabs/participantStatus';
 	import OpenFormality from './OpenFormality.svelte';
 
 	/**
-	 * What the person still has to settle, each opening the tab where it is changed. What is done is
-	 * folded behind a count. Nothing without a participant row.
+	 * How many of the formalities are settled, and the open ones, each opening the tab where it is
+	 * changed. Nothing once all are settled (the tab says so) or without a participant row.
 	 */
 	interface Props {
 		userId: string;
@@ -21,46 +20,34 @@
 	// The same row the formalities tab reads, so both share one cache record.
 	const data = $derived(await fetchStatusWithAge({ userId, conferenceId }));
 	const status = $derived(data.statuses.at(0));
-	const formalities = $derived(
-		formalitiesOf({
-			status,
-			needsGuardian: needsGuardian({
-				isConferenceSupervisor,
-				birthday: data.user.birthday,
-				startConference: data.conference.startConference
-			})
-		})
-	);
+	const formalities = $derived(personFormalities({ data, isConferenceSupervisor }));
 	const open = $derived(formalities.filter(isOpen));
-	const done = $derived(formalities.filter((formality) => !isOpen(formality)));
+	const done = $derived(formalities.length - open.length);
+	const doneOf = $derived(m.userCardDoneOf({ count: done, total: formalities.length }));
 </script>
 
-{#if status}
-	<div class="flex flex-col gap-1 text-sm" data-tour="team.userCard.status">
-		{#if open.length > 0}
-			<p class="text-warning font-bold">{m.userCardOpenCount({ count: open.length })}</p>
-			<ul class="flex flex-col">
-				{#each open as formality (formality.key)}
-					<li>
-						<OpenFormality {formality} onclick={onOpenTab} />
-					</li>
-				{/each}
-			</ul>
-			{#if done.length > 0}
-				<details class="text-base-content/60">
-					<summary class="cursor-pointer">{m.userCardDoneCount({ count: done.length })}</summary>
-					<ul class="pl-4">
-						{#each done as formality (formality.key)}
-							<li>{FORMALITY_META[formality.key].title()}</li>
-						{/each}
-					</ul>
-				</details>
-			{/if}
-		{:else}
-			<p class="text-success">
-				<i aria-hidden="true" class="ph-duotone ph-check-circle"></i>
-				{m.userCardFormalitiesDone()}
-			</p>
-		{/if}
+{#if status && open.length > 0}
+	<div
+		class="border-base-content/10 flex flex-col gap-2 border-t pt-3"
+		data-tour="team.userCard.status"
+	>
+		<p class="flex items-center justify-between gap-2 text-sm">
+			<span class="flex items-center gap-2 font-bold">
+				<i aria-hidden="true" class="ph-duotone ph-list-checks text-warning text-lg"></i>
+				{m.userCardTabFormalities()}
+			</span>
+			<span class="text-base-content/70">{doneOf}</span>
+		</p>
+		<progress
+			class="progress progress-warning"
+			value={done}
+			max={formalities.length}
+			aria-label={doneOf}
+		></progress>
+		<ul class="flex flex-col gap-1">
+			{#each open as formality (formality.key)}
+				<li><OpenFormality {formality} onclick={onOpenTab} /></li>
+			{/each}
+		</ul>
 	</div>
 {/if}

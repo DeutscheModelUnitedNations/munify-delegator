@@ -182,7 +182,7 @@ A notification only names the inbox and leads into the app. The text of a messag
 
 Chairs and committee consultants also hear of every paper submitted in their committee, as long as their team role may read papers (see [Who hears of new papers](./paper-hub#committee-notification)). Slack and the email **Paper submitted in a committee** tell them right away, without a switch on the [Emails](#emails) page.
 
-**Setting it up for yourself:** In the menu behind your initials at the top right, open **My Account** and there the **Notifications** tab. The tab is there once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
+**Setting it up for yourself:** In the menu behind the person icon at the top right, open **My Account** and there the **Notifications** tab. The tab is there once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
 
 **Setting up Slack:** Project management picks the conference's workspace on the [Emails](#emails) page under **Slack workspace**. The choices are the workspaces the system's administration has added (see [Slack workspaces](./overview#slack-workspaces)). Without a workspace the conference sends no Slack messages.
 
@@ -379,7 +379,7 @@ You can change a capacity limit later. If you lower it below the number of answe
 
 A published survey shows on the dashboard of every seated delegate and single participant while the conference is in the **Preparation Phase** or **Active Conference** stage. Until the deadline they pick an option and change it. DELEGATOR refuses a full option and an answer after the deadline. They see how full an option is.
 
-Participant care sets or removes a person's answer in the [user card](./participants#user-card), in the **Surveys / Polls** tab, even after the deadline and beyond the capacity limit.
+Participant care sets or removes a person's answer in the [user card](./participants#user-card), in the **Program & papers** tab, even after the deadline and beyond the capacity limit.
 
 ### Archiving and deleting
 

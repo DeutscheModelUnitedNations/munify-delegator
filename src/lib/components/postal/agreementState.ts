@@ -1,10 +1,11 @@
+import { m } from '#lib/paraglide/messages';
+import type { StatusOption } from '#lib/components/userCard/ui/StateMenu.svelte';
 import type { FieldState } from '#lib/paperScan/readPaper';
 
-const STATES: readonly FieldState[] = ['yes', 'no', 'unclear'];
-
-/** The state a select's option stands for; `null` for the one saying nothing is recorded. */
-export const agreementStateOf = (value: string): FieldState | null =>
-	STATES.find((state) => state === value) ?? null;
-
-/** The option of a state; the empty one for none. */
-export const selectedState = (state: FieldState | undefined) => state ?? '';
+/** What a detail can be; `null` for nothing recorded, which takes no room. */
+export const agreementStateOptions = (): StatusOption<FieldState | null>[] => [
+	{ value: null, label: m.agreementStateUnknown(), short: '–', tone: 'neutral' },
+	{ value: 'yes', label: m.agreementStateYes(), icon: 'check-circle', tone: 'success' },
+	{ value: 'no', label: m.agreementStateNo(), icon: 'x-circle', tone: 'neutral' },
+	{ value: 'unclear', label: m.agreementStateUnclear(), icon: 'question', tone: 'warning' }
+];

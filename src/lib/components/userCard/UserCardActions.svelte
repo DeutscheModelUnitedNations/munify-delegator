@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
-	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import formatNames from '#lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import ImpersonationButton from './ImpersonationButton.svelte';
+	import ImpersonationEntry from './ImpersonationEntry.svelte';
 	import Modal from '../Modal.svelte';
 	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { closeUserCard } from './userCardState.svelte';
@@ -20,14 +19,13 @@
 	import BadgeGeneratorLinks from '../BadgeGeneratorLinks.svelte';
 	import { personBadge } from '#lib/helpers/badgeCsv';
 
-	/** What can be done with the person, whatever tab is open: badge, impersonation, the rarer ones. */
+	/** The menu of what can be done with the person, whatever tab is open. */
 	interface Props extends UserCardRoles {
 		userId: string;
 		conferenceId: string;
 		givenName?: string | null;
 		familyName?: string | null;
 		pronouns?: string | null;
-		mode: 'drawer' | 'page';
 		/** Opens the editor of the care team's note */
 		onEditNote: () => void;
 	}
@@ -38,7 +36,6 @@
 		givenName,
 		familyName,
 		pronouns,
-		mode,
 		onEditNote,
 		delegationMember,
 		singleParticipant,
@@ -48,13 +45,6 @@
 
 	let confirmDisplayName = $derived(
 		formatNames({ givenName: givenName ?? undefined, familyName: familyName ?? undefined })
-	);
-
-	let fullPageUrl = $derived(
-		resolve('/(authenticated)/dashboard/[conferenceId]/team/user/[userId]', {
-			conferenceId,
-			userId
-		})
 	);
 
 	const isParticipant = $derived(
@@ -178,77 +168,61 @@
 	};
 </script>
 
-<!-- Pulled out by the first button's padding, so its icon lines up with the name above -->
-<div class="-ml-2 flex items-center gap-1" data-tour="team.userCard.actions">
-	<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
-	{#if badgeSeat}
-		<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
-			<button
-				class="btn btn-ghost btn-sm btn-square"
-				aria-label={m.generateBadge()}
-				onclick={() => (badgeModalOpen = true)}
-			>
-				<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
+<!-- A <details> opens on click only, never because focus moved into it -->
+<details
+	class="dropdown dropdown-end"
+	bind:open={actionsOpen}
+	bind:this={actionsMenu}
+	data-tour="team.userCard.actions"
+>
+	<summary
+		class="btn btn-ghost btn-sm btn-square list-none text-xl"
+		aria-label={m.userCardMoreActions()}
+		title={m.userCardMoreActions()}
+	>
+		<i aria-hidden="true" class="ph-duotone ph-dots-three-vertical"></i>
+	</summary>
+	<ul
+		class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-1 w-64 border p-2 shadow-lg"
+	>
+		{#if badgeSeat}
+			<li>
+				<button onclick={menuAction(() => (badgeModalOpen = true))}>
+					<i aria-hidden="true" class="ph-duotone ph-identification-badge"></i>
+					{m.generateBadge()}
+				</button>
+			</li>
+		{/if}
+		<ImpersonationEntry {userId} />
+		<li>
+			<button onclick={menuAction(onEditNote)}>
+				<i aria-hidden="true" class="ph-duotone ph-note"></i>
+				{m.editGlobalNotes()}
 			</button>
-		</div>
-	{/if}
-
-	<ImpersonationButton {userId} iconOnly />
-
-	<!-- The rarer actions, the destructive one last -->
-	<!-- A <details> opens on click only, never because focus moved into it -->
-	<details class="dropdown" bind:open={actionsOpen} bind:this={actionsMenu}>
-		<summary
-			class="btn btn-ghost btn-sm btn-square list-none"
-			aria-label={m.userCardMoreActions()}
-			title={m.userCardMoreActions()}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-dots-three-vertical"></i>
-		</summary>
-		<ul
-			class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
-		>
+		</li>
+		<li>
+			<button onclick={menuAction(copyUserId)}>
+				<i aria-hidden="true" class="ph-duotone ph-copy"></i>
+				{m.copyUserId()}
+			</button>
+		</li>
+		<!-- The destructive one last -->
+		{#if isParticipant}
 			<li>
-				<button onclick={menuAction(onEditNote)}>
-					<i aria-hidden="true" class="ph-duotone ph-note"></i>
-					{m.editGlobalNotes()}
+				<button
+					class="text-error"
+					onclick={menuAction(() => {
+						deleteConfirmInput = '';
+						deleteModalOpen = true;
+					})}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-user-minus"></i>
+					{m.deleteParticipant()}
 				</button>
 			</li>
-			<li>
-				<button onclick={menuAction(copyUserId)}>
-					<i aria-hidden="true" class="ph-duotone ph-copy"></i>
-					{m.copyUserId()}
-				</button>
-			</li>
-			{#if isParticipant}
-				<li>
-					<button
-						class="text-error"
-						onclick={menuAction(() => {
-							deleteConfirmInput = '';
-							deleteModalOpen = true;
-						})}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-user-minus"></i>
-						{m.deleteParticipant()}
-					</button>
-				</li>
-			{/if}
-		</ul>
-	</details>
-
-	{#if mode === 'drawer'}
-		<a
-			href={fullPageUrl}
-			target="_blank"
-			rel="noopener noreferrer"
-			class="btn btn-ghost btn-sm btn-square"
-			title={m.userCardOpenFullPage()}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
-		</a>
-	{/if}
-</div>
+		{/if}
+	</ul>
+</details>
 
 <svelte:window onclick={closeActionsOutside} />
 

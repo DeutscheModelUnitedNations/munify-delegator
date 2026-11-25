@@ -1,6 +1,7 @@
 import { parseSignedCode } from '#lib/signedCode/signedCode';
 import { decodeAreas, type PageAreas } from './areas';
 import type { PaperField } from './fields';
+import type { FoundMarker } from './markers';
 import { readPaper, type FieldReading } from './readPaper';
 import type { Picture } from './picture';
 
@@ -18,13 +19,16 @@ function areasOfCode(code: string): PageAreas | null {
  */
 export function readPageOfCode({
 	picture,
-	code
+	code,
+	located
 }: {
 	picture: Picture;
 	code: string;
+	/** The markers in the picture, where they were looked for already. */
+	located?: readonly FoundMarker[];
 }): FieldReading[] | null {
 	const areas = areasOfCode(code);
-	return areas ? readPaper({ picture, areas }) : [];
+	return areas ? readPaper({ picture, areas, located }) : [];
 }
 
 /** The fields printed on the page whose code is `code`; none for a page without any. */

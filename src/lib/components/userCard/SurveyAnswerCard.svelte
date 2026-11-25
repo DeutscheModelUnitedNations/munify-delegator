@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
+	import Row from './ui/Row.svelte';
 
 	interface Props {
 		survey: {
@@ -74,52 +75,45 @@
 	</label>
 {/snippet}
 
-<div class="flex flex-col gap-2 px-4 py-3">
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-		<i
-			aria-hidden="true"
-			class="ph-duotone ph-chart-bar-horizontal text-base-content/60 w-6 text-center text-lg"
-		></i>
-		<div class="flex min-w-48 grow flex-col">
-			<span class="font-semibold">{survey.title}</span>
-			{#if surveyAnswer}
-				<span class="text-sm">
-					<i aria-hidden="true" class="ph-duotone ph-check-circle text-success mr-1"></i>
-					{surveyAnswer.option.title}
-				</span>
-			{:else}
-				<span class="text-error text-sm">
-					<i aria-hidden="true" class="ph-duotone ph-x-circle mr-1"></i>
-					{m.noAnswer()}
-				</span>
-			{/if}
-		</div>
-		<div class="join">
-			<button
-				class="btn btn-sm join-item {optionsOpen ? 'btn-success' : ''}"
-				onclick={() => (optionsOpen = !optionsOpen)}
-			>
-				{#if optionsOpen}
-					<i aria-hidden="true" class="ph-duotone ph-check"></i>{m.done()}
-				{:else}
-					<i aria-hidden="true" class="ph-duotone ph-pencil-simple"></i>{m.edit()}
-				{/if}
-			</button>
-			<a
-				class="btn btn-sm btn-square join-item"
-				href={resolve('/(authenticated)/dashboard/[conferenceId]/team/survey/[surveyId]', {
-					conferenceId,
-					surveyId: survey.id
-				})}
-				aria-label={m.a11yEditSurvey()}
-				title={m.a11yEditSurvey()}
-			>
-				<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
-			</a>
-		</div>
-	</div>
+<div>
+	<Row
+		icon={surveyAnswer ? 'check-circle' : 'question'}
+		title={survey.title}
+		tone={surveyAnswer ? 'success' : 'warning'}
+	>
+		{#if surveyAnswer}
+			<span class="font-bold">{surveyAnswer.option.title}</span>
+		{:else}
+			<span class="text-base-content/60">{m.noAnswer()}</span>
+		{/if}
+		{#snippet actions()}
+			<div class="join">
+				<button
+					class="btn btn-sm join-item {optionsOpen ? 'btn-success' : 'btn-ghost text-primary'}"
+					onclick={() => (optionsOpen = !optionsOpen)}
+				>
+					{#if optionsOpen}
+						<i aria-hidden="true" class="ph-duotone ph-check"></i>{m.done()}
+					{:else}
+						<i aria-hidden="true" class="ph-duotone ph-pencil-simple"></i>{m.edit()}
+					{/if}
+				</button>
+				<a
+					class="btn btn-sm btn-ghost btn-square join-item"
+					href={resolve('/(authenticated)/dashboard/[conferenceId]/team/survey/[surveyId]', {
+						conferenceId,
+						surveyId: survey.id
+					})}
+					aria-label={m.a11yEditSurvey()}
+					title={m.a11yEditSurvey()}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-arrow-square-out"></i>
+				</a>
+			</div>
+		{/snippet}
+	</Row>
 	{#if optionsOpen}
-		<div class="flex flex-col pl-8">
+		<div class="flex flex-col pb-3 pl-9">
 			{#each survey.options as option (option.id)}
 				{@render optionRow(option)}
 			{/each}

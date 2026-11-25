@@ -52,25 +52,27 @@ Clicking a row opens the person's [user card](#user-card).
 
 ## The user card {#user-card}
 
-The user card brings together everything the conference knows about a person. It opens as a side panel when you click a person in the participants table, the waiting list, on the **Seats** page, on a school's page, under **Team Members**, on a payment reference, in the sighting or in the command palette (Ctrl+K). A click anywhere in the row is enough. Inside the card, too, the rows of the delegation members, the supervisors and the supervised students open their card, and a row under **Papers** opens the paper. The address in the browser then names the person, so a copied link opens the same card. **Open in new tab** shows the card as a page of its own, the **Participant File**.
+The user card brings together everything the conference knows about a person. It opens as a side panel when you click a person in the participants table, the waiting list, on the **Seats** page, on a school's page, under **Team Members**, on a payment reference, in the sighting or in the command palette (Ctrl+K). A click anywhere in the row is enough. Inside the card, too, the rows of the delegation members, the supervisors and the supervised students open their card, and a paper under **Papers** opens the paper. The address in the browser then names the person, so a copied link opens the same card. **Open in new tab** shows the card as a page of its own, the **Participant File**.
 
 If the person is not part of the conference shown, a note at the top says that the data belongs to their account and not to this conference.
 
 ### The left column
 
-On the left, whichever tab is open, you see who the person is: name, pronouns, their age when the conference starts (**under age** is highlighted) and a badge showing how far they have come: **Waiting list**, **Registered, not applied**, **Applied**, **No seat**, **Seat assigned** or **Attended**. Below are their part in the conference, phone number, email address and **Emergency Contacts**, birth date, gender, **Diet**, **School** and **Supervisors**. A click on a detail copies it, the phone number and the email address call or write and have a button to copy. What the person did not enter although you need it reads **missing**. On a narrow screen the column is above the tabs.
+On the left, whichever tab is open, you see who the person is: the flag or icon of their role with the committee (hover for the name), name, pronouns and, until they have a seat, how far they have come: **Waiting list**, **Registered, not applied**, **Applied** or **No seat**. Below are the phone number, email address and **Emergency Contacts**, birth date with the age when the conference starts (**under age** is highlighted), gender, **Diet**, **School**, **Supervisors** and **Address**, then the account: **Username**, **Email language**, **Account created** and the **Newsletter** subscriptions. A click on a detail copies it (the **Address** with the name, as on a letter), the phone number and the email address call or write and have a button to copy. What the person did not enter although you need it reads **missing**, and for an incomplete address it says which part. On a narrow screen the name, flag and open formalities are above the tabs and the details in the **Person** tab.
+
+Only the person changes their details, in their account. You see **Edit** only on your own card or as an administrator. The email address comes from the sign-in account and cannot be changed here. Participant Care corrects names and birth dates at the entrance in the [scanner](./formalities#scanner).
+
+**Change school** next to the school picks an existing school, enters a new one or removes it. This is the person's school in this conference. It counts in the numbers per school and in the assignment's [school rules](./assignment). The school's name leads to [its page](#schools).
 
 - **Possible duplicate account** and **Confirmed duplicate account** lead to the [Plausibility](./maintenance#duplicates) page, where you decide whether two accounts belong to the same person.
-- Once the person has a seat, it lists which formalities are still open: **Fee Payment**, **Binding Registration**, for minors the **Parental Agreement**, the **Media Usage Agreement** and, once that has arrived, the **Media Status**. A click opens the **Formalities** tab. What is done is folded.
+- Once the person has a seat, it lists which formalities are still open: **Fee Payment**, **Binding Registration**, for minors the **Parental Agreement**, the **Media Usage Agreement** and, once that has arrived, the **Media Status**. A click opens the **Formalities & access** tab. The bar shows how many are done. Once all are, nothing is listed here and the tab carries a green check.
 - **Global Notes** sit highlighted in yellow in the column so nobody misses them. Notes on accounts confirmed to be the same person appear below as **Note on the linked account (…)**.
 
-- **All details** shows everything the person entered about themselves.
-
-The actions are below the name:
+The three dots next to the name open **More actions**:
 
 - **Generate Badge** (only when the person holds something a badge shows) opens **Nametag and placard**: **Open prefilled in the badge generator** or **Download CSV**.
 - **Impersonation** signs you in as this person, if you may. See [Impersonation](./overview#impersonation).
-- Under **More actions**: **Edit Notes**, **Copy User-ID** and **Remove Participant** (see [Removing a participation](#removing-a-participation)).
+- **Edit Notes**, **Copy User-ID** and **Remove Participant** (see [Removing a participation](#removing-a-participation)).
 
 :::note Global notes
 Notes belong to the account, not to the conference. They are there in every conference the person takes part in later. Only Participant Care and Project Management of a conference the person is registered for or waits for may read and write them. The person never sees them, and nobody on the team reads notes about team members. Add the date, the conference and the author to every note.
@@ -78,24 +80,14 @@ Notes belong to the account, not to the conference. They are there in every conf
 
 ### The tabs
 
-Which tabs a card has depends on how the person takes part. The card opens on the **Overview**, which starts with what the phase of the conference asks for: the application, the open formalities, or attendance and the access card. When you switch to another person, the tab you picked last stays open if they have it too.
+Which tabs a card has depends on how the person takes part. The card opens on **Formalities & access** once the person has a seat, before that on **Registration & seat**. Team members without a participant status only have the **History**. When you switch to another person, the tab you picked last stays open if they have it too.
 
-| Tab                     | When it appears                                                                                                |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Overview**            | with a registration, a waiting list entry or a team role                                                       |
-| **Registration & seat** | with a registration, a waiting list entry or a team role                                                       |
-| **Formalities**         | once the person has a participant status                                                                       |
-| **On site**             | with a seat (supervisors: once someone they supervise has a seat); for the team only with a participant status |
-| **Papers**              | for delegation members                                                                                         |
-| **History**             | always                                                                                                         |
-
-#### All details
-
-**Personal Info** and **Contact Info** as text, below them the **School of this person** and the **Account**: **Username**, **Email language**, **Account created** and the **Newsletter** subscriptions. If part of the address is missing, it says which.
-
-Only the person changes their details, in their account. You see **Edit** only on your own card or as an administrator. The email address comes from the sign-in account and cannot be changed here. Participant Care corrects names and birth dates at the entrance in the [scanner](./formalities#scanner).
-
-**Change school** next to the school picks an existing school, enters a new one or removes it. This is the person's school in this conference. It counts in the numbers per school and in the assignment's [school rules](./assignment). The school's name leads to [its page](#schools).
+| Tab                      | When it appears                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Registration & seat**  | with a registration or a waiting list entry                                                                      |
+| **Formalities & access** | once the person has a participant status                                                                         |
+| **Program & papers**     | with a seat (supervisors: once someone they supervise has a seat), not for the team; also with a submitted paper |
+| **History**              | always                                                                                                           |
 
 #### Registration & seat
 
@@ -104,36 +96,35 @@ What the person submitted and what the team made of it:
 - For a delegation member, the delegation with its entry code, the **Members' schools**, the **Applied for Roles** list and **Motivation** and **Experience**. Its actions are described under [Delegations](#delegations).
 - For individual participants, the roles applied for and the texts and, during the registration phase, **Revoke Application**.
 - For supervisors, the **Connection Code** (see [Supervisors](#supervisors)).
-- The **Review**: stars, flags and note from the [sighting](./assignment#sighting), read only. The **Sighting** button opens the application there.
+- The **Review**: stars, flags and note from the [sighting](./assignment#sighting), read only. The **Open** button opens the application there.
 - The **Waiting List** entry: since when, with which school, motivation, experience and **Requests**. While the person still waits, **Assign seat** leads to the **Seats** page (see [Giving a seat from the waiting list](#seating-from-the-waiting-list)).
 
-And what the person holds in the conference: their delegation's role and their committee, their individual role, the people they supervise or their team role. For delegation members and individual participants, their **Supervisors** are listed here too. The actions are described under [Delegations](#delegations) and [Supervisors](#supervisors).
+And what the person holds in the conference: their delegation's role and the members with their committees, their individual role or the people they supervise. The actions are described under [Delegations](#delegations) and [Supervisors](#supervisors).
 
-#### Formalities
+#### Formalities & access
 
-Everything that has to be settled before the conference. How payments and postal registration work is explained under [Payments](./formalities#payments) and [Postal registration](./formalities#postal-registration).
+Everything that has to be settled before the conference, and during and after the conference participation and the access card at the top. How payments and postal registration work is explained under [Payments](./formalities#payments) and [Postal registration](./formalities#postal-registration).
 
-- **Statuses**: **Fee Payment**, **Binding Registration**, **Parental Agreement** (only for people under age on the first conference day, never for supervisors), **Media Usage Agreement**, each **Pending**, **Problem** or **Done**, plus the **Media Status** (**Not set yet**, **No photos allowed**, **Partially allowed – check the consent form for details**, **Photos allowed without restriction**).
-- **Documents**: the **Filing number** the originals are filed under, and, folded, the person's **Payment References**, including who paid for them, and the **Scans**. **Assign next filing number** gives the number after the highest one in the conference. **Download documents for postal registration** creates the person's documents as a PDF.
-- **Certificate of participation** with **Download certificate**.
+- **Payment**: the **Fee Payment** and, folded, the person's **Payment References**, including who paid for them.
+- **Postal Registration**: **Binding Registration**, **Parental Agreement** (only for people under age on the first conference day, never for supervisors) and **Media Usage Agreement**, with the **Media Status** beside it (**Photos not set**, **No photos**, **Photos partially**, when the consent form has to be checked for details, **Photos allowed**). Below are the **Filing number** the originals are filed under and, folded, the **Scans**. **Assign next filing number** gives the number after the highest one in the conference. **Download documents** creates the documents for the postal registration as a PDF.
+- Every status is **Pending**, **Problem** or **Done**. A click on the state opens the choice, and an open one has the **Done** button to settle it right away.
+- **On site**: participation, the access card and **Download** for the **Certificate of participation** (only for people who participated).
+
+- **Participation**: the switch changes between **Participated** and **Did not participate**. After the conference only people who participated get a certificate, and only then does the certificate email become due.
+- **Access Card ID**: the number of the access card. The pencil opens the field, **Save** (the floppy disk) keeps it. If another person already carries that number, DELEGATOR refuses.
+- **Badge found** (once there is a number) asks **Send notification?** and then emails the person right away that their badge waits for them at Participant Care. Every confirmation sends it again.
+- **NSA card** (only for members of a non-state actor): **Print** creates the card with its current number. **New card** and then **Void earlier cards** is for a lost card: the new one gets the next number, and earlier cards no longer scan.
+- **Attendance Log**: every scan of the person with the check-in, the time and who scanned. **Delete attendance entry** removes a scan. See [Check-in](./formalities#check-in).
 
 :::warning Changing a status makes emails due
 Once the assignment is released and the person has a seat, a status makes emails due: **Done** for the payment the confirmation that it arrived, complete documents the confirmation of the postal registration, and **Problem** for payment, terms and conditions, media usage or guardian consent one email about that problem each. They go out with the next automatic run if that kind is set to **Send automatically**. Otherwise they wait on the [Emails](./communication#emails) page and in the card in the **History** tab.
 :::
 
-#### On site
+#### Program & papers
 
-- **Attendance**: **Present** or **Absent**. After the conference only people who were present get a certificate, and only then does the certificate email become due.
-- **Access Card ID**: the number of the access card, saved with **Save** (the floppy disk). If another person already carries that number, DELEGATOR refuses.
-- **Badge found** asks **Send notification?** and then emails the person right away that their badge waits for them at Participant Care. Every confirmation sends it again.
-- **NSA card** (only for members of a non-state actor): **Print** creates the card with its current number. **New card** and then **Void earlier cards** is for a lost card: the new one gets the next number, and earlier cards no longer scan.
-- **Attendance Log**: every scan of the person with the check-in, the time and who scanned. **Delete attendance entry** removes a scan. See [Check-in](./formalities#check-in).
+- **Papers**: the person's submitted papers with their status, **Versions** and **Reviews**. A click opens the paper in the [Paper Hub](./paper-hub).
 - **Surveys / Polls**: the person's answers to the [surveys](./communication#surveys). You can answer for them or delete their answer with **Withdraw answer**. Participant Care may also pick full options and answer after the deadline.
-- **Calendar**: the schedule as the person sees it, with the entries of their survey choices.
-
-#### Papers
-
-The person's papers with **Versions** and **Reviews**, and **Go to Paper Hub** (see [Paper Hub](./paper-hub)).
+- **Calendar**: the schedule as the person sees it, with the entries of their survey choices. **Next on the schedule** shows where they have to be now and next.
 
 #### History
 
@@ -168,7 +159,7 @@ This cannot be undone. Every member loses their registration, and the delegation
 
 Also there:
 
-- The delegation's role and the person's committee, or **No assignment yet** with **Registration completed** or **Registration not yet completed**.
+- The delegation's role and each member's committee (in the member list), or **No assignment yet**. Whether the application is completed is shown under **Registration**.
 - **Committee Assignment** (only for states): pick a committee the state sits in for every member. If the committee is already full for the delegation, DELEGATOR swaps: the member whose seat went unchanged the longest gets the seat the person leaves. **Reset** takes every member's committee away, **Done** closes the window.
 - **Head Delegate**: pick another member and click **Confirm**.
 - **Delegation Members**: **Remove member** takes a person out of the delegation. If they led it, another member takes over. If nobody is left, the delegation is deleted together with its papers. Role wishes the delegation is now too small for are dropped.
@@ -184,7 +175,7 @@ The **Registration & seat** tab shows the roles applied for and the texts, durin
 
 - The **Registration & seat** tab shows the **Connection Code** students use to connect with the supervisor. **Rotate Code** hands out a new code. Students already connected stay connected.
 - In the **Registration & seat** tab you switch whether the person comes to the conference themselves (**Supervisor plans own attendance**). Below, **Delegations** lists the supervised delegations with entry code and members, and **Individual Participants** the supervised individuals. **Remove supervision** ends a connection after asking.
-- In a student's card, **Assign Supervisor** in the **Registration & seat** tab connects a supervisor: find them in the list and click **+**. Supervisors and team members cannot be supervised.
+- In a student's card, **Assign Supervisor** on the left (in the **Person** tab on narrow screens) connects a supervisor: find them in the list and click **+**. Supervisors and team members cannot be supervised.
 
 A new connection makes two emails due: one to the supervisor saying who joined, and one to the student saying who supervises them. From then on the supervisor sees the person's data and status.
 
@@ -313,14 +304,14 @@ Participant status, supervisors and school stay with the person. Without **Switc
 
 - The person changes their name, contact details, address, diet and emergency contacts themselves in their account. Ask them to. Administrators can also change them in the card with **Edit**.
 - Participant Care corrects names and birth dates at the entrance in the [scanner](./formalities#scanner).
-- You change the school under **All details** with **Change school**.
-- You change statuses and documents in the **Formalities** tab. Remember that this can [make emails due](#user-card).
+- You change the school in the left column with **Change school** (pencil).
+- You change statuses and documents in the **Formalities & access** tab. Remember that this can [make emails due](#user-card).
 
 ### A supervisor is missing students
 
 1. Open the supervisor's card. The **Registration & seat** tab lists the delegations and individual participants they already supervise.
 2. If someone is missing, send the supervisor their **Connection Code** from the **Registration & seat** tab so the students connect themselves.
-3. Or open the student's card, click **Assign Supervisor** in the **Registration & seat** tab and pick the supervisor with **+**.
+3. Or open the student's card, click **Assign Supervisor** on the left and pick the supervisor with **+**.
 4. Check in the supervisor's card that everyone is listed.
 
 For a delegation you connect every member on their own. Every connection makes the two emails to supervisor and student due.

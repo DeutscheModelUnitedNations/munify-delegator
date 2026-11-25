@@ -18,7 +18,9 @@
 	} from '#lib/paperScan/agreementDetails';
 	import { fieldLabel } from '#lib/paperScan/fieldLabels';
 	import { agreementGroupLabel } from './agreementGroupLabels';
-	import { agreementStateOf, selectedState } from './agreementState';
+	import type { FieldState } from '#lib/paperScan/readPaper';
+	import StateMenu from '#lib/components/userCard/ui/StateMenu.svelte';
+	import { agreementStateOptions } from './agreementState';
 
 	interface Props {
 		conferenceParticipantId: string;
@@ -37,10 +39,10 @@
 
 	const detailOf = (field: AgreementField) => details.find((detail) => detail.field === field);
 
-	async function change({ field, value }: { field: AgreementField; value: string }) {
+	async function change({ field, state }: { field: AgreementField; state: FieldState | null }) {
 		const promise = Promise.resolve(
 			client.mutate.setAgreementDetail({
-				__args: { conferenceParticipantId, field, state: agreementStateOf(value) }
+				__args: { conferenceParticipantId, field, state }
 			})
 		);
 		toast.promise(promise, genericPromiseToastMessages);
@@ -51,41 +53,39 @@
 <CollapsibleRow
 	icon="list-checks"
 	title={m.agreementDetails()}
-	value={m.agreementDetailsCount({ count: details.length, total: AGREEMENT_FIELDS.length })}
+	value={details.length > 0
+		? m.agreementDetailsCount({ count: details.length, total: AGREEMENT_FIELDS.length })
+		: undefined}
 >
-	<p class="text-base-content/70 mb-3 text-sm">{m.agreementDetailsHint()}</p>
-	<div class="flex flex-col gap-4">
+	<p class="text-base-content/70 mb-4 text-sm">{m.agreementDetailsHint()}</p>
+	<div class="columns-[24rem] gap-x-12">
 		{#each AGREEMENT_GROUPS as group (group.id)}
-			<section class="flex flex-col gap-1">
-				<h4 class="text-sm font-semibold">{agreementGroupLabel[group.id]()}</h4>
-				<ul class="divide-base-300 flex flex-col divide-y">
+			<section class="mb-6 break-inside-avoid">
+				<h4 class="mb-1 text-sm font-bold">{agreementGroupLabel[group.id]()}</h4>
+				<ul>
 					{#each group.fields as field (field)}
 						{@const detail = detailOf(field)}
-						<li>
-							<label
-								class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-1.5 text-sm"
-							>
-								<span class="min-w-40 grow">{fieldLabel[field]()}</span>
-								<span class="flex items-center gap-2">
-									{#if detail}
-										<span class="text-base-content/60 text-xs">
-											{detail.source === 'MANUAL'
-												? m.agreementSourceManual()
-												: m.agreementSourceScan()}
-										</span>
-									{/if}
-									<select
-										class="select select-xs w-32"
-										value={selectedState(detail?.state)}
-										onchange={(event) => change({ field, value: event.currentTarget.value })}
-									>
-										<option value="">{m.agreementStateUnknown()}</option>
-										<option value="yes">{m.agreementStateYes()}</option>
-										<option value="no">{m.agreementStateNo()}</option>
-										<option value="unclear">{m.agreementStateUnclear()}</option>
-									</select>
-								</span>
-							</label>
+						<li class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-x-3 py-1 text-sm">
+							<span>{fieldLabel[field]()}</span>
+							<span class="flex items-center gap-2 pl-2">
+								<StateMenu
+									name={fieldLabel[field]()}
+									active={detail?.state ?? null}
+									options={agreementStateOptions()}
+									onSelect={(state) => change({ field, state })}
+								/>
+								{#if detail}
+									{@const manual = detail.source === 'MANUAL'}
+									{@const source = manual ? m.agreementSourceManual() : m.agreementSourceScan()}
+									<span class="text-base-content/60" title={source}>
+										<i
+											aria-hidden="true"
+											class="ph-duotone {manual ? 'ph-hand-pointing' : 'ph-scan'}"
+										></i>
+										<span class="sr-only">{source}</span>
+									</span>
+								{/if}
+							</span>
 						</li>
 					{/each}
 				</ul>

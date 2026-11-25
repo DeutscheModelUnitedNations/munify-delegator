@@ -7,6 +7,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { PAPER_FIELDS } from '#lib/paperScan/fields';
 	import { arrowStep, snapRect, type SnapGuides } from '#lib/helpers/layoutSnap';
+	import { fitsBelowCode } from '#lib/helpers/codeCaption';
 	import { scrollKeeping, zoomStep } from '#lib/helpers/layoutZoom';
 	import Modal from '#lib/components/Modal.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
@@ -28,6 +29,7 @@
 		withHidden,
 		withMinimumSizes,
 		resolveDocumentLayout,
+		squareInPoints,
 		type BoxPlacement,
 		type FieldPlacement,
 		type LayoutDocument,
@@ -428,6 +430,13 @@
 	const sample = (id: string) =>
 		id === 'sessions' ? certificateSessions : isWritten(id) ? elementSample[id]() : [];
 
+	/** Whether a code's sample caption prints below it, as it does unless the page number is there. */
+	function captionFits({ id, placement }: { id: string; placement: SquarePlacement }) {
+		const { width, height } = page ?? { width: 595, height: 842 };
+		const { bottom } = squareInPoints({ placement, width, height });
+		return fitsBelowCode({ bottom, lines: sample(id).length });
+	}
+
 	// The elements by shape, each with its current placement in that shape.
 	const byShape = $derived(elementsByShape({ elements: shown, layout: placed }));
 	// The texts are written on the first page; a field shows on its own page.
@@ -559,7 +568,7 @@
 							label={label(id)}
 							{placement}
 							captions={sample(id)}
-							{caption}
+							caption={caption === 'below' && !captionFits({ id, placement }) ? 'above' : caption}
 							{scale}
 							selected={selected === id}
 							onselect={() => (selected = id)}

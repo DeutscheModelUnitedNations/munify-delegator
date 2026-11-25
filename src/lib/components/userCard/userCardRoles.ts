@@ -1,4 +1,5 @@
 import { client } from '#lib/api/rumbleClient/client';
+import { submittedPapersOf } from './tabs/papers';
 
 /**
  * The filters for one person's rows in one conference: `forUser` for tables naming them directly
@@ -16,7 +17,7 @@ function userInConference({ userId, conferenceId }: { userId: string; conference
 
 /**
  * Who someone is in one conference: their name (no row when there is no such person), which registrations they hold there, their
- * participant row and waiting list entry, and the conference's state.
+ * participant row and waiting list entry, whether they wrote a paper, and the conference's state.
  *
  * This is what the user card's header renders and what decides which tabs it offers. Every tab
  * fetches the rest of what it shows on its own, once it is opened.
@@ -38,6 +39,7 @@ export async function fetchUserCardRoles({
 		teamMembers,
 		participants,
 		waitingListEntries,
+		papers,
 		conference
 	] = await Promise.all([
 		// a list, so an id nobody has (or the caller may not see) yields nothing rather than an error
@@ -46,8 +48,7 @@ export async function fetchUserCardRoles({
 			id: true,
 			givenName: true,
 			familyName: true,
-			pronouns: true,
-			gender: true
+			pronouns: true
 		}),
 		client.liveQuery.delegationMembers({
 			__args: registrationOfUser,
@@ -82,8 +83,12 @@ export async function fetchUserCardRoles({
 			supervisedSingleParticipants: { id: true, assignedRole: { id: true } }
 		}),
 		client.liveQuery.teamMembers({ __args: forUser, id: true, role: true }),
-		client.liveQuery.conferenceParticipants({ __args: forUser, id: true, didAttend: true }),
+		client.liveQuery.conferenceParticipants({ __args: forUser, id: true }),
 		client.liveQuery.waitingListEntries({ __args: forUser, id: true, assignedAt: true }),
+		client.liveQuery.papers({
+			__args: { where: submittedPapersOf({ userId, conferenceId }), limit: 1 },
+			id: true
+		}),
 		client.liveQuery.conference({ __args: { id: conferenceId }, id: true, state: true })
 	]);
 
@@ -97,6 +102,7 @@ export async function fetchUserCardRoles({
 		teamMembers,
 		participants,
 		waitingListEntries,
+		papers,
 		conference
 	};
 }
@@ -143,30 +149,31 @@ export function hasConferenceAccess({
 	return !!conferenceSupervisor && supervisesAnyAssigned(conferenceSupervisor);
 }
 
-/** How far a delegate or single participant has come in the conference, or someone waiting. */
-export type ParticipationStage =
-	'waitingList' | 'registered' | 'applied' | 'notSeated' | 'seated' | 'attended';
+/** How far somebody without a seat has come towards one. */
+export type ParticipationStage = 'waitingList' | 'registered' | 'applied' | 'notSeated';
 
 /** States in which the assignment has happened, so an application without a role has none. */
 const AFTER_ASSIGNMENT = new Set(['PREPARATION', 'ACTIVE', 'POST']);
 
+/** Whether the conference has not handed out its seats yet, so what counts is the application. */
+export const isApplicationTime = (conferenceState: string) =>
+	!AFTER_ASSIGNMENT.has(conferenceState);
+
 /**
- * The stage the header shows for someone applying for a seat. Undefined for the team, supervisors
- * and anybody else without an application or a waiting list entry.
+ * The stage the header shows for someone applying for a seat. Undefined once they have one, for the
+ * team, supervisors and anybody else without an application or a waiting list entry.
  */
 export function participationStage({
 	application,
 	waitingListEntry,
-	didAttend,
 	conferenceState
 }: {
 	/** The delegation's or the single participant's application */
 	application?: { applied: boolean; assignedRole?: object | null } | null;
 	waitingListEntry?: { assignedAt: Date | null } | null;
-	didAttend?: boolean;
 	conferenceState: string;
 }): ParticipationStage | undefined {
-	if (application?.assignedRole) return didAttend ? 'attended' : 'seated';
+	if (application?.assignedRole) return undefined;
 	// An applicant who got no seat keeps their application while they wait for one
 	if (waitingListEntry && !waitingListEntry.assignedAt) return 'waitingList';
 	if (application?.applied) return AFTER_ASSIGNMENT.has(conferenceState) ? 'notSeated' : 'applied';

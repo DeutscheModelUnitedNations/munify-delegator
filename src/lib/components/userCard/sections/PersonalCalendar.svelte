@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import Empty from '../ui/Empty.svelte';
 	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
 	import type { Seat } from '#lib/components/calendar/calendarNow';
 	import { ownTrackIds, personalCalendarDays } from '#lib/components/calendar/personalCalendar';
@@ -35,18 +36,14 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<p class="text-sm text-base-content/60">{m.userCardCalendarHint()}</p>
 	{#if !conference.showCalendar}
-		<div class="alert alert-warning" role="status">
+		<div class="alert alert-warning alert-soft" role="status">
 			<i aria-hidden="true" class="ph-duotone ph-eye-slash"></i>
 			<span>{m.userCardCalendarNotShown()}</span>
 		</div>
 	{/if}
 	{#if empty}
-		<div class="alert alert-info">
-			<i aria-hidden="true" class="ph-duotone ph-calendar-blank"></i>
-			<span>{m.userCardNoCalendarEntries()}</span>
-		</div>
+		<Empty icon="calendar-blank" text={m.userCardNoCalendarEntries()} />
 	{:else}
 		<CalendarDisplay {days} timezone={conference.timezone} ownTrackIds={ownTracks} />
 	{/if}

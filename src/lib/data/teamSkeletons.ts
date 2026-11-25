@@ -1254,7 +1254,7 @@ const userPage = {
 	name: 'user',
 	nodes: [
 		{
-			class: 'mx-auto flex w-full max-w-7xl flex-col',
+			class: 'flex w-full flex-col',
 			children: [
 				{ class: 'mb-3 flex items-center gap-2', children: [block('h-8 w-20'), block('h-7 w-48')] },
 				{

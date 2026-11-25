@@ -106,35 +106,39 @@ function sample({
 
 /**
  * `picture` as it comes back from a home printer and a scanner: scaled (a print fit to the page),
- * turned by `angle` degrees about its centre (or upside down, `flipped`), resampled smoothly as a
- * scanner does, on grey paper with noise. The picture keeps its size; what falls outside is paper.
+ * turned by `angle` degrees about its centre and laid in by `quarters` quarter turns (clockwise),
+ * resampled smoothly as a scanner does, on grey paper with noise. The picture keeps its size (a quarter
+ * turn swaps its sides); what falls outside is paper.
  */
 export function simulateScan({
 	picture,
 	angle = 0,
 	scale = 1,
-	flipped = false,
+	quarters = 0,
 	noise = 0
 }: {
 	picture: Pixels;
 	angle?: number;
 	scale?: number;
-	flipped?: boolean;
+	quarters?: number;
 	noise?: number;
 }): Pixels {
-	const { width, height } = picture;
+	const lying = quarters % 2 === 1;
+	const width = lying ? picture.height : picture.width;
+	const height = lying ? picture.width : picture.height;
 	const out = new Uint8ClampedArray(picture.data.length);
-	const turn = ((flipped ? angle + 180 : angle) * Math.PI) / 180;
+	const turn = ((angle + quarters * 90) * Math.PI) / 180;
 	const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
 	const [cx, cy] = [width / 2, height / 2];
+	const [pageX, pageY] = [picture.width / 2, picture.height / 2];
 	const random = noiseOf(42);
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {
 			// where this pixel of the scan was on the page
 			const dx = (x - cx) / scale;
 			const dy = (y - cy) / scale;
-			const sx = cx + dx * cos + dy * sin;
-			const sy = cy - dx * sin + dy * cos;
+			const sx = pageX + dx * cos + dy * sin;
+			const sy = pageY - dx * sin + dy * cos;
 			const grain = (random() - 0.5) * noise;
 			const at = (y * width + x) * 4;
 			for (let channel = 0; channel < 3; channel++) {

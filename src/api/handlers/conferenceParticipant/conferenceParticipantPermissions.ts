@@ -13,7 +13,12 @@ import {
 	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
+import {
+	assertAllowed,
+	callerAsThemselves,
+	callerUserId,
+	grantWhere
+} from '#api/services/authHelper/utils';
 import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
@@ -215,4 +220,32 @@ export async function assertCanSetParticipantSchool({
 	});
 	if (!own) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	return { participantId: own.id };
+}
+
+/** The person's participant row in the conference; NOT_FOUND for somebody without one. */
+export async function partIn({ conferenceId, userId }: { conferenceId: string; userId: string }) {
+	const participant = await db.query.conferenceParticipant.findFirst({
+		where: { conferenceId, userId },
+		columns: { id: true }
+	});
+	if (!participant) throw apiError({ code: 'NOT_FOUND', message: m.userNotInConference() });
+	return { participantId: participant.id };
+}
+
+/**
+ * The caller's own participant row in the conference, whose postal registration they go through.
+ * FORBIDDEN for an AI assistant and for whoever impersonates, who confirm nothing for somebody
+ * else; NOT_FOUND for a caller without a part in it.
+ */
+export async function assertCanUpdatePostalProgress({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	ctx.mustBeLoggedIn();
+	const userId = callerAsThemselves(ctx);
+	if (!userId) throw apiError({ code: 'FORBIDDEN', message: m.postalGuideOnlyOwn() });
+	return partIn({ conferenceId, userId });
 }

@@ -58,10 +58,7 @@
 
 <section class="flex flex-col gap-2">
 	<h3 class="text-lg font-bold">{m.userCardOwedEmails()}</h3>
-	<details class="text-base-content/70 text-sm">
-		<summary class="cursor-pointer">{m.userCardOwedEmailsAbout()}</summary>
-		<p class="mt-1">{m.userCardOwedEmailsDescription()}</p>
-	</details>
+	<p class="text-base-content/70 text-sm">{m.userCardOwedEmailsDescription()}</p>
 	{#if emails.length === 0}
 		<p class="text-base-content/60 text-sm italic">{m.userCardNoOwedEmails()}</p>
 	{:else}

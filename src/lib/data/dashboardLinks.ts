@@ -2,7 +2,6 @@ import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
 import { m } from '#lib/paraglide/messages';
-import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
 import MessagesLinkInfo from '#lib/components/chat/MessagesLinkInfo.svelte';
 import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink';
 
@@ -193,7 +192,6 @@ const dashboardLinks: DashboardLink[] = [
 			resolve('/(authenticated)/dashboard/[conferenceId]/calendar', {
 				conferenceId: ctx.conferenceId
 			}),
-		info: CalendarLinkInfo,
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		// Shown once the team has switched the schedule on
 		isVisible: (ctx) => !!ctx.showCalendar,

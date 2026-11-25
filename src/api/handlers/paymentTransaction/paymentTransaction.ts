@@ -26,7 +26,7 @@ const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 schemaBuilder.mutationFields((t) => ({
 	createPaymentTransaction: t.drizzleField({
 		description:
-			"Creates a payment reference paid by `userId` for the participants it covers, at the conference's fee per participant. Participant care makes one for anybody; everybody else only in their own name (FORBIDDEN otherwise) and for people they know in the conference: themselves, their delegation, the participants they supervise and the supervisors they share a student with. INVALID_INPUT when somebody named takes no part in the conference or the conference has no fee, CONFLICT when one of them has paid already.",
+			"Creates a payment reference paid by `userId` for the participants it covers, at the conference's fee per participant, or answers the one the payer already has for exactly these participants and this amount while its money has not arrived. Participant care makes one for anybody; everybody else only in their own name (FORBIDDEN otherwise) and for people they know in the conference: themselves, their delegation, the participants they supervise and the supervisors they share a student with. INVALID_INPUT when somebody named takes no part in the conference or the conference has no fee, CONFLICT when one of them has paid already.",
 		type: PaymentTransactionRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

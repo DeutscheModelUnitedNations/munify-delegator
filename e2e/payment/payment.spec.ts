@@ -33,6 +33,13 @@ test('a participant can generate a payment reference and an admin can mark it re
 	const reference = await reasonInput.inputValue();
 	expect(reference).toBeTruthy();
 
+	// Generated again after a reload, it is the same reference
+	await participantPage.reload();
+	await waitForHydration(participantPage);
+	await expect(generateButton).toBeVisible({ timeout: 15_000 });
+	await generateButton.click();
+	await expect(reasonInput).toHaveValue(reference, { timeout: 15_000 });
+
 	const adminContext = await browser.newContext();
 	const adminPage = await adminContext.newPage();
 

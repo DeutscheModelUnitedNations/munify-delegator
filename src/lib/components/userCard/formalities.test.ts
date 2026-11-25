@@ -3,7 +3,8 @@ import {
 	formalitiesOf,
 	isOpen,
 	needsGuardian,
-	overviewLead,
+	photoStatusShown,
+	postalProgress,
 	type FormalityStatuses
 } from './formalities';
 
@@ -80,25 +81,28 @@ describe('needsGuardian', () => {
 	});
 });
 
-describe('overviewLead', () => {
-	const seated = { access: true, participant: true, applicant: true };
+describe('postalProgress', () => {
+	const progress = (status: FormalityStatuses) =>
+		postalProgress(formalitiesOf({ status, needsGuardian: true }));
 
-	it('follows the conference for somebody with a place', () => {
-		expect(overviewLead({ state: 'PREPARATION', ...seated })).toBe('formalities');
-		expect(overviewLead({ state: 'ACTIVE', ...seated })).toBe('onSite');
-		expect(overviewLead({ state: 'POST', ...seated })).toBe('onSite');
+	it('counts the signed papers, the payment left out', () => {
+		expect(progress({ ...done, paymentStatus: 'PENDING' })).toEqual({ done: 3, total: 3 });
+		expect(progress({ ...done, guardianConsent: 'PROBLEM' })).toEqual({ done: 2, total: 3 });
 	});
 
-	it('stays with the application until there is a place', () => {
-		expect(overviewLead({ state: 'PARTICIPANT_REGISTRATION', ...seated, access: false })).toBe(
-			'application'
+	it('counts the photo consent as open until it is known what it allows', () => {
+		expect(progress({ ...done, mediaConsentStatus: 'NOT_SET' })).toEqual({ done: 2, total: 3 });
+	});
+});
+
+describe('photoStatusShown', () => {
+	it('waits for the consent unless it is set already', () => {
+		expect(photoStatusShown({ mediaConsent: 'PENDING', mediaConsentStatus: 'NOT_SET' })).toBe(
+			false
 		);
-		expect(overviewLead({ state: 'ACTIVE', ...seated, access: false })).toBe('application');
-	});
-
-	it('leads with nothing for the team', () => {
-		expect(
-			overviewLead({ state: 'PREPARATION', access: true, participant: false, applicant: false })
-		).toBeUndefined();
+		expect(photoStatusShown({ mediaConsent: 'PENDING', mediaConsentStatus: 'NOT_ALLOWED' })).toBe(
+			true
+		);
+		expect(photoStatusShown({ mediaConsent: 'DONE', mediaConsentStatus: 'NOT_SET' })).toBe(true);
 	});
 });

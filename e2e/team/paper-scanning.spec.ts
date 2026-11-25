@@ -183,11 +183,17 @@ test('a batch of scans marks a signed contract in, unattended, and ignores pages
 	await page.getByRole('button', { name: /^scans/i }).click();
 	const scans = page.getByRole('list', { name: /scans der unterlagen|scans of the documents/i });
 	await expect(scans.getByText('stapel_1.pdf')).toBeVisible();
-	await expect(page.getByLabel(/vertragsbedingungen akzeptiert/i)).toHaveCount(0);
+	const terms = (state: string) =>
+		page.getByRole('button', {
+			name: new RegExp(`^(vertragsbedingungen akzeptiert|.*terms.*): (${state})$`, 'i')
+		});
+	await expect(terms('.*')).toHaveCount(0);
 	await page.getByText(/details der einwilligungen|details of the agreements/i).click();
-	const terms = page.getByLabel(/vertragsbedingungen akzeptiert|terms/i).first();
-	await expect(terms).toHaveValue('yes');
-	await terms.selectOption('no');
+	await terms('ja|yes').click();
+	await page
+		.locator('[popover]:popover-open')
+		.getByRole('button', { name: /^(nein|no)$/i })
+		.click();
 	await expect
 		.poll(async () =>
 			(await gracePaper(page)).agreementDetails.find(

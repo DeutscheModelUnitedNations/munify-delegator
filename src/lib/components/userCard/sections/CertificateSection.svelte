@@ -5,7 +5,8 @@
 	import { toast } from 'svelte-sonner';
 	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator';
 	import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
-	import CollapsibleRow from './CollapsibleRow.svelte';
+	import Row from '../ui/Row.svelte';
+	import { fetchParticipantStatus } from '../tabs/participantStatus';
 	import { certificateContentsOf, documentFileName } from '../tabs/statusDownloads';
 
 	/** The person's participation certificate as a list row, generated when it is asked for. */
@@ -15,6 +16,10 @@
 	}
 
 	let { userId, conferenceId }: Props = $props();
+
+	// The API issues one only to who took part
+	const statuses = $derived(await fetchParticipantStatus({ userId, conferenceId }));
+	const didAttend = $derived(statuses.at(0)?.didAttend ?? false);
 
 	const downloadCertificate = async () => {
 		try {
@@ -56,11 +61,23 @@
 	};
 </script>
 
-<CollapsibleRow icon="certificate" title={m.certificate()}>
+{#snippet needsParticipation()}
+	<span class="text-base-content/60">{m.userCardCertificateNeedsParticipation()}</span>
+{/snippet}
+
+<Row
+	icon="certificate"
+	title={m.certificate()}
+	children={didAttend ? undefined : needsParticipation}
+>
 	{#snippet actions()}
-		<button class="btn btn-sm" onclick={downloadCertificate}>
+		<button
+			class="btn btn-sm btn-ghost text-primary disabled:text-base-content/40"
+			disabled={!didAttend}
+			onclick={downloadCertificate}
+		>
 			<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
-			{m.downloadCertificate()}
+			{m.download()}
 		</button>
 	{/snippet}
-</CollapsibleRow>
+</Row>

@@ -2,8 +2,6 @@ import { client } from '#lib/api/rumbleClient/client';
 
 const supervisorSelection = {
 	id: true,
-	plansOwnAttendenceAtConference: true,
-	connectionCode: true,
 	user: { id: true, givenName: true, familyName: true }
 } as const;
 

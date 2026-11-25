@@ -4,9 +4,9 @@
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import InfoRow from './InfoRow.svelte';
+	import Row from '../ui/Row.svelte';
 
-	/** How a supervisor registered: the code their students connect with. */
+	/** The code a supervisor's students connect with, as a row of a `Section`. */
 	interface Props {
 		supervisorId: string;
 	}
@@ -38,27 +38,22 @@
 	};
 </script>
 
-<section class="flex flex-col gap-3">
-	<h3 class="text-lg font-bold">{m.supervisor()}</h3>
-	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<InfoRow title={m.connectionCode()} icon="link">
-			<span class="font-mono text-sm tracking-wider">{supervisor.connectionCode}</span>
-			{#snippet actions()}
-				<div class="join">
-					<button
-						class="btn btn-sm join-item"
-						onclick={copyConnectionCode}
-						aria-label={m.copy()}
-						title={m.copy()}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-copy"></i>
-					</button>
-					<button class="btn btn-sm join-item" onclick={rotateCode}>
-						<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
-						{m.rotateCode()}
-					</button>
-				</div>
-			{/snippet}
-		</InfoRow>
-	</div>
-</section>
+<Row icon="link" title={m.connectionCode()}>
+	<span class="font-mono tracking-wider">{supervisor.connectionCode}</span>
+	{#snippet actions()}
+		<div class="join">
+			<button
+				class="btn btn-sm btn-ghost text-primary join-item"
+				onclick={copyConnectionCode}
+				aria-label={m.copy()}
+				title={m.copy()}
+			>
+				<i aria-hidden="true" class="ph-duotone ph-copy"></i>
+			</button>
+			<button class="btn btn-sm btn-ghost text-primary join-item" onclick={rotateCode}>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
+				{m.rotateCode()}
+			</button>
+		</div>
+	{/snippet}
+</Row>

@@ -1,0 +1,115 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "e02995a3-114c-486f-bc9c-dba67a8a17fa",
+  "prevIds": [
+    "e61afb7c-e88f-4be0-9904-7ade7cee19ab"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference_participant",
+        "postal_info_read"
+      ],
+      "writes": [
+        "s|col|public.conference_participant.postal_info_read",
+        "n|col|public.conference_participant.postal_info_read",
+        "e|col|public.conference_participant.postal_info_read"
+      ],
+      "reads": [
+        "n|tbl|public.conference_participant",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference_participant",
+        "postal_confirmed_details"
+      ],
+      "writes": [
+        "s|col|public.conference_participant.postal_confirmed_details",
+        "n|col|public.conference_participant.postal_confirmed_details",
+        "e|col|public.conference_participant.postal_confirmed_details"
+      ],
+      "reads": [
+        "n|tbl|public.conference_participant",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference_participant",
+        "postal_confirmed_of_age"
+      ],
+      "writes": [
+        "s|col|public.conference_participant.postal_confirmed_of_age",
+        "n|col|public.conference_participant.postal_confirmed_of_age",
+        "e|col|public.conference_participant.postal_confirmed_of_age"
+      ],
+      "reads": [
+        "n|tbl|public.conference_participant",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_participant",
+        "name": "postal_info_read",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_participant",
+        "name": "postal_confirmed_details",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference_participant",
+        "name": "postal_confirmed_of_age",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

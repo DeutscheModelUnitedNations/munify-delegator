@@ -141,7 +141,7 @@
 </Form>
 
 <div class="flex justify-end">
-	<button class="btn btn-sm btn-ghost" onclick={ondone}>
+	<button class="btn btn-sm btn-ghost text-primary" onclick={ondone}>
 		<i aria-hidden="true" class="ph-duotone ph-x"></i>
 		{m.cancel()}
 	</button>

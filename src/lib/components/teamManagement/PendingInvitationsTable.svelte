@@ -6,6 +6,7 @@
 	import { toast } from 'svelte-sonner';
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import { page } from '$app/state';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { runInvitationAction } from './invitationActions';
 
 	interface Invitation {
@@ -55,7 +56,11 @@
 		});
 	}
 
+	/** Invitations being mailed again: a second click would void the link of the first mail. */
+	const resending = new SvelteSet<string>();
+
 	async function handleResendEmail(invitationId: string) {
+		resending.add(invitationId);
 		await runInvitationAction({
 			mutation: () =>
 				client.mutate.regenerateTeamMemberInvitation({
@@ -67,6 +72,7 @@
 			},
 			failureLog: 'Failed to resend invitation'
 		});
+		resending.delete(invitationId);
 	}
 
 	function formatDate(date: Date | string): string {
@@ -91,21 +97,31 @@
 	</span>
 {/snippet}
 
-{#snippet actions(invitationId: string)}
+{#snippet resend(invitationId: string, expired: boolean)}
+	<button
+		class="btn btn-sm {expired ? 'btn-primary whitespace-nowrap' : 'btn-ghost'}"
+		onclick={() => handleResendEmail(invitationId)}
+		disabled={resending.has(invitationId)}
+		title={m.resendInvitation()}
+	>
+		{#if expired}
+			<i aria-hidden="true" class="ph-duotone ph-arrows-clockwise"></i>
+			{m.inviteAgain()}
+		{:else}
+			<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
+		{/if}
+	</button>
+{/snippet}
+
+{#snippet actions(invitationId: string, expired: boolean)}
 	<div class="flex gap-2 justify-end">
+		{@render resend(invitationId, expired)}
 		<button
 			class="btn btn-sm btn-ghost"
 			onclick={() => handleRegenerateAndCopy(invitationId)}
 			title={m.copyLink()}
 		>
 			<i aria-hidden="true" class="ph-duotone ph-copy"></i>
-		</button>
-		<button
-			class="btn btn-sm btn-ghost"
-			onclick={() => handleResendEmail(invitationId)}
-			title={m.resendInvitation()}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt"></i>
 		</button>
 		<button
 			class="btn btn-sm btn-ghost text-error"
@@ -136,7 +152,7 @@
 				<tbody>
 					{#each invitations as invitation (invitation.id)}
 						{@const expired = isExpired(invitation.expiresAt)}
-						<tr class={expired ? 'opacity-50' : ''}>
+						<tr class={expired ? '[&>td:not(:last-child)]:opacity-50' : ''}>
 							<td>{invitation.email}</td>
 							<td class="whitespace-nowrap">
 								<span class="badge badge-ghost">{translateTeamRole(invitation.role)}</span>
@@ -154,7 +170,7 @@
 								{invitation.invitedBy?.givenName}
 								{invitation.invitedBy?.familyName}
 							</td>
-							<td>{@render actions(invitation.id)}</td>
+							<td>{@render actions(invitation.id, expired)}</td>
 						</tr>
 					{/each}
 				</tbody>

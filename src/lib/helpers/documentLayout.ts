@@ -6,7 +6,7 @@ import { MARKER } from '#lib/paperScan/markerGeometry';
  * Where the generated parts of a document go on the conference's own template: a certificate's
  * name, sessions and QR code; the contract's recipient, name and birthday; the consents' fields;
  * and on every page of the application documents their signed code (with the person's name and
- * id beside it) and the page number. The team places them in the layout editor
+ * id below it) and the page number. The team places them in the layout editor
  * (`DocumentLayoutEditor.svelte`); the PDF generator and the editor read the same values, stored
  * per document in `conference.documentLayouts`. The page number is fixed in the bottom right
  * corner (`fixed`), the terms and conditions' pages too. The application documents also carry four
@@ -51,7 +51,7 @@ export type FieldPlacement = z.infer<typeof fieldPlacement>;
 /**
  * A code is never printed smaller than its `minSide` (millimetres), so a phone still reads it off
  * paper; the PDF generator grows it further when its content needs more (`#lib/helpers/qrSize`).
- * Its caption (`caption`) goes above it or beside it. A `fixed` box (the page number) always stays
+ * Its caption (`caption`) goes above it or below it. A `fixed` box (the page number) always stays
  * at its default: the editor shows it, nothing may be placed over it, and it is never stored.
  */
 type ElementSpec =
@@ -65,7 +65,7 @@ type ElementSpec =
 	| { shape: 'field'; field: PaperField; default: FieldPlacement }
 	| {
 			shape: 'square';
-			caption: 'above' | 'beside';
+			caption: 'above' | 'below';
 			minSide: number;
 			default: SquarePlacement;
 	  };
@@ -91,19 +91,23 @@ const FOOTER_CODE = mm(35);
 const FOOTER = { right: 54, bottom: 20 };
 /** The page number: a fixed area in the bottom right corner, the code by default just above. */
 const PAGE_NUMBER = { width: 80, height: 14, gap: 6 };
+/** The page number's upper edge, in points from the page's lower one. */
+export const PAGE_NUMBER_TOP = FOOTER.bottom + PAGE_NUMBER.height;
+/** The room the code's caption takes below it, in points (`#lib/helpers/codeCaption`). */
+const CAPTION_HEIGHT = 16;
 
 /**
  * What every page of an application document carries: the page number, fixed in the bottom right
- * corner, and the signed code with the person's name and id beside it, by default above it.
+ * corner, and the signed code with the person's id and name below it, by default above it.
  */
 const footer = {
 	code: {
 		shape: 'square',
-		caption: 'beside',
+		caption: 'below',
 		minSide: 28,
 		default: {
 			x: portrait.x(A4.short - FOOTER.right - FOOTER_CODE),
-			y: portrait.y(A4.long - FOOTER.bottom - PAGE_NUMBER.height - PAGE_NUMBER.gap - FOOTER_CODE),
+			y: portrait.y(A4.long - PAGE_NUMBER_TOP - PAGE_NUMBER.gap - CAPTION_HEIGHT - FOOTER_CODE),
 			size: portrait.x(FOOTER_CODE)
 		}
 	},
@@ -374,8 +378,7 @@ export const DOCUMENT_ELEMENTS = {
 			left: 20,
 			right: 138.1,
 			line: 127.8,
-			// below the code's caption
-			height: 7.5,
+			height: 8,
 			page: 2
 		}),
 		mediaGuardian1Name: writingLine({
@@ -557,7 +560,7 @@ export function elementsByShape({
 }) {
 	const texts: { id: string; align: 'left' | 'center'; placement: TextPlacement }[] = [];
 	const boxes: ReturnType<typeof boxEntry>[] = [];
-	const squares: { id: string; placement: SquarePlacement; caption: 'above' | 'beside' }[] = [];
+	const squares: { id: string; placement: SquarePlacement; caption: 'above' | 'below' }[] = [];
 	for (const { id, spec } of elements) {
 		const placement = layout[id];
 		if (!placement || 'page' in placement || isHidden(placement)) continue;

@@ -63,9 +63,16 @@ export async function seedAttendance(db: NodePgDatabase) {
 		.values(role)
 		.onConflictDoUpdate({ target: schema.conferenceRole.id, set: role });
 
+	const participantId = await upsertParticipant(db, conferenceId, E2E_ATTENDANCE_ADA_ID);
+	// Only a badge with a number can be reported as found; badge sessions hand her others
+	await db
+		.update(schema.conferenceParticipant)
+		.set({ accessCardId: 'E2E-ADA' })
+		.where(eq(schema.conferenceParticipant.id, participantId));
+
 	const single = {
 		...makeSeedSingleParticipant({
-			conferenceParticipantId: await upsertParticipant(db, conferenceId, E2E_ATTENDANCE_ADA_ID),
+			conferenceParticipantId: participantId,
 			applied: true
 		}),
 		id: ADA_SINGLE_PARTICIPANT_ID,

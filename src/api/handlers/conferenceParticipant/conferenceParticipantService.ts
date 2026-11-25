@@ -9,6 +9,7 @@ import { apiError } from '#api/services/errors';
 import { agreementDetailPubsub, conferenceParticipantPubsub } from '#api/pubsub';
 import { forgetRejectedDetails } from '#api/handlers/agreementDetail/agreementDetailService';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
+import { z } from 'zod';
 import type { ParticipantStatusTarget } from './conferenceParticipantPermissions';
 
 /**
@@ -317,4 +318,37 @@ export async function isOfAgeAtConference(participantId: string) {
 		startConference: participant?.conference.startConference,
 		dateOfBirth: participant?.user.birthday
 	});
+}
+
+/**
+ * A fingerprint of the details (`detailsFingerprint`), where one is given: nothing readable is to be
+ * stored in it.
+ */
+export const postalFingerprintSchema = z
+	.string()
+	.regex(/^[0-9a-f]{8}$/)
+	.nullish();
+
+/** Writes how far somebody is in their postal registration; what is not given stays. */
+export async function updatePostalProgress({
+	participantId,
+	progress
+}: {
+	participantId: string;
+	progress: {
+		infoRead?: boolean | null;
+		confirmedDetails?: string | null;
+		confirmedOfAge?: boolean | null;
+	};
+}) {
+	await db
+		.update(schema.conferenceParticipant)
+		.set({
+			postalInfoRead: progress.infoRead ?? undefined,
+			postalConfirmedDetails: progress.confirmedDetails ?? undefined,
+			postalConfirmedOfAge: progress.confirmedOfAge ?? undefined,
+			updatedAt: new Date()
+		})
+		.where(eq(schema.conferenceParticipant.id, participantId));
+	conferenceParticipantPubsub.updated(participantId);
 }

@@ -31,8 +31,8 @@
 			>
 				<div
 					class="bg-base-200 flex shrink-0 flex-col gap-3 p-4 {mode === 'drawer'
-						? 'lg:w-80'
-						: 'xl:w-80'}"
+						? 'lg:w-84'
+						: 'xl:w-84'}"
 				>
 					<div class="skeleton h-8 w-52 max-w-full"></div>
 					<div class="flex gap-2">
@@ -40,10 +40,6 @@
 						<div class="skeleton h-5 w-20 rounded-full"></div>
 					</div>
 					<div class="skeleton h-4 w-36 rounded-full"></div>
-					<div class="flex gap-1">
-						<div class="skeleton rounded-box h-8 w-8"></div>
-						<div class="skeleton rounded-box h-8 w-8"></div>
-					</div>
 					{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}
 						<div class="flex gap-3">
 							<div class="skeleton h-4 w-20 rounded-full"></div>

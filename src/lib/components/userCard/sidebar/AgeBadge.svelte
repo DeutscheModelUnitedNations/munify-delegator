@@ -24,9 +24,14 @@
 
 {#if age}
 	<span
-		class="badge badge-sm {age.minor ? 'badge-warning badge-soft' : 'badge-outline'}"
+		class={age.minor
+			? 'badge badge-warning badge-sm ml-1 gap-1 align-middle'
+			: 'text-base-content/60 ml-1 text-sm'}
 		title={m.userCardAgeHint()}
 	>
+		{#if age.minor}
+			<i aria-hidden="true" class="ph-duotone ph-shield-warning"></i>
+		{/if}
 		{age.minor ? m.userCardAgeMinor({ age: age.age }) : m.userCardAge({ age: age.age })}
 	</span>
 {/if}

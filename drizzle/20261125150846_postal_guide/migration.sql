@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "postal_guide_completed_at" timestamp(3);

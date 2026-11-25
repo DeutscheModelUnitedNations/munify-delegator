@@ -182,7 +182,7 @@ Eine Benachrichtigung nennt nur das Postfach und führt in die App. Der Text ein
 
 Vorsitz und Gremienberatung erfahren außerdem von jedem Papier, das in ihrem Gremium eingereicht wird, sofern ihre Teamrolle Papiere lesen darf (siehe [Wer von neuen Papieren erfährt](./paper-hub#committee-notification)). Slack und die E-Mail **Papier im Gremium eingereicht** melden sich sofort, ohne Schalter auf der Seite [E-Mails](#emails).
 
-**Für dich einstellen:** Im Menü hinter deinen Initialen oben rechts öffnest du **Mein Konto** und dort den Reiter **Benachrichtigungen**. Den Reiter gibt es, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, je Gremium **Papiere Vorsitz** oder **Papiere Gremienberatung**, wenn deine Teamrolle Papiere lesen darf, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an. Hattest du **E-Mail bei ungelesenen Nachrichten** schon vorher ausgeschaltet, beginnt **E-Mail** in allen Zeilen ausgeschaltet, auch bei den Papieren. Schalte sie in der Zeile ein, in der du sie haben willst. Slack ist auch dann an.
+**Für dich einstellen:** Im Menü hinter dem Personensymbol oben rechts öffnest du **Mein Konto** und dort den Reiter **Benachrichtigungen**. Den Reiter gibt es, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, je Gremium **Papiere Vorsitz** oder **Papiere Gremienberatung**, wenn deine Teamrolle Papiere lesen darf, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an. Hattest du **E-Mail bei ungelesenen Nachrichten** schon vorher ausgeschaltet, beginnt **E-Mail** in allen Zeilen ausgeschaltet, auch bei den Papieren. Schalte sie in der Zeile ein, in der du sie haben willst. Slack ist auch dann an.
 
 **Slack einrichten:** Die Projektleitung wählt auf der Seite [E-Mails](#emails) unter **Slack-Workspace** den Workspace der Konferenz aus. Zur Auswahl stehen die Workspaces, die die Administration des Systems eingetragen hat (siehe [Slack-Workspaces](./overview#slack-workspaces)). Ohne Workspace gibt es für die Konferenz keine Slack-Nachrichten.
 
@@ -379,7 +379,7 @@ Eine Kapazitätsgrenze kannst du später ändern. Senkst du sie unter die Zahl d
 
 Eine veröffentlichte Umfrage steht auf dem Dashboard aller Delegierten und Einzelteilnehmenden mit Platz, solange die Konferenz in der Phase **Vorbereitung** oder **Aktive Konferenz** ist. Bis zur Frist wählen sie eine Option und ändern sie. Eine volle Option und eine Antwort nach der Frist lehnt DELEGATOR ab. Wie voll eine Option ist, sehen sie.
 
-Die Teilnehmendenbetreuung setzt oder entfernt die Antwort einer Person in der [Teilnehmendenkarte](./participants#user-card) im Reiter **Umfragen**, auch nach der Frist und über die Kapazitätsgrenze hinaus.
+Die Teilnehmendenbetreuung setzt oder entfernt die Antwort einer Person in der [Teilnehmendenkarte](./participants#user-card) im Reiter **Programm & Papiere**, auch nach der Frist und über die Kapazitätsgrenze hinaus.
 
 ### Archivieren und löschen
 

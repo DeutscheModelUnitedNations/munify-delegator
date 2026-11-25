@@ -19,7 +19,7 @@ import {
 	type TeamRole
 } from '#api/services/authHelper/rules';
 import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
-import { assertAllowed, callerUserId } from '#api/services/authHelper/utils';
+import { assertAllowed, callerAsThemselves, callerUserId } from '#api/services/authHelper/utils';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
@@ -239,6 +239,19 @@ export function registerUserAbilities() {
  */
 export async function assertCanUpdateUser({ ctx, id }: { ctx: ApiContext; id: string }) {
 	await assertAllowed({ ctx, table: 'user', action: 'update', id });
+}
+
+/**
+ * The signed-in person who watched the postal guide. FORBIDDEN for an AI assistant and for whoever
+ * impersonates: neither watches it for somebody else.
+ */
+export function assertCanCompletePostalGuide(ctx: Context) {
+	ctx.mustBeLoggedIn();
+	const userId = callerAsThemselves(ctx);
+	if (!userId) {
+		throw apiError({ code: 'FORBIDDEN', message: m.postalGuideOnlyOwn() });
+	}
+	return userId;
 }
 
 /**

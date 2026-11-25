@@ -26,9 +26,9 @@ const template = (document: PostalDocument) =>
 type Distortion = (picture: Pixels) => Pixels;
 
 /**
- * The scans a page is read from: straight, a home print scanned crooked, and upside down, at 150
- * dpi, the least a scanner is set to; and a phone's photos, in a shadow, out of focus, noisy, with a
- * thumb on a corner.
+ * The scans a page is read from: straight, a home print scanned crooked, upside down and on either
+ * side, at 150 dpi, the least a scanner is set to; and a phone's photos, in a shadow, out of focus,
+ * noisy, with a thumb on a corner.
  */
 const SCANS: { name: string; dpi: number; scan: Distortion }[] = [
 	{ name: 'straight', dpi: 150, scan: (picture) => simulateScan({ picture }) },
@@ -40,7 +40,17 @@ const SCANS: { name: string; dpi: number; scan: Distortion }[] = [
 	{
 		name: 'upside down',
 		dpi: 150,
-		scan: (picture) => simulateScan({ picture, flipped: true, angle: -0.8, noise: 20 })
+		scan: (picture) => simulateScan({ picture, quarters: 2, angle: -0.8, noise: 20 })
+	},
+	{
+		name: 'right side down',
+		dpi: 150,
+		scan: (picture) => simulateScan({ picture, quarters: 1, angle: 0.8, noise: 20 })
+	},
+	{
+		name: 'left side down',
+		dpi: 150,
+		scan: (picture) => simulateScan({ picture, quarters: 3, angle: -1.6, scale: 0.96, noise: 30 })
 	},
 	{
 		name: 'shadowed',

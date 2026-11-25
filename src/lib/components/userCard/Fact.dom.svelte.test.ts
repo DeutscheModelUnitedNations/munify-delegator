@@ -22,22 +22,33 @@ describe('Fact', () => {
 	test('shows a value, which a click copies', () => {
 		const writeText = vi.fn(async () => undefined);
 		vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
-		expect(show({ label: 'Diet', value: 'Vegan', matters: true })).toBe('Vegan');
+		expect(show({ icon: 'leaf', label: 'Diet', value: 'Vegan', matters: true })).toBe('Vegan');
 		target.querySelector('button')?.click();
 		expect(writeText).toHaveBeenCalledWith('Vegan');
 		vi.unstubAllGlobals();
 	});
 
+	test('copies more than it shows where it is told to', () => {
+		const writeText = vi.fn(async () => undefined);
+		vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+		show({ icon: 'house', label: 'Address', value: 'Street 1', copyText: 'Ada L.\nStreet 1' });
+		target.querySelector('button')?.click();
+		expect(writeText).toHaveBeenCalledWith('Ada L.\nStreet 1');
+		vi.unstubAllGlobals();
+	});
+
 	test('links a value that leads somewhere', () => {
-		show({ label: 'Phone', value: '+49151', href: 'tel:+49151' });
+		show({ icon: 'phone', label: 'Phone', value: '+49151', href: 'tel:+49151' });
 		expect(target.querySelector('a')?.getAttribute('href')).toBe('tel:+49151');
 		expect(target.querySelector('a')?.textContent).toBe('+49151');
 	});
 
 	test('calls nothing missing unless it matters to this reader', () => {
-		expect(show({ label: 'Phone', value: null, matters: true })).toBe(m.userCardMissing());
+		expect(show({ icon: 'phone', label: 'Phone', value: null, matters: true })).toBe(
+			m.userCardMissing()
+		);
 		if (app) unmount(app);
 		target.remove();
-		expect(show({ label: 'Phone', value: ' ' })).toBe(m.noStatement());
+		expect(show({ icon: 'phone', label: 'Phone', value: ' ' })).toBe(m.noStatement());
 	});
 });

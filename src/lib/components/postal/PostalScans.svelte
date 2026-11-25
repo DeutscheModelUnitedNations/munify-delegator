@@ -67,7 +67,7 @@
 <CollapsibleRow
 	title={m.postalScansRow()}
 	icon="scan"
-	value={scans.length > 0 ? m.postalScansCount({ count: scans.length }) : m.postalScansNone()}
+	value={scans.length > 0 ? m.postalScansCount({ count: scans.length }) : undefined}
 	{unfolded}
 	children={scans.length > 0 ? list : undefined}
 >

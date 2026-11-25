@@ -4,18 +4,16 @@
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import codenmz from '#lib/helpers/codenamize';
-	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 	import { toast } from 'svelte-sonner';
-	import QuotedText from '../QuotedText.svelte';
+	import ApplicationReview from './ApplicationReview.svelte';
+	import ApplicationTexts from './ApplicationTexts.svelte';
 	import AppliedBadge from './AppliedBadge.svelte';
 	import WishList from './WishList.svelte';
-	import InfoRow from './InfoRow.svelte';
+	import Section from '../ui/Section.svelte';
 	import { delegationWishes, type Wish } from './wishes';
 
 	/**
-	 * What a delegation applied with: its entry code, texts and the roles it wished for, and its
-	 * members' own schools (it keeps none of its own).
+	 * What a delegation applied with, in its own words too, and what the team made of it.
 	 */
 	interface Props {
 		delegationId: string;
@@ -35,11 +33,7 @@
 			client.liveQuery.delegation({
 				__args: { id: delegationId },
 				id: true,
-				entryCode: true,
-				members: { school: { name: true } },
 				applied: true,
-				motivation: true,
-				experience: true,
 				appliedForRoles: {
 					id: true,
 					rank: true,
@@ -65,19 +59,6 @@
 			countryName: getFullTranslatedCountryNameFromISO3Code
 		})
 	);
-
-	/** Saves another school for the delegation: a known one, a new name, or none. */
-
-	async function rotateEntryCode() {
-		if (!(await confirmDialog({ text: m.confirmRotateCode() }))) return;
-		const promise = client.mutate.updateDelegation({
-			__args: { id: delegationId, resetEntryCode: true },
-			id: true,
-			entryCode: true
-		});
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-	}
 
 	async function revokeApplication() {
 		if (!(await confirmDialog({ text: m.confirmRevokeApplication(), danger: true }))) return;
@@ -119,82 +100,25 @@
 				})
 			)
 		);
-
-	/** Takes the delegation out of the conference, its members' registrations with it. */
-	async function deleteDelegation() {
-		if (!(await confirmDialog({ text: m.confirmDeleteDelegation(), danger: true }))) return;
-		const promise = Promise.resolve(
-			client.mutate.deleteDelegation({ __args: { id: delegationId } })
-		);
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-	}
-
-	const copyEntryCode = async () => {
-		await navigator.clipboard.writeText(delegation.entryCode);
-		toast.success(m.codeCopied());
-	};
 </script>
 
-<section class="flex flex-col gap-3">
-	<div class="flex flex-wrap items-center gap-3">
-		<h3 class="text-lg font-bold">{m.delegation()} {codenmz(delegationId)}</h3>
+<Section icon="note-pencil" title={m.userCardTabRegistration()} columns>
+	{#snippet actions()}
 		<AppliedBadge applied={delegation.applied} />
 		{#if conferenceState === 'PARTICIPANT_REGISTRATION'}
 			<button
-				class="btn btn-ghost btn-sm text-error ml-auto"
+				class="btn btn-ghost btn-sm text-error"
 				disabled={!delegation.applied}
 				onclick={revokeApplication}
 			>
-				<i aria-hidden="true" class="ph-duotone ph-file-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-file-x text-lg"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}
-		<button
-			class="btn btn-ghost btn-sm text-error {conferenceState === 'PARTICIPANT_REGISTRATION'
-				? ''
-				: 'ml-auto'}"
-			onclick={deleteDelegation}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-			{m.deleteDelegation()}
-		</button>
-	</div>
-
-	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<InfoRow title={m.schoolsOfMembers()} icon="graduation-cap">
-			<span class="text-sm">{delegationSchoolsLabel(delegation.members) ?? m.noSchoolGiven()}</span>
-		</InfoRow>
-		<InfoRow title={m.entryCode()} icon="key">
-			<span class="font-mono text-sm tracking-wider">{delegation.entryCode}</span>
-			{#snippet actions()}
-				<div class="join">
-					<button
-						class="btn btn-sm join-item"
-						onclick={copyEntryCode}
-						aria-label={m.copy()}
-						title={m.copy()}
-					>
-						<i aria-hidden="true" class="ph-duotone ph-copy"></i>
-					</button>
-					<button class="btn btn-sm join-item" onclick={rotateEntryCode}>
-						<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise"></i>
-						{m.rotateCode()}
-					</button>
-				</div>
-			{/snippet}
-		</InfoRow>
+	{/snippet}
+	<div class="min-w-0">
 		<WishList {wishes} onRemove={removeWish} onMoveUp={moveWishUp} busy={changingWishes} />
+		<ApplicationReview {conferenceId} applicationId={delegationId} kind="delegation" />
 	</div>
-
-	{#if delegation.motivation || delegation.experience}
-		<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-			{#if delegation.motivation}
-				<QuotedText title={m.motivation()} text={delegation.motivation} />
-			{/if}
-			{#if delegation.experience}
-				<QuotedText title={m.experience()} text={delegation.experience} />
-			{/if}
-		</div>
-	{/if}
-</section>
+	<ApplicationTexts {delegationId} />
+</Section>

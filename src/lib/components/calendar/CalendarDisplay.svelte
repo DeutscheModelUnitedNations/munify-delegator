@@ -78,11 +78,10 @@
 
 {#if days.length > 0}
 	<!-- A heading, when given, and the selection (the days, then the tracks) share one row, wrapping
-	onto further rows when there is no room. All days show at once on a very large screen, where
-	there is nothing to select. -->
+	onto further rows when there is no room. -->
 	<div class="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
 		{@render heading?.()}
-		<div class="3xl:hidden flex flex-wrap items-center gap-x-6 gap-y-2">
+		<div class="flex flex-wrap items-center gap-x-6 gap-y-2">
 			{#if days.length > 1}
 				{@render dayTabs()}
 			{/if}
@@ -93,38 +92,17 @@
 		</div>
 	</div>
 
-	<!-- Small screens: single day -->
-	<div class="3xl:hidden">
-		{#if selectedDay}
-			<CalendarDayView
-				dayName={selectedDay.name}
-				date={selectedDay.date}
-				tracks={selectedDay.tracks}
-				entries={selectedDay.entries}
-				{filterTrackId}
-				{timezone}
-				onEntryClick={(entry) => handleEntryClick({ entry, day: selectedDay })}
-			/>
-		{/if}
-	</div>
-
-	<!-- Large screens: all days side-by-side -->
-	<div class="hidden 3xl:grid 3xl:gap-4" style="grid-template-columns: repeat({days.length}, 1fr);">
-		{#each days as day (day.id)}
-			<CalendarDayView
-				dayName={day.name}
-				date={day.date}
-				tracks={day.tracks}
-				entries={day.entries}
-				filterTrackId={day.tracks.some((track) => track.id === filterTrackId)
-					? filterTrackId
-					: null}
-				{timezone}
-				minTrackWidth="0"
-				onEntryClick={(entry) => handleEntryClick({ entry, day })}
-			/>
-		{/each}
-	</div>
+	{#if selectedDay}
+		<CalendarDayView
+			dayName={selectedDay.name}
+			date={selectedDay.date}
+			tracks={selectedDay.tracks}
+			entries={selectedDay.entries}
+			{filterTrackId}
+			{timezone}
+			onEntryClick={(entry) => handleEntryClick({ entry, day: selectedDay })}
+		/>
+	{/if}
 
 	<CalendarEntryDrawer
 		bind:open={drawerOpen}

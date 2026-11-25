@@ -29,7 +29,10 @@ export interface KeepArgs<P> {
 	pageKey: string;
 	/** Names the page by its file, for one without a code of its own. */
 	contentKey: string;
+	/** The page's file, the right way up. */
 	file: PageFile;
+	/** Whether it had to be turned for that: it is not the file the page came as. */
+	turned: boolean;
 }
 
 /** What became of a page, or why it could not be kept. */
@@ -59,6 +62,12 @@ export interface TakenPage<P> {
 	problem?: Pick<ScanProblem, 'reason' | 'conferenceId'>;
 	ignored?: 'blank' | 'noCode';
 }
+
+/** A page's file as it is kept: turned `upright`, where it did not lie so. */
+const asKept = ({ file, upright }: { file: PageFile; upright: ReadPage['upright'] }) => ({
+	file: { ...file, bytes: upright ?? file.bytes },
+	turned: upright !== undefined
+});
 
 /** What there is to tell of a page kept. */
 function problemOf({
@@ -108,6 +117,7 @@ export async function takePage<P>({
 		const person = { ...who, participant, kept: undefined };
 		return { page: number, person, problem: { reason, conferenceId } };
 	}
+	// by the file as it came, which is the same each time
 	const contentKey = contentKeyOf({ hash: await hashOf(file.bytes), page: number });
 	const kept = await ports.keep({
 		participant,
@@ -116,7 +126,7 @@ export async function takePage<P>({
 		page,
 		pageKey: await pageKeyOf({ ...page, contentKey }),
 		contentKey,
-		file
+		...asKept({ file, upright: read.upright })
 	});
 	const reason = problemOf({ kept, page });
 	return {

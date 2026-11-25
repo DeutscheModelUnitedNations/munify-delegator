@@ -4,7 +4,9 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	changeParticipantSchool,
 	isOfAgeAtConference,
+	postalFingerprintSchema,
 	setAttendanceForAll,
+	updatePostalProgress,
 	upsertParticipantStatus
 } from './conferenceParticipantService';
 import { ScanIssueEnum } from '#api/handlers/scanLookup/scanLookup';
@@ -13,6 +15,7 @@ import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 import {
 	assertCanSetAttendanceForAll,
 	assertCanSetParticipantSchool,
+	assertCanUpdatePostalProgress,
 	assertCanUpsertParticipantStatus,
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
@@ -134,6 +137,33 @@ schemaBuilder.mutationFields((t) => ({
 				participantId,
 				school: { schoolId: args.schoolId, schoolName: args.schoolName }
 			});
+
+			return db.query.conferenceParticipant
+				.findFirst(query(await readableParticipant({ ctx, id: participantId })))
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	updatePostalProgress: t.drizzleField({
+		description:
+			'How far the caller is in the steps of their own postal registration; fields left out or `null` stay as they are. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND without a part in the conference.',
+		type: ConferenceParticipantRef,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			infoRead: t.arg.boolean({ description: 'They read what it is about.' }),
+			confirmedDetails: t.arg
+				.string({
+					description:
+						'The fingerprint of the details they confirmed; others than these are asked about again.'
+				})
+				.validate(postalFingerprintSchema),
+			confirmedOfAge: t.arg.boolean({
+				description: 'What they confirmed: that they are, or are not, of age at the conference.'
+			})
+		},
+		resolve: async (query, _root, { conferenceId, ...progress }, ctx) => {
+			const { participantId } = await assertCanUpdatePostalProgress({ ctx, conferenceId });
+			await updatePostalProgress({ participantId, progress });
 
 			return db.query.conferenceParticipant
 				.findFirst(query(await readableParticipant({ ctx, id: participantId })))

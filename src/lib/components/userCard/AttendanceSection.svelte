@@ -5,7 +5,9 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import formatNames from '#lib/helpers/formatNames';
+	import Row from './ui/Row.svelte';
 
+	/** Every scan of the person at the conference; nothing before the first. */
 	interface Props {
 		userId: string;
 		conferenceId: string;
@@ -44,46 +46,36 @@
 	};
 </script>
 
-<div class="flex items-start gap-4 px-4 py-3">
-	<i
-		aria-hidden="true"
-		class="ph-duotone ph-clipboard-text text-base-content/60 w-6 pt-0.5 text-center text-lg"
-	></i>
-	<div class="flex min-w-0 grow flex-col gap-2">
-		<span class="font-semibold">{m.attendanceLog()}</span>
-		{#if entries.length === 0}
-			<span class="text-base-content/60 text-sm">{m.noAttendanceEntries()}</span>
-		{:else}
-			<ul class="flex max-h-72 flex-col gap-1 overflow-y-auto">
-				{#each entries as entry (entry.id)}
-					<li class="bg-base-100 rounded-field flex items-center gap-3 px-3 py-2">
-						<i aria-hidden="true" class="ph-duotone ph-check-circle text-success"></i>
-						<div class="flex min-w-0 grow flex-col">
-							<span class="truncate">{entry.session.occasion}</span>
-							<span class="text-base-content/60 text-xs">
-								{new Date(entry.timestamp).toLocaleString(getLocale(), {
-									dateStyle: 'short',
-									timeStyle: 'short'
-								})}
-								·
-								{formatNames({
-									givenName: entry.recordedBy.givenName ?? undefined,
-									familyName: entry.recordedBy.familyName ?? undefined,
-									options: { givenNameFirst: true }
-								})}
-							</span>
-						</div>
-						<button
-							class="btn btn-ghost btn-xs btn-square text-error"
-							onclick={() => deleteEntry(entry.id)}
-							aria-label={m.deleteAttendanceEntry()}
-							title={m.deleteAttendanceEntry()}
-						>
-							<i aria-hidden="true" class="ph-duotone ph-trash"></i>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</div>
-</div>
+{#if entries.length > 0}
+	<Row icon="clipboard-text" title={m.attendanceLog()}>
+		<ul class="flex max-h-72 flex-col gap-1 overflow-y-auto">
+			{#each entries as entry (entry.id)}
+				<li class="group flex items-center gap-3 py-1">
+					<div class="flex min-w-0 grow flex-col">
+						<span class="truncate">{entry.session.occasion}</span>
+						<span class="text-base-content/60 text-xs">
+							{new Date(entry.timestamp).toLocaleString(getLocale(), {
+								dateStyle: 'short',
+								timeStyle: 'short'
+							})}
+							·
+							{formatNames({
+								givenName: entry.recordedBy.givenName ?? undefined,
+								familyName: entry.recordedBy.familyName ?? undefined,
+								options: { givenNameFirst: true }
+							})}
+						</span>
+					</div>
+					<button
+						class="btn btn-ghost btn-xs btn-square hover:text-error opacity-40 group-hover:opacity-100 focus-visible:opacity-100"
+						onclick={() => deleteEntry(entry.id)}
+						aria-label={m.deleteAttendanceEntry()}
+						title={m.deleteAttendanceEntry()}
+					>
+						<i aria-hidden="true" class="ph-duotone ph-trash"></i>
+					</button>
+				</li>
+			{/each}
+		</ul>
+	</Row>
+{/if}

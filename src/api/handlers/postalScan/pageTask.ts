@@ -1,7 +1,8 @@
 import { db } from '#api/db/db';
 import { conferencesToDeliverInto } from '#api/handlers/scannerAccess/scannerAccessPermissions';
 import { verifyCode } from '#api/handlers/signedCode/signedCodeService';
-import { readStoredFile } from '#api/handlers/storedFile/storedFileService';
+import { filePurpose } from '#api/handlers/storedFile/storageClient';
+import { readStoredFile, storeGeneratedFile } from '#api/handlers/storedFile/storedFileService';
 import { logger } from '#lib/logger';
 import { scanFileType } from '#lib/paperScan/intake/scanFile';
 import { takePage, type KeepArgs, type KeptPage } from '#lib/paperScan/intake/takePage';
@@ -18,9 +19,9 @@ async function participantIdOf(who: { userId: string; conferenceId: string }) {
 	return participant?.id;
 }
 
-/** Keeps a page, as the file it was cut out as, and takes in what it says. */
+/** Keeps a page, as the file it was cut out as or that file turned upright, and takes in what it says. */
 async function keepPage({
-	args: { participant: participantId, page, pageKey },
+	args: { participant: participantId, page, pageKey, file, turned },
 	task: { userId, fileId }
 }: {
 	args: KeepArgs<string>;
@@ -32,7 +33,16 @@ async function keepPage({
 		page: { pageKey, fields: page.fields },
 		readings: page.readings,
 		uploadedById: userId,
-		storeFile: async () => fileId
+		storeFile: async () =>
+			turned
+				? storeGeneratedFile({
+						userId,
+						purpose: filePurpose({ kind: 'postalScan', field: 'scan' }),
+						fileName: file.name,
+						mimeType: file.type,
+						bytes: file.bytes
+					})
+				: fileId
 	});
 	// it answers `null` only without a file
 	return { outcome: outcome ?? 'known' };

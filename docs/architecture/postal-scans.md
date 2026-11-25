@@ -96,6 +96,12 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
   is refused.
 - **Each page stands by itself.** A page is told by its own code, whatever is around it, and one that cannot be
   cut, read or stored keeps no other from it (`PageError`, `ReadPage.error`).
+- **A page is kept the right way up** (`turnScan.ts`), whichever way it was fed in. Reading needs no turning
+  (`readPaper` goes by the marks); the marks then say how the page lies (`uprightTurn`, also on pages without
+  fields), and the file how it is shown: a PDF's `/Rotate`, a JPEG's or PNG's Exif orientation. What was
+  scanned stays as it is, and is never straightened: it is the evidence. The reader does it (`ReadPage.upright`),
+  so a delivered file is opened in its process only; the page is still named by the file as it came. WebP,
+  pages without a readable code, and scans kept before stay as they lie.
 - **An empty page is told before any code is looked for** (`isBlank`): the back of a sheet scanned on both
   sides, half of a stack, would otherwise go through every variant of `findCodes` (some 0.4 s each). A printed
   page's marks alone are far more ink than that allows (`pipeline.test.ts`).
@@ -104,6 +110,12 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
 - **Pages that are nobody's are not stored**: of another conference, not registered, not readable. In the
   browser they are listed and toasted; of a scanner's delivery its owner is notified (`SCAN_PROBLEM`, mail
   and Slack).
+
+## Before it is sent (`#lib/components/postalGuide/`)
+
+Whoever downloads the documents first watches what makes them hard to scan (staples, sleeves, crumpled,
+odd or double-sided paper, covered marks); see "Postal Guide" in CLAUDE-UI.md. Only the app
+asks for it, `issueDocumentCodes` does not.
 
 ## Data
 

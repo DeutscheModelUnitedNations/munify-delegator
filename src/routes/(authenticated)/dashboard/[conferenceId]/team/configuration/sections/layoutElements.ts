@@ -41,8 +41,8 @@ export const elementSample: Record<WrittenElement, () => string[]> = {
 	recipient: () => ['DMUN e.V.', 'Musterstraße 1', '12345 Musterstadt', 'Deutschland'],
 	birthday: () => ['30.04.1949'],
 	address: () => ['405 E 45th St, New York, NY 10017, USA'],
-	// the name above the id, beside the code, as printed
-	code: () => ['Antonio Guterres', 'x7k2m9p4q1w8'],
+	// the id above the name, below the code, as printed
+	code: () => ['x7k2m9p4q1w8', 'Antonio Guterres'],
 	pageNumber: () => ['1 / 3']
 };
 

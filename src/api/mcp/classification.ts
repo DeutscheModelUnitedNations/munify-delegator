@@ -62,7 +62,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'locale',
 			'wantsJoinTeamInformation',
 			'wantsToReceiveGeneralInformation',
-			'messageNotificationEmails'
+			'messageNotificationEmails',
+			'postalGuideCompletedAt'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
@@ -97,8 +98,15 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'nsaCardNumber'
 		],
-		// The number printed on the person's badge, and a sanction against the person.
-		redacted: ['accessCardId', 'messagingSuspended']
+		// The number printed on the person's badge, a sanction against the person, and how far they are
+		// in their postal registration.
+		redacted: [
+			'accessCardId',
+			'messagingSuspended',
+			'postalInfoRead',
+			'postalConfirmedDetails',
+			'postalConfirmedOfAge'
+		]
 	},
 	// What somebody ticked and signed, like the statuses it makes.
 	Agreementdetail: { visible: [...ROW, 'conferenceParticipantId', 'field', 'state', 'source'] },

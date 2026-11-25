@@ -9,7 +9,7 @@ This page shows how the conference team sets up and maintains a conference: from
 
 ## Creating a conference {#creating-a-conference}
 
-Only system admins create new conferences. On the **Conferences** page and in the menu behind your initials under **Administration**, **Create Conference** leads to the **Create Conference** page.
+Only system admins create new conferences. On the **Conferences** page and in the menu behind the person icon at the top right under **Administration**, **Create Conference** leads to the **Create Conference** page.
 
 1. The conference's data comes from the **Conference Request** page, linked at the top right of **Create Conference**. There you enter the basic details, the committees with their nations, the non-state actors and the individual roles. **Add all UN member states** fills a committee with every state. The page saves nothing on the server, your input stays in this browser only. Times are read in the Europe/Berlin time zone. At the end you download the generated JSON.
 2. An admin selects the file on **Create Conference**. It is checked right away. If something is wrong, **Validation Failed** appears with the places concerned, for example a state that is not a UN member, a duplicate abbreviation or an application deadline after the conference starts.
@@ -179,7 +179,7 @@ The templates contain no placeholders. DELEGATOR writes the person's details ont
 
 You resize the check-in list and the QR codes from their bottom right corner, and change the texts' font size with minus and plus under **Font sizes** in the column beside the page. What your template does not need, such as the address or the check-in list, you switch off under **Inserted details**; the QR code, page number, marks and the fields read off scans always stay. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
 
-The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the name and ID beside it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
+The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the ID and name below it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
 
 :::tip Leave room
 Leave room on your template where the fields go. **Readability** beside the page tells you where parts overlap or lie on the template's text. Where the QR code, a mark or a field is involved, **Save** only works once you have moved it. The test document shows the result with made-up details and the postal address as it currently stands in the form.

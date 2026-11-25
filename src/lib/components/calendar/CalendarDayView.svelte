@@ -7,6 +7,12 @@
 	import CalendarTimeMarker from './CalendarTimeMarker.svelte';
 	import { hourRange, utcEndHourOf, utcHourOf } from './calendarHours';
 
+	/**
+	 * The narrowest a track's column gets. Past it the day scrolls sideways (the times stay put),
+	 * so a phone shows readable entries instead of squeezing every track into a sliver.
+	 */
+	const MIN_TRACK_WIDTH = '9rem';
+
 	interface Props {
 		dayName: string;
 		date?: Date | null;
@@ -14,11 +20,6 @@
 		entries: Entry[];
 		filterTrackId?: string | null;
 		hourHeight?: number;
-		/**
-		 * The narrowest a track's column gets. Past it the day scrolls sideways (the times stay put),
-		 * so a phone shows readable entries instead of squeezing every track into a sliver.
-		 */
-		minTrackWidth?: string;
 		timezone?: string;
 		onEntryClick?: (entry: Entry) => void;
 	}
@@ -30,7 +31,6 @@
 		entries,
 		filterTrackId = null,
 		hourHeight = 90,
-		minTrackWidth = '9rem',
 		timezone = 'UTC',
 		onEntryClick
 	}: Props = $props();
@@ -105,7 +105,7 @@
 		{#if visibleTracks.length > 0}
 			<div
 				class="mb-2 grid gap-px"
-				style="grid-template-columns: 3.5rem repeat({visibleTracks.length}, minmax({minTrackWidth}, 1fr));"
+				style="grid-template-columns: 3.5rem repeat({visibleTracks.length}, minmax({MIN_TRACK_WIDTH}, 1fr));"
 			>
 				<div class="bg-base-100 sticky left-0 z-10"></div>
 				{#each visibleTracks as track (track.id)}
@@ -123,7 +123,7 @@
 
 		<div
 			class="grid"
-			style="grid-template-columns: 3.5rem repeat({columnCount}, minmax({minTrackWidth}, 1fr));"
+			style="grid-template-columns: 3.5rem repeat({columnCount}, minmax({MIN_TRACK_WIDTH}, 1fr));"
 		>
 			<!-- Time gutter, pinned while the tracks scroll sideways -->
 			<div class="bg-base-100 sticky left-0 z-10" style="height: {totalHeight}px;">
@@ -191,6 +191,7 @@
 
 				<!-- Time marker -->
 				<CalendarTimeMarker
+					{date}
 					startHour={timeRange.startHour}
 					endHour={timeRange.endHour}
 					{hourHeight}

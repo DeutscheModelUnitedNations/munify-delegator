@@ -10,7 +10,7 @@ const SAMPLES: Record<string, string[]> = {
 	birthday: ['30.04.1949'],
 	address: ['405 E 45th St, New York, NY 10017, USA'],
 	recipient: ['DMUN e.V.', 'Musterstraße 1', '12345 Musterstadt', 'Deutschland'],
-	code: ['Antonio Guterres', 'x7k2m9p4q1w8'],
+	code: ['x7k2m9p4q1w8', 'Antonio Guterres'],
 	qr: ['Echtheit prüfen']
 };
 const lines = (id: string) => SAMPLES[id] ?? [];
@@ -30,7 +30,7 @@ describe('layoutExtents', () => {
 		expect(recipient?.page).toBe(0);
 	});
 
-	test("counts the code's caption, left of it, beside the code", () => {
+	test("counts the code's caption, below it, with the code", () => {
 		const extents = layoutExtents({
 			document: 'contract',
 			layout: defaultLayout('contract'),
@@ -42,7 +42,10 @@ describe('layoutExtents', () => {
 		expect(code?.page).toBe('every');
 		const [square, caption] = code?.rects ?? [];
 		expect(square.x).toBeLessThan(placed.x);
-		expect(caption.x + caption.width).toBeLessThan(placed.x);
+		const bottom = placed.y + (placed.size * A4.width) / A4.height;
+		expect(caption.y).toBeGreaterThan(bottom);
+		expect(caption.height * A4.height).toBeLessThan(20);
+		expect(caption.x + caption.width / 2).toBeCloseTo(placed.x + placed.size / 2);
 	});
 });
 

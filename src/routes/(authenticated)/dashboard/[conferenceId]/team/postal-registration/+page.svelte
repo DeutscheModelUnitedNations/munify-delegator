@@ -324,7 +324,7 @@
 			<LoadBoundary>
 				<section class="mt-6 flex flex-col gap-3">
 					<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
-					<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
+					<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y px-4 py-1">
 						<PostalScans
 							conferenceId={routeParams.conferenceId}
 							userId={userDetails.id}

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	conferencesToDeliverInto: vi.fn(),
 	verifyCode: vi.fn(),
 	readStoredFile: vi.fn(),
+	storeGeneratedFile: vi.fn(),
 	finishPage: vi.fn(),
 	takeInPage: vi.fn(),
 	read: vi.fn()
@@ -75,6 +76,24 @@ describe('takeInPageTask', () => {
 		expect(mocks.finishPage).toHaveBeenCalledWith({
 			of: task,
 			result: { problem: undefined, ignored: undefined }
+		});
+	});
+
+	test('keeps a page that lay otherwise as its file turned upright, which it stores only then', async () => {
+		const upright = new TextEncoder().encode('%PDF-1.7 turned');
+		const read = await mocks.read();
+		mocks.read.mockResolvedValue({ ...read, upright });
+		mocks.storeGeneratedFile.mockResolvedValue('file-turned');
+		await take();
+		expect(mocks.storeGeneratedFile).not.toHaveBeenCalled();
+		const [kept] = mocks.takeInPage.mock.calls[0];
+		expect(await kept.storeFile()).toBe('file-turned');
+		expect(mocks.storeGeneratedFile).toHaveBeenCalledExactlyOnceWith({
+			userId: 'ada',
+			purpose: 'postalScan/scan',
+			fileName: 'a_7.pdf',
+			mimeType: 'application/pdf',
+			bytes: upright
 		});
 	});
 

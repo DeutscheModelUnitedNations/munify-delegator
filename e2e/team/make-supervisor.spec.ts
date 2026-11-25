@@ -118,7 +118,7 @@ test('the notice is gone for a delegate of the right age', async ({ page }) => {
 	const seatTab = page.getByRole('tab', { name: /platz|seat/i });
 	await expect(seatTab).toBeVisible({ timeout: 15_000 });
 	await seatTab.click();
-	await expect(page.getByRole('heading', { name: /Delegationsmitglieder/ })).toBeVisible({
+	await expect(page.getByRole('list', { name: /Delegationsmitglieder/ })).toBeVisible({
 		timeout: 15_000
 	});
 	await expect(page.getByRole('button', { name: 'Zur Betreuung machen' })).toHaveCount(0);

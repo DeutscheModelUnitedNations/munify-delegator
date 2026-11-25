@@ -304,7 +304,7 @@ describe('elementsByShape', () => {
 		expect(squares.map(({ id }) => id)).toEqual(['qr']);
 	});
 
-	test('marks the page number fixed and captions the code beside it', () => {
+	test('marks the page number fixed and captions the code below it', () => {
 		const { boxes, squares } = elementsByShape({
 			elements: elementsOf('contract'),
 			layout: defaultLayout('contract')
@@ -312,7 +312,7 @@ describe('elementsByShape', () => {
 		expect(boxes).toContainEqual(
 			expect.objectContaining({ id: 'pageNumber', fixed: true, list: false })
 		);
-		expect(squares).toContainEqual(expect.objectContaining({ id: 'code', caption: 'beside' }));
+		expect(squares).toContainEqual(expect.objectContaining({ id: 'code', caption: 'below' }));
 	});
 
 	test('leaves out an element without a placement, or with one of another shape', () => {

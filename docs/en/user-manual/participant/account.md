@@ -9,7 +9,7 @@ One account takes you to every conference. This page covers what does not belong
 
 ## Your personal details {#profile}
 
-You find your details under **My Account**: click the circle with your initials at the top right, then **My Account**. When you first sign in, and whenever something is missing, DELEGATOR sends you there with the notice **Complete data**. After **Save** you continue where you were heading.
+You find your details under **My Account**: click the person icon at the top right, then **My Account**. When you first sign in, and whenever something is missing, DELEGATOR sends you there with the notice **Complete data**. After **Save** you continue where you were heading.
 
 Under **Personal Data** DELEGATOR asks for:
 

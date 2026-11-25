@@ -15,6 +15,7 @@
 {#snippet filterButton(trackId: string | null, label: string)}
 	<button
 		class="btn btn-xs {filterTrackId === trackId ? 'btn-primary' : 'btn-ghost'}"
+		aria-pressed={filterTrackId === trackId}
 		onclick={() => (filterTrackId = trackId)}
 	>
 		{label}

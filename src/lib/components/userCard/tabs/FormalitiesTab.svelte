@@ -4,8 +4,11 @@
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
 	import AgreementDetails from '#lib/components/postal/AgreementDetails.svelte';
 	import PostalScans from '#lib/components/postal/PostalScans.svelte';
-	import CertificateSection from '../sections/CertificateSection.svelte';
+	import AccessPanel from '../sections/AccessPanel.svelte';
 	import FormalityRow from '../sections/FormalityRow.svelte';
+	import Empty from '../ui/Empty.svelte';
+	import Section from '../ui/Section.svelte';
+	import { CARD_COLUMNS } from '../ui/columns';
 	import DocumentNumberRow from '../sections/DocumentNumberRow.svelte';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -14,7 +17,7 @@
 	} from '#lib/api/postalRegistrationSources';
 	import { postalRecipient } from '#lib/api/postalRegistrationData';
 	import { careTeamPostalParticipant, documentFileName, hasPostalAddress } from './statusDownloads';
-	import { formalitiesOf, needsGuardian } from '../formalities';
+	import { formalitiesOf, needsGuardian, postalProgress } from '../formalities';
 	import {
 		changeParticipantStatus,
 		fetchStatusWithAge,
@@ -22,16 +25,20 @@
 	} from './participantStatus';
 
 	/**
-	 * What has to be settled before the conference: payment and the signed agreements with their
-	 * buttons, beside them the papers behind them, what is rarely needed folded.
+	 * What has to be settled with the person, one column per topic: the payment, the signed papers, and
+	 * them at the conference, which comes first once it runs. What is rarely needed is folded.
 	 */
 	interface Props {
 		userId: string;
 		conferenceId: string;
 		isConferenceSupervisor: boolean;
+		/** A confirmed place at the conference, which the access card and attendance go with */
+		access: boolean;
+		/** The conference runs or is over, so letting the person in comes first */
+		onSite: boolean;
 	}
 
-	let { userId, conferenceId, isConferenceSupervisor }: Props = $props();
+	let { userId, conferenceId, isConferenceSupervisor, access, onSite }: Props = $props();
 
 	const data = $derived(await fetchStatusWithAge({ userId, conferenceId }));
 	const status = $derived(data.statuses.at(0));
@@ -43,7 +50,7 @@
 			startConference: data.conference.startConference
 		})
 	);
-	const formalities = $derived(formalitiesOf({ status, needsGuardian: guardian }));
+	const postal = $derived(postalProgress(formalitiesOf({ status, needsGuardian: guardian })));
 
 	const change = (input: StatusChange) =>
 		changeParticipantStatus({ target: { id: statusId, conferenceId, userId }, input });
@@ -79,46 +86,71 @@
 	};
 </script>
 
-<div class="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
-	<section class="flex min-w-0 flex-col gap-3">
-		<h3 class="text-lg font-bold">{m.userCardStatuses()}</h3>
-		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y py-1">
-			{#each formalities as formality (formality.key)}
-				<FormalityRow formality={formality.key} {status} {change} />
-			{/each}
-			{#if !isConferenceSupervisor && !guardian}
-				<p class="text-base-content/60 flex items-center gap-3 px-4 py-2 text-sm">
-					<i aria-hidden="true" class="ph-duotone ph-shield-check w-5 text-center"></i>
-					<span>{m.guardianAgreement()}: {m.guardianAgreementNotNeeded()}</span>
-				</p>
-			{/if}
-		</div>
-		{#if !status}
-			<div class="alert alert-info">
-				<i aria-hidden="true" class="ph-duotone ph-info"></i>
-				<span>{m.noParticipantStatusYet()}</span>
-			</div>
-		{/if}
-	</section>
+{#snippet onSiteSection()}
+	{#if access && status}
+		<AccessPanel {userId} {conferenceId} />
+	{/if}
+{/snippet}
 
-	<section class="flex min-w-0 flex-col gap-3">
-		<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
-		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y py-1">
-			<DocumentNumberRow
-				assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
-				onSave={(number) =>
-					change({ assignedDocumentNumber: number, assignNextDocumentNumber: !number })}
-			/>
-			<ParticipantPaymentWidget {userId} {conferenceId} />
-			{#if statusId}
-				<PostalScans {conferenceId} {userId} conferenceParticipantId={statusId} />
-				<AgreementDetails conferenceParticipantId={statusId} />
-			{/if}
-			<CertificateSection {userId} {conferenceId} />
+{#snippet paymentSection()}
+	<Section icon="money" title={m.userCardPayment()}>
+		<FormalityRow formality="paymentStatus" {status} {change} />
+		<ParticipantPaymentWidget {userId} {conferenceId} />
+		{#if !status}
+			<Empty icon="info" text={m.noParticipantStatusYet()} />
+		{/if}
+	</Section>
+{/snippet}
+
+{#snippet postalSection()}
+	<Section
+		icon="envelope-open"
+		title={m.postalRegistration()}
+		subtitle={m.userCardDoneOf({ count: postal.done, total: postal.total })}
+	>
+		<FormalityRow formality="termsAndConditions" {status} {change} />
+		{#if guardian}
+			<FormalityRow formality="guardianConsent" {status} {change} />
+		{/if}
+		<FormalityRow formality="mediaConsent" {status} {change} />
+		<DocumentNumberRow
+			assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
+			onSave={(number) =>
+				change({ assignedDocumentNumber: number, assignNextDocumentNumber: !number })}
+		/>
+		{#if statusId}
+			<PostalScans {conferenceId} {userId} conferenceParticipantId={statusId} />
+		{/if}
+		<!-- Its icon below the texts of the rows -->
+		<div class="pt-1 pl-6">
+			<button class="btn btn-sm btn-ghost text-primary" onclick={downloadPostalDocs}>
+				<i aria-hidden="true" class="ph-duotone ph-download-simple text-lg"></i>
+				{m.userCardDownloadDocuments()}
+			</button>
 		</div>
-		<button class="btn btn-sm self-start" onclick={downloadPostalDocs}>
-			<i aria-hidden="true" class="ph-duotone ph-file-pdf"></i>
-			{m.downloadPostalDocuments()}
-		</button>
-	</section>
+	</Section>
+{/snippet}
+
+<!-- Where only two columns fit, the first two sections share one -->
+<div class={[CARD_COLUMNS, 'gap-y-6']}>
+	<div class="flex min-w-0 flex-col gap-6 group-data-wide/card:min-[1760px]:contents">
+		{#if onSite}
+			{@render onSiteSection()}
+			{@render paymentSection()}
+		{:else}
+			{@render paymentSection()}
+			{@render postalSection()}
+		{/if}
+	</div>
+	{#if onSite}
+		{@render postalSection()}
+	{:else}
+		{@render onSiteSection()}
+	{/if}
+	{#if statusId}
+		<!-- Across the columns, as its many lines stand beside each other once it is unfolded -->
+		<div class="border-base-content/15 col-span-full min-w-0 border-t pt-3">
+			<AgreementDetails conferenceParticipantId={statusId} />
+		</div>
+	{/if}
 </div>

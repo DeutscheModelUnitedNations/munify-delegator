@@ -70,7 +70,8 @@ vi.mock('#api/pubsub', () => ({
 }));
 vi.mock('#api/handlers/school/schoolService', () => ({}));
 
-const { statusFields, upsertParticipantStatus } = await import('./conferenceParticipantService');
+const { postalFingerprintSchema, statusFields, upsertParticipantStatus } =
+	await import('./conferenceParticipantService');
 
 beforeEach(() => {
 	rows.length = 0;
@@ -169,5 +170,19 @@ describe('the document number', () => {
 				})
 			}
 		]);
+	});
+});
+
+describe('postalFingerprintSchema', () => {
+	it('takes a fingerprint, or none where the rest of the progress is given', () => {
+		for (const given of ['0f1e2d3c', undefined, null]) {
+			expect(postalFingerprintSchema.safeParse(given).success).toBe(true);
+		}
+	});
+
+	it('takes nothing readable', () => {
+		for (const given of ['Ada', 'Street 1', '', '0f1e2d3c0']) {
+			expect(postalFingerprintSchema.safeParse(given).success).toBe(false);
+		}
 	});
 });

@@ -7,7 +7,8 @@ import { readBarcodes } from 'zxing-wasm/reader';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { findMarkers } from '#lib/paperScan/markers';
 import type { PrintedPage } from '#lib/paperScan/pageAreas';
-import { defaultLayout, withHidden } from '#lib/helpers/documentLayout';
+import { CODE_CAPTION } from '#lib/helpers/codeCaption';
+import { defaultLayout, POINTS_PER_MM, withHidden } from '#lib/helpers/documentLayout';
 import { pdfText, renderPdfPage, type Pixels } from '#lib/paperScan/scanSimulation';
 
 // The postal registration as the generator builds it from DMUN's templates: one signed code per
@@ -131,6 +132,11 @@ describe('the postal registration documents', () => {
 				expect(width).toBeCloseTo(596, 0);
 				expect(height).toBeCloseTo(842, 0);
 			});
+			// the id below the code, the name below the id
+			const { texts } = await pdfText({ bytes, page: 1 });
+			const baseline = (line: string) => texts.findLast(({ text }) => text === line)?.baseline;
+			const id = baseline('user-ada') ?? NaN;
+			expect((baseline('ADA LOVELACE') ?? NaN) - id).toBeCloseTo(CODE_CAPTION.step / POINTS_PER_MM);
 			// the five main pages and the four of the terms
 			expect((await PDFDocument.load(bytes)).getPageCount()).toBe(9);
 

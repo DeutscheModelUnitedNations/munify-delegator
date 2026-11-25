@@ -14,7 +14,7 @@ Bevor jemand an der Konferenz teilnimmt, müssen der Beitrag bezahlt und die Unt
 | **Anmeldung vor Ort**     | Namensschild-Tische und QR-Code für den Eingang | **Projektleitung**, **Teilnehmendenbetreuung** |
 | **Einlass & Anwesenheit** | Scanner: Personen prüfen und Check-ins erfassen | das ganze Team                                 |
 
-Was auf diesen Seiten der **Teilnehmendenbetreuung** vorbehalten ist, darf auch die **Projektleitung**. Alle Status einer Person findest du außerdem in ihrer [Teilnehmendenkarte](./participants#user-card): Zahlung und Unterlagen im Reiter **Formalitäten**, Zugangsausweis und Anwesenheit im Reiter **Vor Ort**.
+Was auf diesen Seiten der **Teilnehmendenbetreuung** vorbehalten ist, darf auch die **Projektleitung**. Alle Status einer Person findest du außerdem in ihrer [Teilnehmendenkarte](./participants#user-card): Zahlung, Unterlagen, Zugangsausweis und Anwesenheit im Reiter **Formalitäten & Zugang**.
 
 ## Zahlungen {#payments}
 
@@ -55,7 +55,7 @@ Beide E-Mails werden nur für Personen mit Platz fällig, sobald die Zuteilung f
 
 ### Rückgängig machen
 
-Auf der Seite **Beitragszahlung** lässt sich eine bestätigte Referenz nicht zurücksetzen: Sie zeigt dann **Die Transaktion wurde mit Überweisung vom … als erhalten markiert!** und nur noch **Schließen**. Den Status einer Person änderst du in ihrer Teilnehmendenkarte im Reiter **Formalitäten** bei **Beitragszahlung**. Daneben unter **Unterlagen** stehen ihre **Zahlungsreferenzen**, mit wem sie geteilt sind und ob sie eingegangen sind.
+Auf der Seite **Beitragszahlung** lässt sich eine bestätigte Referenz nicht zurücksetzen: Sie zeigt dann **Die Transaktion wurde mit Überweisung vom … als erhalten markiert!** und nur noch **Schließen**. Den Status einer Person änderst du in ihrer Teilnehmendenkarte im Reiter **Formalitäten & Zugang** bei **Beitragszahlung**. Darunter bei **Zahlung & Downloads** stehen ihre **Zahlungsreferenzen**, mit wem sie geteilt sind und ob sie eingegangen sind.
 
 :::warning Was sich nicht zurückholen lässt
 Der Status in der Teilnehmendenkarte gilt nur für diese eine Person, die Referenz bleibt als erhalten markiert. Eine E-Mail, die schon verschickt ist, holt das Zurücksetzen nicht zurück. Steht die Person wieder auf **Ausstehend**, kann sie eine neue Referenz erstellen.
@@ -72,7 +72,7 @@ Sobald **Postalische Anmeldungen erlauben** eingeschaltet ist, laden Teilnehmend
 - die **Einwilligung Bildnutzung**,
 - die Teilnahmebedingungen, die nur angehängt werden und keinen eigenen Status haben.
 
-Auf jeder Seite steht ein QR-Code, der die Person und die Konferenz nennt und von DELEGATOR signiert ist. Fehlen jemandem die Unterlagen, lädt die Teilnehmendenbetreuung sie in der Teilnehmendenkarte im Reiter **Formalitäten** mit **Dokumente für postalische Anmeldung herunterladen** herunter.
+Auf jeder Seite steht ein QR-Code, der die Person und die Konferenz nennt und von DELEGATOR signiert ist. Fehlen jemandem die Unterlagen, lädt die Teilnehmendenbetreuung sie in der Teilnehmendenkarte im Reiter **Formalitäten & Zugang** mit **Unterlagen herunterladen** herunter.
 
 ### Die Status je Dokument
 
@@ -108,9 +108,9 @@ Jede Änderung speichert sofort, ohne Rückfrage. Einen falschen Klick korrigier
 
 Unter dem Scanner kannst du **Dateien hierher ziehen oder auswählen**: PDFs aus dem Einzug eines Scanners oder Fotos, auch von mehreren Personen gemischt. DELEGATOR liest den QR-Code jeder Seite, speichert die Seiten bei der Person und trägt ein, was unterschrieben und angekreuzt ist. Jede Seite wird nur einmal gespeichert, auch wenn du sie noch einmal scannst; kommt sie später unterschrieben zurück, ersetzt der neue Scan den alten. Nichts wird zurückgesetzt. Seiten ohne QR-Code werden übersprungen; andere, die niemandem zuzuordnen sind, werden nicht gespeichert, sondern aufgelistet.
 
-Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten** in der Liste **Unterlagen** bei **Scans**. Dort kannst du sie öffnen und löschen und mit **Scan hochladen** weitere hinzufügen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
+Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten & Zugang** im Abschnitt **Postalische Anmeldung** bei **Scans**. Dort kannst du sie öffnen und löschen und mit **Scan hochladen** weitere hinzufügen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
 
-Was im Einzelnen angekreuzt und unterschrieben ist, steht in der letzten Zeile der Liste, **Details der Einwilligungen**, eingeklappt. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
+Was im Einzelnen angekreuzt und unterschrieben ist, steht in der letzten Zeile des Reiters, **Details der Einwilligungen**, eingeklappt. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
 
 Damit du nichts von Hand hochladen musst:
 
@@ -191,7 +191,7 @@ Am Eingang:
 ### Jemand kommt ohne bezahlten Beitrag {#unpaid-on-site}
 
 1. Der Scan zeigt **Beitragszahlung ist noch offen**. Klicke **Verwerfen** und schick die Person zur Teilnehmendenbetreuung. Ihre Check-in-Seite sagt ihr dasselbe.
-2. Die Teilnehmendenbetreuung öffnet die Person, etwa mit **Details** im Scanergebnis, und sieht im Reiter **Formalitäten** unter **Zahlungsreferenzen**, ob die Person eine Referenz erstellt hat und ob sie eingegangen ist.
+2. Die Teilnehmendenbetreuung öffnet die Person, etwa mit **Details** im Scanergebnis, und sieht im Reiter **Formalitäten & Zugang** unter **Zahlungsreferenzen**, ob die Person eine Referenz erstellt hat und ob sie eingegangen ist.
 3. Ist das Geld da und nur nicht bestätigt, bestätigt sie die Referenz auf [Beitragszahlung](#confirming-a-payment). Die Check-in-Seite der Person zeigt danach sofort ihren Tisch.
 4. Ein neuer Scan besteht die Prüfung und wird erfasst. Entscheidet das Team, die Person trotzdem einzulassen, erfasst **Trotzdem erfassen** sie. Der Scan ist dann als „mit offenen Punkten“ markiert.
 
@@ -285,16 +285,16 @@ Für die Teilnehmendenbetreuung steht unter dem Scanner die Liste **Gescannte Pe
 - Der Papierkorb entfernt einen Scan nach der Rückfrage **Den Scan von … aus dieser Sitzung entfernen? Die Person kann danach wieder gescannt werden.**
 - **CSV exportieren** lädt alle Scans der Sitzung herunter, unabhängig von der Suche, mit **Zeitstempel**, **Vorname**, **Nachname**, **E-Mail**, **Zugangsausweis-Nr.**, **Prüfung bestanden**, **Gescannt von** und **Benutzer-ID**. Bei Sitzungen der Art **Erfassen** bleibt **Prüfung bestanden** leer.
 
-Alle Scans einer Person über alle Sitzungen stehen in ihrer Teilnehmendenkarte im Reiter **Vor Ort** im **Anwesenheitsprotokoll**.
+Alle Scans einer Person über alle Sitzungen stehen in ihrer Teilnehmendenkarte im Reiter **Formalitäten & Zugang** im **Anwesenheitsprotokoll**.
 
 ### Zugangsausweise und ein verlorener Ausweis {#access-cards}
 
-Im Reiter **Vor Ort** der Teilnehmendenkarte trägt die Teilnehmendenbetreuung die **Zugangsausweis-Nr.** ein, am Einlass jede\*r im Team in einer Sitzung der Art **Badge-basiert**. Eine Nummer gehört in einer Konferenz nur einer Person: **Dieser Zugangsausweis gehört bereits jemand anderem.** Die Befehlspalette (Strg+K) findet Personen auch über ihre Ausweisnummer.
+Im Reiter **Formalitäten & Zugang** der Teilnehmendenkarte trägt die Teilnehmendenbetreuung die **Zugangsausweis-Nr.** ein, am Einlass jede\*r im Team in einer Sitzung der Art **Badge-basiert**. Eine Nummer gehört in einer Konferenz nur einer Person: **Dieser Zugangsausweis gehört bereits jemand anderem.** Die Befehlspalette (Strg+K) findet Personen auch über ihre Ausweisnummer.
 
 Gibt jemand einen gefundenen Ausweis ab:
 
 1. Tippe oder scanne die Nummer in die Befehlspalette und öffne die Person.
-2. Klicke im Reiter **Vor Ort** neben der Nummer auf **Ausweis gefunden** und bestätige **Benachrichtigung senden?**.
+2. Klicke im Reiter **Formalitäten & Zugang** neben der Nummer auf **Ausweis gefunden** und bestätige **Benachrichtigung senden?**.
 3. Die E-Mail **Zugangsausweis gefunden** geht sofort raus, auch wenn sonst nichts automatisch verschickt wird. Sie bittet die Person, den Ausweis bei der Teilnehmendenbetreuung abzuholen.
 
 Jede Bestätigung verschickt die E-Mail erneut. Ihren Text änderst du auf der Seite [E-Mails](./communication#emails).
@@ -307,11 +307,11 @@ Ist die Konferenz **Nach der Konferenz**, laden Teilnehmende ihr Teilnahmezertif
 
 Ein Zertifikat bekommt nur, wessen **Anwesenheit** auf **Anwesend** steht. Für alle anderen gibt es keines, das Dashboard sagt ihnen, dass es noch nicht zur Verfügung steht. Die Anwesenheit setzt kein Scan, sondern:
 
-- die Teilnehmendenkarte im Reiter **Vor Ort** mit **Anwesend** oder **Abwesend**,
+- die Teilnehmendenkarte im Reiter **Formalitäten & Zugang** mit dem Schalter **Teilnahme**,
 - der [Import](./maintenance#import) von Anwesenheitsdaten,
 - der [Helfer](./maintenance#helper), der alle Teilnehmenden auf einmal auf **Anwesend** oder **Abwesend** setzt.
 
-Die Teilnehmendenbetreuung lädt das Zertifikat einer Person in ihrer Teilnehmendenkarte im Reiter **Formalitäten** mit **Zertifikat herunterladen** herunter.
+Die Teilnehmendenbetreuung lädt das Zertifikat einer Person in ihrer Teilnehmendenkarte im Reiter **Formalitäten & Zugang** bei **Teilnahmezertifikat** mit **Download** herunter.
 
 ### Welche Sitzungen darauf stehen
 

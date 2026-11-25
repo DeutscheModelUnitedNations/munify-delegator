@@ -26,6 +26,14 @@ export function callerUserId(ctx: Context) {
 }
 
 /**
+ * The caller's user id where they act for themselves, for what only the person can have done
+ * (watched, confirmed); undefined for an AI assistant and for whoever impersonates.
+ */
+export function callerAsThemselves(ctx: Context) {
+	return ctx.oidc.impersonator ? undefined : callerUserId(ctx);
+}
+
+/**
  * Turns a filter into what `.when()` expects: the rule applies to the rows matching `filter`, and
  * to none when there is no filter (`isOwnUser` and friends return undefined for "nobody").
  */

@@ -74,6 +74,19 @@ beforeEach(() => {
 });
 
 describe('takeScan', () => {
+	test('keeps a page the right way up, and names it by the file it came as', async () => {
+		reads(page('ada'));
+		await take({ source: await stack(1) });
+		const upright = new Uint8Array([1, 2, 3]);
+		reads(page('ada', { upright }));
+		await take({ source: await stack(1) });
+		const [asItCame, turned] = keptPages();
+		expect(asItCame.turned).toBe(false);
+		expect(turned.turned).toBe(true);
+		expect(turned.file).toEqual({ ...asItCame.file, bytes: upright });
+		expect(turned.contentKey).toBe(asItCame.contentKey);
+	});
+
 	test('keeps each page for its person, as a file of its own', async () => {
 		reads(page('ada'), page('bob'), page('ada', { codes: [{ text: 'ada', readings: null }] }));
 		const { people, problems } = await take();

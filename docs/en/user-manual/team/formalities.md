@@ -14,7 +14,7 @@ Before anyone takes part in the conference, their fee has to be paid and their d
 | **On-site check-in**      | nametag tables and the QR code for the entrance  | **Project Management**, **Participant Care** |
 | **Entrance & Attendance** | scanner: checking people and recording check-ins | the whole team                               |
 
-Whatever these pages leave to **Participant Care**, **Project Management** may do as well. You also find all of a person's statuses on their [user card](./participants#user-card): payment and documents in the **Formalities** tab, access card and attendance in the **On site** tab.
+Whatever these pages leave to **Participant Care**, **Project Management** may do as well. You also find all of a person's statuses on their [user card](./participants#user-card): payment, documents, access card and attendance in the **Formalities & access** tab.
 
 ## Payments {#payments}
 
@@ -55,7 +55,7 @@ Both emails only become due for people with a seat once the assignment is releas
 
 ### Undoing
 
-The **Fee Payment** page cannot reset a confirmed reference: it then shows **The payment was already marked as received with transaction on …!** and only **Close**. You change a person's status on their user card in the **Formalities** tab at **Fee Payment**. Next to it, under **Documents**, are their **Payment References**, whom they are shared with and whether they arrived.
+The **Fee Payment** page cannot reset a confirmed reference: it then shows **The payment was already marked as received with transaction on …!** and only **Close**. You change a person's status on their user card in the **Formalities & access** tab at **Fee Payment**. Below it, under **Payment & downloads**, are their **Payment References**, whom they are shared with and whether they arrived.
 
 :::warning What cannot be taken back
 The status on the user card applies to this one person only, the reference stays marked as received. Resetting does not take back an email that was already sent. Once the person is back on **Pending**, they can create a new reference.
@@ -72,7 +72,7 @@ Once **Allow Postal Registration** is on, participants download their documents 
 - the **Media Usage Agreement**,
 - the terms and conditions, which are only appended and have no status of their own.
 
-Every page carries a QR code that names the person and the conference and is signed by DELEGATOR. If someone lacks their documents, participant care downloads them on the user card in the **Formalities** tab with **Download documents for postal registration**.
+Every page carries a QR code that names the person and the conference and is signed by DELEGATOR. If someone lacks their documents, participant care downloads them on the user card in the **Formalities & access** tab with **Download documents**.
 
 ### The statuses per document
 
@@ -108,9 +108,9 @@ If participant care opens the QR code with a phone's camera app, it lands on thi
 
 Below the scanner you can **Drop files here or choose them**: PDFs from a scanner's feeder or photos, also of several people mixed. DELEGATOR reads the QR code of every page, stores the pages with the person and enters what is signed and ticked. Every page is stored once, even if you scan it again; when it comes back signed, the new scan replaces the old one. Nothing is set back. Pages without a QR code are skipped; others that match nobody are not stored, but listed.
 
-The stored scans are on the user card under **Formalities** in the **Documents** list at **Scans**. There you can open and delete them and add more with **Upload a scan**. They are deleted with the person. Only participant care can see them.
+The stored scans are on the user card under **Formalities & access** in the **Postal Registration** section at **Scans**. There you can open and delete them and add more with **Upload a scan**. They are deleted with the person. Only participant care can see them.
 
-What exactly was ticked and signed is in the last row of the list, **Details of the agreements**, folded away. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
+What exactly was ticked and signed is in the last row of the tab, **Details of the agreements**, folded away. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
 
 So that you need not upload anything by hand:
 
@@ -191,7 +191,7 @@ At the entrance:
 ### Someone arrives without having paid {#unpaid-on-site}
 
 1. The scan shows **Payment is still open**. Click **Dismiss** and send the person to participant care. Their check-in page tells them the same.
-2. Participant care opens the person, for example with **Details** in the scan result, and sees under **Payment References** in the **Formalities** tab whether the person created a reference and whether it arrived.
+2. Participant care opens the person, for example with **Details** in the scan result, and sees under **Payment References** in the **Formalities & access** tab whether the person created a reference and whether it arrived.
 3. If the money is there and only not confirmed, they confirm the reference on [Fee Payment](#confirming-a-payment). The person's check-in page then shows their table at once.
 4. A new scan passes the check and is recorded. If the team decides to let the person in anyway, **Record anyway** records them. The scan is then marked as recorded with open points.
 
@@ -285,16 +285,16 @@ For participant care, the **Scanned people** list of the running session is belo
 - The bin removes a scan after asking **Remove the scan of … from this session? They can be scanned again afterwards.**
 - **Export CSV** downloads every scan of the session, whatever the search, with **Time Stamp**, **Given Name**, **Family Name**, **E-mail**, **Access Card ID**, **Check passed**, **Scanned by** and **User ID**. For sessions of the type **Record**, **Check passed** stays empty.
 
-All scans of a person across all sessions are in the **Attendance Log** in the **On site** tab of their user card.
+All scans of a person across all sessions are in the **Attendance Log** in the **Formalities & access** tab of their user card.
 
 ### Access cards and a lost card {#access-cards}
 
-In the **On site** tab of the user card, participant care enters the **Access Card ID**; at the entrance, everybody on the team does in a session of the type **Badge based**. A number belongs to one person per conference: **This access card belongs to somebody else already.** The command palette (Ctrl+K) also finds people by their card number.
+In the **Formalities & access** tab of the user card, participant care enters the **Access Card ID**; at the entrance, everybody on the team does in a session of the type **Badge based**. A number belongs to one person per conference: **This access card belongs to somebody else already.** The command palette (Ctrl+K) also finds people by their card number.
 
 When someone hands in a found card:
 
 1. Type or scan the number into the command palette and open the person.
-2. In the **On site** tab, click **Badge found** next to the number and confirm **Send notification?**.
+2. In the **Formalities & access** tab, click **Badge found** next to the number and confirm **Send notification?**.
 3. The email **Badge found** goes out at once, even if nothing else is sent automatically. It asks the person to collect the card from participant care.
 
 Every confirmation sends the email again. You change its text on the [Emails](./communication#emails) page.
@@ -307,11 +307,11 @@ Once the conference is **After the conference**, participants download their cer
 
 Only people whose **Attendance** is **Present** get a certificate. Everybody else gets none, and the dashboard tells them it is not available yet. No scan sets attendance. These do:
 
-- the user card in the **On site** tab, with **Present** or **Absent**,
+- the user card in the **Formalities & access** tab, with the **Participation** switch,
 - the [Import](./maintenance#import) of attendance data,
 - the [Helper](./maintenance#helper), which sets all participants to **Present** or **Absent** at once.
 
-Participant care downloads a person's certificate on their user card in the **Formalities** tab with **Download certificate**.
+Participant care downloads a person's certificate on their user card in the **Formalities & access** tab at **Certificate of participation** with **Download**.
 
 ### Which sessions it lists
 

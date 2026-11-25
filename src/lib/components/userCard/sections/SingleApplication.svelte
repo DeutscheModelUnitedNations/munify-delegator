@@ -4,11 +4,13 @@
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import QuotedText from '../QuotedText.svelte';
+	import Section from '../ui/Section.svelte';
+	import ApplicationReview from './ApplicationReview.svelte';
+	import ApplicationTexts from './ApplicationTexts.svelte';
 	import AppliedBadge from './AppliedBadge.svelte';
 	import WishList from './WishList.svelte';
 
-	/** What a single participant applied with: their texts and the roles they wished for. */
+	/** What a single participant applied with: the roles they wished for and what they wrote, and what the team made of it. */
 	interface Props {
 		singleParticipantId: string;
 		conferenceId: string;
@@ -28,8 +30,6 @@
 				__args: { id: singleParticipantId },
 				id: true,
 				applied: true,
-				motivation: true,
-				experience: true,
 				appliedForRoles: { id: true, name: true, icon: true }
 			}),
 			client.liveQuery.conference({ __args: { id: conferenceId }, id: true, state: true })
@@ -53,23 +53,21 @@
 	};
 </script>
 
-<section class="flex flex-col gap-3">
-	<div class="flex flex-wrap items-center gap-3">
-		<h3 class="text-lg font-bold">{m.singleParticipant()}</h3>
+<Section icon="note-pencil" title={m.userCardTabRegistration()} columns>
+	{#snippet actions()}
 		<AppliedBadge applied={participant.applied} />
 		{#if conferenceState === 'PARTICIPANT_REGISTRATION'}
 			<button
-				class="btn btn-ghost btn-sm text-error ml-auto"
+				class="btn btn-ghost btn-sm text-error"
 				disabled={!participant.applied}
 				onclick={revokeApplication}
 			>
-				<i aria-hidden="true" class="ph-duotone ph-file-x"></i>
+				<i aria-hidden="true" class="ph-duotone ph-file-x text-lg"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}
-	</div>
-
-	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
+	{/snippet}
+	<div class="min-w-0">
 		<WishList
 			wishes={participant.appliedForRoles.map((role) => ({
 				id: role.id,
@@ -77,16 +75,11 @@
 				icon: role.icon
 			}))}
 		/>
+		<ApplicationReview
+			{conferenceId}
+			applicationId={singleParticipantId}
+			kind="singleParticipant"
+		/>
 	</div>
-
-	{#if participant.motivation || participant.experience}
-		<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-			{#if participant.motivation}
-				<QuotedText title={m.motivation()} text={participant.motivation} />
-			{/if}
-			{#if participant.experience}
-				<QuotedText title={m.experience()} text={participant.experience} />
-			{/if}
-		</div>
-	{/if}
-</section>
+	<ApplicationTexts {singleParticipantId} />
+</Section>

@@ -13,6 +13,8 @@
 		wide?: boolean;
 		/** Wider still, for pickers that lay their options out in columns. */
 		wider?: boolean;
+		/** Clicking beside the box leaves it open, where that would lose something; Escape still closes. */
+		keepOpenOnBackdrop?: boolean;
 		children: Snippet;
 		action?: Snippet;
 		onclose?: () => void;
@@ -24,6 +26,7 @@
 		fullWidth = false,
 		wide = false,
 		wider = false,
+		keepOpenOnBackdrop = false,
 		children,
 		action,
 		onclose
@@ -44,8 +47,12 @@
 		transition:fade={{ duration: 150 }}
 	>
 		<!-- Pointer users close by clicking beside the box; keyboard users have Escape -->
-		<button class="modal-backdrop" tabindex="-1" aria-label={m.a11yCloseDialog()} onclick={close}
-		></button>
+		{#if keepOpenOnBackdrop}
+			<div class="modal-backdrop"></div>
+		{:else}
+			<button class="modal-backdrop" tabindex="-1" aria-label={m.a11yCloseDialog()} onclick={close}
+			></button>
+		{/if}
 		<div
 			class="modal-box {fullWidth && 'w-auto max-w-full sm:max-w-[90%]'} {wide &&
 				'sm:max-w-3xl'} {wider && 'sm:max-w-5xl'}"

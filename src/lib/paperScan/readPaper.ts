@@ -413,8 +413,13 @@ function alignOn({ markers, found }: { markers: readonly Point[]; found: readonl
  * fit the others (a fold, something else taken for a marker), through the three that fit best;
  * `null` when they do not tell.
  */
-function alignPage({ picture, markers }: { picture: Picture; markers: readonly Point[] }) {
-	const found = locateMarkers(picture);
+function alignPage({
+	found,
+	markers
+}: {
+	found: readonly FoundMarker[];
+	markers: readonly Point[];
+}) {
 	if (found.length < MIN_MARKERS) return null;
 	const all = alignOn({ markers, found });
 	if (all.off <= MAX_OFF_MM) return all;
@@ -427,16 +432,19 @@ function alignPage({ picture, markers }: { picture: Picture; markers: readonly P
 
 /**
  * The fields of `areas` read off `picture`; `null` when fewer than three of the four markers are in
- * it (the page is not wholly in the picture, or too small or blurred in it).
+ * it (the page is not wholly in the picture, or too small or blurred in it). `located`: the markers in
+ * it, where they were looked for already.
  */
 export function readPaper({
 	picture,
-	areas
+	areas,
+	located = locateMarkers(picture)
 }: {
 	picture: Picture;
 	areas: PageAreas;
+	located?: readonly FoundMarker[];
 }): FieldReading[] | null {
-	const aligned = alignPage({ picture, markers: areas.markers });
+	const aligned = alignPage({ found: located, markers: areas.markers });
 	if (!aligned) return null;
 	const { toPicture, perMm, found } = aligned;
 	const [topLeft, , bottomRight] = areas.markers;

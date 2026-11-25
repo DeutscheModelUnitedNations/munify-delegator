@@ -1,40 +1,30 @@
 import { m } from '#lib/paraglide/messages';
 import type { ParticipationStage } from './userCardRoles';
 
-/** How each stage a person has come to is shown. */
+/** How each stage on the way to a seat is shown. */
 export const STAGES: Record<
 	ParticipationStage,
-	{ label: () => string; badge: string; icon: string }
+	{ label: () => string; color: string; icon: string }
 > = {
 	waitingList: {
 		label: () => m.userCardStageWaitingList(),
-		badge: 'badge-info',
+		color: 'text-info',
 		icon: 'ph-clock-countdown'
 	},
 	registered: {
 		label: () => m.userCardStageRegistered(),
-		badge: 'badge-warning',
+		color: 'text-warning',
 		icon: 'ph-pencil-line'
 	},
 	applied: {
 		label: () => m.userCardStageApplied(),
-		badge: 'badge-info',
+		color: 'text-info',
 		icon: 'ph-paper-plane-tilt'
 	},
 	notSeated: {
 		label: () => m.userCardStageNotSeated(),
-		badge: 'badge-error',
+		color: 'text-error',
 		icon: 'ph-x-circle'
-	},
-	seated: {
-		label: () => m.userCardStageSeated(),
-		badge: 'badge-success',
-		icon: 'ph-chair'
-	},
-	attended: {
-		label: () => m.userCardStageAttended(),
-		badge: 'badge-success',
-		icon: 'ph-calendar-check'
 	}
 };
 
@@ -43,6 +33,12 @@ const GENDER_ICONS: Partial<Record<string, string>> = {
 	FEMALE: 'gender-female',
 	DIVERSE: 'gender-intersex'
 };
+
+const FOOD_ICONS: Partial<Record<string, string>> = { VEGETARIAN: 'carrot', VEGAN: 'leaf' };
+
+/** The Phosphor icon (without the `ph-` prefix) of a stored diet. */
+export const foodIcon = (preference: string | null | undefined) =>
+	FOOD_ICONS[preference ?? ''] ?? 'fork-knife';
 
 /** The Phosphor icon (without the `ph-` prefix) of a stored gender. */
 export const genderIcon = (gender: string | null | undefined) =>

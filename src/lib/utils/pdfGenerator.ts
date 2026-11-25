@@ -19,7 +19,8 @@ import {
 	type SquarePlacement,
 	type TextPlacement
 } from '#lib/helpers/documentLayout';
-import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
+import { CODE_CAPTION, codeCaptionBaselines, codeCaptionSize } from '#lib/helpers/codeCaption';
+import { fitQrSquare, minQrSide, qrMatrix, type PdfSquare } from '#lib/helpers/qrSize';
 import { drawQr } from '#lib/api/pdfQr';
 import { logger } from '#lib/logger';
 import { drawPaperPage } from '#lib/paperScan/drawPaper';
@@ -560,8 +561,8 @@ function drawPageNumber({
 }
 
 /**
- * The person's name above their id, beside the code at its bottom: to its left, or to its right
- * when the code sits too close to the left edge for them.
+ * The person's id and, below it, their name, each centred below the code (`#lib/helpers/codeCaption`)
+ * and kept on the page.
  */
 function drawCodeCaption({
 	page,
@@ -574,17 +575,20 @@ function drawCodeCaption({
 	font: PDFFont;
 	name: string;
 	id: string;
-	square: { left: number; bottom: number; side: number };
+	square: PdfSquare;
 }) {
-	const size = 8;
-	const gap = 5;
-	const widest = Math.max(font.widthOfTextAtSize(name, size), font.widthOfTextAtSize(id, size));
-	const onLeft = square.left - gap - widest >= 0;
-	[id, name].forEach((line, index) => {
+	const lines = [id, name];
+	const baselines = codeCaptionBaselines({ square, lines: lines.length });
+	lines.forEach((line, index) => {
+		const size = codeCaptionSize({
+			width: font.widthOfTextAtSize(line, CODE_CAPTION.size),
+			side: square.side
+		});
 		const lineWidth = font.widthOfTextAtSize(line, size);
+		const centred = square.left + (square.side - lineWidth) / 2;
 		page.drawText(line, {
-			x: onLeft ? square.left - gap - lineWidth : square.left + square.side + gap,
-			y: square.bottom + index * (size + 2),
+			x: Math.max(0, Math.min(centred, page.getWidth() - lineWidth)),
+			y: baselines[index],
 			size,
 			font,
 			color: rgb(0, 0, 0)
@@ -594,7 +598,7 @@ function drawCodeCaption({
 
 /**
  * Numbers the pages and puts each main page's signed code (`codes`, one per main page), with the
- * person's name and id beside it, where that page's document places it, with the alignment marks
+ * person's id and name below it, where that page's document places it, with the alignment marks
  * and the page's fields to read off a scan (`#lib/paperScan/drawPaper`). The appendix (the terms and conditions) is numbered in roman numerals, where `appendixPageNumber`
  * says. Codes are plain: printed at home and scanned back, black on white reads best.
  */

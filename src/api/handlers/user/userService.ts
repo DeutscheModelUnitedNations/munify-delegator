@@ -16,6 +16,7 @@ import {
 	exists,
 	inArray,
 	isNotNull,
+	isNull,
 	notExists,
 	or,
 	sql,
@@ -334,4 +335,12 @@ export async function updateUser({
 		.where(where)
 		.returning({ id: schema.user.id });
 	for (const { id } of updated) userPubsub.updated(id);
+}
+
+/** Records that the user watched the postal guide to its end; the first time stays. */
+export async function completePostalGuide(userId: string) {
+	await updateUser({
+		where: and(eq(schema.user.id, userId), isNull(schema.user.postalGuideCompletedAt)),
+		changes: { postalGuideCompletedAt: new Date() }
+	});
 }

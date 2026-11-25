@@ -141,12 +141,15 @@ Prüfe alle Angaben besonders genau und achte auf die richtige Währung. Die Kos
 
 Über die Karte **Postalische Anmeldung** lädst du deine Unterlagen herunter, sobald das Team sie freischaltet. Je nach Einstellung der Konferenz bekommst du dann eine E-Mail.
 
-1. Prüfe deine Adresse und dein Geburtsdatum. Fehlt etwas, ist der Download gesperrt. Ergänze es dann mit **Profil aktualisieren**.
-2. Klicke **Dokumente herunterladen**. Das PDF enthält:
+Die Seite führt dich Schritt für Schritt:
+
+1. Prüfe deine Adresse und dein Geburtsdatum. Fehlt etwas, geht es erst weiter, wenn du es mit **Profil aktualisieren** ergänzt hast. Bestätige danach, ob du zu Konferenzbeginn volljährig bist.
+2. Sieh dir die kurzen Hinweise zum Versand an. Beim ersten Mal gehören sie dazu, später kannst du sie überspringen.
+3. Klicke **Dokumente herunterladen**. Das PDF enthält:
    - die **verbindliche Anmeldung**, die du selbst unterschreibst,
    - die **Einverständniserklärung der Eltern oder Erziehungsberechtigten**, wenn du zu Konferenzbeginn noch nicht volljährig bist. Sie unterschreiben im Normalfall beide Eltern,
    - die **Einverständniserklärung zur Bildnutzung**, die du und bei Minderjährigen auch deine Eltern unterschreiben.
-3. Drucke die Dokumente aus, fülle sie aus, unterschreibe sie und schicke die Originale per Post an die Adresse auf der Seite. Achte bei Sendungen aus dem Ausland auf ausreichendes Porto.
+4. Drucke die Dokumente aus, fülle sie aus, unterschreibe sie und schicke die Originale per Post an die Adresse auf der Seite. Achte bei Sendungen aus dem Ausland auf ausreichendes Porto.
 
 Ein Scan oder eine elektronische Unterschrift reicht nicht. Die Nutzungsbedingungen am Ende des PDFs solltest du lesen, ausdrucken musst du sie nicht.
 
@@ -187,7 +190,7 @@ Im Schnellzugriff findest du außerdem:
 
 ## Zeitplan {#schedule}
 
-Sobald das Team den Zeitplan freischaltet, erscheint die Karte **Zeitplan**. Sie zeigt schon auf dem Dashboard, was gerade auf deinem Track läuft und was als Nächstes kommt. Ein Klick öffnet den ganzen Zeitplan der Konferenz, Tag für Tag. Ein Klick auf einen Programmpunkt zeigt seine Einzelheiten, mit dem Ort, der Anfahrt und, wenn es einen gibt, dem Lageplan. Manche Programmpunkte gelten nur für alle, die in einer Umfrage eine bestimmte Antwort gewählt haben.
+Sobald das Team den Zeitplan freischaltet, zeigt der Abschnitt **Nächste Termine** auf dem Dashboard, was gerade auf deinem Track läuft und was als Nächstes kommt, mit Uhrzeit und Ort. Während der Konferenz steht er ganz oben. **Ganzer Zeitplan** und die Karte **Zeitplan** öffnen den Zeitplan der Konferenz, Tag für Tag und zuerst auf deinem Track. Ein Klick auf einen Programmpunkt zeigt seine Einzelheiten, mit dem Ort, der Anfahrt und, wenn es einen gibt, dem Lageplan. Manche Programmpunkte gelten nur für alle, die in einer Umfrage eine bestimmte Antwort gewählt haben.
 
 ## Umfragen {#surveys}
 

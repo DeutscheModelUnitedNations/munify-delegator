@@ -38,7 +38,7 @@
 	}
 </script>
 
-<label class="btn btn-sm {uploading ? 'btn-disabled' : ''}">
+<label class="btn btn-sm btn-ghost text-primary {uploading ? 'btn-disabled' : ''}">
 	<i aria-hidden="true" class="ph-duotone ph-upload-simple"></i>
 	{m.postalScanUpload()}
 	<input

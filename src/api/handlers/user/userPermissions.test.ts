@@ -11,7 +11,8 @@ import type { Context } from '#api/context';
 vi.mock('#api/db/db', () => ({ db: {} }));
 vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
 vi.mock('#api/services/oidc/OIDC', () => ({ OIDC: {} }));
-const { assertCanUpdateNewsletterPreferences } = await import('./userPermissions');
+const { assertCanCompletePostalGuide, assertCanUpdateNewsletterPreferences } =
+	await import('./userPermissions');
 
 function signedInAs(email: string | undefined): Context {
 	const ctx = { oidc: { user: email === undefined ? undefined : { sub: 'u', email } } };
@@ -51,5 +52,26 @@ describe('assertCanUpdateNewsletterPreferences', () => {
 				args: { email: 'bob@example.org', wantsToReceiveGeneralInformation: false }
 			})
 		).not.toThrow();
+	});
+});
+
+describe('assertCanCompletePostalGuide', () => {
+	function caller(options: { impersonator?: object; mcp?: object }): Context {
+		const ctx = {
+			oidc: { user: { sub: 'ada' }, impersonator: options.impersonator },
+			mcp: options.mcp,
+			mustBeLoggedIn: () => ({ sub: 'ada' })
+		};
+		// TYPE-SAFETY-EXCEPTION: as `signedInAs`, the check reads only who the caller is.
+		return ctx as unknown as Context;
+	}
+
+	test('whoever watched it completes it for themselves', () => {
+		expect(assertCanCompletePostalGuide(caller({}))).toBe('ada');
+	});
+
+	test('neither who impersonates nor an AI assistant does', () => {
+		expect(() => assertCanCompletePostalGuide(caller({ impersonator: { sub: 'care' } }))).toThrow();
+		expect(() => assertCanCompletePostalGuide(caller({ mcp: {} }))).toThrow();
 	});
 });

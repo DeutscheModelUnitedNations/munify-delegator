@@ -8,7 +8,7 @@ import {
 } from '../seed/seed';
 
 // Only reads, so it shares the management target with the specs that change it.
-test('the user card opens on the overview and keeps the person beside every tab', async ({
+test('the user card opens on what is to do and keeps the person beside every tab', async ({
 	page
 }) => {
 	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), {
@@ -16,8 +16,9 @@ test('the user card opens on the overview and keeps the person beside every tab'
 	});
 
 	const card = page.getByRole('dialog').filter({ has: page.getByRole('tablist') });
-	const overview = card.getByRole('tab', { name: /übersicht|overview/i });
-	await expect(overview).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+	const opened = card.getByRole('tab', { name: /formalitäten|formalities/i });
+	await expect(opened).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+	await expect(card.getByRole('tab', { name: /übersicht|overview/i })).toHaveCount(0);
 
 	const person = card.getByRole('complementary');
 	const name = person.getByRole('heading', {
@@ -29,7 +30,7 @@ test('the user card opens on the overview and keeps the person beside every tab'
 	}
 
 	// the details read as text, not as a form
-	await person.getByRole('button', { name: /alle angaben|all details/i }).click();
-	await expect(card.getByRole('heading', { name: /kontakt|contact info/i })).toBeVisible();
-	await expect(card.locator('[data-tour="team.userCard.content"] input')).toHaveCount(0);
+	for (const label of [/^(adresse|address)$/i, /^(anmeldename|username)$/i])
+		await expect(person.getByText(label)).toBeVisible();
+	await expect(person.locator('input, select, textarea')).toHaveCount(0);
 });

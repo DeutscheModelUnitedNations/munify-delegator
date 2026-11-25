@@ -71,11 +71,13 @@ gauges, papers by type, status by type (stacked), committee breakdown. Charts fr
 
 `src/lib/components/calendar/`:
 
-- `CalendarDisplay`: `days`, `timezone` (IANA, default `'UTC'`). Day tabs on small screens, columns side by side on 3xl+; picks "today" in the conference timezone; per-day track filter
+- `CalendarDisplay`: `days`, `timezone` (IANA, default `'UTC'`). One day at a time, with day tabs; picks "today" in the conference timezone; track filter, opening on the first of `ownTrackIds` a day has
 - `CalendarDayView`: `dayName`, `date`, `tracks`, `entries`, `filterTrackId`, `timezone`, `onEntryClick`. One day's hour grid with entries and the "now" marker
-- `CalendarTimeMarker`: `startHour`, `endHour`, `hourHeight`, `timezone`. Red "now" line, positioned via `Intl.DateTimeFormat` in the conference timezone
+- `CalendarTimeMarker`: `date`, `startHour`, `endHour`, `hourHeight`, `timezone`. Red "now" line, on today only, positioned via `Intl.DateTimeFormat` in the conference timezone
 - `CalendarEntryCard`: One entry as a coloured card: icon, name, time, room, track
 - `CalendarEntryDrawer`: Slide-out details: place, map, site plan (opened by entry click)
+- `ScheduleTimeline`: `timeline` (`timelineOf`), `onEntryClick`: what is on now and next, a line each; on the user card's program tab and in the dashboard's `NextEntries` (`[conferenceId]/sections/`), which leads with what is on (or the next start, with a countdown) and stands above the quick links while the conference is ACTIVE, below them in PREPARATION
+- `createMinuteClock` (`minuteClock.svelte.ts`): the present, following along every minute
 
 ## Calendar Editor (team/calendar)
 
@@ -102,7 +104,7 @@ card arrows move 15 min / one track, Shift moves the end / right edge, Delete as
   id, never by name. `setCalendarTrackOnDay` (off) takes that day's entries off it and deletes those
   left on none; deferred triggers refuse an entry on a track its day doesn't run. A track names its
   committees and roles (`calendarTrackToCommittee`, `calendarTrackToConferenceRole`); the
-  dashboard timeline (`entriesForSeat`, `seatOf`) follows them. Only an imported day file names
+  dashboard's next entries (`entriesForSeat`, `seatOf`) follows them. Only an imported day file names
   tracks by name: import reuses the conference's track of that name (names are unique).
 
 ### Structure
@@ -130,6 +132,31 @@ card arrows move 15 min / one track, Shift moves the end / right edge, Delete as
 `#lib/components/RoleFlag.svelte`: a nation's flag or a non-state actor's icon (via `Flag`),
 nothing without a role. `role` as selected (`assignedRole { kind icon nation { alpha2Code } }`),
 optional `size` (default `xs`). For the name, narrow with `splitRole` (`#lib/helpers/conferenceRole`).
+
+## FlowStep
+
+`#lib/components/flowSteps/FlowStep.svelte`: a step of a flow down the page (the application form, the
+postal registration), in an `<ol>`: open while worked on, folded to its `summary` once done, reopened by
+`onEdit` (`editLabel`/`editIcon` where one only looks again). `setFlowInteraction` (before the first
+`await`) lets opened steps scroll into view. Show steps with `{#if}`, not in an `{#each}`, whose removed
+steps stay in the page.
+
+## Postal Guide
+
+`#lib/components/postalGuide/`: what whoever downloads postal documents watches first, animated step
+by step (`PostalGuide`). A step of the postal registration page
+(`SendingHints`); elsewhere (supervisors) `passPostalGuide()` (`#lib/state/postalGuide`), which
+`downloadPostalRegistration` calls, opens it as a dialog (`PostalGuideHost` in the authenticated layout).
+Mandatory once per account (`user.postalGuideCompletedAt`), then skippable, and asked for once per page
+load.
+
+- `steps.ts`: the steps; a new one is an entry with a scene, texts and its line in the closing list.
+- `guideProgress.svelte.ts`: when the next step opens; only frames actually shown count.
+- `scenes/`: CSS-animated SVGs, each looping over `SCENE_MS` in the beats `Scene` describes (the mistake,
+  the strike, the right way, back to the first picture), from `Sheet`, `Scanner`, `Feed`, `Strike`,
+  `Check`. A loop's last picture is its first; check that when changing one. Reduced motion shows the
+  right way, the pause button holds them. **No daisyUI class names in there** (`stack` makes children
+  see-through).
 
 ## Kbd Component
 
@@ -188,7 +215,7 @@ inline; `SchoolLine` (`#lib/components/userCard/sections/`) is the list row with
 
 ## Modal Component
 
-`#lib/components/Modal.svelte`: closes on backdrop click or Escape, `role="dialog"` named by
+`#lib/components/Modal.svelte`: closes on backdrop click (not with `keepOpenOnBackdrop`) or Escape, `role="dialog"` named by
 `title` (or first heading), keeps and returns focus (`modalFocus`). Props: `open` (bindable),
 `title`, `fullWidth` (90%), `wide` (`max-w-3xl`, for reading text), `wider` (`max-w-5xl`, column pickers), `children`, `action` (footer snippet), `onclose`. With a form inside,
 use `<Form {form} showSubmitButton={false}>` and submit from the `action` buttons.
@@ -230,18 +257,34 @@ width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 
 `#lib/components/userCard/` (`UserCardDrawer` as a panel, `team/user/[userId]` as a page):
 
-- **`UserCardSidebar`** stands beside every tab (above them on a small screen): name, `AgeBadge`, stage, role,
-  `UserCardActions`, care notes, `OpenFormalities`, `PersonFacts`. What the team looks up at a glance goes
-  there, not into a tab. `person` ("All details") is opened from it and is no tab of the bar.
-- **Tabs** (`userCardTabs.ts`, tested): overview, registration & seat, formalities, on site, papers,
-  history. The card opens on the overview, which leads with the phase's work (`overviewLead`);
-  below it `OverviewTile`s, each fetching its own few fields, with the way to the full tab.
-- **Values are text, never disabled inputs.** `Fact` is one row of a `<dl>`: a click copies the value,
-  `href` opens it. `matters` says an empty value is missing; pass `wholePerson` (`readsWholePerson`), since
-  masked columns come back empty too. A form shows only while editing (`PersonForm`).
+- **`UserCardSidebar`** says who the person is, whichever tab is open: name, menu (`UserCardActions`), `SeatEmblem`
+  (flag or icon with the committee; `seatEmblem.ts`), care notes, `OpenFormalities` (gone once all is done; the
+  tab's icon is a green check then). On a wide card it is a side column that also holds `PersonFacts`:
+  everything the person entered, the account included, what is looked up most first. A narrow card shows
+  the facts as the tab `person` instead (`narrow` in `userCardTabs.ts`).
+- **Tabs** (`userCardTabs.ts`, tested): registration & seat (one section each, the application on top while people
+  apply, `isApplicationTime`, and the seat afterwards), formalities & access (payment, postal
+  registration, on site; on site first from ACTIVE on), program & papers (the next entries, papers, surveys and the
+  calendar), history. There is no overview: the side column is it. The card opens on the tab with what is to do
+  with the person (`openingUserCardTab`).
+- **Look** (`ui/`): the side column is the only surface; nothing beside it is boxed. Every topic is a
+  `Section` (icon, title, `subtitle`, `actions`; `columns` lays its children side by side, as many of three as
+  fit), set off by a rule as `FormSection` does. `Row` (icon, small
+  label, value, actions), `PersonRow` (the whole row opens the card), `StatusRow` and `Empty` start
+  with an icon of the heading's width, so a column has one edge for icons and one for text, and what changes
+  a row follows its label rather than standing at the far edge; what changes a list of persons stands below it. `tone` colors the icon; running text stays in
+  the text color. The button that settles an open status is `btn-soft`; every other button is `btn-ghost`
+  (`text-primary` with a label, faint until hovered where a list repeats it).
+- **Values are text, never disabled inputs.** `Fact` is an icon, a small label and the value in a
+  `<dl>`: a click copies the value, `href` opens it. `matters` says an empty value is missing; pass `wholePerson` (`readsWholePerson`), since
+  masked columns come back empty too. A form shows only while editing (`PersonForm`, in a dialog).
 - **Statuses**: `formalitiesOf` / `isOpen` (`formalities.ts`) decide what is open, `FormalityRow` →
-  `StatusRow` changes one: the active button carries the text (`short` where the label is long).
-  Rarely needed rows fold in `CollapsibleRow` (`value`, `warning`, `actions`, `unfolded`).
+  `StatusRow` shows the current one only: `StateMenu` (icon and name, `short` where the label is long) opens the others,
+  and an open one has the button that settles it. Nothing that is settled or empty takes color or room; a number is
+  text with a pencil, its field in the text's place and size (`EditableRow`).
+  Rarely needed rows fold in `CollapsibleRow` (`value`, `actions`, `unfolded`).
+- The panel is as wide as the app; `group-data-wide/card:min-[1700px]:` (set in the panel only, the page has
+  the team menu beside it) adds a column on wide windows.
 - No container queries around it: a `container-type` would trap the modals its sections open.
 
 ## Postal Components
@@ -249,8 +292,9 @@ width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 `#lib/components/postal/`, on the user card's formalities tab and the postal registration page:
 `PostalScans` (a "Scans" row with the count and `UploadScanButton`, folded below it the person's
 stored scans: open, delete; `unfolded` lists them right away) and `AgreementDetails` (every box and line of the documents, filled in by scans,
-folded in a `CollapsibleRow`, `userCard/sections/`: lower priority than the statuses on purpose) are
-rows of a user card list (`bg-base-200 rounded-box divide-y`) without a heading of their own, beside
+folded in a `CollapsibleRow`, `userCard/sections/`: lower priority than the statuses on purpose; its groups stand in as many columns as fit, so it gets the
+full width) are
+rows of a `Section` (or any list) without a heading of their own, beside
 the statuses. Both take `conferenceParticipantId`, `PostalScans` also `conferenceId` and `userId`, and
 need a `svelte:boundary`.
 
@@ -290,9 +334,11 @@ after saving. Typical binding into URL state:
   (`"default" | "info"`, blue), `collapsible`, `defaultCollapsed`, `collapsed` (bindable),
   `headerAction` (snippet), `id` (anchor target), `tourAnchor` (`data-tour` for guided tours, see
   CLAUDE.md "User manual, help and tours").
+- **`DashboardLinksGrid`**: the masonry the link cards sit in, up to three columns
+  (`#lib/attachments/masonry`, usable on any CSS grid with `items-start`; `masonryPlacement` keeps
+  the reading order where heights are nearly the same).
 - **`DashboardLinkCard`**: title, description, and an `info` snippet for live details the card
-  fetches itself (e.g. `CalendarLinkInfo`: what's on now and the next two things on the caller's
-  track; `MessagesLinkInfo`: unread chats). A link definition (`dashboardLinks.ts`,
+  fetches itself (e.g. `MessagesLinkInfo`: unread chats). A link definition (`dashboardLinks.ts`,
   `teamDashboardLinks.ts`) sets `info` to a component receiving `conferenceId`;
   `DashboardLinkCards` and the quick links pass it on. Team members' cards sit without a section
   box, below `TeamWaiting` (`stages/TeamMember/`, from `teamWaiting.ts`).
@@ -603,7 +649,7 @@ conference** ("Übersicht" and below). "Dashboard" names neither in the UI.
 
 - Wordmark (`MUNify DELEGATOR`) → `/dashboard`; then breadcrumbs, whose conference crumb is
   `ConferenceSwitcher.svelte` (dropdown), also beside the conference side nav.
-- Avatar menu (`UserMenu.svelte`): name + email (→ "Mein Konto": profile, notifications for team
+- Account menu (`UserMenu.svelte`): name + email (→ "Mein Konto": profile, notifications for team
   members), "Konferenzen", "Administration" for system admins (create conference, CHASE link, Slack
   workspaces), feedback, logout, language.
 - A strip atop the bar marks impersonation (yellow) and the dev server (red).

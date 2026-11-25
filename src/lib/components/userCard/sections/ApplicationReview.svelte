@@ -3,9 +3,10 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { sightingHref } from '#lib/helpers/sightingLink';
 	import StarRating from '#lib/components/StarRating.svelte';
+	import Row from '../ui/Row.svelte';
 
 	/**
-	 * How the team rated the application in the sighting. Read-only here: the sighting is where it
+	 * How the team rated the application in the sighting, as a row of a `Section`. Read-only here: the sighting is where it
 	 * is rated, next to the other applications.
 	 */
 	interface Props {
@@ -36,16 +37,18 @@
 	const review = $derived(reviews.at(0));
 </script>
 
-<section class="flex flex-col gap-3">
-	<div class="flex items-center justify-between gap-2">
-		<h3 class="text-lg font-bold">{m.userCardReview()}</h3>
-		<a class="btn btn-sm" href={sightingHref({ conferenceId, applicationId })}>
-			<i aria-hidden="true" class="ph-duotone ph-binoculars"></i>
-			{m.assignmentTabSighting()}
+<Row icon="binoculars" title={m.userCardReview()}>
+	{#snippet actions()}
+		<a
+			class="btn btn-sm btn-ghost text-primary"
+			href={sightingHref({ conferenceId, applicationId })}
+		>
+			{m.open()}
+			<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
 		</a>
-	</div>
+	{/snippet}
 	{#if review}
-		<div class="bg-base-200 rounded-box flex flex-col gap-2 px-4 py-3 text-sm">
+		<div class="flex flex-col gap-2 py-1">
 			<div class="flex flex-wrap items-center gap-2">
 				{#if review.evaluation !== null}
 					<StarRating rating={review.evaluation} size="md" />
@@ -72,15 +75,10 @@
 				{/if}
 			</div>
 			{#if review.note}
-				<p class="whitespace-pre-line">{review.note}</p>
+				<p class="max-w-prose whitespace-pre-line">{review.note}</p>
 			{/if}
 		</div>
 	{:else}
-		<div
-			class="bg-base-200 rounded-box text-base-content/60 flex items-center gap-4 px-4 py-3 text-sm"
-		>
-			<i aria-hidden="true" class="ph-duotone ph-eye-slash w-6 text-center text-lg"></i>
-			{m.userCardNotReviewed()}
-		</div>
+		<span class="text-base-content/60">{m.userCardNotReviewed()}</span>
 	{/if}
-</section>
+</Row>

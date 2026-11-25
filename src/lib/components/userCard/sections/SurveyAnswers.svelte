@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import Empty from '../ui/Empty.svelte';
 	import SurveyAnswerCard from '../SurveyAnswerCard.svelte';
 	import { fetchSurveys } from '../tabs/surveys';
 
@@ -14,19 +15,14 @@
 </script>
 
 {#if surveys.questions.length === 0}
-	<div class="alert alert-info">
-		<i aria-hidden="true" class="ph-duotone ph-chart-pie"></i>
-		<span>{m.userCardNoSurveys()}</span>
-	</div>
+	<Empty icon="chart-pie" text={m.userCardNoSurveys()} />
 {:else}
-	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		{#each surveys.questions as survey (survey.id)}
-			<SurveyAnswerCard
-				{survey}
-				surveyAnswer={surveys.answers.find((a) => a.question.id === survey.id)}
-				{conferenceId}
-				{userId}
-			/>
-		{/each}
-	</div>
+	{#each surveys.questions as survey (survey.id)}
+		<SurveyAnswerCard
+			{survey}
+			surveyAnswer={surveys.answers.find((a) => a.question.id === survey.id)}
+			{conferenceId}
+			{userId}
+		/>
+	{/each}
 {/if}

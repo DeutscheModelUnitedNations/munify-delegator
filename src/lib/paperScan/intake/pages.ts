@@ -1,4 +1,6 @@
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
+import { looksLikeSignedCode } from '#lib/signedCode/signedCode';
+import { locateMarkers, uprightTurn } from '../markers';
 import type { Picture } from '../picture';
 import type { FieldReading } from '../readPaper';
 import { readPageOfCode } from '../readScan';
@@ -6,6 +8,7 @@ import { isBlank } from './blank';
 import { messageOf, PageError } from './errors';
 import { findCodes, type CodeReader } from './findCodes';
 import type { ScanFileType } from './scanFile';
+import { turnScan } from './turnScan';
 
 /**
  * Reading a scanned page, the same in the browser and on the server, which each bring
@@ -43,13 +46,14 @@ export interface ScanContent {
 /**
  * A page as it was read: its codes, unchecked, with the fields each says its page has (`null`: not
  * readable in the picture), and whether it is an empty back; `error` for one that could not be read,
- * which says why.
+ * which says why. `upright` is its file turned the right way up, where it lies otherwise.
  */
 export interface ReadPage {
 	page: number;
 	blank: boolean;
 	codes: { text: string; readings: FieldReading[] | null }[];
 	error?: string;
+	upright?: Uint8Array<ArrayBuffer>;
 }
 
 /** A page is read at 300 dpi, which scanners scan at and shows a pen stroke several pixels wide. */
@@ -123,26 +127,32 @@ async function imagePicture<C>({
 	}
 }
 
-/** What one page's picture shows: its codes and their fields. */
+/**
+ * What one page's picture shows: its codes and their fields, and how many quarter turns it is off standing
+ * upright.
+ */
 async function readPicture({
 	picture,
 	readCodes
 }: {
 	picture: Picture;
 	readCodes: CodeReader;
-}): Promise<ReadPage> {
+}): Promise<{ read: ReadPage; turn: number }> {
 	// an empty back, half of a stack scanned on both sides, is told at a glance: no code is printed on so
 	// little ink, and looking for one in every variant of the picture takes many times as long
-	if (isBlank(picture)) return { page: 1, blank: true, codes: [] };
+	if (isBlank(picture)) return { read: { page: 1, blank: true, codes: [] }, turn: 0 };
 	const codes = await findCodes({ picture, read: readCodes });
-	return {
+	const ours = codes.some(({ rawValue }) => looksLikeSignedCode(rawValue));
+	const located = ours ? locateMarkers(picture) : [];
+	const read = {
 		page: 1,
 		blank: false,
 		codes: codes.map(({ rawValue }) => ({
 			text: rawValue,
-			readings: readPageOfCode({ picture, code: rawValue })
+			readings: readPageOfCode({ picture, code: rawValue, located })
 		}))
 	};
+	return { read, turn: uprightTurn(located) };
 }
 
 /** Tells what is wrong with a page from a failure to load what reads it. */
@@ -170,7 +180,11 @@ export async function readScanPage<C>({
 			scan.type === 'application/pdf'
 				? await pdfPicture({ bytes: scan.bytes, platform })
 				: await imagePicture({ scan, platform });
-		return await ofPage(() => readPicture({ picture, readCodes: platform.readCodes }));
+		const { read, turn } = await ofPage(() =>
+			readPicture({ picture, readCodes: platform.readCodes })
+		);
+		const upright = turn === 0 ? undefined : await turnScan({ scan, turn });
+		return upright ? { ...read, upright } : read;
 	} catch (error) {
 		if (!(error instanceof PageError)) throw error;
 		return { page: 1, blank: false, codes: [], error: error.message };

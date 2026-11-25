@@ -169,6 +169,21 @@ export function locateMarkers(picture: Picture): FoundMarker[] {
 	return [...best.values()].sort((a, b) => a.corner - b.corner);
 }
 
+/**
+ * How many quarter turns (clockwise) a picture with these markers has to be turned by for its page to stand
+ * upright; none where they do not agree, as those of two pages side by side.
+ */
+export function uprightTurn(found: readonly FoundMarker[]): number {
+	const turns = new Set(
+		found.map(({ corners: [topLeft, topRight] }) => {
+			const angle = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x);
+			return (4 - Math.round(angle / (Math.PI / 2))) % 4;
+		})
+	);
+	const [turn, ...others] = turns;
+	return others.length > 0 ? 0 : (turn ?? 0);
+}
+
 /** Where a marker's diagonals cross: its centre, also where it is seen at an angle. */
 function centerOf([a, b, c, d]: readonly Point[]): Point {
 	const across = { x: c.x - a.x, y: c.y - a.y };

@@ -1,4 +1,3 @@
-import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
@@ -7,10 +6,9 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
+import { partIn } from '#api/handlers/conferenceParticipant/conferenceParticipantPermissions';
 import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertAllowed } from '#api/services/authHelper/utils';
-import { apiError } from '#api/services/errors';
-import { m } from '#lib/paraglide/messages';
 
 /**
  * Participant care (project management and participant care) reads what the people of its
@@ -64,10 +62,5 @@ export async function assertCanRecordPaper({
 	userId: string;
 }) {
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-	const participant = await db.query.conferenceParticipant.findFirst({
-		where: { conferenceId, userId },
-		columns: { id: true }
-	});
-	if (!participant) throw apiError({ code: 'NOT_FOUND', message: m.userNotInConference() });
-	return { participantId: participant.id };
+	return partIn({ conferenceId, userId });
 }

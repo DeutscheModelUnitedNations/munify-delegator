@@ -14,11 +14,13 @@
 	let { userId, conferenceId, emails }: Props = $props();
 </script>
 
-<div class="flex flex-col gap-6">
+<div
+	class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,max(34rem,(100%-3rem)/2)),1fr))] items-start gap-x-12 gap-y-6"
+>
 	{#if emails}
 		<EmailLogSection {userId} {conferenceId} />
 	{/if}
-	<section class="flex flex-col gap-3">
+	<section class="flex min-w-0 flex-col gap-2">
 		<h3 class="text-lg font-bold">{m.conferences()}</h3>
 		<OtherConferences {userId} {conferenceId} />
 	</section>

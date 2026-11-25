@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import AuthenticatedHeader from './AuthenticatedHeader.svelte';
+	import PostalGuideHost from '#lib/components/postalGuide/PostalGuideHost.svelte';
 	import UserCardDrawer from '#lib/components/userCard/UserCardDrawer.svelte';
 
 	// import ExportButtons from '#lib/components/dataTable/ExportButtons.svelte';
@@ -25,3 +26,4 @@
 </div>
 
 <UserCardDrawer />
+<PostalGuideHost />

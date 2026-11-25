@@ -20,10 +20,13 @@
 
 <button
 	type="button"
-	class="link link-hover flex items-baseline gap-2 text-left {look.text}"
+	class="hover:bg-base-content/5 rounded-field flex w-full cursor-pointer items-center gap-2 py-0.5 text-left text-sm"
 	{onclick}
 >
-	<i aria-hidden="true" class="ph-duotone {look.icon} text-xs"></i>
-	{FORMALITY_META[formality.key].title()}
-	<span class="sr-only">({look.label})</span>
+	<i aria-hidden="true" class="ph-duotone {look.icon} {look.text} text-lg"></i>
+	<span class="min-w-0 flex-1">
+		{FORMALITY_META[formality.key].title()}
+		<span class="sr-only">({look.label})</span>
+	</span>
+	<i aria-hidden="true" class="ph-duotone ph-caret-right text-base-content/40 text-xs"></i>
 </button>

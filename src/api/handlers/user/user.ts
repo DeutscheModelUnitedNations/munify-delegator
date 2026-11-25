@@ -6,6 +6,7 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
 import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
+	completePostalGuide,
 	countConferenceParticipations,
 	profileArgsSchema,
 	removeParticipation,
@@ -13,6 +14,7 @@ import {
 	type UserChanges
 } from './userService';
 import {
+	assertCanCompletePostalGuide,
 	assertCanImpersonate,
 	assertCanManageUser,
 	assertCanUpdateNewsletterPreferences,
@@ -218,6 +220,20 @@ schemaBuilder.mutationFields((t) => {
 
 				return db.query.user
 					.findFirst(query(await allowedUser({ ctx, id: args.id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		completePostalGuide: t.drizzleField({
+			description:
+				'The caller watched the guide to sending their postal documents to its end, so they may skip it from now on (`User.postalGuideCompletedAt`, which keeps the first time). FORBIDDEN for an AI assistant and while impersonating.',
+			type: UserRef,
+			resolve: async (query, _root, _args, ctx) => {
+				const id = assertCanCompletePostalGuide(ctx);
+				await completePostalGuide(id);
+
+				return db.query.user
+					.findFirst(query(await allowedUser({ ctx, id })))
 					.then(assertFindFirstExists);
 			}
 		}),
