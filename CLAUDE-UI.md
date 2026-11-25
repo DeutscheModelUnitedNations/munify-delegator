@@ -202,6 +202,7 @@ Fields take `form`, `name`, `label` (plus as listed):
 - `AddressRegionField`: `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has no region
 - `AddressFields`: `form`, `fields` (`ADDRESS_FIELDS`), `rules`, `disabled`; postal code/city/region per country
 - `AddressSection`: `form`, `fields`, `rules`; `AddressFields` inside the "Address" `FormSection`
+- `PersonNameFields`, `PersonalInformationFields`: `form`, `fields` (`PERSON_NAME_FIELDS`, `PERSONAL_INFORMATION_FIELDS`); bare fields, the caller lays them out
 - `SchoolPicker`: `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`
 
 **`SchoolPicker`** is how every form asks for a school (applications, joining a delegation, waiting

@@ -127,7 +127,7 @@ const settings = {
 };
 
 /** One row of the seats overview: the nation, then a seat button per committee */
-const seatRow = (index: number): SkeletonNode => ({
+const seatRow = (): SkeletonNode => ({
 	class: 'border-base-200 flex items-center gap-3 border-t py-2',
 	children: [
 		{
@@ -170,7 +170,7 @@ const seats = {
 								}))
 							]
 						},
-						...Array.from({ length: 10 }, (_, index) => seatRow(index))
+						...Array.from({ length: 10 }, seatRow)
 					]
 				}
 			]

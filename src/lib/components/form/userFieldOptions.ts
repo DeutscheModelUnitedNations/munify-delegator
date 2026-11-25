@@ -14,3 +14,14 @@ export const foodPreferenceOptions = () => [
 	{ value: 'VEGETARIAN', label: m.vegetarian() },
 	{ value: 'OMNIVORE', label: m.omnivore() }
 ];
+
+/** The name fields of the user forms (`PersonNameFields`). */
+export const PERSON_NAME_FIELDS = { givenName: 'given_name', familyName: 'family_name' } as const;
+
+/** The fields about the person of the user forms (`PersonalInformationFields`). */
+export const PERSONAL_INFORMATION_FIELDS = {
+	birthday: 'birthday',
+	gender: 'gender',
+	pronouns: 'pronouns',
+	foodPreference: 'foodPreference'
+} as const;

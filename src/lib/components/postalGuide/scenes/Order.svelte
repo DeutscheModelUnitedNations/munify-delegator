@@ -65,17 +65,26 @@
 		animation: envelope var(--scene) infinite both;
 	}
 
-	/* One person after the other, the nearest first */
+	/*
+	 * Every page is mixed, sorted and leaves with the envelope alike; into it they go one person after
+	 * the other, the nearest first, which only moves them along (`translate`, on top of `transform`).
+	 */
 	.owner-2 {
-		animation: third var(--scene) ease-in-out infinite both;
+		animation:
+			page var(--scene) ease-in-out infinite both,
+			third var(--scene) ease-in-out infinite both;
 	}
 
 	.owner-1 {
-		animation: second var(--scene) ease-in-out infinite both;
+		animation:
+			page var(--scene) ease-in-out infinite both,
+			second var(--scene) ease-in-out infinite both;
 	}
 
 	.owner-0 {
-		animation: first var(--scene) ease-in-out infinite both;
+		animation:
+			page var(--scene) ease-in-out infinite both,
+			first var(--scene) ease-in-out infinite both;
 	}
 
 	@keyframes envelope {
@@ -95,7 +104,7 @@
 		}
 	}
 
-	@keyframes third {
+	@keyframes page {
 		0%,
 		5% {
 			transform: none;
@@ -105,19 +114,12 @@
 			transform: translate(var(--x), var(--y)) rotate(var(--turn));
 		}
 		48%,
-		52% {
-			transform: none;
-		}
-		58% {
-			transform: translate(var(--into-x), calc(var(--into-y) - 75px));
-		}
-		64%,
 		92% {
-			transform: translate(var(--into-x), var(--into-y));
+			transform: none;
 			animation-timing-function: ease-in;
 		}
 		96% {
-			transform: translate(calc(var(--into-x) + 160px), var(--into-y));
+			transform: translateX(160px);
 		}
 		/* the envelope is off, the next pages come */
 		96.1% {
@@ -126,74 +128,60 @@
 		}
 		100% {
 			transform: none;
+		}
+	}
+
+	@keyframes third {
+		0%,
+		52% {
+			translate: 0 0;
+		}
+		58% {
+			translate: var(--into-x) calc(var(--into-y) - 75px);
+		}
+		64%,
+		96% {
+			translate: var(--into-x) var(--into-y);
+		}
+		96.1%,
+		100% {
+			translate: 0 0;
 		}
 	}
 
 	@keyframes second {
 		0%,
-		5% {
-			transform: none;
-		}
-		20%,
-		34% {
-			transform: translate(var(--x), var(--y)) rotate(var(--turn));
-		}
-		48%,
 		58% {
-			transform: none;
+			translate: 0 0;
 		}
 		64% {
-			transform: translate(var(--into-x), calc(var(--into-y) - 75px));
+			translate: var(--into-x) calc(var(--into-y) - 75px);
 		}
 		70%,
-		92% {
-			transform: translate(var(--into-x), var(--into-y));
-			animation-timing-function: ease-in;
-		}
 		96% {
-			transform: translate(calc(var(--into-x) + 160px), var(--into-y));
+			translate: var(--into-x) var(--into-y);
 		}
-		/* the envelope is off, the next pages come */
-		96.1% {
-			transform: translateX(-280px);
-			animation-timing-function: ease-out;
-		}
+		96.1%,
 		100% {
-			transform: none;
+			translate: 0 0;
 		}
 	}
 
 	@keyframes first {
 		0%,
-		5% {
-			transform: none;
-		}
-		20%,
-		34% {
-			transform: translate(var(--x), var(--y)) rotate(var(--turn));
-		}
-		48%,
 		64% {
-			transform: none;
+			translate: 0 0;
 		}
 		70% {
-			transform: translate(var(--into-x), calc(var(--into-y) - 75px));
+			translate: var(--into-x) calc(var(--into-y) - 75px);
 		}
 		76%,
-		92% {
-			transform: translate(var(--into-x), var(--into-y));
-			animation-timing-function: ease-in;
-		}
 		96% {
-			transform: translate(calc(var(--into-x) + 160px), var(--into-y));
+			translate: var(--into-x) var(--into-y);
 		}
-		/* the envelope is off, the next pages come */
-		96.1% {
-			transform: translateX(-280px);
-			animation-timing-function: ease-out;
-		}
+		96.1%,
 		100% {
-			transform: none;
+			translate: 0 0;
 		}
 	}
 </style>

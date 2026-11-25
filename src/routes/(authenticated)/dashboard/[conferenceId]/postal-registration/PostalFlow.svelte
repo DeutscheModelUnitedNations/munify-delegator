@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { untrack, type Snippet } from 'svelte';
-	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -110,10 +108,6 @@
 		})
 	);
 
-	const profileHref = $derived(
-		resolve(`my-account?redirect=${encodeURIComponent(`${page.url.origin}${page.url.pathname}`)}`)
-	);
-
 	interface StepLook {
 		title: string;
 		summary: string;
@@ -195,22 +189,12 @@
 {/snippet}
 
 {#snippet check()}
-	<DetailsCheck
-		details={user}
-		complete={details !== undefined}
-		{profileHref}
-		onConfirm={confirmDetails}
-	/>
+	<DetailsCheck details={user} complete={details !== undefined} onConfirm={confirmDetails} />
 {/snippet}
 
 {#snippet age()}
 	{#if texts.age}
-		<AgeQuestion
-			age={texts.age}
-			birthday={onDate(user.birthday)}
-			{profileHref}
-			onConfirm={confirmAge}
-		/>
+		<AgeQuestion age={texts.age} birthday={onDate(user.birthday)} onConfirm={confirmAge} />
 	{/if}
 {/snippet}
 

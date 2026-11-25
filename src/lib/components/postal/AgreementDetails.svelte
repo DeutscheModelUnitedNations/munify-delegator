@@ -16,11 +16,9 @@
 		AGREEMENT_GROUPS,
 		type AgreementField
 	} from '#lib/paperScan/agreementDetails';
-	import { fieldLabel } from '#lib/paperScan/fieldLabels';
 	import { agreementGroupLabel } from './agreementGroupLabels';
 	import type { FieldState } from '#lib/paperScan/readPaper';
-	import StateMenu from '#lib/components/userCard/ui/StateMenu.svelte';
-	import { agreementStateOptions } from './agreementState';
+	import AgreementDetailRow from './AgreementDetailRow.svelte';
 
 	interface Props {
 		conferenceParticipantId: string;
@@ -58,35 +56,17 @@
 		: undefined}
 >
 	<p class="text-base-content/70 mb-4 text-sm">{m.agreementDetailsHint()}</p>
-	<div class="columns-[24rem] gap-x-12">
+	<div class="columns-sm gap-x-12">
 		{#each AGREEMENT_GROUPS as group (group.id)}
 			<section class="mb-6 break-inside-avoid">
 				<h4 class="mb-1 text-sm font-bold">{agreementGroupLabel[group.id]()}</h4>
 				<ul>
 					{#each group.fields as field (field)}
-						{@const detail = detailOf(field)}
-						<li class="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-x-3 py-1 text-sm">
-							<span>{fieldLabel[field]()}</span>
-							<span class="flex items-center gap-2 pl-2">
-								<StateMenu
-									name={fieldLabel[field]()}
-									active={detail?.state ?? null}
-									options={agreementStateOptions()}
-									onSelect={(state) => change({ field, state })}
-								/>
-								{#if detail}
-									{@const manual = detail.source === 'MANUAL'}
-									{@const source = manual ? m.agreementSourceManual() : m.agreementSourceScan()}
-									<span class="text-base-content/60" title={source}>
-										<i
-											aria-hidden="true"
-											class="ph-duotone {manual ? 'ph-hand-pointing' : 'ph-scan'}"
-										></i>
-										<span class="sr-only">{source}</span>
-									</span>
-								{/if}
-							</span>
-						</li>
+						<AgreementDetailRow
+							{field}
+							detail={detailOf(field)}
+							onChange={(state) => change({ field, state })}
+						/>
 					{/each}
 				</ul>
 			</section>

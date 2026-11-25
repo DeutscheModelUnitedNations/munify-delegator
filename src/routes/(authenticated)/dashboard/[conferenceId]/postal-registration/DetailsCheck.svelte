@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import type { ResolvedPathname } from '$app/types';
+	import ProfileLink from '#lib/components/ProfileLink.svelte';
 	import PersonalDetails from './PersonalDetails.svelte';
 	import type { PostalDetails } from './postalDetails';
 
@@ -9,11 +9,10 @@
 		details: PostalDetails;
 		/** Whether nothing the documents need is missing. */
 		complete: boolean;
-		profileHref: ResolvedPathname;
 		onConfirm: () => void;
 	}
 
-	let { details, complete, profileHref, onConfirm }: Props = $props();
+	let { details, complete, onConfirm }: Props = $props();
 </script>
 
 {#if complete}
@@ -27,11 +26,7 @@
 {/if}
 
 <div class="mt-4 flex flex-wrap justify-end gap-2">
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved by the page -->
-	<a class="btn {complete ? 'btn-ghost' : 'btn-primary'}" href={profileHref}>
-		<i aria-hidden="true" class="ph-fill ph-pencil-simple-line"></i>
-		{m.updateProfile()}
-	</a>
+	<ProfileLink class="btn {complete ? 'btn-ghost' : 'btn-primary'}" label={m.updateProfile()} />
 	{#if complete}
 		<button type="button" class="btn btn-primary" onclick={onConfirm}>
 			{m.postalRegistrationDetailsCorrect()}

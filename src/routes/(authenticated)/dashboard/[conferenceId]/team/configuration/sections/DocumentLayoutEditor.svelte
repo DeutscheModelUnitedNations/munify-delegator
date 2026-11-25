@@ -53,6 +53,7 @@
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
 	import LayoutFieldChecks from './LayoutFieldChecks.svelte';
 	import LayoutGuides from './LayoutGuides.svelte';
+	import LayoutHowTo from './LayoutHowTo.svelte';
 	import LayoutInsertions from './LayoutInsertions.svelte';
 	import LayoutPager from './LayoutPager.svelte';
 	import LayoutProblems from './LayoutProblems.svelte';
@@ -623,25 +624,7 @@
 				/>
 			{/if}
 
-			<details class="collapse-arrow bg-base-200 rounded-box collapse">
-				<summary class="collapse-title text-sm font-semibold">
-					<i aria-hidden="true" class="ph-duotone ph-info"></i>
-					{m.documentLayoutHowTo()}
-				</summary>
-				<div class="collapse-content text-base-content/70 flex flex-col gap-2 text-sm">
-					<p>
-						{withoutSessions ? m.certificateLayoutHintWithoutSessions() : m.certificateLayoutHint()}
-					</p>
-					{#if codeMinimum !== undefined}
-						<p>{m.documentLayoutCodeMinimum({ size: codeMinimum })}</p>
-					{/if}
-					{#if allFields.length > 0}
-						<p>{m.documentLayoutFieldsHint()}</p>
-					{/if}
-					<p>{m.documentLayoutSnapHint()}</p>
-					<p>{m.documentLayoutNudgeHint()}</p>
-				</div>
-			</details>
+			<LayoutHowTo {withoutSessions} {codeMinimum} hasFields={allFields.length > 0} />
 		</aside>
 	</div>
 

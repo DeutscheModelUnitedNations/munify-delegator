@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { foodPreferenceOptions, genderOptions } from '#lib/components/form/userFieldOptions';
+	import {
+		PERSON_NAME_FIELDS,
+		PERSONAL_INFORMATION_FIELDS
+	} from '#lib/components/form/userFieldOptions';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
@@ -9,8 +12,9 @@
 	import Form from '#lib/components/form/Form.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
-	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import PersonNameFields from '#lib/components/form/PersonNameFields.svelte';
+	import PersonalInformationFields from '#lib/components/form/PersonalInformationFields.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import { translatedNationCodeAddressFormOptions } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import {
@@ -77,31 +81,11 @@
 	<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 		<div class="flex flex-col gap-6">
 			<FormFieldset title={m.legalName()}>
-				<FormTextInput {form} name="given_name" label={m.firstName()} placeholder={m.firstName()} />
-				<FormTextInput {form} name="family_name" label={m.lastName()} placeholder={m.lastName()} />
+				<PersonNameFields {form} fields={PERSON_NAME_FIELDS} />
 			</FormFieldset>
 
 			<FormFieldset title={m.personalInformation()}>
-				<FormDateTimeInput
-					{form}
-					name="birthday"
-					label={m.birthDate()}
-					defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
-					enableFutureDates={false}
-				/>
-				<FormSelect {form} name="gender" label={m.gender()} options={genderOptions()} />
-				<FormTextInput
-					{form}
-					name="pronouns"
-					label={m.pronouns()}
-					placeholder={m.pronounsExample()}
-				/>
-				<FormSelect
-					{form}
-					name="foodPreference"
-					label={m.diet()}
-					options={foodPreferenceOptions()}
-				/>
+				<PersonalInformationFields {form} fields={PERSONAL_INFORMATION_FIELDS} />
 			</FormFieldset>
 		</div>
 

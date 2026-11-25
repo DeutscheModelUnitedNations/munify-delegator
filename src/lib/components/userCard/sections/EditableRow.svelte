@@ -80,7 +80,7 @@
 	{#if editing}
 		<form class="flex items-center gap-1" onsubmit={save}>
 			<input
-				class="field-sizing-content h-5 max-w-40 min-w-16 border-0 bg-transparent p-0 font-mono text-sm tracking-wider shadow-[0_2px_0_var(--color-primary)] outline-none"
+				class="field-sizing-content border-primary -mb-0.5 h-5.5 max-w-40 min-w-16 border-0 border-b-2 bg-transparent p-0 font-mono text-sm tracking-wider outline-none"
 				type="text"
 				inputmode={numeric ? 'numeric' : undefined}
 				pattern={numeric ? '[1-9][0-9]*' : undefined}

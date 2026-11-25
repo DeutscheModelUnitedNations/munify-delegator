@@ -29,6 +29,19 @@ export function fetchParticipantStatus({
 	});
 }
 
+/** The statuses that decide what mails a person is owed, as one value. */
+export const owedEmailsRevision = (
+	status: Awaited<ReturnType<typeof fetchParticipantStatus>>[number] | undefined
+) =>
+	status &&
+	[
+		status.paymentStatus,
+		status.termsAndConditions,
+		status.guardianConsent,
+		status.mediaConsent,
+		status.didAttend
+	].join();
+
 /**
  * The status row plus the two dates that decide whether a guardian has to consent: the person's
  * birthday and the conference's start.

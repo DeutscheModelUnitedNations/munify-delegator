@@ -1,19 +1,17 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	import { m } from '#lib/paraglide/messages';
-	import type { ResolvedPathname } from '$app/types';
+	import ProfileLink from '#lib/components/ProfileLink.svelte';
 
 	/** Whether the person is of age at the conference, as their birthday says, and if that is right. */
 	interface Props {
 		age: { ofAge: boolean; text: string; meaning: string };
 		/** Their birthday, as it is written. */
 		birthday: string;
-		/** Where they correct it. */
-		profileHref: ResolvedPathname;
 		onConfirm: () => void;
 	}
 
-	let { age, birthday, profileHref, onConfirm }: Props = $props();
+	let { age, birthday, onConfirm }: Props = $props();
 
 	let wrong = $state(false);
 </script>
@@ -40,10 +38,6 @@
 {#if wrong}
 	<div class="mt-4 flex flex-col items-start gap-3" transition:slide={{ duration: 200 }}>
 		<p role="status">{m.postalRegistrationAgeWrongHint({ birthday })}</p>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved by the page -->
-		<a class="btn" href={profileHref}>
-			<i aria-hidden="true" class="ph-fill ph-pencil-simple-line"></i>
-			{m.updateProfile()}
-		</a>
+		<ProfileLink class="btn" label={m.updateProfile()} />
 	</div>
 {/if}
