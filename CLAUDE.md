@@ -192,7 +192,7 @@ bun run preview
   (`args.x ?? undefined`). Upserts created on first change put only given fields + `updatedAt` in
   the conflict `set`. Cross-field rules are checked on the written row inside the transaction.
   Values meaningful only whole (address, document layout) stay one argument. Clients send only
-  what changed.
+  what changed; an `undefined` argument is left out (rumble ≥ 0.34), clearing takes `null`.
 - **Authorization = ability filters** (drizzle filters that compose into queries):
   `ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where`. Enforced by
   `e2e/authorization/`:

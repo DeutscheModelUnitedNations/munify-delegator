@@ -42,7 +42,7 @@
 		"@inlang/cli": "^3.6.0",
 		"@inlang/paraglide-js": "^2.29.3",
 		"@lingual/i18n-check": "^0.9.5",
-		"@m1212e/rumble": "^0.33.3",
+		"@m1212e/rumble": "^0.34.0",
 		"@m1212e/sveltekit-oidc": "^0.3.3",
 		"@magidoc/plugin-svelte-marked": "^9.0.0",
 		"@modelcontextprotocol/server": "2.4.0",

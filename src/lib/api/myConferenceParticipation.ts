@@ -125,9 +125,8 @@ export type MyConferenceParticipation = Awaited<ReturnType<typeof fetchMyConfere
  * the mutations publish.
  */
 export async function fetchMyParticipation(conferenceId: string) {
-	// Rumble's client serializes an `undefined` argument as `null` rather than omitting it, which a
-	// non-nullable `ID!` argument then rejects - so skip the request rather than fire one that can
-	// only fail.
+	// Without a conference the query would only fail or, its filter left out, answer for any
+	// conference - so skip it.
 	if (!conferenceId) return undefined;
 
 	const user = await getOptionalCurrentUser();

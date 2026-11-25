@@ -64,8 +64,7 @@ export interface PlaceFormValues {
 
 /**
  * The fields a place is saved with: empty inputs are stored as none, coordinates as numbers. Without
- * a new site plan its argument is left out: the client sends `undefined` as `null`, which would
- * remove the stored one.
+ * a new site plan its argument is left out, which keeps the stored one.
  */
 export function placeFields({
 	values,

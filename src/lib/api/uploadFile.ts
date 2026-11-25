@@ -24,8 +24,8 @@ export type ConferenceFileField =
  * Uploads `file` straight to the storage, through a URL the API hands out for `target`, and
  * returns the id the mutation saving the row takes for it (`logoFileId`, `fileId`, …).
  *
- * Returns `undefined` for "no file"; leave the argument out then. The mutations treat `null` as
- * "remove the file", and the client sends an `undefined` argument as `null`.
+ * Returns `undefined` for "no file", which the client leaves out of the mutation, so the stored file
+ * is kept; `null` would remove it.
  */
 export async function uploadFile({
 	file,

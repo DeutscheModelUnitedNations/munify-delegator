@@ -18,7 +18,7 @@ beforeEach(() => {
 
 describe('uploadConferenceFiles', () => {
 	test('names only the touched files, so the stored others are kept', async () => {
-		// Strict: the client would send an `undefined` argument as `null`, removing the file
+		// Strict: an untouched file must not be named at all, `null` removes it
 		expect(
 			await uploadConferenceFiles({
 				conferenceId: 'c1',

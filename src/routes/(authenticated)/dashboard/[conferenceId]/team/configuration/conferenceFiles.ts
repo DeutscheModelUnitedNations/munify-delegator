@@ -13,8 +13,8 @@ const CONFERENCE_FILE_FIELDS = [
 
 /**
  * Uploads the picked files one by one and returns the `updateConference` arguments for them: the
- * new id, or `null` for a removed one. An untouched field gets no argument at all: the client sends
- * an `undefined` argument as `null`, which would remove the stored file.
+ * new id, or `null` for a removed one. An untouched field gets no argument, which keeps the stored
+ * file.
  */
 export async function uploadConferenceFiles({
 	conferenceId,
