@@ -66,7 +66,7 @@ test('document numbers are unique, kept, and refused when taken', async ({ page 
 	// somebody else's number
 	const taken = await assign({ page, userId: first, next: false, given: numbers[1] ?? undefined });
 	expect(taken.errors?.[0]?.extensions?.code, JSON.stringify(taken)).toBe('CONFLICT');
-	expect(taken.errors?.[0]?.message).toMatch(/belongs to somebody else/);
+	expect(taken.errors?.[0]?.message).toMatch(/belongs to someone else/);
 
 	// a free one, typed in, replaces it
 	expect(numberOf(await assign({ page, userId: second, next: false, given: 40 }))).toBe(40);

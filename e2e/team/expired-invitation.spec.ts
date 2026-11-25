@@ -7,6 +7,9 @@ import {
 	E2E_REPLACED_INVITATION_EMAIL
 } from '../seed/invitations';
 
+// in brackets: an invitee's address says it as well
+const EXPIRED = /\((abgelaufen|expired)\)/i;
+
 test('an expired invitation is sent again from its row', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_INVITATIONS_PM_ID), {
 		startUrl: `/dashboard/${E2E_INVITATIONS_CONFERENCE_ID}/team/invitations`
@@ -14,11 +17,11 @@ test('an expired invitation is sent again from its row', async ({ page }) => {
 	await waitForHydration(page);
 
 	const row = page.locator('tbody tr', { hasText: E2E_EXPIRED_INVITATION_EMAIL });
-	await expect(row).toContainText(/abgelaufen|expired/i, { timeout: 15_000 });
+	await expect(row).toContainText(EXPIRED, { timeout: 15_000 });
 	await row.getByRole('button', { name: /erneut einladen|invite again/i }).click();
 
 	// The row follows live: valid again, with the ordinary resend button
-	await expect(row).not.toContainText(/abgelaufen|expired/i, { timeout: 15_000 });
+	await expect(row).not.toContainText(EXPIRED, { timeout: 15_000 });
 	await expect(row.getByRole('button', { name: /erneut einladen|invite again/i })).toHaveCount(0);
 	await expect(
 		row.getByRole('button', { name: /einladung erneut senden|resend invitation/i })
@@ -46,7 +49,7 @@ test('inviting the address of an expired invitation replaces it', async ({ page 
 	});
 	await waitForHydration(page);
 	const row = page.locator('tbody tr', { hasText: E2E_REPLACED_INVITATION_EMAIL });
-	await expect(row).toContainText(/abgelaufen|expired/i, { timeout: 15_000 });
+	await expect(row).toContainText(EXPIRED, { timeout: 15_000 });
 
 	await page
 		.getByRole('button', { name: /mitglieder einladen|invite members/i })
@@ -59,7 +62,7 @@ test('inviting the address of an expired invitation replaces it', async ({ page 
 
 	// One row for the address: the new invitation, in the role chosen now
 	await expect(row).toHaveCount(1, { timeout: 15_000 });
-	await expect(row).not.toContainText(/abgelaufen|expired/i, { timeout: 15_000 });
+	await expect(row).not.toContainText(EXPIRED, { timeout: 15_000 });
 	await expect(row).toContainText(/mitglied|member/i);
 
 	// Still open, it is not invited a second time

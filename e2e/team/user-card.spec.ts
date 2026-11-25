@@ -30,7 +30,8 @@ test('the user card opens on what is to do and keeps the person beside every tab
 	}
 
 	// the details read as text, not as a form
-	for (const label of [/^(adresse|address)$/i, /^(anmeldename|username)$/i])
+	// a pattern sees the text as it is in the page, with the space around it
+	for (const label of [/^\s*(adresse|address)\s*$/i, /^\s*(anmeldename|username)\s*$/i])
 		await expect(person.getByText(label)).toBeVisible();
 	await expect(person.locator('input, select, textarea')).toHaveCount(0);
 });
