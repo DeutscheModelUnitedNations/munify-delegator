@@ -162,6 +162,7 @@
 		}
 		89% {
 			transform: translate(198px, 68px);
+			animation-timing-function: step-end;
 		}
 		/* out of sight in the scanner, the next page comes from the left */
 		89.1% {

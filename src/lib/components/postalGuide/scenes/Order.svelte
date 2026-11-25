@@ -120,6 +120,7 @@
 		}
 		96% {
 			transform: translateX(160px);
+			animation-timing-function: step-end;
 		}
 		/* the envelope is off, the next pages come */
 		96.1% {
@@ -142,6 +143,7 @@
 		64%,
 		96% {
 			translate: var(--into-x) var(--into-y);
+			animation-timing-function: step-end;
 		}
 		96.1%,
 		100% {
@@ -160,6 +162,7 @@
 		70%,
 		96% {
 			translate: var(--into-x) var(--into-y);
+			animation-timing-function: step-end;
 		}
 		96.1%,
 		100% {
@@ -178,6 +181,7 @@
 		76%,
 		96% {
 			translate: var(--into-x) var(--into-y);
+			animation-timing-function: step-end;
 		}
 		96.1%,
 		100% {

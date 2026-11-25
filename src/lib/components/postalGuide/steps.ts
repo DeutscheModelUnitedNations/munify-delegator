@@ -2,9 +2,13 @@ import type { Component } from 'svelte';
 import { m } from '#lib/paraglide/messages';
 import Codes from './scenes/Codes.svelte';
 import Crumple from './scenes/Crumple.svelte';
+import FillIn from './scenes/FillIn.svelte';
 import Intro from './scenes/Intro.svelte';
 import Order from './scenes/Order.svelte';
 import PaperKind from './scenes/PaperKind.svelte';
+import Print from './scenes/Print.svelte';
+import Read from './scenes/Read.svelte';
+import Signature from './scenes/Signature.svelte';
 import SingleSided from './scenes/SingleSided.svelte';
 import Sleeve from './scenes/Sleeve.svelte';
 import Staple from './scenes/Staple.svelte';
@@ -15,17 +19,67 @@ interface GuideStep {
 	scene: Component;
 	title: () => string;
 	text: () => string;
+	/** Highlighted below the text. */
+	warning?: () => string;
+	/** Marked by a big exclamation mark. */
+	important?: boolean;
 	/** What the list at the end says of it; nothing for the introduction. */
 	done?: readonly { icon: string; text: () => string; dont?: boolean }[];
 }
 
-/** What the postal guide goes through, in this order. */
+/** What the postal guide goes through, in the order it is done: from reading to the envelope. */
 export const GUIDE_STEPS: readonly GuideStep[] = [
+	{
+		id: 'read',
+		scene: Read,
+		title: m.postalGuideReadTitle,
+		text: m.postalGuideReadText,
+		warning: m.postalGuideReadWarning,
+		done: [{ icon: 'book-open-text', text: m.postalGuideDoneRead }]
+	},
+	{
+		id: 'fill-in',
+		scene: FillIn,
+		title: m.postalGuideFillInTitle,
+		text: m.postalGuideFillInText,
+		warning: m.postalGuideFillInWarning,
+		done: [{ icon: 'pencil-line', text: m.postalGuideDoneFillIn }]
+	},
+	{
+		id: 'print',
+		scene: Print,
+		title: m.postalGuidePrintTitle,
+		text: m.postalGuidePrintText,
+		done: [{ icon: 'x-circle', text: m.postalGuideDoneTerms, dont: true }]
+	},
+	{
+		id: 'paper',
+		scene: PaperKind,
+		title: m.postalGuidePaperTitle,
+		text: m.postalGuidePaperText,
+		done: [{ icon: 'file', text: m.postalGuideDonePaper }]
+	},
+	{
+		id: 'single-sided',
+		scene: SingleSided,
+		title: m.postalGuideSingleSidedTitle,
+		text: m.postalGuideSingleSidedText,
+		done: [{ icon: 'printer', text: m.postalGuideDoneSingleSided }]
+	},
+	{
+		id: 'signature',
+		scene: Signature,
+		title: m.postalGuideSignatureTitle,
+		text: m.postalGuideSignatureText,
+		important: true,
+		done: [{ icon: 'signature', text: m.postalGuideDoneSignature }]
+	},
 	{
 		id: 'intro',
 		scene: Intro,
 		title: m.postalGuideIntroTitle,
-		text: m.postalGuideIntroText
+		text: m.postalGuideIntroText,
+		warning: m.postalGuideWarning
 	},
 	{
 		id: 'staple',
@@ -49,20 +103,6 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
 		done: [{ icon: 'envelope-simple', text: m.postalGuideDoneFlat }]
 	},
 	{
-		id: 'paper',
-		scene: PaperKind,
-		title: m.postalGuidePaperTitle,
-		text: m.postalGuidePaperText,
-		done: [{ icon: 'file', text: m.postalGuideDonePaper }]
-	},
-	{
-		id: 'single-sided',
-		scene: SingleSided,
-		title: m.postalGuideSingleSidedTitle,
-		text: m.postalGuideSingleSidedText,
-		done: [{ icon: 'printer', text: m.postalGuideDoneSingleSided }]
-	},
-	{
 		id: 'codes',
 		scene: Codes,
 		title: m.postalGuideCodesTitle,
@@ -74,10 +114,7 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
 		scene: Order,
 		title: m.postalGuideOrderTitle,
 		text: m.postalGuideOrderText,
-		done: [
-			{ icon: 'stack', text: m.postalGuideDoneOrder },
-			{ icon: 'x-circle', text: m.postalGuideDoneTerms, dont: true }
-		]
+		done: [{ icon: 'stack', text: m.postalGuideDoneOrder }]
 	}
 ];
 

@@ -1,4 +1,9 @@
 <!-- A printed page as we send it out: marks in the corners, a code, some text and a signature. -->
+<script module lang="ts">
+	/** The signature, as drawn on the page. */
+	export const SIGNATURE = 'M14 80c4-10 6-10 6-2s5-9 8-5 2 6 6 1 5 2 10 0';
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
@@ -8,12 +13,15 @@
 		/** A coloured bar at the top, to tell whose page it is. */
 		owner?: string;
 		/** The page's number, printed large. */
-		number?: number;
+		number?: number | string;
+		signed?: boolean;
+		/** Fields to fill in, in place of the text. */
+		fields?: boolean;
 		/** Drawn on top of the page. */
 		children?: Snippet;
 	}
 
-	let { x = 0, y = 0, owner, number, children }: Props = $props();
+	let { x = 0, y = 0, owner, number, signed = true, fields = false, children }: Props = $props();
 
 	const CORNERS = [
 		[5, 5],
@@ -46,10 +54,15 @@
 	</g>
 	{#if number}
 		<text x="35" y="62" class="number">{number}</text>
+	{:else if fields}
+		<path d="M12 46h46M12 58h46M24 67.5h32" class="line" />
+		<rect x="12" y="64" width="7" height="7" class="box" />
 	{:else}
 		<path d="M12 40h46M12 47h46M12 54h30" class="line" />
 	{/if}
-	<path d="M14 80c4-10 6-10 6-2s5-9 8-5 2 6 6 1 5 2 10 0" class="signature" />
+	{#if signed}
+		<path d={SIGNATURE} class="signature" />
+	{/if}
 	<path d="M12 84h40" class="line" />
 	{@render children?.()}
 </g>
@@ -70,6 +83,11 @@
 		stroke: var(--paper-edge);
 		stroke-width: 2.4;
 		stroke-linecap: round;
+	}
+
+	.box {
+		fill: none;
+		stroke: var(--ink);
 	}
 
 	.signature {

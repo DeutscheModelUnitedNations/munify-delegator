@@ -5,7 +5,7 @@ import { POSTAL_GUIDE } from '../seed/postalGuide';
 // The postal registration goes step by step: what it is about, one's details and age, how to send
 // the documents (to be watched the first time, skippable from then on), then the download.
 
-const GUIDE_STEPS = 8;
+const GUIDE_STEPS = 12;
 /** Longer than a step of the guide has to be watched (`SCENE_MS`). */
 const STEP_WATCHED = 6500;
 
@@ -20,6 +20,7 @@ test('the documents come after checking the details and watching the hints, and 
 	const step = (name: string) => page.getByRole('heading', { name, exact: true });
 
 	// --- a wrong age leads to the profile and back here; a reopened step closes what follows ---
+	await expect(page.getByText('Alle Unterschriften müssen handschriftlich sein')).toBeVisible();
 	await button(page, 'Weiter').click();
 	await button(page, 'Meine Angaben stimmen').click();
 	await expect(page.getByText(/damit volljährig/)).toBeVisible();
@@ -42,7 +43,8 @@ test('the documents come after checking the details and watching the hints, and 
 	// --- the hints cannot be skipped the first time; each opens the next once it was watched ---
 	// timed by animation frames, which the clock fast-forwards
 	await button(page, 'Ja, das stimmt').click();
-	await expect(step('Automatische Verarbeitung')).toBeVisible();
+	await expect(step('Alles sorgfältig lesen')).toBeVisible();
+	await expect(page.getByText(/Sieh dir zuerst alle Schritte/)).toBeVisible();
 	await page.clock.install();
 	await expect(button(page, 'Gleich geht es weiter')).toBeDisabled();
 	await expect(button(page, 'Überspringen')).toHaveCount(0);

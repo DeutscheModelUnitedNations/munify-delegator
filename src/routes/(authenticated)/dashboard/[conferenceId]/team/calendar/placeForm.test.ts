@@ -69,6 +69,10 @@ describe('placeFields', () => {
 			sitePlanFileId: 'file-1'
 		});
 	});
+
+	test('leaves the stored site plan alone without a new one', () => {
+		expect(placeFields({ values, sitePlanFileId: undefined })).not.toHaveProperty('sitePlanFileId');
+	});
 });
 
 describe('upsertPlace', () => {

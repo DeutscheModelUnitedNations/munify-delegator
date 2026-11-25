@@ -150,11 +150,11 @@ by step (`PostalGuide`). A step of the postal registration page
 Mandatory once per account (`user.postalGuideCompletedAt`), then skippable, and asked for once per page
 load.
 
-- `steps.ts`: the steps; a new one is an entry with a scene, texts and its line in the closing list.
+- `steps.ts`: the steps, in the order things are done (read, fill in, print, sign, send); a new one is an entry with a scene, texts and its line in the closing list.
 - `guideProgress.svelte.ts`: when the next step opens; only frames actually shown count.
 - `scenes/`: CSS-animated SVGs, each looping over `SCENE_MS` in the beats `Scene` describes (the mistake,
   the strike, the right way, back to the first picture), from `Sheet`, `Scanner`, `Feed`, `Strike`,
-  `Check`. A loop's last picture is its first; check that when changing one. Reduced motion shows the
+  `Check`, `Laptop`, `Pen`; a step that is no rule has no mistake to strike. A loop's last picture is its first; check that when changing one. Reduced motion shows the
   right way, the pause button holds them. **No daisyUI class names in there** (`stack` makes children
   see-through).
 

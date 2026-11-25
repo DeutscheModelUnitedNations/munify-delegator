@@ -1,5 +1,6 @@
 <!-- The end of the postal guide: everything once more, as a list. -->
 <script lang="ts">
+	import { m } from '#lib/paraglide/messages';
 	import GuideWarning from './GuideWarning.svelte';
 	import { GUIDE_STEPS } from './steps';
 
@@ -17,4 +18,4 @@
 		</li>
 	{/each}
 </ul>
-<GuideWarning />
+<GuideWarning text={m.postalGuideWarning()} />

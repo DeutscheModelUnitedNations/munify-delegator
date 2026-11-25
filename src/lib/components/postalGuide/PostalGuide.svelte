@@ -101,14 +101,19 @@
 
 {#snippet explanation()}
 	<!-- The longest text's height, so the buttons stay where they are -->
-	<div class="mx-auto mt-4 max-w-xl text-center" class:min-h-36={step}>
+	<div class="mx-auto mt-4 max-w-xl text-center" class:min-h-40={step}>
 		<h3 class="text-2xl font-bold outline-none" tabindex="-1" {@attach focusTitle}>
 			{step ? step.title() : m.postalGuideDoneTitle()}
 		</h3>
 		{#if step}
-			<p class="mt-2">{step.text()}</p>
-			{#if progress.index === 0}
-				<GuideWarning />
+			<div class="mt-2 flex items-center justify-center gap-2 sm:gap-4">
+				{#if step.important}
+					<span aria-hidden="true" class="text-error text-8xl leading-none font-black">!</span>
+				{/if}
+				<p>{step.text()}</p>
+			</div>
+			{#if step.warning}
+				<GuideWarning text={step.warning()} />
 			{/if}
 		{:else}
 			<GuideClosing />
