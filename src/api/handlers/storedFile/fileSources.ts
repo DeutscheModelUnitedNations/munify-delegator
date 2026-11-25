@@ -81,6 +81,15 @@ const FILE_SOURCES = {
 			permission: 'manageParticipants'
 		}
 	},
+	guide: {
+		// images and downloads of the preparation guide's pages (`file:<id>` in their text)
+		file: {
+			column: 'fileId',
+			mimeTypes: [...PDF, ...IMAGES],
+			maxBytes: 20_000_000,
+			permission: 'editGuide'
+		}
+	},
 	resolution: {
 		content: {
 			column: 'fileId',

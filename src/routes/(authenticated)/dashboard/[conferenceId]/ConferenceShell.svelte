@@ -48,10 +48,13 @@
 	});
 
 	// Every navigation gets a fresh boundary, so the next page's skeleton shows right away. The
-	// assignment keeps its tabs and draft status across its pages, the paper hub its back link, and
-	// both show the skeleton below that themselves, so their pages share one key here.
+	// assignment keeps its tabs and draft status across its pages, the guide its tabs, tree and
+	// sidebar draft, the paper hub its back link, and they show the skeleton below that
+	// themselves, so their pages share one key here.
 	const pathname = $derived(page.url.pathname);
-	const pageKey = $derived(boundaryKey({ pathname, frames: ['team/assignment', 'paperhub'] }));
+	const pageKey = $derived(
+		boundaryKey({ pathname, frames: ['team/assignment', 'team/guide', 'paperhub'] })
+	);
 	const relativePath = $derived(teamRelativePath({ pathname, conferenceId }));
 	const skeleton = $derived(
 		relativePath === '' ? DASHBOARD_SKELETON : teamSkeletonForPath(relativePath)

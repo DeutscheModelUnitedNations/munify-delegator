@@ -15,10 +15,12 @@ describe('fileReferenceColumns', () => {
 				schema.resolution.fileId,
 				schema.announcementAttachment.fileId,
 				schema.postalScan.fileId,
-				schema.scanTask.fileId
+				schema.scanTask.fileId,
+				schema.guidePageVersion.pdfFileId,
+				schema.guidePageFile.fileId
 			])
 		);
-		expect(columns).toHaveLength(13);
+		expect(columns).toHaveLength(15);
 	});
 });
 

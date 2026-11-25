@@ -449,6 +449,21 @@ bun run preview
   loads the stored one or keeps theirs) and takes over the old browser-only `reviewDraft_<paperId>` entry;
   `createPaperReview` deletes the draft. No MCP tool sends a review or sets a status; keep it so.
   `e2e/authorization/review-drafts.spec.ts`, `e2e/papers/review-draft.spec.ts`.
+- **Preparation guide** (`docs/plans/guide.md`; `#api/handlers/guidePage/`, `guideOutline/`,
+  `conferenceSeries/`, pure logic in `#lib/guide/`): pages (`guide_page`, draft + published
+  versions) shared by scope — everywhere, year, series (`conference_series`, system admins) or one
+  conference; shared scopes reach only conferences of a series. Who may edit is `editGuide` in a
+  conference the draft **and** the published scope reach (`guideReach.ts`, SQL on the page's own
+  columns). Each conference has one sidebar (`guide_outline`, draft/published JSON checked by
+  `outlineSchema`) with audiences and a committee template; readers never read the tables:
+  `myGuide` / `guideReaderPage` build their part (`guideReaderService.ts`) once `guidePublished`
+  and the release are on (the team always, with previews). The team works in one workspace
+  (`team/guide/`: tree + editor, visibility, committee matrix; CLAUDE-UI.md "Guide Components"); its views and the sidebar's
+  single changes are API fields too (`guideOutlineTools.ts`, all draft writes through `editOutlineDraft`, which refuses a stale
+  `expectedDraftUpdatedAt`). Agenda item pages render their
+  committee text with Typst on publish (`committeeText.ts`). Files in page texts are `file:<id>`,
+  kept by `guide_page_file` for the cleanup job. MCP: Markdown ↔ TipTap in `guideMarkdown.ts`
+  (shares `#api/services/markdownTokens` with review drafts). `e2e/authorization/guide.spec.ts`.
 - Domain specifics (calendar, scanner, age limits, waiting list, certificates, document layouts):
   `docs/architecture/conference-features.md`.
 

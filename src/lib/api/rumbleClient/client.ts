@@ -1675,6 +1675,11 @@ export type Conference = {
     where?: StoredfileWhereInputArgument | null | undefined
   }) => Storedfile | null,
   guardianConsentFileId: ID | null,
+  guideOutline: (p?: {
+    orderBy?: GuideoutlineOrderInputArgument | null | undefined,
+    where?: GuideoutlineWhereInputArgument | null | undefined
+  }) => Guideoutline | null,
+  guidePublished: Boolean,
   iban: String | null,
   id: ID,
   imageFile: (p?: {
@@ -1753,6 +1758,11 @@ export type Conference = {
   }) => Conferencerole[],
   schools: () => ConferenceSchools[],
   search_distance: Float | null,
+  series: (p?: {
+    orderBy?: ConferenceseriesOrderInputArgument | null | undefined,
+    where?: ConferenceseriesWhereInputArgument | null | undefined
+  }) => Conferenceseries | null,
+  seriesId: ID | null,
   showCalendar: Boolean,
   singleParticipants: (p?: {
     limit?: Int | null | undefined,
@@ -1826,6 +1836,7 @@ export type ConferenceOrderInputArgument = {
   endConference?: SortingParameter | null | undefined,
   feeAmount?: SortingParameter | null | undefined,
   guardianConsentFileId?: SortingParameter | null | undefined,
+  guidePublished?: SortingParameter | null | undefined,
   iban?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   imageFileId?: SortingParameter | null | undefined,
@@ -1855,6 +1866,7 @@ export type ConferenceOrderInputArgument = {
   postalZip?: SortingParameter | null | undefined,
   qrCorporateDesign?: SortingParameter | null | undefined,
   registrationDeadlineGracePeriodMinutes?: SortingParameter | null | undefined,
+  seriesId?: SortingParameter | null | undefined,
   showCalendar?: SortingParameter | null | undefined,
   startConference?: SortingParameter | null | undefined,
   state?: SortingParameter | null | undefined,
@@ -1877,7 +1889,7 @@ export type ConferenceSchools = {
   sumParticipants: Int    
 };
 		
-export type ConferenceSearchFieldEnum = "bankAccountHolder" | "bankName" | "bic" | "certificateFileId" | "contractFileId" | "currency" | "emblemFileId" | "guardianConsentFileId" | "iban" | "id" | "imageFileId" | "language" | "linkToPaperInbox" | "linkToPreparationGuide" | "linkToServicesPage" | "linkToTeamWiki" | "location" | "logoFileId" | "longTitle" | "mediaConsentFileId" | "postalApartment" | "postalCity" | "postalCountry" | "postalName" | "postalStreet" | "postalZip" | "termsAndConditionsFileId" | "timezone" | "title" | "website";
+export type ConferenceSearchFieldEnum = "bankAccountHolder" | "bankName" | "bic" | "certificateFileId" | "contractFileId" | "currency" | "emblemFileId" | "guardianConsentFileId" | "iban" | "id" | "imageFileId" | "language" | "linkToPaperInbox" | "linkToPreparationGuide" | "linkToServicesPage" | "linkToTeamWiki" | "location" | "logoFileId" | "longTitle" | "mediaConsentFileId" | "postalApartment" | "postalCity" | "postalCountry" | "postalName" | "postalStreet" | "postalZip" | "seriesId" | "termsAndConditionsFileId" | "timezone" | "title" | "website";
 		
 export type ConferenceSearchInputArgument = {
   fields?: ConferenceSearchFieldEnum[] | undefined,
@@ -1916,6 +1928,8 @@ export type ConferenceWhereInputArgument = {
   feeAmount?: FloatWhereInputArgument | null | undefined,
   guardianConsentFile?: StoredfileWhereInputArgument | null | undefined,
   guardianConsentFileId?: IDWhereInputArgument | null | undefined,
+  guideOutline?: GuideoutlineWhereInputArgument | null | undefined,
+  guidePublished?: BooleanWhereInputArgument | null | undefined,
   iban?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   imageFile?: StoredfileWhereInputArgument | null | undefined,
@@ -1953,6 +1967,8 @@ export type ConferenceWhereInputArgument = {
   registrationDeadlineGracePeriodMinutes?: IntWhereInputArgument | null | undefined,
   resolutions?: ResolutionWhereInputArgument | null | undefined,
   roles?: ConferenceroleWhereInputArgument | null | undefined,
+  series?: ConferenceseriesWhereInputArgument | null | undefined,
+  seriesId?: IDWhereInputArgument | null | undefined,
   showCalendar?: BooleanWhereInputArgument | null | undefined,
   singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   startConference?: DateTimeWhereInputArgument | null | undefined,
@@ -2362,6 +2378,42 @@ export type ConferenceroleWhereInputArgument = {
 };
 		
 export type ConferencerolekindEnum = "CUSTOM" | "NATION" | "NON_STATE_ACTOR";
+		
+export type Conferenceseries = {
+  abbreviation: String,
+  conferences: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: ConferenceSearchInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
+  createdAt: DateTime,
+  id: ID,
+  name: String,
+  search_distance: Float | null,
+  updatedAt: DateTime    
+};
+		
+export type ConferenceseriesOrderInputArgument = {
+  abbreviation?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  name?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ConferenceseriesWhereInputArgument = {
+  AND?: ConferenceseriesWhereInputArgument[] | undefined,
+  NOT?: ConferenceseriesWhereInputArgument | null | undefined,
+  OR?: ConferenceseriesWhereInputArgument[] | undefined,
+  abbreviation?: StringWhereInputArgument | null | undefined,
+  conferences?: ConferenceWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  name?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
 		
 export type ConferencestateEnum = "ACTIVE" | "PARTICIPANT_REGISTRATION" | "POST" | "PRE" | "PREPARATION";
 		
@@ -2884,6 +2936,500 @@ export type FoodpreferenceEnum = "OMNIVORE" | "VEGAN" | "VEGETARIAN";
 		
 export type GenderEnum = "DIVERSE" | "FEMALE" | "MALE" | "NO_STATEMENT";
 		
+export type GuideAudienceInput = {
+  roleIds?: ID[] | undefined,
+  type: GuideAudienceType    
+};
+		
+export type GuideAudienceType = "customRoles" | "delegates" | "everyone" | "nonStateActors" | "supervisors";
+		
+export type GuideCommitteeMatrixView = {
+  committees: () => GuideMatrixCommittee[],
+  hasTemplate: Boolean,
+  rows: () => GuideMatrixRow[]    
+};
+		
+export type GuideConferenceTitle = {
+  id: ID,
+  title: String    
+};
+		
+export type GuideEntryView = {
+  indent: Int,
+  key: String,
+  pageId: ID,
+  title: String    
+};
+		
+export type GuideFileUrl = {
+  fileId: ID,
+  fileName: String | null,
+  url: String    
+};
+		
+export type GuideHeadingView = {
+  anchor: String,
+  level: Int,
+  text: String    
+};
+		
+export type GuideMarkdown = {
+  markdown: String,
+  omittedBlocks: String[]    
+};
+		
+export type GuideMatrixCell = {
+  agendaItemId: ID | null,
+  committeeId: ID | null,
+  kind: String,
+  pageId: ID | null,
+  state: GuidePageState | null,
+  title: String | null    
+};
+		
+export type GuideMatrixCommittee = {
+  abbreviation: String,
+  id: ID,
+  name: String,
+  published: Int,
+  total: Int    
+};
+		
+export type GuideMatrixPage = {
+  id: ID,
+  state: GuidePageState,
+  title: String    
+};
+		
+export type GuideMatrixRow = {
+  cells: () => GuideMatrixCell[],
+  key: String,
+  kind: String,
+  label: String | null,
+  number: Int | null,
+  page: () => GuideMatrixPage | null    
+};
+		
+export type GuideOutlineDraftChange = {
+  draft: JSON,
+  draftUpdatedAt: DateTime,
+  sectionId: String | null    
+};
+		
+export type GuidePagePublishPreview = {
+  firstPublish: Boolean,
+  reaches: () => GuideConferenceTitle[],
+  scope: GuideScopeKind,
+  scopeChanges: Boolean,
+  stopsReaching: () => GuideConferenceTitle[],
+  textChanges: Boolean,
+  titleChanges: Boolean    
+};
+		
+export type GuidePageState = "CHANGED" | "DRAFT" | "PUBLISHED";
+		
+export type GuidePendingChanges = {
+  pages: () => GuidePendingPage[],
+  sidebarChanged: Boolean,
+  sidebarPublished: Boolean    
+};
+		
+export type GuidePendingPage = {
+  id: ID,
+  kind: String,
+  state: GuidePageState,
+  title: String    
+};
+		
+export type GuidePreviewAudience = "CUSTOM_ROLE" | "DELEGATE" | "EVERYTHING" | "NON_STATE_ACTOR" | "SUPERVISOR";
+		
+export type GuidePublishedChanges = {
+  publishedPageIds: ID[],
+  sidebarPublished: Boolean    
+};
+		
+export type GuideReaderGroupView = {
+  roleId: ID | null,
+  roleName: String | null,
+  type: String    
+};
+		
+export type GuideReaderPage = {
+  content: JSON,
+  entryKey: String,
+  headings: () => GuideHeadingView[],
+  next: () => GuideEntryView | null,
+  pageId: ID,
+  pdfUrl: String | null,
+  previous: () => GuideEntryView | null,
+  sectionTitle: String,
+  title: String,
+  updatedAt: DateTime    
+};
+		
+export type GuideScopeKind = "CONFERENCE" | "EVERYWHERE" | "SERIES" | "YEAR";
+		
+export type GuideSectionView = {
+  entries: () => GuideEntryView[],
+  key: String,
+  title: String    
+};
+		
+export type GuideTemplateSlotInput = {
+  label?: String | null | undefined,
+  pageId?: ID | null | undefined,
+  type: GuideTemplateSlotType    
+};
+		
+export type GuideTemplateSlotType = "agendaItemPages" | "committeePage" | "page";
+		
+export type GuideView = {
+  preview: Boolean,
+  sections: () => GuideSectionView[]    
+};
+		
+export type GuideVisibility = "all" | "none" | "own" | "some";
+		
+export type GuideVisibilityRow = {
+  cells: GuideVisibility[],
+  key: String,
+  kind: String,
+  sectionId: String | null,
+  title: String    
+};
+		
+export type GuideVisibilityView = {
+  groups: () => GuideReaderGroupView[],
+  rows: () => GuideVisibilityRow[]    
+};
+		
+export type Guideoutline = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  draft: JSON,
+  draftUpdatedAt: DateTime,
+  draftUpdatedById: ID | null,
+  id: ID,
+  published: JSON | null,
+  publishedAt: DateTime | null,
+  publishedById: ID | null,
+  search_distance: Float | null,
+  updatedAt: DateTime,
+  versions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: GuideoutlineversionOrderInputArgument | null | undefined,
+    search?: GuideoutlineversionSearchInputArgument | null | undefined,
+    where?: GuideoutlineversionWhereInputArgument | null | undefined
+  }) => Guideoutlineversion[]    
+};
+		
+export type GuideoutlineOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  draft?: SortingParameter | null | undefined,
+  draftUpdatedAt?: SortingParameter | null | undefined,
+  draftUpdatedById?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  published?: SortingParameter | null | undefined,
+  publishedAt?: SortingParameter | null | undefined,
+  publishedById?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type GuideoutlineWhereInputArgument = {
+  AND?: GuideoutlineWhereInputArgument[] | undefined,
+  NOT?: GuideoutlineWhereInputArgument | null | undefined,
+  OR?: GuideoutlineWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  draft?: JSONWhereInputArgument | null | undefined,
+  draftUpdatedAt?: DateTimeWhereInputArgument | null | undefined,
+  draftUpdatedById?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  published?: JSONWhereInputArgument | null | undefined,
+  publishedAt?: DateTimeWhereInputArgument | null | undefined,
+  publishedById?: IDWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  versions?: GuideoutlineversionWhereInputArgument | null | undefined    
+};
+		
+export type Guideoutlineversion = {
+  createdAt: DateTime,
+  guideOutline: (p?: {
+    orderBy?: GuideoutlineOrderInputArgument | null | undefined,
+    where?: GuideoutlineWhereInputArgument | null | undefined
+  }) => Guideoutline,
+  id: ID,
+  number: Int,
+  outline: JSON,
+  outlineId: ID,
+  publishedById: ID | null,
+  search_distance: Float | null    
+};
+		
+export type GuideoutlineversionOrderInputArgument = {
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  number?: SortingParameter | null | undefined,
+  outline?: SortingParameter | null | undefined,
+  outlineId?: SortingParameter | null | undefined,
+  publishedById?: SortingParameter | null | undefined    
+};
+		
+export type GuideoutlineversionSearchFieldEnum = "id" | "outlineId" | "publishedById";
+		
+export type GuideoutlineversionSearchInputArgument = {
+  fields?: GuideoutlineversionSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type GuideoutlineversionWhereInputArgument = {
+  AND?: GuideoutlineversionWhereInputArgument[] | undefined,
+  NOT?: GuideoutlineversionWhereInputArgument | null | undefined,
+  OR?: GuideoutlineversionWhereInputArgument[] | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  guideOutline?: GuideoutlineWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  number?: IntWhereInputArgument | null | undefined,
+  outline?: JSONWhereInputArgument | null | undefined,
+  outlineId?: IDWhereInputArgument | null | undefined,
+  publishedById?: IDWhereInputArgument | null | undefined    
+};
+		
+export type Guidepage = {
+  agendaItem: (p?: {
+    orderBy?: CommitteeagendaitemOrderInputArgument | null | undefined,
+    where?: CommitteeagendaitemWhereInputArgument | null | undefined
+  }) => Committeeagendaitem | null,
+  agendaItemId: ID | null,
+  committee: (p?: {
+    orderBy?: CommitteeOrderInputArgument | null | undefined,
+    where?: CommitteeWhereInputArgument | null | undefined
+  }) => Committee | null,
+  committeeId: ID | null,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference | null,
+  conferenceId: ID | null,
+  content: JSON,
+  createdAt: DateTime,
+  draftMarkdown: () => GuideMarkdown,
+  draftUpdatedAt: DateTime,
+  draftUpdatedById: ID | null,
+  id: ID,
+  kind: GuidepagekindEnum,
+  publishedConference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference | null,
+  publishedConferenceId: ID | null,
+  publishedScope: GuideScopeKind | null,
+  publishedSeries: (p?: {
+    orderBy?: ConferenceseriesOrderInputArgument | null | undefined,
+    where?: ConferenceseriesWhereInputArgument | null | undefined
+  }) => Conferenceseries | null,
+  publishedSeriesId: ID | null,
+  publishedVersion: (p?: {
+    orderBy?: GuidepageversionOrderInputArgument | null | undefined,
+    where?: GuidepageversionWhereInputArgument | null | undefined
+  }) => Guidepageversion | null,
+  publishedVersionId: ID | null,
+  publishedYear: Int | null,
+  scope: GuideScopeKind,
+  search_distance: Float | null,
+  series: (p?: {
+    orderBy?: ConferenceseriesOrderInputArgument | null | undefined,
+    where?: ConferenceseriesWhereInputArgument | null | undefined
+  }) => Conferenceseries | null,
+  seriesId: ID | null,
+  title: String,
+  updatedAt: DateTime,
+  usedInSidebars: String[],
+  versions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: GuidepageversionOrderInputArgument | null | undefined,
+    search?: GuidepageversionSearchInputArgument | null | undefined,
+    where?: GuidepageversionWhereInputArgument | null | undefined
+  }) => Guidepageversion[],
+  year: Int | null    
+};
+		
+export type GuidepageOrderInputArgument = {
+  agendaItemId?: SortingParameter | null | undefined,
+  committeeId?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  content?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  draftUpdatedAt?: SortingParameter | null | undefined,
+  draftUpdatedById?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  publishedConferenceId?: SortingParameter | null | undefined,
+  publishedSeriesId?: SortingParameter | null | undefined,
+  publishedVersionId?: SortingParameter | null | undefined,
+  publishedYear?: SortingParameter | null | undefined,
+  seriesId?: SortingParameter | null | undefined,
+  title?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  year?: SortingParameter | null | undefined    
+};
+		
+export type GuidepageSearchFieldEnum = "title";
+		
+export type GuidepageSearchInputArgument = {
+  fields?: GuidepageSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type GuidepageWhereInputArgument = {
+  AND?: GuidepageWhereInputArgument[] | undefined,
+  NOT?: GuidepageWhereInputArgument | null | undefined,
+  OR?: GuidepageWhereInputArgument[] | undefined,
+  agendaItem?: CommitteeagendaitemWhereInputArgument | null | undefined,
+  agendaItemId?: IDWhereInputArgument | null | undefined,
+  committee?: CommitteeWhereInputArgument | null | undefined,
+  committeeId?: IDWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  content?: JSONWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  draftUpdatedAt?: DateTimeWhereInputArgument | null | undefined,
+  draftUpdatedById?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  kind?: GuidepagekindEnum | null | undefined,
+  publishedConference?: ConferenceWhereInputArgument | null | undefined,
+  publishedConferenceId?: IDWhereInputArgument | null | undefined,
+  publishedSeries?: ConferenceseriesWhereInputArgument | null | undefined,
+  publishedSeriesId?: IDWhereInputArgument | null | undefined,
+  publishedVersion?: GuidepageversionWhereInputArgument | null | undefined,
+  publishedVersionId?: IDWhereInputArgument | null | undefined,
+  publishedYear?: IntWhereInputArgument | null | undefined,
+  series?: ConferenceseriesWhereInputArgument | null | undefined,
+  seriesId?: IDWhereInputArgument | null | undefined,
+  title?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  versions?: GuidepageversionWhereInputArgument | null | undefined,
+  year?: IntWhereInputArgument | null | undefined    
+};
+		
+export type Guidepagefile = {
+  createdAt: DateTime,
+  file: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile,
+  fileId: ID,
+  id: ID,
+  page: (p?: {
+    orderBy?: GuidepageOrderInputArgument | null | undefined,
+    where?: GuidepageWhereInputArgument | null | undefined
+  }) => Guidepage,
+  pageId: ID,
+  search_distance: Float | null    
+};
+		
+export type GuidepagefileOrderInputArgument = {
+  createdAt?: SortingParameter | null | undefined,
+  fileId?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  pageId?: SortingParameter | null | undefined    
+};
+		
+export type GuidepagefileSearchFieldEnum = "fileId" | "id" | "pageId";
+		
+export type GuidepagefileSearchInputArgument = {
+  fields?: GuidepagefileSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type GuidepagefileWhereInputArgument = {
+  AND?: GuidepagefileWhereInputArgument[] | undefined,
+  NOT?: GuidepagefileWhereInputArgument | null | undefined,
+  OR?: GuidepagefileWhereInputArgument[] | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  file?: StoredfileWhereInputArgument | null | undefined,
+  fileId?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  page?: GuidepageWhereInputArgument | null | undefined,
+  pageId?: IDWhereInputArgument | null | undefined    
+};
+		
+export type GuidepagekindEnum = "AGENDA_ITEM" | "COMMITTEE" | "GENERAL";
+		
+export type Guidepageversion = {
+  conferenceId: ID | null,
+  content: JSON,
+  createdAt: DateTime,
+  id: ID,
+  markdown: () => GuideMarkdown,
+  number: Int,
+  page: (p?: {
+    orderBy?: GuidepageOrderInputArgument | null | undefined,
+    where?: GuidepageWhereInputArgument | null | undefined
+  }) => Guidepage,
+  pageId: ID,
+  pdfFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
+  pdfFileId: ID | null,
+  pdfUrl: String | null,
+  publishedById: ID | null,
+  scope: GuideScopeKind,
+  search_distance: Float | null,
+  seriesId: ID | null,
+  title: String,
+  year: Int | null    
+};
+		
+export type GuidepageversionOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  content?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  number?: SortingParameter | null | undefined,
+  pageId?: SortingParameter | null | undefined,
+  pdfFileId?: SortingParameter | null | undefined,
+  publishedById?: SortingParameter | null | undefined,
+  seriesId?: SortingParameter | null | undefined,
+  title?: SortingParameter | null | undefined,
+  year?: SortingParameter | null | undefined    
+};
+		
+export type GuidepageversionSearchFieldEnum = "conferenceId" | "id" | "pageId" | "pdfFileId" | "publishedById" | "seriesId" | "title";
+		
+export type GuidepageversionSearchInputArgument = {
+  fields?: GuidepageversionSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type GuidepageversionWhereInputArgument = {
+  AND?: GuidepageversionWhereInputArgument[] | undefined,
+  NOT?: GuidepageversionWhereInputArgument | null | undefined,
+  OR?: GuidepageversionWhereInputArgument[] | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  content?: JSONWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  number?: IntWhereInputArgument | null | undefined,
+  page?: GuidepageWhereInputArgument | null | undefined,
+  pageId?: IDWhereInputArgument | null | undefined,
+  pdfFile?: StoredfileWhereInputArgument | null | undefined,
+  pdfFileId?: IDWhereInputArgument | null | undefined,
+  publishedById?: IDWhereInputArgument | null | undefined,
+  seriesId?: IDWhereInputArgument | null | undefined,
+  title?: StringWhereInputArgument | null | undefined,
+  year?: IntWhereInputArgument | null | undefined    
+};
+		
 export type HiddenChatMessage = {
   authorName: String | null,
   authorParticipantId: ID | null,
@@ -2932,6 +3478,13 @@ export type ImpersonationUser = {
   given_name: String | null,
   preferred_username: String | null,
   sub: String    
+};
+		
+export type ImportedGuideFile = {
+  fileName: String,
+  id: ID,
+  mimeType: String,
+  size: Int    
 };
 		
 export type Instancelink = {
@@ -3147,6 +3700,22 @@ export type Mutation = {
     revision: Int,
     version: Int
   }) => Boolean,
+  addGuideEntry: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    label?: String | null | undefined,
+    pageId: ID,
+    position?: Int | null | undefined,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
+  addGuideSection: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    position?: Int | null | undefined,
+    title: String
+  }) => GuideOutlineDraftChange,
   analyzeSchoolSuggestions: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -3261,6 +3830,10 @@ export type Mutation = {
     name: String,
     numOfSeatsPerDelegation: Int
   }) => Committee,
+  createConferenceSeries: (p: {
+    abbreviation: String,
+    name: String
+  }) => Conferenceseries,
   createConferenceSupervisor: (p: {
     conferenceId: ID,
     plansOwnAttendenceAtConference?: Boolean | null | undefined,
@@ -3288,6 +3861,13 @@ export type Mutation = {
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
   }) => Delegationmember,
+  createGuidePage: (p: {
+    conferenceId: ID,
+    content?: JSON | null | undefined,
+    markdown?: String | null | undefined,
+    scope: GuideScopeKind,
+    title: String
+  }) => Guidepage,
   createNonStateActor: (p: {
     abbreviation: String,
     conferenceId: ID,
@@ -3416,6 +3996,9 @@ export type Mutation = {
   deleteCommittee: (p: {
     id: ID
   }) => Boolean,
+  deleteConferenceSeries: (p: {
+    id: ID
+  }) => Boolean,
   deleteCustomRole: (p: {
     id: ID
   }) => Boolean,
@@ -3423,6 +4006,9 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deleteDelegationMember: (p: {
+    id: ID
+  }) => Boolean,
+  deleteGuidePage: (p: {
     id: ID
   }) => Boolean,
   deleteNonStateActor: (p: {
@@ -3500,6 +4086,10 @@ export type Mutation = {
   endAttendanceSession: (p: {
     id: ID
   }) => Boolean,
+  ensureGuidePageOf: (p?: {
+    agendaItemId?: ID | null | undefined,
+    committeeId?: ID | null | undefined
+  }) => Guidepage,
   giveTeamFunction: (p: {
     committeeId?: ID | null | undefined,
     kind: TeamfunctionkindEnum,
@@ -3514,6 +4104,10 @@ export type Mutation = {
     participantId: ID,
     reason: String
   }) => Int,
+  importGuideFile: (p: {
+    conferenceId: ID,
+    url: String
+  }) => ImportedGuideFile,
   importPostalScan: (p: {
     code?: String | null | undefined,
     conferenceId: ID,
@@ -3551,6 +4145,29 @@ export type Mutation = {
     sourceIds: ID[],
     targetId: ID
   }) => School,
+  moveGuideEntry: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    pageId: ID,
+    position?: Int | null | undefined,
+    sectionId: ID,
+    toSectionId?: ID | null | undefined,
+    toTemplate?: Boolean | null | undefined
+  }) => GuideOutlineDraftChange,
+  moveGuideSection: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    position: Int,
+    sectionId?: ID | null | undefined,
+    template?: Boolean | null | undefined,
+    topicOverview?: Boolean | null | undefined
+  }) => GuideOutlineDraftChange,
+  moveGuideTemplateSlot: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    from: Int,
+    to: Int
+  }) => GuideOutlineDraftChange,
   notifyBadgeFound: (p: {
     id: ID
   }) => SendPersonEmailResult,
@@ -3572,6 +4189,16 @@ export type Mutation = {
     id: ID,
     publishAt?: DateTime | null | undefined
   }) => Announcement,
+  publishGuideChanges: (p: {
+    conferenceId: ID,
+    pageIds?: ID[] | null | undefined
+  }) => GuidePublishedChanges,
+  publishGuideOutline: (p: {
+    conferenceId: ID
+  }) => Boolean,
+  publishGuidePage: (p: {
+    id: ID
+  }) => Guidepage,
   recordPaperReadings: (p: {
     conferenceId: ID,
     confirm: Boolean,
@@ -3588,6 +4215,17 @@ export type Mutation = {
     invitationId: ID,
     sendEmail?: Boolean | null | undefined
   }) => RegeneratedInvitation,
+  removeGuideEntry: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    pageId: ID,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
+  removeGuideSection: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
   removeTeamFunction: (p: {
     id: ID
   }) => Boolean,
@@ -3632,6 +4270,14 @@ export type Mutation = {
     chatId: ID,
     note?: String | null | undefined
   }) => Int,
+  restoreGuideOutlineVersion: (p: {
+    conferenceId: ID,
+    versionId: ID
+  }) => Boolean,
+  restoreGuidePageVersion: (p: {
+    id: ID,
+    versionId: ID
+  }) => Guidepage,
   revertSingleParticipantConversion: (p: {
     singleParticipantId: ID
   }) => Boolean,
@@ -3753,6 +4399,26 @@ export type Mutation = {
     document: LayoutDocument,
     layout?: JSON | null | undefined
   }) => Conference,
+  setGuidePageScope: (p: {
+    conferenceId: ID,
+    id: ID,
+    scope: GuideScopeKind
+  }) => Guidepage,
+  setGuideTemplate: (p: {
+    conferenceId: ID,
+    enabled: Boolean,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    slots?: GuideTemplateSlotInput[] | null | undefined
+  }) => GuideOutlineDraftChange,
+  setGuideTopicOverview: (p: {
+    conferenceId: ID,
+    enabled: Boolean,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    nonStateActors?: Boolean | null | undefined,
+    roleIds?: ID[] | null | undefined,
+    supervisors?: Boolean | null | undefined,
+    title?: String | null | undefined
+  }) => GuideOutlineDraftChange,
   setMessageNotificationEmails: (p: {
     enabled: Boolean
   }) => Boolean,
@@ -3888,6 +4554,7 @@ export type Mutation = {
     endConference?: DateTime | null | undefined,
     feeAmount?: Float | null | undefined,
     guardianConsentFileId?: ID | null | undefined,
+    guidePublished?: Boolean | null | undefined,
     iban?: String | null | undefined,
     id: ID,
     imageFileId?: ID | null | undefined,
@@ -3916,6 +4583,7 @@ export type Mutation = {
     postalZip?: String | null | undefined,
     qrCorporateDesign?: Boolean | null | undefined,
     registrationDeadlineGracePeriodMinutes?: Int | null | undefined,
+    seriesId?: ID | null | undefined,
     showCalendar?: Boolean | null | undefined,
     startConference?: DateTime | null | undefined,
     state?: ConferencestateEnum | null | undefined,
@@ -3927,6 +4595,11 @@ export type Mutation = {
     unlockPostals?: Boolean | null | undefined,
     website?: String | null | undefined
   }) => Conference,
+  updateConferenceSeries: (p: {
+    abbreviation?: String | null | undefined,
+    id: ID,
+    name?: String | null | undefined
+  }) => Conferenceseries,
   updateConferenceSupervisor: (p: {
     id: ID,
     plansOwnAttendenceAtConference: Boolean
@@ -3950,6 +4623,34 @@ export type Mutation = {
     assignedCommitteeId: ID,
     id: ID
   }) => Delegationmember,
+  updateGuideEntry: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    label?: String | null | undefined,
+    pageId: ID,
+    sectionId: ID
+  }) => GuideOutlineDraftChange,
+  updateGuideOutlineDraft: (p: {
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    outline: JSON
+  }) => GuideOutlineDraftChange,
+  updateGuidePageDraft: (p: {
+    content?: JSON | null | undefined,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    id: ID,
+    markdown?: String | null | undefined,
+    replaceRichBlocks?: Boolean | null | undefined,
+    title?: String | null | undefined
+  }) => Guidepage,
+  updateGuideSection: (p: {
+    audience?: GuideAudienceInput | null | undefined,
+    conferenceId: ID,
+    expectedDraftUpdatedAt?: DateTime | null | undefined,
+    sectionId: ID,
+    title?: String | null | undefined
+  }) => GuideOutlineDraftChange,
   updateNonStateActor: (p: {
     abbreviation?: String | null | undefined,
     description?: String | null | undefined,
@@ -5096,6 +5797,7 @@ export type Query = {
     search?: ConferenceroleSearchInputArgument | null | undefined,
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole[],
+  conferenceSeriesList: () => Conferenceseries[],
   conferenceSlackWorkspace: (p: {
     conferenceId: ID
   }) => SlackWorkspaceInfo | null,
@@ -5206,6 +5908,48 @@ export type Query = {
     conferenceId: ID,
     filter?: StatsFilter | null | undefined
   }) => StatisticsResult,
+  guideCommitteeMatrix: (p: {
+    conferenceId: ID
+  }) => GuideCommitteeMatrixView,
+  guideFileUrls: (p: {
+    conferenceId: ID,
+    fileIds: ID[]
+  }) => GuideFileUrl[],
+  guideLibrary: (p: {
+    conferenceId: ID
+  }) => Guidepage[],
+  guideOutlineOf: (p: {
+    conferenceId: ID
+  }) => Guideoutline | null,
+  guidePage: (p: {
+    id: ID
+  }) => Guidepage,
+  guidePagePublishPreview: (p: {
+    id: ID
+  }) => GuidePagePublishPreview,
+  guidePages: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: GuidepageOrderInputArgument | null | undefined,
+    search?: GuidepageSearchInputArgument | null | undefined,
+    where?: GuidepageWhereInputArgument | null | undefined
+  }) => Guidepage[],
+  guidePendingChanges: (p: {
+    conferenceId: ID
+  }) => GuidePendingChanges,
+  guideReaderPage: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    draft?: Boolean | null | undefined,
+    entryKey?: String | null | undefined,
+    pageId: ID,
+    previewAs?: GuidePreviewAudience | null | undefined,
+    roleId?: ID | null | undefined
+  }) => GuideReaderPage | null,
+  guideVisibility: (p: {
+    conferenceId: ID,
+    draft?: Boolean | null | undefined
+  }) => GuideVisibilityView,
   impersonationStatus: () => ImpersonationStatus,
   instanceLink: (p: {
     id: ID
@@ -5234,6 +5978,13 @@ export type Query = {
     conferenceId: ID,
     role: AgeRole
   }) => AgeNotice | null,
+  myGuide: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    draft?: Boolean | null | undefined,
+    previewAs?: GuidePreviewAudience | null | undefined,
+    roleId?: ID | null | undefined
+  }) => GuideView | null,
   myNotificationSettings: () => ConferenceNotificationSettings[],
   myOIDCRoles: OIDCRolesEnum[],
   myPaperReviewDraft: (p: {
@@ -6499,6 +7250,13 @@ export type Storedfile = {
     search?: ConferenceSearchInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
   }) => Conference[],
+  guidePageFileOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: GuidepagefileOrderInputArgument | null | undefined,
+    search?: GuidepagefileSearchInputArgument | null | undefined,
+    where?: GuidepagefileWhereInputArgument | null | undefined
+  }) => Guidepagefile[],
   id: ID,
   imageOf: (p?: {
     limit?: Int | null | undefined,
@@ -6583,6 +7341,7 @@ export type StoredfileWhereInputArgument = {
   emblemOf?: ConferenceWhereInputArgument | null | undefined,
   fileName?: StringWhereInputArgument | null | undefined,
   guardianConsentOf?: ConferenceWhereInputArgument | null | undefined,
+  guidePageFileOf?: GuidepagefileWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   imageOf?: ConferenceWhereInputArgument | null | undefined,
   key?: StringWhereInputArgument | null | undefined,
@@ -6859,6 +7618,7 @@ export type Subscription = {
     search?: ConferenceroleSearchInputArgument | null | undefined,
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole[],
+  conferenceSeriesList: () => Conferenceseries[],
   conferenceSlackWorkspace: (p: {
     conferenceId: ID
   }) => SlackWorkspaceInfo | null,
@@ -6912,6 +7672,31 @@ export type Subscription = {
     search?: EmaillogSearchInputArgument | null | undefined,
     where?: EmaillogWhereInputArgument | null | undefined
   }) => Emaillog[],
+  guideLibrary: (p: {
+    conferenceId: ID
+  }) => Guidepage[],
+  guideOutlineOf: (p: {
+    conferenceId: ID
+  }) => Guideoutline | null,
+  guidePage: (p: {
+    id: ID
+  }) => Guidepage,
+  guidePages: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: GuidepageOrderInputArgument | null | undefined,
+    search?: GuidepageSearchInputArgument | null | undefined,
+    where?: GuidepageWhereInputArgument | null | undefined
+  }) => Guidepage[],
+  guideReaderPage: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    draft?: Boolean | null | undefined,
+    entryKey?: String | null | undefined,
+    pageId: ID,
+    previewAs?: GuidePreviewAudience | null | undefined,
+    roleId?: ID | null | undefined
+  }) => GuideReaderPage | null,
   instanceLink: (p: {
     id: ID
   }) => Instancelink,
@@ -6932,6 +7717,13 @@ export type Subscription = {
   mcpAuditEntry: (p: {
     id: ID
   }) => Mcpauditentry,
+  myGuide: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    draft?: Boolean | null | undefined,
+    previewAs?: GuidePreviewAudience | null | undefined,
+    roleId?: ID | null | undefined
+  }) => GuideView | null,
   myNotificationSettings: () => ConferenceNotificationSettings[],
   myPaperReviewDraft: (p: {
     paperId: ID
@@ -8076,7 +8868,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

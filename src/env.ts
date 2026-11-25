@@ -103,6 +103,19 @@ export const variables = defineEnvVars({
 	// Space-separated scopes the provider defines on that API resource, advertised to MCP clients
 	// in the protected resource metadata. Optional.
 	MCP_SCOPES: { schema: unlessEmpty(z.string().optional()) },
+	// Comma-separated hosts the guide's file import (`importGuideFile`, for AI assistants moving
+	// the old guide in) downloads from; `guide.dmun.de,cdn.dmun.de` when unset.
+	GUIDE_IMPORT_HOSTS: {
+		schema: z
+			.string()
+			.optional()
+			.transform((value) =>
+				(value || 'guide.dmun.de,cdn.dmun.de')
+					.split(',')
+					.map((host) => host.trim().toLowerCase())
+					.filter(Boolean)
+			)
+	},
 
 	// The link to MUNify CHASE (`docs/plans/chase-link.md`), through the OIDC provider both trust:
 	// each instance asks it for a token with its machine-to-machine client (OIDC_M2M_CLIENT_ID and

@@ -165,6 +165,8 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
 				showCalendar: nullToUndefined(args.showCalendar),
 				messagingEnabled: nullToUndefined(args.messagingEnabled),
+				guidePublished: nullToUndefined(args.guidePublished),
+				seriesId: args.seriesId,
 				qrCorporateDesign: nullToUndefined(args.qrCorporateDesign),
 				timezone: nullToUndefined(args.timezone),
 				nametagBinCount: nullToUndefined(args.nametagBinCount),

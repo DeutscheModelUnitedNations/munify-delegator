@@ -846,6 +846,98 @@ const announcement = {
 	]
 };
 
+/** The guide workspace's structure tab without a page open: settings and the sidebar's versions */
+const guideStructureBody: SkeletonNode = {
+	class: 'flex w-full flex-col gap-4',
+	children: [
+		block('h-16 w-full'),
+		block('h-28 w-full'),
+		block('h-8 w-72 max-w-full'),
+		block('h-14 w-full')
+	]
+};
+
+/** A guide page in the editor: title and actions, the toolbar and text, the page's settings */
+const guidePageBody: SkeletonNode = {
+	class: 'flex w-full flex-col gap-4 xl:flex-row',
+	children: [
+		{
+			class: 'flex min-w-0 flex-1 flex-col gap-4',
+			children: [
+				{
+					class: 'flex flex-wrap items-center gap-3',
+					children: [block('h-10 min-w-0 flex-1'), block('h-10 w-28'), block('h-10 w-28')]
+				},
+				block('h-12 w-full'),
+				block('h-[28rem] w-full')
+			]
+		},
+		block('h-80 w-full xl:w-72')
+	]
+};
+
+/** Who sees what: the reader picker, their sidebar and the table */
+const guideVisibilityBody: SkeletonNode = {
+	class: 'flex w-full flex-col gap-4',
+	children: [
+		block('h-10 w-[32rem] max-w-full'),
+		block('h-8 w-48'),
+		{
+			class: 'flex flex-col gap-4 lg:flex-row',
+			children: [block('h-96 w-full lg:w-80'), block('h-96 min-w-0 flex-1')]
+		}
+	]
+};
+
+/** The committee matrix: a header row and a row per template slot */
+const guideCommitteesBody: SkeletonNode = {
+	class: 'flex w-full flex-col gap-2',
+	children: [block('h-16 w-full'), ...[0, 1, 2, 3, 4, 5].map(() => block('h-11 w-full'))]
+};
+
+/** What the guide layout shows below its tabs, per tab (and for an open page) */
+export const GUIDE_TAB_SKELETONS: Record<string, SkeletonLayout> = {
+	structure: { name: 'guideStructure', nodes: [guideStructureBody] },
+	page: { name: 'guidePage', nodes: [guidePageBody] },
+	visibility: { name: 'guideVisibility', nodes: [guideVisibilityBody] },
+	committees: { name: 'guideCommittees', nodes: [guideCommitteesBody] }
+};
+
+/** The whole guide workspace, frame included: title, tabs, and the tree beside structure pages */
+const guideWorkspace = (
+	tab: 'structure' | 'page' | 'visibility' | 'committees'
+): SkeletonLayout => {
+	const body = GUIDE_TAB_SKELETONS[tab].nodes[0];
+	const content: SkeletonNode =
+		tab === 'structure' || tab === 'page'
+			? {
+					class: 'flex flex-col gap-4 lg:flex-row',
+					children: [
+						block('h-[32rem] w-full lg:w-80'),
+						{ class: 'min-w-0 flex-1', children: [body] }
+					]
+				}
+			: body;
+	return {
+		name: `guideWorkspace-${tab}`,
+		nodes: [
+			{
+				class: 'flex w-full flex-col gap-4 py-4',
+				children: [
+					{
+						class: 'flex flex-wrap items-center gap-3',
+						children: [block('h-8 w-56 rounded-full'), block('ml-auto h-8 w-40')]
+					},
+					block('h-10 w-96 max-w-full'),
+					content
+				]
+			}
+		]
+	};
+};
+
+const guide = guideWorkspace('structure');
+
 /** A day of the calendar: its name and date over its track, then its entries */
 const calendarDay = ({
 	entries,
@@ -1363,6 +1455,7 @@ export const TEAM_SKELETONS = {
 	payments,
 	attendance,
 	announcement,
+	guide,
 	messages,
 	calendar,
 	survey,
@@ -1384,7 +1477,10 @@ const SUBPAGE_SKELETONS: readonly { prefix: string; skeleton: SkeletonLayout }[]
 	{ prefix: 'team/invitations', skeleton: invitations },
 	{ prefix: 'team/user/', skeleton: userPage },
 	{ prefix: 'team/schools/', skeleton: schoolPage },
-	{ prefix: 'team/survey/', skeleton: surveyDetail }
+	{ prefix: 'team/survey/', skeleton: surveyDetail },
+	{ prefix: 'team/guide/page/', skeleton: guideWorkspace('page') },
+	{ prefix: 'team/guide/visibility', skeleton: guideWorkspace('visibility') },
+	{ prefix: 'team/guide/committees', skeleton: guideWorkspace('committees') }
 ];
 
 /** The skeleton of a page below an entry, if it has one of its own */

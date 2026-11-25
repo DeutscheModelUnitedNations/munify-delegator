@@ -32,7 +32,12 @@ const AUTHENTICATED_ROUTE_PREFIXES = [
 ];
 
 /** Pages under `/dashboard/` that need a login although they look like a conference id. */
-const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request', 'slack-workspaces'];
+const LOGIN_ONLY_DASHBOARD_PAGES = [
+	'seed',
+	'conference-request',
+	'slack-workspaces',
+	'conference-series'
+];
 
 /** `/dashboard/<page>` or `/dashboard/<page>/seats`, capturing `<page>`. */
 const DASHBOARD_PAGE_PATH = /^\/dashboard\/([^/]+)(?:\/seats)?\/?$/;

@@ -52,6 +52,7 @@ import { conferencePlans } from './seed-dev/plans';
 import { addMessages, addMessagingAccountSettings } from './seed-dev/messages';
 import { addAnnouncements } from './seed-dev/announcements';
 import { addNotifications, addSlackWorkspaces } from './seed-dev/notifications';
+import { addGuide, addGuideBasics } from './seed-dev/guide';
 import { logger } from '#lib/logger';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
@@ -100,6 +101,7 @@ addMessagingAccountSettings(batch);
 addSlackWorkspaces(batch);
 addScannerAccesses(batch);
 addDuplicateScenarioAccounts(batch);
+addGuideBasics(batch);
 
 for (const plan of conferencePlans) {
 	const templates = await conferenceTemplatePdfs(
@@ -129,6 +131,7 @@ for (const plan of conferencePlans) {
 	await addCalendar(cs);
 	await addResolutions(cs);
 	await addPostalScans(cs);
+	addGuide(cs);
 	addBulk({ cs, scale });
 	addDuplicateScenarioParticipants(cs);
 }

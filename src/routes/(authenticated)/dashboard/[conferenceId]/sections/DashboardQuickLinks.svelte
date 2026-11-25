@@ -34,6 +34,8 @@
 			unlockPayments: true,
 			unlockPostals: true,
 			linkToPreparationGuide: true,
+			guidePublished: true,
+			assignmentReleased: true,
 			isOpenPaperSubmission: true,
 			showCalendar: true,
 			linkToPaperInbox: true
@@ -47,6 +49,7 @@
 		unlockPayments: conference.unlockPayments,
 		unlockPostals: conference.unlockPostals,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
+		guideOpen: conference.guidePublished && conference.assignmentReleased,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
 		showCalendar: conference.showCalendar,
 		linkToPaperInbox: conference.linkToPaperInbox,

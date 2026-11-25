@@ -41,6 +41,7 @@ import { seedEmailPace } from './emailPace';
 import { seedInvitations } from './invitations';
 import { seedMcp } from './mcp';
 import { seedReviewDrafts } from './reviewDrafts';
+import { seedGuide } from './guide';
 import { seedMessages } from './messages';
 import { seedNextEntries } from './nextEntries';
 import { seedNotifications } from './notifications';
@@ -1064,6 +1065,7 @@ export default async function seed() {
 	await seedMakeSupervisor(db);
 	await seedMcp(db);
 	await seedReviewDrafts(db);
+	await seedGuide(db);
 	await seedMessages(db);
 	await seedNextEntries(db);
 	await seedNotifications(db);

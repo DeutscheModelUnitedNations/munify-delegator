@@ -24,6 +24,7 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
 
 export {
 	CONFERENCE_CONTENT_ROLES,
+	GUIDE_ROLES,
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
