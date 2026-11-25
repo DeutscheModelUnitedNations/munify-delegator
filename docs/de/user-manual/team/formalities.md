@@ -20,7 +20,7 @@ Was auf diesen Seiten der **Teilnehmendenbetreuung** vorbehalten ist, darf auch 
 
 ### Wie Teilnehmende zahlen
 
-Sobald **Zahlungen erlauben** eingeschaltet ist (siehe [Status und Phasen](./configuration#stages)), erzeugen Teilnehmende auf ihrem Dashboard eine Überweisungs-Referenz und überweisen den Beitrag mit ihr als Verwendungszweck. Wie das für sie aussieht, steht unter [Zahlung](../participant/dashboard#payment).
+Sobald **Zahlungen** eingeschaltet ist (siehe [Status und Phasen](./configuration#stages)), erzeugen Teilnehmende auf ihrem Dashboard eine Überweisungs-Referenz und überweisen den Beitrag mit ihr als Verwendungszweck. Wie das für sie aussieht, steht unter [Zahlung](../participant/dashboard#payment).
 
 - Eine Referenz kann mehrere Personen abdecken. Der Betrag ist dann der **Teilnahmebeitrag** mal die Zahl der Personen.
 - Mitbezahlen kann man für sich selbst, die eigene Delegation, die Teilnehmenden, die man betreut, und Betreuende, mit denen man eine betreute Person teilt. Alles andere lehnt DELEGATOR ab.
@@ -65,7 +65,7 @@ Der Status in der Teilnehmendenkarte gilt nur für diese eine Person, die Refere
 
 ### Was Teilnehmende schicken
 
-Sobald **Postalische Anmeldungen erlauben** eingeschaltet ist, laden Teilnehmende ihre Unterlagen als PDF herunter, unterschreiben sie und schicken die Originale an die Postadresse aus den [Dokumenten und Vorlagen](./configuration#documents). Wie das für sie aussieht, steht unter [Postalische Anmeldung](../participant/dashboard#postal-registration). Das PDF enthält:
+Sobald **Postalische Anmeldung** eingeschaltet ist, laden Teilnehmende ihre Unterlagen als PDF herunter, unterschreiben sie und schicken die Originale an die Postadresse aus den [Dokumenten und Vorlagen](./configuration#documents). Wie das für sie aussieht, steht unter [Postalische Anmeldung](../participant/dashboard#postal-registration). Das PDF enthält:
 
 - die **Verbindliche Anmeldung**,
 - die **Einwilligung der Erziehungsberechtigten**, wenn die Person zu Konferenzbeginn noch nicht 18 ist,

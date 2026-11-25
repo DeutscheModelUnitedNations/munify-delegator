@@ -2204,6 +2204,17 @@ type Conference {
   website: String
 }
 
+type ConferenceFeatureContent {
+  """Some committee has an agenda item (paper submission)."""
+  hasAgendaItem: Boolean!
+
+  """The calendar has a day (calendar)."""
+  hasCalendarDay: Boolean!
+
+  """The guide sidebar is published (guide)."""
+  hasPublishedGuide: Boolean!
+}
+
 """
 The caller's notification settings in one conference they are on the team of.
 """
@@ -7765,6 +7776,11 @@ type Query {
   """List all conferenceEmailTexts"""
   conferenceEmailTexts(limit: Int, offset: Int, orderBy: ConferenceemailtextOrderInputArgument, search: ConferenceemailtextSearchInputArgument, where: ConferenceemailtextWhereInputArgument): [Conferenceemailtext!]!
 
+  """
+  What a conference's feature switches need outside its own settings: an agenda item for the paper submission, a calendar day for the calendar, a published sidebar for the guide. `updateConference` refuses switching one on without it (CONFLICT). `editConferenceContent` in the conference (FORBIDDEN otherwise).
+  """
+  conferenceFeatureContent(conferenceId: ID!): ConferenceFeatureContent!
+
   """Get a single conferenceParticipant by ID"""
   conferenceParticipant(id: ID!): Conferenceparticipant!
 
@@ -10342,6 +10358,11 @@ type Subscription {
 
   """List all conferenceEmailTexts"""
   conferenceEmailTexts(limit: Int, offset: Int, orderBy: ConferenceemailtextOrderInputArgument, search: ConferenceemailtextSearchInputArgument, where: ConferenceemailtextWhereInputArgument): [Conferenceemailtext!]!
+
+  """
+  What a conference's feature switches need outside its own settings: an agenda item for the paper submission, a calendar day for the calendar, a published sidebar for the guide. `updateConference` refuses switching one on without it (CONFLICT). `editConferenceContent` in the conference (FORBIDDEN otherwise).
+  """
+  conferenceFeatureContent(conferenceId: ID!): ConferenceFeatureContent!
 
   """Get a single conferenceParticipant by ID"""
   conferenceParticipant(id: ID!): Conferenceparticipant!

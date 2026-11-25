@@ -7,6 +7,7 @@ import {
 	countOfferedSeats,
 	countSeatedParticipants,
 	countWaitingList,
+	loadConferenceFeatureContent,
 	seedConference,
 	seedingDataSchema,
 	updateConference
@@ -15,6 +16,7 @@ import { conferenceSettingSchemas, documentLayoutArgsSchema } from './conference
 import {
 	assertCanClaimConferenceFiles,
 	assertCanReadConference,
+	assertCanReadFeatureContent,
 	assertCanSeedConference,
 	assertCanSetDocumentLayout,
 	assertCanUpdateConference,
@@ -22,6 +24,12 @@ import {
 } from './conferencePermissions';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
 import { mcpTool } from '#api/mcp/mcpTool';
+import {
+	calendarDayPubsub,
+	committeeAgendaItemPubsub,
+	conferencePubsub,
+	guideOutlinePubsub
+} from '#api/pubsub';
 
 /** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
 const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });
@@ -276,6 +284,39 @@ schemaBuilder.queryFields((t) => ({
 					where: { conferenceRoles: { conferenceId: args.conferenceId, committees: true } }
 				})
 			);
+		}
+	})
+}));
+
+/** What the feature switches need beyond the conference row (`#lib/helpers/conferenceFeatures`). */
+const ConferenceFeatureContent = schemaBuilder.simpleObject('ConferenceFeatureContent', {
+	fields: (t) => ({
+		hasAgendaItem: t.boolean({
+			description: 'Some committee has an agenda item (paper submission).'
+		}),
+		hasCalendarDay: t.boolean({ description: 'The calendar has a day (calendar).' }),
+		hasPublishedGuide: t.boolean({ description: 'The guide sidebar is published (guide).' })
+	})
+});
+
+schemaBuilder.queryFields((t) => ({
+	conferenceFeatureContent: t.field({
+		description:
+			"What a conference's feature switches need outside its own settings: an agenda item for the paper submission, a calendar day for the calendar, a published sidebar for the guide. `updateConference` refuses switching one on without it (CONFLICT). `editConferenceContent` in the conference (FORBIDDEN otherwise).",
+		type: ConferenceFeatureContent,
+		args: { conferenceId: t.arg.id({ required: true }) },
+		smartSubscription: true,
+		subscribe: (instance) => {
+			for (const action of ['created', 'removed', 'updated'] as const) {
+				committeeAgendaItemPubsub.registerOnInstance({ instance, action });
+				calendarDayPubsub.registerOnInstance({ instance, action });
+				guideOutlinePubsub.registerOnInstance({ instance, action });
+			}
+			conferencePubsub.registerOnInstance({ instance, action: 'updated' });
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanReadFeatureContent({ ctx, conferenceId: args.conferenceId });
+			return loadConferenceFeatureContent({ conferenceId: args.conferenceId });
 		}
 	})
 }));

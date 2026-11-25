@@ -45,14 +45,14 @@ The **Settings** page splits the configuration into tabs: **General**, **Committ
 Changes in the tabs are not saved right away. A tab with unsaved changes carries a yellow dot, and the button reads, for example, **Save settings (3 changes)**. It opens **Confirm Save** with every change, grouped by tab, old and new value side by side. Highlighted in yellow and explained are:
 
 - the **Conference Status**, which immediately controls what everyone can see and use,
-- the five switches under **Features**, which unlock or lock a feature for everyone immediately,
+- the switches under **Features**, which unlock or lock a feature for everyone immediately,
 - fee, currency and bank details, which appear on payment requests already sent.
 
 A newly picked file replaces the one stored so far, a removed one is listed as **removed**. Only **Save** writes it all.
 
 If the end of the application period lies after the conference starts, the start after the end, or the participants' minimum age above their maximum age, you cannot save. The message is shown at the field concerned.
 
-If saving made emails due, the page then asks **Send emails now?** and names which kinds are open and how many. This happens with **Allow Payments**, **Allow Postal Registration**, the status **After the conference** and a new certificate template. **Send {count} emails now** sends them, with **Later** you find them again on the [Emails](./communication#emails) page. Only Project Management and Participant Care, who may manage the emails, are asked.
+If saving made emails due, the page then asks **Send emails now?** and names which kinds are open and how many. This happens with **Payments**, **Postal registration**, the status **After the conference** and a new certificate template. **Send {count} emails now** sends them, with **Later** you find them again on the [Emails](./communication#emails) page. Only Project Management and Participant Care, who may manage the emails, are asked.
 
 :::note Outside the form
 Committees and agenda items, resolutions and the layout on the templates save right away in their own windows. The save button only covers the form fields.
@@ -115,22 +115,33 @@ The stages also make emails due. In the registration phase, a reminder becomes d
 2. After the application period, [review](./assignment#sighting) the applications, [assign](./assignment#delegations) the seats and [apply](./assignment#finish-and-release) the assignment.
 3. Set **Preparation Phase**. This opens the waiting list.
 4. [Release](./assignment#releasing) the assignment. Only now do participants see their roles and the quick links.
-5. Switch on **Allow Payments** and **Allow Postal Registration**, plus calendar, paper submission and messages as needed.
+5. Switch on **Payments** and **Postal registration**, plus calendar, paper submission and messages as needed.
 6. Set **Active Conference** for the conference itself.
 7. Afterwards store the certificate template and set **After the conference**. The page then offers the certificate email.
 
 ### Features {#features}
 
-Under **Features** you unlock individual parts regardless of the stage. Project Management, Participant Care and Content Lead may change them.
+Under **Features** you unlock individual parts regardless of the stage, each on its own card that says what it unlocks for participants. Project Management, Participant Care and Content Lead may change them.
+
+A feature can only be switched on once what it needs is set up. Until then its switch is locked, the card lists what is missing under **Still needs** and **Set up** takes you there. You can do both in one go: enter the bank details, switch payments on, save once.
+
+- **Payments**: participation fee, currency, account holder and IBAN
+- **Postal registration**: the complete postal address and all four [templates](#documents)
+- **Paper submission**: a committee with an agenda item
+- **Calendar**: at least one calendar day
+- **Preparation guide**: a published sidebar in the [guide](./communication#guide)
+- **Messages between delegations** needs nothing.
+
+Switching off always works. If a feature that is on later lacks something, say because a template was removed, it stays on and its card warns **Switched on, but missing**. Taking away something a switched-on feature needs, such as deleting the IBAN, is refused on saving. Switch the feature off first then.
 
 The cards under **Quick Links** on the participants' dashboard, such as **Fee Payment**, **Postal Registration**, **Paper Hub** or **Schedule**, only appear for people with a seat and for supervisors of someone with a seat. And only in **Preparation Phase** and **Active Conference** after the assignment is released. A switch you turn on earlier only shows from then on.
 
-- **Allow Payments**: participants see [how and where to pay](../participant/dashboard#payment). For everyone with a seat who has not paid yet, the email **Participation fee unlocked** becomes due once the assignment is released. Open payments are also named in the reminder 14 days before the conference.
-- **Allow Postal Registration**: participants download their [postal registration](../participant/dashboard#postal-registration). This only works when all four [templates](#documents) are stored. For everyone with a seat whose documents are not complete yet, **Postal registration unlocked** becomes due.
-- **Paper Submission Open**: participants create papers on their committees' agenda items in the [Paper Hub](../participant/paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
-- **Show calendar for participants**: participants see the [schedule](./communication#calendar). The team always sees it.
+- **Payments**: participants see [how and where to pay](../participant/dashboard#payment). For everyone with a seat who has not paid yet, the email **Participation fee unlocked** becomes due once the assignment is released. Open payments are also named in the reminder 14 days before the conference.
+- **Postal registration**: participants download their [postal registration](../participant/dashboard#postal-registration). This only works when all four [templates](#documents) are stored. For everyone with a seat whose documents are not complete yet, **Postal registration unlocked** becomes due.
+- **Paper submission**: participants create papers on their committees' agenda items in the [Paper Hub](../participant/paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
+- **Calendar**: participants see the [schedule](./communication#calendar). The team always sees it.
 - **Messages between delegations**: unlocks the direct chats between participants of different delegations once the assignment is released (see [Messages](./communication#messages)). Participants always reach the team and their own delegation. Switched off, existing direct chats stay readable, but nobody writes anything new there.
-- **Guide published**: participants read the [preparation guide](./communication#guide) in the app once their roles are released; until then the dashboard links the **preparation guide** link. The same switch sits in the guide itself.
+- **Preparation guide**: participants read the [preparation guide](./communication#guide) in the app once their roles are released; until then the dashboard links the **preparation guide** link. The same switch sits in the guide itself.
 
 :::tip Release first, then the paperwork
 **Participation fee unlocked** and **Postal registration unlocked** only become due once the assignment is released. If you allow payments before that, saving offers no emails. After the release they go out with the next automatic run if the kind is set to automatic. Otherwise they wait on the [Emails](./communication#emails) page until you send them.
@@ -138,7 +149,7 @@ The cards under **Quick Links** on the participants' dashboard, such as **Fee Pa
 
 ### School rules {#school-rules}
 
-The same tab holds the limits of the school rules. Only Project Management can change them.
+The same tab holds the limits of the school rules, under **School rules**. Only Project Management can change them.
 
 - **Decide groups together up to** (16 to begin with): the applicants of one supervisor from the same school form a group. When one person of a delegation is linked to the supervisor, every member of that delegation from the same school counts too. Up to this size, all of them get a seat or none do. Larger groups are treated like everyone else.
 - **Guaranteed seats per school abroad** (12 to begin with): at most this many people of one school abroad can get a guaranteed seat. Which school is a school abroad is set by Participant Care under [schools](./participants#schools).

@@ -29,6 +29,7 @@
 	import TabIntro from './sections/TabIntro.svelte';
 	import GeneralSettings from './sections/GeneralSettings.svelte';
 	import StatusSettings from './sections/StatusSettings.svelte';
+	import FeatureSettings from './sections/FeatureSettings.svelte';
 	import AgeSettings from './sections/AgeSettings.svelte';
 	import LinkSettings from './sections/LinkSettings.svelte';
 	import PaymentSettings from './sections/PaymentSettings.svelte';
@@ -469,6 +470,12 @@
 		<!-- Status, features, links, postal address and templates are also kept by participant care and the content lead. -->
 		<fieldset class="contents" disabled={!canEditContent}>
 			<div class:hidden={currentTab !== 'status'}>
+				<FeatureSettings
+					{form}
+					{conferenceId}
+					storedTemplates={storedFiles}
+					onOpenTab={(tab) => setTab(tab)}
+				/>
 				<StatusSettings {form} />
 			</div>
 

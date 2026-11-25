@@ -45,7 +45,7 @@ Ob du sie per E-Mail, per Slack oder gar nicht bekommst, stellst du unter **Bena
 
 ## Die Einreichung öffnen {#opening-submission}
 
-Ob Delegationen Papiere schreiben dürfen, entscheidet der Schalter **Papier-Einreichung geöffnet** in den [Einstellungen](./configuration#stages). Ihn stellen die Projektleitung, die Teilnehmendenbetreuung und die Leitung Inhalt.
+Ob Delegationen Papiere schreiben dürfen, entscheidet der Schalter **Papier-Einreichung** in den [Einstellungen](./configuration#stages). Ihn stellen die Projektleitung, die Teilnehmendenbetreuung und die Leitung Inhalt.
 
 - **Geöffnet:** Delegierte sehen auf ihrem Dashboard die Karte **Papier-Hub** und können schreiben, sobald die Rollen ihrer Delegation veröffentlicht sind.
 - **Geschlossen:** Die Karte verschwindet. Jedes Speichern eines Papiers wird abgelehnt, auch von Entwürfen und von Änderungen des Teams am Text. Begutachten kannst du weiterhin.
