@@ -19,9 +19,20 @@ import {
 	callerUserId,
 	grantWhere
 } from '#api/services/authHelper/utils';
-import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
+
+/**
+ * How far somebody is in their postal registration is for them and participant care. What they
+ * confirmed says who is a minor, and the fingerprint of their details gives a birthday or an address
+ * away to whoever knows the rest of them.
+ */
+const WITHOUT_POSTAL_PROGRESS = {
+	postalInfoRead: false,
+	postalConfirmedDetails: false,
+	postalConfirmedOfAge: false
+};
 
 export function registerConferenceParticipantAbilities() {
 	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
@@ -42,26 +53,22 @@ export function registerConferenceParticipantAbilities() {
 
 	// Supervisors read those of their students. Supervision links this very row, so only the
 	// conference they supervise them in.
-	abilityBuilder.conferenceParticipant
-		.allow('read')
-		.when(
-			liveWhere(({ ctx, facts }) =>
-				callerUserId(ctx)
-					? { id: idIn(facts.supervised.map((person) => person.participantId)) }
-					: undefined
-			)
-		);
+	abilityBuilder.conferenceParticipant.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			if (!callerUserId(ctx)) return undefined;
+			const where = { id: idIn(facts.supervised.map((person) => person.participantId)) };
+			return { where, columns: WITHOUT_POSTAL_PROGRESS };
+		})
+	);
 
 	// Every delegate reads those of their co-delegates.
-	abilityBuilder.conferenceParticipant
-		.allow('read')
-		.when(
-			liveWhere(({ ctx, facts }) =>
-				callerUserId(ctx)
-					? { id: idIn(facts.delegationMates.map((mate) => mate.participantId)) }
-					: undefined
-			)
-		);
+	abilityBuilder.conferenceParticipant.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			if (!callerUserId(ctx)) return undefined;
+			const where = { id: idIn(facts.delegationMates.map((mate) => mate.participantId)) };
+			return { where, columns: WITHOUT_POSTAL_PROGRESS };
+		})
+	);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
 	// participant rows of its conference.

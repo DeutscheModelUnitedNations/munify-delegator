@@ -71,7 +71,7 @@ export const conferenceParticipant = snakeCase.table(
 		postalInfoRead: boolean().default(false).notNull(),
 		/**
 		 * their details were confirmed as this fingerprint (`detailsFingerprint`), which tells whether
-		 * they changed since and nothing of what they are,
+		 * they changed since,
 		 */
 		postalConfirmedDetails: text(),
 		/** and that they are, or are not, of age at the conference. */

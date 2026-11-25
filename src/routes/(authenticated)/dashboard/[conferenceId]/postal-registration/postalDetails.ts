@@ -14,7 +14,8 @@ export interface PostalDetails {
 
 /**
  * Tells whether the details changed (32-bit FNV-1a, as hex); undefined while some are missing. It is
- * kept on the server, so it is short on purpose: far too many details share one to name any.
+ * kept on the server and hides nothing: whoever knows most of the details finds the rest by trying, so
+ * only the person and participant care read it (`conferenceParticipantPermissions`).
  */
 export function detailsFingerprint(details: PostalDetails): string | undefined {
 	const { givenName, familyName, street, apartment, zip, city, country, birthday } = details;

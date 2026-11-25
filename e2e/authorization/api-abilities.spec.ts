@@ -224,6 +224,38 @@ test('co-delegates see each other’s names and email addresses, no other contac
 	expect(own?.user.conferenceParticipationsCount).toBe(0);
 	expect(other?.user.conferenceParticipationsCount).toBeNull();
 
+	// How far somebody is in their postal registration is theirs alone: the fingerprint of their
+	// details, and whether they are of age.
+	const done = await gql(
+		head,
+		`mutation ($c: ID!) {
+			updatePostalProgress(conferenceId: $c, confirmedDetails: "0123abcd", confirmedOfAge: true) {
+				postalConfirmedDetails
+			}
+		}`,
+		{ c: E2E_CONFERENCE_ID }
+	);
+	expect(done.data?.updatePostalProgress, JSON.stringify(done)).toEqual({
+		postalConfirmedDetails: '0123abcd'
+	});
+	const progress = await gql(
+		member,
+		`query ($id: ID!) {
+			delegation(id: $id) {
+				members { user { id } participant { postalConfirmedDetails postalConfirmedOfAge } }
+			}
+		}`,
+		{ id: delegation.id }
+	);
+	expect(progress.errors, JSON.stringify(progress)).toBeUndefined();
+	const mates = (
+		progress.data?.delegation as { members: { user: { id: string }; participant: object }[] }
+	).members;
+	expect(mates.find((m) => m.user.id !== memberClaims.preferred_username)?.participant).toEqual({
+		postalConfirmedDetails: null,
+		postalConfirmedOfAge: null
+	});
+
 	// Co-delegates may write to each other: the email address is theirs to read.
 	const withEmail = await gql(
 		member,
