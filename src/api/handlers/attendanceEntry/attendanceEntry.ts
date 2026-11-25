@@ -50,11 +50,12 @@ const occasionSchema = z
 	.trim()
 	.min(1, { error: () => m.attendanceOccasionEmpty() });
 
-/** An access card's number as stored, trimmed; an empty one is refused. */
+/** An access card's number as stored, trimmed, where one is given; an empty one is refused. */
 const accessCardSchema = z
 	.string()
 	.trim()
-	.min(1, { error: () => m.scanBadgeRequired() });
+	.min(1, { error: () => m.scanBadgeRequired() })
+	.nullish();
 
 query({ table: 'attendanceEntry' });
 query({ table: 'attendanceSession' });
@@ -146,7 +147,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	createAttendanceEntry: t.drizzleField({
 		description:
-			'Records a scan of the person in a scanner session. A second scan in the same session is refused with ALREADY_SCANNED. Whether the check passed is decided here, as things stand when the scan is written; a session that only records checks nothing. In a session that hands out access cards (`BADGE`) the scan stores the card with it; scanned again, the person gets the new card and keeps the first scan.',
+			'Records a scan of the person in a scanner session. A second scan in the same session is refused with ALREADY_SCANNED. Whether the check passed is decided here, as things stand when the scan is written; a session that only records checks nothing. In a session that hands out access cards (`BADGE`) the scan stores the card with it; scanned again, the person gets the new card and keeps the first scan. Once ended, it refuses any scan with CONFLICT.',
 		type: AttendanceEntryRef,
 		args: {
 			userId: t.arg.id({ required: true }),

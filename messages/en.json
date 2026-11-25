@@ -3683,6 +3683,7 @@
 	"servicesPage": "Services",
 	"servicesPageDescription": "Access conference tools and services",
 	"sessionActive": "Session active",
+	"sessionEndedNoAccessCards": "This session has ended and hands out no more access cards.",
 	"sessionExpiredCause1": "The login process took longer than 5 minutes",
 	"sessionExpiredCause2": "You refreshed the page during login",
 	"sessionExpiredCause3": "You opened multiple login tabs",

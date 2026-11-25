@@ -10,7 +10,7 @@ import {
 	conferenceParticipantPubsub
 } from '#api/pubsub';
 import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
-import { checkPassedForScan, sessionModeOf } from '#api/handlers/scanLookup/scanLookupService';
+import { checkPassedForScan, findSession } from '#api/handlers/scanLookup/scanLookupService';
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one
@@ -97,7 +97,8 @@ export async function updateAttendanceSession({
 
 /**
  * Refuses (INVALID_INPUT) a card in a session that hands out none, and a scan without a card in one
- * that does.
+ * that does; once that one ended, any scan (CONFLICT). Other sessions take scans after their end:
+ * those a device kept while it was offline arrive late. Cards are only handed out online.
  */
 async function assertCardFitsSession({
 	conferenceId,
@@ -108,7 +109,11 @@ async function assertCardFitsSession({
 	sessionId: string;
 	accessCardId: string | undefined;
 }) {
-	const handsOutCards = (await sessionModeOf({ conferenceId, sessionId })) === 'BADGE';
+	const session = await findSession({ conferenceId, sessionId });
+	const handsOutCards = session?.mode === 'BADGE';
+	if (handsOutCards && session.ended) {
+		throw apiError({ code: 'CONFLICT', message: m.sessionEndedNoAccessCards() });
+	}
 	if (handsOutCards === !!accessCardId) return;
 	throw apiError({
 		code: 'INVALID_INPUT',
@@ -132,7 +137,8 @@ async function refusingTakenCard<T>(write: Promise<T>) {
  * Records the scan of a person in a session of their conference, creating their participant row
  * when they have none yet. A session that hands out cards (`BADGE`) stores the card with the scan,
  * both or neither: any team member working in it may, which is what participant care set it up for.
- * Refuses a card another participant carries (CONFLICT) and a second scan in the session
+ * Refuses a card another participant carries, a scan once such a session ended (both CONFLICT) and a
+ * second scan in the session
  * (ALREADY_SCANNED), except that one with a card replaces the person's card and keeps the first
  * scan. Whether the check passed is decided here, as things stand when the scan is written. Returns
  * the entry's id.

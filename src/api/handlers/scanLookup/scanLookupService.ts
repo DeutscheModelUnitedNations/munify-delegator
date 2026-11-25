@@ -183,8 +183,8 @@ async function missingSurveyOptions({
 	return options.map((option) => option.title);
 }
 
-/** What a scan does in the session; undefined for one the conference has not. */
-export async function sessionModeOf({
+/** What a scan does in the session, and whether it ended; undefined for one the conference has not. */
+export async function findSession({
 	conferenceId,
 	sessionId
 }: {
@@ -193,12 +193,12 @@ export async function sessionModeOf({
 }) {
 	const session = await db.query.attendanceSession.findFirst({
 		where: { id: sessionId, conferenceId },
-		columns: { mode: true }
+		columns: { mode: true, endedAt: true }
 	});
-	return session?.mode;
+	return session && { mode: session.mode, ended: session.endedAt !== null };
 }
 
-/** The card the person carries, told only where one is handed out: a session that does (`BADGE`). */
+/** The card the person carries, told only where one is handed out: a running session that does (`BADGE`). */
 async function cardForSession({
 	conferenceId,
 	sessionId,
@@ -209,8 +209,8 @@ async function cardForSession({
 	status: ScannedStatus;
 }) {
 	if (!sessionId || !status?.accessCardId) return null;
-	const mode = await sessionModeOf({ conferenceId, sessionId });
-	return mode === 'BADGE' ? status.accessCardId : null;
+	const session = await findSession({ conferenceId, sessionId });
+	return session?.mode === 'BADGE' && !session.ended ? status.accessCardId : null;
 }
 
 /** Whether the session holds a scan of the person already; without a participant row it cannot. */
@@ -294,8 +294,8 @@ export async function checkPassedForScan({
 	sessionId: string;
 	userId: string;
 }) {
-	const mode = await sessionModeOf({ conferenceId, sessionId });
-	if (!mode || mode === 'RECORD') return null;
+	const session = await findSession({ conferenceId, sessionId });
+	if (!session || session.mode === 'RECORD') return null;
 	// The scan being recorded is no repeat: a repeated one is refused before it is written
 	const found = await lookupScan({ conferenceId, code: userId, sessionId });
 	return found.checkPassed;

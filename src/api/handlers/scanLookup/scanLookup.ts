@@ -64,7 +64,7 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 		accessCardId: t.string({
 			nullable: true,
 			description:
-				'The access card they carry; only told for a session that hands out cards (`BADGE`).'
+				'The access card they carry; only told for a running session that hands out cards (`BADGE`).'
 		}),
 		didAttend: t.boolean({ description: 'Whether their attendance has been recorded.' }),
 		paymentStatus: t.field({ type: administrativeStatusEnum, description: 'Their payment.' }),

@@ -159,3 +159,21 @@ test('a badge session takes no scan without a card, and no other session takes o
 		expect(result.errors?.[0]?.extensions?.code, JSON.stringify(result)).toBe('INVALID_INPUT');
 	}
 });
+
+test('an ended badge session hands out no more cards', async ({ page }) => {
+	const sessionId = await startSession(page, 'BADGE');
+	const card = `CARD-${sessionId.slice(0, 8)}`;
+	const stored = await recordCard(page, sessionId, card);
+	expect(stored.errors, JSON.stringify(stored)).toBeUndefined();
+
+	const ended = await gql(page, `mutation ($id: ID!) { endAttendanceSession(id: $id) }`, {
+		id: sessionId
+	});
+	expect(ended.errors, JSON.stringify(ended)).toBeUndefined();
+
+	const late = await recordCard(page, sessionId, `${card}-2`);
+	expect(late.errors?.[0]?.extensions?.code, JSON.stringify(late)).toBe('CONFLICT');
+	expect(await adasCard(page, sessionId)).toBeNull();
+	// the card from before stays hers
+	expect(await adasCard(page, await startSession(page, 'BADGE'))).toBe(card);
+});

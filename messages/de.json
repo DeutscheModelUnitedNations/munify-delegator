@@ -3683,6 +3683,7 @@
 	"servicesPage": "Dienste",
 	"servicesPageDescription": "Zugriff auf Konferenz-Tools und Dienste",
 	"sessionActive": "Sitzung aktiv",
+	"sessionEndedNoAccessCards": "Diese Sitzung ist beendet und gibt keine Zugangsausweise mehr aus.",
 	"sessionExpiredCause1": "Der Anmeldevorgang länger als 5 Minuten gedauert hat",
 	"sessionExpiredCause2": "du die Seite während der Anmeldung aktualisiert hast",
 	"sessionExpiredCause3": "du mehrere Anmelde-Tabs geöffnet hast",
