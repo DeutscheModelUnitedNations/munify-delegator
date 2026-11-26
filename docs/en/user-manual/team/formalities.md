@@ -45,13 +45,26 @@ If the page finds nothing, it says **No transaction with this reference found**.
 
 **Mark as Received** stores today as the date of receipt and sets the payment status of **everybody** the reference covers to **Done**. The payer only counts if they are covered as well. **Mark as Problem** sets everybody covered to **Problem**.
 
-| Status      | What follows                                                                                                                                                                                |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pending** | The initial state. At the entrance, **Payment is still open** shows.                                                                                                                        |
-| **Problem** | The email **Problem with documents or payment** becomes due. It names the payment and asks the person to contact participant care, without details. At the entrance the payment stays open. |
-| **Done**    | The email **Payment received** becomes due. The person makes no new references and cannot be included in a new one. At the entrance the payment is no longer an open point.                 |
+| Status           | What follows                                                                                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pending**      | The initial state. At the entrance, **Payment is still open** shows.                                                                                                                                 |
+| **Problem**      | The email **Problem with documents or payment** becomes due. It names the payment and asks the person to contact participant care, without details. At the entrance the payment stays open.          |
+| **Done**         | The email **Payment received** becomes due. The person makes no new references and cannot be included in a new one. At the entrance the payment is no longer an open point.                          |
+| **Needs review** | Set only by the [bank account sync](#bank-sync) when it could not match a transfer on its own. No email. Participants and supervisors still see **Pending**; at the entrance the payment stays open. |
 
 Both emails only become due for people with a seat once the assignment is released, and for supervisors who attend themselves and supervise someone with a seat. Whether they go out right away or wait on the [Emails](./communication#emails) page depends on whether the kind is set to automatic. Each of these emails reaches each person at most once.
+
+### Bank account sync {#bank-sync}
+
+Once a day DELEGATOR reads the incoming transfers of all accounts from BuchhaltungsButler and looks for references in every payment purpose. A reference counts wherever it is in the purpose, also in lower case, without dashes or broken across lines.
+
+- **The amount fits** and the payment is still open: the reference is confirmed as with **Mark as received**, with the booking day as the date received.
+- **The amount does not fit**, too little or too much: everybody the reference covers is set to **Needs review**.
+- **The payment was settled already**, e.g. transferred twice: everybody is set to **Needs review** as well; the date received stays.
+
+A transfer naming several references has to be their sum. Under **Bank transfers** the **Fee Payment** page shows, for each reference, which transfers the sync matched to it, with amount, booking day and the transaction number in BuchhaltungsButler.
+
+You find who needs review in the [participants table](./participants) with a filter on the payment column. Once you have looked at the case, set the status in the user card to **Done**, **Problem** or **Pending**. The sync handles a transfer only once and does not overwrite your decision.
 
 ### Undoing
 

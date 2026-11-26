@@ -22,6 +22,7 @@ input AddressInput {
 
 enum AdministrativestatusEnum {
   DONE
+  NEEDS_HUMAN_REVIEW
   PENDING
   PROBLEM
 }
@@ -1060,6 +1061,74 @@ enum AttendancesessionmodeEnum {
   BADGE
   CHECK
   RECORD
+}
+
+type Banktransfer {
+  amount: Float!
+  bookedAt: DateTime!
+  createdAt: DateTime!
+  externalId: Int!
+  id: ID!
+
+  """Get the paymentTransactions related to this bankTransfer"""
+  paymentTransaction(orderBy: PaymenttransactionOrderInputArgument, where: PaymenttransactionWhereInputArgument): Paymenttransaction!
+  paymentTransactionId: ID!
+  result: BanktransferresultEnum!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  updatedAt: DateTime!
+}
+
+input BanktransferOrderInputArgument {
+  amount: SortingParameter
+  bookedAt: SortingParameter
+  createdAt: SortingParameter
+  externalId: SortingParameter
+  id: SortingParameter
+  paymentTransactionId: SortingParameter
+  result: SortingParameter
+  updatedAt: SortingParameter
+}
+
+"""A column of bankTransfer the search can look at"""
+enum BanktransferSearchFieldEnum {
+  id
+  paymentTransactionId
+}
+
+"""
+Fuzzy search on bankTransfer, ranked by how close the columns are to the term
+"""
+input BanktransferSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [BanktransferSearchFieldEnum!]
+  term: String!
+}
+
+input BanktransferWhereInputArgument {
+  AND: [BanktransferWhereInputArgument!]
+  NOT: BanktransferWhereInputArgument
+  OR: [BanktransferWhereInputArgument!]
+  amount: FloatWhereInputArgument
+  bookedAt: DateTimeWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  externalId: IntWhereInputArgument
+  id: IDWhereInputArgument
+  paymentTransaction: PaymenttransactionWhereInputArgument
+  paymentTransactionId: IDWhereInputArgument
+  result: BanktransferresultEnum
+  updatedAt: DateTimeWhereInputArgument
+}
+
+enum BanktransferresultEnum {
+  ALREADY_RECEIVED
+  AMOUNT_MISMATCH
+  RECEIVED
 }
 
 """
@@ -7134,6 +7203,9 @@ input PaperversionWhereInputArgument {
 type Paymenttransaction {
   amount: Float!
 
+  """Get the bankTransfers related to this paymentTransaction"""
+  bankTransfers(limit: Int, offset: Int, orderBy: BanktransferOrderInputArgument, search: BanktransferSearchInputArgument, where: BanktransferWhereInputArgument): [Banktransfer!]!
+
   """Get the conferences related to this paymentTransaction"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
   createdAt: DateTime!
@@ -7189,6 +7261,7 @@ input PaymenttransactionWhereInputArgument {
   NOT: PaymenttransactionWhereInputArgument
   OR: [PaymenttransactionWhereInputArgument!]
   amount: FloatWhereInputArgument
+  bankTransfers: BanktransferWhereInputArgument
   conference: ConferenceWhereInputArgument
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
@@ -7671,6 +7744,12 @@ type Query {
 
   """List all attendanceSessions"""
   attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
+
+  """Get a single bankTransfer by ID"""
+  bankTransfer(id: ID!): Banktransfer!
+
+  """List all bankTransfers"""
+  bankTransfers(limit: Int, offset: Int, orderBy: BanktransferOrderInputArgument, search: BanktransferSearchInputArgument, where: BanktransferWhereInputArgument): [Banktransfer!]!
 
   """Get a single calendarDay by ID"""
   calendarDay(id: ID!): Calendarday!
@@ -10294,6 +10373,12 @@ type Subscription {
 
   """List all attendanceSessions"""
   attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
+
+  """Get a single bankTransfer by ID"""
+  bankTransfer(id: ID!): Banktransfer!
+
+  """List all bankTransfers"""
+  bankTransfers(limit: Int, offset: Int, orderBy: BanktransferOrderInputArgument, search: BanktransferSearchInputArgument, where: BanktransferWhereInputArgument): [Banktransfer!]!
 
   """Get a single calendarDay by ID"""
   calendarDay(id: ID!): Calendarday!

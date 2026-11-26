@@ -7,6 +7,10 @@
 	} from '#lib/components/dashboard/StatusChecklist.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
+	import {
+		participantFacingStatus,
+		type AdministrativeStatus
+	} from '#lib/helpers/administrativeStatus';
 
 	interface Props {
 		conferenceId: string;
@@ -57,14 +61,18 @@
 	const unlockPayment = $derived(conference.unlockPayments);
 	const unlockPostals = $derived(conference.unlockPostals);
 
-	/** A step that cannot be taken before the conference unlocks it, and is pending until it is. */
+	/**
+	 * A step that cannot be taken before the conference unlocks it, and is pending until it is. A
+	 * review flag of the team's reads as pending (`participantFacingStatus`).
+	 */
 	const stepStatus = ({
 		unlocked,
 		value
 	}: {
 		unlocked: boolean;
-		value: ChecklistStatus | undefined;
-	}): ChecklistStatus => (unlocked ? (value ?? 'PENDING') : 'NOT_YET_POSSIBLE');
+		value: AdministrativeStatus | undefined;
+	}): ChecklistStatus =>
+		unlocked ? participantFacingStatus(value ?? 'PENDING') : 'NOT_YET_POSSIBLE';
 
 	const answeredIds = $derived(new Set(answers.map((answer) => answer.question.id)));
 	const now = new Date();

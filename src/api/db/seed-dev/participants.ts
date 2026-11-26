@@ -210,12 +210,18 @@ export function addPayment({
 	cs,
 	payerId,
 	forUserIds,
-	received
+	received,
+	bankTransfer
 }: {
 	cs: ConferenceSeed;
 	payerId: string;
 	forUserIds: string[];
 	received: boolean;
+	/** A transfer the bank payment sync matched to the payment, with what it made of it. */
+	bankTransfer?: {
+		amount: number;
+		result: (typeof schema.bankTransferResult.enumValues)[number];
+	};
 }) {
 	// The reference is the row's primary key, unique across conferences.
 	const id = cs.world.uniqueCode(paymentReference);
@@ -232,6 +238,16 @@ export function addPayment({
 		cs.batch.userReferenceInPaymentTransaction.push({
 			paymentTransactionId: id,
 			conferenceParticipantId: cs.participant(userId).id
+		});
+	}
+	if (bankTransfer) {
+		cs.batch.bankTransfer.push({
+			// low, so the sync of a dev database reads the transactions after it
+			externalId: faker.number.int({ min: 1, max: 50 }),
+			paymentTransactionId: id,
+			amount: bankTransfer.amount,
+			bookedAt: faker.date.between({ from: createdAt, to: new Date() }),
+			result: bankTransfer.result
 		});
 	}
 }

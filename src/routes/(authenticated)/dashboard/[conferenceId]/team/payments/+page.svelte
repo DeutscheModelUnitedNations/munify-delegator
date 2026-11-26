@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
 	import { getLocale } from '#lib/paraglide/runtime';
-	import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
+	import {
+		client,
+		type AdministrativestatusEnum,
+		type BanktransferresultEnum
+	} from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import formatNames from '#lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
@@ -64,7 +68,18 @@
 				givenName: true,
 				familyName: true
 			}),
-			client.query.conference({ __args: { id: conferenceId }, currency: true })
+			client.query.conference({ __args: { id: conferenceId }, currency: true }),
+			// what the bank payment sync matched to the reference
+			client.query.bankTransfers({
+				__args: {
+					where: { paymentTransactionId: { eq: reference } },
+					orderBy: { bookedAt: 'desc' }
+				},
+				externalId: true,
+				amount: true,
+				bookedAt: true,
+				result: true
+			})
 		]);
 	}
 
@@ -92,6 +107,7 @@
 	let paymentTransaction = $derived(reference?.[0][0]);
 	let referencedUsers = $derived(reference?.[1]);
 	let conference = $derived(reference?.[2]);
+	let bankTransfers = $derived(reference?.[3] ?? []);
 
 	async function loadReference(searchValue: string) {
 		referenceFetching = true;
@@ -243,8 +259,27 @@
 			return transactionReceived ? 'ph-check' : 'ph-seal-check icon-beat-fade';
 		}
 		if (status === 'PROBLEM') return 'ph-warning icon-beat-fade';
+		if (status === 'NEEDS_HUMAN_REVIEW') return 'ph-magnifying-glass icon-beat-fade';
 		return 'ph-hourglass-medium';
 	}
+
+	/** How each outcome of the bank payment sync is shown. */
+	const BANK_TRANSFER_LOOKS: Record<
+		BanktransferresultEnum,
+		{ badge: string; icon: string; label: () => string }
+	> = {
+		RECEIVED: { badge: 'badge-success', icon: 'ph-check', label: m.bankTransferReceived },
+		AMOUNT_MISMATCH: {
+			badge: 'badge-warning',
+			icon: 'ph-scales',
+			label: m.bankTransferAmountMismatch
+		},
+		ALREADY_RECEIVED: {
+			badge: 'badge-warning',
+			icon: 'ph-copy',
+			label: m.bankTransferAlreadyReceived
+		}
+	};
 
 	// --- Hotkeys ---
 
@@ -430,6 +465,35 @@
 			})}
 		</div>
 	</div>
+
+	{#if bankTransfers.length > 0}
+		<div class="mb-4 flex flex-col gap-2" data-tour="team.payments.bankTransfers">
+			<h2 class="text-xl font-bold">{m.bankTransfers()}</h2>
+			<ul class="flex flex-col gap-2">
+				{#each bankTransfers as transfer (transfer.id)}
+					{@const look = BANK_TRANSFER_LOOKS[transfer.result]}
+					<li class="flex flex-wrap items-center gap-2 rounded-field bg-base-200 px-3 py-2">
+						<span class="badge badge-soft gap-1.5 {look.badge}">
+							<i aria-hidden="true" class="ph-duotone {look.icon}"></i>
+							{look.label()}
+						</span>
+						<span class="font-mono font-bold">
+							{transfer.amount.toLocaleString(getLocale(), {
+								style: 'currency',
+								currency: conference?.currency ?? 'EUR'
+							})}
+						</span>
+						<span class="text-sm opacity-70">
+							{m.bankTransferBooked({
+								date: formatLongDate(transfer.bookedAt),
+								id: transfer.externalId
+							})}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 
 	<!-- Referenced users -->
 	<div class="flex flex-col gap-2">

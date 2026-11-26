@@ -3,6 +3,10 @@
 	import { m } from '#lib/paraglide/messages';
 	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
 	import type { Snippet } from 'svelte';
+	import {
+		participantFacingStatus,
+		type ParticipantFacingStatus
+	} from '#lib/helpers/administrativeStatus';
 
 	interface Props {
 		name: string;
@@ -26,8 +30,8 @@
 		email,
 		headDelegate = false,
 		committee,
-		postalSatus = 'PENDING',
-		paymentStatus = 'PENDING',
+		postalSatus: postalStatusGiven = 'PENDING',
+		paymentStatus: paymentStatusGiven = 'PENDING',
 		downloadPostalDocuments,
 		withPostalStatus = false,
 		withPaymentStatus = false,
@@ -35,6 +39,10 @@
 		paperCount = 0,
 		children
 	}: Props = $props();
+
+	// participants and supervisors look at this table: the team's review flags read as open
+	const postalSatus = $derived(participantFacingStatus(postalStatusGiven));
+	const paymentStatus = $derived(participantFacingStatus(paymentStatusGiven));
 
 	const getMailStatusTooltip = () => {
 		switch (postalSatus) {
@@ -60,7 +68,7 @@
 
 	let loading = $state(false);
 
-	const statusIcons: Record<AdministrativestatusEnum, string> = {
+	const statusIcons: Record<ParticipantFacingStatus, string> = {
 		DONE: 'ph-check-circle text-success',
 		PROBLEM: 'ph-warning icon-beat text-error',
 		PENDING: 'ph-hourglass-medium text-warning'
@@ -81,7 +89,7 @@
 	{/if}
 {/snippet}
 
-{#snippet statusCell(status: AdministrativestatusEnum, tooltip: string)}
+{#snippet statusCell(status: ParticipantFacingStatus, tooltip: string)}
 	<div class="tooltip" data-tip={tooltip}>
 		<i aria-hidden="true" class="ph-fill {statusIcons[status]}"></i>
 		<span class="sr-only">{tooltip}</span>

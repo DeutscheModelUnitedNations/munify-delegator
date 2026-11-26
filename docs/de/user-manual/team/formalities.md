@@ -45,13 +45,26 @@ Findet die Seite nichts, steht dort **Keine Überweisung mit dieser Referenz gef
 
 **Als erhalten markieren** speichert den heutigen Tag als Eingangsdatum und setzt den Zahlungsstatus **jeder** Person, die die Referenz abdeckt, auf **Erledigt**. Die zahlende Person selbst zählt nur, wenn sie auch abgedeckt ist. **Als Problem markieren** setzt alle abgedeckten Personen auf **Problem**.
 
-| Status         | Was folgt                                                                                                                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ausstehend** | Der Anfangszustand. Am Einlass erscheint **Beitragszahlung ist noch offen**.                                                                                                                        |
-| **Problem**    | Die E-Mail **Problem mit Unterlagen oder Zahlung** wird fällig. Sie nennt die Zahlung und bittet, sich bei der Teilnehmendenbetreuung zu melden, ohne Details. Am Einlass bleibt die Zahlung offen. |
-| **Erledigt**   | Die E-Mail **Zahlung eingegangen** wird fällig. Die Person erstellt keine neuen Referenzen mehr und kann in keine neue aufgenommen werden. Am Einlass ist die Zahlung kein offener Punkt mehr.      |
+| Status            | Was folgt                                                                                                                                                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ausstehend**    | Der Anfangszustand. Am Einlass erscheint **Beitragszahlung ist noch offen**.                                                                                                                                               |
+| **Problem**       | Die E-Mail **Problem mit Unterlagen oder Zahlung** wird fällig. Sie nennt die Zahlung und bittet, sich bei der Teilnehmendenbetreuung zu melden, ohne Details. Am Einlass bleibt die Zahlung offen.                        |
+| **Erledigt**      | Die E-Mail **Zahlung eingegangen** wird fällig. Die Person erstellt keine neuen Referenzen mehr und kann in keine neue aufgenommen werden. Am Einlass ist die Zahlung kein offener Punkt mehr.                             |
+| **Prüfung nötig** | Setzt nur der [Abgleich mit dem Bankkonto](#bank-sync), wenn er eine Überweisung nicht selbst zuordnen konnte. Keine E-Mail. Teilnehmende und Betreuende sehen weiter **Ausstehend**, am Einlass bleibt die Zahlung offen. |
 
 Beide E-Mails werden nur für Personen mit Platz fällig, sobald die Zuteilung freigegeben ist, und für Betreuende, die selbst mitfahren und eine betreute Person mit Platz haben. Ob sie sofort rausgehen oder auf der Seite [E-Mails](./communication#emails) warten, hängt davon ab, ob die Art auf automatisch steht. Jede dieser E-Mails geht an jede Person höchstens einmal.
+
+### Abgleich mit dem Bankkonto {#bank-sync}
+
+Einmal am Tag liest DELEGATOR die eingegangenen Überweisungen aller Konten aus BuchhaltungsButler und sucht in jedem Verwendungszweck nach Referenzen. Eine Referenz zählt, wo immer sie im Verwendungszweck steht, auch kleingeschrieben, ohne Bindestriche oder über Zeilen umgebrochen.
+
+- **Der Betrag passt** und die Zahlung ist noch offen: Die Referenz wird wie mit **Als erhalten markieren** bestätigt, mit dem Buchungstag als Eingangsdatum.
+- **Der Betrag passt nicht**, zu wenig oder zu viel: Alle Personen, die die Referenz abdeckt, stehen auf **Prüfung nötig**.
+- **Die Zahlung war schon erledigt**, etwa doppelt überwiesen: Auch dann stehen alle auf **Prüfung nötig**, das Eingangsdatum bleibt.
+
+Nennt eine Überweisung mehrere Referenzen, muss sie deren Summe sein. Unter **Banküberweisungen** zeigt die Seite **Beitragszahlung** bei jeder Referenz, welche Überweisungen der Abgleich ihr zugeordnet hat, mit Betrag, Buchungstag und der Umsatznummer in BuchhaltungsButler.
+
+Wer auf **Prüfung nötig** steht, findest du in der [Teilnehmendentabelle](./participants) mit einem Filter auf die Spalte Zahlung. Hast du dir den Fall angesehen, setze den Status in der Teilnehmendenkarte auf **Erledigt**, **Problem** oder **Ausstehend**. Der Abgleich fasst eine Überweisung nur einmal an und überschreibt deine Entscheidung nicht.
 
 ### Rückgängig machen
 

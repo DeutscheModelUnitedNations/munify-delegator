@@ -1,4 +1,5 @@
 import type { PaperField } from './fields';
+import type { AdministrativeStatus } from '#lib/helpers/administrativeStatus';
 import type { FieldReading, FieldState } from './readPaper';
 
 /**
@@ -10,7 +11,7 @@ import type { FieldReading, FieldState } from './readPaper';
  * the team marked as a problem is taken as in only by a person.
  */
 
-type Administrative = 'DONE' | 'PROBLEM' | 'PENDING';
+type Administrative = AdministrativeStatus;
 type MediaChoice = 'ALLOWED_ALL' | 'PARTIALLY_ALLOWED' | 'NOT_ALLOWED';
 
 /** What the team says of each document. */

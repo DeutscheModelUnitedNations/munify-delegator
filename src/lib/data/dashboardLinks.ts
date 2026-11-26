@@ -1,4 +1,5 @@
 import { resolve } from '$app/paths';
+import type { AdministrativeStatus } from '#lib/helpers/administrativeStatus';
 import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
 import { m } from '#lib/paraglide/messages';
@@ -25,8 +26,8 @@ export interface DashboardLinkContext {
 	linkToPaperInbox?: string | null;
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
-	paymentStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
-	postalRegistrationStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
+	paymentStatus?: AdministrativeStatus;
+	postalRegistrationStatus?: AdministrativeStatus;
 	/** Whether the caller owes paperwork of their own (`owesOwnFormalities`); left out, they do. */
 	owesOwnFormalities?: boolean;
 	user?: { sub: string; email: string };

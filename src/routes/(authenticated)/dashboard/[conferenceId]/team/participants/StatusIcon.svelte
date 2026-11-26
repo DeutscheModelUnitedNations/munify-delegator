@@ -19,6 +19,11 @@
 		<i aria-hidden="true" class="ph-duotone ph-hourglass-medium"></i>
 		<span class="text-xs">{m.statusPending()}</span>
 	</span>
+{:else if status === 'NEEDS_HUMAN_REVIEW'}
+	<span class="flex items-center gap-1.5 text-warning">
+		<i aria-hidden="true" class="ph-duotone ph-magnifying-glass"></i>
+		<span class="text-xs">{m.statusNeedsHumanReview()}</span>
+	</span>
 {:else if status === 'PROBLEM'}
 	<span class="flex items-center gap-1.5 text-error">
 		<i aria-hidden="true" class="ph-duotone ph-warning icon-beat"></i>

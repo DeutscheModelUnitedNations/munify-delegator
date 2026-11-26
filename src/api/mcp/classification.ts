@@ -366,6 +366,10 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [...ROW, 'conferenceParticipantId', 'questionId', 'optionId']
 	},
 	Paymenttransaction: { visible: [...ROW, 'payerParticipantId', 'amount', 'recievedAt'] },
+	// what the bank payment sync matched: amounts and dates, no payer or purpose
+	Banktransfer: {
+		visible: [...ROW, 'externalId', 'paymentTransactionId', 'amount', 'bookedAt', 'result']
+	},
 	Userreferenceinpaymenttransaction: {
 		visible: [...ROW, 'conferenceParticipantId', 'paymentTransactionId']
 	},

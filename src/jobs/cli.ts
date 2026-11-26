@@ -1,6 +1,7 @@
 import { defineCommand, runMain } from 'citty';
 import { DEFAULT_RETENTION_DAYS } from './retention';
 import { DEFAULT_GRACE_HOURS } from './fileReferences';
+import { DEFAULT_LOOKBACK_DAYS } from './bankLookback';
 import { runJob } from './logs';
 
 /**
@@ -111,12 +112,53 @@ const sendEmails = defineCommand({
 		})
 });
 
+const bankPaymentSync = defineCommand({
+	meta: {
+		description:
+			'Mark payments received from the transfers in BuchhaltungsButler, flag the rest for review'
+	},
+	args: {
+		'lookback-days': {
+			type: 'string',
+			description: 'Days back the sync reads transactions at most, also on its first run',
+			default: String(DEFAULT_LOOKBACK_DAYS)
+		},
+		'dry-run': {
+			type: 'boolean',
+			description: 'Only log what would be marked or flagged',
+			default: false
+		}
+	},
+	run: ({ args }) =>
+		runJob({
+			job: 'bank-payment-sync',
+			async run() {
+				const lookbackDays = Number(args['lookback-days']);
+				if (!Number.isInteger(lookbackDays) || lookbackDays < 1) {
+					throw new Error(
+						`--lookback-days must be a whole number of days, got "${args['lookback-days']}"`
+					);
+				}
+				const { bankPaymentSyncConfig } = await import('./config');
+				const { createBuchhaltungsButlerClient } =
+					await import('./apis/buchhaltungsbutler/buchhaltungsbutlerClient');
+				const { runBankPaymentSync } = await import('./bankPaymentSync');
+				await runBankPaymentSync({
+					client: createBuchhaltungsButlerClient({ config: bankPaymentSyncConfig() }),
+					lookbackDays,
+					dryRun: args['dry-run']
+				});
+			}
+		})
+});
+
 const main = defineCommand({
 	meta: {
 		name: 'delegator-jobs',
 		description: 'MUNify DELEGATOR background job runner'
 	},
 	subCommands: {
+		'bank-payment-sync': bankPaymentSync,
 		'file-cleanup': fileCleanup,
 		'invitation-cleanup': invitationCleanup,
 		'mail-sync': mailSync,

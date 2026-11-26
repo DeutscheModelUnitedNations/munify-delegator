@@ -4,6 +4,7 @@ import './agreementDetail/agreementDetail';
 import './announcement/announcement';
 import './assignment/assignment';
 import './attendanceEntry/attendanceEntry';
+import './bankTransfer/bankTransfer';
 import './calendar/calendarDay';
 import './calendar/calendarEntry';
 import './calendar/calendarTrack';

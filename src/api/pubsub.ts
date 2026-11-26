@@ -11,6 +11,7 @@ export const assignmentUnitMemberPubsub = pubsub({ table: 'assignmentUnitMember'
 export const assignmentWeightsPubsub = pubsub({ table: 'assignmentWeights' });
 export const attendanceEntryPubsub = pubsub({ table: 'attendanceEntry' });
 export const attendanceSessionPubsub = pubsub({ table: 'attendanceSession' });
+export const bankTransferPubsub = pubsub({ table: 'bankTransfer' });
 export const calendarDayPubsub = pubsub({ table: 'calendarDay' });
 export const calendarEntryPubsub = pubsub({ table: 'calendarEntry' });
 export const calendarTrackPubsub = pubsub({ table: 'calendarTrack' });

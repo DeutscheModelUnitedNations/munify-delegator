@@ -95,7 +95,12 @@ export {
 	reviewerSnippet,
 	resolution
 } from './papers';
-export { paymentTransaction, userReferenceInPaymentTransaction } from './payments';
+export {
+	paymentTransaction,
+	userReferenceInPaymentTransaction,
+	bankTransferResult,
+	bankTransfer
+} from './payments';
 export { mailingList } from './mailSync';
 export { instanceLink } from './chaseLink';
 export { tableView, tableViewDefault } from './tableViews';

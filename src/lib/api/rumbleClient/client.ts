@@ -27,7 +27,7 @@ export type AddressInput = {
   streetAddress: String    
 };
 		
-export type AdministrativestatusEnum = "DONE" | "PENDING" | "PROBLEM";
+export type AdministrativestatusEnum = "DONE" | "NEEDS_HUMAN_REVIEW" | "PENDING" | "PROBLEM";
 		
 export type AgeIssue = "shouldBeSupervisor" | "shouldNotBeSupervisor" | "tooOld" | "tooYoung";
 		
@@ -812,6 +812,57 @@ export type AttendancesessionWhereInputArgument = {
 };
 		
 export type AttendancesessionmodeEnum = "BADGE" | "CHECK" | "RECORD";
+		
+export type Banktransfer = {
+  amount: Float,
+  bookedAt: DateTime,
+  createdAt: DateTime,
+  externalId: Int,
+  id: ID,
+  paymentTransaction: (p?: {
+    orderBy?: PaymenttransactionOrderInputArgument | null | undefined,
+    where?: PaymenttransactionWhereInputArgument | null | undefined
+  }) => Paymenttransaction,
+  paymentTransactionId: ID,
+  result: BanktransferresultEnum,
+  search_distance: Float | null,
+  updatedAt: DateTime    
+};
+		
+export type BanktransferOrderInputArgument = {
+  amount?: SortingParameter | null | undefined,
+  bookedAt?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  externalId?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  paymentTransactionId?: SortingParameter | null | undefined,
+  result?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type BanktransferSearchFieldEnum = "id" | "paymentTransactionId";
+		
+export type BanktransferSearchInputArgument = {
+  fields?: BanktransferSearchFieldEnum[] | undefined,
+  term: String    
+};
+		
+export type BanktransferWhereInputArgument = {
+  AND?: BanktransferWhereInputArgument[] | undefined,
+  NOT?: BanktransferWhereInputArgument | null | undefined,
+  OR?: BanktransferWhereInputArgument[] | undefined,
+  amount?: FloatWhereInputArgument | null | undefined,
+  bookedAt?: DateTimeWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  externalId?: IntWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  paymentTransaction?: PaymenttransactionWhereInputArgument | null | undefined,
+  paymentTransactionId?: IDWhereInputArgument | null | undefined,
+  result?: BanktransferresultEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type BanktransferresultEnum = "ALREADY_RECEIVED" | "AMOUNT_MISMATCH" | "RECEIVED";
 		
 export type BigInt = unknown;
 		
@@ -5224,6 +5275,13 @@ export type PaperversionWhereInputArgument = {
 		
 export type Paymenttransaction = {
   amount: Float,
+  bankTransfers: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: BanktransferOrderInputArgument | null | undefined,
+    search?: BanktransferSearchInputArgument | null | undefined,
+    where?: BanktransferWhereInputArgument | null | undefined
+  }) => Banktransfer[],
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -5272,6 +5330,7 @@ export type PaymenttransactionWhereInputArgument = {
   NOT?: PaymenttransactionWhereInputArgument | null | undefined,
   OR?: PaymenttransactionWhereInputArgument[] | undefined,
   amount?: FloatWhereInputArgument | null | undefined,
+  bankTransfers?: BanktransferWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
@@ -5644,6 +5703,16 @@ export type Query = {
     search?: AttendancesessionSearchInputArgument | null | undefined,
     where?: AttendancesessionWhereInputArgument | null | undefined
   }) => Attendancesession[],
+  bankTransfer: (p: {
+    id: ID
+  }) => Banktransfer,
+  bankTransfers: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: BanktransferOrderInputArgument | null | undefined,
+    search?: BanktransferSearchInputArgument | null | undefined,
+    where?: BanktransferWhereInputArgument | null | undefined
+  }) => Banktransfer[],
   calendarDay: (p: {
     id: ID
   }) => Calendarday,
@@ -7495,6 +7564,16 @@ export type Subscription = {
     search?: AttendancesessionSearchInputArgument | null | undefined,
     where?: AttendancesessionWhereInputArgument | null | undefined
   }) => Attendancesession[],
+  bankTransfer: (p: {
+    id: ID
+  }) => Banktransfer,
+  bankTransfers: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: BanktransferOrderInputArgument | null | undefined,
+    search?: BanktransferSearchInputArgument | null | undefined,
+    where?: BanktransferWhereInputArgument | null | undefined
+  }) => Banktransfer[],
   calendarDay: (p: {
     id: ID
   }) => Calendarday,
@@ -8881,7 +8960,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceFeatureContent", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "bankTransfer", "bankTransfers", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceFeatureContent", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

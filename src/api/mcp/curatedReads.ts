@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ADMINISTRATIVE_STATUSES } from '#lib/helpers/administrativeStatus';
 import { roleSeats } from '#lib/helpers/conferenceRole';
 import { MIN_GROUP_SIZE, SMALL_GROUP } from './classification';
 
@@ -96,10 +97,10 @@ function participantKind(row: {
 
 export const participantFilterSchema = z.object({
 	kind: z.enum(PARTICIPANT_KINDS).optional(),
-	paymentStatus: z.enum(['DONE', 'PENDING', 'PROBLEM']).optional(),
-	termsAndConditions: z.enum(['DONE', 'PENDING', 'PROBLEM']).optional(),
-	guardianConsent: z.enum(['DONE', 'PENDING', 'PROBLEM']).optional(),
-	mediaConsent: z.enum(['DONE', 'PENDING', 'PROBLEM']).optional(),
+	paymentStatus: z.enum(ADMINISTRATIVE_STATUSES).optional(),
+	termsAndConditions: z.enum(ADMINISTRATIVE_STATUSES).optional(),
+	guardianConsent: z.enum(ADMINISTRATIVE_STATUSES).optional(),
+	mediaConsent: z.enum(ADMINISTRATIVE_STATUSES).optional(),
 	minor: z.boolean().optional(),
 	didAttend: z.boolean().optional(),
 	withCheckIssues: z.boolean().optional()

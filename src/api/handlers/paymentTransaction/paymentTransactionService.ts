@@ -11,29 +11,26 @@ import {
 } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import {
+	PAYMENT_REFERENCE_ALPHABET,
+	PAYMENT_REFERENCE_LENGTH,
+	formatPaymentReference
+} from './paymentReference';
 
-type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
+export type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
 
 /** Whom a new payment covers: somebody, or it would be a reference for nothing. */
 export const paymentForSchema = z
 	.array(z.string())
 	.min(1, { error: () => m.paymentCoversNobody() });
 
-/**
- * Payment reference ids are printed on transfer forms, so they avoid characters that are easy to
- * misread and are grouped in fours. Same alphabet and shape as the legacy generator.
- */
+/** A new payment reference id, same alphabet and shape as the legacy generator. */
 function generateSEPASafeId() {
-	const chars = 'ACDEFHJKMNPRTUVWXY3479';
-	const length = 16;
-	let id = '';
-	for (let i = 0; i < length; i++) {
-		id += chars[randomInt(chars.length)];
-		if (i % 4 === 3 && i !== length - 1) {
-			id += '-';
-		}
+	let chars = '';
+	for (let i = 0; i < PAYMENT_REFERENCE_LENGTH; i++) {
+		chars += PAYMENT_REFERENCE_ALPHABET[randomInt(PAYMENT_REFERENCE_ALPHABET.length)];
 	}
-	return id;
+	return formatPaymentReference(chars);
 }
 
 /**
