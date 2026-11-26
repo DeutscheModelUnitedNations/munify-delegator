@@ -5,6 +5,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import AccentStripe from '#lib/components/AccentStripe.svelte';
 	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
+	import CalendarExport from '#lib/components/calendar/CalendarExport.svelte';
 	import { seatOf } from '#lib/components/calendar/calendarNow';
 	import { ownTrackIds } from '#lib/components/calendar/personalCalendar';
 	import { fetchCalendarDays } from '#lib/api/calendarDays';
@@ -52,6 +53,7 @@
 			<AccentStripe />
 			<h1 class="text-3xl font-bold tracking-tight">{m.calendarSectionTitle()}</h1>
 			<p class="text-base-content/70">{conference.title}</p>
+			<CalendarExport {conferenceId} />
 		</header>
 	{/snippet}
 

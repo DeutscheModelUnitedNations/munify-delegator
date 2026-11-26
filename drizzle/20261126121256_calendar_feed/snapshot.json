@@ -1,0 +1,257 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f5f8a7d4-2b54-4ea0-854f-e50e1515a6d9",
+  "prevIds": [
+    "e02995a3-114c-486f-bc9c-dba67a8a17fa",
+    "6444b9e2-a28f-4f5e-abcc-aca64789174f"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "calendar_feed"
+      ],
+      "writes": [
+        "s|tbl|public.calendar_feed",
+        "n|tbl|public.calendar_feed",
+        "e|tbl|public.calendar_feed",
+        "n|rel|public.calendar_feed",
+        "n|type|public.calendar_feed",
+        "n|rel|public.calendar_feed_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "calendar_feed",
+        "calendar_feed_user_id_conference_id_key"
+      ],
+      "writes": [
+        "s|idx|public.calendar_feed_user_id_conference_id_key",
+        "n|idx|public.calendar_feed_user_id_conference_id_key",
+        "e|idx|public.calendar_feed_user_id_conference_id_key",
+        "n|rel|public.calendar_feed_user_id_conference_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.calendar_feed",
+        "n|sch|public",
+        "n|col|public.calendar_feed.user_id",
+        "n|col|public.calendar_feed.conference_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "calendar_feed"
+      ],
+      "writes": [
+        "s|fk|public.calendar_feed.calendar_feed_user_id_user_id_fkey",
+        "n|fk|public.calendar_feed.calendar_feed_user_id_user_id_fkey",
+        "e|fk|public.calendar_feed.calendar_feed_user_id_user_id_fkey",
+        "n|con|public.calendar_feed.calendar_feed_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.calendar_feed",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.calendar_feed.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "calendar_feed"
+      ],
+      "writes": [
+        "s|fk|public.calendar_feed.calendar_feed_conference_id_conference_id_fkey",
+        "n|fk|public.calendar_feed.calendar_feed_conference_id_conference_id_fkey",
+        "e|fk|public.calendar_feed.calendar_feed_conference_id_conference_id_fkey",
+        "n|con|public.calendar_feed.calendar_feed_conference_id_conference_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.calendar_feed",
+        "n|sch|public",
+        "n|tbl|public.conference",
+        "n|sch|public",
+        "n|col|public.calendar_feed.conference_id",
+        "n|col|public.conference.id",
+        "e|uniqueness|public.conference.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "calendar_feed",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "conference_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "calendar_feed_user_id_conference_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "conference_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "calendar_feed_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "calendar_feed_conference_id_conference_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "calendar_feed",
+        "name": "calendar_feed_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    }
+  ]
+}

@@ -3745,6 +3745,9 @@ export type Mutation = {
   autoAssignSingleParticipants: (p: {
     conferenceId: ID
   }) => Int,
+  calendarFeedUrl: (p: {
+    conferenceId: ID
+  }) => String,
   completePostalGuide: () => User,
   connectToConferenceSupervisor: (p: {
     conferenceId: ID,
@@ -4263,6 +4266,9 @@ export type Mutation = {
     conferenceId: ID,
     seats: Int
   }) => Boolean,
+  resetCalendarFeedUrl: (p: {
+    conferenceId: ID
+  }) => String,
   resolveChatReport: (p: {
     id: ID
   }) => Chatreport,

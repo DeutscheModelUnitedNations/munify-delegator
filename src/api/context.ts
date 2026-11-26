@@ -68,15 +68,15 @@ export function sessionClaims(session: OIDCSession | undefined): Record<string, 
 }
 
 /**
- * Who an AI assistant acts for over the MCP server (`locals.mcp`, set by `/mcp` once the bearer
- * token checked out): only their id. Over MCP nobody holds a system role, an admin included:
- * `isTeamMemberOf` gives an admin every team role in the conference of the tool call, and nothing
- * beyond it.
+ * A user known only by id, without any system role: the account an AI assistant acts with over
+ * MCP (`locals.mcp`, an admin included: `isTeamMemberOf` gives an admin every team role in the
+ * conference of the tool call, and nothing beyond it), or the owner of a calendar subscription
+ * link (`locals.calendarFeedUserId`).
  */
-function mcpUser(mcp: NonNullable<RequestEvent['locals']['mcp']>): ReturnType<typeof sessionUser> {
+function roleLessUser(userId: string): ReturnType<typeof sessionUser> {
 	const OIDCRoleNames: OidcRole[] = [];
 	return {
-		sub: mcp.userId,
+		sub: userId,
 		email: undefined,
 		OIDCRoleNames,
 		hasRole: () => false
@@ -86,16 +86,26 @@ function mcpUser(mcp: NonNullable<RequestEvent['locals']['mcp']>): ReturnType<ty
 /**
  * Who a request acts as: the signed-in session's user, or for an AI assistant's request over MCP
  * (`locals.mcp`) the account it acts with, without any system role and with the conference its
- * tool call is about (`mcp`).
+ * tool call is about (`mcp`), or for a calendar app fetching a subscription link the link's owner,
+ * also without any system role.
  */
 export function requestIdentity(locals: RequestEvent['locals']) {
+	if (locals.calendarFeedUserId) {
+		const OIDCRoleNames: OidcRole[] = [];
+		return {
+			session: undefined,
+			OIDCRoleNames,
+			user: roleLessUser(locals.calendarFeedUserId),
+			mcp: undefined
+		};
+	}
 	const mcp = locals.mcp;
 	if (mcp) {
 		const OIDCRoleNames: OidcRole[] = [];
 		return {
 			session: undefined,
 			OIDCRoleNames,
-			user: mcpUser(mcp),
+			user: roleLessUser(mcp.userId),
 			mcp: { isAdmin: mcp.isAdmin, conferenceId: mcp.conferenceId }
 		};
 	}

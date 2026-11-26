@@ -4647,6 +4647,11 @@ type Mutation {
   autoAssignSingleParticipants(conferenceId: ID!): Int!
 
   """
+  The caller's subscription link to the conference's schedule (an iCalendar feed), made on first use. Calendar apps subscribe to it without signing in, so it is secret: whoever has it reads the schedule as the caller does. For the caller acting for themselves (FORBIDDEN while impersonating) in a conference whose schedule they read (NOT_FOUND otherwise).
+  """
+  calendarFeedUrl(conferenceId: ID!): String!
+
+  """
   The caller watched the guide to sending their postal documents to its end, so they may skip it from now on (`User.postalGuideCompletedAt`, which keeps the first time). FORBIDDEN for an AI assistant and while impersonating.
   """
   completePostalGuide: User!
@@ -5629,6 +5634,11 @@ type Mutation {
 
   """Unplans every role with `seats` seats, so they can be assigned anew."""
   resetAssignmentSize(conferenceId: ID!, seats: Int!): Boolean!
+
+  """
+  Replaces the caller's subscription link to the conference's schedule with a new one; the old one stops working. Calendar apps subscribe to it without signing in, so it is secret: whoever has it reads the schedule as the caller does. For the caller acting for themselves (FORBIDDEN while impersonating) in a conference whose schedule they read (NOT_FOUND otherwise).
+  """
+  resetCalendarFeedUrl(conferenceId: ID!): String!
 
   """
   Settles a report. Once none of its reports is open the chat is private again. Participant care of its conference only (NOT_FOUND otherwise).

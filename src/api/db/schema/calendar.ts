@@ -8,12 +8,13 @@ import {
 	doublePrecision,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
-import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
+import { defaultIdAndCreatedAt, defaultIdAndTimestamps, implicitManyToMany } from './helpers';
 import { conferenceRef } from './conference';
 import { fileRef } from './storedFile';
 import { surveyOption } from './surveys';
 import { committee } from './committees';
 import { conferenceRole } from './roles';
+import { user } from './users';
 
 /** A conference's calendar: days, tracks, entries and the places they happen at. */
 
@@ -142,3 +143,22 @@ export const calendarEntryToSurveyOption = implicitManyToMany({
 	b: () => surveyOption.id,
 	bOnDelete: 'restrict'
 });
+
+/**
+ * A person's subscription link to a conference's schedule (`/calendar/<token>.ics`), one per person
+ * and conference. The link carries the row's id and a MAC of it (`calendarFeedToken.ts`), so the
+ * table holds nothing that opens a feed on its own; a new row (new id) replaces a leaked link.
+ */
+export const calendarFeed = snakeCase.table(
+	'calendar_feed',
+	{
+		...defaultIdAndCreatedAt,
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('cascade')
+	},
+	(table) => [
+		uniqueIndex('calendar_feed_user_id_conference_id_key').on(table.userId, table.conferenceId)
+	]
+);

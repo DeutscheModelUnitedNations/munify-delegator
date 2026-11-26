@@ -8,15 +8,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
-import {
-	makeSeedCalendarDay,
-	makeSeedCalendarEntry,
-	makeSeedCalendarTrack,
-	makeSeedPlace
-} from '../../src/api/db/seed-data/calendarDay';
+import { makeSeedCalendarEntry, makeSeedPlace } from '../../src/api/db/seed-data/calendarDay';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
-import { upsertConference, upsertGvAndSr, upsertSeatedDelegations } from './conference';
+import { upsertGvAndSr, upsertSeatedDelegations } from './conference';
+import { gvAndSrDay, insertSchedule, upsertScheduleConference } from './schedule';
 import { upsertParticipant } from './participant';
 import { upsertTeamMember } from './teamMember';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
@@ -40,16 +36,11 @@ const DELEGATION_ID = 'e2e00000nxtdelegation0001';
 const MEMBER_ID = 'e2e00000nxtmember00000001';
 
 export async function seedNextEntries(db: NodePgDatabase) {
-	const { id: conferenceId } = await upsertConference(db, {
+	const conferenceId = await upsertScheduleConference(db, {
 		id: NEXT_ENTRIES.conferenceId,
 		title: 'E2E Next Entries Conference',
-		state: 'ACTIVE',
 		nations: NATIONS
 	});
-	await db
-		.update(schema.conference)
-		.set({ showCalendar: true, assignmentReleased: true, timezone: 'Europe/Berlin' })
-		.where(eq(schema.conference.id, conferenceId));
 	await upsertGvAndSr(db, { fixture: NEXT_ENTRIES, nations: Object.keys(NATIONS) });
 
 	await upsertUsers(
@@ -84,19 +75,12 @@ async function seedSchedule(db: NodePgDatabase, conferenceId: string) {
 		await db.delete(table).where(eq(table.conferenceId, conferenceId));
 	}
 
-	const day = makeSeedCalendarDay({
-		conferenceId,
-		name: 'Sonntag',
-		date: new Date(`${NEXT_ENTRIES.date}T00:00:00Z`)
-	});
-	const gv = makeSeedCalendarTrack({ conferenceId, name: 'GV-Track', sortOrder: 0 });
-	const sr = makeSeedCalendarTrack({ conferenceId, name: 'SR-Track', sortOrder: 1 });
+	const { day, gv, sr, at } = gvAndSrDay({ conferenceId, date: NEXT_ENTRIES.date });
 	const place = makeSeedPlace({
 		conferenceId,
 		name: 'Landtag',
 		directions: 'Mit der U-Bahn bis Waterloo.'
 	});
-	const at = (time: string) => new Date(`${NEXT_ENTRIES.date}T${time}:00Z`);
 	const planned = [
 		{ name: 'Sitzung der GV', from: '09:00', to: '11:00', room: '101', tracks: [gv] },
 		{
@@ -122,26 +106,13 @@ async function seedSchedule(db: NodePgDatabase, conferenceId: string) {
 		return { entry: { ...entry, id: id ?? entry.id }, tracks };
 	});
 
-	// In one transaction: the triggers check at commit that an entry's tracks run on its day
-	await db.transaction(async (tx) => {
-		await tx.insert(schema.calendarDay).values(day);
-		await tx.insert(schema.calendarTrack).values([gv, sr]);
-		await tx.insert(schema.calendarDayToCalendarTrack).values([
-			{ a: day.id, b: gv.id },
-			{ a: day.id, b: sr.id }
-		]);
-		await tx.insert(schema.calendarTrackToCommittee).values([
-			{ a: gv.id, b: NEXT_ENTRIES.gvId },
-			{ a: sr.id, b: NEXT_ENTRIES.srId }
-		]);
-		await tx.insert(schema.place).values(place);
-		await tx.insert(schema.calendarEntry).values(planned.map(({ entry }) => entry));
-		await tx
-			.insert(schema.calendarEntryToCalendarTrack)
-			.values(
-				planned.flatMap(({ entry, tracks }) =>
-					tracks.map((track) => ({ a: entry.id, b: track.id }))
-				)
-			);
+	await insertSchedule(db, {
+		day,
+		tracks: [
+			{ track: gv, committeeId: NEXT_ENTRIES.gvId },
+			{ track: sr, committeeId: NEXT_ENTRIES.srId }
+		],
+		places: [place],
+		planned
 	});
 }

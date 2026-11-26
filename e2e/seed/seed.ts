@@ -44,6 +44,7 @@ import { seedReviewDrafts } from './reviewDrafts';
 import { seedGuide } from './guide';
 import { seedMessages } from './messages';
 import { seedNextEntries } from './nextEntries';
+import { seedCalendarFeed } from './calendarFeed';
 import { seedNotifications } from './notifications';
 import { seedPaperNotifications } from './paperNotifications';
 import { seedAnnouncements } from './announcements';
@@ -1068,6 +1069,7 @@ export default async function seed() {
 	await seedGuide(db);
 	await seedMessages(db);
 	await seedNextEntries(db);
+	await seedCalendarFeed(db);
 	await seedNotifications(db);
 	await seedPaperNotifications(db);
 	await seedAnnouncements(db);

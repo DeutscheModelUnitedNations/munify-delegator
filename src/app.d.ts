@@ -32,6 +32,12 @@ declare global {
 			 * request's link token grants the `chase` role (`#api/handlers/chaseLink/linkAuth`).
 			 */
 			linkCaller?: boolean;
+			/**
+			 * Set by the calendar subscription route (`src/routes/calendar/`) once the link's token
+			 * checked out: the request reads the schedule as the link's owner, without any system role
+			 * (`#api/context`).
+			 */
+			calendarFeedUserId?: string;
 			mcp?: {
 				userId: string;
 				isAdmin: boolean;

@@ -7,6 +7,7 @@ import './attendanceEntry/attendanceEntry';
 import './calendar/calendarDay';
 import './calendar/calendarEntry';
 import './calendar/calendarTrack';
+import './calendarFeed/calendarFeed';
 import './collectiveGroup/collectiveGroup';
 import './committee/committee';
 import './committeeAgendaItem/committeeAgendaItem';

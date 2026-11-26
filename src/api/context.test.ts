@@ -122,4 +122,16 @@ describe('requestIdentity', () => {
 		expect(identity.user?.hasRole('admin')).toBe(false);
 		expect(identity.mcp).toEqual({ isAdmin: true, conferenceId: 'c1' });
 	});
+
+	test("is a calendar link's owner, without any system role and before any session", () => {
+		const identity = requestIdentity({
+			oidc: session('someone-else', ['admin']),
+			calendarFeedUserId: 'u2'
+		});
+		expect(identity.session).toBeUndefined();
+		expect(identity.mcp).toBeUndefined();
+		expect(identity.OIDCRoleNames).toEqual([]);
+		expect(identity.user?.sub).toBe('u2');
+		expect(identity.user?.hasRole('admin')).toBe(false);
+	});
 });

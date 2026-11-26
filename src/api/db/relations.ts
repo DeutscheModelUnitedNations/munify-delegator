@@ -1197,6 +1197,19 @@ export const relations = defineRelations(schema, (r) => ({
 			alias: 'emailLogSentBy'
 		})
 	},
+	calendarFeed: {
+		conference: r.one.conference({
+			from: r.calendarFeed.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		user: r.one.user({
+			from: r.calendarFeed.userId,
+			to: r.user.id,
+			optional: false,
+			alias: 'calendarFeedUser'
+		})
+	},
 	mcpAuditEntry: {
 		conference: r.one.conference({
 			from: r.mcpAuditEntry.conferenceId,
