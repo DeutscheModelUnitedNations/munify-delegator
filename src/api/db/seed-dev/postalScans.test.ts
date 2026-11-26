@@ -103,4 +103,5 @@ test('a seeded scan reads as what the seed says was read, its fields found where
 			expect(y).toBeLessThan(picture.height);
 		}
 	}
-});
+	// prints, renders and reads a whole page: a second locally, several on CI's runners
+}, 60_000);
