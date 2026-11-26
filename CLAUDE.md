@@ -442,7 +442,8 @@ bun run preview
   under an advisory lock. Swapping parts happens in one transaction. `e2e/authorization/one-part.spec.ts`.
 - Conference states: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`.
   Supervisor connection codes are unique across conferences. Payments: `PaymentTransaction`; the daily `bank-payment-sync` job settles them from
-  BuchhaltungsButler and flags what it cannot as `NEEDS_HUMAN_REVIEW` (`docs/architecture/bank-payments.md`).
+  BuchhaltungsButler and flags what it cannot as `NEEDS_HUMAN_REVIEW`; a transfer without a known
+  reference is not flagged and still needs matching by hand (`docs/architecture/bank-payments.md`).
   Papers are versioned with reviews.
 - **Review drafts** (`#api/handlers/paperReviewDraft/`, `paper_review_draft`): an AI assistant
   prepares a review over MCP (`upsertPaperReviewDraft`, Markdown → TipTap in `reviewMarkdown.ts`,
