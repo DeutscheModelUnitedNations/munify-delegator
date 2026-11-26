@@ -3,6 +3,8 @@
  * `NEEDS_HUMAN_REVIEW`, grouped by the transfer that flagged them, with what deciding them writes.
  */
 
+import formatNames from '#lib/helpers/formatNames';
+
 type BankTransferResult = 'RECEIVED' | 'AMOUNT_MISMATCH' | 'ALREADY_RECEIVED';
 
 export interface CaseTransfer {
@@ -45,6 +47,28 @@ interface PersonName {
 /** A user as read separately, with their participant row in the conference. */
 interface ReadableUser extends PersonName {
 	conferenceParticipants: readonly { id: string }[];
+}
+
+/**
+ * The names of the people each payment covers, by payment id, as far as the caller may read them:
+ * the users read with their references to those payments.
+ */
+export function namesByPayment(
+	users: readonly (PersonName & {
+		paymentTransactionsReferences: readonly { paymentTransactionId: string }[];
+	})[]
+): Map<string, string[]> {
+	const names = new Map<string, string[]>();
+	for (const user of users) {
+		const name = formatNames({
+			givenName: user.givenName ?? undefined,
+			familyName: user.familyName ?? undefined
+		});
+		for (const { paymentTransactionId } of user.paymentTransactionsReferences) {
+			names.set(paymentTransactionId, [...(names.get(paymentTransactionId) ?? []), name]);
+		}
+	}
+	return names;
 }
 
 /** A payment as read, before the names of the people it covers are attached. */

@@ -5,6 +5,7 @@ import {
 	flaggingTransfer,
 	paidDecisions,
 	preselected,
+	namesByPayment,
 	reviewCases,
 	withPeople
 } from './reviewCases';
@@ -159,5 +160,30 @@ describe('withPeople', () => {
 		});
 		expect(payment.paymentFor.map((p) => p.user?.id)).toEqual(['user-a', undefined]);
 		expect(payment.bankTransfers).toEqual([transfer()]);
+	});
+});
+
+describe('namesByPayment', () => {
+	it('lists the readable people of each payment', () => {
+		const names = namesByPayment([
+			{
+				id: 'u1',
+				givenName: 'Ada',
+				familyName: 'Lovelace',
+				paymentTransactionsReferences: [
+					{ paymentTransactionId: 'p' },
+					{ paymentTransactionId: 'q' }
+				]
+			},
+			{
+				id: 'u2',
+				givenName: 'Alan',
+				familyName: 'Turing',
+				paymentTransactionsReferences: [{ paymentTransactionId: 'p' }]
+			}
+		]);
+		expect(names.get('p')).toHaveLength(2);
+		expect(names.get('q')).toHaveLength(1);
+		expect(names.get('r')).toBeUndefined();
 	});
 });

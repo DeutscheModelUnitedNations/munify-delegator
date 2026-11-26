@@ -8,8 +8,8 @@
 	import { m } from '#lib/paraglide/messages';
 	import { resolve } from '$app/paths';
 	import { getLocale } from '#lib/paraglide/runtime';
-	import formatNames from '#lib/helpers/formatNames';
 	import { asCount } from '#lib/api/queryHelpers';
+	import { namesByPayment } from './reviewCases';
 
 	interface Props {
 		conferenceId: string;
@@ -60,20 +60,7 @@
 				})
 	);
 
-	/** The names of the people each payment covers, as far as the caller may read them. */
-	const coveredNames = $derived.by(() => {
-		const names = new Map<string, string[]>();
-		for (const user of users) {
-			const name = formatNames({
-				givenName: user.givenName ?? undefined,
-				familyName: user.familyName ?? undefined
-			});
-			for (const { paymentTransactionId } of user.paymentTransactionsReferences) {
-				names.set(paymentTransactionId, [...(names.get(paymentTransactionId) ?? []), name]);
-			}
-		}
-		return names;
-	});
+	const coveredNames = $derived(namesByPayment(users));
 </script>
 
 {#if transfers.length === 0}
