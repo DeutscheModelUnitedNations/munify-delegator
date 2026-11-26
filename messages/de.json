@@ -2977,6 +2977,7 @@
 	"paymentCaseDifference": "Differenz",
 	"paymentCaseExpected": "Erwartet",
 	"paymentCaseFlagged": "Zur Prüfung gestellt",
+	"paymentCaseHiddenPerson": "Person ohne Lesezugriff",
 	"paymentCaseKeep": "Kein Handlungsbedarf – bleibt erhalten",
 	"paymentCaseLookup": "Nachschlagen",
 	"paymentCaseMarkPaid": "{count} als erhalten markieren",

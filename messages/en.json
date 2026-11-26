@@ -2977,6 +2977,7 @@
 	"paymentCaseDifference": "Difference",
 	"paymentCaseExpected": "Expected",
 	"paymentCaseFlagged": "Flagged for review",
+	"paymentCaseHiddenPerson": "Person you cannot see",
 	"paymentCaseKeep": "Nothing to do – stays received",
 	"paymentCaseLookup": "Look up",
 	"paymentCaseMarkPaid": "Mark {count} as received",

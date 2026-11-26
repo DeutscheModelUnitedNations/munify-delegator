@@ -23,10 +23,12 @@
 	const id = $props.id();
 
 	const name = (user: ReviewPayment['paymentFor'][number]['user']) =>
-		formatNames({
-			givenName: user.givenName ?? undefined,
-			familyName: user.familyName ?? undefined
-		});
+		user
+			? formatNames({
+					givenName: user.givenName ?? undefined,
+					familyName: user.familyName ?? undefined
+				})
+			: m.paymentCaseHiddenPerson();
 </script>
 
 <fieldset class="flex min-w-0 flex-col gap-2">
@@ -55,14 +57,17 @@
 				<span class="text-xs text-base-content/60">
 					{translateAdministrativeStatus(person.participant.paymentStatus)}
 				</span>
-				<button
-					type="button"
-					class="btn btn-square btn-ghost btn-xs"
-					aria-label={m.chatOpenUserCard({ name: name(person.user) })}
-					onclick={() => openUserCard(person.user.id)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
-				</button>
+				{#if person.user}
+					{@const userId = person.user.id}
+					<button
+						type="button"
+						class="btn btn-square btn-ghost btn-xs"
+						aria-label={m.chatOpenUserCard({ name: name(person.user) })}
+						onclick={() => openUserCard(userId)}
+					>
+						<i aria-hidden="true" class="ph-duotone ph-identification-card"></i>
+					</button>
+				{/if}
 			</li>
 		{/each}
 	</ul>

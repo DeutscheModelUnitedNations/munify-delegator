@@ -5,7 +5,8 @@ import {
 	flaggingTransfer,
 	paidDecisions,
 	preselected,
-	reviewCases
+	reviewCases,
+	withPeople
 } from './reviewCases';
 
 const transfer = (overrides: Partial<CaseTransfer> = {}): CaseTransfer => ({
@@ -134,5 +135,29 @@ describe('paidDecisions', () => {
 			{ paymentId: 'some', kind: 'partly', paidFor: ['d'] },
 			{ paymentId: 'none', kind: 'pending' }
 		]);
+	});
+});
+
+describe('withPeople', () => {
+	it('names the people the caller may read and leaves a gap for the others', () => {
+		const read = {
+			id: 'p',
+			amount: 170,
+			recievedAt: null,
+			payerParticipantId: 'a',
+			bankTransfers: [transfer()],
+			paymentFor: ['a', 'b'].map((conferenceParticipantId) => ({
+				conferenceParticipantId,
+				participant: { paymentStatus: 'NEEDS_HUMAN_REVIEW' }
+			}))
+		};
+		const [payment] = withPeople({
+			payments: [read],
+			users: [
+				{ id: 'user-a', givenName: 'Ada', familyName: 'A', conferenceParticipants: [{ id: 'a' }] }
+			]
+		});
+		expect(payment.paymentFor.map((p) => p.user?.id)).toEqual(['user-a', undefined]);
+		expect(payment.bankTransfers).toEqual([transfer()]);
 	});
 });

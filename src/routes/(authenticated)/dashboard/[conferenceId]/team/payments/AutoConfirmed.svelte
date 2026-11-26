@@ -33,24 +33,47 @@
 				externalId: true,
 				amount: true,
 				bookedAt: true,
-				paymentTransactionId: true,
-				paymentTransaction: {
-					paymentFor: { user: { givenName: true, familyName: true } }
-				}
+				paymentTransactionId: true
 			}),
 			client.liveQuery.bankTransfersCount({ __args: { where } })
 		])
 	);
 
-	const covered = (transfer: (typeof transfers)[number]) =>
-		transfer.paymentTransaction.paymentFor
-			.map(({ user }) =>
-				formatNames({
-					givenName: user.givenName ?? undefined,
-					familyName: user.familyName ?? undefined
+	const paymentIds = $derived(transfers.map((transfer) => transfer.paymentTransactionId));
+
+	// read on their own: a person participant care may not see leaves a gap, not a failed query
+	const users = $derived(
+		paymentIds.length === 0
+			? []
+			: await client.liveQuery.users({
+					__args: {
+						where: {
+							paymentTransactionsReferences: { paymentTransaction: { id: { in: paymentIds } } }
+						}
+					},
+					givenName: true,
+					familyName: true,
+					paymentTransactionsReferences: {
+						__args: { where: { paymentTransactionId: { in: paymentIds } } },
+						paymentTransactionId: true
+					}
 				})
-			)
-			.join(', ');
+	);
+
+	/** The names of the people each payment covers, as far as the caller may read them. */
+	const coveredNames = $derived.by(() => {
+		const names = new Map<string, string[]>();
+		for (const user of users) {
+			const name = formatNames({
+				givenName: user.givenName ?? undefined,
+				familyName: user.familyName ?? undefined
+			});
+			for (const { paymentTransactionId } of user.paymentTransactionsReferences) {
+				names.set(paymentTransactionId, [...(names.get(paymentTransactionId) ?? []), name]);
+			}
+		}
+		return names;
+	});
 </script>
 
 {#if transfers.length === 0}
@@ -83,7 +106,7 @@
 								{transfer.paymentTransactionId}
 							</a>
 						</td>
-						<td class="min-w-48">{covered(transfer)}</td>
+						<td class="min-w-48">{coveredNames.get(transfer.paymentTransactionId)?.join(', ')}</td>
 						<td class="text-right font-mono whitespace-nowrap">
 							{transfer.amount.toLocaleString(getLocale(), { style: 'currency', currency })}
 						</td>

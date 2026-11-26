@@ -9,7 +9,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import ReviewCase from './ReviewCase.svelte';
-	import { reviewCases } from './reviewCases';
+	import { reviewCases, withPeople } from './reviewCases';
 
 	interface Props {
 		conferenceId: string;
@@ -17,7 +17,7 @@
 
 	let { conferenceId }: Props = $props();
 
-	const [payments, conference, lastMatch] = $derived(
+	const [read, conference, lastMatch] = $derived(
 		await Promise.all([
 			client.liveQuery.paymentTransactions({
 				__args: {
@@ -32,8 +32,7 @@
 				payerParticipantId: true,
 				paymentFor: {
 					conferenceParticipantId: true,
-					participant: { paymentStatus: true },
-					user: { id: true, givenName: true, familyName: true }
+					participant: { paymentStatus: true }
 				},
 				bankTransfers: {
 					externalId: true,
@@ -57,7 +56,28 @@
 		])
 	);
 
-	const cases = $derived(reviewCases(payments));
+	const paymentIds = $derived(read.map((payment) => payment.id));
+
+	// read on their own: a person participant care may not see (no part any more) leaves a gap
+	const users = $derived(
+		paymentIds.length === 0
+			? []
+			: await client.liveQuery.users({
+					__args: {
+						where: {
+							paymentTransactionsReferences: { paymentTransaction: { id: { in: paymentIds } } }
+						}
+					},
+					givenName: true,
+					familyName: true,
+					conferenceParticipants: {
+						__args: { where: { conferenceId: { eq: conferenceId } } },
+						id: true
+					}
+				})
+	);
+
+	const cases = $derived(reviewCases(withPeople({ payments: read, users })));
 	const currency = $derived(conference.currency ?? 'EUR');
 	const lastMatchAt = $derived(lastMatch[0]?.createdAt);
 </script>

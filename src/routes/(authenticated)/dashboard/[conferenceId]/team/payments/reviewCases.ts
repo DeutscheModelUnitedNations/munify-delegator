@@ -31,8 +31,67 @@ export interface ReviewPayment extends CasePayment {
 	paymentFor: readonly {
 		conferenceParticipantId: string;
 		participant: { paymentStatus: string };
-		user: { id: string; givenName?: string | null; familyName?: string | null };
+		/** Missing for somebody the caller may not read (a participant row without a part). */
+		user?: PersonName;
 	}[];
+}
+
+interface PersonName {
+	id: string;
+	givenName?: string | null;
+	familyName?: string | null;
+}
+
+/** A user as read separately, with their participant row in the conference. */
+interface ReadableUser extends PersonName {
+	conferenceParticipants: readonly { id: string }[];
+}
+
+/** A payment as read, before the names of the people it covers are attached. */
+type ReadPayment = Omit<ReviewPayment, 'paymentFor'> & {
+	paymentFor: readonly Omit<ReviewPayment['paymentFor'][number], 'user'>[];
+};
+
+/**
+ * Plain copies of the payments with the name of everybody they cover the caller may read. Users are
+ * read on their own, so a person the caller may not see leaves a gap instead of failing the query.
+ */
+export function withPeople({
+	payments,
+	users
+}: {
+	payments: readonly ReadPayment[];
+	users: readonly ReadableUser[];
+}): ReviewPayment[] {
+	const byParticipant = new Map<string, PersonName>();
+	for (const user of users) {
+		for (const participant of user.conferenceParticipants) {
+			byParticipant.set(participant.id, {
+				id: user.id,
+				givenName: user.givenName,
+				familyName: user.familyName
+			});
+		}
+	}
+	return payments.map((payment) => ({
+		id: payment.id,
+		amount: payment.amount,
+		recievedAt: payment.recievedAt,
+		payerParticipantId: payment.payerParticipantId,
+		bankTransfers: payment.bankTransfers.map((transfer) => ({
+			externalId: transfer.externalId,
+			amount: transfer.amount,
+			bookedAt: transfer.bookedAt,
+			result: transfer.result,
+			counterparty: transfer.counterparty,
+			purpose: transfer.purpose
+		})),
+		paymentFor: payment.paymentFor.map((covered) => ({
+			conferenceParticipantId: covered.conferenceParticipantId,
+			participant: { paymentStatus: covered.participant.paymentStatus },
+			user: byParticipant.get(covered.conferenceParticipantId)
+		}))
+	}));
 }
 
 /**
