@@ -235,6 +235,44 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
             }
 
+  # A release's migrations must apply to the data the release before left behind, not only to an
+  # empty database: scripts/migrationUpgrade.sh migrates and seeds (small dev seed) a database
+  # with the previous release tag, then migrates it with this commit. Runs on release tags, which
+  # docker-build waits for, and on PRs that change migrations, as an early warning. Elsewhere the
+  # steps skip, so the job still passes for docker-build's `needs`.
+  migration-upgrade:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      # RustFS from dev.docker-compose.yml, for the files the seed uploads
+      S3_ENDPOINT: http://localhost:9100/delegator
+      S3_ACCESS_KEY_ID: delegator
+      S3_SECRET_ACCESS_KEY: delegator-secret
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The previous release tag and its tree
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: dorny/paths-filter@v4
+        id: changes
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            migrations:
+              - 'drizzle/**'
+      - id: decide
+        run: echo "run=${{ github.ref_type == 'tag' || steps.changes.outputs.migrations == 'true' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.decide.outputs.run == 'true'
+        uses: ./.github/actions/setup-bun
+      - if: steps.decide.outputs.run == 'true'
+        run: docker compose -f dev.docker-compose.yml up -d --wait postgres s3
+      - if: steps.decide.outputs.run == 'true'
+        name: Create the bucket
+        run: docker compose -f dev.docker-compose.yml run --rm s3-init
+      - if: steps.decide.outputs.run == 'true'
+        run: bash scripts/migrationUpgrade.sh
+
   i18n:
     runs-on: ubuntu-latest
     steps:
@@ -343,7 +381,7 @@ jobs:
   # force a fresh dependency install when the GHA cache is serving a stale layer.
 
   docker-build:
-    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
+    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow, migration-upgrade]
     runs-on: ubuntu-latest
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -471,7 +509,7 @@ jobs:
 
   docker-build-jobs:
     if: github.event_name == 'push'
-    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
+    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow, migration-upgrade]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
