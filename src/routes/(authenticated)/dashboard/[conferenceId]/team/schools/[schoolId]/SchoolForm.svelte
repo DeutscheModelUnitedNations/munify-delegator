@@ -11,7 +11,7 @@
 	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
 	import AddressSection from '#lib/components/form/AddressSection.svelte';
 	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { m } from '#lib/paraglide/messages';
 	import { schoolFormSchema, toUpdateSchoolArgs, type SchoolFormValues } from './schoolForm';
 
@@ -65,7 +65,7 @@
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod4Client(schoolFormSchema),
-		onError: (e) => toast.error(e.result.error.message),
+		onError: (e) => toast.error(errorToastMessage(e.result.error)),
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
 			const promise = client.mutate.updateSchool({

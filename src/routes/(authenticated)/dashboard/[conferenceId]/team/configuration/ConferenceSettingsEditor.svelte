@@ -21,7 +21,7 @@
 	import Form from '#lib/components/form/Form.svelte';
 	import { canEditConference, canEditConferenceContent } from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { conferenceSettingsFormSchema, limitArgs, type ConferenceSettings } from './form-schema';
 	import { collectConfigChanges, type ChangeGroupKey } from './changePreview';
 	import { uploadConferenceFiles } from './conferenceFiles';
@@ -192,7 +192,7 @@
 		validationMethod: 'oninput',
 		validators: zod4Client(conferenceSettingsFormSchema),
 		onError(e) {
-			toast.error(e.result.error.message);
+			toast.error(errorToastMessage(e.result.error));
 		},
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;

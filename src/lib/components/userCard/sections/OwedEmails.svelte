@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
@@ -49,7 +50,7 @@
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
 			success: m.emailSendSuccess(),
-			error: (error) => (error instanceof Error ? error.message : m.genericToastError())
+			error: errorToastMessage
 		});
 		await promise.catch(() => undefined);
 		sending = undefined;

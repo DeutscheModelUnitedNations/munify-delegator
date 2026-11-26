@@ -1,3 +1,4 @@
+import { errorToastMessage } from '#lib/utils/toast';
 import { client } from '#lib/api/rumbleClient/client';
 import { m } from '#lib/paraglide/messages';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
@@ -170,7 +171,7 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 				roles: { id: true }
 			});
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 			return;
 		} finally {
 			end({ key, request });

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
 	import { emailKindTexts } from '#lib/helpers/emailKindTexts';
@@ -30,7 +31,7 @@
 			toast.success(m.emailSendingStarted({ count: Number(count) }));
 			prompt.close();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		} finally {
 			sending = false;
 		}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	// MapLibre is large: loaded only when a map shows.
 	const loadPlaceMap = () => import('#lib/components/map/PlaceMap.svelte');
 	import { logger } from '#lib/logger';
@@ -129,7 +130,7 @@
 			onClose();
 		} catch (error) {
 			logger.error('Failed to save place', error);
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(errorToastMessage(error));
 		} finally {
 			isLoading = false;
 		}

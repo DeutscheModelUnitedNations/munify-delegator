@@ -3,7 +3,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { onDestroy } from 'svelte';
 	import { fullName } from './attendanceSession';
@@ -132,7 +132,7 @@
 				filename: `${sessionName}_scans.csv`
 			});
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		} finally {
 			exporting = false;
 		}

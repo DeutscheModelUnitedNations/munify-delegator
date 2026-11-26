@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
-	import { conflictAwareToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { TEAM_ROLES } from '#lib/dataGrid/tables/participants';
 
@@ -28,7 +28,7 @@
 		saving = true;
 		try {
 			const promise = onChange(next);
-			toast.promise(promise, conflictAwareToastMessages);
+			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
 		} catch {
 			shown = role;

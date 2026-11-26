@@ -3,7 +3,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
-	import { conflictAwareToastMessages } from '#lib/utils/toast';
+	import { errorToastMessage } from '#lib/utils/toast';
 	import type { WorkspacePage } from '#lib/guide/workspace';
 	import { getOutlineDraft } from '../outlineDraft.svelte';
 	import StateDot from './StateDot.svelte';
@@ -51,7 +51,7 @@
 		toast.promise(promise, {
 			loading: m.guidePublishing(),
 			success: m.guidePublished(),
-			error: conflictAwareToastMessages.error
+			error: errorToastMessage
 		});
 		try {
 			await promise;

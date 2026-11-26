@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { client } from '#lib/api/rumbleClient/client';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import codenamize from '#lib/helpers/codenamize';
@@ -61,7 +62,7 @@
 			});
 			onClose();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		} finally {
 			saving = false;
 		}

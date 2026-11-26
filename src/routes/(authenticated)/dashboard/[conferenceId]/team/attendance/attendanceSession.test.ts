@@ -45,6 +45,15 @@ describe('attendanceSession', () => {
 		);
 	});
 
+	test("scanErrorText shows the API's message of a coded error, else the fallback", () => {
+		const failed = (extensions?: Record<string, unknown>) =>
+			new CombinedError({ graphQLErrors: [new GraphQLError('Text', { extensions })] });
+		expect(
+			scanErrorText({ err: failed({ code: 'CONFLICT' }), offlineText: 'o', fallback: 'g' })
+		).toBe('Text');
+		expect(scanErrorText({ err: failed(), offlineText: 'o', fallback: 'g' })).toBe('g');
+	});
+
 	test('isAlreadyScanned reads the error code, not the message', () => {
 		const refused = (code: string, message: string) =>
 			new CombinedError({

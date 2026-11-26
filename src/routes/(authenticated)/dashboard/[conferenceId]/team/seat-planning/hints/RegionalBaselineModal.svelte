@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
@@ -40,7 +41,7 @@
 				regionalBaselineTargets: true
 			});
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		}
 	}
 

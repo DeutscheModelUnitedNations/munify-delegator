@@ -310,7 +310,7 @@ bun run preview
   	resetForm: false,
   	validationMethod: 'oninput',
   	validators: zod4Client(schema),
-  	onError: (e) => toast.error(e.result.error.message),
+  	onError: (e) => toast.error(errorToastMessage(e.result.error)),
   	async onUpdate({ form: validated }) {
   		if (!validated.valid) return;
   		const promise = client.mutate.updateX({ __args: { ...validated.data, id } });
@@ -399,7 +399,10 @@ bun run preview
 - **Errors the client recognises carry a code**: `apiError({ code, message: m.…() })`
   (`#api/services/errors.ts`), read with `hasErrorCode` / `errorCodeOf` (`$lib/api/errorCodes.ts`,
   closed `ERROR_CODES`). Never branch on message text; `isNetworkError` checks urql's
-  `networkError`. `UNAUTHENTICATED` is handled globally by `loginRedirectExchange`; resolvers just
+  `networkError`. **Toasts show coded errors' messages**: `errorToastMessage` (`#lib/utils/toast`,
+  also `genericPromiseToastMessages.error`) shows the translated message of a coded error
+  (`apiErrorMessageOf`) and the generic one otherwise; never toast `error.message` (a failed
+  operation's reads "[GraphQL] …"). A handler awaiting a toasted promise catches its rejection. `UNAUTHENTICATED` is handled globally by `loginRedirectExchange`; resolvers just
   call `mustBeLoggedIn()`.
 - **German is informal**: "du"/"dein" (lowercase mid-sentence), plural "ihr"/"euch" for groups,
   du-imperatives. **Gender-inclusive**: neutral forms ("Teilnehmende"), otherwise gender asterisk

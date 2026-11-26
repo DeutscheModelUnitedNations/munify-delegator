@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
@@ -76,7 +77,7 @@
 			await client.mutate.setAttendanceSessionOnCertificate({ __args: { id, show } });
 		} catch (error) {
 			input.checked = !show;
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		}
 	}
 

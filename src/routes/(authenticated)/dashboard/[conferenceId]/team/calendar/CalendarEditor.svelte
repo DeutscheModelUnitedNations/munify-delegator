@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import NoCalendarDays from './NoCalendarDays.svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { formatClockMinutes } from '#lib/helpers/formatClock';
@@ -229,7 +230,7 @@
 			await client.mutate.deleteCalendarEntry({ __args: { id: entryToDelete } });
 			entryToDelete = null;
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		}
 	}
 

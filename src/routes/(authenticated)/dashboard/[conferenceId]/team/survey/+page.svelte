@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { conflictMessageOf } from '#lib/api/errorCodes';
 	import { logger } from '#lib/logger';
 	import ActionModal from '#lib/components/ActionModal.svelte';
@@ -80,7 +81,7 @@
 			createDeadline = '';
 		} catch (error) {
 			logger.error('Failed to create survey', error);
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(errorToastMessage(error));
 		} finally {
 			isLoading = false;
 		}

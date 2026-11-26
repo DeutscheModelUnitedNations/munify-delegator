@@ -1,6 +1,6 @@
 import { superForm, type FormOptions, type SuperValidated } from 'sveltekit-superforms';
 import { toast } from 'svelte-sonner';
-import { genericPromiseToastMessages } from '#lib/utils/toast';
+import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 
 /**
  * A superforms SPA form that submits through a mutation, in the shape every such form shares:
@@ -28,7 +28,7 @@ export function mutationForm<
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators,
-		onError: (e) => toast.error(e.result.error.message),
+		onError: (e) => toast.error(errorToastMessage(e.result.error)),
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
 			const promise = save(validated.data);

@@ -6,7 +6,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { conflictAwareToastMessages, genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import GuideEditor from '#lib/components/guide/editor/GuideEditor.svelte';
 	import GuideContent from '#lib/components/guide/GuideContent.svelte';
 	import {
@@ -102,18 +102,22 @@
 		placeholdersIn(doc).filter((name) => COMMITTEE_PLACEHOLDERS.includes(name))
 	);
 
+	/** Whether the draft is saved; a failure is toasted, not thrown. */
 	async function save() {
-		if (saving) return;
+		if (saving) return false;
 		saving = true;
 		try {
 			const promise = client.mutate.updateGuidePageDraft({
 				__args: { id: pageId, title: title.trim(), content: doc, expectedDraftUpdatedAt: savedAt },
 				draftUpdatedAt: true
 			});
-			toast.promise(promise, conflictAwareToastMessages);
+			toast.promise(promise, genericPromiseToastMessages);
 			const saved = await promise;
 			savedAt = new Date(saved.draftUpdatedAt);
 			dirty = false;
+			return true;
+		} catch {
+			return false;
 		} finally {
 			saving = false;
 		}
@@ -129,7 +133,7 @@
 	}
 
 	async function publish() {
-		if (dirty) await save();
+		if (dirty && !(await save())) return;
 		const promise = client.mutate.publishGuidePage({
 			__args: { id: pageId },
 			draftUpdatedAt: true
@@ -137,9 +141,13 @@
 		toast.promise(promise, {
 			loading: m.guidePublishing(),
 			success: m.guidePublished(),
-			error: (error) => (error instanceof Error ? error.message : m.genericToastError())
+			error: errorToastMessage
 		});
-		await promise;
+		try {
+			await promise;
+		} catch {
+			// the toast shows the failure
+		}
 	}
 
 	async function restore(versionId: string) {
@@ -165,7 +173,7 @@
 		draft.change(withoutPage({ outline: draft.outline, pageId }));
 		if (!(await draft.flush())) return;
 		const promise = Promise.resolve(client.mutate.deleteGuidePage({ __args: { id: pageId } }));
-		toast.promise(promise, conflictAwareToastMessages);
+		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		await goto(resolve('/(authenticated)/dashboard/[conferenceId]/team/guide', { conferenceId }));
 	}

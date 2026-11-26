@@ -1,7 +1,7 @@
 import { CombinedError } from '@urql/core';
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
-import { conflictMessageOf, errorCodeOf, hasErrorCode } from './errorCodes';
+import { apiErrorMessageOf, conflictMessageOf, errorCodeOf, hasErrorCode } from './errorCodes';
 
 const failed = (extensions?: Record<string, unknown>) =>
 	new CombinedError({ graphQLErrors: [new GraphQLError('Text', { extensions })] });
@@ -44,5 +44,31 @@ describe('conflictMessageOf', () => {
 	it('answers nothing for any other failure', () => {
 		expect(conflictMessageOf(failed({ code: 'FORBIDDEN' }))).toBeUndefined();
 		expect(conflictMessageOf(new Error('CONFLICT'))).toBeUndefined();
+	});
+});
+
+describe('apiErrorMessageOf', () => {
+	it('answers the message of any error the API gave a code, without the "[GraphQL]" prefix', () => {
+		expect(apiErrorMessageOf(failed({ code: 'INVALID_INPUT' }))).toBe('Text');
+		expect(apiErrorMessageOf(failed({ code: 'FORBIDDEN' }))).toBe('Text');
+	});
+
+	it('takes the message of the error that carries the code', () => {
+		const err = new CombinedError({
+			graphQLErrors: [
+				new GraphQLError('Unexpected error.'),
+				new GraphQLError('Gremientext', { extensions: { code: 'INVALID_INPUT' } })
+			]
+		});
+		expect(apiErrorMessageOf(err)).toBe('Gremientext');
+	});
+
+	it('answers nothing for an unexpected error, a network failure or anything else', () => {
+		expect(apiErrorMessageOf(failed())).toBeUndefined();
+		expect(apiErrorMessageOf(failed({ code: 'INTERNAL_SERVER_ERROR' }))).toBeUndefined();
+		expect(
+			apiErrorMessageOf(new CombinedError({ networkError: new TypeError('Failed to fetch') }))
+		).toBeUndefined();
+		expect(apiErrorMessageOf(new Error('Text'))).toBeUndefined();
 	});
 });

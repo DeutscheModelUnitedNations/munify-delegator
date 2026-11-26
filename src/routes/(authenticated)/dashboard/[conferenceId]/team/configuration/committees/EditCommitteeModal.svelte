@@ -2,7 +2,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import CommitteeNameFields from './CommitteeNameFields.svelte';
 	import SeatsPerDelegationField from './SeatsPerDelegationField.svelte';
@@ -43,7 +43,7 @@
 		});
 		toast.promise(promise, {
 			...genericPromiseToastMessages,
-			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
+			error: errorToastMessage
 		});
 		await promise;
 		committee = undefined;

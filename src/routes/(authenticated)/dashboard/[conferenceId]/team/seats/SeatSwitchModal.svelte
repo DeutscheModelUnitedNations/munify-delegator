@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages';
@@ -123,7 +124,7 @@
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
 			success: m.seatSwitchSuccess(),
-			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
+			error: errorToastMessage
 		});
 		try {
 			await promise;
