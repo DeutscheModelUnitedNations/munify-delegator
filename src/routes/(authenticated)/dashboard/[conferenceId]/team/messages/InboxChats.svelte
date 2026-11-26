@@ -11,6 +11,7 @@
 	import ChatListHeader from '#lib/components/chat/ChatListHeader.svelte';
 	import ChatWorkspace from '#lib/components/chat/ChatWorkspace.svelte';
 	import { m } from '#lib/paraglide/messages';
+	import { createChatOpener } from '#lib/components/chat/chatOpener.svelte.js';
 	import ArchiveToggle from './ArchiveToggle.svelte';
 	import InboxFilter from './InboxFilter.svelte';
 	import {
@@ -18,6 +19,7 @@
 		inboxGroups,
 		inboxKey,
 		listedChats,
+		teamInboxName,
 		unreadByInbox,
 		type TeamInbox
 	} from './teamInboxes';
@@ -65,7 +67,41 @@
 		filter ? chats.filter((chat) => filter.keys.has(inboxKey(chat))) : chats
 	);
 	const listed = $derived(listedChats({ chats: shownChats, showArchive }));
+	// the groups in view, which the team writes into without waiting for a participant
+	const shownGroups = $derived(
+		(filter ? (filter.inbox ? [filter.inbox] : filter.group.inboxes) : inboxes).filter(
+			(inbox) => inbox.group
+		)
+	);
+	const opener = createChatOpener({
+		conferenceId: () => conferenceId,
+		onOpened: (chatId) => onSelect(chatId)
+	});
 </script>
+
+{#snippet groupButtons()}
+	{#if shownGroups.length > 0}
+		<ul class="flex flex-wrap justify-center gap-2" data-testid="team-group-buttons">
+			{#each shownGroups as inbox (inbox.key)}
+				{@const group = inbox.group}
+				{#if group}
+					<li>
+						<button
+							type="button"
+							class="btn btn-sm btn-outline"
+							disabled={opener.opening}
+							onclick={() => opener.group(group)}
+							data-testid="team-open-group"
+						>
+							<i aria-hidden="true" class="ph-duotone ph-users-four"></i>
+							{teamInboxName(inbox)}
+						</button>
+					</li>
+				{/if}
+			{/each}
+		</ul>
+	{/if}
+{/snippet}
 
 <ChatWorkspace
 	chats={listed.chats}
@@ -114,6 +150,7 @@
 		<div class="text-base-content/60 flex flex-col items-center gap-3 px-4 py-10 text-center">
 			<i aria-hidden="true" class="ph-duotone ph-tray text-4xl"></i>
 			<p>{listed.archived > 0 ? m.chatInboxAllArchived() : m.chatInboxEmpty()}</p>
+			{@render groupButtons()}
 		</div>
 	{/snippet}
 	{#snippet noSelection()}
@@ -126,6 +163,10 @@
 				<i aria-hidden="true" class="ph-duotone ph-identification-badge mt-0.5"></i>
 				{m.chatTeamAnswerHint()}
 			</p>
+			{#if shownGroups.length > 0}
+				<p class="mt-2 text-sm font-medium">{m.chatOpenGroup()}</p>
+				{@render groupButtons()}
+			{/if}
 		</div>
 	{/snippet}
 </ChatWorkspace>

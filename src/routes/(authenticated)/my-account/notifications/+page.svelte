@@ -24,6 +24,7 @@
 				functionKind: true,
 				committeeAbbreviation: true,
 				committeeName: true,
+				roleName: true,
 				email: true,
 				slack: true
 			}

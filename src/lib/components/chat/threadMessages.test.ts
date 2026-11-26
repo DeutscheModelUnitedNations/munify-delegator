@@ -289,3 +289,56 @@ describe('scrollBehaviorFor', () => {
 		expect(scrollBehaviorFor({ opening: false, reducedMotion: true })).toBe('instant');
 	});
 });
+
+describe('the group of a committee or role', () => {
+	const group: ThreadChat = {
+		kind: 'COMMITTEE',
+		committee: { abbreviation: 'GV' },
+		participantId: null,
+		contacts: [germany, france]
+	};
+
+	test('everybody in it, the team too, has their own messages on their side', () => {
+		const mineFromTeam = { ...fromTeam('t1'), mine: true };
+		expect(standsOnOwnSide({ message: mineFromTeam, side: 'TEAM', chat: group })).toBe(true);
+		expect(standsOnOwnSide({ message: fromTeam('t2'), side: 'TEAM', chat: group })).toBe(false);
+		expect(
+			standsOnOwnSide({ message: fromParticipant('m', true), side: 'PARTICIPANT', chat: group })
+		).toBe(true);
+		expect(standsOnOwnSide({ message: fromParticipant('m'), side: 'REVIEW', chat: group })).toBe(
+			false
+		);
+	});
+
+	test('participants are named by their role, the team by name', () => {
+		expect(messageAuthor({ message: fromParticipant('m'), side: 'PARTICIPANT', chat: group })).toBe(
+			'Frankreich · GV'
+		);
+		expect(messageAuthor({ message: fromTeam('t'), side: 'PARTICIPANT', chat: group })).toBe(
+			'Team · Chris Chair'
+		);
+	});
+
+	test('somebody no longer seated there still reads as somebody', () => {
+		expect(
+			messageAuthor({
+				message: fromParticipant('m', false, 'p-gone'),
+				side: 'PARTICIPANT',
+				chat: group
+			})
+		).toBe('Person ohne Rolle');
+	});
+
+	test("a role's inbox names the role its team answers for", () => {
+		const roleInbox: ThreadChat = {
+			kind: 'TEAM',
+			inbox: 'ROLE_SUPPORT',
+			role: { name: 'Presse' },
+			participantId: 'p-press',
+			contacts: []
+		};
+		expect(messageAuthor({ message: fromTeam('t'), side: 'PARTICIPANT', chat: roleInbox })).toBe(
+			'Betreuung Presse · Chris Chair'
+		);
+	});
+});

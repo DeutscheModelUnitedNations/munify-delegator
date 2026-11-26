@@ -29,7 +29,9 @@ describe('inboxesOf', () => {
 			'PARTICIPANT_CARE',
 			'CHAIR:ga',
 			'CONSULTANT:ga',
-			'CONSULTANT:sc'
+			'CONSULTANT:sc',
+			'GROUP:committee:ga',
+			'GROUP:committee:sc'
 		]);
 	});
 
@@ -42,7 +44,8 @@ describe('inboxesOf', () => {
 			['PARTICIPANT_CARE', false],
 			['TRUSTED_PERSON', false],
 			['TRUSTED_PERSON:own', true],
-			['CHAIR:ga', false]
+			['CHAIR:ga', false],
+			['GROUP:committee:ga', false]
 		]);
 	});
 
@@ -140,7 +143,8 @@ describe('inbox groups', () => {
 			['PARTICIPANT_CARE', 1],
 			['group:TRUSTED_PERSON', 2],
 			['group:CHAIR', 2],
-			['CONSULTANT:ga', 1]
+			['CONSULTANT:ga', 1],
+			['group:GROUP', 2]
 		]);
 	});
 
@@ -187,7 +191,8 @@ describe('the inbox filter rows', () => {
 		expect(rows.kinds?.all.pressed).toBe(true);
 		expect(rows.kinds?.groups.map(({ target, unread }) => [target, unread])).toEqual([
 			['PARTICIPANT_CARE', 4],
-			['group:CHAIR', 3]
+			['group:CHAIR', 3],
+			['group:GROUP', 0]
 		]);
 		expect(rows.members).toBeNull();
 	});
@@ -196,7 +201,8 @@ describe('the inbox filter rows', () => {
 		const rows = inboxFilterRows({ groups, selected: 'group:CHAIR', unreadOf });
 		expect(rows.kinds?.groups.map(({ pressed, target }) => [pressed, target])).toEqual([
 			[false, 'PARTICIPANT_CARE'],
-			[true, null]
+			[true, null],
+			[false, 'group:GROUP']
 		]);
 		expect(rows.members?.all).toEqual({ pressed: true, target: 'group:CHAIR', unread: 0 });
 		expect(
@@ -227,5 +233,51 @@ describe('the inbox filter rows', () => {
 	test('a kind of one inbox gets no second row', () => {
 		const rows = inboxFilterRows({ groups, selected: 'PARTICIPANT_CARE', unreadOf });
 		expect(rows.members).toBeNull();
+	});
+});
+
+describe('the groups and the inboxes of custom roles', () => {
+	const press = {
+		kind: 'ROLE_SUPPORT' as const,
+		committeeId: null,
+		roleId: 'press',
+		role: { name: 'Presse' }
+	};
+
+	test("whoever supports a role answers its inbox and is in its group, after the committees'", () => {
+		const inboxes = inboxesOf({ cares: false, functions: [press, fn('CHAIR', 'ga', 'GV')] });
+		expect(inboxes.map((inbox) => [inbox.key, inbox.inbox, inbox.roleName ?? null])).toEqual([
+			['CHAIR:ga', 'CHAIR', null],
+			['ROLE_SUPPORT:role:press', 'ROLE_SUPPORT', 'Presse'],
+			['GROUP:committee:ga', 'GROUP', null],
+			['GROUP:role:press', 'GROUP', 'Presse']
+		]);
+		expect(inboxes.at(-1)?.group).toEqual({ committeeId: null, roleId: 'press' });
+	});
+
+	test('chairing and advising a committee puts somebody into its group once', () => {
+		const inboxes = inboxesOf({
+			cares: false,
+			functions: [fn('CHAIR', 'ga', 'GV'), fn('CONSULTANT', 'ga', 'GV')]
+		});
+		expect(inboxes.filter((inbox) => inbox.inbox === 'GROUP')).toHaveLength(1);
+	});
+
+	test('a system admin is in no group by being one', () => {
+		const inboxes = inboxesOf({
+			cares: true,
+			functions: [],
+			isAdmin: true,
+			committees: [{ id: 'ga', abbreviation: 'GV' }]
+		});
+		expect(inboxes.some((inbox) => inbox.inbox === 'GROUP')).toBe(false);
+	});
+
+	test('matches the group chats and role inboxes to their keys', () => {
+		expect(inboxKey({ kind: 'COMMITTEE', committeeId: 'ga' })).toBe('GROUP:committee:ga');
+		expect(inboxKey({ kind: 'ROLE', roleId: 'press' })).toBe('GROUP:role:press');
+		expect(inboxKey({ kind: 'TEAM', inbox: 'ROLE_SUPPORT', roleId: 'press' })).toBe(
+			'ROLE_SUPPORT:role:press'
+		);
 	});
 });

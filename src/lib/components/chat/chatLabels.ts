@@ -41,10 +41,15 @@ export function contactLabel(contact: ContactLabelSource) {
 	return [contactName(contact), contactDetail(contact)].filter(Boolean).join(' · ');
 }
 
-/** A team inbox as the labels read it: its kind, a committee's abbreviation, one trusted person's name. */
+/**
+ * A team inbox as the labels read it: its kind, a committee's abbreviation, a custom role's name,
+ * one trusted person's name.
+ */
 export interface InboxLabelSource {
 	inbox: ChatInbox;
 	committeeAbbreviation?: string | null;
+	/** The custom role a `ROLE_SUPPORT` inbox looks after */
+	roleName?: string | null;
 	/** The one trusted person the inbox is; empty for all of them together */
 	personName?: string | null;
 }
@@ -52,11 +57,17 @@ export interface InboxLabelSource {
 const joined = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 
 /**
- * A team inbox: participant care, a committee's chairs or consultants, the trusted persons
- * together or one of them by name.
+ * A team inbox: participant care, a committee's chairs or consultants, the team looking after a
+ * custom role, the trusted persons together or one of them by name.
  */
-export function inboxName({ inbox, committeeAbbreviation, personName }: InboxLabelSource) {
+export function inboxName({
+	inbox,
+	committeeAbbreviation,
+	roleName,
+	personName
+}: InboxLabelSource) {
 	if (inbox === 'PARTICIPANT_CARE') return m.chatInboxParticipantCare();
+	if (inbox === 'ROLE_SUPPORT') return m.chatInboxRoleSupport({ role: roleName ?? '' });
 	if (inbox === 'TRUSTED_PERSON') {
 		return personName
 			? joined(m.chatInboxTrustedPerson(), personName)
@@ -69,6 +80,7 @@ export function inboxName({ inbox, committeeAbbreviation, personName }: InboxLab
 /** What the inbox is there for, under its name in the picker. */
 export function inboxDescription({ inbox, personName }: InboxLabelSource) {
 	if (inbox === 'PARTICIPANT_CARE') return m.chatInboxParticipantCareDescription();
+	if (inbox === 'ROLE_SUPPORT') return m.chatInboxRoleSupportDescription();
 	if (inbox === 'TRUSTED_PERSON') {
 		return personName
 			? m.chatInboxTrustedPersonDescription()
@@ -81,18 +93,42 @@ export const INBOX_ICON: Record<ChatInbox, string> = {
 	PARTICIPANT_CARE: 'lifebuoy',
 	CHAIR: 'gavel',
 	CONSULTANT: 'chalkboard-teacher',
-	TRUSTED_PERSON: 'hand-heart'
+	TRUSTED_PERSON: 'hand-heart',
+	ROLE_SUPPORT: 'headset'
 };
+
+/** The group of a committee or custom role as the labels read it. */
+export interface GroupLabelSource {
+	kind: ChatKind;
+	committee?: { abbreviation: string; name?: string } | null;
+	role?: { name: string | null; icon?: string | null } | null;
+}
+
+/** A group: "GA" for a committee's, the role's name for a custom role's. */
+export function groupName(group: GroupLabelSource) {
+	if (group.kind === 'COMMITTEE') {
+		return m.chatCommitteeGroup({ committee: group.committee?.abbreviation ?? '' });
+	}
+	return m.chatRoleGroup({ role: group.role?.name ?? m.chatUnknownRole() });
+}
+
+/** The picture of a group: the role's own icon, a committee's table. */
+export function groupIcon(group: GroupLabelSource) {
+	if (group.kind === 'ROLE') return group.role?.icon ?? 'users-four';
+	return 'users-four';
+}
 
 /** The inbox of a team chat as the labels read it. */
 function inboxOfChat(chat: {
 	inbox: ChatInbox;
 	committee?: { abbreviation: string } | null;
+	role?: { name: string | null } | null;
 	trustedPersonName?: string | null;
 }): InboxLabelSource {
 	return {
 		inbox: chat.inbox,
 		committeeAbbreviation: chat.committee?.abbreviation,
+		roleName: chat.role?.name,
 		personName: chat.trustedPersonName
 	};
 }
@@ -103,6 +139,8 @@ export interface ChatLabelSource {
 	side: string;
 	inbox?: ChatInbox | null;
 	committee?: { abbreviation: string } | null;
+	/** A custom role's group or inbox: the role */
+	role?: { name: string | null; icon?: string | null } | null;
 	/** A chat with one trusted person: their name */
 	trustedPersonName?: string | null;
 	contacts: readonly ContactLabelSource[];
@@ -126,6 +164,8 @@ function trustedHint(personName: string | null | undefined) {
 export function kindHint(chat: Pick<ChatLabelSource, 'kind' | 'inbox' | 'trustedPersonName'>) {
 	if (chat.kind === 'DIRECT') return m.chatDirectHint();
 	if (chat.kind === 'DELEGATION') return m.chatDelegationHint();
+	if (chat.kind === 'COMMITTEE') return m.chatCommitteeGroupHint();
+	if (chat.kind === 'ROLE') return m.chatRoleGroupHint();
 	return chat.inbox === 'TRUSTED_PERSON' ? trustedHint(chat.trustedPersonName) : m.chatTeamHint();
 }
 
@@ -156,6 +196,7 @@ export function listBadge({
 
 /** What a chat is called for the caller: the other party, their delegation, or the team inbox. */
 export function chatTitle(chat: ChatLabelSource) {
+	if (chat.kind === 'COMMITTEE' || chat.kind === 'ROLE') return groupName(chat);
 	const side = sideOf(chat);
 	if (chat.kind === 'DELEGATION') {
 		if (side === 'PARTICIPANT') return m.chatMyDelegation();
@@ -176,6 +217,8 @@ export function chatTitle(chat: ChatLabelSource) {
 export function chatSubtitle(chat: ChatLabelSource) {
 	const side = sideOf(chat);
 	if (side === 'PARTICIPANT') return undefined;
+	// a group is everybody seated there: its hint says so, names would be a long list
+	if (chat.kind === 'COMMITTEE' || chat.kind === 'ROLE') return undefined;
 	const names = (chat.people ?? [])
 		.map((person) => person.name)
 		.join(chat.kind === 'DELEGATION' ? ', ' : ' ↔ ');
@@ -201,6 +244,7 @@ export function threadSubtitle(chat: ChatLabelSource) {
 /** The picture of a chat: a flag, or an icon. */
 export function chatAvatar(chat: ChatLabelSource): { alpha2Code: string } | { icon: string } {
 	if (chat.kind === 'DELEGATION') return { icon: 'users-three' };
+	if (chat.kind === 'COMMITTEE' || chat.kind === 'ROLE') return { icon: groupIcon(chat) };
 	if (chat.kind === 'TEAM' && sideOf(chat) === 'PARTICIPANT' && chat.inbox) {
 		return { icon: INBOX_ICON[chat.inbox] };
 	}

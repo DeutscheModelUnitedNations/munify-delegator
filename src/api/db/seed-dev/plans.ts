@@ -172,6 +172,7 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 5 · Preparation',
 			messagingEnabled: true,
+			groupChatsEnabled: true,
 			longTitle: 'Seed-Konferenz in der Vorbereitung',
 			state: 'PREPARATION',
 			seriesId: SEED_SERIES.sh,
@@ -236,6 +237,7 @@ export const conferencePlans: ConferencePlan[] = [
 		conference: {
 			title: 'Seed 7 · Active',
 			messagingEnabled: true,
+			groupChatsEnabled: true,
 			longTitle: 'Seed-Konferenz, die gerade läuft',
 			state: 'ACTIVE',
 			seriesId: SEED_SERIES.sh,

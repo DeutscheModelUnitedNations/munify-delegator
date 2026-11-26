@@ -6826,6 +6826,7 @@ type NotificationSetting {
   """`COMMITTEE_INBOX`: `CHAIR` or `CONSULTANT`."""
   functionKind: String
   id: ID!
+  roleName: String
   slack: Boolean!
 
   """

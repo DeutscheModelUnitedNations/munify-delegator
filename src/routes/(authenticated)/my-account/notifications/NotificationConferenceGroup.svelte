@@ -18,6 +18,7 @@
 		functionKind?: string | null;
 		committeeAbbreviation?: string | null;
 		committeeName?: string | null;
+		roleName?: string | null;
 		email: boolean;
 		slack: boolean;
 	}

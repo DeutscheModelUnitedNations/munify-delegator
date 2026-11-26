@@ -32,6 +32,7 @@
 			client.liveQuery.conference({
 				__args: { id: conferenceId },
 				messagingEnabled: true,
+				groupChatsEnabled: true,
 				assignmentReleased: true
 			}),
 			fetchChats({ conferenceId }),
@@ -101,6 +102,13 @@
 		<div class="alert alert-info" role="status">
 			<i aria-hidden="true" class="ph-duotone ph-info"></i>
 			<span>{m.chatTeamDisabledHint()}</span>
+		</div>
+	{/if}
+
+	{#if !conference.groupChatsEnabled && !reporting && inboxes.some((inbox) => inbox.group)}
+		<div class="alert alert-info" role="status" data-testid="team-groups-closed">
+			<i aria-hidden="true" class="ph-duotone ph-users-four"></i>
+			<span>{m.chatTeamGroupsClosedHint()}</span>
 		</div>
 	{/if}
 

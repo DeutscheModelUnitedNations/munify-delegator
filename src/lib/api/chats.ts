@@ -28,13 +28,16 @@ const CHAT_SUMMARY = {
 	inbox: true,
 	side: true,
 	committeeId: true,
+	roleId: true,
 	lastMessageAt: true,
 	lastMessagePreview: true,
 	unreadCount: true,
 	underReview: true,
 	archived: true,
+	muted: true,
 	trustedPersonName: true,
 	committee: { abbreviation: true, name: true },
+	role: { name: true, icon: true },
 	contacts: CONTACT,
 	people: { participantId: true, userId: true, name: true }
 } as const;
@@ -44,6 +47,9 @@ const INBOX = {
 	committeeId: true,
 	committeeAbbreviation: true,
 	committeeName: true,
+	roleId: true,
+	roleName: true,
+	roleIcon: true,
 	trustedPersonId: true,
 	personName: true,
 	chatId: true
@@ -53,6 +59,7 @@ const INBOX = {
 export interface ChatListFilter {
 	inbox?: ChatInbox;
 	committeeId?: string | null;
+	roleId?: string | null;
 }
 
 /** The caller's chats of a conference that hold a message, the latest first. */
@@ -69,7 +76,8 @@ export function fetchChats({
 				conferenceId: { eq: conferenceId },
 				lastMessageAt: { isNotNull: true },
 				...(filter.inbox ? { kind: 'TEAM' as const, inbox: filter.inbox } : {}),
-				...(filter.committeeId ? { committeeId: { eq: filter.committeeId } } : {})
+				...(filter.committeeId ? { committeeId: { eq: filter.committeeId } } : {}),
+				...(filter.roleId ? { roleId: { eq: filter.roleId } } : {})
 			},
 			orderBy: { lastMessageAt: 'desc' }
 		},
@@ -138,6 +146,27 @@ export function fetchChatInboxes({
 }
 
 export type ChatInboxRow = Awaited<ReturnType<typeof fetchChatInboxes>>[number];
+
+/**
+ * The groups of committees and custom roles of the conference the caller is in, opened or not:
+ * as a participant the one of their seat, for the team those of their functions.
+ */
+export function fetchChatGroups(conferenceId: string) {
+	return client.liveQuery.chatGroups({
+		__args: { conferenceId },
+		kind: true,
+		committeeId: true,
+		committeeAbbreviation: true,
+		committeeName: true,
+		roleId: true,
+		roleName: true,
+		roleIcon: true,
+		asTeam: true,
+		chatId: true
+	});
+}
+
+export type ChatGroupRow = Awaited<ReturnType<typeof fetchChatGroups>>[number];
 
 /** The inboxes the caller answers that reach one person, asked once (on a click). */
 export function fetchReachingInboxes({

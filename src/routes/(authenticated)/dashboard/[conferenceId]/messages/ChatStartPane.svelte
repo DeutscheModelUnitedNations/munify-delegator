@@ -1,15 +1,22 @@
 <!--
 	@component
 	What the messenger shows while no chat is open: whom a participant can write to right away (their
-	delegation, the team inboxes that are theirs) and the way to everybody else, with the reminder
-	that others only see their role.
+	delegation, the group of their committee or role, the team inboxes that are theirs) and the way
+	to everybody else, with the reminder that others only see their role.
 -->
 <script lang="ts">
-	import { fetchChatInboxes } from '#lib/api/chats';
+	import { fetchChatGroups, fetchChatInboxes } from '#lib/api/chats';
 	import { m } from '#lib/paraglide/messages';
 	import ChatAvatar from '#lib/components/chat/ChatAvatar.svelte';
 	import { createChatOpener } from '#lib/components/chat/chatOpener.svelte.js';
-	import { inboxDescription, inboxName, INBOX_ICON } from '#lib/components/chat/chatLabels';
+	import {
+		groupIcon,
+		groupName,
+		inboxDescription,
+		inboxName,
+		INBOX_ICON
+	} from '#lib/components/chat/chatLabels';
+	import { groupLabelSource } from '#lib/components/chat/chatGroups';
 
 	interface Props {
 		conferenceId: string;
@@ -21,7 +28,10 @@
 
 	let { conferenceId, delegationGroup, onNew, onOpened }: Props = $props();
 
-	const inboxes = $derived(await fetchChatInboxes({ conferenceId }));
+	const [inboxes, groups] = $derived(
+		await Promise.all([fetchChatInboxes({ conferenceId }), fetchChatGroups(conferenceId)])
+	);
+	const firstInbox = $derived((delegationGroup ? 1 : 0) + groups.length);
 	// single trusted persons stay in the picker, a card each would crowd the pane
 	const shownInboxes = $derived(inboxes.filter((option) => !option.trustedPersonId));
 
@@ -79,13 +89,23 @@
 					index: 0
 				})}
 			{/if}
-			{#each shownInboxes as option, index (`${option.inbox}/${option.committeeId}`)}
+			{#each groups as group, index (`${group.committeeId}/${group.roleId}`)}
+				{@const source = groupLabelSource(group)}
+				{@render card({
+					avatar: { icon: groupIcon(source) },
+					title: groupName(source),
+					detail: group.kind === 'ROLE' ? m.chatRoleGroupHint() : m.chatCommitteeGroupHint(),
+					onclick: () => opener.group(group),
+					index: index + 1
+				})}
+			{/each}
+			{#each shownInboxes as option, index (`${option.inbox}/${option.committeeId}/${option.roleId}`)}
 				{@render card({
 					avatar: { icon: INBOX_ICON[option.inbox] },
 					title: inboxName(option),
 					detail: inboxDescription(option),
 					onclick: () => opener.inbox({ option }),
-					index: index + 1
+					index: firstInbox + index
 				})}
 			{/each}
 			{@render card({
@@ -93,7 +113,7 @@
 				title: m.chatNewMessage(),
 				detail: m.chatStartSearchHint(),
 				onclick: onNew,
-				index: shownInboxes.length + 1
+				index: firstInbox + shownInboxes.length
 			})}
 		</ul>
 

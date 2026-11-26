@@ -4977,6 +4977,7 @@ export type NotificationSetting = {
   email: Boolean,
   functionKind: String | null,
   id: ID,
+  roleName: String | null,
   slack: Boolean,
   teamFunctionId: ID | null,
   topic: NotificationtopicEnum    

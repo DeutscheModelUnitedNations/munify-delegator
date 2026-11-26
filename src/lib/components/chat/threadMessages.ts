@@ -1,5 +1,5 @@
 import { m } from '#lib/paraglide/messages';
-import type { ChatInbox, ChatKind, ChatSide } from '#lib/helpers/chat';
+import { isGroupChat, type ChatInbox, type ChatKind, type ChatSide } from '#lib/helpers/chat';
 import { contactLabel, inboxName, type ContactLabelSource } from './chatLabels';
 import { sameDay } from './chatTime';
 
@@ -20,14 +20,16 @@ export interface ThreadChat {
 	kind: ChatKind;
 	inbox?: ChatInbox | null;
 	committee?: { abbreviation: string } | null;
+	role?: { name: string | null } | null;
 	participantId?: string | null;
 	contacts: readonly (ContactLabelSource & { participantId: string })[];
 }
 
 /**
  * Whether a message stands on the caller's side of the thread (the right): the inbox's for the
- * team, their own for a participant. Reviewing, the chat's first participant is on the left, and
- * in a delegation's group, which has no sides, everybody is.
+ * team, their own for a participant. In the group of a committee or role, where the team writes
+ * as people among the others, everybody's own. Reviewing, the chat's first participant is on the
+ * left, and in a group, which has no sides, everybody is.
  */
 export function standsOnOwnSide({
 	message,
@@ -38,21 +40,31 @@ export function standsOnOwnSide({
 	side: ChatSide;
 	chat: ThreadChat;
 }) {
-	if (side === 'TEAM') return message.fromTeam;
-	if (side === 'PARTICIPANT') return message.mine;
-	return chat.kind !== 'DELEGATION' && message.authorParticipantId !== chat.participantId;
+	if (side === 'TEAM' && !isGroupChat(chat.kind)) return message.fromTeam;
+	if (side !== 'REVIEW') return message.mine;
+	if (chat.kind === 'DELEGATION' || isGroupChat(chat.kind)) return false;
+	return message.authorParticipantId !== chat.participantId;
 }
 
 /** The function a team member writes under: their inbox, a trusted person as just that. */
-function authorInbox(chat: { inbox: ChatInbox; committee?: { abbreviation: string } | null }) {
+function authorInbox(chat: {
+	inbox: ChatInbox;
+	committee?: { abbreviation: string } | null;
+	role?: { name: string | null } | null;
+}) {
 	return chat.inbox === 'TRUSTED_PERSON'
 		? m.chatInboxTrustedPerson()
-		: inboxName({ inbox: chat.inbox, committeeAbbreviation: chat.committee?.abbreviation });
+		: inboxName({
+				inbox: chat.inbox,
+				committeeAbbreviation: chat.committee?.abbreviation,
+				roleName: chat.role?.name
+			});
 }
 
 /**
  * Who wrote a message, where the thread has more than one voice per side: the inbox and the name
- * of a team member; in a delegation group and for participant care the role and the name.
+ * of a team member; in a delegation group and for participant care the role and the name; in the
+ * group of a committee or role the role (participants know each other by role there).
  * Undefined in a direct chat, whose two parties know who the other is.
  */
 export function messageAuthor({
@@ -68,11 +80,16 @@ export function messageAuthor({
 		const inbox = chat.inbox ? authorInbox({ ...chat, inbox: chat.inbox }) : m.team();
 		return [inbox, message.authorName].filter(Boolean).join(' · ');
 	}
-	if (chat.kind !== 'DELEGATION' && side !== 'REVIEW') return undefined;
+	if (chat.kind !== 'DELEGATION' && !isGroupChat(chat.kind) && side !== 'REVIEW') {
+		return undefined;
+	}
 	const contact = chat.contacts.find(
 		(candidate) => candidate.participantId === message.authorParticipantId
 	);
-	const parts = [contact ? contactLabel(contact) : undefined, message.authorName];
+	// in a group somebody no longer seated there is still somebody
+	const former =
+		isGroupChat(chat.kind) && side !== 'REVIEW' ? m.chatFormerParticipant() : undefined;
+	const parts = [contact ? contactLabel(contact) : former, message.authorName];
 	return parts.filter(Boolean).join(' · ') || undefined;
 }
 
