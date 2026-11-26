@@ -114,12 +114,16 @@ test('a participant can say they transferred, take it back and start the payment
 	await expect(
 		page.getByRole('button', { name: /ich habe überwiesen|i have transferred/i })
 	).toBeVisible({ timeout: 15_000 });
+	// the last step folds away, its own way to start over with it
+	await expect(page.getByText(/bei uns eingegangen|received by us/i)).toBeHidden();
 
 	// Started over: the old reference is given up, and a new one is made
 	await page.getByRole('button', { name: /zahlung neu beginnen|start the payment over/i }).click();
 	await page.getByRole('button', { name: /referenz verwerfen|discard the reference/i }).click();
 	const generateButton = page.locator('button:has(.ph-sparkle)');
 	await expect(generateButton).toBeEnabled({ timeout: 15_000 });
+	// the old reference's fields are gone before the new ones are read
+	await expect(page.locator('input[readonly]')).toHaveCount(0);
 	await generateButton.click();
 	const { reference: renewed } = await transferInputs(page);
 	expect(renewed).not.toBe(reference);
