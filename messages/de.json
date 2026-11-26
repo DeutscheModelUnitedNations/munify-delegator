@@ -4575,6 +4575,8 @@
 	"tourTeamMembersTableTitle": "Die Mitgliedertabelle",
 	"tourTeamMembersTabsBody": "Teammitglieder zeigt das Team, Ausstehende Einladungen die Einladungen, die noch niemand angenommen hat.",
 	"tourTeamMembersTabsTitle": "Mitglieder und Einladungen",
+	"tourTeamMessagesInboxesBody": "Hier grenzt du die Liste auf ein Postfach oder auf deine Gruppen ein. In den Gruppen deines Gremiums oder deiner betreuten Rolle schreibst du mit Namen an alle, die dort sitzen.",
+	"tourTeamMessagesInboxesTitle": "Postfächer und Gruppen",
 	"tourTeamMessagesIntroBody": "Hier beantwortest du die Chats der Postfächer, die du betreust: Teilnehmendenbetreuung, Vorsitz oder Gremienberatung deines Gremiums oder die Vertrauenspersonen. Alle, die ein Postfach betreuen, lesen mit und können antworten.",
 	"tourTeamMessagesIntroTitle": "Nachrichten",
 	"tourTeamMessagesListBody": "Links stehen die Chats aller deiner Postfächer, Teilnehmende mit ihrer Rolle. Betreust du mehrere Postfächer, grenzt je Postfach ein Knopf mit der Zahl ungelesener Nachrichten die Liste ein. Archiv blendet die archivierten Chats ein.",

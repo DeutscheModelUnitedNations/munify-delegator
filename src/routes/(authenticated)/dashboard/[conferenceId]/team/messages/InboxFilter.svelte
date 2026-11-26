@@ -99,7 +99,7 @@
 	</button>
 {/snippet}
 
-<div class="flex flex-col gap-1.5" data-testid="inbox-filter">
+<div class="flex flex-col gap-1.5" data-testid="inbox-filter" data-tour="team.messages.inboxes">
 	{#if rows.kinds}
 		<div
 			class="bg-base-content/5 flex flex-wrap gap-0.5 rounded-field p-0.5"

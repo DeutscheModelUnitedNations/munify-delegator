@@ -4575,6 +4575,8 @@
 	"tourTeamMembersTableTitle": "The members table",
 	"tourTeamMembersTabsBody": "Team Members shows the team, Pending Invitations the invitations nobody has accepted yet.",
 	"tourTeamMembersTabsTitle": "Members and invitations",
+	"tourTeamMessagesInboxesBody": "Narrow the list to one inbox or to your groups here. In the groups of your committee or the role you support you write by name to everybody seated there.",
+	"tourTeamMessagesInboxesTitle": "Inboxes and groups",
 	"tourTeamMessagesIntroBody": "Here you answer the chats of the inboxes you look after: participant care, the chair or committee advisors of your committee, or the trusted persons. Everyone who looks after an inbox reads along and can answer.",
 	"tourTeamMessagesIntroTitle": "Messages",
 	"tourTeamMessagesListBody": "On the left are the chats of all your inboxes, participants shown by their role. If you look after several inboxes, a button per inbox with its unread count narrows the list. Archive shows the archived chats.",

@@ -167,12 +167,21 @@ Das Team antwortet aus Postfächern, die es gemeinsam betreut. Alle, die ein Pos
 | **Gremienberatung**        | wer in einem Gremium die Funktion Gremienberatung hat, je Gremium     |
 | **Vertrauenspersonen**     | alle Vertrauenspersonen der Konferenz gemeinsam                       |
 | **An mich persönlich**     | eine einzelne Vertrauensperson                                        |
+| **Betreuung …**            | wer eine eigene Rolle (etwa die Presse) betreut, je Rolle             |
 
-Funktionen vergeben **Projektleitung** und **Teamkoordinator\*in** auf der Seite [Teammanagement](./overview#team-management). Das Hammer-Symbol **Funktionen** in der Zeile einer Person öffnet **Funktionen von …**: Dort kreuzt du je Gremium **Vorsitz** und **Gremienberatung** an oder machst die Person zur **Vertrauensperson** der ganzen Konferenz. Wer kein Postfach betreut, sieht auf der Seite **Nachrichten** nur einen Hinweis darauf.
+Funktionen vergeben **Projektleitung** und **Teamkoordinator\*in** auf der Seite [Teammanagement](./overview#team-management). Das Hammer-Symbol **Funktionen** in der Zeile einer Person öffnet **Funktionen von …**: Dort kreuzt du je Gremium **Vorsitz** und **Gremienberatung** an, unter **Betreuung eigener Rollen** je eigener Rolle die **Betreuung**, oder machst die Person zur **Vertrauensperson** der ganzen Konferenz. Wer kein Postfach betreut, sieht auf der Seite **Nachrichten** nur einen Hinweis darauf.
 
 :::note Vertrauenspersonen
 Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen mit Namen. Den gemeinsamen Chat lesen alle Vertrauenspersonen, einen persönlichen nur die angeschriebene Person. Sonst liest niemand mit, auch nicht die Teilnehmendenbetreuung, die Projektleitung oder die Administration des Systems. Einzige Ausnahme ist die [Stellvertretung](./overview#impersonation): Wer stellvertretend für eine teilnehmende Person handelt, sieht deren Chats wie sie selbst, auch die mit den Vertrauenspersonen. Vertrauenspersonen sehen Teilnehmende nur mit ihrer Rolle, nie mit Namen. Diese Chats lassen sich nicht melden.
 :::
+
+### Gruppen der Gremien und Rollen {#groups}
+
+Jedes Gremium und jede eigene Rolle hat eine Gruppe. In der Gruppe eines Gremiums sind alle, die dort sitzen, mit **Vorsitz** und **Gremienberatung** des Gremiums. In der Gruppe einer eigenen Rolle sind alle mit dieser Rolle und wer sie betreut. Die Gruppen entstehen von selbst, du musst nichts anlegen.
+
+Für Teilnehmende öffnest du die Gruppen in den Einstellungen im Reiter **Status & Funktionen** mit **Gremien- und Rollengruppen**. Teilnehmende sehen ihre Gruppe, sobald außerdem die Zuteilung freigegeben ist. Das Team schreibt in seine Gruppen immer, auch vorher. So kannst du eine Begrüßung vorbereiten. Solange die Gruppen zu sind, weist die Seite **Nachrichten** darauf hin.
+
+In den Gruppen schreibst du als Person, nicht aus einem Postfach: Teilnehmende sehen deinen Namen, sich gegenseitig nur mit ihrer Rolle. Jede Person liest für sich, auch im Team. Über **Gruppen** über der Liste grenzt du die Liste auf deine Gruppen ein. Hat eine Gruppe noch keine Nachricht, öffnest du sie mit **In der Gruppe schreiben**. Im Menü einer Gruppe schaltest du sie für dich stumm: Sie zählt dann nichts Ungelesenes und schickt dir keine E-Mail. Gruppen lassen sich wie Einzelchats von Teilnehmenden melden. Die Teilnehmendenbetreuung liest eine Gruppe nur, solange eine Meldung offen ist.
 
 ### Wer wem schreiben kann
 
@@ -182,6 +191,8 @@ Teilnehmende schreiben den Vertrauenspersonen alle zusammen oder einer einzelnen
 | Delegierte und Einzelteilnehmende | **Vorsitz** und **Gremienberatung** ihres Gremiums. Wer ohne Gremium sitzt, etwa als nichtstaatlicher Akteur oder Einzelteilnehmende\*r, erreicht die aller Gremien. | sobald die Zuteilung freigegeben ist                                                  |
 | Teilnehmende mit Platz            | andere Teilnehmende mit Platz, im Einzelchat                                                                                                                         | sobald die Zuteilung freigegeben ist und **Nachrichten zwischen Delegationen** an ist |
 | Mitglieder einer Delegation       | die Gruppe ihrer Delegation                                                                                                                                          | ab der Anmeldung, bis die Delegation ohne Rolle bleibt                                |
+| Teilnehmende mit Platz            | die Gruppe ihres Gremiums oder ihrer eigenen Rolle                                                                                                                   | sobald die Zuteilung freigegeben ist und **Gremien- und Rollengruppen** an ist        |
+| Einzelteilnehmende                | die **Betreuung** ihrer eigenen Rolle                                                                                                                                | sobald die Zuteilung freigegeben ist                                                  |
 | Das Team aus einem Postfach       | jede Person mit Platz, die das Postfach erreicht                                                                                                                     | sobald die Zuteilung freigegeben ist                                                  |
 
 In Einzelchats und Delegationsgruppen sehen sich Teilnehmende nur mit ihrer Rolle. Das Team liest diese Chats nicht, außer nach einer Meldung. Verliert eine Person ihren Platz, kann in ihren Einzelchats niemand mehr schreiben.
@@ -242,7 +253,7 @@ Eine Benachrichtigung nennt nur das Postfach und führt in die App. Der Text ein
 
 Vorsitz und Gremienberatung erfahren außerdem von jedem Papier, das in ihrem Gremium eingereicht wird, sofern ihre Teamrolle Papiere lesen darf (siehe [Wer von neuen Papieren erfährt](./paper-hub#committee-notification)). Slack und die E-Mail **Papier im Gremium eingereicht** melden sich sofort, ohne Schalter auf der Seite [E-Mails](#emails).
 
-**Für dich einstellen:** Im Menü hinter dem Personensymbol oben rechts öffnest du **Mein Konto** und dort den Reiter **Benachrichtigungen**. Den Reiter gibt es, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, je Gremium **Papiere Vorsitz** oder **Papiere Gremienberatung**, wenn deine Teamrolle Papiere lesen darf, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an. Hattest du **E-Mail bei ungelesenen Nachrichten** schon vorher ausgeschaltet, beginnt **E-Mail** in allen Zeilen ausgeschaltet, auch bei den Papieren. Schalte sie in der Zeile ein, in der du sie haben willst. Slack ist auch dann an.
+**Für dich einstellen:** Im Menü hinter dem Personensymbol oben rechts öffnest du **Mein Konto** und dort den Reiter **Benachrichtigungen**. Den Reiter gibt es, sobald du in einem Team bist. Die Seite zeigt jede Konferenz, in deren Team du bist, mit einer Zeile pro Thema: jedes Postfach, das du betreust, jede Gruppe, in der du bist, je Gremium **Papiere Vorsitz** oder **Papiere Gremienberatung**, wenn deine Teamrolle Papiere lesen darf, und für die Teilnehmendenbetreuung **Gemeldete Chats**. Je Zeile schaltest du **E-Mail** und **Slack** an oder aus. Ein Schalter speichert sofort und gilt nur für dich. Anfangs ist alles an. Hattest du **E-Mail bei ungelesenen Nachrichten** schon vorher ausgeschaltet, beginnt **E-Mail** in allen Zeilen ausgeschaltet, auch bei den Papieren. Schalte sie in der Zeile ein, in der du sie haben willst. Slack ist auch dann an.
 
 **Slack einrichten:** Die Projektleitung wählt auf der Seite [E-Mails](#emails) unter **Slack-Workspace** den Workspace der Konferenz aus. Zur Auswahl stehen die Workspaces, die die Administration des Systems eingetragen hat (siehe [Slack-Workspaces](./overview#slack-workspaces)). Ohne Workspace gibt es für die Konferenz keine Slack-Nachrichten.
 
@@ -250,7 +261,7 @@ Slack findet dich über die E-Mail-Adresse deines DELEGATOR-Kontos. Du musst nic
 
 Um eine Benachrichtigung auszuprobieren, klickst du in ihrer Zeile auf den Papierflieger neben dem Schalter für E-Mail oder Slack. Du bekommst sie dann genau so, wie sie sonst ankommt, mit dem Text deiner Konferenz und als Test markiert, auch wenn der Schalter aus ist. Für die Papiere eines Gremiums beschreibt die Probe ein Beispielpapier zum ersten Thema des Gremiums.
 
-Teilnehmende bekommen nur die E-Mail. Sie schalten sie unter ihren Chats mit **E-Mail bei ungelesenen Nachrichten** für sich ab.
+Teilnehmende bekommen nur die E-Mail. Sie schalten sie unter ihren Chats mit **E-Mail bei ungelesenen Nachrichten** für sich ab, für ihre Gruppen allein mit **Auch über Gruppen benachrichtigen**.
 
 ## E-Mails {#emails}
 

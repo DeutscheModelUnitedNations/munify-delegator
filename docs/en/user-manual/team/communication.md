@@ -167,12 +167,21 @@ The team answers from inboxes it shares. Everyone answering an inbox reads along
 | **Committee consultants** | whoever holds the consultant function in a committee, one per committee |
 | **Trusted persons**       | all trusted persons of the conference together                          |
 | **To me personally**      | one single trusted person                                               |
+| **Support: …**            | whoever supports a custom role (the press, say), one per role           |
 
-**Project Management** and **Team Coordinator** hand out functions on the [Team Management](./overview#team-management) page. The gavel icon **Functions** in a person's row opens **Functions of …**: there you tick **Chairs** and **Committee consultants** per committee, or make the person a **Trusted person** of the whole conference. Whoever answers no inbox only sees a hint about this on the **Messages** page.
+**Project Management** and **Team Coordinator** hand out functions on the [Team Management](./overview#team-management) page. The gavel icon **Functions** in a person's row opens **Functions of …**: there you tick **Chairs** and **Committee consultants** per committee, under **Support of custom roles** the **Support** of each custom role, or make the person a **Trusted person** of the whole conference. Whoever answers no inbox only sees a hint about this on the **Messages** page.
 
 :::note Trusted persons
 Participants write to the trusted persons all together or to one of them by name. All trusted persons read the shared chat, only the person addressed reads a personal one. Nobody else reads along, not participant care, not project management and not system administrators. The one exception is [impersonation](./overview#impersonation): whoever acts as a participant sees that person's chats as they do, those with the trusted persons included. Trusted persons see participants by their role only, never by name. These chats cannot be reported.
 :::
+
+### Committee and role groups {#groups}
+
+Every committee and every custom role has a group. A committee's group holds everybody seated there, with the committee's **Chairs** and **Committee consultants**. A custom role's group holds everybody with that role and whoever supports it. The groups exist by themselves, there is nothing to create.
+
+You open the groups to participants in the settings, tab **Status & features**, with **Committee and role groups**. Participants see their group once the assignment is released as well. The team writes in its groups at any time, before that too, so you can prepare a welcome. While the groups are closed, the **Messages** page says so.
+
+In a group you write as yourself, not from an inbox: participants see your name, and each other by role only. Everybody reads for themselves, the team too. **Groups** above the list narrows it to your groups. A group without a message yet you open with **Write in the group**. In a group's menu you mute it for yourself: it then counts nothing unread and sends you no email. Participants report a group like a direct chat. Participant care reads a group only while a report is open.
 
 ### Who can write to whom
 
@@ -182,6 +191,8 @@ Participants write to the trusted persons all together or to one of them by name
 | Delegates and single participants | **Chairs** and **Committee consultants** of their committee. Whoever sits without a committee, such as a non-state actor or a single participant, reaches those of every committee. | as soon as the assignment is released                                            |
 | Seated participants               | other seated participants, in a direct chat                                                                                                                                         | as soon as the assignment is released and **Messages between delegations** is on |
 | Members of a delegation           | their delegation's group                                                                                                                                                            | from the registration on, until the delegation is left without a role            |
+| Seated participants               | the group of their committee or custom role                                                                                                                                         | as soon as the assignment is released and **Committee and role groups** is on    |
+| Single participants               | the **Support** of their custom role                                                                                                                                                | as soon as the assignment is released                                            |
 | The team, from an inbox           | every seated person the inbox reaches                                                                                                                                               | as soon as the assignment is released                                            |
 
 In direct chats and delegation groups, participants see each other by role only. The team does not read these chats, except after a report. When a person loses their seat, nobody can write in their direct chats any more.
@@ -242,7 +253,7 @@ A notification only names the inbox and leads into the app. The text of a messag
 
 Chairs and committee consultants also hear of every paper submitted in their committee, as long as their team role may read papers (see [Who hears of new papers](./paper-hub#committee-notification)). Slack and the email **Paper submitted in a committee** tell them right away, without a switch on the [Emails](#emails) page.
 
-**Setting it up for yourself:** In the menu behind the person icon at the top right, open **My Account** and there the **Notifications** tab. The tab is there once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
+**Setting it up for yourself:** In the menu behind the person icon at the top right, open **My Account** and there the **Notifications** tab. The tab is there once you are on a team. The page shows every conference whose team you are on, with one line per topic: each inbox you answer, each group you are in, for each committee **Papers, chairs** or **Papers, committee consultants** when your team role may read papers, and for participant care **Reported chats**. On each line you switch **Email** and **Slack** on or off. A switch saves right away and applies only to you. At first everything is on. If you had already switched off **Email about unread messages**, **Email** starts off on every line, the papers included. Switch it on on the line where you want it. Slack is on all the same.
 
 **Setting up Slack:** Project management picks the conference's workspace on the [Emails](#emails) page under **Slack workspace**. The choices are the workspaces the system's administration has added (see [Slack workspaces](./overview#slack-workspaces)). Without a workspace the conference sends no Slack messages.
 
@@ -250,7 +261,7 @@ Slack finds you by the email address of your DELEGATOR account. You do not have 
 
 To try a notification, click the paper plane next to its email or Slack switch. You get it exactly as it would arrive, in your conference's words and marked as a test, even while the switch is off. For a committee's papers the test describes a sample paper on the committee's first agenda item.
 
-Participants only get the email. They switch it off for themselves below their chats with **Email about unread messages**.
+Participants only get the email. They switch it off for themselves below their chats with **Email about unread messages**, and for their groups alone with **Also about groups**.
 
 ## Emails {#emails}
 
