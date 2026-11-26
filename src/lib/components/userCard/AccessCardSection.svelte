@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '#lib/components/ActionModal.svelte';
@@ -24,7 +25,7 @@
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
 			success: m.badgeFoundSent(),
-			error: (error) => (error instanceof Error ? error.message : m.genericToastError())
+			error: errorToastMessage
 		});
 		await promise.catch(() => undefined);
 		notifying = false;

@@ -1,9 +1,9 @@
-import { m } from '#lib/paraglide/messages';
+import { errorToastMessage } from '#lib/utils/toast';
 import { toast } from 'svelte-sonner';
 
 /** Shows why a draft mutation failed: the server's message, or the generic one. */
 export function toastError(error: unknown) {
-	toast.error(error instanceof Error ? error.message : m.genericToastError());
+	toast.error(errorToastMessage(error));
 }
 
 /** Whether a draft mutation worked; a failure is shown with `toastError`. */

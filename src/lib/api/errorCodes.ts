@@ -50,6 +50,17 @@ export function hasErrorCode({ err, code }: { err: unknown; code: ErrorCode }) {
 }
 
 /**
+ * The message the API worded for the person, in their language: every error carrying a code (an
+ * `apiError`, a failed argument schema, a database rule) is an `m.…()` message. Undefined for any
+ * other failure (network, unexpected server error), whose message is not meant for them.
+ */
+export function apiErrorMessageOf(err: unknown) {
+	if (!(err instanceof CombinedError)) return undefined;
+	return err.graphQLErrors.find((graphQLError) => isErrorCode(graphQLError.extensions?.code))
+		?.message;
+}
+
+/**
  * The message of a refusal of the current state (CONFLICT), which the person can act on; undefined
  * for any other failure, whose message is not meant for them.
  */

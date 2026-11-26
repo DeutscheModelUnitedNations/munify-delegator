@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { onDestroy, onMount } from 'svelte';
 	import type { Readable } from 'svelte/store';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
@@ -74,7 +75,7 @@
 		toast.promise(upload, {
 			loading: m.guideEditorUploading(),
 			success: m.guideEditorUploaded(),
-			error: (error) => (error instanceof Error ? error.message : m.genericToastError())
+			error: errorToastMessage
 		});
 		const id = await upload.catch(() => undefined);
 		if (id) onUpload?.(id);

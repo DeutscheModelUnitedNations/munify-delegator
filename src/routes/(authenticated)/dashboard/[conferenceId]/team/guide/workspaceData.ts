@@ -1,3 +1,4 @@
+import { errorToastMessage } from '#lib/utils/toast';
 import { client } from '#lib/api/rumbleClient/client';
 import { m } from '#lib/paraglide/messages';
 import { guidePageState } from '#lib/guide/library';
@@ -91,7 +92,7 @@ export function toRoleOptions(rows: readonly { id: string; name?: string | null 
 export const pageCreatedToast = {
 	loading: m.genericToastLoading(),
 	success: m.guidePageCreated(),
-	error: (error: unknown) => (error instanceof Error ? error.message : m.genericToastError())
+	error: errorToastMessage
 };
 
 /** What the workspace's views of the whole guide need: the pages, committees and custom roles. */

@@ -8,7 +8,7 @@
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { assignmentWeightsSchema } from '#lib/schemata/assignmentWeights';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
@@ -61,7 +61,7 @@
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod4Client(assignmentWeightsSchema),
-		onError: (e) => toast.error(e.result.error.message),
+		onError: (e) => toast.error(errorToastMessage(e.result.error)),
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
 			const promise = client.mutate.upsertAssignmentWeights({

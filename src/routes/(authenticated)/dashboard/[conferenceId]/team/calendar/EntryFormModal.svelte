@@ -1,5 +1,6 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import IconPicker from '#lib/components/IconPicker.svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { toast } from 'svelte-sonner';
@@ -213,7 +214,7 @@
 			entryTrackTo = moved.to;
 			selectedDayId = dayId;
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		}
 	}
 

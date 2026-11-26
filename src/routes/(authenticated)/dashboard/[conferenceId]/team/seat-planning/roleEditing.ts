@@ -1,8 +1,8 @@
+import { errorToastMessage } from '#lib/utils/toast';
 import { m } from '#lib/paraglide/messages';
 import { toast } from 'svelte-sonner';
 
-export const showError = (error: unknown) =>
-	toast.error(error instanceof Error ? error.message : m.genericToastError());
+export const showError = (error: unknown) => toast.error(errorToastMessage(error));
 
 /** Saves one field of a role; a refused change puts the saved value back into the input. */
 export async function saveField({

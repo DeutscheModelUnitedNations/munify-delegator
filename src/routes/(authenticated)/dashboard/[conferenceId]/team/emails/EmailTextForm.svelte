@@ -12,7 +12,7 @@
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import EmailEditorLayout from './EmailEditorLayout.svelte';
 	import { debounced, fetchEmailPreview } from './emailPreview.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import {
 		defaultEmailText,
 		placeholdersOf,
@@ -87,7 +87,7 @@
 		validationMethod: 'oninput',
 		resetForm: false,
 		onUpdate: ({ form: validated }) => (validated.valid ? save(validated.data) : undefined),
-		onError: (e) => toast.error(e.result.error.message)
+		onError: (e) => toast.error(errorToastMessage(e.result.error))
 	});
 	const formData = $derived(form.form);
 

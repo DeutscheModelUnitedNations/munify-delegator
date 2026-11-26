@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import NoCalendarDays from './NoCalendarDays.svelte';
 	import { toast } from 'svelte-sonner';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
@@ -56,7 +57,7 @@
 			await client.mutate.deleteCalendarDay({ __args: { id: dayToDelete.id } });
 			dayToDelete = null;
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		}
 	}
 </script>

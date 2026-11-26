@@ -1,5 +1,6 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
@@ -46,8 +47,7 @@
 	/** Cells with a write in flight, as `trackId|dayId` */
 	const busy = new SvelteSet<string>();
 
-	const showError = (error: unknown) =>
-		toast.error(error instanceof Error ? error.message : m.genericToastError());
+	const showError = (error: unknown) => toast.error(errorToastMessage(error));
 
 	const cellKey = ({ track, day }: Cell) => `${track.id}|${day.id}`;
 

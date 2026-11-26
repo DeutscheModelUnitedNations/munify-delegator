@@ -11,7 +11,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 	import RegistrationStepPage from '../RegistrationStepPage.svelte';
@@ -56,7 +56,7 @@
 			validationMethod: 'oninput',
 			validators: zod4Client(waitingListFormSchema),
 			onError(e) {
-				toast.error(e.result.error.message);
+				toast.error(errorToastMessage(e.result.error));
 			},
 			async onUpdate({ form: validated }) {
 				if (!validated.valid) return;
