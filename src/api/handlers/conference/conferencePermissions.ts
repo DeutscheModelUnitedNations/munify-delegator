@@ -90,7 +90,8 @@ export function registerConferenceAbilities() {
 /**
  * The arguments of `updateConference` the content roles (`editConferenceContent`: project
  * management, participant care, content lead) may send: links, postal address, templates, the
- * participants' announcement, the conference status and the feature switches.
+ * participants' announcement, the conference status, the feature switches and the payment
+ * deadline.
  */
 const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'id',
