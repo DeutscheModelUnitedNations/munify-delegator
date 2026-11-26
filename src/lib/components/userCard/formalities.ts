@@ -23,7 +23,9 @@ export interface Formality {
 const STATE: Record<AdministrativestatusEnum, Formality['state']> = {
 	DONE: 'done',
 	PENDING: 'pending',
-	PROBLEM: 'problem'
+	PROBLEM: 'problem',
+	// flagged by automation: somebody has to look, as at a problem
+	NEEDS_HUMAN_REVIEW: 'problem'
 };
 
 /**

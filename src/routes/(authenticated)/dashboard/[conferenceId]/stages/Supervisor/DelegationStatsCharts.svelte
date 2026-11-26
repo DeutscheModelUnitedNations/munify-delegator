@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
+	import { participantFacingStatus } from '#lib/helpers/administrativeStatus';
 	import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
 	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
 	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
@@ -56,7 +57,8 @@
 		statusOf: (member: (typeof members)[number]) => AdministrativestatusEnum
 	) => {
 		const counts = { DONE: 0, PENDING: 0, PROBLEM: 0 };
-		members.forEach((member) => counts[statusOf(member)]++);
+		// supervisors see the team's review flags as still open
+		members.forEach((member) => counts[participantFacingStatus(statusOf(member))]++);
 		return counts;
 	};
 

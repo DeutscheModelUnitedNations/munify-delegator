@@ -1,4 +1,5 @@
 import type { ColumnMeta } from '../columnTypes';
+import { ADMINISTRATIVE_STATUSES } from '#lib/helpers/administrativeStatus';
 
 /**
  * The participants table's columns as the API and the page share them: id, type and the values of
@@ -22,7 +23,6 @@ export const TEAM_ROLES = [
 	'REVIEWER',
 	'MEMBER'
 ] as const;
-const ADMINISTRATIVE_STATUSES = ['DONE', 'PENDING', 'PROBLEM'] as const;
 
 /**
  * Columns whose values are (nearly) one per person - names, contact details, ids, free texts -

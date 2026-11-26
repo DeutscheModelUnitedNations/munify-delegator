@@ -1,4 +1,5 @@
 import formatNames from '#lib/helpers/formatNames';
+import type { AdministrativeStatus } from '#lib/helpers/administrativeStatus';
 
 interface NamedUser {
 	givenName: string | null;
@@ -26,9 +27,12 @@ export function compareByFamilyName(a: { user: NamedUser }, b: { user: NamedUser
 	return (a.user.familyName ?? '').localeCompare(b.user.familyName ?? '');
 }
 
-type RegistrationStatus = 'DONE' | 'PENDING' | 'PROBLEM';
+type RegistrationStatus = AdministrativeStatus;
 
-/** A status cell of the registration lists: empty when done, `X` while pending, `P` on a problem. */
+/**
+ * A status cell of the registration lists: empty when done, `X` while pending (and while flagged
+ * for review, still open), `P` on a problem.
+ */
 export function formatRegistrationStatus(status: RegistrationStatus | undefined): string {
 	if (status === 'DONE') return '';
 	if (status === 'PROBLEM') return 'P';

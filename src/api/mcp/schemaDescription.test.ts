@@ -35,7 +35,7 @@ describe('describeSchema', () => {
 		});
 		expect(describeSchema({ schema, typeName: 'AdministrativestatusEnum' })).toEqual({
 			enum: 'AdministrativestatusEnum',
-			values: ['DONE', 'PENDING', 'PROBLEM']
+			values: ['DONE', 'NEEDS_HUMAN_REVIEW', 'PENDING', 'PROBLEM']
 		});
 		expect(describeSchema({ schema, typeName: 'Nope' })).toEqual({
 			error: 'There is no type called Nope.'

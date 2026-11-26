@@ -486,7 +486,8 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
   every word must match, "ger ga" works), chips per committee, team inboxes and delegation group on
   top. `mode="team"`: person first, then the inbox to write from.
 - **`WriteToDelegateButton`**: `conferenceId`, `participantId`, optional `paperId`, `compact` (icon
-  only, table rows); asks for inboxes on click.
+  only, table rows), `label` (other wording, e.g. the payments page's "message the person paying");
+  asks for inboxes on click.
 - **`FilterChips`** (`#lib/components/FilterChips.svelte`, shared): "all" first, pressing the
   pressed chip lifts the filter; `options` (with `key`), `selected`, `onSelect`, `label`, `chip`
   snippet. `CommitteeChips` and the announcement state chips build on it.
