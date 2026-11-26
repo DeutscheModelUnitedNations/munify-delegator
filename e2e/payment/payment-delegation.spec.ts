@@ -1,10 +1,11 @@
 import { test, expect, acceptDialogs } from '../support/test';
-import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
+import { loginAs, makeTestUser } from '../support/auth';
 import {
 	chooseApplyPath,
 	fillApplicationSteps,
 	openFirstConferenceForRegistration
 } from '../support/registration';
+import { createReference, openPaymentFlow } from './paymentFlow';
 
 // Covers the head delegate's "delegation payment" variant - a reference covering the whole
 // delegation, distinct participant-selection logic from the "single" variant already covered in
@@ -64,16 +65,7 @@ test('a head delegate can generate a delegation payment reference covering all m
 	const feeAmount = (await feeRes.json())?.data?.conference?.feeAmount as number;
 	expect(feeAmount).toBeGreaterThan(0);
 
-	await headPage.goto(`/dashboard/${conferenceId}/payment`);
-	await waitForHydration(headPage);
-	await headPage.getByLabel(/für andere mitbezahlen|pay for others too/i).check();
-
-	const generateButton = headPage.locator('button:has(.ph-sparkle)');
-	await expect(generateButton).toBeEnabled({ timeout: 15_000 });
-	await generateButton.click();
-
-	const readonlyInputs = headPage.locator('input[readonly]');
-	await expect(readonlyInputs.last()).toHaveValue(/.+/, { timeout: 15_000 });
-	const amountText = await readonlyInputs.nth(4).inputValue();
-	expect(parseFloat(amountText)).toBeCloseTo(feeAmount * 2, 1);
+	await openPaymentFlow(headPage, { conferenceId, payForOthers: true });
+	const { amount } = await createReference(headPage);
+	expect(amount).toBeCloseTo(feeAmount * 2, 1);
 });

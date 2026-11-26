@@ -87,7 +87,7 @@ Ein leeres Feld blendet den Link aus. Ändern dürfen das Projektleitung, Teilne
 
 ### Überweisungsinformationen {#payment-details}
 
-Unter **Teilnahmegebühr** stehen **Teilnahmebeitrag** und **Währung** (drei Buchstaben, anfangs EUR), unter **Bankkonto** **Kontoinhaber\*in**, **Name der Bank**, **IBAN** (22 Zeichen ohne Leerzeichen) und **BIC**. Nur die Projektleitung ändert sie. Teilnehmende sehen diese Angaben, wenn sie [ihren Beitrag zahlen](../participant/dashboard#payment), samt einem QR-Code für die Überweisung.
+Unter **Teilnahmegebühr** stehen **Teilnahmebeitrag** und **Währung** (drei Buchstaben, anfangs EUR), unter **Bankkonto** **Kontoinhaber\*in**, **Name der Bank**, **IBAN** (22 Zeichen ohne Leerzeichen) und **BIC**. Nur die Projektleitung ändert sie. Teilnehmende sehen diese Angaben, wenn sie [ihren Beitrag zahlen](../participant/dashboard#payment), samt einem QR-Code für die Überweisung. Die **Zahlungsfrist** darunter ist freiwillig: Sie steht auf der Zahlungsseite, nach ihrem Ablauf als **Frist überschritten**, und wenige Tage davor erinnert eine E-Mail alle, deren Beitrag noch fehlt. Bezahlen bleibt auch danach möglich.
 
 ## Status und Phasen {#stages}
 

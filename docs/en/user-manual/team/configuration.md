@@ -87,7 +87,7 @@ An empty field hides the link. Project Management, Participant Care and Content 
 
 ### Banking Information {#payment-details}
 
-Under **Participation fee** you find **Fee** and **Currency** (three letters, EUR to begin with), under **Bank account** the **Account Holder**, **Bank Name**, **IBAN** (22 characters without spaces) and **BIC**. Only Project Management changes them. Participants see these details when they [pay their fee](../participant/dashboard#payment), along with a QR code for the transfer.
+Under **Participation fee** you find **Fee** and **Currency** (three letters, EUR to begin with), under **Bank account** the **Account Holder**, **Bank Name**, **IBAN** (22 characters without spaces) and **BIC**. Only Project Management changes them. Participants see these details when they [pay their fee](../participant/dashboard#payment), along with a QR code for the transfer. The **Payment deadline** below is optional: it is shown on the payment page, marked **Deadline passed** once it is over, and a few days before it an email reminds everyone whose fee is still missing. Paying stays possible afterwards.
 
 ## Status and stages {#stages}
 

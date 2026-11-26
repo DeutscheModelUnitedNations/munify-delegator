@@ -3,6 +3,7 @@
 	import type { SuperForm } from 'sveltekit-superforms';
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
+	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 
 	let { form }: { form: SuperForm<ConferenceSettings> } = $props();
@@ -13,6 +14,13 @@
 		<FormTextInput {form} name="feeAmount" placeholder="75,00" label={m.fee()} type="number" />
 		<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
 	</div>
+	<FormDateTimeInput
+		{form}
+		name="paymentDeadline"
+		label={m.paymentDeadline()}
+		description={m.paymentDeadlineDescription()}
+		enableTime
+	/>
 </FormSection>
 <FormSection title={m.conferenceBankAccount()} icon="bank">
 	<FormTextInput

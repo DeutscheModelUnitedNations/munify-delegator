@@ -14,9 +14,13 @@ import Sleeve from './scenes/Sleeve.svelte';
 import Staple from './scenes/Staple.svelte';
 import { SCENE_MS } from './timing';
 
-interface GuideStep {
+/** One step of an animated guide (`PostalGuide`, and the payment guide that shares its frame). */
+export interface GuideStep {
 	id: string;
-	scene: Component;
+	/** The looping animation; a step without one shows `icon` in its place until it has one. */
+	scene?: Component;
+	/** Phosphor name of the stand-in for a scene still to be drawn. */
+	icon?: string;
 	title: () => string;
 	text: () => string;
 	/** Highlighted below the text. */

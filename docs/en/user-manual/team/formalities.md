@@ -25,6 +25,8 @@ Once **Payments** is on (see [Status and stages](./configuration#stages)), parti
 - One reference can cover several people. The amount is then the **Fee** times the number of people.
 - People can pay for themselves, their own delegation, the participants they supervise and supervisors they share a supervised person with. DELEGATOR refuses anything else.
 - Someone who has paid makes no new reference and cannot be included in a new one.
+- Whoever created a reference can discard it with **Start the payment over**. It stays findable here, marked as discarded, so you can still match a transfer that arrives with it after all.
+- With **I have transferred the money** participants state that they transferred. The page shows that with the reference, but it does not change the payment status: only you set that, once the money is there.
 - While no fee is set in the [Banking Information](./configuration#payment-details), no reference can be created.
 
 A reference has 16 characters in groups of four with hyphens, such as `ACDE-FH34-…`. It contains no characters that are easy to mix up.

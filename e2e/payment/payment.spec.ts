@@ -1,6 +1,7 @@
 import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_PAYMENT_ADMIN_ID, E2E_ROLE_ID } from '../seed/seed';
+import { createReference, openPaymentFlow, transferInputs } from './paymentFlow';
 
 test('a participant can generate a payment reference and an admin can mark it received', async ({
 	browser
@@ -21,24 +22,15 @@ test('a participant can generate a payment reference and an admin can mark it re
 	});
 	expect((await registered.json()).errors).toBeUndefined();
 
-	await participantPage.goto(`/dashboard/${E2E_CONFERENCE_ID}/payment`);
-	await waitForHydration(participantPage);
-
-	const generateButton = participantPage.locator('button:has(.ph-sparkle)');
-	await expect(generateButton).toBeVisible({ timeout: 15_000 });
-	await generateButton.click();
-
-	const reasonInput = participantPage.locator('input[readonly]').last();
-	await expect(reasonInput).toHaveValue(/.+/, { timeout: 15_000 });
-	const reference = await reasonInput.inputValue();
+	// Nobody else to pay for: no step asks whom the payment covers
+	await openPaymentFlow(participantPage, { conferenceId: E2E_CONFERENCE_ID });
+	const { reference } = await createReference(participantPage);
 	expect(reference).toBeTruthy();
 
-	// Generated again after a reload, it is the same reference
+	// Coming back, the page goes on where it was, with the same reference
 	await participantPage.reload();
 	await waitForHydration(participantPage);
-	await expect(generateButton).toBeVisible({ timeout: 15_000 });
-	await generateButton.click();
-	await expect(reasonInput).toHaveValue(reference, { timeout: 15_000 });
+	expect((await transferInputs(participantPage)).reference).toBe(reference);
 
 	const adminContext = await browser.newContext();
 	const adminPage = await adminContext.newPage();
@@ -88,6 +80,61 @@ test('a participant can generate a payment reference and an admin can mark it re
 	await waitForHydration(participantPage);
 	await expect(participantPage.locator('button:has(.ph-sparkle)')).toHaveCount(0);
 	await expect(participantPage.locator('.alert-success')).toBeVisible({ timeout: 15_000 });
+
+	await participantContext.close();
+	await adminContext.close();
+});
+
+test('a participant can say they transferred, take it back and start the payment over', async ({
+	browser
+}) => {
+	const participantContext = await browser.newContext();
+	const page = await participantContext.newPage();
+	const participant = makeTestUser('payment-restart');
+	await loginAs(page, participant);
+	const registered = await page.request.post('/api/graphql', {
+		data: {
+			query: `mutation ($c: ID!, $r: ID!) { createSingleParticipant(conferenceId: $c, roleId: $r) { id } }`,
+			variables: { c: E2E_CONFERENCE_ID, r: E2E_ROLE_ID }
+		}
+	});
+	expect((await registered.json()).errors).toBeUndefined();
+
+	await openPaymentFlow(page, { conferenceId: E2E_CONFERENCE_ID });
+	const { reference } = await createReference(page);
+
+	// Said transferred: the last step waits for the money
+	await page.getByRole('button', { name: /ich habe überwiesen|i have transferred/i }).click();
+	await expect(page.getByText(/bei uns eingegangen|received by us/i)).toBeVisible({
+		timeout: 15_000
+	});
+
+	// Taken back: the transfer step is open again
+	await page.getByRole('button', { name: /angabe zurücknehmen|take back/i }).click();
+	await expect(
+		page.getByRole('button', { name: /ich habe überwiesen|i have transferred/i })
+	).toBeVisible({ timeout: 15_000 });
+
+	// Started over: the old reference is given up, and a new one is made
+	await page.getByRole('button', { name: /zahlung neu beginnen|start the payment over/i }).click();
+	await page.getByRole('button', { name: /referenz verwerfen|discard the reference/i }).click();
+	const generateButton = page.locator('button:has(.ph-sparkle)');
+	await expect(generateButton).toBeEnabled({ timeout: 15_000 });
+	await generateButton.click();
+	const { reference: renewed } = await transferInputs(page);
+	expect(renewed).not.toBe(reference);
+
+	// The old one is kept, marked given up, for participant care to match a late transfer
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	await loginAs(adminPage, fixedTestUser(E2E_PAYMENT_ADMIN_ID), {
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/payments`
+	});
+	await adminPage.getByPlaceholder(/referenzsuche|reference search/i).fill(reference);
+	await adminPage.keyboard.press('Enter');
+	await expect(adminPage.getByText(/verworfen|discarded by the payer/i)).toBeVisible({
+		timeout: 15_000
+	});
 
 	await participantContext.close();
 	await adminContext.close();

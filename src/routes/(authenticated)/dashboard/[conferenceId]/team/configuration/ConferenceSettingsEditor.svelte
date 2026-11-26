@@ -75,6 +75,7 @@
 		unlockPayments: true,
 		unlockPostals: true,
 		feeAmount: true,
+		paymentDeadline: true,
 		bic: true,
 		currency: true,
 		bankName: true,
@@ -151,6 +152,7 @@
 		unlockPayments: storedConference.unlockPayments,
 		unlockPostals: storedConference.unlockPostals,
 		feeAmount: storedConference.feeAmount ?? undefined,
+		paymentDeadline: storedConference.paymentDeadline ?? undefined,
 		bankAccountHolder: storedConference.bankAccountHolder ?? undefined,
 		iban: storedConference.iban ?? undefined,
 		bic: storedConference.bic ?? undefined,
@@ -236,6 +238,7 @@
 					postalCountry: settings.postalCountry,
 					state: settings.state,
 					unlockPayments: settings.unlockPayments,
+					paymentDeadline: settings.paymentDeadline,
 					unlockPostals: settings.unlockPostals,
 					isOpenPaperSubmission: settings.isOpenPaperSubmission,
 					showCalendar: settings.showCalendar,
@@ -264,6 +267,8 @@
 				__args: {
 					...settings,
 					...limitArgs(settings),
+					// emptied, the deadline is cleared
+					paymentDeadline: settings.paymentDeadline ?? null,
 					id: conferenceId,
 					...(await uploadConferenceFiles({
 						conferenceId,
