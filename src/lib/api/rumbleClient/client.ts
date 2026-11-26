@@ -1811,6 +1811,12 @@ export type Conference = {
   website: String | null    
 };
 		
+export type ConferenceFeatureContent = {
+  hasAgendaItem: Boolean,
+  hasCalendarDay: Boolean,
+  hasPublishedGuide: Boolean    
+};
+		
 export type ConferenceNotificationSettings = {
   conferenceId: ID,
   conferenceTitle: String,
@@ -5774,6 +5780,9 @@ export type Query = {
     search?: ConferenceemailtextSearchInputArgument | null | undefined,
     where?: ConferenceemailtextWhereInputArgument | null | undefined
   }) => Conferenceemailtext[],
+  conferenceFeatureContent: (p: {
+    conferenceId: ID
+  }) => ConferenceFeatureContent,
   conferenceParticipant: (p: {
     id: ID
   }) => Conferenceparticipant,
@@ -7599,6 +7608,9 @@ export type Subscription = {
     search?: ConferenceemailtextSearchInputArgument | null | undefined,
     where?: ConferenceemailtextWhereInputArgument | null | undefined
   }) => Conferenceemailtext[],
+  conferenceFeatureContent: (p: {
+    conferenceId: ID
+  }) => ConferenceFeatureContent,
   conferenceParticipant: (p: {
     id: ID
   }) => Conferenceparticipant,
@@ -8869,7 +8881,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceFeatureContent", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

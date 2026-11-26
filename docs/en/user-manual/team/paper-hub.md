@@ -45,7 +45,7 @@ Whether you get it by email, on Slack or not at all you set under **Notification
 
 ## Opening submission {#opening-submission}
 
-Whether delegations may write papers is decided by the **Paper Submission Open** switch in the [settings](./configuration#stages). Project management, participant care and the content lead set it.
+Whether delegations may write papers is decided by the **Paper submission** switch in the [settings](./configuration#stages). Project management, participant care and the content lead set it.
 
 - **Open:** delegates see the **Paper Hub** card on their dashboard and can write as soon as their delegation's role has been released.
 - **Closed:** the card disappears. Every save of a paper is refused, drafts and the team's changes to the text included. You can still review.

@@ -227,3 +227,18 @@ export async function assertCanReadConference({
 		options: { message: m.conferenceNotFound }
 	});
 }
+
+/**
+ * Refuses (FORBIDDEN) unless the caller keeps the conference's feature switches
+ * (`editConferenceContent`): what the switches' requirements outside the conference row say.
+ */
+export async function assertCanReadFeatureContent({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	ctx.mustBeLoggedIn();
+	await assertTeamPermission({ ctx, conferenceId, permission: 'editConferenceContent' });
+}

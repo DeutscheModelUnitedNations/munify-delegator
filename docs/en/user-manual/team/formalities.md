@@ -20,7 +20,7 @@ Whatever these pages leave to **Participant Care**, **Project Management** may d
 
 ### How participants pay
 
-Once **Allow Payments** is on (see [Status and stages](./configuration#stages)), participants create a transfer reference on their dashboard and transfer the fee with it as the payment reference. What that looks like for them is described under [Payment](../participant/dashboard#payment).
+Once **Payments** is on (see [Status and stages](./configuration#stages)), participants create a transfer reference on their dashboard and transfer the fee with it as the payment reference. What that looks like for them is described under [Payment](../participant/dashboard#payment).
 
 - One reference can cover several people. The amount is then the **Fee** times the number of people.
 - People can pay for themselves, their own delegation, the participants they supervise and supervisors they share a supervised person with. DELEGATOR refuses anything else.
@@ -65,7 +65,7 @@ The status on the user card applies to this one person only, the reference stays
 
 ### What participants send
 
-Once **Allow Postal Registration** is on, participants download their documents as a PDF, sign them and post the originals to the postal address from [Documents and templates](./configuration#documents). What that looks like for them is described under [Postal registration](../participant/dashboard#postal-registration). The PDF contains:
+Once **Postal registration** is on, participants download their documents as a PDF, sign them and post the originals to the postal address from [Documents and templates](./configuration#documents). What that looks like for them is described under [Postal registration](../participant/dashboard#postal-registration). The PDF contains:
 
 - the **Binding Registration**,
 - the **Parental Agreement**, if the person is not yet 18 when the conference starts,

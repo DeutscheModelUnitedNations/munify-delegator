@@ -42,76 +42,7 @@
 	];
 </script>
 
-<FormSection title={m.features()} icon="toggle-right">
-	<div class="flex flex-col gap-3">
-		<label class="flex cursor-pointer items-center gap-3">
-			<input
-				type="checkbox"
-				class="toggle toggle-primary"
-				name="unlockPayments"
-				bind:checked={$formData.unlockPayments}
-			/>
-			<span>{m.paymentOpen()}</span>
-		</label>
-		<label class="flex cursor-pointer items-center gap-3">
-			<input
-				type="checkbox"
-				class="toggle toggle-primary"
-				name="unlockPostals"
-				bind:checked={$formData.unlockPostals}
-			/>
-			<span>{m.postalOpen()}</span>
-		</label>
-		<label class="flex cursor-pointer items-center gap-3">
-			<input
-				type="checkbox"
-				class="toggle toggle-primary"
-				name="isOpenPaperSubmission"
-				bind:checked={$formData.isOpenPaperSubmission}
-			/>
-			<span>{m.paperSubmissionOpen()}</span>
-		</label>
-		<label class="flex cursor-pointer items-center gap-3">
-			<input
-				type="checkbox"
-				class="toggle toggle-primary"
-				name="showCalendar"
-				bind:checked={$formData.showCalendar}
-			/>
-			<span>{m.showCalendar()}</span>
-		</label>
-		<label class="flex cursor-pointer items-start gap-3">
-			<input
-				type="checkbox"
-				class="toggle toggle-primary"
-				name="messagingEnabled"
-				aria-describedby="messaging-enabled-description"
-				bind:checked={$formData.messagingEnabled}
-			/>
-			<span class="flex flex-col gap-0.5">
-				<span>{m.messagingEnabled()}</span>
-				<span id="messaging-enabled-description" class="text-base-content/60 text-sm">
-					{m.messagingEnabledDescription()}
-				</span>
-			</span>
-		</label>
-		<!-- the same switch as in the guide workspace (team/guide) -->
-		<label class="flex cursor-pointer items-start gap-3">
-			<input
-				type="checkbox"
-				class="toggle toggle-primary"
-				name="guidePublished"
-				aria-describedby="guide-published-description"
-				bind:checked={$formData.guidePublished}
-			/>
-			<span class="flex flex-col gap-0.5">
-				<span>{m.guidePublishedSwitch()}</span>
-				<span id="guide-published-description" class="text-base-content/60 text-sm">
-					{m.guidePublishedHint()}
-				</span>
-			</span>
-		</label>
-	</div>
+<FormSection title={m.schoolRules()} icon="users-three" description={m.schoolRulesDescription()}>
 	<!-- the inputs line up at the bottom, whatever their descriptions wrap to -->
 	<div class="grid grid-cols-1 items-end gap-x-4 lg:grid-cols-3">
 		<FormTextInput

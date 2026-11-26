@@ -45,14 +45,14 @@ Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines
 Änderungen in den Reitern werden nicht sofort gespeichert. Ein Reiter mit ungespeicherten Änderungen trägt einen gelben Punkt, und der Knopf zeigt etwa **Einstellungen speichern (3 Änderungen)**. Er öffnet **Speichern bestätigen** mit allen Änderungen, nach Reitern geordnet, alter und neuer Wert nebeneinander. Gelb hervorgehoben und mit einer Erklärung versehen sind:
 
 - der **Konferenzstatus**: Er steuert sofort, was alle sehen und nutzen können.
-- die fünf Schalter unter **Funktionen**: Sie schalten eine Funktion für alle sofort frei oder sperren sie.
+- die Schalter unter **Funktionen**: Sie schalten eine Funktion für alle sofort frei oder sperren sie.
 - Beitrag, Währung und Bankdaten: Sie erscheinen auf Zahlungsaufforderungen, die schon verschickt sind.
 
-Eine neu gewählte Datei ersetzt die bisher hinterlegte, eine entfernte steht als **entfernt** in der Liste. Erst **Speichern** schreibt alles.
+Eine neu gewählte Datei ersetzt die bisher hinterlegte, eine entfernte steht als **entfernt** in der Liste. Erst **Speichern** schreibt alles. Verlässt du die Seite mit ungespeicherten Änderungen, etwa über **Einrichten** zum Kalender, fragt DELEGATOR vorher, ob du sie verwerfen willst. Ein Wechsel zwischen den Tabs behält sie.
 
 Liegt das Ende der Bewerbungsphase nach dem Konferenzbeginn, der Beginn nach dem Ende oder das Mindestalter der Teilnehmenden über ihrem Höchstalter, lässt sich nicht speichern. Die Meldung steht am betroffenen Feld.
 
-Hat das Speichern E-Mails fällig gemacht, fragt die Seite danach **E-Mails jetzt verschicken?** und nennt, welche Arten wie oft offen sind. Das passiert bei **Zahlungen erlauben**, **Postalische Anmeldungen erlauben**, beim Status **Nach der Konferenz** und bei einer neuen Zertifikatsvorlage. **{count} E-Mails jetzt verschicken** schickt sie ab, mit **Später** findest du sie auf der Seite [E-Mails](./communication#emails) wieder. Die Frage sehen nur Projektleitung und Teilnehmendenbetreuung, die die E-Mails verwalten dürfen.
+Hat das Speichern E-Mails fällig gemacht, fragt die Seite danach **E-Mails jetzt verschicken?** und nennt, welche Arten wie oft offen sind. Das passiert bei **Zahlungen**, **Postalische Anmeldung**, beim Status **Nach der Konferenz** und bei einer neuen Zertifikatsvorlage. **{count} E-Mails jetzt verschicken** schickt sie ab, mit **Später** findest du sie auf der Seite [E-Mails](./communication#emails) wieder. Die Frage sehen nur Projektleitung und Teilnehmendenbetreuung, die die E-Mails verwalten dürfen.
 
 :::note Außerhalb des Formulars
 Gremien und Themen, Resolutionen und die Anordnung auf den Vorlagen speichern in ihren eigenen Fenstern sofort. Der Speichern-Knopf gilt nur für die Formularfelder.
@@ -115,22 +115,33 @@ Die Phasen machen auch E-Mails fällig. In der Bewerbungsphase wird drei Tage vo
 2. Nach dem Ende der Bewerbungsphase die Bewerbungen [sichten](./assignment#sighting), die Plätze [zuteilen](./assignment#delegations) und die Zuteilung [übernehmen](./assignment#finish-and-release).
 3. **Vorbereitung** setzen. Damit öffnet die Warteliste.
 4. Die Zuteilung [freigeben](./assignment#releasing). Erst jetzt sehen Teilnehmende ihre Rollen und den Schnellzugriff.
-5. **Zahlungen erlauben** und **Postalische Anmeldungen erlauben** einschalten, dazu je nach Bedarf Kalender, Papier-Einreichung und Nachrichten.
+5. **Zahlungen** und **Postalische Anmeldung** einschalten, dazu je nach Bedarf Kalender, Papier-Einreichung und Nachrichten.
 6. Zur Konferenz **Aktive Konferenz** setzen.
 7. Danach die Zertifikatsvorlage hinterlegen und **Nach der Konferenz** setzen. Die Seite bietet dann die Zertifikats-E-Mail an.
 
 ### Funktionen {#features}
 
-Unter **Funktionen** schaltest du einzelne Teile unabhängig von der Phase frei. Ändern dürfen das Projektleitung, Teilnehmendenbetreuung und Leitung Inhalt.
+Unter **Funktionen** schaltest du einzelne Teile unabhängig von der Phase frei, jeder auf einer eigenen Karte, die sagt, was er für Teilnehmende freischaltet. Ändern dürfen das Projektleitung, Teilnehmendenbetreuung und Leitung Inhalt.
+
+Eine Funktion lässt sich erst einschalten, wenn eingerichtet ist, was sie braucht. Bis dahin ist ihr Schalter gesperrt, die Karte nennt unter **Braucht noch** das Fehlende und führt mit **Einrichten** dorthin. Du kannst beides in einem Rutsch erledigen: Bankdaten eintragen, Zahlungen einschalten, einmal speichern.
+
+- **Zahlungen**: Teilnahmebeitrag, Währung, Kontoinhaber\*in und IBAN
+- **Postalische Anmeldung**: die vollständige Postanschrift und alle vier [Vorlagen](#documents)
+- **Papier-Einreichung**: ein Gremium mit Tagesordnungspunkt
+- **Kalender**: mindestens ein Kalendertag
+- **Vorbereitungsleitfaden**: eine veröffentlichte Seitenleiste im [Leitfaden](./communication#guide)
+- **Nachrichten zwischen Delegationen** braucht nichts.
+
+Ausschalten geht immer. Fehlt einer eingeschalteten Funktion später etwas, etwa weil eine Vorlage entfernt wurde, bleibt sie an und ihre Karte warnt **Eingeschaltet, aber es fehlt**. Etwas wegnehmen, das eine eingeschaltete Funktion braucht, etwa die IBAN löschen, lehnt das Speichern ab. Schalte die Funktion dann zuerst aus.
 
 Die Karten unter **Schnellzugriff** auf dem Dashboard der Teilnehmenden, etwa **Beitragszahlung**, **Postalische Anmeldung**, **Papier-Hub** oder **Zeitplan**, erscheinen nur für Personen mit Platz und für Betreuende mit einer betreuten Person mit Platz. Und das nur in **Vorbereitung** und **Aktive Konferenz** nach der Freigabe der Zuteilung. Ein Schalter, den du vorher einschaltest, zeigt sich also erst dann.
 
-- **Zahlungen erlauben**: Teilnehmende sehen, [wie und wohin sie zahlen](../participant/dashboard#payment). Für alle mit Platz, die noch nicht bezahlt haben, wird die E-Mail **Teilnahmebeitrag freigeschaltet** fällig, nach der Freigabe der Zuteilung. Offene Zahlungen nennt außerdem die Erinnerung 14 Tage vor der Konferenz.
-- **Postalische Anmeldungen erlauben**: Teilnehmende laden ihre [postalische Anmeldung](../participant/dashboard#postal-registration) herunter. Das klappt nur, wenn alle vier [Vorlagen](#documents) hinterlegt sind. Für alle mit Platz, deren Unterlagen noch nicht vollständig sind, wird **Postalische Anmeldung freigeschaltet** fällig.
-- **Papier-Einreichung geöffnet**: Teilnehmende legen im [Papier-Hub](../participant/paper-hub) Papiere zu den Themen ihrer Gremien an und speichern neue Fassungen. Ist der Schalter aus, lehnt DELEGATOR beides ab mit „Papier kann nicht eingereicht werden, weil das Papier-Postfach geschlossen ist.“, und der **Papier-Hub** fehlt im Schnellzugriff.
-- **Kalender für Teilnehmende anzeigen**: Teilnehmende sehen den [Zeitplan](./communication#calendar). Das Team sieht ihn immer.
+- **Zahlungen**: Teilnehmende sehen, [wie und wohin sie zahlen](../participant/dashboard#payment). Für alle mit Platz, die noch nicht bezahlt haben, wird die E-Mail **Teilnahmebeitrag freigeschaltet** fällig, nach der Freigabe der Zuteilung. Offene Zahlungen nennt außerdem die Erinnerung 14 Tage vor der Konferenz.
+- **Postalische Anmeldung**: Teilnehmende laden ihre [postalische Anmeldung](../participant/dashboard#postal-registration) herunter. Das klappt nur, wenn alle vier [Vorlagen](#documents) hinterlegt sind. Für alle mit Platz, deren Unterlagen noch nicht vollständig sind, wird **Postalische Anmeldung freigeschaltet** fällig.
+- **Papier-Einreichung**: Teilnehmende legen im [Papier-Hub](../participant/paper-hub) Papiere zu den Themen ihrer Gremien an und speichern neue Fassungen. Ist der Schalter aus, lehnt DELEGATOR beides ab mit „Papier kann nicht eingereicht werden, weil das Papier-Postfach geschlossen ist.“, und der **Papier-Hub** fehlt im Schnellzugriff.
+- **Kalender**: Teilnehmende sehen den [Zeitplan](./communication#calendar). Das Team sieht ihn immer.
 - **Nachrichten zwischen Delegationen**: schaltet die Einzelchats zwischen Teilnehmenden verschiedener Delegationen frei, sobald die Zuteilung freigegeben ist (siehe [Nachrichten](./communication#messages)). Das Team und die eigene Delegation erreichen Teilnehmende immer. Ausgeschaltet bleiben bestehende Einzelchats lesbar, aber niemand schreibt dort mehr Neues.
-- **Leitfaden veröffentlicht**: Teilnehmende lesen den [Vorbereitungsleitfaden](./communication#guide) in der App, sobald ihre Rollen verteilt sind; vorher führt die Übersicht zum Link **Vorbereitungsleitfaden**. Derselbe Schalter steht auch im Leitfaden selbst.
+- **Vorbereitungsleitfaden**: Teilnehmende lesen den [Vorbereitungsleitfaden](./communication#guide) in der App, sobald ihre Rollen verteilt sind; vorher führt die Übersicht zum Link **Vorbereitungsleitfaden**. Derselbe Schalter steht auch im Leitfaden selbst.
 
 :::tip Erst die Freigabe, dann die Formalitäten
 **Teilnahmebeitrag freigeschaltet** und **Postalische Anmeldung freigeschaltet** werden erst fällig, wenn die Zuteilung freigegeben ist. Schaltest du Zahlungen vorher frei, bietet das Speichern keine E-Mails an. Nach der Freigabe gehen sie mit dem nächsten automatischen Lauf raus, wenn die Art auf automatisch steht. Sonst warten sie auf der Seite [E-Mails](./communication#emails), bis du sie verschickst.
@@ -138,7 +149,7 @@ Die Karten unter **Schnellzugriff** auf dem Dashboard der Teilnehmenden, etwa **
 
 ### Schulregeln {#school-rules}
 
-Im selben Reiter stehen die Grenzen der Schulregeln. Ändern kann sie nur die Projektleitung.
+Im selben Reiter stehen unter **Schulregeln** die Grenzen der Schulregeln. Ändern kann sie nur die Projektleitung.
 
 - **Gemeinsame Entscheidung bis Gruppengröße** (anfangs 16): Die Bewerbenden einer Betreuungsperson von derselben Schule bilden eine Gruppe. Ist eine Person einer Delegation mit der Betreuungsperson verknüpft, zählen alle Mitglieder dieser Delegation von derselben Schule mit. Bis zu dieser Größe bekommen alle einen Platz oder niemand. Größere Gruppen werden wie alle anderen behandelt.
 - **Garantierte Plätze pro Auslandsschule** (anfangs 12): So viele Personen einer Auslandsschule können höchstens einen garantierten Platz bekommen. Welche Schule eine Auslandsschule ist, legt die Teilnehmendenbetreuung bei den [Schulen](./participants#schools) fest.

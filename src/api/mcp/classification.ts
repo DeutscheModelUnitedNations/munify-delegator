@@ -496,6 +496,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	// --- Preparation guide (`docs/plans/guide.md`): the team's texts about the conference, never
 	// about people; who edited is an id.
 	Conferenceseries: { visible: [...ROW, 'abbreviation', 'name'] },
+	ConferenceFeatureContent: { visible: ['hasAgendaItem', 'hasCalendarDay', 'hasPublishedGuide'] },
 	Guidepage: {
 		visible: [
 			...ROW,
