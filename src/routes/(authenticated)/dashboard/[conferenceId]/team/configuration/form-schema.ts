@@ -90,6 +90,8 @@ export const conferenceSettingsFormSchema = z
 				message: m.pleaseEnterAValidAmount()
 			})
 			.optional(),
+		/** Until when the fee is to be paid; empty for no deadline. */
+		paymentDeadline: z.date({ message: m.pleaseEnterAValidDate() }).optional(),
 		bankAccountHolder: z.string().optional(),
 		iban: z
 			.string()

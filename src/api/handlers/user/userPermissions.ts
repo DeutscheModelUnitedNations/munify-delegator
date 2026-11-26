@@ -242,7 +242,7 @@ export async function assertCanUpdateUser({ ctx, id }: { ctx: ApiContext; id: st
 }
 
 /**
- * The signed-in person who watched the postal guide. FORBIDDEN for an AI assistant and for whoever
+ * The signed-in person who watched the postal guide (or the payment guide). FORBIDDEN for an AI assistant and for whoever
  * impersonates: neither watches it for somebody else.
  */
 export function assertCanCompletePostalGuide(ctx: Context) {

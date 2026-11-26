@@ -38,7 +38,7 @@ The **Settings** page splits the configuration into tabs: **General**, **Committ
 
 ![The conference settings with their tabs and the save button](shot:team/configuration)
 
-**Project Management**, **Participant Care** and **Content Lead** may open the page. Only Project Management may change everything. Participant Care and Content Lead change the status, the feature switches, the links, the postal address, the templates with their layout, and the resolutions. They see **General** and **Banking Information** locked, and a note at the top tells them what they can change.
+**Project Management**, **Participant Care** and **Content Lead** may open the page. Only Project Management may change everything. Participant Care and Content Lead change the status, the feature switches, the links, the postal address, the payment deadline, the templates with their layout, and the resolutions. They see **General** and the rest of **Banking Information** locked, and a note at the top tells them what they can change.
 
 ### Saving with a preview {#saving}
 
@@ -87,7 +87,7 @@ An empty field hides the link. Project Management, Participant Care and Content 
 
 ### Banking Information {#payment-details}
 
-Under **Participation fee** you find **Fee** and **Currency** (three letters, EUR to begin with), under **Bank account** the **Account Holder**, **Bank Name**, **IBAN** (22 characters without spaces) and **BIC**. Only Project Management changes them. Participants see these details when they [pay their fee](../participant/dashboard#payment), along with a QR code for the transfer.
+Under **Participation fee** you find **Fee** and **Currency** (three letters, EUR to begin with), under **Bank account** the **Account Holder**, **Bank Name**, **IBAN** (22 characters without spaces) and **BIC**. Only Project Management changes them. Participants see these details when they [pay their fee](../participant/dashboard#payment), along with a QR code for the transfer. Participant Care and Content Lead may change the **Payment deadline** below too. It is optional: it is shown on the payment page, marked **Deadline passed** once it is over, and a few days before it an email reminds everyone whose fee is still missing. Paying stays possible afterwards.
 
 ## Status and stages {#stages}
 

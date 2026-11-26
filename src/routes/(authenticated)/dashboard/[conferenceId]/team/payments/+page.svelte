@@ -46,7 +46,9 @@
 				id: true,
 				amount: true,
 				createdAt: true,
-				recievedAt: true
+				recievedAt: true,
+				transferReportedAt: true,
+				discardedAt: true
 			}),
 			client.query.users({
 				__args: {
@@ -418,6 +420,19 @@
 		<div class="alert alert-success mb-4">
 			<i aria-hidden="true" class="ph-duotone ph-check text-2xl"></i>
 			{m.paymentReceived({ date: formatLongDate(transaction.recievedAt) })}
+		</div>
+	{/if}
+	<!-- The payer's own word and choices, which change no status -->
+	{#if transaction.discardedAt}
+		<div class="alert alert-warning alert-soft mb-4">
+			<i aria-hidden="true" class="ph-duotone ph-arrow-counter-clockwise text-2xl"></i>
+			{m.paymentReferenceDiscardedOn({ date: formatLongDate(transaction.discardedAt) })}
+		</div>
+	{/if}
+	{#if transaction.transferReportedAt && !transaction.recievedAt}
+		<div class="alert alert-info alert-soft mb-4">
+			<i aria-hidden="true" class="ph-duotone ph-paper-plane-tilt text-2xl"></i>
+			{m.paymentTransferReportedOn({ date: formatLongDate(transaction.transferReportedAt) })}
 		</div>
 	{/if}
 

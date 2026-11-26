@@ -226,6 +226,11 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	linkToTeamWiki: { group: 'links', label: () => m.linkToTeamWiki() },
 	linkToServicesPage: { group: 'links', label: () => m.linkToServicesPage() },
 	feeAmount: { group: 'payments', label: () => m.fee(), highImpact: true, note: bankingNote },
+	paymentDeadline: {
+		group: 'payments',
+		label: () => m.paymentDeadline(),
+		format: formatDateTime
+	},
 	bankName: { group: 'payments', label: () => m.bankName(), highImpact: true, note: bankingNote },
 	iban: { group: 'payments', label: () => m.iban(), highImpact: true, note: bankingNote },
 	bic: { group: 'payments', label: () => m.bic(), highImpact: true, note: bankingNote },

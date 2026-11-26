@@ -11,6 +11,7 @@ import {
 	hop
 } from '#api/services/authHelper/rules';
 import { liveWhere } from '#api/services/authHelper/callerFacts';
+import { callerAsThemselves } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -29,11 +30,16 @@ export function registerPaymentTransactionAbilities() {
 	);
 
 	// The payer reads their own payments: `createPaymentTransaction` hands the new row back to them,
-	// and its transfer reference is the whole point of the payment pages.
+	// and its transfer reference is the whole point of the payment pages. Whoever a payment covers
+	// reads it too, so their payment page says that somebody pays for them and how far that is.
 	abilityBuilder.paymentTransaction.allow('read').when(
 		liveWhere((args) => {
 			const ids = ownParticipantIds(args);
-			return ids && { payerParticipantId: idIn(ids) };
+			if (!ids) return undefined;
+			const own = idIn(ids);
+			return {
+				OR: [{ payerParticipantId: own }, { paymentFor: { conferenceParticipantId: own } }]
+			};
 		})
 	);
 }
@@ -124,5 +130,19 @@ export async function assertCanUpdatePaymentTransaction({
 
 	return db.query.paymentTransaction
 		.findFirst({ ...updatable.query.single, with: { paymentFor: true } })
+		.then(assertFindFirstExists);
+}
+
+/**
+ * Refuses unless the caller is the payer of the payment, acting for themselves: only they know
+ * whether they transferred the money or want to start over. FORBIDDEN for an AI assistant and while
+ * impersonating, NOT_FOUND for a payment that is not theirs.
+ */
+export async function assertCanActAsPayer({ ctx, id }: { ctx: ApiContext; id: string }) {
+	ctx.mustBeLoggedIn();
+	const userId = callerAsThemselves(ctx);
+	if (!userId) throw apiError({ code: 'FORBIDDEN', message: m.paymentOnlyPayer() });
+	await db.query.paymentTransaction
+		.findFirst({ where: { id, payer: { userId } }, columns: { id: true } })
 		.then(assertFindFirstExists);
 }

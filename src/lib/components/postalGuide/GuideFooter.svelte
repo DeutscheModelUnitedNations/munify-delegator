@@ -3,10 +3,11 @@
 	import { m } from '#lib/paraglide/messages';
 	import GuideStepButtons from './GuideStepButtons.svelte';
 	import type { GuideProgress } from './guideProgress.svelte.js';
-	import { GUIDE_STEPS } from './steps';
 
 	interface Props {
 		progress: GuideProgress;
+		/** How many steps the guide has. */
+		count: number;
 		onNext: () => void;
 		onBack: () => void;
 		/** The end's button, for what comes next. */
@@ -17,12 +18,12 @@
 		onLeave?: () => void;
 	}
 
-	let { progress, onNext, onBack, finish, onSkip, onLeave }: Props = $props();
+	let { progress, count, onNext, onBack, finish, onSkip, onLeave }: Props = $props();
 </script>
 
 <div class="flex w-full flex-col gap-4">
 	<div class="flex items-center gap-1" aria-hidden="true">
-		{#each GUIDE_STEPS as { id }, index (id)}
+		{#each { length: count }, index (index)}
 			<div class="bg-base-300 h-2 flex-1 overflow-hidden rounded-full">
 				<div
 					class="bg-primary h-full origin-left rounded-full"
@@ -39,7 +40,7 @@
 		{/if}
 		{#if !progress.done}
 			<span class="text-base-content/60 text-sm max-sm:sr-only">
-				{m.postalGuideStep({ current: progress.index + 1, total: GUIDE_STEPS.length })}
+				{m.postalGuideStep({ current: progress.index + 1, total: count })}
 			</span>
 		{/if}
 		<div class="ml-auto flex flex-wrap gap-2">

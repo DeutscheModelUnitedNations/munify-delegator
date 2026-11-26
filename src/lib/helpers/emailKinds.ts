@@ -23,6 +23,8 @@ export const PHONE_READY_REMINDER_DAYS = 7;
 export const REMINDER_GAP_DAYS = 2;
 /** Days before a survey's deadline the reminder to answer it goes out. */
 export const SURVEY_REMINDER_DAYS = 3;
+/** Days before the payment deadline the reminder to pay the fee goes out. */
+export const PAYMENT_REMINDER_DAYS = 5;
 
 /**
  * The mails sent where they happen, which always go out (and are logged like any mail sent by
@@ -98,6 +100,7 @@ export function settingsEmailKinds(changedFields: readonly string[]): EmailkindE
  */
 export const REMINDER_KINDS = [
 	'APPLICATION_DEADLINE_REMINDER',
+	'PAYMENT_DEADLINE_REMINDER',
 	'OPEN_ISSUES_REMINDER',
 	'CHASE_INTRO_REMINDER',
 	'PHONE_READY_REMINDER',

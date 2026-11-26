@@ -90,6 +90,7 @@ export async function loadEmailConference(
 			unlockPostals: true,
 			unlockPayments: true,
 			applicationDeadline: true,
+			paymentDeadline: true,
 			startConference: true,
 			timezone: true,
 			certificateFileId: true

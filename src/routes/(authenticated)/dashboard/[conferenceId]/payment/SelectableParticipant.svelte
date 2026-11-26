@@ -2,7 +2,7 @@
 	import Selection from '#lib/components/selection/index';
 	import formatNames from '#lib/helpers/formatNames';
 	import { m } from '#lib/paraglide/messages';
-	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte';
+	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte.js';
 
 	/** One person a payment can cover, as a checkbox. Labelled with their name unless `label` is given. */
 	interface Props {

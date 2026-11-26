@@ -1,10 +1,11 @@
 <!-- The end of the postal guide: everything once more, as a list. -->
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages';
 	import GuideWarning from './GuideWarning.svelte';
-	import { GUIDE_STEPS } from './steps';
+	import type { GuideStep } from './steps';
 
-	const lines = GUIDE_STEPS.flatMap(({ done }) => done ?? []);
+	let { steps, warning }: { steps: readonly GuideStep[]; warning: string } = $props();
+
+	const lines = $derived(steps.flatMap(({ done }) => done ?? []));
 </script>
 
 <ul class="mt-4 grid gap-2 text-left sm:grid-cols-2">
@@ -18,4 +19,4 @@
 		</li>
 	{/each}
 </ul>
-<GuideWarning text={m.postalGuideWarning()} />
+<GuideWarning text={warning} />

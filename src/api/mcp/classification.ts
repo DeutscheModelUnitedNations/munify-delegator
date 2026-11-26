@@ -63,7 +63,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'wantsJoinTeamInformation',
 			'wantsToReceiveGeneralInformation',
 			'messageNotificationEmails',
-			'postalGuideCompletedAt'
+			'postalGuideCompletedAt',
+			'paymentGuideCompletedAt'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
@@ -105,7 +106,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'messagingSuspended',
 			'postalInfoRead',
 			'postalConfirmedDetails',
-			'postalConfirmedOfAge'
+			'postalConfirmedOfAge',
+			'paymentInfoRead'
 		]
 	},
 	// What somebody ticked and signed, like the statuses it makes.
@@ -365,7 +367,16 @@ const FIELDS: Record<string, TypeClassification> = {
 	Surveyanswer: {
 		visible: [...ROW, 'conferenceParticipantId', 'questionId', 'optionId']
 	},
-	Paymenttransaction: { visible: [...ROW, 'payerParticipantId', 'amount', 'recievedAt'] },
+	Paymenttransaction: {
+		visible: [
+			...ROW,
+			'payerParticipantId',
+			'amount',
+			'recievedAt',
+			'transferReportedAt',
+			'discardedAt'
+		]
+	},
 	Userreferenceinpaymenttransaction: {
 		visible: [...ROW, 'conferenceParticipantId', 'paymentTransactionId']
 	},
@@ -470,6 +481,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'nametagBinCount',
 			'participantMaxAge',
 			'participantMinAge',
+			'paymentDeadline',
 			'postalApartment',
 			'postalCity',
 			'postalCountry',
