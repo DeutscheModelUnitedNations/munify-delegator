@@ -114,6 +114,7 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'isOpenPaperSubmission',
 	'showCalendar',
 	'messagingEnabled',
+	'groupChatsEnabled',
 	'guidePublished'
 ];
 

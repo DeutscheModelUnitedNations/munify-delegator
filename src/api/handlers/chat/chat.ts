@@ -6,13 +6,15 @@ import { callerFacts, refreshCallerAbilities } from '#api/services/authHelper/ca
 import { isSystemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
-import { messagePreview, type ChatInbox } from '#lib/helpers/chat';
+import { isGroupChat, messagePreview, type ChatInbox } from '#lib/helpers/chat';
 import { m } from '#lib/paraglide/messages';
 import { conferenceContacts, type Contact } from './chatContacts';
 import { hideChatMessages, hideReasonSchema, type HideTarget } from './chatModeration';
 import {
 	assertCanListContacts,
 	assertCanModerateChat,
+	assertCanMuteChat,
+	assertInGroup,
 	assertCanModerateMessage,
 	assertCanSuspend,
 	assertDelegationMember,
@@ -23,6 +25,7 @@ import {
 	assertTakesPartInChat,
 	assertWritingParticipant,
 	chatSide,
+	groupIdsIn,
 	holdsInbox,
 	knowsPeopleOf,
 	readableChat,
@@ -33,16 +36,22 @@ import {
 	chatWriteRefusal,
 	hasBlocked,
 	inboxesReaching,
+	isChatMuted,
 	lastMessageOf,
 	markChatRead,
+	groupArgsSchema,
 	messageBodySchema,
 	openDelegationChat,
 	openDirectChat,
+	openGroupChat,
 	openTeamChat,
 	sameInbox,
+	seatedInGroup,
 	sendMessage,
 	setChatArchived,
 	setChatBlocked,
+	setChatMuted,
+	setGroupMessageNotificationEmails,
 	setMessageNotificationEmails,
 	setMessagingSuspended,
 	unreadCount,
@@ -120,6 +129,13 @@ ChatInboxOption.implement({
 			resolve: (option) => option.committee?.abbreviation
 		}),
 		committeeName: t.string({ nullable: true, resolve: (option) => option.committee?.name }),
+		roleId: t.id({
+			nullable: true,
+			description: 'The custom role of a `ROLE_SUPPORT` inbox.',
+			resolve: (option) => option.role?.id
+		}),
+		roleName: t.string({ nullable: true, resolve: (option) => option.role?.name }),
+		roleIcon: t.string({ nullable: true, resolve: (option) => option.role?.icon }),
 		trustedPersonId: t.id({
 			nullable: true,
 			description:
@@ -157,13 +173,16 @@ async function sideOf({ ctx, chat }: { ctx: ApiContext; chat: ChatRow }) {
 }
 
 /**
- * The seated people of a chat: its one or two parties, or, for a delegation's group, everybody of
- * the delegation.
+ * The seated people of a chat: its one or two parties, for a delegation's group everybody of the
+ * delegation, and for the group of a committee or custom role everybody seated there.
  */
 async function seatedPeopleOf(chat: ChatRow) {
 	const contacts = await conferenceContacts(chat.conferenceId);
 	if (chat.kind === 'DELEGATION') {
 		return [...contacts.values()].filter((contact) => contact.delegationId === chat.delegationId);
+	}
+	if (isGroupChat(chat.kind)) {
+		return [...contacts.values()].filter((contact) => seatedInGroup({ contact, chat }));
 	}
 	return [chat.participantId, chat.otherParticipantId].flatMap((participantId) => {
 		const contact = participantId ? contacts.get(participantId) : undefined;
@@ -196,16 +215,20 @@ async function peopleOfChat(chat: ChatRow) {
 		[
 			...seated.map((contact) => ({
 				id: contact.participantId,
-				delegationId: contact.delegationId
+				delegationId: contact.delegationId,
+				committeeId: contact.committee?.id ?? null,
+				roleId: contact.role.kind === 'CUSTOM' ? contact.role.id : null
 			})),
-			...unseated.map((id) => ({ id, delegationId: null }))
-		].map(async ({ id, delegationId }) => {
+			...unseated.map((id) => ({ id, delegationId: null, committeeId: null, roleId: null }))
+		].map(async ({ id, delegationId, committeeId, roleId }) => {
 			const person = await personOfParticipant(id);
 			if (!person?.name) return undefined;
 			const earlierReports = await earlierReportCount({
 				participantId: id,
 				userId: person.userId,
-				delegationId
+				delegationId,
+				committeeId,
+				roleId
 			});
 			return { ...person, name: person.name, earlierReports };
 		})
@@ -224,7 +247,7 @@ const ChatRef = object({
 		contacts: t.field({
 			type: [ChatContact],
 			description:
-				'The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties, or every member of a delegation group, for participant care. Empty for a member of a delegation group and for someone who holds no seat (any more).',
+				'The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties, everybody seated in the group of a committee or custom role, or every member of a delegation group, for participant care. Empty for a member of a delegation group and for someone who holds no seat (any more).',
 			resolve: (chat, _args, ctx) => contactsOfChat({ ctx, chat })
 		}),
 		people: t.field({
@@ -270,13 +293,20 @@ const ChatRef = object({
 				chat.teamArchivedAt !== null && (await sideOf({ ctx, chat })) === 'TEAM'
 		}),
 		unreadCount: t.int({
-			description: 'How many messages the caller (or, for a team chat, their inbox) has not read.',
+			description:
+				'How many messages the caller (or, for a team chat, their inbox) has not read. Nothing for a group the caller muted.',
 			resolve: async (chat, _args, ctx) =>
 				unreadCount({
 					userId: ctx.mustBeLoggedIn().sub,
 					side: await sideOf({ ctx, chat }),
-					chatId: chat.id
+					chat
 				})
+		}),
+		muted: t.boolean({
+			description:
+				'A group the caller muted for themselves: it counts nothing unread and sends them no mail.',
+			resolve: async (chat, _args, ctx) =>
+				isGroupChat(chat.kind) && isChatMuted({ userId: ctx.mustBeLoggedIn().sub, chatId: chat.id })
 		}),
 		lastMessagePreview: t.string({
 			nullable: true,
@@ -300,7 +330,7 @@ const ChatRef = object({
 		writeRefusal: t.string({
 			nullable: true,
 			description:
-				'Why the caller cannot write into the chat right now (`DISABLED`, `NOT_RELEASED`, `NOT_SEATED`, `SUSPENDED`, `BLOCKED`, `REVIEW`); null when they can.',
+				'Why the caller cannot write into the chat right now (`DISABLED`, `GROUPS_DISABLED`, `NOT_RELEASED`, `NOT_SEATED`, `SUSPENDED`, `BLOCKED`, `REVIEW`); null when they can.',
 			resolve: async (chat, _args, ctx) => {
 				const { side, participantId } = await readableChat({ ctx, id: chat.id });
 				return chatWriteRefusal({ chat, side, writerParticipantId: participantId });
@@ -393,6 +423,78 @@ const ChatMessageRef = object({
 });
 query({ table: 'chatMessage' });
 
+const ChatGroupOption = schemaBuilder.simpleObject('ChatGroupOption', {
+	description:
+		'The group of a committee or custom role the caller is in, as a participant seated there or for the team.',
+	fields: (t) => ({
+		kind: t.string({ description: '`COMMITTEE` or `ROLE`.' }),
+		committeeId: t.id({ nullable: true }),
+		committeeAbbreviation: t.string({ nullable: true }),
+		committeeName: t.string({ nullable: true }),
+		roleId: t.id({ nullable: true }),
+		roleName: t.string({ nullable: true }),
+		roleIcon: t.string({ nullable: true }),
+		asTeam: t.boolean({ description: 'Whether the caller is in it for the team.' }),
+		chatId: t.id({ nullable: true, description: 'The group chat, once it was opened.' })
+	})
+});
+
+/** The groups of the conference the caller is in (`groupIdsIn`), committees first. */
+async function groupsOfCaller({ ctx, conferenceId }: { ctx: ApiContext; conferenceId: string }) {
+	const facts = await callerFacts(ctx);
+	const ids = groupIdsIn({ ctx, facts, conferenceId });
+	if (ids.committeeIds.length === 0 && ids.roleIds.length === 0) return [];
+	const team = groupIdsIn({ ctx, facts: { ...facts, groupSeats: [] }, conferenceId });
+	const [committees, roles, chats] = await Promise.all([
+		db.query.committee.findMany({
+			where: { id: { in: [...ids.committeeIds] }, conferenceId },
+			columns: { id: true, abbreviation: true, name: true },
+			orderBy: { abbreviation: 'asc' }
+		}),
+		db.query.conferenceRole.findMany({
+			where: { id: { in: [...ids.roleIds] }, conferenceId, kind: 'CUSTOM' },
+			columns: { id: true, name: true, icon: true },
+			orderBy: { name: 'asc' }
+		}),
+		db.query.chat.findMany({
+			where: { conferenceId, kind: { in: ['COMMITTEE', 'ROLE'] } },
+			columns: { id: true, committeeId: true, roleId: true }
+		})
+	]);
+	const none = { committeeId: null, committeeAbbreviation: null, committeeName: null };
+	const noRole = { roleId: null, roleName: null, roleIcon: null };
+	return [
+		...committees.map((committee) => ({
+			kind: 'COMMITTEE',
+			committeeId: committee.id,
+			committeeAbbreviation: committee.abbreviation,
+			committeeName: committee.name,
+			...noRole,
+			asTeam: team.committeeIds.includes(committee.id),
+			chatId: chats.find((chat) => chat.committeeId === committee.id)?.id ?? null
+		})),
+		...roles.map((role) => ({
+			kind: 'ROLE',
+			...none,
+			roleId: role.id,
+			roleName: role.name,
+			roleIcon: role.icon,
+			asTeam: team.roleIds.includes(role.id),
+			chatId: chats.find((chat) => chat.roleId === role.id)?.id ?? null
+		}))
+	];
+}
+
+/** A list that changes with the functions handed out and the chats opened. */
+function listenToFunctionsAndChats(
+	subscriptions: Parameters<typeof chatPubsub.registerOnInstance>[0]['instance']
+) {
+	for (const action of ['created', 'removed'] as const) {
+		teamFunctionPubsub.registerOnInstance({ instance: subscriptions, action });
+		chatPubsub.registerOnInstance({ instance: subscriptions, action });
+	}
+}
+
 const readableChatQuery = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 	(await ctx.abilities.chat.filter('read')).merge({ where: { id } }).query.single;
 
@@ -423,21 +525,29 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
+	chatGroups: t.field({
+		description:
+			'The groups of committees and custom roles of the conference the caller is in: as a participant the one of their committee or custom role, once their seat is released and while the conference opened the groups (`groupChatsEnabled`); for the team the ones of the committees they chair or advise and the custom roles they look after, any time. Open one with `openGroupChat`.',
+		type: [ChatGroupOption],
+		args: { conferenceId: t.arg.id({ required: true }) },
+		// functions being handed out or taken away, and groups being opened, change the list
+		subscribe: listenToFunctionsAndChats,
+		resolve: (_root, args, ctx) => {
+			ctx.mustBeLoggedIn();
+			return groupsOfCaller({ ctx, conferenceId: args.conferenceId });
+		}
+	}),
+
 	chatInboxes: t.field({
 		description:
-			'The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, from the registration on, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.',
+			'The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, from the registration on, and the chairs and consultants of their committee and whoever looks after their custom role once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.',
 		type: [ChatInboxOption],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			participantId: t.arg.id()
 		},
 		// functions being handed out or taken away change the inboxes
-		subscribe: (subscriptions) => {
-			for (const action of ['created', 'removed'] as const) {
-				teamFunctionPubsub.registerOnInstance({ instance: subscriptions, action });
-				chatPubsub.registerOnInstance({ instance: subscriptions, action });
-			}
-		},
+		subscribe: listenToFunctionsAndChats,
 		resolve: async (_root, args, ctx) => {
 			ctx.mustBeLoggedIn();
 			const facts = await callerFacts(ctx);
@@ -449,20 +559,21 @@ schemaBuilder.queryFields((t) => ({
 				participantId
 			});
 			const options = args.participantId
-				? reaching.filter(({ inbox, committee, person }) =>
+				? reaching.filter(({ inbox, committee, role, person }) =>
 						holdsInbox({
 							ctx,
 							facts,
 							conferenceId: args.conferenceId,
 							inbox,
 							committeeId: committee?.id ?? null,
+							roleId: role?.id ?? null,
 							trustedUserId: person?.userId ?? null
 						})
 					)
 				: reaching;
 			const chats = await db.query.chat.findMany({
 				where: { kind: 'TEAM', participantId, conferenceId: args.conferenceId },
-				columns: { id: true, inbox: true, committeeId: true, trustedUserId: true }
+				columns: { id: true, inbox: true, committeeId: true, roleId: true, trustedUserId: true }
 			});
 			return options.map((option) => ({
 				...option,
@@ -550,6 +661,7 @@ schemaBuilder.mutationFields((t) => {
 				conferenceId: t.arg.id({ required: true }),
 				inbox: t.arg({ type: chatInboxEnum, required: true }),
 				committeeId: t.arg.id({ description: "The committee of a chairs' or consultants' inbox." }),
+				roleId: t.arg.id({ description: 'The custom role of a `ROLE_SUPPORT` inbox.' }),
 				trustedPersonId: t.arg.id({
 					description: 'One trusted person, instead of all of them together.'
 				}),
@@ -558,6 +670,7 @@ schemaBuilder.mutationFields((t) => {
 			resolve: async (select, _root, args, ctx) => {
 				const inbox: ChatInbox = args.inbox;
 				const committeeId = args.committeeId ?? null;
+				const roleId = args.roleId ?? null;
 				const trustedUserId = args.trustedPersonId
 					? await trustedUserIdOf({
 							conferenceId: args.conferenceId,
@@ -571,6 +684,7 @@ schemaBuilder.mutationFields((t) => {
 						conferenceId: args.conferenceId,
 						inbox,
 						committeeId,
+						roleId,
 						trustedUserId
 					});
 					participantId = args.participantId;
@@ -582,12 +696,51 @@ schemaBuilder.mutationFields((t) => {
 					participantId,
 					inbox,
 					committeeId,
+					roleId,
 					trustedUserId
 				});
 				await refreshCallerAbilities(ctx);
 				return db.query.chat
 					.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
 					.then(assertFindFirstExists);
+			}
+		}),
+
+		openGroupChat: t.drizzleField({
+			description:
+				'The group of a committee (`committeeId`) or custom role (`roleId`), opened when it has none yet. For whoever is in it (`chatGroups`; FORBIDDEN otherwise); INVALID_INPUT unless exactly one of the two is given.',
+			type: ChatRef,
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				committeeId: t.arg.id(),
+				roleId: t.arg.id()
+			},
+			validate: groupArgsSchema,
+			resolve: async (select, _root, args, ctx) => {
+				const group = args.committeeId
+					? { committeeId: args.committeeId }
+					: { roleId: args.roleId ?? '' };
+				await assertInGroup({ ctx, conferenceId: args.conferenceId, group });
+				const chat = await openGroupChat({ conferenceId: args.conferenceId, group });
+				await refreshCallerAbilities(ctx);
+				return db.query.chat
+					.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		setChatMuted: t.field({
+			description:
+				'Mutes a group for the caller, or unmutes it: muted, it counts nothing unread and sends them no mail; they stay in it. For somebody in the group (FORBIDDEN otherwise, and for every other chat).',
+			type: 'Boolean',
+			args: {
+				chatId: t.arg.id({ required: true }),
+				muted: t.arg.boolean({ required: true })
+			},
+			resolve: async (_root, args, ctx) => {
+				const { chat, userId } = await assertCanMuteChat({ ctx, id: args.chatId });
+				await setChatMuted({ chat, userId, muted: args.muted });
+				return true;
 			}
 		}),
 
@@ -719,6 +872,20 @@ schemaBuilder.mutationFields((t) => {
 					target: { authorParticipantId: args.participantId },
 					reason: args.reason
 				});
+			}
+		}),
+
+		setGroupMessageNotificationEmails: t.field({
+			description:
+				'Whether the mail about unread messages also tells the caller about the groups of their committee or custom role.',
+			type: 'Boolean',
+			args: { enabled: t.arg.boolean({ required: true }) },
+			resolve: async (_root, args, ctx) => {
+				await setGroupMessageNotificationEmails({
+					userId: ctx.mustBeLoggedIn().sub,
+					enabled: args.enabled
+				});
+				return true;
 			}
 		}),
 

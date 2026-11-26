@@ -1417,7 +1417,7 @@ type Chat {
   conferenceId: ID!
 
   """
-  The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties, or every member of a delegation group, for participant care. Empty for a member of a delegation group and for someone who holds no seat (any more).
+  The seated people of the chat other than the caller: the other party of a direct chat, the participant of a team chat for the inbox, both parties, everybody seated in the group of a committee or custom role, or every member of a delegation group, for participant care. Empty for a member of a delegation group and for someone who holds no seat (any more).
   """
   contacts: [ChatContact!]!
   createdAt: DateTime!
@@ -1439,6 +1439,11 @@ type Chat {
   """Get the chatMessages related to this chat"""
   messages(limit: Int, offset: Int, orderBy: ChatmessageOrderInputArgument, search: ChatmessageSearchInputArgument, where: ChatmessageWhereInputArgument): [Chatmessage!]!
 
+  """
+  A group the caller muted for themselves: it counts nothing unread and sends them no mail.
+  """
+  muted: Boolean!
+
   """Get the conferenceParticipants related to this chat"""
   otherParticipant(orderBy: ConferenceparticipantOrderInputArgument, where: ConferenceparticipantWhereInputArgument): Conferenceparticipant
   otherParticipantId: ID
@@ -1454,6 +1459,10 @@ type Chat {
 
   """Get the chatReports related to this chat"""
   reports(limit: Int, offset: Int, orderBy: ChatreportOrderInputArgument, search: ChatreportSearchInputArgument, where: ChatreportWhereInputArgument): [Chatreport!]!
+
+  """Get the conferenceRoles related to this chat"""
+  role(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
+  roleId: ID
 
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
@@ -1483,13 +1492,13 @@ type Chat {
   underReview: Boolean!
 
   """
-  How many messages the caller (or, for a team chat, their inbox) has not read.
+  How many messages the caller (or, for a team chat, their inbox) has not read. Nothing for a group the caller muted.
   """
   unreadCount: Int!
   updatedAt: DateTime!
 
   """
-  Why the caller cannot write into the chat right now (`DISABLED`, `NOT_RELEASED`, `NOT_SEATED`, `SUSPENDED`, `BLOCKED`, `REVIEW`); null when they can.
+  Why the caller cannot write into the chat right now (`DISABLED`, `GROUPS_DISABLED`, `NOT_RELEASED`, `NOT_SEATED`, `SUSPENDED`, `BLOCKED`, `REVIEW`); null when they can.
   """
   writeRefusal: String
 }
@@ -1524,6 +1533,26 @@ type ChatContact {
   userId: ID
 }
 
+"""
+The group of a committee or custom role the caller is in, as a participant seated there or for the team.
+"""
+type ChatGroupOption {
+  """Whether the caller is in it for the team."""
+  asTeam: Boolean!
+
+  """The group chat, once it was opened."""
+  chatId: ID
+  committeeAbbreviation: String
+  committeeId: ID
+  committeeName: String
+
+  """`COMMITTEE` or `ROLE`."""
+  kind: String!
+  roleIcon: String
+  roleId: ID
+  roleName: String
+}
+
 """A team inbox a chat can be opened with."""
 type ChatInboxOption {
   """The chat with this inbox, once one was opened."""
@@ -1535,6 +1564,11 @@ type ChatInboxOption {
 
   """The full name of that trusted person."""
   personName: String
+  roleIcon: String
+
+  """The custom role of a `ROLE_SUPPORT` inbox."""
+  roleId: ID
+  roleName: String
 
   """
   The one trusted person this inbox is, to pass to `openTeamChat`; null for the trusted persons together and for every other inbox.
@@ -1554,6 +1588,7 @@ input ChatOrderInputArgument {
   lastParticipantMessageAt: SortingParameter
   otherParticipantId: SortingParameter
   participantId: SortingParameter
+  roleId: SortingParameter
   teamArchivedAt: SortingParameter
   teamReadAt: SortingParameter
   trustedUserId: SortingParameter
@@ -1580,6 +1615,7 @@ enum ChatSearchFieldEnum {
   id
   otherParticipantId
   participantId
+  roleId
   trustedUserId
 }
 
@@ -1614,6 +1650,8 @@ input ChatWhereInputArgument {
   participant: ConferenceparticipantWhereInputArgument
   participantId: IDWhereInputArgument
   reports: ChatreportWhereInputArgument
+  role: ConferenceroleWhereInputArgument
+  roleId: IDWhereInputArgument
   teamArchivedAt: DateTimeWhereInputArgument
   teamReadAt: DateTimeWhereInputArgument
   trustedUserId: IDWhereInputArgument
@@ -1625,12 +1663,15 @@ enum ChatinboxEnum {
   CHAIR
   CONSULTANT
   PARTICIPANT_CARE
+  ROLE_SUPPORT
   TRUSTED_PERSON
 }
 
 enum ChatkindEnum {
+  COMMITTEE
   DELEGATION
   DIRECT
+  ROLE
   TEAM
 }
 
@@ -2086,6 +2127,7 @@ type Conference {
   emblemFileId: ID
   endConference: DateTime!
   feeAmount: Float
+  groupChatsEnabled: Boolean!
 
   """Get the storedFiles related to this conference"""
   guardianConsentFile(orderBy: StoredfileOrderInputArgument, where: StoredfileWhereInputArgument): Storedfile
@@ -2252,6 +2294,7 @@ input ConferenceOrderInputArgument {
   emblemFileId: SortingParameter
   endConference: SortingParameter
   feeAmount: SortingParameter
+  groupChatsEnabled: SortingParameter
   guardianConsentFileId: SortingParameter
   guidePublished: SortingParameter
   iban: SortingParameter
@@ -2384,6 +2427,7 @@ input ConferenceWhereInputArgument {
   emblemFileId: IDWhereInputArgument
   endConference: DateTimeWhereInputArgument
   feeAmount: FloatWhereInputArgument
+  groupChatsEnabled: BooleanWhereInputArgument
   guardianConsentFile: StoredfileWhereInputArgument
   guardianConsentFileId: IDWhereInputArgument
   guideOutline: GuideoutlineWhereInputArgument
@@ -5337,9 +5381,16 @@ type Mutation {
   ensureGuidePageOf(agendaItemId: ID, committeeId: ID): Guidepage!
 
   """
-  Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, or `TRUSTED_PERSON` for the whole conference (without a committee). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, the trusted persons their shared one and each their own. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee of another conference, a committee function without a committee and a trusted person with one.
+  Gives a team member a function: `CHAIR` or `CONSULTANT` in a committee of their conference, `ROLE_SUPPORT` for one of its custom roles (`roleId`), or `TRUSTED_PERSON` for the whole conference (without either). Whoever holds a function answers its inbox in the chats: a committee's chairs or consultants theirs, whoever looks after a custom role its own, the trusted persons their shared one and each their own; chairs, consultants and whoever looks after a role are in the group of their committee or role. Project management and team coordinators only (FORBIDDEN otherwise); INVALID_INPUT for a committee or role of another conference, a role that is not a custom one, a committee function without a committee, a role function without a role and a trusted person with either.
   """
-  giveTeamFunction(committeeId: ID, kind: TeamfunctionkindEnum!, teamMemberId: ID!): Teamfunction!
+  giveTeamFunction(
+    committeeId: ID
+    kind: TeamfunctionkindEnum!
+
+    """The custom role of a `ROLE_SUPPORT`."""
+    roleId: ID
+    teamMemberId: ID!
+  ): Teamfunction!
 
   """
   Hides a message of a reported chat for everybody of it, with a reason for the team. Final: the parties read a placeholder from then on, participant care and system admins keep the text with the report. Participant care of the conference while a report of the chat is open (NOT_FOUND otherwise, FORBIDDEN for a team chat, CONFLICT for a message hidden already).
@@ -5481,6 +5532,11 @@ type Mutation {
   ): Chat!
 
   """
+  The group of a committee (`committeeId`) or custom role (`roleId`), opened when it has none yet. For whoever is in it (`chatGroups`; FORBIDDEN otherwise); INVALID_INPUT unless exactly one of the two is given.
+  """
+  openGroupChat(committeeId: ID, conferenceId: ID!, roleId: ID): Chat!
+
+  """
   The chat of a participant with a team inbox, opened when there is none yet. Without `participantId` the caller's own, as a delegation member or single participant; with it a team member opens the chat of that participant with an inbox they answer (FORBIDDEN otherwise). `trustedPersonId` (from `chatInboxes`) makes it the chat with that one trusted person. CONFLICT for an inbox that does not reach the participant (`chatInboxes`).
   """
   openTeamChat(
@@ -5489,6 +5545,9 @@ type Mutation {
     conferenceId: ID!
     inbox: ChatinboxEnum!
     participantId: ID
+
+    """The custom role of a `ROLE_SUPPORT` inbox."""
+    roleId: ID
 
     """One trusted person, instead of all of them together."""
     trustedPersonId: ID
@@ -5783,6 +5842,11 @@ type Mutation {
   setChatBlocked(blocked: Boolean!, chatId: ID!): Boolean!
 
   """
+  Mutes a group for the caller, or unmutes it: muted, it counts nothing unread and sends them no mail; they stay in it. For somebody in the group (FORBIDDEN otherwise, and for every other chat).
+  """
+  setChatMuted(chatId: ID!, muted: Boolean!): Boolean!
+
+  """
   Sets (rather than toggles) whether a nation holds a seat in a committee, so that concurrent clicks of several people converge on the same state. The first seat makes the nation one of the conference's roles, the last one ends that unless a delegation holds it. Taking a seat away is refused with CONFLICT while members of the delegation holding the nation sit in the committee; an unknown nation is NOT_FOUND.
   """
   setCommitteeNationSeat(
@@ -5852,6 +5916,11 @@ type Mutation {
     """
     layout: JSON
   ): Conference!
+
+  """
+  Whether the mail about unread messages also tells the caller about the groups of their committee or custom role.
+  """
+  setGroupMessageNotificationEmails(enabled: Boolean!): Boolean!
 
   """
   Sets where a general page's draft is shared, seen from the conference (`scope` reaching it); takes effect with the next publish. Committee and agenda item pages stay in their conference (INVALID_INPUT). `editGuide` in the conference, and the page reaching one of the caller's (NOT_FOUND / FORBIDDEN otherwise).
@@ -6124,6 +6193,11 @@ type Mutation {
     emblemFileId: ID
     endConference: DateTime
     feeAmount: Float
+
+    """
+    Whether the groups of the committees and custom roles are open to the participants seated there, once their seat is released. The team in a group writes any time.
+    """
+    groupChatsEnabled: Boolean
 
     """
     A file uploaded through `requestFileUpload` for this field of this conference; `null` removes the stored one, left out keeps it.
@@ -6776,10 +6850,12 @@ enum NotificationchannelEnum {
 }
 
 enum NotificationtopicEnum {
+  CHAT_GROUP
   CHAT_REPORT
   COMMITTEE_INBOX
   COMMITTEE_PAPERS
   PARTICIPANT_CARE
+  ROLE_INBOX
   SCAN_PROBLEM
   TRUSTED_PERSONAL
   TRUSTED_SHARED
@@ -7714,7 +7790,12 @@ type Query {
   chatContacts(conferenceId: ID!): [ChatContact!]!
 
   """
-  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, from the registration on, and the chairs and consultants of their committee once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
+  The groups of committees and custom roles of the conference the caller is in: as a participant the one of their committee or custom role, once their seat is released and while the conference opened the groups (`groupChatsEnabled`); for the team the ones of the committees they chair or advise and the custom roles they look after, any time. Open one with `openGroupChat`.
+  """
+  chatGroups(conferenceId: ID!): [ChatGroupOption!]!
+
+  """
+  The team inboxes a chat can be opened with. Without `participantId`: the ones the caller, taking part in the conference, may write to (participant care, the trusted persons together and each of them by name, from the registration on, and the chairs and consultants of their committee and whoever looks after their custom role once roles are released). With it: the inboxes the caller answers that reach this participant, for a team member writing to them.
   """
   chatInboxes(conferenceId: ID!, participantId: ID): [ChatInboxOption!]!
 
@@ -11038,6 +11119,10 @@ type Teamfunction {
   id: ID!
   kind: TeamfunctionkindEnum!
 
+  """Get the conferenceRoles related to this teamFunction"""
+  role(orderBy: ConferenceroleOrderInputArgument, where: ConferenceroleWhereInputArgument): Conferencerole
+  roleId: ID
+
   """
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
   """
@@ -11054,6 +11139,7 @@ input TeamfunctionOrderInputArgument {
   createdAt: SortingParameter
   id: SortingParameter
   kind: SortingParameter
+  roleId: SortingParameter
   teamMemberId: SortingParameter
   updatedAt: SortingParameter
 }
@@ -11062,6 +11148,7 @@ input TeamfunctionOrderInputArgument {
 enum TeamfunctionSearchFieldEnum {
   committeeId
   id
+  roleId
   teamMemberId
 }
 
@@ -11085,6 +11172,8 @@ input TeamfunctionWhereInputArgument {
   createdAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
   kind: TeamfunctionkindEnum
+  role: ConferenceroleWhereInputArgument
+  roleId: IDWhereInputArgument
   teamMember: TeammemberWhereInputArgument
   teamMemberId: IDWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
@@ -11093,6 +11182,7 @@ input TeamfunctionWhereInputArgument {
 enum TeamfunctionkindEnum {
   CHAIR
   CONSULTANT
+  ROLE_SUPPORT
   TRUSTED_PERSON
 }
 
@@ -11313,6 +11403,7 @@ type User {
   gender: GenderEnum
   givenName: String!
   globalNotes: String
+  groupMessageNotificationEmails: Boolean!
   id: ID!
 
   """Get the teamMemberInvitations related to this user"""
@@ -11382,6 +11473,7 @@ input UserOrderInputArgument {
   gender: SortingParameter
   givenName: SortingParameter
   globalNotes: SortingParameter
+  groupMessageNotificationEmails: SortingParameter
   id: SortingParameter
   locale: SortingParameter
   messageNotificationEmails: SortingParameter
@@ -11436,6 +11528,7 @@ input UserWhereInputArgument {
   gender: GenderEnum
   givenName: StringWhereInputArgument
   globalNotes: StringWhereInputArgument
+  groupMessageNotificationEmails: BooleanWhereInputArgument
   id: IDWhereInputArgument
   invitationsAccepted: TeammemberinvitationWhereInputArgument
   invitationsSent: TeammemberinvitationWhereInputArgument

@@ -44,6 +44,7 @@ const off: FeatureSwitches = {
 	isOpenPaperSubmission: false,
 	showCalendar: false,
 	messagingEnabled: false,
+	groupChatsEnabled: false,
 	guidePublished: false
 };
 const on: FeatureSwitches = {
@@ -52,6 +53,7 @@ const on: FeatureSwitches = {
 	isOpenPaperSubmission: true,
 	showCalendar: true,
 	messagingEnabled: true,
+	groupChatsEnabled: true,
 	guidePublished: true
 };
 
@@ -67,6 +69,7 @@ describe('missingFeatureRequirements', () => {
 			isOpenPaperSubmission: ['agendaItem'],
 			showCalendar: ['calendarDay'],
 			messagingEnabled: [],
+			groupChatsEnabled: [],
 			guidePublished: ['publishedGuide']
 		});
 	});

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { functionFitsCommittee, inboxReaches, messagePreview, writeRefusal } from './chat';
+import { functionFits, inboxReaches, messagePreview, writeRefusal } from './chat';
 
 describe('inboxReaches', () => {
 	test('participant care reaches everybody, seated or not', () => {
@@ -102,14 +102,66 @@ describe('messagePreview', () => {
 	});
 });
 
-describe('functionFitsCommittee', () => {
+describe('functionFits', () => {
 	test('a trusted person belongs to the whole conference', () => {
-		expect(functionFitsCommittee({ kind: 'TRUSTED_PERSON', committeeId: null })).toBe(true);
-		expect(functionFitsCommittee({ kind: 'TRUSTED_PERSON', committeeId: 'ga' })).toBe(false);
+		expect(functionFits({ kind: 'TRUSTED_PERSON', committeeId: null })).toBe(true);
+		expect(functionFits({ kind: 'TRUSTED_PERSON', committeeId: 'ga' })).toBe(false);
 	});
 
 	test("chairs and consultants are a committee's", () => {
-		expect(functionFitsCommittee({ kind: 'CHAIR', committeeId: 'ga' })).toBe(true);
-		expect(functionFitsCommittee({ kind: 'CONSULTANT', committeeId: null })).toBe(false);
+		expect(functionFits({ kind: 'CHAIR', committeeId: 'ga' })).toBe(true);
+		expect(functionFits({ kind: 'CONSULTANT', committeeId: null })).toBe(false);
+	});
+});
+
+describe('custom roles', () => {
+	test('whoever supports a custom role looks after that role, not a committee', () => {
+		expect(functionFits({ kind: 'ROLE_SUPPORT', committeeId: null, roleId: 'press' })).toBe(true);
+		expect(functionFits({ kind: 'ROLE_SUPPORT', committeeId: null })).toBe(false);
+		expect(functionFits({ kind: 'ROLE_SUPPORT', committeeId: 'ga', roleId: 'press' })).toBe(false);
+		expect(functionFits({ kind: 'CHAIR', committeeId: 'ga', roleId: 'press' })).toBe(false);
+		expect(functionFits({ kind: 'TRUSTED_PERSON', committeeId: null, roleId: 'press' })).toBe(
+			false
+		);
+	});
+
+	test("a role's inbox reaches the people holding that role only", () => {
+		const inbox = { inbox: 'ROLE_SUPPORT' as const, committeeId: null, roleId: 'press' };
+		expect(inboxReaches({ ...inbox, person: { committeeId: null, roleId: 'press' } })).toBe(true);
+		expect(inboxReaches({ ...inbox, person: { committeeId: null, roleId: 'jury' } })).toBe(false);
+		expect(inboxReaches({ ...inbox, person: { committeeId: 'ga', roleId: 'n-de' } })).toBe(false);
+		expect(inboxReaches({ ...inbox, person: null })).toBe(false);
+	});
+});
+
+describe('writeRefusal in a group', () => {
+	const group = {
+		kind: 'COMMITTEE' as const,
+		side: 'PARTICIPANT' as const,
+		messagingEnabled: false,
+		groupChatsEnabled: true,
+		assignmentReleased: true,
+		writerSeated: true,
+		writerSuspended: false,
+		counterpartSeated: false,
+		blocked: false
+	};
+
+	test('people seated there write while the groups are open, whatever the messaging switch', () => {
+		expect(writeRefusal(group)).toBeNull();
+		expect(writeRefusal({ ...group, kind: 'ROLE' })).toBeNull();
+	});
+
+	test('the groups wait for their switch and the release, and close for those not seated', () => {
+		expect(writeRefusal({ ...group, groupChatsEnabled: false })).toBe('GROUPS_DISABLED');
+		expect(writeRefusal({ ...group, assignmentReleased: false })).toBe('NOT_RELEASED');
+		expect(writeRefusal({ ...group, writerSeated: false })).toBe('NOT_SEATED');
+		expect(writeRefusal({ ...group, writerSuspended: true })).toBe('SUSPENDED');
+	});
+
+	test('the team in a group writes any time', () => {
+		expect(
+			writeRefusal({ ...group, side: 'TEAM', groupChatsEnabled: false, assignmentReleased: false })
+		).toBeNull();
 	});
 });

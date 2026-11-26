@@ -67,8 +67,11 @@ export async function notificationSettingsOf(
 			user: { columns: { messageNotificationEmails: true } },
 			conference: { columns: { title: true, startConference: true } },
 			functions: {
-				columns: { id: true, committeeId: true, kind: true },
-				with: { committee: { columns: { abbreviation: true, name: true } } }
+				columns: { id: true, committeeId: true, roleId: true, kind: true },
+				with: {
+					committee: { columns: { abbreviation: true, name: true } },
+					role: { columns: { name: true } }
+				}
 			}
 		}
 	});

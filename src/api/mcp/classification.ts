@@ -63,6 +63,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'wantsJoinTeamInformation',
 			'wantsToReceiveGeneralInformation',
 			'messageNotificationEmails',
+			'groupMessageNotificationEmails',
 			'postalGuideCompletedAt'
 		]
 	},
@@ -140,7 +141,7 @@ const FIELDS: Record<string, TypeClassification> = {
 		redacted: ['experience', 'motivation', 'requests']
 	},
 	Teammember: { visible: [...ROW, 'conferenceId', 'userId', 'role'] },
-	Teamfunction: { visible: [...ROW, 'teamMemberId', 'committeeId', 'kind'] },
+	Teamfunction: { visible: [...ROW, 'teamMemberId', 'committeeId', 'roleId', 'kind'] },
 	// --- Announcements --------------------------------------------------------------------------
 	// What the team tells an audience is about the conference, not about a person. How many it
 	// reaches and how many read it are counts by attributes an assistant does not see.
@@ -211,6 +212,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'kind',
 			'inbox',
 			'committeeId',
+			'roleId',
 			'delegationId',
 			'participantId',
 			'otherParticipantId',
@@ -221,6 +223,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'archived',
 			'underReview',
 			'unreadCount',
+			'muted',
 			'side',
 			'blockedByMe',
 			'writeRefusal',
@@ -254,10 +257,26 @@ const FIELDS: Record<string, TypeClassification> = {
 			'committeeId',
 			'committeeAbbreviation',
 			'committeeName',
+			'roleId',
+			'roleName',
+			'roleIcon',
 			'trustedPersonId',
 			'chatId'
 		],
 		redacted: ['personName']
+	},
+	ChatGroupOption: {
+		visible: [
+			'kind',
+			'committeeId',
+			'committeeAbbreviation',
+			'committeeName',
+			'roleId',
+			'roleName',
+			'roleIcon',
+			'asTeam',
+			'chatId'
+		]
 	},
 	// The message service's terms: the app's text, about nobody.
 	MessagingTerms: {
@@ -280,6 +299,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'functionKind',
 			'committeeAbbreviation',
 			'committeeName',
+			'roleName',
 			'email',
 			'slack'
 		]
@@ -466,6 +486,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'maxGuaranteedSeatsPerForeignSchool',
 			'mcpEnabled',
 			'messagingEnabled',
+			'groupChatsEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
 			'participantMaxAge',

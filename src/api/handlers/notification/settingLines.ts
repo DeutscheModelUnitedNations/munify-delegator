@@ -14,6 +14,8 @@ export interface NotificationSetting extends TopicKey {
 	functionKind: string | null;
 	committeeAbbreviation: string | null;
 	committeeName: string | null;
+	/** `ROLE_INBOX`, and `CHAT_GROUP` of a role: the custom role the function looks after. */
+	roleName: string | null;
 	email: boolean;
 	slack: boolean;
 }
@@ -24,9 +26,21 @@ export interface SettingsMember extends NotifiedMember {
 	functions: readonly {
 		id: string;
 		committeeId: string | null;
+		roleId?: string | null;
 		kind: string;
 		committee?: { abbreviation: string; name: string } | null;
+		role?: { name: string | null } | null;
 	}[];
+}
+
+/** What a line names of the function its topic is about. */
+function functionLabels(held: SettingsMember['functions'][number] | undefined) {
+	return {
+		functionKind: held?.kind ?? null,
+		committeeAbbreviation: held?.committee?.abbreviation ?? null,
+		committeeName: held?.committee?.name ?? null,
+		roleName: held?.role?.name ?? null
+	};
 }
 
 /**
@@ -49,9 +63,7 @@ export function settingLines({
 		return {
 			...key,
 			id: `${member.id}:${key.topic}:${key.teamFunctionId ?? ''}`,
-			functionKind: held?.kind ?? null,
-			committeeAbbreviation: held?.committee?.abbreviation ?? null,
-			committeeName: held?.committee?.name ?? null,
+			...functionLabels(held),
 			email: wants('EMAIL'),
 			slack: wants('SLACK')
 		};

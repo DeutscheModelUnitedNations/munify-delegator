@@ -11,6 +11,8 @@ import type { SnapshotUnreadMessage } from './dueEmails';
 export interface UnreadInbox {
 	inbox: ChatInbox;
 	committeeId: string | null;
+	/** The custom role of a `ROLE_SUPPORT` inbox. */
+	roleId?: string | null;
 	/** A chat with one trusted person: only theirs to read */
 	trustedUserId: string | null;
 	messageId: string;

@@ -4,11 +4,14 @@ import { localeOfUser, runWithLocale } from '#api/services/requestLocale';
 import { logger } from '#lib/logger';
 import { m } from '#lib/paraglide/messages';
 import {
+	groupKey,
+	groupTopicsOf,
 	hearsOfReports,
 	inboxKey,
 	topicOfInbox,
 	wantsNotification,
 	wantsPaperNotification,
+	type NotifiedGroup,
 	type NotifiedInbox,
 	type TopicKey
 } from '#lib/helpers/teamNotifications';
@@ -52,8 +55,11 @@ async function loadRecipients(conferenceId: string) {
 			with: {
 				user: { columns: { id: true, email: true, locale: true } },
 				functions: {
-					columns: { id: true, committeeId: true, kind: true },
-					with: { committee: { columns: { abbreviation: true } } }
+					columns: { id: true, committeeId: true, roleId: true, kind: true },
+					with: {
+						committee: { columns: { abbreviation: true } },
+						role: { columns: { name: true } }
+					}
 				}
 			}
 		})
@@ -93,6 +99,13 @@ const stillWaiting = sql`exists (
 	where m.id = ${schema.slackNotification.subjectId}
 		and (c.team_read_at is null or m.created_at > c.team_read_at))`;
 
+/** `stillWaiting` for a group, which each of its people reads for themselves. */
+const stillUnreadBy = (userId: string) => sql`exists (
+	select 1 from chat_message m
+		left join chat_read r on r.chat_id = m.chat_id and r.user_id = ${userId}
+	where m.id = ${schema.slackNotification.subjectId}
+		and (r.read_at is null or m.created_at > r.read_at))`;
+
 /**
  * Writes down that the member is told about `subjectId` under `key`, unless they were already:
  * about this very subject, or, for an inbox, about a message that still waits. Under a lock per
@@ -102,12 +115,15 @@ async function claim({
 	teamMemberId,
 	key,
 	subjectId,
-	oncePerSubject
+	oncePerSubject,
+	waiting = stillWaiting
 }: {
 	teamMemberId: string;
 	key: string;
 	subjectId: string;
 	oncePerSubject: boolean;
+	/** What makes the message told about before still wait (`stillWaiting`). */
+	waiting?: typeof stillWaiting;
 }) {
 	return db.transaction(async (tx) => {
 		await tx.execute(
@@ -118,7 +134,7 @@ async function claim({
 		const [told] = await tx
 			.select({ id: log.id })
 			.from(log)
-			.where(and(mine, oncePerSubject ? eq(log.subjectId, subjectId) : stillWaiting))
+			.where(and(mine, oncePerSubject ? eq(log.subjectId, subjectId) : waiting))
 			.orderBy(desc(log.createdAt))
 			.limit(1);
 		if (told) return undefined;
@@ -137,6 +153,7 @@ async function tell({
 	key,
 	subjectId,
 	oncePerSubject,
+	waiting,
 	text
 }: {
 	recipients: Recipients;
@@ -144,9 +161,10 @@ async function tell({
 	key: string;
 	subjectId: string;
 	oncePerSubject: boolean;
+	waiting?: typeof stillWaiting;
 	text: () => string;
 }): Promise<boolean> {
-	const claimed = await claim({ teamMemberId: member.id, key, subjectId, oncePerSubject });
+	const claimed = await claim({ teamMemberId: member.id, key, subjectId, oncePerSubject, waiting });
 	if (!claimed) return false;
 	const unclaim = async () => {
 		await db.delete(schema.slackNotification).where(eq(schema.slackNotification.id, claimed));
@@ -190,8 +208,12 @@ export const inboxSlackText = ({
 	origin
 }: {
 	key: TopicKey;
-	/** The member's function the inbox is answered by, for a committee's inbox. */
-	held?: { kind: string; committee?: { abbreviation: string } | null };
+	/** The member's function the inbox is answered by, for a committee's or custom role's inbox. */
+	held?: {
+		kind: string;
+		committee?: { abbreviation: string } | null;
+		role?: { name: string | null } | null;
+	};
 	conferenceTitle: string;
 	conferenceId: string;
 	origin: string;
@@ -200,8 +222,30 @@ export const inboxSlackText = ({
 		inbox: notificationTopicLabel({
 			topic: key.topic,
 			functionKind: held?.kind,
-			committeeAbbreviation: held?.committee?.abbreviation
+			committeeAbbreviation: held?.committee?.abbreviation,
+			roleName: held?.role?.name
 		}),
+		conference: conferenceTitle
+	})}\n${slackLink({ url: `${origin}/dashboard/${conferenceId}/team/messages`, label: m.slackOpenMessages() })}`;
+
+/** A participant wrote in a group the member is in by `held`. */
+export const groupSlackText = ({
+	held,
+	conferenceTitle,
+	conferenceId,
+	origin
+}: {
+	held?: {
+		kind: string;
+		committee?: { abbreviation: string } | null;
+		role?: { name: string | null } | null;
+	};
+	conferenceTitle: string;
+	conferenceId: string;
+	origin: string;
+}) =>
+	`${m.slackGroupMessage({
+		group: (held?.kind === 'ROLE_SUPPORT' ? held.role?.name : held?.committee?.abbreviation) ?? '',
 		conference: conferenceTitle
 	})}\n${slackLink({ url: `${origin}/dashboard/${conferenceId}/team/messages`, label: m.slackOpenMessages() })}`;
 
@@ -268,6 +312,55 @@ async function tellInbox({
 				text: () =>
 					inboxSlackText({
 						key,
+						held,
+						conferenceTitle: recipients.conferenceTitle,
+						conferenceId: chat.conferenceId,
+						origin
+					})
+			});
+		})
+	);
+}
+
+/**
+ * Tells the team members of a group (`groupTopicsOf`) that a participant wrote there, unless they
+ * muted it. Once until they read it, like an inbox, but each by their own reading.
+ */
+async function tellGroup({
+	chat,
+	messageId,
+	origin
+}: {
+	chat: NotifiedGroup & { id: string; conferenceId: string };
+	messageId: string;
+	origin: string;
+}) {
+	const recipients = await loadRecipients(chat.conferenceId);
+	if (!recipients) return;
+	const muted = new Set(
+		(
+			await db.query.chatMute.findMany({
+				where: { chatId: chat.id },
+				columns: { userId: true }
+			})
+		).map((row) => row.userId)
+	);
+	await Promise.all(
+		recipients.members.map(async (member) => {
+			if (muted.has(member.userId)) return;
+			const keys = groupTopicsOf({ member, group: chat });
+			const key = keys.find((one) => wantsSlack({ member, key: one }));
+			if (!key) return;
+			const held = member.functions.find((fn) => fn.id === key.teamFunctionId);
+			await tell({
+				recipients,
+				member,
+				key: groupKey(chat.id),
+				subjectId: messageId,
+				oncePerSubject: false,
+				waiting: stillUnreadBy(member.userId),
+				text: () =>
+					groupSlackText({
 						held,
 						conferenceTitle: recipients.conferenceTitle,
 						conferenceId: chat.conferenceId,
@@ -371,11 +464,31 @@ function inBackground({ work, failure }: { work: Promise<void>; failure: string 
 
 /** A chat as far as telling its inbox asks: only a team chat has one. */
 interface ToldChat {
+	id: string;
 	conferenceId: string;
 	kind: string;
 	inbox: NotifiedInbox['inbox'] | null;
 	committeeId: string | null;
+	roleId: string | null;
 	trustedUserId: string | null;
+}
+
+/** Tells the team of a group that a participant wrote there; nothing for any other chat. */
+export function tellGroupOnSlack({
+	chat,
+	messageId,
+	origin
+}: {
+	chat: ToldChat;
+	messageId: string;
+	origin: string;
+}) {
+	const { kind } = chat;
+	if (kind !== 'COMMITTEE' && kind !== 'ROLE') return;
+	inBackground({
+		work: tellGroup({ chat: { ...chat, kind }, messageId, origin }),
+		failure: 'Telling a group on Slack failed'
+	});
 }
 
 /** Tells the inbox of a team chat that a participant wrote there; nothing for any other chat. */

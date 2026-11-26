@@ -1,0 +1,1012 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4d637e87-4db6-42ab-8551-cf6e230f71c1",
+  "prevIds": [
+    "e02995a3-114c-486f-bc9c-dba67a8a17fa",
+    "6444b9e2-a28f-4f5e-abcc-aca64789174f"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "chat_inbox"
+      ],
+      "writes": [
+        "s|enum|public.chat_inbox"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "chat_kind"
+      ],
+      "writes": [
+        "s|enum|public.chat_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "team_function_kind"
+      ],
+      "writes": [
+        "s|enum|public.team_function_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "notification_topic"
+      ],
+      "writes": [
+        "s|enum|public.notification_topic"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "chat_mute"
+      ],
+      "writes": [
+        "s|tbl|public.chat_mute",
+        "n|tbl|public.chat_mute",
+        "e|tbl|public.chat_mute",
+        "n|rel|public.chat_mute",
+        "n|type|public.chat_mute",
+        "n|rel|public.chat_mute_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "chat",
+        "role_id"
+      ],
+      "writes": [
+        "s|col|public.chat.role_id",
+        "n|col|public.chat.role_id",
+        "e|col|public.chat.role_id"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conference",
+        "group_chats_enabled"
+      ],
+      "writes": [
+        "s|col|public.conference.group_chats_enabled",
+        "n|col|public.conference.group_chats_enabled",
+        "e|col|public.conference.group_chats_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.conference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "team_function",
+        "role_id"
+      ],
+      "writes": [
+        "s|col|public.team_function.role_id",
+        "n|col|public.team_function.role_id",
+        "e|col|public.team_function.role_id"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "group_message_notification_emails"
+      ],
+      "writes": [
+        "s|col|public.user.group_message_notification_emails",
+        "n|col|public.user.group_message_notification_emails",
+        "e|col|public.user.group_message_notification_emails"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_team_committee_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_team_committee_key",
+        "n|idx|public.chat_team_committee_key",
+        "e|idx|public.chat_team_committee_key",
+        "n|rel|public.chat_team_committee_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.participant_id",
+        "n|col|public.chat.inbox",
+        "n|col|public.chat.committee_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "16454c7b31ef268a"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_team_trusted_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_team_trusted_key",
+        "n|idx|public.chat_team_trusted_key",
+        "e|idx|public.chat_team_trusted_key",
+        "n|rel|public.chat_team_trusted_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.participant_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "50d2ecb446547a24"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "team_function",
+        "team_function_team_member_id_kind_key"
+      ],
+      "writes": [
+        "s|idx|public.team_function_team_member_id_kind_key",
+        "n|idx|public.team_function_team_member_id_kind_key",
+        "e|idx|public.team_function_team_member_id_kind_key",
+        "n|rel|public.team_function_team_member_id_kind_key"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.team_function.team_member_id",
+        "n|col|public.team_function.kind"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "b6a9399d4bc5c661"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_team_role_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_team_role_key",
+        "n|idx|public.chat_team_role_key",
+        "e|idx|public.chat_team_role_key",
+        "n|rel|public.chat_team_role_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.participant_id",
+        "n|col|public.chat.role_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_committee_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_committee_key",
+        "n|idx|public.chat_committee_key",
+        "e|idx|public.chat_committee_key",
+        "n|rel|public.chat_committee_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.committee_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_role_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_role_key",
+        "n|idx|public.chat_role_key",
+        "e|idx|public.chat_role_key",
+        "n|rel|public.chat_role_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.role_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat",
+        "chat_role_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.chat_role_id_idx",
+        "n|idx|public.chat_role_id_idx",
+        "e|idx|public.chat_role_id_idx",
+        "n|rel|public.chat_role_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat.role_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat_mute",
+        "chat_mute_chat_id_user_id_key"
+      ],
+      "writes": [
+        "s|idx|public.chat_mute_chat_id_user_id_key",
+        "n|idx|public.chat_mute_chat_id_user_id_key",
+        "e|idx|public.chat_mute_chat_id_user_id_key",
+        "n|rel|public.chat_mute_chat_id_user_id_key"
+      ],
+      "reads": [
+        "n|tbl|public.chat_mute",
+        "n|sch|public",
+        "n|col|public.chat_mute.chat_id",
+        "n|col|public.chat_mute.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "chat_mute",
+        "chat_mute_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.chat_mute_user_id_idx",
+        "n|idx|public.chat_mute_user_id_idx",
+        "e|idx|public.chat_mute_user_id_idx",
+        "n|rel|public.chat_mute_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.chat_mute",
+        "n|sch|public",
+        "n|col|public.chat_mute.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "team_function",
+        "team_function_team_member_id_role_id_kind_key"
+      ],
+      "writes": [
+        "s|idx|public.team_function_team_member_id_role_id_kind_key",
+        "n|idx|public.team_function_team_member_id_role_id_kind_key",
+        "e|idx|public.team_function_team_member_id_role_id_kind_key",
+        "n|rel|public.team_function_team_member_id_role_id_kind_key"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.team_function.team_member_id",
+        "n|col|public.team_function.role_id",
+        "n|col|public.team_function.kind"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "team_function",
+        "team_function_role_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.team_function_role_id_idx",
+        "n|idx|public.team_function_role_id_idx",
+        "e|idx|public.team_function_role_id_idx",
+        "n|rel|public.team_function_role_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|col|public.team_function.role_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "chat"
+      ],
+      "writes": [
+        "s|fk|public.chat.chat_role_id_conference_role_id_fkey",
+        "n|fk|public.chat.chat_role_id_conference_role_id_fkey",
+        "e|fk|public.chat.chat_role_id_conference_role_id_fkey",
+        "n|con|public.chat.chat_role_id_conference_role_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|tbl|public.conference_role",
+        "n|sch|public",
+        "n|col|public.chat.role_id",
+        "n|col|public.conference_role.id",
+        "e|uniqueness|public.conference_role.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "chat_mute"
+      ],
+      "writes": [
+        "s|fk|public.chat_mute.chat_mute_chat_id_chat_id_fkey",
+        "n|fk|public.chat_mute.chat_mute_chat_id_chat_id_fkey",
+        "e|fk|public.chat_mute.chat_mute_chat_id_chat_id_fkey",
+        "n|con|public.chat_mute.chat_mute_chat_id_chat_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.chat_mute",
+        "n|sch|public",
+        "n|tbl|public.chat",
+        "n|sch|public",
+        "n|col|public.chat_mute.chat_id",
+        "n|col|public.chat.id",
+        "e|uniqueness|public.chat.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "chat_mute"
+      ],
+      "writes": [
+        "s|fk|public.chat_mute.chat_mute_user_id_user_id_fkey",
+        "n|fk|public.chat_mute.chat_mute_user_id_user_id_fkey",
+        "e|fk|public.chat_mute.chat_mute_user_id_user_id_fkey",
+        "n|con|public.chat_mute.chat_mute_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.chat_mute",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.chat_mute.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "team_function"
+      ],
+      "writes": [
+        "s|fk|public.team_function.team_function_role_id_conference_role_id_fkey",
+        "n|fk|public.team_function.team_function_role_id_conference_role_id_fkey",
+        "e|fk|public.team_function.team_function_role_id_conference_role_id_fkey",
+        "n|con|public.team_function.team_function_role_id_conference_role_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.team_function",
+        "n|sch|public",
+        "n|tbl|public.conference_role",
+        "n|sch|public",
+        "n|col|public.team_function.role_id",
+        "n|col|public.conference_role.id",
+        "e|uniqueness|public.conference_role.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "chat_mute",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "role_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "chat_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conference",
+        "name": "group_chats_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "team_function",
+        "name": "role_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "group_message_notification_emails",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "true",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_team_role_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "participant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "role_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"kind\" = 'TEAM' and \"role_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_committee_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "committee_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"kind\" <> 'TEAM' and \"committee_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_role_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "role_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"kind\" <> 'TEAM' and \"role_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_role_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "role_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "chat_mute_chat_id_user_id_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "chat_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "chat_mute_user_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "team_function",
+        "name": "team_function_team_member_id_role_id_kind_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "team_member_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "role_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "kind",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"role_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "team_function",
+        "name": "team_function_role_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "role_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat",
+        "name": "chat_role_id_conference_role_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "role_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference_role",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "chat_mute_chat_id_chat_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "chat_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "chat",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "chat_mute_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "team_function",
+        "name": "team_function_role_id_conference_role_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "role_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference_role",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "chat_mute",
+        "name": "chat_mute_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"chat_inbox\"]",
+      "set": {
+        "values": [
+          "PARTICIPANT_CARE",
+          "CHAIR",
+          "CONSULTANT",
+          "TRUSTED_PERSON",
+          "ROLE_SUPPORT"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"chat_kind\"]",
+      "set": {
+        "values": [
+          "DIRECT",
+          "DELEGATION",
+          "TEAM",
+          "COMMITTEE",
+          "ROLE"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"team_function_kind\"]",
+      "set": {
+        "values": [
+          "CHAIR",
+          "CONSULTANT",
+          "TRUSTED_PERSON",
+          "ROLE_SUPPORT"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"notification_topic\"]",
+      "set": {
+        "values": [
+          "PARTICIPANT_CARE",
+          "COMMITTEE_INBOX",
+          "TRUSTED_SHARED",
+          "TRUSTED_PERSONAL",
+          "CHAT_REPORT",
+          "COMMITTEE_PAPERS",
+          "SCAN_PROBLEM",
+          "ROLE_INBOX",
+          "CHAT_GROUP"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"chat_team_committee_key\"]",
+      "set": {
+        "where": "\"kind\" = 'TEAM' and \"inbox\" in ('CHAIR', 'CONSULTANT')"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"chat_team_trusted_key\"]",
+      "set": {
+        "where": "\"kind\" = 'TEAM' and \"inbox\" = 'TRUSTED_PERSON' and \"trusted_user_id\" is null"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"team_function_team_member_id_kind_key\"]",
+      "set": {
+        "where": "\"committee_id\" is null and \"role_id\" is null"
+      }
+    }
+  ]
+}

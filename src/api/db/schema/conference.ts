@@ -145,6 +145,11 @@ export const conference = snakeCase.table('conference', {
 	 * chats there are stay readable and nothing new is written.
 	 */
 	messagingEnabled: boolean().default(false).notNull(),
+	/**
+	 * Whether the groups of the committees and custom roles (`chat` `COMMITTEE`, `ROLE`) are open to
+	 * the participants seated there, once their seat is released. The team in them writes any time.
+	 */
+	groupChatsEnabled: boolean().default(false).notNull(),
 	/** The series the conference belongs to; shared guide pages reach it only with one. */
 	seriesId: seriesRef(),
 	/**

@@ -26,6 +26,7 @@ describe('settingLines', () => {
 				functionKind: null,
 				committeeAbbreviation: null,
 				committeeName: null,
+				roleName: null,
 				email: true,
 				slack: true
 			},
@@ -36,9 +37,11 @@ describe('settingLines', () => {
 				functionKind: 'CHAIR',
 				committeeAbbreviation: 'GA',
 				committeeName: 'Generalversammlung',
+				roleName: null,
 				email: true,
 				slack: true
 			},
+			expect.objectContaining({ id: 'tm1:CHAT_GROUP:f-ga', topic: 'CHAT_GROUP' }),
 			{
 				id: 'tm1:COMMITTEE_PAPERS:f-ga',
 				topic: 'COMMITTEE_PAPERS',
@@ -46,6 +49,7 @@ describe('settingLines', () => {
 				functionKind: 'CHAIR',
 				committeeAbbreviation: 'GA',
 				committeeName: 'Generalversammlung',
+				roleName: null,
 				email: true,
 				slack: true
 			},
@@ -66,6 +70,7 @@ describe('settingLines', () => {
 		expect(lines.map(({ topic, email, slack }) => ({ topic, email, slack }))).toEqual([
 			{ topic: 'PARTICIPANT_CARE', email: true, slack: true },
 			{ topic: 'COMMITTEE_INBOX', email: true, slack: false },
+			{ topic: 'CHAT_GROUP', email: true, slack: true },
 			{ topic: 'COMMITTEE_PAPERS', email: true, slack: true },
 			{ topic: 'CHAT_REPORT', email: false, slack: true },
 			{ topic: 'SCAN_PROBLEM', email: true, slack: true }
@@ -75,6 +80,31 @@ describe('settingLines', () => {
 	it('starts with mail off for whoever switched the unread mails off before', () => {
 		const lines = settingLines({ member: chair, preferences: [], mailByDefault: false });
 		expect(lines.every((line) => !line.email && line.slack)).toBe(true);
+	});
+
+	it("names the custom role a support function looks after on its inbox's and group's line", () => {
+		const support: SettingsMember = {
+			id: 'tm3',
+			userId: 'u3',
+			role: 'MEMBER',
+			functions: [
+				{
+					id: 'f-press',
+					committeeId: null,
+					roleId: 'press',
+					kind: 'ROLE_SUPPORT',
+					role: { name: 'Presse' }
+				}
+			]
+		};
+		expect(
+			settingLines({ member: support, preferences: [], mailByDefault: true }).map(
+				({ topic, roleName }) => ({ topic, roleName })
+			)
+		).toEqual([
+			{ topic: 'ROLE_INBOX', roleName: 'Presse' },
+			{ topic: 'CHAT_GROUP', roleName: 'Presse' }
+		]);
 	});
 
 	it('is empty for a member who answers nothing', () => {
@@ -88,12 +118,14 @@ describe('settingLines', () => {
 			role: 'MEMBER',
 			functions: [{ id: 'f-sc', committeeId: 'sc', kind: 'CONSULTANT' }]
 		};
+		const nameless = expect.objectContaining({
+			functionKind: 'CONSULTANT',
+			committeeAbbreviation: null,
+			committeeName: null
+		});
 		expect(settingLines({ member: bare, preferences: [], mailByDefault: true })).toEqual([
-			expect.objectContaining({
-				functionKind: 'CONSULTANT',
-				committeeAbbreviation: null,
-				committeeName: null
-			})
+			nameless,
+			nameless
 		]);
 	});
 });

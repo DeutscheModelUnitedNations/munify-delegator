@@ -33,7 +33,7 @@ export async function assertOwnTeamMember({
 	const member = await db.query.teamMember.findFirst({
 		where: { conferenceId, userId },
 		columns: { id: true, userId: true, role: true },
-		with: { functions: { columns: { id: true, committeeId: true, kind: true } } }
+		with: { functions: { columns: { id: true, committeeId: true, roleId: true, kind: true } } }
 	});
 	if (!member) throw apiError({ code: 'NOT_FOUND', message: m.notificationsNotOnTeam() });
 	return member;
@@ -55,7 +55,7 @@ export async function assertOwnTeamMembers({
 	return db.query.teamMember.findMany({
 		where: { userId, conference: { state: { ne: 'POST' } } },
 		columns: { id: true, userId: true, role: true },
-		with: { functions: { columns: { id: true, committeeId: true, kind: true } } }
+		with: { functions: { columns: { id: true, committeeId: true, roleId: true, kind: true } } }
 	});
 }
 

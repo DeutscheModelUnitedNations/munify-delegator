@@ -29,7 +29,9 @@ export const notificationChannel = pgEnum('notification_channel', ['EMAIL', 'SLA
  * chairs or consultants, one per function they hold; the trusted persons together, and the chats
  * written to them alone), for participant care a chat being reported, and for a committee's chairs
  * and consultants on the paper team the papers submitted there (one per function they hold); and
- * for participant care what their own scanner delivered and could not be matched to anybody.
+ * for participant care what their own scanner delivered and could not be matched to anybody; the
+ * inbox of a custom role they look after (`ROLE_INBOX`), and the groups they are in (`CHAT_GROUP`,
+ * one per function that puts them there).
  */
 export const notificationTopic = pgEnum('notification_topic', [
 	'PARTICIPANT_CARE',
@@ -38,7 +40,9 @@ export const notificationTopic = pgEnum('notification_topic', [
 	'TRUSTED_PERSONAL',
 	'CHAT_REPORT',
 	'COMMITTEE_PAPERS',
-	'SCAN_PROBLEM'
+	'SCAN_PROBLEM',
+	'ROLE_INBOX',
+	'CHAT_GROUP'
 ]);
 
 /**
@@ -83,8 +87,8 @@ export const notificationPreference = snakeCase.table(
 			.references(() => teamMember.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		topic: notificationTopic().notNull(),
 		/**
-		 * `COMMITTEE_INBOX` and `COMMITTEE_PAPERS`: the member's function of that committee; empty for
-		 * every other topic.
+		 * `COMMITTEE_INBOX`, `COMMITTEE_PAPERS`, `ROLE_INBOX` and `CHAT_GROUP`: the member's function
+		 * there; empty for every other topic.
 		 */
 		teamFunctionId: text(),
 		channel: notificationChannel().notNull(),

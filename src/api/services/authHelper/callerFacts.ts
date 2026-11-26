@@ -26,7 +26,12 @@ type TeamFunctionKind = (typeof teamFunctionKind.enumValues)[number];
 type DuplicateStatus = 'OPEN' | 'CONFIRMED' | 'DISMISSED';
 
 /** What the rules need to know of a conference the caller has a part in. */
-export type ConferenceFlags = { assignmentReleased: boolean; showCalendar: boolean };
+export type ConferenceFlags = {
+	assignmentReleased: boolean;
+	showCalendar: boolean;
+	/** The groups of committees and custom roles are open to the people seated there. */
+	groupChatsEnabled: boolean;
+};
 
 export type CallerFacts = {
 	/**
@@ -36,13 +41,16 @@ export type CallerFacts = {
 	 */
 	team: readonly { conferenceId: string; roles: readonly TeamRole[] }[];
 	/**
-	 * The committee functions the caller holds on those teams (`teamFunction`): the chairs' and the
-	 * consultants' inboxes they answer.
+	 * The functions the caller holds on those teams (`teamFunction`): the chairs' and the
+	 * consultants' inboxes they answer and the groups of those committees, the custom roles they
+	 * look after (`ROLE_SUPPORT`), and whether they are a trusted person.
 	 */
 	teamFunctions: readonly {
 		conferenceId: string;
-		/** Empty for a function of the whole conference (a trusted person). */
+		/** The committee of a chair or consultant. */
 		committeeId: string | null;
+		/** The custom role of a `ROLE_SUPPORT`. */
+		roleId: string | null;
 		kind: TeamFunctionKind;
 	}[];
 	/** Who is on the team of each of those conferences, the caller included. */
@@ -63,6 +71,16 @@ export type CallerFacts = {
 	}[];
 	/** The caller's single participant registrations. */
 	singleParticipations: readonly { id: string; conferenceId: string; applied: boolean }[];
+	/**
+	 * Where the caller sits, as the groups ask: the committee their delegation's role seats them in,
+	 * or the custom role they hold as single participant. Whether the conference released it and
+	 * opened the groups is in `conferences`. Empty for an AI assistant.
+	 */
+	groupSeats: readonly {
+		conferenceId: string;
+		committeeId: string | null;
+		roleId: string | null;
+	}[];
 	/** The caller's supervisor registrations. */
 	supervisorRegistrations: readonly { id: string; conferenceId: string }[];
 	/** Every member of the caller's delegations, the caller included. */
@@ -118,6 +136,7 @@ export const NO_CALLER_FACTS: CallerFacts = {
 	participants: [],
 	delegationMemberships: [],
 	singleParticipations: [],
+	groupSeats: [],
 	supervisorRegistrations: [],
 	delegationMates: [],
 	ownSupervisors: [],
@@ -154,9 +173,14 @@ function factsSubject(ctx: Context): FactsSubject {
 	};
 }
 
-const CONFERENCE_FLAGS = { assignmentReleased: true, showCalendar: true } as const;
+const CONFERENCE_FLAGS = {
+	assignmentReleased: true,
+	showCalendar: true,
+	groupChatsEnabled: true
+} as const;
 
-const noFunctions: { committeeId: string | null; kind: TeamFunctionKind }[] = [];
+const noFunctions: { committeeId: string | null; roleId: string | null; kind: TeamFunctionKind }[] =
+	[];
 
 /** The caller's team memberships, with the flags and the teams of those conferences. */
 async function loadTeam({ teamUserId, mcp }: FactsSubject) {
@@ -183,7 +207,7 @@ async function loadTeam({ teamUserId, mcp }: FactsSubject) {
 		where: mcp ? { userId: teamUserId, conferenceId: mcp.conferenceId } : { userId: teamUserId },
 		columns: { conferenceId: true, role: true },
 		with: {
-			functions: { columns: { committeeId: true, kind: true } },
+			functions: { columns: { committeeId: true, roleId: true, kind: true } },
 			conference: {
 				columns: { mcpEnabled: true, ...CONFERENCE_FLAGS },
 				with: { teamMembers: { columns: { userId: true } } }
@@ -208,7 +232,7 @@ function queryParticipation(userId: string) {
 		with: {
 			conference: { columns: CONFERENCE_FLAGS },
 			delegationMember: {
-				columns: { id: true, delegationId: true, isHeadDelegate: true },
+				columns: { id: true, delegationId: true, isHeadDelegate: true, assignedCommitteeId: true },
 				with: {
 					delegation: {
 						columns: { applied: true, assignedRoleId: true },
@@ -371,7 +395,8 @@ export function teamFacts(memberships: Awaited<ReturnType<typeof loadTeam>>) {
 		roles.set(conferenceId, unique([...(roles.get(conferenceId) ?? []), ...held]));
 		conferences.set(conferenceId, {
 			assignmentReleased: conference.assignmentReleased,
-			showCalendar: conference.showCalendar
+			showCalendar: conference.showCalendar,
+			groupChatsEnabled: conference.groupChatsEnabled
 		});
 		for (const { userId } of conference.teamMembers) {
 			teammates.set(`${conferenceId}/${userId}`, { conferenceId, userId });
@@ -380,7 +405,12 @@ export function teamFacts(memberships: Awaited<ReturnType<typeof loadTeam>>) {
 	return {
 		team: [...roles].map(([conferenceId, held]) => ({ conferenceId, roles: held })),
 		teamFunctions: memberships.flatMap(({ conferenceId, functions }) =>
-			functions.map(({ committeeId, kind }) => ({ conferenceId, committeeId, kind }))
+			functions.map(({ committeeId, roleId, kind }) => ({
+				conferenceId,
+				committeeId,
+				roleId,
+				kind
+			}))
 		),
 		teammates: [...teammates.values()],
 		conferences
@@ -434,6 +464,27 @@ export function participationFacts({
 			singleParticipant
 				? [{ id: singleParticipant.id, conferenceId, applied: singleParticipant.applied }]
 				: []
+		),
+		groupSeats: participation.flatMap(
+			({
+				conferenceId,
+				delegationMember,
+				singleParticipant
+			}): {
+				conferenceId: string;
+				committeeId: string | null;
+				roleId: string | null;
+			}[] => {
+				if (delegationMember?.delegation.assignedRoleId && delegationMember.assignedCommitteeId) {
+					return [
+						{ conferenceId, committeeId: delegationMember.assignedCommitteeId, roleId: null }
+					];
+				}
+				if (singleParticipant?.assignedRoleId) {
+					return [{ conferenceId, committeeId: null, roleId: singleParticipant.assignedRoleId }];
+				}
+				return [];
+			}
 		),
 		supervisorRegistrations: [...supervisorConference].map(([id, conferenceId]) => ({
 			id,

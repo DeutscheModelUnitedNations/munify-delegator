@@ -20,14 +20,19 @@ import {
 	CHAT_MESSAGE_MAX_LENGTH,
 	CHAT_REPORT_REASON_MAX_LENGTH,
 	inboxReaches,
+	isGroupChat,
 	writeRefusal,
 	type ChatInbox,
 	type ChatSide,
 	type WriteRefusal
 } from '#lib/helpers/chat';
 import { refusalText } from '#lib/helpers/chatRefusalText';
-import { conferenceContacts, forgetContacts } from './chatContacts';
-import { tellInboxOnSlack, tellReportOnSlack } from '#api/handlers/notification/slackNotifications';
+import { conferenceContacts, forgetContacts, type Contact } from './chatContacts';
+import {
+	tellGroupOnSlack,
+	tellInboxOnSlack,
+	tellReportOnSlack
+} from '#api/handlers/notification/slackNotifications';
 
 export type ChatRow = typeof schema.chat.$inferSelect;
 
@@ -47,6 +52,11 @@ export const reportReasonSchema = z
 		error: () => m.chatReportReasonTooLong({ max: CHAT_REPORT_REASON_MAX_LENGTH })
 	});
 
+/** `openGroupChat`'s arguments: a committee or a custom role, exactly one of them. */
+export const groupArgsSchema = z
+	.looseObject({ committeeId: z.string().nullish(), roleId: z.string().nullish() })
+	.refine((args) => !args.committeeId !== !args.roleId, { error: () => m.chatGroupArgs() });
+
 function refused(reason: WriteRefusal) {
 	return apiError({ code: 'CONFLICT', message: refusalText(reason) });
 }
@@ -54,10 +64,28 @@ function refused(reason: WriteRefusal) {
 async function messagingFlags(conferenceId: string) {
 	const conference = await db.query.conference.findFirst({
 		where: { id: conferenceId },
-		columns: { messagingEnabled: true, assignmentReleased: true }
+		columns: { messagingEnabled: true, assignmentReleased: true, groupChatsEnabled: true }
 	});
 	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
 	return conference;
+}
+
+/**
+ * Whether a seated person is in the group of a committee or custom role: seated in the committee,
+ * or holding the role.
+ */
+export function seatedInGroup({
+	contact,
+	chat
+}: {
+	contact: Pick<Contact, 'committee' | 'role'>;
+	chat: Pick<ChatRow, 'kind' | 'committeeId' | 'roleId'>;
+}) {
+	if (chat.kind === 'COMMITTEE') {
+		return chat.committeeId !== null && contact.committee?.id === chat.committeeId;
+	}
+	if (chat.kind === 'ROLE') return chat.roleId !== null && contact.role.id === chat.roleId;
+	return false;
 }
 
 /** Whether either party of a direct chat blocked the other. */
@@ -92,6 +120,9 @@ export async function chatWriteRefusal({
 		conferenceContacts(chat.conferenceId)
 	]);
 	const writer = writerParticipantId ? contacts.get(writerParticipantId) : undefined;
+	// in a group the writer's seat is the group's: a delegate moved to another committee is out
+	const seated =
+		writer !== undefined && (!isGroupChat(chat.kind) || seatedInGroup({ contact: writer, chat }));
 	const counterpartId =
 		chat.participantId === writerParticipantId ? chat.otherParticipantId : chat.participantId;
 	const direct = chat.kind === 'DIRECT' && writerParticipantId && counterpartId;
@@ -99,7 +130,7 @@ export async function chatWriteRefusal({
 		kind: chat.kind,
 		side,
 		...flags,
-		writerSeated: writer !== undefined,
+		writerSeated: seated,
 		writerSuspended: writer?.suspended ?? false,
 		counterpartSeated: counterpartId ? contacts.has(counterpartId) : false,
 		blocked: direct ? await isBlocked({ a: writerParticipantId, b: counterpartId }) : false
@@ -107,12 +138,14 @@ export async function chatWriteRefusal({
 }
 
 /**
- * A team inbox, with the committee of a chairs' or consultants' one, or the one trusted person it
- * is (`id` is their function's, which names them without their account).
+ * A team inbox, with the committee of a chairs' or consultants' one, the custom role of a
+ * `ROLE_SUPPORT` one, or the one trusted person it is (`id` is their function's, which names them
+ * without their account).
  */
 export interface InboxOption {
 	inbox: ChatInbox;
 	committee: { id: string; abbreviation: string; name: string } | null;
+	role?: { id: string; name: string | null; icon: string | null } | null;
 	person: { id: string; userId: string; name: string } | null;
 }
 
@@ -120,7 +153,8 @@ const byText = (a: string | undefined, b: string | undefined) => (a ?? '').local
 
 /**
  * The team inboxes of the conference that somebody answers: participant care, the trusted persons
- * together and each of them alone, and each committee function a team member holds.
+ * together and each of them alone, each committee function a team member holds, and each custom
+ * role somebody looks after.
  */
 async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 	const functions = await db.query.teamFunction.findMany({
@@ -128,6 +162,7 @@ async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 		columns: { id: true, kind: true },
 		with: {
 			committee: { columns: { id: true, abbreviation: true, name: true } },
+			role: { columns: { id: true, name: true, icon: true } },
 			teamMember: {
 				columns: { userId: true },
 				with: { user: { columns: { givenName: true, familyName: true } } }
@@ -135,10 +170,13 @@ async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 		}
 	});
 	const committeeInboxes = new Map<string, InboxOption>();
+	const roleInboxes = new Map<string, InboxOption>();
 	const trusted: InboxOption[] = [];
-	for (const { id, kind, committee, teamMember } of functions) {
+	for (const { id, kind, committee, role, teamMember } of functions) {
 		if (committee) {
 			committeeInboxes.set(`${committee.id}/${kind}`, { inbox: kind, committee, person: null });
+		} else if (kind === 'ROLE_SUPPORT' && role) {
+			roleInboxes.set(role.id, { inbox: kind, committee: null, role, person: null });
 		} else if (kind === 'TRUSTED_PERSON' && teamMember.user) {
 			const name = `${teamMember.user.givenName} ${teamMember.user.familyName}`;
 			trusted.push({
@@ -159,6 +197,9 @@ async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 			(a, b) =>
 				byText(a.committee?.abbreviation, b.committee?.abbreviation) ||
 				a.inbox.localeCompare(b.inbox)
+		),
+		...[...roleInboxes.values()].sort((a, b) =>
+			byText(a.role?.name ?? undefined, b.role?.name ?? undefined)
 		)
 	];
 }
@@ -166,7 +207,8 @@ async function conferenceInboxes(conferenceId: string): Promise<InboxOption[]> {
 /**
  * The team inboxes that write with the participant (`inboxReaches`): participant care and the
  * trusted persons always, from the registration on and whatever the conference's switch says, a
- * committee's chairs and consultants once the participant's seat is released.
+ * committee's chairs and consultants once the participant's seat is released, and whoever looks
+ * after a custom role once the participant's role is released.
  */
 export async function inboxesReaching({
 	conferenceId,
@@ -181,9 +223,11 @@ export async function inboxesReaching({
 		conferenceInboxes(conferenceId)
 	]);
 	const contact = flags.assignmentReleased ? contacts.get(participantId) : undefined;
-	const person = contact ? { committeeId: contact.committee?.id ?? null } : null;
-	return inboxes.filter(({ inbox, committee }) =>
-		inboxReaches({ inbox, committeeId: committee?.id ?? null, person })
+	const person = contact
+		? { committeeId: contact.committee?.id ?? null, roleId: contact.role.id }
+		: null;
+	return inboxes.filter(({ inbox, committee, role }) =>
+		inboxReaches({ inbox, committeeId: committee?.id ?? null, roleId: role?.id ?? null, person })
 	);
 }
 
@@ -264,18 +308,40 @@ export async function openDelegationChat({
 	return findOrCreateChat({ where: key, values: { conferenceId, ...key } });
 }
 
+/**
+ * The group of a committee or custom role, opened when it has none yet. Every committee and custom
+ * role of the conference has one; who is in it is the permissions file's.
+ */
+export async function openGroupChat({
+	conferenceId,
+	group
+}: {
+	conferenceId: string;
+	group: { committeeId: string } | { roleId: string };
+}) {
+	const key =
+		'committeeId' in group
+			? { kind: 'COMMITTEE' as const, committeeId: group.committeeId }
+			: { kind: 'ROLE' as const, roleId: group.roleId };
+	// that the committee or role is of the conference, and a custom role, is the database's
+	return findOrCreateChat({ where: key, values: { conferenceId, ...key } });
+}
+
 /** The chat of a participant with a team inbox that reaches them, opened when there is none yet. */
 export async function openTeamChat({
 	conferenceId,
 	participantId,
 	inbox,
 	committeeId,
+	roleId = null,
 	trustedUserId = null
 }: {
 	conferenceId: string;
 	participantId: string;
 	inbox: ChatInbox;
 	committeeId: string | null;
+	/** The custom role of a `ROLE_SUPPORT` inbox. */
+	roleId?: string | null;
 	/** The one trusted person to write to; null for their shared inbox and every other one */
 	trustedUserId?: string | null;
 }) {
@@ -283,6 +349,7 @@ export async function openTeamChat({
 	const wanted = {
 		inbox,
 		committeeId: inbox === 'CHAIR' || inbox === 'CONSULTANT' ? committeeId : null,
+		roleId: inbox === 'ROLE_SUPPORT' ? roleId : null,
 		trustedUserId: inbox === 'TRUSTED_PERSON' ? trustedUserId : null
 	};
 	if (!reaching.some((option) => sameInbox({ option, wanted }))) {
@@ -295,6 +362,7 @@ export async function openTeamChat({
 			participantId,
 			inbox,
 			committeeId: orNone(wanted.committeeId),
+			roleId: orNone(wanted.roleId),
 			// the trusted persons' shared chat is the one naming none of them
 			trustedUserId: orNone(wanted.trustedUserId)
 		},
@@ -302,17 +370,23 @@ export async function openTeamChat({
 	});
 }
 
-/** Whether an inbox is the one a chat names: by its kind, its committee and its trusted person. */
+/** Whether an inbox is the one a chat names: by its kind, its committee or role and its trusted person. */
 export function sameInbox({
 	option,
 	wanted
 }: {
 	option: InboxOption;
-	wanted: { inbox: ChatInbox | null; committeeId: string | null; trustedUserId: string | null };
+	wanted: {
+		inbox: ChatInbox | null;
+		committeeId: string | null;
+		roleId: string | null;
+		trustedUserId: string | null;
+	};
 }) {
 	return (
 		option.inbox === wanted.inbox &&
 		(option.committee?.id ?? null) === wanted.committeeId &&
+		(option.role?.id ?? null) === wanted.roleId &&
 		(option.person?.userId ?? null) === wanted.trustedUserId
 	);
 }
@@ -377,6 +451,8 @@ export async function sendMessage({
 
 	const now = new Date();
 	const fromTeam = author.side === 'TEAM';
+	// in a group everybody reads for themselves, the team included
+	const group = isGroupChat(chat.kind);
 	const id = await db.transaction(async (tx) => {
 		const [message] = await tx
 			.insert(schema.chatMessage)
@@ -392,17 +468,12 @@ export async function sendMessage({
 			.returning({ id: schema.chatMessage.id });
 		await tx
 			.update(schema.chat)
-			.set({
-				lastMessageAt: now,
-				// a new message brings an archived chat back into its inbox
-				teamArchivedAt: null,
-				// an answer from the inbox means the inbox has read what came before
-				...(fromTeam ? { teamReadAt: now } : {}),
-				...(chat.kind === 'TEAM' && !fromTeam ? { lastParticipantMessageAt: now } : {})
-			})
+			.set(chatAfterMessage({ kind: chat.kind, fromTeam, now }))
 			.where(eq(schema.chat.id, chat.id));
 		// whoever writes has read the chat; the inbox's reading is `teamReadAt`
-		if (!fromTeam) await writeRead({ tx, chatId: chat.id, userId: author.userId, readAt: now });
+		if (!fromTeam || group) {
+			await writeRead({ tx, chatId: chat.id, userId: author.userId, readAt: now });
+		}
 		if (!message) throw new Error('sendMessage: the insert returned no row');
 		return message.id;
 	});
@@ -413,7 +484,30 @@ export async function sendMessage({
 	if (!chat.lastMessageAt) chatPubsub.created();
 	// whoever answers the inbox hears of it on Slack right away; the mail waits for the sweep
 	if (!fromTeam) tellInboxOnSlack({ chat, messageId: id, origin });
+	// the team of a group hears of what participants write there
+	if (!fromTeam && group) tellGroupOnSlack({ chat, messageId: id, origin });
 	return id;
+}
+
+/** What a new message changes of its chat. */
+function chatAfterMessage({
+	kind,
+	fromTeam,
+	now
+}: {
+	kind: ChatRow['kind'];
+	fromTeam: boolean;
+	now: Date;
+}): Partial<ChatValues> {
+	return {
+		lastMessageAt: now,
+		// a new message brings an archived chat back into its inbox
+		teamArchivedAt: null,
+		// an answer from the inbox means the inbox has read what came before (a group is read by
+		// each of its people)
+		...(fromTeam && !isGroupChat(kind) ? { teamReadAt: now } : {}),
+		...(kind === 'TEAM' && !fromTeam ? { lastParticipantMessageAt: now } : {})
+	};
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -449,7 +543,8 @@ export async function markChatRead({
 	userId: string;
 }) {
 	const now = new Date();
-	if (side === 'TEAM') {
+	// a group is read by each of its people, the team's included
+	if (side === 'TEAM' && !isGroupChat(chat.kind)) {
 		await db.update(schema.chat).set({ teamReadAt: now }).where(eq(schema.chat.id, chat.id));
 	} else {
 		await writeRead({ tx: db, chatId: chat.id, userId, readAt: now });
@@ -613,18 +708,23 @@ export async function resolveChatReports({
 }
 
 /**
- * How many settled reports there are about chats a person takes part in (their direct chats and
- * their delegation's group), not counting the ones they filed themselves: what participant care
- * sees next to a person of a reported chat, so a repetition shows.
+ * How many settled reports there are about chats a person takes part in (their direct chats,
+ * their delegation's group and the group of their committee or role), not counting the ones they
+ * filed themselves: what participant care sees next to a person of a reported chat, so a
+ * repetition shows.
  */
 export async function earlierReportCount({
 	participantId,
 	userId,
-	delegationId
+	delegationId,
+	committeeId = null,
+	roleId = null
 }: {
 	participantId: string;
 	userId: string;
 	delegationId: string | null;
+	committeeId?: string | null;
+	roleId?: string | null;
 }) {
 	const [row] = await db
 		.select({ reports: count() })
@@ -637,7 +737,11 @@ export async function earlierReportCount({
 				or(
 					eq(schema.chat.participantId, participantId),
 					eq(schema.chat.otherParticipantId, participantId),
-					delegationId ? eq(schema.chat.delegationId, delegationId) : undefined
+					delegationId ? eq(schema.chat.delegationId, delegationId) : undefined,
+					committeeId
+						? and(eq(schema.chat.kind, 'COMMITTEE'), eq(schema.chat.committeeId, committeeId))
+						: undefined,
+					roleId ? and(eq(schema.chat.kind, 'ROLE'), eq(schema.chat.roleId, roleId)) : undefined
 				)
 			)
 		);
@@ -675,9 +779,20 @@ export async function setMessagingSuspended({
 	if (!row) throw apiError({ code: 'NOT_FOUND', message: m.chatContactNotFound() });
 	forgetContacts(row.conferenceId);
 	conferenceParticipantPubsub.updated(participantId);
-	// their chats say whether they are suspended, and whether anybody can write in them
+	// their chats say whether they are suspended, and whether anybody can write in them; so does
+	// the group of their seat, for them
+	const seat = (await conferenceContacts(row.conferenceId)).get(participantId);
 	const chats = await db.query.chat.findMany({
-		where: { OR: [{ participantId }, { otherParticipantId: participantId }] },
+		where: {
+			OR: [
+				{ participantId },
+				{ otherParticipantId: participantId },
+				...(seat?.committee
+					? [{ kind: 'COMMITTEE' as const, committeeId: seat.committee.id }]
+					: []),
+				...(seat?.role.kind === 'CUSTOM' ? [{ kind: 'ROLE' as const, roleId: seat.role.id }] : [])
+			]
+		},
 		columns: { id: true }
 	});
 	if (chats.length > 0) chatPubsub.updated(chats.map((chat) => chat.id));
@@ -696,6 +811,68 @@ export async function setMessageNotificationEmails({
 		.set({ messageNotificationEmails: enabled })
 		.where(eq(schema.user.id, userId));
 	userPubsub.updated(userId);
+}
+
+/**
+ * Whether a mail also tells the user about the groups of their committee or role (on top of
+ * `messageNotificationEmails`, which turns off all of them).
+ */
+export async function setGroupMessageNotificationEmails({
+	userId,
+	enabled
+}: {
+	userId: string;
+	enabled: boolean;
+}) {
+	await db
+		.update(schema.user)
+		.set({ groupMessageNotificationEmails: enabled })
+		.where(eq(schema.user.id, userId));
+	userPubsub.updated(userId);
+}
+
+/** Mutes a group for the user (no unread count, no mail) or unmutes it. */
+export async function setChatMuted({
+	chat,
+	userId,
+	muted
+}: {
+	chat: ChatRow;
+	userId: string;
+	muted: boolean;
+}) {
+	if (!isGroupChat(chat.kind)) {
+		throw apiError({ code: 'INVALID_INPUT', message: m.chatOnlyGroupsCanBeMuted() });
+	}
+	if (muted) {
+		await db.insert(schema.chatMute).values({ chatId: chat.id, userId }).onConflictDoNothing();
+	} else {
+		await db
+			.delete(schema.chatMute)
+			.where(and(eq(schema.chatMute.chatId, chat.id), eq(schema.chatMute.userId, userId)));
+	}
+	chatPubsub.updated(chat.id);
+}
+
+const muteBatcher = createBatcher(async (keys: string[]) => {
+	const asked = keys.map((key) => {
+		const [userId = '', chatId = ''] = key.split('|');
+		return { userId, chatId };
+	});
+	const rows = await db.query.chatMute.findMany({
+		where: {
+			chatId: { in: [...new Set(asked.map((one) => one.chatId))] },
+			userId: { in: [...new Set(asked.map((one) => one.userId))] }
+		},
+		columns: { chatId: true, userId: true }
+	});
+	const muted = new Set(rows.map((row) => `${row.userId}|${row.chatId}`));
+	return new Map(keys.map((key) => [key, muted.has(key)]));
+});
+
+/** Whether the user muted the group. */
+export async function isChatMuted({ userId, chatId }: { userId: string; chatId: string }) {
+	return (await muteBatcher(`${userId}|${chatId}`)) ?? false;
 }
 
 /** `userId|TEAM|chatId` or `userId|PARTICIPANT|chatId`. */
@@ -767,12 +944,25 @@ async function countUnread(keys: string[]) {
 const unreadBatcher = createBatcher(countUnread);
 
 /**
- * How many messages of the chat the caller has not read: for the team side what the participant
- * wrote since the inbox last read, for a person what was written since they last read.
+ * How many messages of the chat the caller has not read: for the team side of a team chat what
+ * the participant wrote since the inbox last read, for a person what was written since they last
+ * read. A group is read by each of its people, the team's too, and counts nothing for somebody who
+ * muted it.
  */
-export async function unreadCount(args: { userId: string; side: ChatSide; chatId: string }) {
-	if (args.side === 'REVIEW') return 0;
-	return (await unreadBatcher(unreadKey(args))) ?? 0;
+export async function unreadCount({
+	userId,
+	side,
+	chat
+}: {
+	userId: string;
+	side: ChatSide;
+	chat: Pick<ChatRow, 'id' | 'kind'>;
+}) {
+	if (side === 'REVIEW') return 0;
+	const group = isGroupChat(chat.kind);
+	if (group && (await isChatMuted({ userId, chatId: chat.id }))) return 0;
+	const key = unreadKey({ userId, side: group ? 'PARTICIPANT' : side, chatId: chat.id });
+	return (await unreadBatcher(key)) ?? 0;
 }
 
 const lastMessageBatcher = createBatcher(async (chatIds: string[]) => {

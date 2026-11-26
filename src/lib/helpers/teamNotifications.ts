@@ -15,11 +15,13 @@ export type NotificationTopic =
 	| 'TRUSTED_PERSONAL'
 	| 'CHAT_REPORT'
 	| 'COMMITTEE_PAPERS'
-	| 'SCAN_PROBLEM';
+	| 'SCAN_PROBLEM'
+	| 'ROLE_INBOX'
+	| 'CHAT_GROUP';
 
 /**
- * One line of the settings: a topic, and for a committee's inbox or papers the member's function
- * there.
+ * One line of the settings: a topic, and for a committee's inbox, papers or group, or a custom
+ * role's inbox or group, the member's function there.
  */
 export interface TopicKey {
 	topic: NotificationTopic;
@@ -30,7 +32,13 @@ export interface TopicKey {
 export interface NotifiedMember {
 	userId: string;
 	role: string;
-	functions: readonly { id: string; committeeId: string | null; kind: string }[];
+	functions: readonly {
+		id: string;
+		committeeId: string | null;
+		/** The custom role of a `ROLE_SUPPORT`. */
+		roleId?: string | null;
+		kind: string;
+	}[];
 }
 
 const careRoles: readonly string[] = PARTICIPANT_CARE_ROLES;
@@ -40,6 +48,10 @@ const paperRoles: readonly string[] = PAPER_ROLES;
 const isCommitteeFunction = (held: NotifiedMember['functions'][number]) =>
 	(held.kind === 'CHAIR' || held.kind === 'CONSULTANT') && held.committeeId !== null;
 
+/** A function looking after a custom role, which answers its inbox and is in its group. */
+const isRoleFunction = (held: NotifiedMember['functions'][number]) =>
+	held.kind === 'ROLE_SUPPORT' && !!held.roleId;
+
 /** The topics a member can be told about, in the order the page lists them. */
 export function topicsOf(member: NotifiedMember): TopicKey[] {
 	const topics: TopicKey[] = [];
@@ -48,6 +60,13 @@ export function topicsOf(member: NotifiedMember): TopicKey[] {
 	const committeeFunctions = member.functions.filter(isCommitteeFunction);
 	for (const held of committeeFunctions) {
 		topics.push({ topic: 'COMMITTEE_INBOX', teamFunctionId: held.id });
+	}
+	for (const held of committeeFunctions) {
+		topics.push({ topic: 'CHAT_GROUP', teamFunctionId: held.id });
+	}
+	for (const held of member.functions.filter(isRoleFunction)) {
+		topics.push({ topic: 'ROLE_INBOX', teamFunctionId: held.id });
+		topics.push({ topic: 'CHAT_GROUP', teamFunctionId: held.id });
 	}
 	if (paperRoles.includes(member.role)) {
 		for (const held of committeeFunctions) {
@@ -69,6 +88,8 @@ export function topicsOf(member: NotifiedMember): TopicKey[] {
 export interface NotifiedInbox {
 	inbox: ChatInbox;
 	committeeId: string | null;
+	/** The custom role of a `ROLE_SUPPORT` inbox. */
+	roleId?: string | null;
 	/** A chat with one trusted person: only theirs to read */
 	trustedUserId: string | null;
 }
@@ -97,10 +118,63 @@ export function topicOfInbox({
 			? { topic: 'TRUSTED_PERSONAL', teamFunctionId: null }
 			: null;
 	}
+	if (inbox.inbox === 'ROLE_SUPPORT') {
+		const held = member.functions.find(
+			(fn) => isRoleFunction(fn) && fn.roleId === (inbox.roleId ?? null)
+		);
+		return held ? { topic: 'ROLE_INBOX', teamFunctionId: held.id } : null;
+	}
 	const held = member.functions.find(
 		(fn) => fn.kind === inbox.inbox && fn.committeeId === inbox.committeeId
 	);
 	return held ? { topic: 'COMMITTEE_INBOX', teamFunctionId: held.id } : null;
+}
+
+/** The group of a committee or custom role, as the notifications tell it apart. */
+export interface NotifiedGroup {
+	kind: 'COMMITTEE' | 'ROLE';
+	committeeId: string | null;
+	roleId: string | null;
+}
+
+/**
+ * The topics under which `member` hears of what participants write in a group: one per function
+ * that puts them there (chair or consultant of its committee, support of its role). Empty for
+ * anybody not in it. Somebody holding two functions there is told once, when either wants it.
+ */
+export function groupTopicsOf({
+	member,
+	group
+}: {
+	member: NotifiedMember;
+	group: NotifiedGroup;
+}): TopicKey[] {
+	return member.functions
+		.filter((held) =>
+			group.kind === 'COMMITTEE'
+				? isCommitteeFunction(held) && held.committeeId === group.committeeId
+				: isRoleFunction(held) && held.roleId === group.roleId
+		)
+		.map((held) => ({ topic: 'CHAT_GROUP', teamFunctionId: held.id }));
+}
+
+/** Whether `member` wants to hear on `channel` of a message in the group: one of `groupTopicsOf` wants it. */
+export function wantsGroupNotification({
+	member,
+	group,
+	preferences,
+	channel,
+	mailByDefault
+}: {
+	member: NotifiedMember;
+	group: NotifiedGroup;
+	preferences: readonly StoredPreference[];
+	channel: NotificationChannel;
+	mailByDefault: boolean;
+}): boolean {
+	return groupTopicsOf({ member, group }).some((key) =>
+		wantsNotification({ preferences, key, channel, mailByDefault })
+	);
 }
 
 /**
@@ -181,5 +255,8 @@ export function wantsNotification({
 }
 
 /** An inbox as one string: the Slack messages tell of each inbox once until it is read. */
-export const inboxKey = ({ inbox, committeeId, trustedUserId }: NotifiedInbox) =>
-	`${inbox}:${committeeId ?? ''}:${trustedUserId ?? ''}`;
+export const inboxKey = ({ inbox, committeeId, roleId, trustedUserId }: NotifiedInbox) =>
+	`${inbox}:${committeeId ?? roleId ?? ''}:${trustedUserId ?? ''}`;
+
+/** A group as one string, for the same purpose. */
+export const groupKey = (chatId: string) => `group:${chatId}`;

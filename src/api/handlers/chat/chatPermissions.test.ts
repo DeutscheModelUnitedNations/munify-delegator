@@ -18,6 +18,7 @@ const {
 	assertCanModerateMessage,
 	caresFor,
 	chatSide,
+	groupIdsIn,
 	holdsInbox,
 	knowsPeopleOf,
 	writingParticipantId
@@ -57,6 +58,7 @@ const chat = {
 	delegationId: null,
 	inbox: null,
 	committeeId: null,
+	roleId: null,
 	trustedUserId: null
 };
 const teamChat = {
@@ -76,7 +78,7 @@ const delegate = facts({
 const care = facts({ team: [{ conferenceId: 'c1', roles: ['PARTICIPANT_CARE'] }] });
 const chair = facts({
 	team: [{ conferenceId: 'c1', roles: ['MEMBER'] }],
-	teamFunctions: [{ conferenceId: 'c1', committeeId: 'ga', kind: 'CHAIR' }]
+	teamFunctions: [{ conferenceId: 'c1', committeeId: 'ga', roleId: null, kind: 'CHAIR' }]
 });
 
 describe('chatSide', () => {
@@ -192,7 +194,7 @@ describe('trusted persons', () => {
 	};
 	const trusted = facts({
 		team: [{ conferenceId: 'c1', roles: ['MEMBER'] }],
-		teamFunctions: [{ conferenceId: 'c1', committeeId: null, kind: 'TRUSTED_PERSON' }]
+		teamFunctions: [{ conferenceId: 'c1', committeeId: null, roleId: null, kind: 'TRUSTED_PERSON' }]
 	});
 	const anna = contextFor({ sub: 'anna' });
 
@@ -347,5 +349,84 @@ describe('hiding messages', () => {
 		await expect(assertCanModerateMessage({ ctx, messageId: 'gone' })).rejects.toMatchObject({
 			extensions: { code: 'NOT_FOUND' }
 		});
+	});
+});
+
+describe('the groups of committees and custom roles', () => {
+	const open = { assignmentReleased: true, showCalendar: false, groupChatsEnabled: true };
+	const seatedIn = (flags: typeof open) =>
+		facts({
+			...delegate,
+			groupSeats: [{ conferenceId: 'c1', committeeId: 'ga', roleId: null }],
+			conferences: new Map([['c1', flags]])
+		});
+	const committeeGroup = {
+		...chat,
+		kind: 'COMMITTEE' as const,
+		participantId: null,
+		otherParticipantId: null,
+		committeeId: 'ga'
+	};
+	const roleGroup = {
+		...committeeGroup,
+		kind: 'ROLE' as const,
+		committeeId: null,
+		roleId: 'press'
+	};
+	const support = facts({
+		team: [{ conferenceId: 'c1', roles: ['MEMBER'] }],
+		teamFunctions: [
+			{ conferenceId: 'c1', committeeId: null, roleId: 'press', kind: 'ROLE_SUPPORT' }
+		]
+	});
+	const ctx = contextFor({ sub: 'u' });
+
+	test('somebody seated in the committee is in its group once released and open', () => {
+		expect(chatSide({ ctx, facts: seatedIn(open), chat: committeeGroup })).toBe('PARTICIPANT');
+		expect(
+			chatSide({ ctx, facts: seatedIn(open), chat: { ...committeeGroup, committeeId: 'sc' } })
+		).toBe('REVIEW');
+	});
+
+	test('a participant is in no group while the groups are closed or the seat unreleased', () => {
+		const closed = seatedIn({ ...open, groupChatsEnabled: false });
+		const unreleased = seatedIn({ ...open, assignmentReleased: false });
+		expect(chatSide({ ctx, facts: closed, chat: committeeGroup })).toBe('REVIEW');
+		expect(chatSide({ ctx, facts: unreleased, chat: committeeGroup })).toBe('REVIEW');
+		expect(groupIdsIn({ ctx, facts: closed, conferenceId: 'c1' })).toEqual({
+			committeeIds: [],
+			roleIds: []
+		});
+	});
+
+	test("a committee's chairs and whoever supports a role are in its group for the team", () => {
+		expect(chatSide({ ctx, facts: chair, chat: committeeGroup })).toBe('TEAM');
+		expect(chatSide({ ctx, facts: chair, chat: roleGroup })).toBe('REVIEW');
+		expect(chatSide({ ctx, facts: support, chat: roleGroup })).toBe('TEAM');
+		expect(chatSide({ ctx, facts: support, chat: committeeGroup })).toBe('REVIEW');
+	});
+
+	test('the team is in its groups whatever the switch says', () => {
+		const closedChair = facts({
+			...chair,
+			conferences: new Map([['c1', { ...open, groupChatsEnabled: false }]])
+		});
+		expect(groupIdsIn({ ctx, facts: closedChair, conferenceId: 'c1' })).toEqual({
+			committeeIds: ['ga'],
+			roleIds: []
+		});
+		expect(groupIdsIn({ ctx, facts: support, conferenceId: 'c2' })).toEqual({
+			committeeIds: [],
+			roleIds: []
+		});
+	});
+
+	test("whoever supports a custom role answers that role's inbox only", () => {
+		const roleInbox = { conferenceId: 'c1', inbox: 'ROLE_SUPPORT' as const, committeeId: null };
+		expect(holdsInbox({ ctx, facts: support, ...roleInbox, roleId: 'press' })).toBe(true);
+		expect(holdsInbox({ ctx, facts: support, ...roleInbox, roleId: 'jury' })).toBe(false);
+		expect(holdsInbox({ ctx, facts: chair, ...roleInbox, roleId: 'press' })).toBe(false);
+		const inboxChat = { ...teamChat, inbox: 'ROLE_SUPPORT' as const, committeeId: null };
+		expect(chatSide({ ctx, facts: support, chat: { ...inboxChat, roleId: 'press' } })).toBe('TEAM');
 	});
 });

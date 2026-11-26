@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+	groupTopicsOf,
 	hearsOfReports,
 	inboxKey,
 	paperTopicsOf,
 	topicOfInbox,
 	topicsOf,
 	wantsNotification,
+	wantsGroupNotification,
 	wantsPaperNotification,
 	type NotifiedInbox,
 	type NotifiedMember,
@@ -26,6 +28,11 @@ const trusted: NotifiedMember = {
 	userId: 'u-trusted',
 	role: 'MEMBER',
 	functions: [{ id: 'f-trusted', committeeId: null, kind: 'TRUSTED_PERSON' }]
+};
+const support: NotifiedMember = {
+	userId: 'u-support',
+	role: 'MEMBER',
+	functions: [{ id: 'f-press', committeeId: null, roleId: 'press', kind: 'ROLE_SUPPORT' }]
 };
 const plain: NotifiedMember = { userId: 'u-plain', role: 'MEMBER', functions: [] };
 
@@ -48,10 +55,19 @@ describe('topicsOf', () => {
 		}
 	});
 
-	it('gives one line per committee function', () => {
+	it("gives one line per committee function for its inbox, and one for its committee's group", () => {
 		expect(topicsOf(chair)).toEqual([
 			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-chair-ga' },
-			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-consult-sc' }
+			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-consult-sc' },
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-chair-ga' },
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-consult-sc' }
+		]);
+	});
+
+	it("gives whoever supports a custom role the role's inbox and group", () => {
+		expect(topicsOf(support)).toEqual([
+			{ topic: 'ROLE_INBOX', teamFunctionId: 'f-press' },
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-press' }
 		]);
 	});
 
@@ -66,6 +82,8 @@ describe('topicsOf', () => {
 		expect(topicsOf({ ...chair, role: 'REVIEWER' })).toEqual([
 			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-chair-ga' },
 			{ topic: 'COMMITTEE_INBOX', teamFunctionId: 'f-consult-sc' },
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-chair-ga' },
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-consult-sc' },
 			{ topic: 'COMMITTEE_PAPERS', teamFunctionId: 'f-chair-ga' },
 			{ topic: 'COMMITTEE_PAPERS', teamFunctionId: 'f-consult-sc' }
 		]);
@@ -81,6 +99,8 @@ describe('topicsOf', () => {
 			'PARTICIPANT_CARE',
 			'COMMITTEE_INBOX',
 			'COMMITTEE_INBOX',
+			'CHAT_GROUP',
+			'CHAT_GROUP',
 			'COMMITTEE_PAPERS',
 			'COMMITTEE_PAPERS',
 			'TRUSTED_SHARED',
@@ -337,5 +357,63 @@ describe('wantsPaperNotification', () => {
 				mailByDefault: true
 			})
 		).toBe(false);
+	});
+});
+
+describe('the groups and inboxes of custom roles', () => {
+	const pressInbox: NotifiedInbox = {
+		inbox: 'ROLE_SUPPORT',
+		committeeId: null,
+		roleId: 'press',
+		trustedUserId: null
+	};
+
+	it("names the function a role's inbox is answered by, and nobody else", () => {
+		expect(topicOfInbox({ member: support, inbox: pressInbox })).toEqual({
+			topic: 'ROLE_INBOX',
+			teamFunctionId: 'f-press'
+		});
+		expect(topicOfInbox({ member: support, inbox: { ...pressInbox, roleId: 'jury' } })).toBeNull();
+		expect(topicOfInbox({ member: chair, inbox: pressInbox })).toBeNull();
+	});
+
+	it('keeps the inboxes of two roles apart', () => {
+		expect(inboxKey(pressInbox)).not.toBe(inboxKey({ ...pressInbox, roleId: 'jury' }));
+	});
+
+	it('puts the functions of a committee and a role into their groups', () => {
+		const ga = { kind: 'COMMITTEE' as const, committeeId: 'ga', roleId: null };
+		expect(groupTopicsOf({ member: chair, group: ga })).toEqual([
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-chair-ga' }
+		]);
+		expect(groupTopicsOf({ member: support, group: ga })).toEqual([]);
+		const press = { kind: 'ROLE' as const, committeeId: null, roleId: 'press' };
+		expect(groupTopicsOf({ member: support, group: press })).toEqual([
+			{ topic: 'CHAT_GROUP', teamFunctionId: 'f-press' }
+		]);
+	});
+
+	it('tells of a group while one of the functions there wants it', () => {
+		const ga = { kind: 'COMMITTEE' as const, committeeId: 'ga', roleId: null };
+		const both: NotifiedMember = {
+			...chair,
+			functions: [...chair.functions, { id: 'f-consult-ga', committeeId: 'ga', kind: 'CONSULTANT' }]
+		};
+		const off = (teamFunctionId: string): StoredPreference => ({
+			topic: 'CHAT_GROUP',
+			teamFunctionId,
+			channel: 'EMAIL',
+			enabled: false
+		});
+		const asks = (preferences: StoredPreference[]) =>
+			wantsGroupNotification({
+				member: both,
+				group: ga,
+				preferences,
+				channel: 'EMAIL',
+				mailByDefault: true
+			});
+		expect(asks([off('f-chair-ga')])).toBe(true);
+		expect(asks([off('f-chair-ga'), off('f-consult-ga')])).toBe(false);
 	});
 });

@@ -19,19 +19,23 @@ import { delegation } from './application';
 import { committee } from './committees';
 import { teamMember } from './team';
 import { paper } from './papers';
+import { conferenceRole } from './roles';
 
 /** The messages people of a conference write each other inside the app. */
 
 /**
  * What a team member does next to their team role. In a committee: chairing it, or advising its
- * delegates on the content; each function of a committee shares one inbox (`chat.inbox`). For the
- * whole conference, without a committee: being a trusted person, whom participants turn to in
- * confidence, together or one of them alone.
+ * delegates on the content; each function of a committee shares one inbox (`chat.inbox`) and is in
+ * the committee's group. For a custom role (`ROLE_SUPPORT`, "Betreuung"): looking after the people
+ * holding it (the press, say), in its inbox and its group. For the whole conference, without a
+ * committee or role: being a trusted person, whom participants turn to in confidence, together or
+ * one of them alone.
  */
 export const teamFunctionKind = pgEnum('team_function_kind', [
 	'CHAIR',
 	'CONSULTANT',
-	'TRUSTED_PERSON'
+	'TRUSTED_PERSON',
+	'ROLE_SUPPORT'
 ]);
 
 export const teamFunction = snakeCase.table(
@@ -46,13 +50,22 @@ export const teamFunction = snakeCase.table(
 			onDelete: 'cascade',
 			onUpdate: 'cascade'
 		}),
+		/** The custom role a `ROLE_SUPPORT` looks after; empty for every other function. */
+		roleId: text().references(() => conferenceRole.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
 		kind: teamFunctionKind().notNull()
 	},
 	(table) => [
-		// a function without a committee is held once
+		// a function without a committee or role (a trusted person) is held once
 		uniqueIndex('team_function_team_member_id_kind_key')
 			.on(table.teamMemberId, table.kind)
-			.where(sql`${table.committeeId} is null`),
+			.where(sql`${table.committeeId} is null and ${table.roleId} is null`),
+		uniqueIndex('team_function_team_member_id_role_id_kind_key')
+			.on(table.teamMemberId, table.roleId, table.kind)
+			.where(sql`${table.roleId} is not null`),
+		index('team_function_role_id_idx').on(table.roleId),
 		uniqueIndex('team_function_team_member_id_committee_id_kind_key').on(
 			table.teamMemberId,
 			table.committeeId,
@@ -66,19 +79,23 @@ export const teamFunction = snakeCase.table(
 
 /**
  * `DIRECT`: two participants. `DELEGATION`: everybody of one delegation. `TEAM`: one participant
- * and a team inbox, which everybody holding it reads and answers.
+ * and a team inbox, which everybody holding it reads and answers. `COMMITTEE`: the group of
+ * everybody seated in a committee with its chairs and consultants. `ROLE`: the group of everybody
+ * holding a custom role with the team members looking after it (`ROLE_SUPPORT`).
  */
-export const chatKind = pgEnum('chat_kind', ['DIRECT', 'DELEGATION', 'TEAM']);
+export const chatKind = pgEnum('chat_kind', ['DIRECT', 'DELEGATION', 'TEAM', 'COMMITTEE', 'ROLE']);
 
 /**
  * The team inboxes: participant care (one per conference), a committee's chairs or consultants,
- * and the trusted persons: all of them together, or one of them alone (`chat.trustedUserId`).
+ * the trusted persons: all of them together, or one of them alone (`chat.trustedUserId`), and the
+ * team members looking after a custom role (`ROLE_SUPPORT`, with `chat.roleId`).
  */
 export const chatInbox = pgEnum('chat_inbox', [
 	'PARTICIPANT_CARE',
 	'CHAIR',
 	'CONSULTANT',
-	'TRUSTED_PERSON'
+	'TRUSTED_PERSON',
+	'ROLE_SUPPORT'
 ]);
 
 function participantOfChat() {
@@ -103,9 +120,15 @@ export const chat = snakeCase.table(
 			onDelete: 'cascade',
 			onUpdate: 'cascade'
 		}),
-		/** `TEAM`: the inbox, with its committee unless it is participant care. */
+		/** `TEAM`: the inbox, with its committee or role unless it is participant care. */
 		inbox: chatInbox(),
+		/** `TEAM`: the committee of a chairs' or consultants' inbox. `COMMITTEE`: whose group this is. */
 		committeeId: text().references(() => committee.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
+		/** `TEAM`: the custom role of a `ROLE_SUPPORT` inbox. `ROLE`: whose group this is. */
+		roleId: text().references(() => conferenceRole.id, {
 			onDelete: 'cascade',
 			onUpdate: 'cascade'
 		}),
@@ -139,13 +162,26 @@ export const chat = snakeCase.table(
 			.where(sql`${table.kind} = 'TEAM' and ${table.inbox} = 'PARTICIPANT_CARE'`),
 		uniqueIndex('chat_team_committee_key')
 			.on(table.participantId, table.inbox, table.committeeId)
-			.where(sql`${table.kind} = 'TEAM' and ${table.inbox} <> 'PARTICIPANT_CARE'`),
+			.where(sql`${table.kind} = 'TEAM' and ${table.inbox} in ('CHAIR', 'CONSULTANT')`),
 		// the trusted persons' inboxes name no committee: one chat with all of them, one with each
 		uniqueIndex('chat_team_trusted_key')
 			.on(table.participantId)
 			.where(
-				sql`${table.kind} = 'TEAM' and ${table.inbox} <> 'PARTICIPANT_CARE' and ${table.committeeId} is null and ${table.trustedUserId} is null`
+				sql`${table.kind} = 'TEAM' and ${table.inbox} = 'TRUSTED_PERSON' and ${table.trustedUserId} is null`
 			),
+		// a team chat naming a role is that role's inbox (the conditions name only values the enums
+		// had before the groups: a new value cannot be used in the transaction that adds it)
+		uniqueIndex('chat_team_role_key')
+			.on(table.participantId, table.roleId)
+			.where(sql`${table.kind} = 'TEAM' and ${table.roleId} is not null`),
+		// besides a team chat only the committee's and role's group name one
+		uniqueIndex('chat_committee_key')
+			.on(table.committeeId)
+			.where(sql`${table.kind} <> 'TEAM' and ${table.committeeId} is not null`),
+		uniqueIndex('chat_role_key')
+			.on(table.roleId)
+			.where(sql`${table.kind} <> 'TEAM' and ${table.roleId} is not null`),
+		index('chat_role_id_idx').on(table.roleId),
 		uniqueIndex('chat_team_trusted_person_key')
 			.on(table.participantId, table.trustedUserId)
 			.where(sql`${table.trustedUserId} is not null`),
@@ -207,20 +243,43 @@ export const chatMessage = snakeCase.table(
 	]
 );
 
-/** Up to when a person has read a chat. The team side of a `TEAM` chat is `chat.teamReadAt`. */
-export const chatRead = snakeCase.table(
-	'chat_read',
-	{
-		...defaultIdAndTimestamps,
+/** A chat and a person: who read it up to when, who muted it. */
+function chatAndPerson() {
+	return {
 		chatId: text()
 			.notNull()
 			.references(() => chat.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		userId: text()
 			.notNull()
-			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+	};
+}
+
+/** Up to when a person has read a chat. The team side of a `TEAM` chat is `chat.teamReadAt`. */
+export const chatRead = snakeCase.table(
+	'chat_read',
+	{
+		...defaultIdAndTimestamps,
+		...chatAndPerson(),
 		readAt: timestamp({ precision: 3 }).notNull()
 	},
 	(table) => [uniqueIndex('chat_read_chat_id_user_id_key').on(table.chatId, table.userId)]
+);
+
+/**
+ * Somebody who muted a group (`COMMITTEE`, `ROLE`) for themselves: it counts nothing unread for
+ * them and sends them no mail. They stay in it and keep reading.
+ */
+export const chatMute = snakeCase.table(
+	'chat_mute',
+	{
+		...defaultIdAndCreatedAt,
+		...chatAndPerson()
+	},
+	(table) => [
+		uniqueIndex('chat_mute_chat_id_user_id_key').on(table.chatId, table.userId),
+		index('chat_mute_user_id_idx').on(table.userId)
+	]
 );
 
 /** A participant who does not want to hear from another: neither can write the other directly. */

@@ -1141,6 +1141,7 @@ export type Chat = {
     search?: ChatmessageSearchInputArgument | null | undefined,
     where?: ChatmessageWhereInputArgument | null | undefined
   }) => Chatmessage[],
+  muted: Boolean,
   otherParticipant: (p?: {
     orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
     where?: ConferenceparticipantWhereInputArgument | null | undefined
@@ -1159,6 +1160,11 @@ export type Chat = {
     search?: ChatreportSearchInputArgument | null | undefined,
     where?: ChatreportWhereInputArgument | null | undefined
   }) => Chatreport[],
+  role: (p?: {
+    orderBy?: ConferenceroleOrderInputArgument | null | undefined,
+    where?: ConferenceroleWhereInputArgument | null | undefined
+  }) => Conferencerole | null,
+  roleId: ID | null,
   search_distance: Float | null,
   side: String,
   teamArchivedAt: DateTime | null,
@@ -1188,6 +1194,18 @@ export type ChatContact = {
   userId: ID | null    
 };
 		
+export type ChatGroupOption = {
+  asTeam: Boolean,
+  chatId: ID | null,
+  committeeAbbreviation: String | null,
+  committeeId: ID | null,
+  committeeName: String | null,
+  kind: String,
+  roleIcon: String | null,
+  roleId: ID | null,
+  roleName: String | null    
+};
+		
 export type ChatInboxOption = {
   chatId: ID | null,
   committeeAbbreviation: String | null,
@@ -1195,6 +1213,9 @@ export type ChatInboxOption = {
   committeeName: String | null,
   inbox: ChatinboxEnum,
   personName: String | null,
+  roleIcon: String | null,
+  roleId: ID | null,
+  roleName: String | null,
   trustedPersonId: ID | null    
 };
 		
@@ -1210,6 +1231,7 @@ export type ChatOrderInputArgument = {
   lastParticipantMessageAt?: SortingParameter | null | undefined,
   otherParticipantId?: SortingParameter | null | undefined,
   participantId?: SortingParameter | null | undefined,
+  roleId?: SortingParameter | null | undefined,
   teamArchivedAt?: SortingParameter | null | undefined,
   teamReadAt?: SortingParameter | null | undefined,
   trustedUserId?: SortingParameter | null | undefined,
@@ -1224,7 +1246,7 @@ export type ChatPerson = {
   userId: ID    
 };
 		
-export type ChatSearchFieldEnum = "committeeId" | "conferenceId" | "delegationId" | "id" | "otherParticipantId" | "participantId" | "trustedUserId";
+export type ChatSearchFieldEnum = "committeeId" | "conferenceId" | "delegationId" | "id" | "otherParticipantId" | "participantId" | "roleId" | "trustedUserId";
 		
 export type ChatSearchInputArgument = {
   fields?: ChatSearchFieldEnum[] | undefined,
@@ -1253,6 +1275,8 @@ export type ChatWhereInputArgument = {
   participant?: ConferenceparticipantWhereInputArgument | null | undefined,
   participantId?: IDWhereInputArgument | null | undefined,
   reports?: ChatreportWhereInputArgument | null | undefined,
+  role?: ConferenceroleWhereInputArgument | null | undefined,
+  roleId?: IDWhereInputArgument | null | undefined,
   teamArchivedAt?: DateTimeWhereInputArgument | null | undefined,
   teamReadAt?: DateTimeWhereInputArgument | null | undefined,
   trustedUserId?: IDWhereInputArgument | null | undefined,
@@ -1260,9 +1284,9 @@ export type ChatWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type ChatinboxEnum = "CHAIR" | "CONSULTANT" | "PARTICIPANT_CARE" | "TRUSTED_PERSON";
+export type ChatinboxEnum = "CHAIR" | "CONSULTANT" | "PARTICIPANT_CARE" | "ROLE_SUPPORT" | "TRUSTED_PERSON";
 		
-export type ChatkindEnum = "DELEGATION" | "DIRECT" | "TEAM";
+export type ChatkindEnum = "COMMITTEE" | "DELEGATION" | "DIRECT" | "ROLE" | "TEAM";
 		
 export type Chatmessage = {
   authorName: String | null,
@@ -1670,6 +1694,7 @@ export type Conference = {
   emblemFileId: ID | null,
   endConference: DateTime,
   feeAmount: Float | null,
+  groupChatsEnabled: Boolean,
   guardianConsentFile: (p?: {
     orderBy?: StoredfileOrderInputArgument | null | undefined,
     where?: StoredfileWhereInputArgument | null | undefined
@@ -1841,6 +1866,7 @@ export type ConferenceOrderInputArgument = {
   emblemFileId?: SortingParameter | null | undefined,
   endConference?: SortingParameter | null | undefined,
   feeAmount?: SortingParameter | null | undefined,
+  groupChatsEnabled?: SortingParameter | null | undefined,
   guardianConsentFileId?: SortingParameter | null | undefined,
   guidePublished?: SortingParameter | null | undefined,
   iban?: SortingParameter | null | undefined,
@@ -1932,6 +1958,7 @@ export type ConferenceWhereInputArgument = {
   emblemFileId?: IDWhereInputArgument | null | undefined,
   endConference?: DateTimeWhereInputArgument | null | undefined,
   feeAmount?: FloatWhereInputArgument | null | undefined,
+  groupChatsEnabled?: BooleanWhereInputArgument | null | undefined,
   guardianConsentFile?: StoredfileWhereInputArgument | null | undefined,
   guardianConsentFileId?: IDWhereInputArgument | null | undefined,
   guideOutline?: GuideoutlineWhereInputArgument | null | undefined,
@@ -4099,6 +4126,7 @@ export type Mutation = {
   giveTeamFunction: (p: {
     committeeId?: ID | null | undefined,
     kind: TeamfunctionkindEnum,
+    roleId?: ID | null | undefined,
     teamMemberId: ID
   }) => Teamfunction,
   hideChatMessage: (p: {
@@ -4184,11 +4212,17 @@ export type Mutation = {
     conferenceId: ID,
     participantId: ID
   }) => Chat,
+  openGroupChat: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    roleId?: ID | null | undefined
+  }) => Chat,
   openTeamChat: (p: {
     committeeId?: ID | null | undefined,
     conferenceId: ID,
     inbox: ChatinboxEnum,
     participantId?: ID | null | undefined,
+    roleId?: ID | null | undefined,
     trustedPersonId?: ID | null | undefined
   }) => Chat,
   publishAnnouncement: (p: {
@@ -4367,6 +4401,10 @@ export type Mutation = {
     blocked: Boolean,
     chatId: ID
   }) => Boolean,
+  setChatMuted: (p: {
+    chatId: ID,
+    muted: Boolean
+  }) => Boolean,
   setCommitteeNationSeat: (p: {
     committeeId: ID,
     enabled: Boolean,
@@ -4405,6 +4443,9 @@ export type Mutation = {
     document: LayoutDocument,
     layout?: JSON | null | undefined
   }) => Conference,
+  setGroupMessageNotificationEmails: (p: {
+    enabled: Boolean
+  }) => Boolean,
   setGuidePageScope: (p: {
     conferenceId: ID,
     id: ID,
@@ -4559,6 +4600,7 @@ export type Mutation = {
     emblemFileId?: ID | null | undefined,
     endConference?: DateTime | null | undefined,
     feeAmount?: Float | null | undefined,
+    groupChatsEnabled?: Boolean | null | undefined,
     guardianConsentFileId?: ID | null | undefined,
     guidePublished?: Boolean | null | undefined,
     iban?: String | null | undefined,
@@ -4944,7 +4986,7 @@ export type NotificationTestResult = "NOT_FOUND" | "SENT" | "UNAVAILABLE";
 		
 export type NotificationchannelEnum = "EMAIL" | "SLACK";
 		
-export type NotificationtopicEnum = "CHAT_REPORT" | "COMMITTEE_INBOX" | "COMMITTEE_PAPERS" | "PARTICIPANT_CARE" | "SCAN_PROBLEM" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
+export type NotificationtopicEnum = "CHAT_GROUP" | "CHAT_REPORT" | "COMMITTEE_INBOX" | "COMMITTEE_PAPERS" | "PARTICIPANT_CARE" | "ROLE_INBOX" | "SCAN_PROBLEM" | "TRUSTED_PERSONAL" | "TRUSTED_SHARED";
 		
 export type NsaCard = {
   cardNumber: Int,
@@ -5689,6 +5731,9 @@ export type Query = {
   chatContacts: (p: {
     conferenceId: ID
   }) => ChatContact[],
+  chatGroups: (p: {
+    conferenceId: ID
+  }) => ChatGroupOption[],
   chatInboxes: (p: {
     conferenceId: ID,
     participantId?: ID | null | undefined
@@ -8314,6 +8359,11 @@ export type Teamfunction = {
   createdAt: DateTime,
   id: ID,
   kind: TeamfunctionkindEnum,
+  role: (p?: {
+    orderBy?: ConferenceroleOrderInputArgument | null | undefined,
+    where?: ConferenceroleWhereInputArgument | null | undefined
+  }) => Conferencerole | null,
+  roleId: ID | null,
   search_distance: Float | null,
   teamMember: (p?: {
     orderBy?: TeammemberOrderInputArgument | null | undefined,
@@ -8328,11 +8378,12 @@ export type TeamfunctionOrderInputArgument = {
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   kind?: SortingParameter | null | undefined,
+  roleId?: SortingParameter | null | undefined,
   teamMemberId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
-export type TeamfunctionSearchFieldEnum = "committeeId" | "id" | "teamMemberId";
+export type TeamfunctionSearchFieldEnum = "committeeId" | "id" | "roleId" | "teamMemberId";
 		
 export type TeamfunctionSearchInputArgument = {
   fields?: TeamfunctionSearchFieldEnum[] | undefined,
@@ -8348,12 +8399,14 @@ export type TeamfunctionWhereInputArgument = {
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   kind?: TeamfunctionkindEnum | null | undefined,
+  role?: ConferenceroleWhereInputArgument | null | undefined,
+  roleId?: IDWhereInputArgument | null | undefined,
   teamMember?: TeammemberWhereInputArgument | null | undefined,
   teamMemberId?: IDWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type TeamfunctionkindEnum = "CHAIR" | "CONSULTANT" | "TRUSTED_PERSON";
+export type TeamfunctionkindEnum = "CHAIR" | "CONSULTANT" | "ROLE_SUPPORT" | "TRUSTED_PERSON";
 		
 export type Teammember = {
   conference: (p?: {
@@ -8558,6 +8611,7 @@ export type User = {
   gender: GenderEnum | null,
   givenName: String,
   globalNotes: String | null,
+  groupMessageNotificationEmails: Boolean,
   id: ID,
   invitationsAccepted: (p?: {
     limit?: Int | null | undefined,
@@ -8671,6 +8725,7 @@ export type UserOrderInputArgument = {
   gender?: SortingParameter | null | undefined,
   givenName?: SortingParameter | null | undefined,
   globalNotes?: SortingParameter | null | undefined,
+  groupMessageNotificationEmails?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   locale?: SortingParameter | null | undefined,
   messageNotificationEmails?: SortingParameter | null | undefined,
@@ -8715,6 +8770,7 @@ export type UserWhereInputArgument = {
   gender?: GenderEnum | null | undefined,
   givenName?: StringWhereInputArgument | null | undefined,
   globalNotes?: StringWhereInputArgument | null | undefined,
+  groupMessageNotificationEmails?: BooleanWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   invitationsAccepted?: TeammemberinvitationWhereInputArgument | null | undefined,
   invitationsSent?: TeammemberinvitationWhereInputArgument | null | undefined,

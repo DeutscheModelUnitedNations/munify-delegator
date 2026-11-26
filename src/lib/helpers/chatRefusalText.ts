@@ -4,6 +4,7 @@ import type { WriteRefusal } from './chat';
 /** Why a chat cannot be written in right now, as the API refuses it and the thread says it. */
 const REFUSALS: Record<WriteRefusal, () => string> = {
 	DISABLED: () => m.chatRefusedDisabled(),
+	GROUPS_DISABLED: () => m.chatRefusedGroupsDisabled(),
 	NOT_RELEASED: () => m.chatRefusedNotReleased(),
 	NOT_SEATED: () => m.chatRefusedNotSeated(),
 	SUSPENDED: () => m.chatRefusedSuspended(),
