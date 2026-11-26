@@ -13,7 +13,7 @@
 	<title>{m.adminUserCard()}</title>
 </svelte:head>
 
-<div class="mx-auto flex h-full w-full max-w-5xl flex-col">
+<div class="flex h-full w-full flex-col">
 	<div class="mb-3 flex items-center gap-2">
 		<a href={resolve(`dashboard/${conferenceId}/team/participants`)} class="btn btn-ghost btn-sm">
 			<i aria-hidden="true" class="ph-duotone ph-arrow-left"></i>

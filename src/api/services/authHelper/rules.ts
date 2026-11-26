@@ -24,6 +24,7 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
 
 export {
 	CONFERENCE_CONTENT_ROLES,
+	GUIDE_ROLES,
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
@@ -562,4 +563,17 @@ export function releasedIds({
 	return rows
 		.filter((row) => facts.conferences.get(row.conferenceId)?.assignmentReleased)
 		.map((row) => row.id);
+}
+
+/**
+ * The scans the caller handles: those of the people of the conferences they care for participants in
+ * (project management and participant care). None for an AI assistant: a scan holds a signature and
+ * an address, and its file's URL is the whole of it.
+ */
+export function handledScans(args: RuleArgs) {
+	if (args.ctx.mcp) return undefined;
+	return hop(
+		isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES }),
+		(participant) => ({ participant })
+	);
 }

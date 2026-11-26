@@ -77,8 +77,20 @@ describe('who sees what', () => {
 			'seatPlanning',
 			'attendance',
 			'announcement',
+			'guide',
 			'messages'
 		]);
+	});
+
+	test('the guide workspace’s tabs and pages belong to the guide entry', () => {
+		for (const path of [
+			'team/guide',
+			'team/guide/page/p1',
+			'team/guide/visibility',
+			'team/guide/committees'
+		]) {
+			expect(teamRouteForPath(path)?.id).toBe('guide');
+		}
 	});
 
 	test('a team coordinator also manages the team', () => {

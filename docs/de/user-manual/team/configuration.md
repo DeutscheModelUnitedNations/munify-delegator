@@ -9,7 +9,7 @@ Diese Seite zeigt, wie das Konferenzteam eine Konferenz aufsetzt und pflegt: von
 
 ## Eine Konferenz anlegen {#creating-a-conference}
 
-Neue Konferenzen legen nur System-Admins an. Auf der Seite **Konferenzen** und im Menü hinter deinen Initialen unter **Administration** führt **Konferenz anlegen** zur Seite **Konferenz erstellen**.
+Neue Konferenzen legen nur System-Admins an. Auf der Seite **Konferenzen** und im Menü hinter dem Personensymbol oben rechts unter **Administration** führt **Konferenz anlegen** zur Seite **Konferenz erstellen**.
 
 1. Die Daten der Konferenz entstehen auf der Seite **Konferenzanfrage**, die **Konferenz erstellen** oben rechts verlinkt. Dort trägst du Eckdaten, Gremien mit ihren Staaten, nichtstaatliche Akteure und Einzelrollen ein. **Alle UN-Mitgliedstaaten hinzufügen** füllt ein Gremium mit allen Staaten. Die Seite speichert nichts auf dem Server, deine Eingaben bleiben nur in diesem Browser. Zeiten gelten in der Zeitzone Europe/Berlin. Am Ende lädst du das erzeugte JSON herunter.
 2. Ein\*e Admin wählt die Datei auf **Konferenz erstellen** aus. Sie wird sofort geprüft. Bei Fehlern erscheint **Validierung fehlgeschlagen** mit den betroffenen Stellen, etwa einem Staat, der kein UN-Mitglied ist, einem doppelten Kürzel oder einem Bewerbungsende nach dem Konferenzbeginn.
@@ -130,6 +130,7 @@ Die Karten unter **Schnellzugriff** auf dem Dashboard der Teilnehmenden, etwa **
 - **Papier-Einreichung geöffnet**: Teilnehmende legen im [Papier-Hub](../participant/paper-hub) Papiere zu den Themen ihrer Gremien an und speichern neue Fassungen. Ist der Schalter aus, lehnt DELEGATOR beides ab mit „Papier kann nicht eingereicht werden, weil das Papier-Postfach geschlossen ist.“, und der **Papier-Hub** fehlt im Schnellzugriff.
 - **Kalender für Teilnehmende anzeigen**: Teilnehmende sehen den [Zeitplan](./communication#calendar). Das Team sieht ihn immer.
 - **Nachrichten zwischen Delegationen**: schaltet die Einzelchats zwischen Teilnehmenden verschiedener Delegationen frei, sobald die Zuteilung freigegeben ist (siehe [Nachrichten](./communication#messages)). Das Team und die eigene Delegation erreichen Teilnehmende immer. Ausgeschaltet bleiben bestehende Einzelchats lesbar, aber niemand schreibt dort mehr Neues.
+- **Leitfaden veröffentlicht**: Teilnehmende lesen den [Vorbereitungsleitfaden](./communication#guide) in der App, sobald ihre Rollen verteilt sind; vorher führt die Übersicht zum Link **Vorbereitungsleitfaden**. Derselbe Schalter steht auch im Leitfaden selbst.
 
 :::tip Erst die Freigabe, dann die Formalitäten
 **Teilnahmebeitrag freigeschaltet** und **Postalische Anmeldung freigeschaltet** werden erst fällig, wenn die Zuteilung freigegeben ist. Schaltest du Zahlungen vorher frei, bietet das Speichern keine E-Mails an. Nach der Freigabe gehen sie mit dem nächsten automatischen Lauf raus, wenn die Art auf automatisch steht. Sonst warten sie auf der Seite [E-Mails](./communication#emails), bis du sie verschickst.
@@ -177,9 +178,9 @@ Die Vorlagen enthalten keine Platzhalter. DELEGATOR schreibt die Angaben der Per
 | **Einwilligung der Erziehungsberechtigten** | **Name**, **Geburtsdatum**, **QR-Code mit Name und ID**, **Seitenzahl**                                                                     |
 | **Einwilligung Bildnutzung**                | **Name**, **Geburtsdatum**, **Adresse**, **QR-Code mit Name und ID**, **Seitenzahl**                                                        |
 
-Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in der Größe, die Schriftgröße der Texte mit Minus und Plus unter **Schriftgrößen** in der Spalte neben der Seite. **Standard** setzt alles auf die Standardpositionen zurück, die auch gelten, solange du nichts platzierst. **Testdokument generieren** druckt ein Beispiel mit erfundenen Angaben schon mit der ungespeicherten Anordnung. **Speichern** übernimmt sie sofort für alle Dokumente, die danach erzeugt werden.
+Die Check-in-Liste und die QR-Codes änderst du an ihrer Ecke unten rechts in der Größe, die Schriftgröße der Texte mit Minus und Plus unter **Schriftgrößen** in der Spalte neben der Seite. Was deine Vorlage nicht braucht, etwa die Adresse oder die Check-in-Liste, schaltest du unter **Eingesetzte Angaben** aus; QR-Code, Seitenzahl, Markierungen und die ausgelesenen Felder bleiben immer. **Standard** setzt alles auf die Standardpositionen zurück, die auch gelten, solange du nichts platzierst. **Testdokument generieren** druckt ein Beispiel mit erfundenen Angaben schon mit der ungespeicherten Anordnung. **Speichern** übernimmt sie sofort für alle Dokumente, die danach erzeugt werden.
 
-Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Jede Seite der postalischen Anmeldung bekommt den signierten QR-Code mit Name und ID daneben dort, wo ihr Dokument ihn platziert, und unten rechts die Seitenzahl, auch die Seiten der Teilnahmebedingungen. Das Zertifikat kann jede Seitengröße haben, auch quer.
+Die Teilnahmebedingungen werden unverändert hinten angehängt, dort wird nichts platziert. Jede Seite der postalischen Anmeldung bekommt den signierten QR-Code mit ID und Name darunter dort, wo ihr Dokument ihn platziert, und unten rechts die Seitenzahl, auch die Seiten der Teilnahmebedingungen. Das Zertifikat kann jede Seitengröße haben, auch quer.
 
 :::tip Platz lassen
 Lass auf deiner Vorlage an den Stellen der Felder Platz frei. **Lesbarkeit** neben der Seite sagt dir, wo sich Teile überdecken oder auf dem Text der Vorlage liegen. Liegt dabei der QR-Code, eine Markierung oder ein Feld, geht **Speichern** erst, wenn du es verschoben hast. Das Testdokument zeigt das Ergebnis mit erfundenen Angaben und der Postadresse, wie sie gerade im Formular steht.

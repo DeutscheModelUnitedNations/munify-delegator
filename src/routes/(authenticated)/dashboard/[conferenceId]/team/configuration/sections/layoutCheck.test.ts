@@ -49,18 +49,42 @@ describe('checkFields', () => {
 		).toBe('filled');
 	});
 
-	test('a box whose template ☐ lies inside it, not on its edge, does not read empty', () => {
+	test("a line's field may have the template's line in it", () => {
+		const { page, ink } = blankPage();
+		const signature = area('termsSignature');
+		const above = { x: signature.x, w: signature.width, h: 0.3 };
+		ink({ ...above, y: signature.y + 5.6 });
+		// dotted: every other millimetre
+		const placeDate = area('termsPlaceDate');
+		for (let x = 0; x < placeDate.width; x += 1.6) {
+			ink({ x: placeDate.x + x, y: placeDate.y + 5.6, w: 0.9, h: 0.4 });
+		}
+		const checks = checkFields({ document: 'contract', layout: contract, pictures: [page] });
+		expect(checks).toMatchObject({ termsSignature: 'free', termsPlaceDate: 'free' });
+	});
+
+	/** The check of a box whose template ☐ has its edges `inset` inside of it, moved by `off`. */
+	const boxCheck = ({ inset = 0, off = 0 }: { inset?: number; off?: number }) => {
 		const { page, ink } = blankPage();
 		const box = area('termsAccepted');
-		const inset = 0.8;
+		const [x, y] = [box.x + inset + off, box.y + inset + off];
 		const side = box.width - 2 * inset;
-		ink({ x: box.x + inset, y: box.y + inset, w: side, h: 0.2 });
-		ink({ x: box.x + inset, y: box.y + inset + side - 0.2, w: side, h: 0.2 });
-		ink({ x: box.x + inset, y: box.y + inset, w: 0.2, h: side });
-		ink({ x: box.x + inset + side - 0.2, y: box.y + inset, w: 0.2, h: side });
-		expect(
-			checkFields({ document: 'contract', layout: contract, pictures: [page] }).termsAccepted
-		).not.toBe('free');
+		ink({ x, y, w: side, h: 0.25 });
+		ink({ x, y: y + side - 0.25, w: side, h: 0.25 });
+		ink({ x, y, w: 0.25, h: side });
+		ink({ x: x + side - 0.25, y, w: 0.25, h: side });
+		return checkFields({ document: 'contract', layout: contract, pictures: [page] }).termsAccepted;
+	};
+
+	test('a box may be a little off its ☐, or larger, as long as its middle stays clear', () => {
+		expect(boxCheck({})).toBe('free');
+		expect(boxCheck({ off: 0.25 })).toBe('free');
+		expect(boxCheck({ inset: 0.5 })).toBe('free');
+	});
+
+	test("a box with its template's ☐ in its middle does not read empty", () => {
+		expect(boxCheck({ inset: 1.3 })).not.toBe('free');
+		expect(boxCheck({ off: 1.5 })).not.toBe('free');
 	});
 
 	test('a field on a page the template does not have is unknown; a certificate has no fields', () => {

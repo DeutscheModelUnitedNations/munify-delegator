@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "e61afb7c-e88f-4be0-9904-7ade7cee19ab",
+  "prevIds": [
+    "b24d2130-f30a-4093-a8f9-b7ba8f575c56"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "postal_guide_completed_at"
+      ],
+      "writes": [
+        "s|col|public.user.postal_guide_completed_at",
+        "n|col|public.user.postal_guide_completed_at",
+        "e|col|public.user.postal_guide_completed_at"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "postal_guide_completed_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

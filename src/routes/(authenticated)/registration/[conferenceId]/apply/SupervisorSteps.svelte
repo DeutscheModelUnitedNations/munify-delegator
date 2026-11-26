@@ -9,7 +9,7 @@
 	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
-	import FlowStep from './FlowStep.svelte';
+	import FlowStep from '#lib/components/flowSteps/FlowStep.svelte';
 	import ApplicationBlockers from '#lib/components/registration/ApplicationBlockers.svelte';
 
 	/** Signing up as a supervisor: the school first, then whether they attend themselves. */

@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import { sentryVitePlugin } from '@sentry/bundler-plugins/vite';
 import { oidcMock } from 'oidc-mock/vite';
+import { munifyBrand } from '@deutschemodelunitednations/munify-brand/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath } from 'node:url';
 import type { EnvironmentModuleNode, Plugin } from 'vite';
@@ -121,6 +122,50 @@ export default defineConfig({
 		// it has to come before SvelteKit so it can answer the login page itself.
 		// a second dev server (another checkout) runs its own mock on another port
 		oidcMock({ port: process.env.OIDC_MOCK_PORT ? Number(process.env.OIDC_MOCK_PORT) : undefined }),
+		// Favicons, app icons, the web app manifest, iOS launch images and the social card come from
+		// the MUNify brand package: `/favicon.ico`, `/apple-touch-icon.png` and `/brand/*`, linked by
+		// `BrandHead` in the root layout. Name, colours and icons are the package's; the rest is ours.
+		munifyBrand({
+			product: 'delegator',
+			manifest: {
+				description:
+					'Bewerbung, Delegationen und Organisation von Model-United-Nations-Konferenzen',
+				id: '/',
+				lang: 'de',
+				scope: '/',
+				screenshots: [
+					{
+						form_factor: 'narrow',
+						label: 'Dein Konferenz-Dashboard',
+						sizes: '390x844',
+						src: '/pwa/screenshots/de/light/phone-dashboard.jpg',
+						type: 'image/jpeg'
+					},
+					{
+						form_factor: 'narrow',
+						label: 'Der Zeitplan der Konferenz',
+						sizes: '390x844',
+						src: '/pwa/screenshots/de/light/phone-calendar.jpg',
+						type: 'image/jpeg'
+					},
+					{
+						form_factor: 'wide',
+						label: 'Dein Konferenz-Dashboard',
+						sizes: '1280x800',
+						src: '/pwa/screenshots/de/light/desktop-dashboard.jpg',
+						type: 'image/jpeg'
+					},
+					{
+						form_factor: 'wide',
+						label: 'Die Zuteilung im Team-Bereich',
+						sizes: '1280x800',
+						src: '/pwa/screenshots/de/light/desktop-assignment.jpg',
+						type: 'image/jpeg'
+					}
+				],
+				start_url: '/'
+			}
+		}),
 		rebuildRumbleOnSchemaChange(),
 		sveltekit({
 			preprocess: vitePreprocess(),

@@ -2,8 +2,12 @@
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
 	import PersonNameButton from '../PersonNameButton.svelte';
+	import Empty from '../ui/Empty.svelte';
+	import Section from '../ui/Section.svelte';
+	import Row from '../ui/Row.svelte';
 	import { openUserCard } from '../userCardState.svelte';
 	import { CLICKABLE_ROW, rowClick } from '#lib/helpers/rowClick';
+	import SupervisorRegistration from './SupervisorRegistration.svelte';
 	import { removeSupervision } from './removeSupervision';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
@@ -144,7 +148,7 @@
 
 {#snippet delegationGroupRows(group: Group)}
 	<!-- Delegation header row -->
-	<tr class="bg-base-200/50">
+	<tr>
 		<td>{@render appliedIcon(group.delegation.applied)}</td>
 		<td>
 			<div class="flex items-center gap-2">
@@ -221,65 +225,49 @@
 	</table>
 {/snippet}
 
-<div class="flex flex-col gap-6">
-	<h3 class="text-lg font-bold">{m.supervisor()}</h3>
-	<label class="bg-base-200 rounded-box flex cursor-pointer items-center gap-4 p-4">
-		{#if conferenceSupervisor.plansOwnAttendenceAtConference}
-			<i aria-hidden="true" class="ph-duotone ph-map-pin-simple text-success text-xl"></i>
-		{:else}
-			<i aria-hidden="true" class="ph-duotone ph-cloud text-base-content/50 text-xl"></i>
-		{/if}
-		<div class="flex grow flex-col">
-			<span class="font-semibold">{m.attendancePlan()}</span>
-			<span class="text-base-content/60 text-sm">
-				{conferenceSupervisor.plansOwnAttendenceAtConference
-					? m.supervisorPlansOwnAttendance()
-					: m.supervisorDoesNotPlanOwnAttendance()}
-			</span>
-		</div>
-		<input
-			type="checkbox"
-			class="toggle toggle-success"
-			checked={conferenceSupervisor.plansOwnAttendenceAtConference}
-			onchange={() => changeAttendance(!conferenceSupervisor.plansOwnAttendenceAtConference)}
-		/>
-	</label>
-
-	<!-- Students list -->
+<Section icon="chalkboard-teacher" title={m.supervisor()}>
+	<Row
+		icon={conferenceSupervisor.plansOwnAttendenceAtConference ? 'map-pin' : 'cloud'}
+		tone={conferenceSupervisor.plansOwnAttendenceAtConference ? 'success' : 'neutral'}
+		title={m.attendancePlan()}
+	>
+		{conferenceSupervisor.plansOwnAttendenceAtConference
+			? m.supervisorPlansOwnAttendance()
+			: m.supervisorDoesNotPlanOwnAttendance()}
+		{#snippet actions()}
+			<input
+				type="checkbox"
+				class="toggle toggle-success"
+				aria-label={m.attendancePlan()}
+				checked={conferenceSupervisor.plansOwnAttendenceAtConference}
+				onchange={() => changeAttendance(!conferenceSupervisor.plansOwnAttendenceAtConference)}
+			/>
+		{/snippet}
+	</Row>
+	<SupervisorRegistration {supervisorId} />
 	{#if delegationMembers.length === 0 && singleParticipants.length === 0}
-		<div class="alert alert-info">
-			<i aria-hidden="true" class="ph-duotone ph-graduation-cap"></i>
-			<span>{m.userCardNoStudents()}</span>
-		</div>
+		<Empty icon="student" text={m.userCardNoStudents()} />
 	{/if}
+</Section>
 
-	{#if groupedDelegations.length > 0}
-		<div>
-			<div class="divider"></div>
-			<h3 class="mb-2 text-lg font-bold">
-				{m.delegations()}
-			</h3>
-			<div class="overflow-x-auto">
-				<table class="table table-sm">
-					<tbody>
-						{#each groupedDelegations as group (group.delegation.id)}
-							{@render delegationGroupRows(group)}
-						{/each}
-					</tbody>
-				</table>
-			</div>
+{#if groupedDelegations.length > 0}
+	<Section icon="users-three" title={m.delegations()}>
+		<div class="overflow-x-auto">
+			<table class="table table-sm">
+				<tbody>
+					{#each groupedDelegations as group (group.delegation.id)}
+						{@render delegationGroupRows(group)}
+					{/each}
+				</tbody>
+			</table>
 		</div>
-	{/if}
+	</Section>
+{/if}
 
-	{#if singleParticipants.length > 0}
-		<div>
-			<div class="divider"></div>
-			<h3 class="mb-2 text-lg font-bold">
-				{m.adminSingleParticipants()}
-			</h3>
-			<div class="overflow-x-auto">
-				{@render singleParticipantsTable()}
-			</div>
+{#if singleParticipants.length > 0}
+	<Section icon="user" title={m.adminSingleParticipants()}>
+		<div class="overflow-x-auto">
+			{@render singleParticipantsTable()}
 		</div>
-	{/if}
-</div>
+	</Section>
+{/if}

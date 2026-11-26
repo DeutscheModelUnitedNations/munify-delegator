@@ -7,6 +7,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { PAPER_FIELDS } from '#lib/paperScan/fields';
 	import { arrowStep, snapRect, type SnapGuides } from '#lib/helpers/layoutSnap';
+	import { fitsBelowCode } from '#lib/helpers/codeCaption';
 	import { scrollKeeping, zoomStep } from '#lib/helpers/layoutZoom';
 	import Modal from '#lib/components/Modal.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
@@ -17,6 +18,7 @@
 		elementsOf,
 		coversFixedArea,
 		fieldMinimum,
+		insertionsOf,
 		minSquareSize,
 		movePlacement,
 		pageMargin,
@@ -24,8 +26,10 @@
 		POINTS_PER_MM,
 		resizePlacement,
 		resizeText,
+		withHidden,
 		withMinimumSizes,
 		resolveDocumentLayout,
+		squareInPoints,
 		type BoxPlacement,
 		type FieldPlacement,
 		type LayoutDocument,
@@ -49,6 +53,8 @@
 	import LayoutFieldElement from './LayoutFieldElement.svelte';
 	import LayoutFieldChecks from './LayoutFieldChecks.svelte';
 	import LayoutGuides from './LayoutGuides.svelte';
+	import LayoutHowTo from './LayoutHowTo.svelte';
+	import LayoutInsertions from './LayoutInsertions.svelte';
 	import LayoutPager from './LayoutPager.svelte';
 	import LayoutProblems from './LayoutProblems.svelte';
 	import LayoutZoom from './LayoutZoom.svelte';
@@ -68,7 +74,8 @@
 	 * links where they are chosen (its placement stays stored). On the application documents the
 	 * alignment marks show fixed and the fields to read sit on a page each, which a template of
 	 * several pages is paged through for; the texts are on the first page, the footer on every one.
-	 * Each field says live what a scan of the empty form would make of it (`checkFields`).
+	 * What is put in for a person to read (name, birthday, address, recipient, sessions) can be
+	 * switched off. Each field says live what a scan of the empty form would make of it (`checkFields`).
 	 */
 	interface Props {
 		conferenceId: string;
@@ -140,7 +147,7 @@
 	// The template read once, for the checks of the fields read off a scan
 	$effect(() => {
 		if (!templateUrl) return;
-		templatePictures({ url: templateUrl })
+		templatePictures({ source: { url: templateUrl } })
 			.then((rendered) => (pictures = rendered))
 			.catch((error) => logger.warn('Could not read the template for the checks', error));
 	});
@@ -381,6 +388,12 @@
 		if ('page' in placement) layout[id] = { ...placement, page: target };
 	}
 
+	/** Switches what is put in for a person to read on or off; its place is kept. */
+	function show(id: string, shown: boolean) {
+		layout[id] = withHidden({ placement: layout[id], hidden: !shown });
+		if (!shown && selected === id) selected = undefined;
+	}
+
 	function resizeFont(id: string, step: number) {
 		const placement = layout[id];
 		if ('size' in placement) layout[id] = resizeText({ start: placement, step });
@@ -418,10 +431,18 @@
 	const sample = (id: string) =>
 		id === 'sessions' ? certificateSessions : isWritten(id) ? elementSample[id]() : [];
 
+	/** Whether a code's sample caption prints below it, as it does unless the page number is there. */
+	function captionFits({ id, placement }: { id: string; placement: SquarePlacement }) {
+		const { width, height } = page ?? { width: 595, height: 842 };
+		const { bottom } = squareInPoints({ placement, width, height });
+		return fitsBelowCode({ bottom, lines: sample(id).length });
+	}
+
 	// The elements by shape, each with its current placement in that shape.
 	const byShape = $derived(elementsByShape({ elements: shown, layout: placed }));
 	// The texts are written on the first page; a field shows on its own page.
 	const texts = $derived(pageIndex === 0 ? byShape.texts : []);
+	const insertions = $derived(insertionsOf({ elements: shown, layout: placed }));
 	const boxes = $derived(byShape.boxes);
 	const squares = $derived(byShape.squares);
 	const allFields = $derived(byShape.fields);
@@ -548,7 +569,7 @@
 							label={label(id)}
 							{placement}
 							captions={sample(id)}
-							{caption}
+							caption={caption === 'below' && !captionFits({ id, placement }) ? 'above' : caption}
 							{scale}
 							selected={selected === id}
 							onselect={() => (selected = id)}
@@ -581,6 +602,11 @@
 
 			<LayoutProblems {problems} {label} onselect={selectField} />
 
+			<LayoutInsertions
+				insertions={insertions.map((insertion) => ({ ...insertion, label: label(insertion.id) }))}
+				onchange={show}
+			/>
+
 			{#if fieldRows.length > 0}
 				<LayoutFieldChecks
 					fields={fieldRows}
@@ -598,25 +624,7 @@
 				/>
 			{/if}
 
-			<details class="collapse-arrow bg-base-200 rounded-box collapse">
-				<summary class="collapse-title text-sm font-semibold">
-					<i aria-hidden="true" class="ph-duotone ph-info"></i>
-					{m.documentLayoutHowTo()}
-				</summary>
-				<div class="collapse-content text-base-content/70 flex flex-col gap-2 text-sm">
-					<p>
-						{withoutSessions ? m.certificateLayoutHintWithoutSessions() : m.certificateLayoutHint()}
-					</p>
-					{#if codeMinimum !== undefined}
-						<p>{m.documentLayoutCodeMinimum({ size: codeMinimum })}</p>
-					{/if}
-					{#if allFields.length > 0}
-						<p>{m.documentLayoutFieldsHint()}</p>
-					{/if}
-					<p>{m.documentLayoutSnapHint()}</p>
-					<p>{m.documentLayoutNudgeHint()}</p>
-				</div>
-			</details>
+			<LayoutHowTo {withoutSessions} {codeMinimum} hasFields={allFields.length > 0} />
 		</aside>
 	</div>
 

@@ -79,9 +79,6 @@
 			memberWithCommittee.committeeId === committeeId ? null : committeeId;
 	};
 
-	const initials = ({ givenName, familyName }: { givenName?: string; familyName?: string } = {}) =>
-		`${givenName?.at(0) ?? ''}${familyName?.at(0) ?? ''}`.toUpperCase();
-
 	let saving = $state(false);
 
 	const sendCommitteeAssignment = async () => {
@@ -150,25 +147,16 @@
 	{@const member = members?.find((me) => me.id === memberWithCommittee.delegationMemberId)}
 	{@const picked = committees.find((c) => c.id === memberWithCommittee.committeeId)}
 	<li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-		<div class="flex items-center gap-3">
-			<div
-				class="grid size-10 shrink-0 place-items-center rounded-full font-bold transition-colors duration-300 {picked
-					? 'bg-primary text-primary-content'
-					: 'bg-base-300'}"
-			>
-				{initials({ givenName: member?.user.givenName, familyName: member?.user.familyName })}
-			</div>
-			<div class="flex flex-col">
-				<span class="font-bold">
-					{formatNames({ givenName: member?.user.givenName, familyName: member?.user.familyName })}
+		<div class="flex flex-col">
+			<span class="font-bold">
+				{formatNames({ givenName: member?.user.givenName, familyName: member?.user.familyName })}
+			</span>
+			{#if member?.isHeadDelegate}
+				<span class="flex items-center gap-1 text-xs text-base-content/60">
+					<i aria-hidden="true" class="ph-duotone ph-crown"></i>
+					{m.headDelegate()}
 				</span>
-				{#if member?.isHeadDelegate}
-					<span class="flex items-center gap-1 text-xs text-base-content/60">
-						<i aria-hidden="true" class="ph-duotone ph-crown"></i>
-						{m.headDelegate()}
-					</span>
-				{/if}
-			</div>
+			{/if}
 		</div>
 
 		{#if memberWithCommittee.alreadyAssigned}

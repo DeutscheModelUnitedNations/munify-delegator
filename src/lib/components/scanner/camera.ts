@@ -5,7 +5,7 @@ import { logger } from '#lib/logger';
  * dense code printed small (a signed code on paper) has too few pixels to be read unless it is held
  * closer than the camera can focus. So the scanners ask for full HD (`ideal`: a camera with less
  * gives what it has), keep focusing continuously where the camera can, and offer its zoom, so the
- * paper can be held at a distance the camera focuses at and zoomed in on. Reading a whole page
+ * paper can be held at a distance the camera focuses at and zoomed in on, and its light. Reading a whole page
  * (`page`: its fields too, `#lib/paperScan`) asks for 4K, where the camera has it: the page then
  * fills the picture with a few pixels to each millimetre.
  */
@@ -19,6 +19,7 @@ type ConstraintSet = NonNullable<
 interface CameraConstraintSet extends ConstraintSet {
 	focusMode?: string;
 	zoom?: number;
+	torch?: boolean;
 }
 
 /** What the camera's zoom can do and where it stands. */
@@ -48,6 +49,16 @@ function zoomOf(track: MediaStreamTrack): CameraZoom | undefined {
 		step: isNumber(step) && step > 0 ? step : 0.1,
 		value: isNumber(value) ? value : min
 	};
+}
+
+/** Whether the track's light is on; `undefined` for a camera without one to switch. */
+function torchOf(track: MediaStreamTrack): boolean | undefined {
+	if (typeof track.getCapabilities !== 'function') return undefined;
+	const able = readProperty({ source: track.getCapabilities(), name: 'torch' });
+	// some browsers answer the values it can have
+	const has = able === true || (Array.isArray(able) && able.includes(true));
+	if (!has) return undefined;
+	return readProperty({ source: track.getSettings(), name: 'torch' }) === true;
 }
 
 /** Focuses continuously where the camera can; a camera that cannot keeps what it does. */
@@ -86,6 +97,38 @@ export async function openScannerCamera({
 export function streamZoom(stream: MediaStream) {
 	const track = videoTrackOf(stream);
 	return track ? zoomOf(track) : undefined;
+}
+
+/** Whether the light of the stream's camera is on; `undefined` when it has none to switch. */
+export function streamTorch(stream: MediaStream) {
+	const track = videoTrackOf(stream);
+	return track ? torchOf(track) : undefined;
+}
+
+/**
+ * Switches the light of the camera `video` shows; answers whether it is on, or undefined once the
+ * camera is off. It goes out with the camera.
+ */
+export async function switchTorch({
+	video,
+	on
+}: {
+	video: HTMLVideoElement | undefined;
+	on: boolean;
+}) {
+	const stream = video?.srcObject;
+	if (!(stream instanceof MediaStream)) return undefined;
+	const track = videoTrackOf(stream);
+	if (!track) return undefined;
+	const advanced: CameraConstraintSet[] = [{ torch: on }];
+	try {
+		await track.applyConstraints({ advanced });
+	} catch (error) {
+		logger.warn('Switching the camera light failed', error);
+		return video?.srcObject === stream ? torchOf(track) : undefined;
+	}
+	// not every browser reports it back in the settings
+	return video?.srcObject === stream ? on : undefined;
 }
 
 /** Zooms the stream's camera to `value`; answers where it ended up. */

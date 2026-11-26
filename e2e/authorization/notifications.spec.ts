@@ -73,7 +73,7 @@ test('everybody is offered exactly the topics they can be told about, all on', a
 }) => {
 	const carePage = await signedIn(browser, care.id);
 	const careSettings = await settingsOf(carePage);
-	expect(topicsOf(careSettings)).toEqual(['PARTICIPANT_CARE', 'CHAT_REPORT']);
+	expect(topicsOf(careSettings)).toEqual(['PARTICIPANT_CARE', 'CHAT_REPORT', 'SCAN_PROBLEM']);
 	expect(careSettings?.settings.every((setting) => setting.email && setting.slack)).toBe(true);
 	// no workspace picked yet
 	expect(careSettings?.slackWorkspaceName).toBeNull();
@@ -100,7 +100,9 @@ test('mail starts off for whoever switched the unread mails off before, Slack on
 	browser
 }) => {
 	const settings = await settingsOf(await signedIn(browser, quiet.id));
+	// participant care's topics: their inbox, chat reports and scan problems
 	expect(settings?.settings.map(({ email, slack }) => ({ email, slack }))).toEqual([
+		{ email: false, slack: true },
 		{ email: false, slack: true },
 		{ email: false, slack: true }
 	]);
@@ -132,7 +134,8 @@ test('a choice is stored for the caller alone', async ({ browser }) => {
 	expect(saved.errors).toBeUndefined();
 	expect((await settingsOf(carePage))?.settings).toEqual([
 		expect.objectContaining({ topic: 'PARTICIPANT_CARE', email: true, slack: true }),
-		expect.objectContaining({ topic: 'CHAT_REPORT', email: true, slack: false })
+		expect.objectContaining({ topic: 'CHAT_REPORT', email: true, slack: false }),
+		expect.objectContaining({ topic: 'SCAN_PROBLEM', email: true, slack: true })
 	]);
 	// project management answers the same inbox and keeps their own choices
 	const managementSettings = await settingsOf(await signedIn(browser, management.id));
@@ -286,7 +289,8 @@ test('the page lists the topics and a switch saves', async ({ browser }) => {
 	await expect(page).toHaveURL(/\/my-account\/notifications$/);
 
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
-	await expect(section.getByTestId('notification-row')).toHaveCount(2);
+	// their inbox, chat reports and scan problems
+	await expect(section.getByTestId('notification-row')).toHaveCount(3);
 	await expect(section.getByTestId('slack-connection')).toBeVisible();
 
 	const mailForCare = section.getByRole('checkbox', {
@@ -320,7 +324,7 @@ test('a conference is switched off and on at once', async ({ browser }) => {
 	await page.goto('/my-account/notifications');
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
 	const switches = section.getByRole('checkbox');
-	await expect(switches).toHaveCount(4);
+	await expect(switches).toHaveCount(6);
 
 	await section
 		.getByRole('button', { name: `Alle Benachrichtigungen für ${fixture.title} ausschalten` })
@@ -328,6 +332,7 @@ test('a conference is switched off and on at once', async ({ browser }) => {
 	await expect
 		.poll(async () => (await settingsOf(page))?.settings)
 		.toEqual([
+			expect.objectContaining({ email: false, slack: false }),
 			expect.objectContaining({ email: false, slack: false }),
 			expect.objectContaining({ email: false, slack: false })
 		]);

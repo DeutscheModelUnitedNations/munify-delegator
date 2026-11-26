@@ -1,15 +1,18 @@
 <script lang="ts">
+	import { isToday } from './calendarDisplay';
 	import { utcHourOf } from './calendarHours';
 	import { wallClockNow } from './calendarNow';
 
+	/** Where the present is in a day's hours. Nothing on any other day. */
 	interface Props {
+		date: Date | null;
 		startHour: number;
 		endHour: number;
 		hourHeight: number;
 		timezone?: string;
 	}
 
-	let { startHour, endHour, hourHeight, timezone = 'UTC' }: Props = $props();
+	let { date, startHour, endHour, hourHeight, timezone = 'UTC' }: Props = $props();
 
 	let now = $state(new Date());
 
@@ -17,6 +20,7 @@
 	const getCurrentHour = (date: Date) => utcHourOf(new Date(wallClockNow({ timezone, now: date })));
 
 	let visible = $derived.by(() => {
+		if (!date || !isToday({ date, timezone, now })) return false;
 		const currentHour = getCurrentHour(now);
 		return currentHour >= startHour && currentHour <= endHour;
 	});

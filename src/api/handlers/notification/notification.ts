@@ -301,8 +301,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: {
 			id: t.arg.id({ required: true }),
-			name: t.arg.string().validate(workspaceNameSchema),
-			botToken: t.arg.string().validate(botTokenSchema)
+			name: t.arg.string().validate(workspaceNameSchema.nullish()),
+			botToken: t.arg.string().validate(botTokenSchema.nullish())
 		},
 		resolve: async (_root, args, ctx) => {
 			assertCanManageSlackWorkspaces(ctx);

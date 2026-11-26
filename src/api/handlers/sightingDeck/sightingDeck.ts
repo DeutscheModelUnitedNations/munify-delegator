@@ -95,6 +95,8 @@ const FILTER_ARGS = {
 		'Only applications with someone who named no school; not together with `schoolId` (INVALID_INPUT).'
 };
 
+const statusFilterSchema = sightingStatusSchema.nullish();
+
 schemaBuilder.queryFields((t) => ({
 	sightingDeck: t.field({
 		description:
@@ -102,7 +104,7 @@ schemaBuilder.queryFields((t) => ({
 		type: SightingDeck,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			status: t.arg.string({ description: FILTER_ARGS.status }).validate(sightingStatusSchema),
+			status: t.arg.string({ description: FILTER_ARGS.status }).validate(statusFilterSchema),
 			schoolId: t.arg.id({ description: FILTER_ARGS.schoolId }),
 			withoutSchool: t.arg.boolean({ description: FILTER_ARGS.withoutSchool }),
 			currentId: t.arg.id({
@@ -114,7 +116,7 @@ schemaBuilder.queryFields((t) => ({
 			}),
 			size: t.arg
 				.int({ description: 'Cards in the window, 1 to 200; 60 when left out.' })
-				.validate(deckSizeSchema)
+				.validate(deckSizeSchema.nullish())
 		},
 		validate: schoolFilterSchema,
 		resolve: async (_root, args, ctx) => {
@@ -143,7 +145,7 @@ schemaBuilder.queryFields((t) => ({
 						'Delegation and single participant ids, at most 100; those not under review in the conference are left out.'
 				})
 				.validate(entryIdsSchema),
-			status: t.arg.string({ description: FILTER_ARGS.status }).validate(sightingStatusSchema),
+			status: t.arg.string({ description: FILTER_ARGS.status }).validate(statusFilterSchema),
 			schoolId: t.arg.id({ description: FILTER_ARGS.schoolId }),
 			withoutSchool: t.arg.boolean({ description: FILTER_ARGS.withoutSchool })
 		},
@@ -187,7 +189,7 @@ schemaBuilder.queryFields((t) => ({
 			}),
 			limit: t.arg
 				.int({ description: 'Schools to answer, 1 to 50; 20 when left out.' })
-				.validate(schoolLimitSchema)
+				.validate(schoolLimitSchema.nullish())
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });

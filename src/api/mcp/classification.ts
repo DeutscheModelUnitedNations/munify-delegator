@@ -62,7 +62,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'locale',
 			'wantsJoinTeamInformation',
 			'wantsToReceiveGeneralInformation',
-			'messageNotificationEmails'
+			'messageNotificationEmails',
+			'postalGuideCompletedAt'
 		]
 	},
 	// The caller's own age against a conference's range; the age and its verdict are a person's.
@@ -97,8 +98,21 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'nsaCardNumber'
 		],
-		// The number printed on the person's badge, and a sanction against the person.
-		redacted: ['accessCardId', 'messagingSuspended']
+		// The number printed on the person's badge, a sanction against the person, and how far they are
+		// in their postal registration.
+		redacted: [
+			'accessCardId',
+			'messagingSuspended',
+			'postalInfoRead',
+			'postalConfirmedDetails',
+			'postalConfirmedOfAge'
+		]
+	},
+	// What somebody ticked and signed, like the statuses it makes.
+	Agreementdetail: { visible: [...ROW, 'conferenceParticipantId', 'field', 'state', 'source'] },
+	Postalscan: {
+		visible: [...ROW, 'conferenceParticipantId', 'fileId', 'source', 'fields', 'uploadedById'],
+		redacted: ['pageKey', 'readings']
 	},
 	Conferencesupervisor: {
 		visible: [...ROW, 'conferenceParticipantId', 'plansOwnAttendenceAtConference'],
@@ -271,6 +285,13 @@ const FIELDS: Record<string, TypeClassification> = {
 		]
 	},
 	// A workspace by name; its bot token is no field of the schema at all.
+	// Scanner logins are their owner's, and no assistant gets any (`scannerAccessPermissions`).
+	ScannerAccess: {
+		visible: ['id', 'lastUsedAt', 'expiresAt'],
+		redacted: ['name', 'username']
+	},
+	MyScanners: { visible: ['allowed'] },
+	NewScannerAccess: { visible: ['id'], redacted: ['name', 'username', 'password'] },
 	SlackWorkspaceInfo: { visible: ['id', 'name', 'slackTeamName', 'conferenceCount'] },
 	Chatmessage: {
 		visible: [
@@ -429,6 +450,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'endConference',
 			'feeAmount',
 			'guardianConsentFileId',
+			'guidePublished',
 			'imageFileId',
 			'isOpenPaperSubmission',
 			'language',
@@ -446,7 +468,6 @@ const FIELDS: Record<string, TypeClassification> = {
 			'messagingEnabled',
 			'mediaConsentFileId',
 			'nametagBinCount',
-			'nextDocumentNumber',
 			'participantMaxAge',
 			'participantMinAge',
 			'postalApartment',
@@ -456,6 +477,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'postalZip',
 			'qrCorporateDesign',
 			'registrationDeadlineGracePeriodMinutes',
+			'seriesId',
 			'showCalendar',
 			'startConference',
 			'state',
@@ -471,6 +493,100 @@ const FIELDS: Record<string, TypeClassification> = {
 			'website'
 		]
 	},
+	// --- Preparation guide (`docs/plans/guide.md`): the team's texts about the conference, never
+	// about people; who edited is an id.
+	Conferenceseries: { visible: [...ROW, 'abbreviation', 'name'] },
+	Guidepage: {
+		visible: [
+			...ROW,
+			'agendaItemId',
+			'committeeId',
+			'conferenceId',
+			'content',
+			'draftUpdatedAt',
+			'draftUpdatedById',
+			'kind',
+			'publishedConferenceId',
+			'publishedScope',
+			'publishedSeriesId',
+			'publishedVersionId',
+			'publishedYear',
+			'scope',
+			'seriesId',
+			'title',
+			'usedInSidebars',
+			'year'
+		]
+	},
+	Guidepageversion: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'conferenceId',
+			'content',
+			'number',
+			'pageId',
+			'pdfFileId',
+			'pdfUrl',
+			'publishedById',
+			'scope',
+			'seriesId',
+			'title',
+			'year'
+		]
+	},
+	Guidepagefile: { visible: ['id', 'createdAt', 'search_distance', 'fileId', 'pageId'] },
+	Guideoutline: {
+		visible: [
+			...ROW,
+			'conferenceId',
+			'draft',
+			'draftUpdatedAt',
+			'draftUpdatedById',
+			'published',
+			'publishedAt',
+			'publishedById'
+		]
+	},
+	Guideoutlineversion: {
+		visible: [
+			'id',
+			'createdAt',
+			'search_distance',
+			'number',
+			'outline',
+			'outlineId',
+			'publishedById'
+		]
+	},
+	GuideMarkdown: { visible: ['markdown', 'omittedBlocks'] },
+	GuideConferenceTitle: { visible: ['id', 'title'] },
+	GuidePagePublishPreview: {
+		visible: ['firstPublish', 'scope', 'scopeChanges', 'textChanges', 'titleChanges']
+	},
+	GuideFileUrl: { visible: ['fileId', 'fileName', 'url'] },
+	ImportedGuideFile: { visible: ['fileName', 'id', 'mimeType', 'size'] },
+	GuideView: { visible: ['preview'] },
+	GuideSectionView: { visible: ['key', 'title'] },
+	GuideEntryView: { visible: ['indent', 'key', 'pageId', 'title'] },
+	GuideHeadingView: { visible: ['anchor', 'level', 'text'] },
+	GuideReaderPage: {
+		visible: ['content', 'entryKey', 'pageId', 'pdfUrl', 'sectionTitle', 'title', 'updatedAt']
+	},
+	GuideOutlineDraftChange: { visible: ['draft', 'draftUpdatedAt', 'sectionId'] },
+	GuideReaderGroupView: { visible: ['roleId', 'roleName', 'type'] },
+	GuideVisibilityRow: { visible: ['cells', 'key', 'kind', 'sectionId', 'title'] },
+	GuideMatrixPage: { visible: ['id', 'state', 'title'] },
+	GuideMatrixCell: {
+		visible: ['agendaItemId', 'committeeId', 'kind', 'pageId', 'state', 'title']
+	},
+	GuideMatrixRow: { visible: ['key', 'kind', 'label', 'number'] },
+	GuideMatrixCommittee: { visible: ['abbreviation', 'id', 'name', 'published', 'total'] },
+	GuideCommitteeMatrixView: { visible: ['hasTemplate'] },
+	GuidePendingPage: { visible: ['id', 'kind', 'state', 'title'] },
+	GuidePendingChanges: { visible: ['sidebarChanged', 'sidebarPublished'] },
+	GuidePublishedChanges: { visible: ['publishedPageIds', 'sidebarPublished'] },
 	Committee: {
 		visible: [
 			...ROW,
@@ -587,7 +703,8 @@ const FIELDS: Record<string, TypeClassification> = {
 		redacted: ['givenName', 'familyName', 'code']
 	},
 	Storedfile: {
-		// Every stored file is a conference picture, template, site plan or resolution.
+		// Every stored file an assistant reaches is a conference picture, template, site plan or
+		// resolution; scans of somebody's documents are kept from it (`handledScans`).
 		visible: [...ROW, 'fileName', 'key', 'mimeType', 'purpose', 'size', 'uploadedById', 'url'],
 		// A capability to write the file, not something to read.
 		redacted: ['uploadUrl']
@@ -877,7 +994,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'termsAndConditions',
 			'userId'
 		],
-		redacted: ['birthday', 'familyName', 'givenName']
+		redacted: ['accessCardId', 'birthday', 'familyName', 'givenName']
 	},
 
 	// --- Statistics -----------------------------------------------------------------------------

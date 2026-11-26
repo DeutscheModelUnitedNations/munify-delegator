@@ -9,7 +9,7 @@ This page shows how the conference team sets up and maintains a conference: from
 
 ## Creating a conference {#creating-a-conference}
 
-Only system admins create new conferences. On the **Conferences** page and in the menu behind your initials under **Administration**, **Create Conference** leads to the **Create Conference** page.
+Only system admins create new conferences. On the **Conferences** page and in the menu behind the person icon at the top right under **Administration**, **Create Conference** leads to the **Create Conference** page.
 
 1. The conference's data comes from the **Conference Request** page, linked at the top right of **Create Conference**. There you enter the basic details, the committees with their nations, the non-state actors and the individual roles. **Add all UN member states** fills a committee with every state. The page saves nothing on the server, your input stays in this browser only. Times are read in the Europe/Berlin time zone. At the end you download the generated JSON.
 2. An admin selects the file on **Create Conference**. It is checked right away. If something is wrong, **Validation Failed** appears with the places concerned, for example a state that is not a UN member, a duplicate abbreviation or an application deadline after the conference starts.
@@ -130,6 +130,7 @@ The cards under **Quick Links** on the participants' dashboard, such as **Fee Pa
 - **Paper Submission Open**: participants create papers on their committees' agenda items in the [Paper Hub](../participant/paper-hub) and save new versions. With the switch off, DELEGATOR refuses both with "Paper cannot be submitted because the paper mailbox is closed.", and the **Paper Hub** is missing from the quick links.
 - **Show calendar for participants**: participants see the [schedule](./communication#calendar). The team always sees it.
 - **Messages between delegations**: unlocks the direct chats between participants of different delegations once the assignment is released (see [Messages](./communication#messages)). Participants always reach the team and their own delegation. Switched off, existing direct chats stay readable, but nobody writes anything new there.
+- **Guide published**: participants read the [preparation guide](./communication#guide) in the app once their roles are released; until then the dashboard links the **preparation guide** link. The same switch sits in the guide itself.
 
 :::tip Release first, then the paperwork
 **Participation fee unlocked** and **Postal registration unlocked** only become due once the assignment is released. If you allow payments before that, saving offers no emails. After the release they go out with the next automatic run if the kind is set to automatic. Otherwise they wait on the [Emails](./communication#emails) page until you send them.
@@ -177,9 +178,9 @@ The templates contain no placeholders. DELEGATOR writes the person's details ont
 | **Parental Agreement**           | **Name**, **Date of Birth**, **QR code with name and ID**, **Page number**                                                                   |
 | **Media Usage Agreement**        | **Name**, **Date of Birth**, **Address**, **QR code with name and ID**, **Page number**                                                      |
 
-You resize the check-in list and the QR codes from their bottom right corner, and change the texts' font size with minus and plus under **Font sizes** in the column beside the page. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
+You resize the check-in list and the QR codes from their bottom right corner, and change the texts' font size with minus and plus under **Font sizes** in the column beside the page. What your template does not need, such as the address or the check-in list, you switch off under **Inserted details**; the QR code, page number, marks and the fields read off scans always stay. **Default** puts everything back at the default positions, which also apply as long as you place nothing. **Generate test document** prints a sample with made-up details using the unsaved layout already. **Save** applies it at once to every document generated afterwards.
 
-The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the name and ID beside it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
+The terms and conditions are appended unchanged at the end, nothing is placed on them. Every page of the postal registration gets the signed QR code with the ID and name below it where its document places it, and the page number at the bottom right, the pages of the terms and conditions too. The certificate can have any page size, landscape too.
 
 :::tip Leave room
 Leave room on your template where the fields go. **Readability** beside the page tells you where parts overlap or lie on the template's text. Where the QR code, a mark or a field is involved, **Save** only works once you have moved it. The test document shows the result with made-up details and the postal address as it currently stands in the form.

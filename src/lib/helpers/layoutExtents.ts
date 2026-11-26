@@ -1,3 +1,4 @@
+import { CODE_CAPTION, codeCaptionBaselines, codeCaptionSize } from './codeCaption';
 import { elementsByShape, elementsOf, POINTS_PER_MM, type LayoutDocument } from './documentLayout';
 
 /**
@@ -12,7 +13,7 @@ export type PageRect = { x: number; y: number; width: number; height: number };
 
 export type Extent = {
 	id: string;
-	/** Where it prints: one area, or a code and its caption beside it. */
+	/** Where it prints: one area, or a code and its caption. */
 	rects: PageRect[];
 	/** The page it prints on, from 0; `every` for the code, the page number and the marks. */
 	page: number | 'every';
@@ -30,15 +31,15 @@ export const breaksReading = ({ a, b }: { a: Extent; b: Extent }) =>
 
 /** Space Mono's advance, in ems: every character is this wide. */
 const MONO_ADVANCE = 0.6;
-/** Helvetica's average advance for names and ids, in ems (the code's caption beside it). */
+/** Helvetica's average advance for names and ids, in ems (the code's caption). */
 const SANS_ADVANCE = 0.56;
 /** How far a line reaches above its baseline and below it, in ems. */
 const ASCENT = 0.8;
 const DESCENT = 0.25;
 /** The generator's line height, in ems. */
 const LINE_HEIGHT = 1.36;
-/** The code's caption: its size, its gap to the code and its line step, in points. */
-const CAPTION = { size: 8, gap: 5, step: 10 };
+/** The certificate's caption above its code: its size and its gap to the code, in points. */
+const CAPTION_ABOVE = { size: 8, gap: 4 };
 /** The quiet zone a code needs around it to be found, in millimetres. */
 const QUIET_ZONE_MM = 1;
 
@@ -81,40 +82,46 @@ function textRect({
 }
 
 /**
- * A code's caption, as the generator draws it: beside the code at its bottom (the name above the
- * id), left of it unless the page leaves no room there; or centred above it.
+ * A code's caption, as the generator draws it: the certificate's one line centred above the code,
+ * the documents' lines centred below it (`#lib/helpers/codeCaption`).
  */
 function captionRect({
 	square,
 	caption,
-	lines
+	lines,
+	pageHeight
 }: {
 	square: { left: number; top: number; side: number };
-	caption: 'above' | 'beside';
+	caption: 'above' | 'below';
 	lines: readonly string[];
+	pageHeight: number;
 }): PageRect | null {
 	if (lines.length === 0) return null;
-	const { size, gap, step } = CAPTION;
+	const centre = square.left + square.side / 2;
 	if (caption === 'above') {
 		return textRect({
-			x: square.left + square.side / 2,
-			baseline: square.top - 4,
-			size,
+			x: centre,
+			baseline: square.top - CAPTION_ABOVE.gap,
+			size: CAPTION_ABOVE.size,
 			lines: lines.slice(0, 1),
 			advance: MONO_ADVANCE,
 			align: 'center'
 		});
 	}
-	const width = longest(lines) * SANS_ADVANCE * size;
-	const onLeft = square.left - gap - width >= 0;
-	const bottom = square.top + square.side;
-	const top = bottom - (lines.length - 1) * step - ASCENT * size;
-	return {
-		x: onLeft ? square.left - gap - width : square.left + square.side + gap,
-		y: top,
-		width,
-		height: bottom + DESCENT * size - top
-	};
+	const { size } = CODE_CAPTION;
+	const baselines = codeCaptionBaselines({
+		square: { ...square, bottom: pageHeight - square.top - square.side },
+		lines: lines.length
+	});
+	const width = Math.max(
+		...lines.map((line) => {
+			const ems = line.length * SANS_ADVANCE;
+			return ems * codeCaptionSize({ width: ems * size, side: square.side });
+		})
+	);
+	const top = pageHeight - Math.max(...baselines) - ASCENT * size;
+	const bottom = pageHeight - Math.min(...baselines) + DESCENT * size;
+	return { x: centre - width / 2, y: top, width, height: bottom - top };
 }
 
 /**
@@ -165,7 +172,12 @@ export function layoutExtents({
 			width: square.side + 2 * quiet,
 			height: square.side + 2 * quiet
 		};
-		const text = captionRect({ square, caption, lines: lines(id) });
+		const text = captionRect({
+			square,
+			caption,
+			lines: lines(id),
+			pageHeight: page.height
+		});
 		const rects = [code, ...(text ? [text] : [])].map((rect) => ofPage(rect, page));
 		extents.push({ id, rects, page: 'every', fixed: false, shape: 'square' });
 	}

@@ -49,6 +49,11 @@ describe('collectConfigChanges', () => {
 		expect(changes[0].group).toBe('general');
 	});
 
+	test('the guide switch is a high-impact status change, like the other feature switches', () => {
+		const [change] = collect({ ...saved, guidePublished: true }, { guidePublished: true });
+		expect(change).toMatchObject({ key: 'guidePublished', group: 'status', highImpact: true });
+	});
+
 	test('skips a tainted field whose value did not actually change', () => {
 		expect(collect({ ...saved }, { title: true })).toEqual([]);
 	});

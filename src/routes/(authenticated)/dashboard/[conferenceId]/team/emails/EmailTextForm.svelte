@@ -126,6 +126,7 @@
 		member: m.emailPlaceholderMember,
 		supervisor: m.emailPlaceholderSupervisor,
 		title: m.emailPlaceholderTitle,
+		scanner: m.emailPlaceholderScanner,
 		paperType: m.emailPlaceholderPaperType,
 		delegation: m.emailPlaceholderDelegation,
 		version: m.emailPlaceholderVersion

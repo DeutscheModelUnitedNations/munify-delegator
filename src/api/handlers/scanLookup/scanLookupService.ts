@@ -19,6 +19,7 @@ const NOTHING_FOUND = {
 	nonStateActorIcon: null,
 	committeeAbbreviation: null,
 	singleRoleName: null,
+	accessCardId: null,
 	didAttend: false,
 	paymentStatus: 'PENDING',
 	termsAndConditions: 'PENDING',
@@ -182,6 +183,36 @@ async function missingSurveyOptions({
 	return options.map((option) => option.title);
 }
 
+/** What a scan does in the session, and whether it ended; undefined for one the conference has not. */
+export async function findSession({
+	conferenceId,
+	sessionId
+}: {
+	conferenceId: string;
+	sessionId: string;
+}) {
+	const session = await db.query.attendanceSession.findFirst({
+		where: { id: sessionId, conferenceId },
+		columns: { mode: true, endedAt: true }
+	});
+	return session && { mode: session.mode, ended: session.endedAt !== null };
+}
+
+/** The card the person carries, told only where one is handed out: a running session that does (`BADGE`). */
+async function cardForSession({
+	conferenceId,
+	sessionId,
+	status
+}: {
+	conferenceId: string;
+	sessionId: string | null | undefined;
+	status: ScannedStatus;
+}) {
+	if (!sessionId || !status?.accessCardId) return null;
+	const session = await findSession({ conferenceId, sessionId });
+	return session?.mode === 'BADGE' && !session.ended ? status.accessCardId : null;
+}
+
 /** Whether the session holds a scan of the person already; without a participant row it cannot. */
 async function scannedInSession({
 	sessionId,
@@ -206,7 +237,8 @@ function checkResult(issues: ScanIssue[]) {
 /**
  * Looks the code up and describes the person it belongs to, or answers that nothing was found,
  * with what the check finds open. With a session, it also names the survey options the session
- * expects that the person lacks, and with `asScan` an earlier scan in the session is open too.
+ * expects that the person lacks, and with `asScan` an earlier scan in the session is open too. A
+ * session that hands out cards is told the one the person carries.
  */
 export async function lookupScan({
 	conferenceId,
@@ -241,7 +273,12 @@ export async function lookupScan({
 		missingSurveyOptions: missing,
 		alreadyScanned
 	});
-	return { ...described, missingSurveyOptions: missing, ...checkResult(issues) };
+	return {
+		...described,
+		accessCardId: await cardForSession({ conferenceId, sessionId, status }),
+		missingSurveyOptions: missing,
+		...checkResult(issues)
+	};
 }
 
 /**
@@ -257,10 +294,7 @@ export async function checkPassedForScan({
 	sessionId: string;
 	userId: string;
 }) {
-	const session = await db.query.attendanceSession.findFirst({
-		where: { id: sessionId, conferenceId },
-		columns: { mode: true }
-	});
+	const session = await findSession({ conferenceId, sessionId });
 	if (!session || session.mode === 'RECORD') return null;
 	// The scan being recorded is no repeat: a repeated one is refused before it is written
 	const found = await lookupScan({ conferenceId, code: userId, sessionId });

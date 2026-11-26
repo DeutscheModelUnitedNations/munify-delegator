@@ -7,7 +7,6 @@ import {
 	countOfferedSeats,
 	countSeatedParticipants,
 	countWaitingList,
-	nextDocumentNumber,
 	seedConference,
 	seedingDataSchema,
 	updateConference
@@ -16,7 +15,6 @@ import { conferenceSettingSchemas, documentLayoutArgsSchema } from './conference
 import {
 	assertCanClaimConferenceFiles,
 	assertCanReadConference,
-	assertCanReadNextDocumentNumber,
 	assertCanSeedConference,
 	assertCanSetDocumentLayout,
 	assertCanUpdateConference,
@@ -51,16 +49,6 @@ export const ConferenceRef = object({
 			description: "How many entries the conference's waiting list holds, hidden ones included.",
 			type: 'Int',
 			resolve: (conference) => countWaitingList(conference.id)
-		}),
-
-		nextDocumentNumber: t.field({
-			description:
-				'The document number to hand to the next participant who needs one. Participant care only; anybody else gets FORBIDDEN.',
-			type: 'Int',
-			resolve: async (conference, _args, ctx) => {
-				await assertCanReadNextDocumentNumber({ ctx, conferenceId: conference.id });
-				return nextDocumentNumber(conference.id);
-			}
 		})
 	})
 });
@@ -104,6 +92,7 @@ schemaBuilder.mutationFields((t) => ({
 				'state',
 				'showCalendar',
 				'messagingEnabled',
+				'guidePublished',
 				'qrCorporateDesign',
 				'unlockPayments',
 				'unlockPostals',
@@ -128,6 +117,14 @@ schemaBuilder.mutationFields((t) => ({
 			linkToPaperInbox: t.arg.string(),
 			isOpenPaperSubmission: t.arg.boolean(),
 			showCalendar: t.arg.boolean(),
+			guidePublished: t.arg.boolean({
+				description:
+					"Whether participants read the conference's preparation guide in the app, once their roles are released too; off, the dashboard links `linkToPreparationGuide`."
+			}),
+			seriesId: t.arg.id({
+				description:
+					'The conference series it belongs to (`conferenceSeriesList`); shared guide pages reach it only with one. `null` takes it out of its series. Project management only.'
+			}),
 			messagingEnabled: t.arg.boolean({
 				description: 'Whether the people of the conference can write each other in the chats.'
 			}),

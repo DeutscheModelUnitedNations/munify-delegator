@@ -4,7 +4,8 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
 	import QuotedText from '../QuotedText.svelte';
-	import InfoRow from './InfoRow.svelte';
+	import Section from '../ui/Section.svelte';
+	import Row from '../ui/Row.svelte';
 
 	/**
 	 * The person's waiting list entry: since when they wait, whether they got a seat from it, and
@@ -37,48 +38,41 @@
 </script>
 
 {#if entry}
-	<section class="flex flex-col gap-3">
-		<div class="flex flex-wrap items-center gap-3">
-			<h3 class="text-lg font-bold">{m.waitingList()}</h3>
+	<Section icon="clock-countdown" title={m.waitingList()} columns>
+		{#snippet actions()}
 			{#if entry.assignedAt}
-				<span class="badge badge-success badge-sm">{m.userCardSeatedFromWaitingList()}</span>
+				<span class="badge badge-soft badge-success">{m.userCardSeatedFromWaitingList()}</span>
 			{/if}
 			{#if entry.hidden}
-				<span class="badge badge-ghost badge-sm">{m.userCardWaitingListHidden()}</span>
+				<span class="badge badge-ghost">{m.userCardWaitingListHidden()}</span>
 			{/if}
 			{#if !entry.assignedAt}
 				<a
-					class="btn btn-primary btn-sm ml-auto"
+					class="btn btn-primary btn-sm"
 					href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}
 				>
-					<i aria-hidden="true" class="ph-duotone ph-user-plus"></i>
+					<i aria-hidden="true" class="ph-duotone ph-user-plus text-lg"></i>
 					{m.assignSeat()}
 				</a>
 			{/if}
-		</div>
-		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-			<InfoRow title={m.waitingListSince()} icon="hourglass-medium">
-				<span class="text-sm">{formatDate(entry.createdAt)}</span>
-			</InfoRow>
+		{/snippet}
+		<div class="min-w-0">
+			<Row icon="hourglass-medium" title={m.waitingListSince()}>
+				{formatDate(entry.createdAt)}
+			</Row>
 			{#if entry.assignedAt}
-				<InfoRow title={m.userCardSeatedAt()} icon="chair">
-					<span class="text-sm">{formatDate(entry.assignedAt)}</span>
-				</InfoRow>
+				<Row icon="chair" title={m.userCardSeatedAt()}>{formatDate(entry.assignedAt)}</Row>
 			{/if}
-			<InfoRow title={m.schoolOrInstitution()} icon="graduation-cap">
-				<span class="text-sm">{entry.school?.name ?? m.noSchoolGiven()}</span>
-			</InfoRow>
+			<Row icon="graduation-cap" title={m.schoolOrInstitution()}>
+				{entry.school?.name ?? m.noSchoolGiven()}
+			</Row>
 		</div>
-		<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-			<QuotedText title={m.motivation()} text={entry.motivation} />
-			<QuotedText title={m.experience()} text={entry.experience} />
+		<div class="min-w-0">
+			<QuotedText icon="chat-centered-text" title={m.motivation()} text={entry.motivation} />
+			<QuotedText icon="trophy" title={m.experience()} text={entry.experience} />
 			{#if entry.requests}
-				<QuotedText
-					class="md:col-span-2"
-					title={m.userCardWaitingListRequests()}
-					text={entry.requests}
-				/>
+				<QuotedText icon="heart" title={m.userCardWaitingListRequests()} text={entry.requests} />
 			{/if}
 		</div>
-	</section>
+	</Section>
 {/if}

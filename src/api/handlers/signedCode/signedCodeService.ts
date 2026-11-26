@@ -3,7 +3,7 @@ import { db } from '#api/db/db';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
-import { encodeAreas } from '#lib/paperScan/areas';
+import { areasAsPrinted, encodeAreas, type PrintedInk } from '#lib/paperScan/areas';
 import { pageAreas, POSTAL_DOCUMENTS, type PrintedPage } from '#lib/paperScan/pageAreas';
 import type { CertificateJWTPayload } from '#lib/helpers/certificateJwt';
 import {
@@ -48,7 +48,20 @@ export const documentCodesArgsSchema = z.looseObject({
 				document: z.enum(POSTAL_DOCUMENTS),
 				page: z.number().int().min(0).max(99),
 				width: z.number().min(50).max(5000),
-				height: z.number().min(50).max(5000)
+				height: z.number().min(50).max(5000),
+				printedInk: z
+					.array(
+						z.object({
+							field: z.string().max(60),
+							ink: z.number().min(0).max(1),
+							core: z.number().min(0).max(1),
+							clear: z
+								.object({ top: z.number().min(0).max(500), bottom: z.number().min(0).max(500) })
+								.nullish()
+						})
+					)
+					.max(40)
+					.nullish()
 			}),
 			{ error: () => m.documentCodesInvalidPages() }
 		)
@@ -56,9 +69,16 @@ export const documentCodesArgsSchema = z.looseObject({
 		.max(60, { error: () => m.documentCodesInvalidPages() })
 });
 
+/** A page as the client says it is; only the print in fields that are on it counts. */
+type PrintedPageArgs = Omit<PrintedPage, 'printedInk'> & {
+	printedInk?: readonly (Omit<PrintedInk, 'field'> & { field: string })[] | null;
+};
+
 /**
  * The codes printed on the pages of the application documents of `userId` in the conference, one
- * per page in the order given, each carrying where its page's alignment marks and fields are, from
+ * per page in the order given, each carrying where its page's alignment marks and fields are, and the
+ * print in those (as measured by whoever prints: no mark is made of it; not measured, a person looks at
+ * the fields), from
  * the stored layouts (`layouts` stand in for them in a test print of a layout being edited).
  */
 export async function issuePrintCodes({
@@ -70,7 +90,7 @@ export async function issuePrintCodes({
 }: {
 	userId: string;
 	conferenceId: string;
-	pages: readonly PrintedPage[];
+	pages: readonly PrintedPageArgs[];
 	draft?: { layouts: unknown };
 	now?: number;
 }) {
@@ -82,13 +102,21 @@ export async function issuePrintCodes({
 	const layouts = draft ? draft.layouts : conference.documentLayouts;
 	const issuedAt = secondsOf(now);
 	return Promise.all(
-		pages.map(({ document, page, width, height }) => {
-			const fields = pageAreas({
+		pages.map(({ document, page, width, height, printedInk }) => {
+			const placed = pageAreas({
 				document,
 				layout: resolveDocumentLayout({ document, stored: layouts }),
 				page,
 				size: { width, height }
 			});
+			const measured = printedInk?.flatMap((print) => {
+				const onPage = placed.areas.find(({ field }) => field === print.field);
+				return onPage ? [{ ...print, field: onPage.field }] : [];
+			});
+			const fields = {
+				...placed,
+				areas: areasAsPrinted({ areas: placed.areas, printedInk: measured })
+			};
 			const areas = fields.areas.length > 0 ? encodeAreas(fields) : undefined;
 			return signCode({ kind: 'print', userId, conferenceId, issuedAt, areas });
 		})

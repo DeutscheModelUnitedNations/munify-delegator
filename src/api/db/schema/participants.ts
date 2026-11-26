@@ -67,6 +67,15 @@ export const conferenceParticipant = snakeCase.table(
 		 * they still reach the team.
 		 */
 		messagingSuspended: boolean().default(false).notNull(),
+		/** How far the person is in the steps of their postal registration: the information is read, */
+		postalInfoRead: boolean().default(false).notNull(),
+		/**
+		 * their details were confirmed as this fingerprint (`detailsFingerprint`), which tells whether
+		 * they changed since,
+		 */
+		postalConfirmedDetails: text(),
+		/** and that they are, or are not, of age at the conference. */
+		postalConfirmedOfAge: boolean(),
 		/**
 		 * The person's own school, the only place a school of someone taking part is kept. Given when
 		 * they apply (or carried over from their waiting list entry), changed by themselves or by

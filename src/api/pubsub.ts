@@ -1,5 +1,6 @@
 import { pubsub } from '#api/rumble';
 
+export const agreementDetailPubsub = pubsub({ table: 'agreementDetail' });
 export const announcementPubsub = pubsub({ table: 'announcement' });
 export const announcementAudiencePubsub = pubsub({ table: 'announcementAudience' });
 export const announcementAttachmentPubsub = pubsub({ table: 'announcementAttachment' });
@@ -23,12 +24,17 @@ export const conferenceSlackWorkspacePubsub = pubsub({ table: 'conferenceSlackWo
 export const conferenceEmailSettingPubsub = pubsub({ table: 'conferenceEmailSetting' });
 export const conferenceEmailTextPubsub = pubsub({ table: 'conferenceEmailText' });
 export const conferenceEmailFooterPubsub = pubsub({ table: 'conferenceEmailFooter' });
+export const conferenceSeriesPubsub = pubsub({ table: 'conferenceSeries' });
 export const conferenceRolePubsub = pubsub({ table: 'conferenceRole' });
 export const conferenceParticipantPubsub = pubsub({ table: 'conferenceParticipant' });
 export const conferenceSupervisorPubsub = pubsub({ table: 'conferenceSupervisor' });
 export const delegationPubsub = pubsub({ table: 'delegation' });
 export const delegationMemberPubsub = pubsub({ table: 'delegationMember' });
 export const emailLogPubsub = pubsub({ table: 'emailLog' });
+export const guideOutlinePubsub = pubsub({ table: 'guideOutline' });
+export const guideOutlineVersionPubsub = pubsub({ table: 'guideOutlineVersion' });
+export const guidePagePubsub = pubsub({ table: 'guidePage' });
+export const guidePageVersionPubsub = pubsub({ table: 'guidePageVersion' });
 export const instanceLinkPubsub = pubsub({ table: 'instanceLink' });
 export const mcpAuditEntryPubsub = pubsub({ table: 'mcpAuditEntry' });
 export const notificationPreferencePubsub = pubsub({ table: 'notificationPreference' });
@@ -39,9 +45,11 @@ export const paperVersionPubsub = pubsub({ table: 'paperVersion' });
 export const paymentTransactionPubsub = pubsub({ table: 'paymentTransaction' });
 export const placePubsub = pubsub({ table: 'place' });
 export const possibleDuplicatePubsub = pubsub({ table: 'possibleDuplicate' });
+export const postalScanPubsub = pubsub({ table: 'postalScan' });
 export const resolutionPubsub = pubsub({ table: 'resolution' });
 export const reviewerSnippetPubsub = pubsub({ table: 'reviewerSnippet' });
 export const roleApplicationPubsub = pubsub({ table: 'roleApplication' });
+export const scannerAccessPubsub = pubsub({ table: 'scannerAccess' });
 export const schoolPubsub = pubsub({ table: 'school' });
 export const schoolSuggestionPubsub = pubsub({ table: 'schoolSuggestion' });
 export const schoolSuggestionVariantPubsub = pubsub({ table: 'schoolSuggestionVariant' });

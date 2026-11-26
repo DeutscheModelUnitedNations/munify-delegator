@@ -7,6 +7,23 @@ function calendarDayIn({ timezone, now }: { timezone: string; now: Date }) {
 	return Math.floor(wallClockNow({ timezone, now }) / DAY) * DAY;
 }
 
+/** Whether `now` falls on the calendar day `date` in `timezone`. */
+export function isToday({
+	date,
+	timezone,
+	now = new Date()
+}: {
+	date: Date;
+	timezone: string;
+	now?: Date;
+}) {
+	const day = new Date(date);
+	return (
+		Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()) ===
+		calendarDayIn({ timezone, now })
+	);
+}
+
 /** The index of today's day in `days` (judged in `timezone`), or 0 when none is today. */
 export function todayIndex({
 	days,
@@ -17,11 +34,7 @@ export function todayIndex({
 	timezone: string;
 	now?: Date;
 }) {
-	const today = calendarDayIn({ timezone, now });
-	const index = days.findIndex((day) => {
-		const date = new Date(day.date);
-		return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) === today;
-	});
+	const index = days.findIndex(({ date }) => isToday({ date, timezone, now }));
 	return Math.max(index, 0);
 }
 

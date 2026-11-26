@@ -16,6 +16,7 @@ export interface SeedBatch {
 	school: (typeof schema.school.$inferInsert)[];
 	/** Not a table: the bucket objects of `storedFile`, written by `replaceSeedObjects`. */
 	storedObject: { key: string; bytes: Uint8Array; mimeType: string }[];
+	conferenceSeries: (typeof schema.conferenceSeries.$inferInsert)[];
 	conference: (typeof schema.conference.$inferInsert)[];
 	committee: (typeof schema.committee.$inferInsert)[];
 	conferenceRole: (typeof schema.conferenceRole.$inferInsert)[];
@@ -48,6 +49,9 @@ export interface SeedBatch {
 	slackNotification: (typeof schema.slackNotification.$inferInsert)[];
 	waitingListEntry: (typeof schema.waitingListEntry.$inferInsert)[];
 	conferenceParticipant: (typeof schema.conferenceParticipant.$inferInsert)[];
+	postalScan: (typeof schema.postalScan.$inferInsert)[];
+	agreementDetail: (typeof schema.agreementDetail.$inferInsert)[];
+	scannerAccess: (typeof schema.scannerAccess.$inferInsert)[];
 	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
 	attendanceEntry: (typeof schema.attendanceEntry.$inferInsert)[];
 	paymentTransaction: (typeof schema.paymentTransaction.$inferInsert)[];
@@ -76,6 +80,10 @@ export interface SeedBatch {
 	conferenceEmailSetting: (typeof schema.conferenceEmailSetting.$inferInsert)[];
 	conferenceEmailText: (typeof schema.conferenceEmailText.$inferInsert)[];
 	emailLog: (typeof schema.emailLog.$inferInsert)[];
+	guidePage: (typeof schema.guidePage.$inferInsert)[];
+	guidePageVersion: (typeof schema.guidePageVersion.$inferInsert)[];
+	guideOutline: (typeof schema.guideOutline.$inferInsert)[];
+	guideOutlineVersion: (typeof schema.guideOutlineVersion.$inferInsert)[];
 }
 
 export function emptyBatch(): SeedBatch {
@@ -87,6 +95,7 @@ export function emptyBatch(): SeedBatch {
 		storedFile: [],
 		school: [],
 		storedObject: [],
+		conferenceSeries: [],
 		conference: [],
 		committee: [],
 		conferenceRole: [],
@@ -119,6 +128,9 @@ export function emptyBatch(): SeedBatch {
 		slackNotification: [],
 		waitingListEntry: [],
 		conferenceParticipant: [],
+		postalScan: [],
+		agreementDetail: [],
+		scannerAccess: [],
 		attendanceSession: [],
 		attendanceEntry: [],
 		paymentTransaction: [],
@@ -146,7 +158,11 @@ export function emptyBatch(): SeedBatch {
 		possibleDuplicate: [],
 		conferenceEmailSetting: [],
 		conferenceEmailText: [],
-		emailLog: []
+		emailLog: [],
+		guidePage: [],
+		guidePageVersion: [],
+		guideOutline: [],
+		guideOutlineVersion: []
 	};
 }
 
@@ -207,6 +223,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	// columns, the files after it, and the columns last.
 	const conferenceFiles = batch.conference.map(conferenceFileColumns);
 	await insertChunked({
+		rows: batch.conferenceSeries,
+		insert: (rows) => db.insert(s.conferenceSeries).values(rows)
+	});
+	await insertChunked({
 		rows: batch.conference,
 		insert: (rows) =>
 			db.insert(s.conference).values(rows.map((row) => ({ ...row, ...nullFileColumns })))
@@ -244,9 +264,18 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 		rows: batch.resolution,
 		insert: (rows) => db.insert(s.resolution).values(rows)
 	});
+	await insertGuide({ db, batch });
 	await insertChunked({
 		rows: batch.conferenceParticipant,
 		insert: (rows) => db.insert(s.conferenceParticipant).values(rows)
+	});
+	await insertChunked({
+		rows: batch.postalScan,
+		insert: (rows) => db.insert(s.postalScan).values(rows)
+	});
+	await insertChunked({
+		rows: batch.agreementDetail,
+		insert: (rows) => db.insert(s.agreementDetail).values(rows)
 	});
 	await insertChunked({
 		rows: batch.delegation,
@@ -279,6 +308,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.teamMember,
 		insert: (rows) => db.insert(s.teamMember).values(rows)
+	});
+	await insertChunked({
+		rows: batch.scannerAccess,
+		insert: (rows) => db.insert(s.scannerAccess).values(rows)
 	});
 	await insertChunked({
 		rows: batch.teamMemberInvitation,
@@ -451,5 +484,37 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.slackNotification,
 		insert: (rows) => db.insert(s.slackNotification).values(rows)
+	});
+}
+
+/**
+ * The guide: pages first without their published version, which points back at them, then the
+ * versions, then the pages' published version; then the sidebars.
+ */
+async function insertGuide({ db, batch }: { db: NodePgDatabase; batch: SeedBatch }) {
+	const s = schema;
+	await insertChunked({
+		rows: batch.guidePage,
+		insert: (rows) =>
+			db.insert(s.guidePage).values(rows.map((row) => ({ ...row, publishedVersionId: null })))
+	});
+	await insertChunked({
+		rows: batch.guidePageVersion,
+		insert: (rows) => db.insert(s.guidePageVersion).values(rows)
+	});
+	for (const page of batch.guidePage) {
+		if (!page.id || !page.publishedVersionId) continue;
+		await db
+			.update(s.guidePage)
+			.set({ publishedVersionId: page.publishedVersionId })
+			.where(whereRows({ table: s.guidePage, filter: { id: page.id } }));
+	}
+	await insertChunked({
+		rows: batch.guideOutline,
+		insert: (rows) => db.insert(s.guideOutline).values(rows)
+	});
+	await insertChunked({
+		rows: batch.guideOutlineVersion,
+		insert: (rows) => db.insert(s.guideOutlineVersion).values(rows)
 	});
 }

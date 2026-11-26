@@ -14,7 +14,8 @@ export type NotificationTopic =
 	| 'TRUSTED_SHARED'
 	| 'TRUSTED_PERSONAL'
 	| 'CHAT_REPORT'
-	| 'COMMITTEE_PAPERS';
+	| 'COMMITTEE_PAPERS'
+	| 'SCAN_PROBLEM';
 
 /**
  * One line of the settings: a topic, and for a committee's inbox or papers the member's function
@@ -57,7 +58,10 @@ export function topicsOf(member: NotifiedMember): TopicKey[] {
 		topics.push({ topic: 'TRUSTED_SHARED', teamFunctionId: null });
 		topics.push({ topic: 'TRUSTED_PERSONAL', teamFunctionId: null });
 	}
-	if (care) topics.push({ topic: 'CHAT_REPORT', teamFunctionId: null });
+	if (care) {
+		topics.push({ topic: 'CHAT_REPORT', teamFunctionId: null });
+		topics.push({ topic: 'SCAN_PROBLEM', teamFunctionId: null });
+	}
 	return topics;
 }
 

@@ -22,9 +22,15 @@ import {
 	renderPaperSubmittedEmail,
 	type SubmittedPaper
 } from '#api/handlers/email/paperSubmittedEmail';
+import { renderScanProblemEmail, sampleScanProblem } from '#api/handlers/email/scanProblemEmail';
 import { workspaceOfConference } from './notificationStore';
 import { sendSlackTo } from './notificationService';
-import { inboxSlackText, paperSlackText, reportSlackText } from './slackNotifications';
+import {
+	inboxSlackText,
+	paperSlackText,
+	reportSlackText,
+	scanProblemSlackText
+} from './slackNotifications';
 
 /**
  * The test on the notification settings page: a team member sends themselves one of their topics'
@@ -50,6 +56,8 @@ export function testEmailKind(topic: NotificationTopic) {
 			return 'CHAT_REPORTED' as const;
 		case 'COMMITTEE_PAPERS':
 			return 'PAPER_SUBMITTED' as const;
+		case 'SCAN_PROBLEM':
+			return 'SCAN_PROBLEM' as const;
 	}
 }
 
@@ -126,6 +134,9 @@ async function sendSlackTest(test: TestSetting): Promise<NotificationTestResult>
 	const text = () => {
 		const at = { conferenceTitle: conference.title, conferenceId, origin };
 		if (key.topic === 'CHAT_REPORT') return reportSlackText(at);
+		if (key.topic === 'SCAN_PROBLEM') {
+			return scanProblemSlackText({ notice: sampleScanProblem(at), origin });
+		}
 		if (key.topic === 'COMMITTEE_PAPERS' && paper) return paperSlackText({ paper, url: paperUrl });
 		return inboxSlackText({ ...at, key, held: held && { kind: held.kind, committee } });
 	};
@@ -145,6 +156,14 @@ async function renderTestEmail(test: TestSetting): Promise<RenderedEmail> {
 	if (kind === 'PAPER_SUBMITTED') {
 		if (!paper) throw new Error('A committee function without its committee');
 		return renderPaperSubmittedEmail({ recipient: user, paper, origin, wording, url: paperUrl });
+	}
+	if (kind === 'SCAN_PROBLEM') {
+		return renderScanProblemEmail({
+			recipient: user,
+			notice: sampleScanProblem({ conferenceId, conferenceTitle: conference.title }),
+			origin,
+			wording
+		});
 	}
 	const email: DueEmail = {
 		kind,

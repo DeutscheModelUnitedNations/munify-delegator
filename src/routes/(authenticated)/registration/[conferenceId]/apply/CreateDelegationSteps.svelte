@@ -2,7 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
-	import FlowStep from './FlowStep.svelte';
+	import FlowStep from '#lib/components/flowSteps/FlowStep.svelte';
 	import ApplicationTextsSteps from './ApplicationTextsSteps.svelte';
 	import type { ApplyPath } from './applyPaths';
 

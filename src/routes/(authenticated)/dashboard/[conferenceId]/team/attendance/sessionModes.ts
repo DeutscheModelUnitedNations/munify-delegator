@@ -10,11 +10,20 @@ export type SessionMode = ServerMode | 'INFO';
 export const modeIcons: Record<SessionMode, string> = {
 	CHECK: 'ph-user-check',
 	RECORD: 'ph-lightning',
+	BADGE: 'ph-identification-card',
 	INFO: 'ph-info'
 };
 
 export const modeLabels: Record<SessionMode, () => string> = {
 	CHECK: m.scanModeCheck,
 	RECORD: m.scanModeRecord,
+	BADGE: m.scanModeBadge,
 	INFO: m.scanModeInfo
+};
+
+/** What a scan does in each kind of session that can be started. */
+export const modeHints: Record<ServerMode, () => string> = {
+	CHECK: m.scanModeCheckHint,
+	RECORD: m.scanModeRecordHint,
+	BADGE: m.scanModeBadgeHint
 };

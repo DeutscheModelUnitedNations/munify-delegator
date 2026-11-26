@@ -2,7 +2,8 @@ import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#lib/api/rumbleClient/client', () => ({ client: {} }));
 
-const { hasConferenceAccess, participationStage } = await import('./userCardRoles');
+const { hasConferenceAccess, isApplicationTime, participationStage } =
+	await import('./userCardRoles');
 
 const role = { id: 'role' };
 const supervisor = (delegationRoles: (object | null)[], singleRoles: (object | null)[]) => ({
@@ -44,7 +45,7 @@ describe('hasConferenceAccess', () => {
 describe('participationStage', () => {
 	const state = 'PARTICIPANT_REGISTRATION';
 
-	test('follows an application from registering to attending', () => {
+	test('follows an application until it has a seat, which says itself that it has', () => {
 		expect(participationStage({ application: { applied: false }, conferenceState: state })).toBe(
 			'registered'
 		);
@@ -56,14 +57,7 @@ describe('participationStage', () => {
 				application: { applied: true, assignedRole: role },
 				conferenceState: state
 			})
-		).toBe('seated');
-		expect(
-			participationStage({
-				application: { applied: true, assignedRole: role },
-				didAttend: true,
-				conferenceState: 'ACTIVE'
-			})
-		).toBe('attended');
+		).toBeUndefined();
 	});
 
 	test('calls an application without a role unseated once the assignment is done', () => {
@@ -93,5 +87,12 @@ describe('participationStage', () => {
 
 	test('has nothing to say about somebody without an application', () => {
 		expect(participationStage({ conferenceState: state })).toBeUndefined();
+	});
+});
+
+describe('isApplicationTime', () => {
+	test('lasts until the seats are handed out', () => {
+		expect(['PRE', 'PARTICIPANT_REGISTRATION'].every(isApplicationTime)).toBe(true);
+		expect(['PREPARATION', 'ACTIVE', 'POST'].some(isApplicationTime)).toBe(false);
 	});
 });

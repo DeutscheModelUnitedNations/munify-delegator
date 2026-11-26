@@ -42,13 +42,14 @@ export type TemplatePicture = { width: number; height: number; perMm: number; pi
 
 /**
  * Every page of a PDF template rendered off screen at `perMm` pixels to the millimetre, for the
- * layout editor to read its fields off as a scan would (`checkFields`).
+ * layout editor to read its fields off as a scan would (`checkFields`), and for what a page prints in
+ * them (`measurePrintedInk`).
  */
 export async function templatePictures({
-	url,
+	source,
 	perMm = 6
 }: {
-	url: string;
+	source: { url: string } | { data: Uint8Array };
 	perMm?: number;
 }): Promise<TemplatePicture[]> {
 	const [pdfjs, worker] = await Promise.all([
@@ -56,7 +57,8 @@ export async function templatePictures({
 		import('pdfjs-dist/build/pdf.worker.min.mjs?url')
 	]);
 	pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-	const task = pdfjs.getDocument({ url });
+	// its worker takes the bytes over, so it gets its own
+	const task = pdfjs.getDocument('data' in source ? { data: source.data.slice() } : source);
 	const document = await task.promise;
 	try {
 		const pictures: TemplatePicture[] = [];

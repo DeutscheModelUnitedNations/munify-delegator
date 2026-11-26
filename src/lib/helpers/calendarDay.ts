@@ -1,3 +1,5 @@
+import { getLocale } from '#lib/paraglide/runtime';
+
 /**
  * A calendar day without a time, such as a birthday, travels as rumble's `Date` scalar: the
  * client sends the UTC day of the `Date` it is given (`YYYY-MM-DD`) and reads one back as UTC
@@ -13,4 +15,9 @@ export function toCalendarDay(local: Date): Date {
 /** A `Date` scalar value (UTC midnight) as the local midnight a date picker shows. */
 export function fromCalendarDay(day: Date): Date {
 	return new Date(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate());
+}
+
+/** A `Date` scalar value (UTC midnight) written out in the user's selected locale. */
+export function calendarDayText(day: Date): string {
+	return day.toLocaleDateString(getLocale(), { dateStyle: 'medium', timeZone: 'UTC' });
 }

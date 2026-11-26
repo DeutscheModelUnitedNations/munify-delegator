@@ -103,6 +103,19 @@ export const variables = defineEnvVars({
 	// Space-separated scopes the provider defines on that API resource, advertised to MCP clients
 	// in the protected resource metadata. Optional.
 	MCP_SCOPES: { schema: unlessEmpty(z.string().optional()) },
+	// Comma-separated hosts the guide's file import (`importGuideFile`, for AI assistants moving
+	// the old guide in) downloads from; `guide.dmun.de,cdn.dmun.de` when unset.
+	GUIDE_IMPORT_HOSTS: {
+		schema: z
+			.string()
+			.optional()
+			.transform((value) =>
+				(value || 'guide.dmun.de,cdn.dmun.de')
+					.split(',')
+					.map((host) => host.trim().toLowerCase())
+					.filter(Boolean)
+			)
+	},
 
 	// The link to MUNify CHASE (`docs/plans/chase-link.md`), through the OIDC provider both trust:
 	// each instance asks it for a token with its machine-to-machine client (OIDC_M2M_CLIENT_ID and
@@ -140,6 +153,21 @@ export const variables = defineEnvVars({
 	SMTP_PASSWORD: { schema: z.string().optional() },
 	SMTP_FROM_ADDRESS: { schema: z.string().email().default('noreply@munify.cloud') },
 	SMTP_FROM_NAME: { schema: z.string().default('MUNify Delegator') },
+
+	// The app's public address, for links in what is sent outside a request (a scanner's delivery).
+	APP_URL: { schema: unlessEmpty(z.string().url().optional()) },
+	/**
+	 * Pages of delivered scans each app instance reads at once, each in a process of its own of up to some
+	 * 0.7 GB (`docs/architecture/postal-scans.md`). Reading is CPU-bound: about one per spare core.
+	 */
+	SCAN_READERS: {
+		schema: numberOr(2).pipe(z.number().int().min(1, 'must be at least 1').max(16))
+	},
+	/**
+	 * Opens delivered scans also where the system has no Landlock to sandbox that with; without this they
+	 * wait in the queue there. Whoever gets a crafted file in may then read the app's secrets.
+	 */
+	SCANS_WITHOUT_SANDBOX: { schema: unlessEmpty(z.stringbool().default(false)) },
 
 	// Object storage (any S3-compatible service) for every uploaded file. The endpoint names the
 	// bucket, path style (`https://s3.example.org/delegator`) or virtual-hosted

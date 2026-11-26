@@ -227,6 +227,14 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	conference: {
+		series: r.one.conferenceSeries({
+			from: r.conference.seriesId,
+			to: r.conferenceSeries.id
+		}),
+		guideOutline: r.one.guideOutline({
+			from: r.conference.id,
+			to: r.guideOutline.conferenceId
+		}),
 		imageFile: r.one.storedFile({
 			from: r.conference.imageFileId,
 			to: r.storedFile.id
@@ -364,6 +372,33 @@ export const relations = defineRelations(schema, (r) => ({
 		school: r.one.school({
 			from: r.conferenceParticipant.schoolId,
 			to: r.school.id
+		}),
+		postalScans: r.many.postalScan({
+			from: r.conferenceParticipant.id,
+			to: r.postalScan.conferenceParticipantId
+		}),
+		agreementDetails: r.many.agreementDetail({
+			from: r.conferenceParticipant.id,
+			to: r.agreementDetail.conferenceParticipantId
+		})
+	},
+	postalScan: {
+		participant: r.one.conferenceParticipant({
+			from: r.postalScan.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
+		file: r.one.storedFile({
+			from: r.postalScan.fileId,
+			to: r.storedFile.id,
+			optional: false
+		})
+	},
+	agreementDetail: {
+		participant: r.one.conferenceParticipant({
+			from: r.agreementDetail.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
 		})
 	},
 	conferenceSupervisor: {
@@ -640,6 +675,14 @@ export const relations = defineRelations(schema, (r) => ({
 		announcementAttachmentOf: r.many.announcementAttachment({
 			from: r.storedFile.id,
 			to: r.announcementAttachment.fileId
+		}),
+		postalScanOf: r.many.postalScan({
+			from: r.storedFile.id,
+			to: r.postalScan.fileId
+		}),
+		guidePageFileOf: r.many.guidePageFile({
+			from: r.storedFile.id,
+			to: r.guidePageFile.fileId
 		})
 	},
 	place: {
@@ -1179,6 +1222,92 @@ export const relations = defineRelations(schema, (r) => ({
 		user: r.one.user({
 			from: r.waitingListEntry.userId,
 			to: r.user.id,
+			optional: false
+		})
+	},
+	conferenceSeries: {
+		conferences: r.many.conference({
+			from: r.conferenceSeries.id,
+			to: r.conference.seriesId
+		})
+	},
+	guidePage: {
+		series: r.one.conferenceSeries({
+			from: r.guidePage.seriesId,
+			to: r.conferenceSeries.id
+		}),
+		conference: r.one.conference({
+			from: r.guidePage.conferenceId,
+			to: r.conference.id
+		}),
+		committee: r.one.committee({
+			from: r.guidePage.committeeId,
+			to: r.committee.id
+		}),
+		agendaItem: r.one.committeeAgendaItem({
+			from: r.guidePage.agendaItemId,
+			to: r.committeeAgendaItem.id
+		}),
+		publishedVersion: r.one.guidePageVersion({
+			from: r.guidePage.publishedVersionId,
+			to: r.guidePageVersion.id,
+			alias: 'publishedVersion'
+		}),
+		publishedSeries: r.one.conferenceSeries({
+			from: r.guidePage.publishedSeriesId,
+			to: r.conferenceSeries.id,
+			alias: 'publishedSeries'
+		}),
+		publishedConference: r.one.conference({
+			from: r.guidePage.publishedConferenceId,
+			to: r.conference.id,
+			alias: 'publishedConference'
+		}),
+		versions: r.many.guidePageVersion({
+			from: r.guidePage.id,
+			to: r.guidePageVersion.pageId,
+			alias: 'pageVersions'
+		})
+	},
+	guidePageVersion: {
+		page: r.one.guidePage({
+			from: r.guidePageVersion.pageId,
+			to: r.guidePage.id,
+			optional: false,
+			alias: 'pageVersions'
+		}),
+		pdfFile: r.one.storedFile({
+			from: r.guidePageVersion.pdfFileId,
+			to: r.storedFile.id
+		})
+	},
+	guidePageFile: {
+		page: r.one.guidePage({
+			from: r.guidePageFile.pageId,
+			to: r.guidePage.id,
+			optional: false
+		}),
+		file: r.one.storedFile({
+			from: r.guidePageFile.fileId,
+			to: r.storedFile.id,
+			optional: false
+		})
+	},
+	guideOutline: {
+		conference: r.one.conference({
+			from: r.guideOutline.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		versions: r.many.guideOutlineVersion({
+			from: r.guideOutline.id,
+			to: r.guideOutlineVersion.outlineId
+		})
+	},
+	guideOutlineVersion: {
+		guideOutline: r.one.guideOutline({
+			from: r.guideOutlineVersion.outlineId,
+			to: r.guideOutline.id,
 			optional: false
 		})
 	}

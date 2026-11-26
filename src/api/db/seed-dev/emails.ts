@@ -20,7 +20,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Mails the personas got while the conference prepared: every status the log shows, and the mails
- * about announcements, messages, reports and joining the team, keyed by the rows they are about.
+ * about announcements, messages, reports, scans nobody was found for and joining the team, keyed by the rows they are about.
  */
 const preparationLog = (cs: ConferenceSeed): LogPlan[] => [
 	{
@@ -93,6 +93,13 @@ const preparationLog = (cs: ConferenceSeed): LogPlan[] => [
 		subjectKey: cs.rowId('chat-report-direct'),
 		status: 'SENT',
 		daysAgo: 0
+	},
+	{
+		kind: 'SCAN_PROBLEM',
+		userId: 'dev-team-pm',
+		subjectKey: cs.rowId('scan-problem'),
+		status: 'SENT',
+		daysAgo: 2
 	},
 	{
 		kind: 'TEAM_WELCOME',

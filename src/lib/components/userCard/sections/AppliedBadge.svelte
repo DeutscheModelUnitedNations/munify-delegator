@@ -10,7 +10,13 @@
 </script>
 
 {#if applied}
-	<span class="badge badge-success badge-sm">{m.registrationCompleted()}</span>
+	<span class="text-base-content/70 text-sm">
+		<i aria-hidden="true" class="ph-fill ph-check-circle text-success"></i>
+		{m.registrationCompleted()}
+	</span>
 {:else}
-	<span class="badge badge-warning badge-sm">{m.registrationNotCompleted()}</span>
+	<span class="text-base-content/70 text-sm">
+		<i aria-hidden="true" class="ph-fill ph-hourglass-medium text-warning"></i>
+		{m.registrationNotCompleted()}
+	</span>
 {/if}

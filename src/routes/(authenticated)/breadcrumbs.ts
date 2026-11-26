@@ -66,6 +66,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.myAccount(),
 		icon: 'user'
 	},
+	scanners: {
+		translation: () => m.scanners(),
+		icon: 'printer'
+	},
 	configuration: {
 		translation: () => m.settings(),
 		icon: 'gear-six'
@@ -165,6 +169,26 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	'slack-workspaces': {
 		icon: 'slack-logo',
 		translation: () => m.slackWorkspaces()
+	},
+	'conference-series': {
+		icon: 'stack',
+		translation: () => m.conferenceSeriesTitle()
+	},
+	guide: {
+		icon: 'book-open-text',
+		translation: () => m.guideTitle()
+	},
+	page: {
+		icon: 'files',
+		translation: () => m.guidePages()
+	},
+	pageId: {
+		icon: 'file-magnifying-glass',
+		translation: () => m.guideEntryPage()
+	},
+	visibility: {
+		icon: 'eye',
+		translation: () => m.guideTabVisibility()
 	},
 	notifications: {
 		icon: 'bell',

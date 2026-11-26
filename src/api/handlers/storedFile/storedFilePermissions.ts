@@ -4,6 +4,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
 	CONFERENCE_CONTENT_ROLES,
+	handledScans,
 	hasPartIn,
 	hasPartInConference,
 	hop,
@@ -35,6 +36,7 @@ const WITHOUT_UPLOADER = { uploadedById: false };
  *   the members-only columns that hold them;
  * - a place's site plan: to whoever reads the conference's calendar, like the place;
  * - a resolution's PDF: to the people with a part in its conference, like the resolution;
+ * - a scan of somebody's application documents: to participant care, who reads the scan itself;
  * - an announcement's attachments: to its editors (readers get them through their feed).
  */
 export function registerStoredFileAbilities() {
@@ -91,6 +93,14 @@ export function registerStoredFileAbilities() {
 				isTeamMemberOfConference({ ...args, roles: CONFERENCE_CONTENT_ROLES }),
 				(announcement) => ({ announcementAttachmentOf: { announcement } })
 			);
+			return where && { where, columns: WITHOUT_UPLOADER };
+		})
+	);
+
+	// Scans of the application documents: participant care of the person's conference.
+	abilityBuilder.storedFile.allow('read').when(
+		liveRule((args) => {
+			const where = hop(handledScans(args), (postalScanOf) => ({ postalScanOf }));
 			return where && { where, columns: WITHOUT_UPLOADER };
 		})
 	);

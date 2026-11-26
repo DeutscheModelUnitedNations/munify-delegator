@@ -1,21 +1,30 @@
 <script lang="ts">
+	import { toast } from 'svelte-sonner';
+	import { resolve } from '$app/paths';
 	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
-	import formatNames from '#lib/helpers/formatNames';
-	import { changesAnything, proposePaperChange } from '#lib/paperScan/proposal';
-	import { pagesByPerson, strayPages, type PersonResult, type ScannedPage } from './paperBatch';
-	import { pagesOf, readScannedPage } from './scanFiles';
-	import { postalStatusOf } from './postalConfirm';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
+	import { browserPlatform, checkCode } from '#lib/components/postal/browserScan';
+	import { keepScan } from '#lib/components/postal/uploadScan';
+	import { readScanPage } from '#lib/paperScan/intake/pages';
+	import {
+		describeScanProblem,
+		type ScanProblem,
+		type ScanProblemReason
+	} from '#lib/paperScan/intake/problems';
+	import { blobSource } from '#lib/paperScan/intake/source';
+	import type { KeepArgs, KeptPage } from '#lib/paperScan/intake/takePage';
+	import { takeScan } from '#lib/paperScan/intake/takeScan';
+	import { oncePerPerson, personReport, withResult, type PersonResult } from './paperBatch';
+	import FolderWatch from './FolderWatch.svelte';
 	import PaperBatchPerson from './PaperBatchPerson.svelte';
 
 	/**
-	 * Reads a batch of scanned application documents and saves what they say, unattended: every
-	 * page's code names its person and its fields, a signed document is marked in, a media choice
-	 * taken where none was stored (`proposePaperChange`). Nothing is set back; what could not be
-	 * told is listed for a person to check, with the pages nobody could be found for. Nothing of
-	 * the scans is kept: they are read in the browser.
+	 * Takes in a batch of scanned application documents, unattended (`takeScan`): every page's code
+	 * names its person and its fields, each page becomes a scan of theirs, a signed document
+	 * is marked in, a media choice taken where none was stored (`proposePaperChange`). Nothing is set
+	 * back; what could not be told is listed for a person to check, with the pages nobody could be
+	 * found for, of which nothing is kept.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -26,123 +35,98 @@
 	let dragging = $state(false);
 	let running = $state(false);
 	let progress = $state({ files: 0, pages: 0 });
-	let pages = $state<ScannedPage[]>([]);
+	let problems = $state<ScanProblem[]>([]);
 	let people = $state<PersonResult[]>([]);
-	const stray = $derived(strayPages(pages));
 
-	const acceptance = $derived({
-		conferenceId,
-		kinds: ['print'] as const,
-		printedNametags: false
-	});
+	type Source = 'UPLOAD' | 'FOLDER';
 
-	const fullName = (user: { givenName?: string | null; familyName?: string | null }) =>
-		formatNames({
-			givenName: user.givenName ?? undefined,
-			familyName: user.familyName ?? undefined
-		});
+	/** Said on the person's own line: unreadable fields, and who is not registered. */
+	const ON_PERSONS_LINE: readonly ScanProblemReason[] = ['unreadable', 'notRegistered'];
 
-	/** The people's status rows, with their names, to propose and save against. */
-	async function statusRows(userIds: string[]) {
-		if (userIds.length === 0) return [];
-		return client.query.conferenceParticipants({
-			__args: { where: { conferenceId: { eq: conferenceId }, userId: { in: userIds } } },
+	/** A person's status row, with their name, to propose against. */
+	async function participant({ userId }: { userId: string }) {
+		const [row] = await client.query.conferenceParticipants({
+			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 			userId: true,
 			termsAndConditions: true,
 			guardianConsent: true,
 			mediaConsent: true,
 			mediaConsentStatus: true,
-			user: { givenName: true, familyName: true, birthday: true }
+			agreementDetails: { field: true, state: true, source: true },
+			user: { givenName: true, familyName: true, birthday: true },
+			conference: { startConference: true }
 		});
+		return row;
 	}
 
-	/** Saves what a person's pages say; answers the person's line of the report. */
-	// fallow-ignore-next-line complexity
-	async function settle({
-		person,
-		row,
-		startConference
+	type Row = NonNullable<Awaited<ReturnType<typeof participant>>>;
+
+	/** Keeps a page and what it says; a failure is the person's line of the report's to tell. */
+	async function keep({
+		args,
+		source
 	}: {
-		person: ReturnType<typeof pagesByPerson>[number];
-		row: Awaited<ReturnType<typeof statusRows>>[number] | undefined;
-		/** When the conference starts, which decides who is a minor. */
-		startConference: Date | null | undefined;
-	}): Promise<PersonResult> {
-		const proposal = proposePaperChange({
-			readings: person.readings,
-			status: postalStatusOf(row),
-			confirm: false,
-			// without a birthday (or a status row) nobody is taken for a minor
-			minor:
-				!!row?.user.birthday &&
-				!ofAgeAtConference({ startConference, dateOfBirth: row.user.birthday })
-		});
-		const result = {
-			userId: person.userId,
-			name: row ? fullName(row.user) : person.userId,
-			pages: person.pages,
-			unreadable: person.unreadable,
-			...proposal,
-			missing: !row
-		};
-		if (!row || !changesAnything(proposal.change)) return result;
+		args: KeepArgs<Row>;
+		source: Source;
+	}): Promise<KeptPage> {
 		try {
-			await client.mutate.upsertConferenceParticipant({
-				__args: { ...proposal.change, id: row.id, conferenceId, userId: person.userId },
-				id: true
-			});
-			return result;
+			return { outcome: await keepScan({ args, source, conferenceId }) };
 		} catch (error) {
-			logger.warn('Saving what a scan says failed', error);
-			return {
-				...result,
-				change: {},
-				error: error instanceof Error ? error.message : String(error)
-			};
+			logger.warn('Saving a scan failed', error);
+			return { outcome: 'failed', error: error instanceof Error ? error.message : String(error) };
 		}
 	}
 
+	async function take({ file, source }: { file: File; source: Source }) {
+		const taken = await takeScan<Row>({
+			file: { name: file.name, source: blobSource(file) },
+			conferenceIds: new Set([conferenceId]),
+			ports: {
+				read: (scan) => readScanPage({ scan, platform: browserPlatform }),
+				onPage: () => (progress.pages += 1),
+				check: checkCode,
+				participant: oncePerPerson(participant),
+				keep: (args) => keep({ args, source }),
+				onUnreadable: (error) => logger.warn('Reading a scanned file failed', error)
+			}
+		});
+		for (const { person, participant, kept } of taken.people) {
+			people = withResult({ people, result: personReport({ person, row: participant, kept }) });
+		}
+		problems.push(...taken.problems.filter(({ reason }) => !ON_PERSONS_LINE.includes(reason)));
+	}
+
 	// fallow-ignore-next-line complexity
-	async function run(files: File[]) {
+	async function run({ files, source }: { files: File[]; source: Source }) {
 		if (running || files.length === 0) return;
 		running = true;
-		pages = [];
+		problems = [];
 		people = [];
 		progress = { files: 0, pages: 0 };
 		try {
 			for (const file of files) {
-				try {
-					for await (const { page, picture } of pagesOf(file)) {
-						const outcome = await readScannedPage({ picture, acceptance });
-						pages.push({ file: file.name, page, outcome });
-						progress.pages += 1;
-					}
-				} catch (error) {
-					logger.warn('Reading a scanned file failed', error);
-					pages.push({
-						file: file.name,
-						page: 0,
-						outcome: { kind: 'refused', message: m.paperFileUnreadable() }
-					});
-				}
+				await take({ file, source });
 				progress.files += 1;
 			}
-			const found = pagesByPerson(pages);
-			const [rows, conference] = await Promise.all([
-				statusRows(found.map(({ userId }) => userId)),
-				client.query.conference({ __args: { id: conferenceId }, startConference: true })
-			]);
-			for (const person of found) {
-				const row = rows.find((candidate) => candidate.userId === person.userId);
-				people.push(await settle({ person, row, startConference: conference.startConference }));
+			if (problems.length > 0 || people.some(({ missing, error }) => missing || error)) {
+				toast.error(m.paperBatchProblems(), { duration: 15_000 });
 			}
+		} catch (error) {
+			logger.error('Taking in scans failed', error);
+			toast.error(m.genericToastError());
 		} finally {
 			running = false;
 		}
 	}
 
+	/** New scans in the watched folder, once what is being read is done. */
+	async function runFolder(files: File[]) {
+		while (running) await new Promise((later) => setTimeout(later, 500));
+		await run({ files, source: 'FOLDER' });
+	}
+
 	function onfiles(list: FileList | null | undefined) {
-		if (list) void run([...list]);
+		if (list) void run({ files: [...list], source: 'UPLOAD' });
 	}
 
 	function ondrop(event: DragEvent) {
@@ -150,9 +134,6 @@
 		dragging = false;
 		onfiles(event.dataTransfer?.files);
 	}
-
-	const strayReason = (page: ScannedPage) =>
-		page.outcome.kind === 'refused' ? page.outcome.message : m.paperPageWithoutCode();
 </script>
 
 <section class="flex w-full flex-col gap-3" aria-label={m.paperBatchTitle()}>
@@ -182,6 +163,14 @@
 		/>
 	</label>
 
+	<div class="flex flex-wrap items-center gap-2">
+		<FolderWatch onscans={runFolder} />
+		<a class="btn btn-sm" href={resolve('my-account/scanners')}>
+			<i aria-hidden="true" class="ph-duotone ph-printer"></i>
+			{m.scannerSetupButton()}
+		</a>
+	</div>
+
 	{#if running}
 		<div class="flex items-center gap-3" role="status">
 			<span class="loading loading-spinner loading-sm"></span>
@@ -200,16 +189,12 @@
 		</section>
 	{/if}
 
-	{#if stray.length > 0}
+	{#if problems.length > 0}
 		<section class="flex flex-col gap-2">
-			<h3 class="font-semibold">{m.paperBatchStray({ count: stray.length })}</h3>
+			<h3 class="font-semibold">{m.paperBatchNotTaken()}</h3>
 			<ul class="text-sm">
-				{#each stray as page, index (index)}
-					<li>
-						{page.file}{page.page > 0 ? `, ${m.paperBatchPage({ page: page.page })}` : ''}: {strayReason(
-							page
-						)}
-					</li>
+				{#each problems as problem, index (index)}
+					<li>{describeScanProblem(problem)}</li>
 				{/each}
 			</ul>
 		</section>

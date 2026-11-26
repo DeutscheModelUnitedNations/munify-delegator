@@ -155,14 +155,14 @@ A click on a row opens the person's user card. At the end of each row are:
 2. **Check Emails** shows what will happen to each address:
    - **Account exists**: the person already has an account and joins the team right away.
    - **New user**: the person gets an invitation by email.
-   - **Pending invitation** or **Already member**: the address cannot be invited again.
+   - **Pending invitation** or **Already member**: the address cannot be invited again. An expired invitation does not count as pending, the new one replaces it.
 
    If the server has an organisation domain set, addresses of other domains carry the mark **External**, and a warning shows above the list. They are invited all the same.
 
 3. Choose the **Role** for each address. **Member** is preselected. Untick anyone you do not want to invite.
 4. **Send Invitations** carries it all out. A message counts how many people were added directly and how many invitations were sent. If an address fails, DELEGATOR reports it on its own with the reason, and the other addresses still go through.
 
-DELEGATOR refuses an address when it is not a valid email address, the person is on the team already, an invitation for them is still open, or they already take part in the conference. Team Coordinators cannot invite anyone as **Project Management**. Such addresses get an error message, the other invitations go out.
+DELEGATOR refuses an address when it is not a valid email address, the person is on the team already, an invitation for them is still open and valid, or they already take part in the conference. Team Coordinators cannot invite anyone as **Project Management**. Such addresses get an error message, the other invitations go out.
 
 :::warning Account exists means on the team right away
 Anyone who already has an account is on the team as soon as you click **Send Invitations**, without an invitation email and without confirming anything. They see the pages of their role at once. Whether they hear about it depends on the [welcome email](#welcome-mail).
@@ -184,7 +184,7 @@ When the person clicks the link, they sign in or create an account and land on t
 The **Pending Invitations** tab lists every invitation that is neither accepted nor revoked, with **E-mail**, **Role**, **Status** (**Account exists** or **New user**), **Expires** and **Invited by**. Expired invitations stay in it, faded and marked **expired**. DELEGATOR deletes them 30 days after they expired.
 
 - **Copy Link** creates a new link, again valid for seven days, and copies it so you can send it yourself.
-- **Resend invitation** also creates a new link and sends it with the invitation email.
+- **Resend invitation** also creates a new link and sends it with the invitation email. On expired invitations the button is called **Invite again**.
 - **Revoke invitation** makes the invitation unusable. It disappears from the list.
 
 :::note A new link replaces the old one
@@ -301,7 +301,7 @@ With **Impersonation** you see and use DELEGATOR as if you were another person.
 
 **How it works:**
 
-1. Open the person's user card. If you may act as them, the header of the card shows the button with the detective (**Impersonation**). System administrators also find it in the members table in [Team management](#team-management).
+1. Open the person's user card. If you may act as them, **More actions** next to the name has **Impersonation** (the detective). System administrators also find it in the members table in [Team management](#team-management).
 2. A click reloads DELEGATOR and shows you the conference overview as the person sees it.
 3. The header now shows a yellow button with the detective. Hover over it to read **Acting as: …** with the person's address and your own.
 4. Clicking that button ends the impersonation and takes you back to the conference overview as yourself.
@@ -350,7 +350,7 @@ While a CHASE instance is linked, every team member sees the **Link to CHASE** c
 
 System administrators find the **Sync now** button on the card and on the **Link to CHASE** page. It makes DELEGATOR read everything from CHASE again and asks CHASE to do the same with DELEGATOR. It is not normally needed, since both sides hear changes right away. If CHASE cannot be reached at the moment, DELEGATOR still syncs on its side and says so in the message.
 
-System administrators open the **Link to CHASE** page in the menu behind their initials at the top right, under **Administration**. It shows which address DELEGATOR is linked to, **Last notice from CHASE**, **Last full sync** and the last error, plus **Open CHASE**. Without a link, it explains which server settings it needs.
+System administrators open the **Link to CHASE** page in the menu behind the person icon at the top right, under **Administration**. It shows which address DELEGATOR is linked to, **Last notice from CHASE**, **Last full sync** and the last error, plus **Open CHASE**. Without a link, it explains which server settings it needs.
 
 :::note When the link ends
 If the administration removes the link from the configuration, it ends at the server's next start. The resolutions from CHASE then stay as ordinary resolutions and can be deleted again.

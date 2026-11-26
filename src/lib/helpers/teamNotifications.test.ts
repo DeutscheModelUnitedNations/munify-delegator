@@ -38,11 +38,12 @@ const sharedTrust: NotifiedInbox = {
 };
 
 describe('topicsOf', () => {
-	it('gives participant care its inbox and the reports', () => {
+	it('gives participant care its inbox, the reports and its scanners', () => {
 		for (const member of [carer, lead]) {
 			expect(topicsOf(member)).toEqual([
 				{ topic: 'PARTICIPANT_CARE', teamFunctionId: null },
-				{ topic: 'CHAT_REPORT', teamFunctionId: null }
+				{ topic: 'CHAT_REPORT', teamFunctionId: null },
+				{ topic: 'SCAN_PROBLEM', teamFunctionId: null }
 			]);
 		}
 	});
@@ -84,7 +85,8 @@ describe('topicsOf', () => {
 			'COMMITTEE_PAPERS',
 			'TRUSTED_SHARED',
 			'TRUSTED_PERSONAL',
-			'CHAT_REPORT'
+			'CHAT_REPORT',
+			'SCAN_PROBLEM'
 		]);
 	});
 });

@@ -18,12 +18,12 @@
 	import { page } from '$app/state';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Form from '#lib/components/form/Form.svelte';
-	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile';
 	import { canEditConference, canEditConferenceContent } from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { conferenceSettingsFormSchema, limitArgs, type ConferenceSettings } from './form-schema';
 	import { collectConfigChanges, type ChangeGroupKey } from './changePreview';
+	import { uploadConferenceFiles } from './conferenceFiles';
 	import ConfigSave from './ConfigSave.svelte';
 	import CommitteesManager from './committees/CommitteesManager.svelte';
 	import TabIntro from './sections/TabIntro.svelte';
@@ -67,6 +67,7 @@
 		isOpenPaperSubmission: true,
 		showCalendar: true,
 		messagingEnabled: true,
+		guidePublished: true,
 		qrCorporateDesign: true,
 		timezone: true,
 		unlockPayments: true,
@@ -139,6 +140,7 @@
 		timezone: storedConference.timezone,
 		showCalendar: storedConference.showCalendar,
 		messagingEnabled: storedConference.messagingEnabled,
+		guidePublished: storedConference.guidePublished,
 		qrCorporateDesign: storedConference.qrCorporateDesign,
 		isOpenPaperSubmission: storedConference.isOpenPaperSubmission,
 		linkToPreparationGuide: storedConference.linkToPreparationGuide ?? undefined,
@@ -191,19 +193,6 @@
 			if (!validated.valid) return;
 			const changedFields = pendingChanges.map((change) => change.key);
 
-			// The form carries uploads as `File`; each picked one goes to the storage first and the
-			// mutation takes its id. A field left untouched yields `undefined` and keeps what is stored,
-			// a removed image `null`, which deletes it.
-			const upload = async ({
-				field,
-				file
-			}: {
-				field: ConferenceFileField;
-				file: File | null | undefined;
-			}) =>
-				file === null
-					? null
-					: uploadFile({ file, target: { kind: 'conference', field, conferenceId } });
 			const {
 				image,
 				emblem,
@@ -216,19 +205,13 @@
 				...settings
 			} = validated.data;
 			// The document templates, which content roles may change too.
-			const uploadDocuments = async () => ({
-				contractFileId: await upload({ field: 'contract', file: contractBasePDF }),
-				guardianConsentFileId: await upload({
-					field: 'guardianConsent',
-					file: guardianConsentBasePDF
-				}),
-				mediaConsentFileId: await upload({ field: 'mediaConsent', file: mediaConsentBasePDF }),
-				termsAndConditionsFileId: await upload({
-					field: 'termsAndConditions',
-					file: termsAndConditionsBasePDF
-				}),
-				certificateFileId: await upload({ field: 'certificate', file: certificateBasePDF })
-			});
+			const documents = {
+				contract: contractBasePDF,
+				guardianConsent: guardianConsentBasePDF,
+				mediaConsent: mediaConsentBasePDF,
+				termsAndConditions: termsAndConditionsBasePDF,
+				certificate: certificateBasePDF
+			};
 			const documentFiles = {
 				certificateFile: { url: true },
 				termsAndConditionsFile: { url: true },
@@ -254,13 +237,14 @@
 					unlockPostals: settings.unlockPostals,
 					isOpenPaperSubmission: settings.isOpenPaperSubmission,
 					showCalendar: settings.showCalendar,
-					messagingEnabled: settings.messagingEnabled
+					messagingEnabled: settings.messagingEnabled,
+					guidePublished: settings.guidePublished
 				};
 				const promise = client.mutate.updateConference({
 					__args: {
 						...content,
 						id: conferenceId,
-						...(await uploadDocuments())
+						...(await uploadConferenceFiles({ conferenceId, files: documents }))
 					},
 					id: true,
 					...documentFiles
@@ -279,10 +263,10 @@
 					...settings,
 					...limitArgs(settings),
 					id: conferenceId,
-					imageFileId: await upload({ field: 'image', file: image }),
-					emblemFileId: await upload({ field: 'emblem', file: emblem }),
-					logoFileId: await upload({ field: 'logo', file: logo }),
-					...(await uploadDocuments())
+					...(await uploadConferenceFiles({
+						conferenceId,
+						files: { image, emblem, logo, ...documents }
+					}))
 				},
 				id: true,
 				imageFile: { url: true },

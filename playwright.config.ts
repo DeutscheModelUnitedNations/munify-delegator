@@ -84,6 +84,8 @@ export default defineConfig({
 		env: {
 			LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn',
 			MCP_RESOURCE: `${baseURL}/mcp`,
+			// CI's setpriv knows no Landlock; where there is one, the sandbox is used all the same
+			SCANS_WITHOUT_SANDBOX: 'true',
 			LINK_REMOTE_URL: 'https://chase.e2e.invalid',
 			LINK_REMOTE_RESOURCE: 'https://chase.e2e.invalid/api',
 			LINK_RESOURCE: `${baseURL}/api`,

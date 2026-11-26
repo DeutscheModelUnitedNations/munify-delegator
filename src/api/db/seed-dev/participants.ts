@@ -239,6 +239,9 @@ export function addPayment({
 /** Occasions the team took off the certificates: a scan there is recorded, never certified. */
 const HIDDEN_FROM_CERTIFICATES = new Set(['Scanner-Test']);
 
+/** Occasions at which the team hands out the access cards with the scan. */
+const HANDS_OUT_CARDS = new Set(['Check-in Tag 1']);
+
 export function addAttendance({
 	cs,
 	statusId,
@@ -265,6 +268,7 @@ export function addAttendance({
 				id: sessionId,
 				conferenceId: cs.id,
 				occasion,
+				mode: HANDS_OUT_CARDS.has(occasion) ? 'BADGE' : 'RECORD',
 				startedAt,
 				endedAt,
 				createdById: recordedById,

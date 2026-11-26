@@ -102,12 +102,6 @@
 {#snippet previewCard(preview: SupervisorPreview)}
 	<div class="flex flex-col gap-2 rounded-box bg-base-200 p-3">
 		<div class="flex flex-wrap items-center gap-3">
-			<div
-				class="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-bold text-primary-content"
-				aria-hidden="true"
-			>
-				{`${preview.given_name?.at(0) ?? ''}${preview.family_name?.at(0) ?? ''}`.toUpperCase()}
-			</div>
 			<div class="flex min-w-0 flex-1 flex-col">
 				<span class="font-semibold">
 					{formatNames({

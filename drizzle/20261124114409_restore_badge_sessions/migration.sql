@@ -1,0 +1,1 @@
+ALTER TYPE "attendance_session_mode" ADD VALUE 'BADGE';

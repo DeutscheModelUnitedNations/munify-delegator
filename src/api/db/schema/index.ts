@@ -7,7 +7,15 @@
 export { storedFile } from './storedFile';
 export { school, schoolSuggestion, schoolSuggestionVariant } from './schools';
 export { gender, foodPreference, user, possibleDuplicateStatus, possibleDuplicate } from './users';
-export { conferenceState, conference } from './conference';
+export { conferenceSeries, conferenceState, conference } from './conference';
+export {
+	guidePageKind,
+	guidePage,
+	guidePageVersion,
+	guideOutline,
+	guideOutlineVersion,
+	guidePageFile
+} from './guide';
 export {
 	calendarEntryColor,
 	place,
@@ -31,6 +39,18 @@ export {
 	conferenceSupervisor,
 	supervision
 } from './participants';
+export {
+	postalScanSource,
+	postalScan,
+	agreementField,
+	agreementState,
+	agreementSource,
+	agreementDetail,
+	scannerAccess,
+	scanDelivery,
+	scanTaskKind,
+	scanTask
+} from './postal';
 export {
 	delegation,
 	delegationMember,

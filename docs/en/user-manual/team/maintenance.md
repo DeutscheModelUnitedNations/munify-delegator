@@ -91,7 +91,7 @@ Someone with a care note who signs up again with a new account would otherwise l
 **What confirming does.**
 
 - The notes follow the person: next to the account's own note, the user card shows every **Note on the linked account** at the top, and the warning in the [sighting](./assignment#sighting) counts them too.
-- The user card's **Conferences** tab also lists the conferences of the linked accounts, marked with the other account's name.
+- The user card's **History** tab also lists the conferences of the linked accounts, marked with the other account's name.
 - Confirmations carry over: if A and B are the same person, and B and C are, so are A and C. DELEGATOR creates and confirms such pairs itself. They read **Linked through other confirmed accounts** and have no buttons of their own. When you reopen or dismiss one of the pairs someone confirmed, DELEGATOR takes back the pairs that came from it.
 - While a pair is open or confirmed, Participant Care may read the name and notes of the other account too, without its contact details.
 

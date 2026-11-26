@@ -10,7 +10,7 @@ export const calendarDayFields = {
 		name: true,
 		description: true,
 		sortOrder: true,
-		// whose seats the track is for, which the dashboard's timeline follows
+		// whose seats the track is for, which the dashboard's next entries follow
 		committees: { id: true },
 		conferenceRoles: { id: true }
 	},
@@ -48,5 +48,8 @@ export function calendarDaysOf(conferenceId: string) {
 
 /** The conference's schedule: its days with their tracks and entries, in the order they happen */
 export function fetchCalendarDays(conferenceId: string) {
-	return client.query.calendarDays({ __args: calendarDaysOf(conferenceId), ...calendarDayFields });
+	return client.liveQuery.calendarDays({
+		__args: calendarDaysOf(conferenceId),
+		...calendarDayFields
+	});
 }

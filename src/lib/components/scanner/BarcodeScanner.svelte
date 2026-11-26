@@ -17,14 +17,8 @@
 	} from './suggestions';
 	import { searchUsers } from './userSearch';
 	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
-	import {
-		captureFrame,
-		openScannerCamera,
-		stopVideoStream,
-		streamZoom,
-		zoomVideo,
-		type CameraZoom
-	} from './camera';
+	import { captureFrame, openScannerCamera } from './camera';
+	import { createCameraControls } from './cameraControls.svelte.js';
 
 	interface Props {
 		/** Barcode formats to detect */
@@ -89,8 +83,7 @@
 	let videoElem = $state<HTMLVideoElement>();
 	let streaming = $state(false);
 	let starting = $state(false);
-	/** The camera's zoom, while it streams with one. */
-	let zoom = $state<CameraZoom>();
+	const controls = createCameraControls(() => videoElem);
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
 	let cameraWanted = createPersistedState({ key: untrack(() => persistKey), initial: false });
 	let manualInputElem = $state<HTMLInputElement>();
@@ -153,7 +146,7 @@
 		video.srcObject = stream;
 		await video.play();
 		streaming = true;
-		zoom = streamZoom(stream);
+		controls.started(stream);
 		cameraWanted.current = true;
 		await refreshVideoDevices();
 	}
@@ -181,13 +174,8 @@
 	}
 
 	function stopVideo() {
-		stopVideoStream(videoElem);
+		controls.stop();
 		streaming = false;
-		zoom = undefined;
-	}
-
-	async function zoomTo(value: number) {
-		zoom = await zoomVideo({ video: videoElem, value });
 	}
 
 	function turnCameraOff() {
@@ -419,8 +407,10 @@
 				{scannedCode}
 				{scanPromptText}
 				canSwitchCamera={availableVideoDevices.length > 1}
-				{zoom}
-				onzoom={zoomTo}
+				zoom={controls.zoom}
+				onzoom={controls.zoomTo}
+				torch={controls.torch}
+				ontorch={controls.switchLight}
 				onswitch={switchCamera}
 				onstop={turnCameraOff}
 				onstart={startVideo}

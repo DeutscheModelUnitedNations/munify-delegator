@@ -5,15 +5,21 @@
 	import { toast } from 'svelte-sonner';
 	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator';
 	import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
+	import Row from '../ui/Row.svelte';
+	import { fetchParticipantStatus } from '../tabs/participantStatus';
 	import { certificateContentsOf, documentFileName } from '../tabs/statusDownloads';
 
-	/** The person's participation certificate, generated when it is asked for. */
+	/** The person's participation certificate as a list row, generated when it is asked for. */
 	interface Props {
 		userId: string;
 		conferenceId: string;
 	}
 
 	let { userId, conferenceId }: Props = $props();
+
+	// The API issues one only to who took part
+	const statuses = $derived(await fetchParticipantStatus({ userId, conferenceId }));
+	const didAttend = $derived(statuses.at(0)?.didAttend ?? false);
 
 	const downloadCertificate = async () => {
 		try {
@@ -55,17 +61,23 @@
 	};
 </script>
 
-<section class="flex flex-col gap-3">
-	<h3 class="text-lg font-bold">{m.certificate()}</h3>
-	<div class="bg-base-200 rounded-box flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-		<i
-			aria-hidden="true"
-			class="ph-duotone ph-certificate text-base-content/60 w-6 text-center text-lg"
-		></i>
-		<span class="grow font-semibold">{m.certificate()}</span>
-		<button class="btn btn-sm" onclick={downloadCertificate}>
+{#snippet needsParticipation()}
+	<span class="text-base-content/60">{m.userCardCertificateNeedsParticipation()}</span>
+{/snippet}
+
+<Row
+	icon="certificate"
+	title={m.certificate()}
+	children={didAttend ? undefined : needsParticipation}
+>
+	{#snippet actions()}
+		<button
+			class="btn btn-sm btn-ghost text-primary disabled:text-base-content/40"
+			disabled={!didAttend}
+			onclick={downloadCertificate}
+		>
 			<i aria-hidden="true" class="ph-duotone ph-download-simple"></i>
-			{m.downloadCertificate()}
+			{m.download()}
 		</button>
-	</div>
-</section>
+	{/snippet}
+</Row>

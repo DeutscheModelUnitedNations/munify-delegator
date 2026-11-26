@@ -5,8 +5,12 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from '#lib/schemata/userForm';
-	import FormSelect from '#lib/components/form/FormSelect.svelte';
-	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
+	import PersonNameFields from '#lib/components/form/PersonNameFields.svelte';
+	import PersonalInformationFields from '#lib/components/form/PersonalInformationFields.svelte';
+	import {
+		PERSON_NAME_FIELDS,
+		PERSONAL_INFORMATION_FIELDS
+	} from '#lib/components/form/userFieldOptions';
 	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
 	import LoginInformationCard from './LoginInformationCard.svelte';
 	import { toast } from 'svelte-sonner';
@@ -150,18 +154,7 @@
 							{m.legalNameDisclaimer()}
 						</p>
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-							<FormTextInput
-								{form}
-								name="given_name"
-								label={m.firstName()}
-								placeholder={m.firstName()}
-							/>
-							<FormTextInput
-								{form}
-								name="family_name"
-								label={m.lastName()}
-								placeholder={m.lastName()}
-							/>
+							<PersonNameFields {form} fields={PERSON_NAME_FIELDS} />
 						</div>
 						<FormTextInput
 							{form}
@@ -180,40 +173,7 @@
 					<AddressSection {form} fields={ADDRESS_FIELDS} rules={address} />
 					<FormSection title={m.aboutYou()} icon="user">
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-							<FormDateTimeInput
-								{form}
-								name="birthday"
-								label={m.birthDate()}
-								defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
-								enableFutureDates={false}
-							/>
-							<FormSelect
-								{form}
-								name="gender"
-								label={m.gender()}
-								options={[
-									{ value: 'MALE', label: m.male() },
-									{ value: 'FEMALE', label: m.female() },
-									{ value: 'DIVERSE', label: m.diverse() },
-									{ value: 'NO_STATEMENT', label: m.noStatement() }
-								]}
-							/>
-							<FormTextInput
-								{form}
-								name="pronouns"
-								placeholder={m.pronounsExample()}
-								label={m.pronouns()}
-							/>
-							<FormSelect
-								{form}
-								name="foodPreference"
-								label={m.diet()}
-								options={[
-									{ value: 'VEGAN', label: m.vegan() },
-									{ value: 'VEGETARIAN', label: m.vegetarian() },
-									{ value: 'OMNIVORE', label: m.omnivore() }
-								]}
-							/>
+							<PersonalInformationFields {form} fields={PERSONAL_INFORMATION_FIELDS} />
 						</div>
 					</FormSection>
 					<FormSection title={m.newsletters()} icon="envelope-open">

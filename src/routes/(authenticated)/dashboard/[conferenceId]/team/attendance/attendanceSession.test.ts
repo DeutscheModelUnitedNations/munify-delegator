@@ -114,6 +114,9 @@ describe('attendanceSession', () => {
 	});
 
 	test('scanStep', () => {
+		expect(scanStep({ badgeMode: true, passed: true })).toBe('badge');
+		// the card is handed out at the entrance whatever is still open
+		expect(scanStep({ badgeMode: true, passed: false })).toBe('badge');
 		expect(scanStep({ passed: true })).toBeNull();
 		expect(scanStep({ passed: false })).toBe('ack');
 		expect(scanStep({ passed: false, decides: true })).toBe('decide');

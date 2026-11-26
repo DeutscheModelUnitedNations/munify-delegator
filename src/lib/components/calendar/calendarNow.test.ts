@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import { entriesForSeat, seatOf, timelineOf, wallClockNow } from './calendarNow';
+import {
+	entriesForSeat,
+	leadOfTimeline,
+	placeLine,
+	seatOf,
+	startsIn,
+	timelineOf,
+	wallClockNow
+} from './calendarNow';
 
 const at = (iso: string) => new Date(`${iso}Z`);
 const entry = (name: string, start: string, end: string, tracks: string[] = []) => ({
@@ -85,6 +93,53 @@ describe('entriesForSeat', () => {
 		expect(names).toContain('Press');
 		expect(new Set(names).size).toBe(names.length);
 	});
+
+	describe('parallel copies of one session, for someone without a track', () => {
+		const session = ({
+			trackId,
+			place,
+			room
+		}: {
+			trackId: string;
+			place: string;
+			room: string;
+		}) => ({
+			...entry('Sitzung', '2026-10-11T11:00', '2026-10-11T12:00', [trackId]),
+			place: { id: place, name: place },
+			room
+		});
+		const merged = (entries: ReturnType<typeof session>[]) =>
+			entriesForSeat({ days: [{ tracks: [council, press], entries }], seat: seat({}) });
+
+		test('are one entry on all their tracks, without the rooms they differ in', () => {
+			const [only, ...rest] = merged([
+				session({ trackId: 'sr', place: 'Landtag', room: '201' }),
+				session({ trackId: 'press', place: 'Landtag', room: '202' })
+			]);
+			expect(rest).toEqual([]);
+			expect(only).toMatchObject({
+				tracks: [{ id: 'sr' }, { id: 'press' }],
+				place: { name: 'Landtag' },
+				room: null
+			});
+		});
+
+		test('name no place and no room when they are at different places', () => {
+			const [only] = merged([
+				session({ trackId: 'sr', place: 'Landtag', room: '1' }),
+				session({ trackId: 'press', place: 'Kulturzentrum', room: '1' })
+			]);
+			expect(only).toMatchObject({ place: null, room: null });
+		});
+
+		test('keep the place and room they share', () => {
+			const [only] = merged([
+				session({ trackId: 'sr', place: 'Landtag', room: '1' }),
+				session({ trackId: 'press', place: 'Landtag', room: '1' })
+			]);
+			expect(only).toMatchObject({ place: { name: 'Landtag' }, room: '1' });
+		});
+	});
 });
 
 describe('timelineOf', () => {
@@ -98,7 +153,7 @@ describe('timelineOf', () => {
 
 	test('names what is running and the next two to start', () => {
 		const { current, upcoming } = timelineOf({ entries, timezone: 'Europe/Berlin', now: NOW });
-		expect(current?.name).toBe('Mittagspause');
+		expect(current.map((e) => e.name)).toEqual(['Mittagspause']);
 		expect(upcoming.map((u) => u.entry.name)).toEqual(['Workshop', 'Abend']);
 		expect(upcoming.map((u) => u.newDay)).toEqual([false, false]);
 	});
@@ -120,24 +175,99 @@ describe('timelineOf', () => {
 
 	test('an entry that ended exactly now is over and one that starts now is running', () => {
 		const atNine = new Date('2026-10-11T07:00:00Z');
-		expect(timelineOf({ entries, timezone: 'Europe/Berlin', now: atNine }).current?.name).toBe(
-			'Mittagspause'
-		);
+		const { current } = timelineOf({ entries, timezone: 'Europe/Berlin', now: atNine });
+		expect(current.map((e) => e.name)).toEqual(['Mittagspause']);
+	});
+
+	test('names everything that runs at the same time, the earlier start first', () => {
+		const parallel = [
+			entry('Pressekonferenz', '2026-10-11T09:15', '2026-10-11T09:45'),
+			entry('Sprechstunde', '2026-10-11T08:00', '2026-10-11T12:00')
+		];
+		const { current } = timelineOf({ entries: parallel, timezone: 'Europe/Berlin', now: NOW });
+		expect(current.map((e) => e.name)).toEqual(['Sprechstunde', 'Pressekonferenz']);
 	});
 
 	test('between entries there is nothing running', () => {
 		const gap = new Date('2026-10-11T17:00:00Z');
 		const { current, upcoming } = timelineOf({ entries, timezone: 'Europe/Berlin', now: gap });
-		expect(current).toBeUndefined();
+		expect(current).toEqual([]);
 		expect(upcoming.map((u) => u.entry.name)).toEqual(['Sitzung V']);
 	});
 
 	test('nothing is left after the last entry', () => {
 		const after = new Date('2026-10-13T12:00:00Z');
 		expect(timelineOf({ entries, timezone: 'Europe/Berlin', now: after })).toEqual({
-			current: undefined,
+			current: [],
 			upcoming: []
 		});
+	});
+});
+
+describe('leadOfTimeline', () => {
+	const upcoming = ['a', 'b', 'c', 'd'].map((entry) => ({ entry, newDay: false }));
+	const names = (list: readonly { entry: string }[]) => list.map(({ entry }) => entry);
+
+	test('leads with everything running, then what comes next', () => {
+		const lead = leadOfTimeline({ timeline: { current: ['x', 'y'], upcoming }, count: 3 });
+		expect(lead.running).toEqual(['x', 'y']);
+		expect(lead.next).toBeUndefined();
+		expect(names(lead.following)).toEqual(['a', 'b', 'c']);
+	});
+
+	test('leads with the next entry when nothing is running', () => {
+		const lead = leadOfTimeline({ timeline: { current: [], upcoming }, count: 3 });
+		expect(lead.next?.entry).toBe('a');
+		expect(names(lead.following)).toEqual(['b', 'c', 'd']);
+	});
+
+	test('keeps everything when little is left', () => {
+		const little = { current: ['x'], upcoming: upcoming.slice(0, 1) };
+		expect(names(leadOfTimeline({ timeline: little, count: 3 }).following)).toEqual(['a']);
+		const nothing = leadOfTimeline({ timeline: { current: [], upcoming: [] }, count: 3 });
+		expect(nothing).toEqual({ running: [], next: undefined, following: [] });
+	});
+});
+
+describe('startsIn', () => {
+	// 09:30 on the wall clock
+	const until = (start: string, locale = 'en') =>
+		startsIn({ startTime: at(start), timezone: 'Europe/Berlin', now: NOW, locale });
+
+	test('counts minutes within the hour', () => {
+		expect(until('2026-10-11T09:31')).toBe('in 1 minute');
+		expect(until('2026-10-11T10:29', 'de')).toBe('in 59 Minuten');
+	});
+
+	test('counts full hours on the same day, never more than are left', () => {
+		expect(until('2026-10-11T10:30')).toBe('in 1 hour');
+		expect(until('2026-10-11T12:25')).toBe('in 2 hours');
+	});
+
+	test('counts days from the next day on', () => {
+		expect(until('2026-10-12T08:00')).toBe('tomorrow');
+		expect(until('2026-10-14T23:00', 'de')).toBe('in 3 Tagen');
+	});
+
+	test('counts minutes across midnight', () => {
+		const late = new Date('2026-10-11T21:50:00Z');
+		expect(
+			startsIn({
+				startTime: at('2026-10-12T00:10'),
+				timezone: 'Europe/Berlin',
+				now: late,
+				locale: 'en'
+			})
+		).toBe('in 20 minutes');
+	});
+});
+
+describe('placeLine', () => {
+	test('joins the place and the room, whichever is known', () => {
+		expect(placeLine({ place: { name: 'Landtag' }, room: '201' })).toBe('Landtag · 201');
+		expect(placeLine({ place: null, room: '201' })).toBe('201');
+		expect(placeLine({ place: { name: 'Landtag' } })).toBe('Landtag');
+		expect(placeLine({})).toBe('');
 	});
 });
 

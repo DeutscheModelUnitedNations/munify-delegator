@@ -1,6 +1,7 @@
 import { client, type Mutation } from '#lib/api/rumbleClient/client';
 import { genericPromiseToastMessages } from '#lib/utils/toast';
 import { toast } from 'svelte-sonner';
+import { formalitiesOf, needsGuardian } from '../formalities';
 import { ensureSent } from '../sections/owedEmails';
 
 /**
@@ -28,6 +29,19 @@ export function fetchParticipantStatus({
 	});
 }
 
+/** The statuses that decide what mails a person is owed, as one value. */
+export const owedEmailsRevision = (
+	status: Awaited<ReturnType<typeof fetchParticipantStatus>>[number] | undefined
+) =>
+	status &&
+	[
+		status.paymentStatus,
+		status.termsAndConditions,
+		status.guardianConsent,
+		status.mediaConsent,
+		status.didAttend
+	].join();
+
 /**
  * The status row plus the two dates that decide whether a guardian has to consent: the person's
  * birthday and the conference's start.
@@ -45,6 +59,24 @@ export async function fetchStatusWithAge({
 		client.liveQuery.conference({ __args: { id: conferenceId }, id: true, startConference: true })
 	]);
 	return { statuses, user, conference };
+}
+
+/** What the person has to settle, from what `fetchStatusWithAge` answered. */
+export function personFormalities({
+	data,
+	isConferenceSupervisor
+}: {
+	data: Awaited<ReturnType<typeof fetchStatusWithAge>>;
+	isConferenceSupervisor: boolean;
+}) {
+	return formalitiesOf({
+		status: data.statuses.at(0),
+		needsGuardian: needsGuardian({
+			isConferenceSupervisor,
+			birthday: data.user.birthday,
+			startConference: data.conference.startConference
+		})
+	});
 }
 
 /** The mutation's own argument type minus the identifying fields `changeParticipantStatus` fills in. */

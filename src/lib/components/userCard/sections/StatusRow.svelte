@@ -1,19 +1,12 @@
-<script lang="ts" module>
-	export type StatusTone = 'success' | 'warning' | 'error' | 'neutral';
-
-	export interface StatusOption<S> {
-		value: S;
-		label: string;
-		icon: string;
-		tone: StatusTone;
-	}
-</script>
-
 <script lang="ts" generics="S">
+	import type { Snippet } from 'svelte';
+	import Row from '../ui/Row.svelte';
+	import StateMenu, { type StatusOption } from '../ui/StateMenu.svelte';
+
 	/**
-	 * One status of a person as a list row: what it is, what it currently says in words, and the
-	 * buttons to change it. The postal registration page keeps the large `StatusWidget` for quick
-	 * clicking; the user card reads better with the state spelled out.
+	 * One status of a person as a row of a `Section`: its state, changed in a menu, and while it is open
+	 * the button that settles it. The postal registration page keeps the large `StatusWidget` for quick
+	 * clicking.
 	 */
 	interface Props {
 		title: string;
@@ -21,70 +14,50 @@
 		active: S;
 		options: StatusOption<S>[];
 		change: (status: S) => Promise<void>;
+		/** Beside the state */
+		extra?: Snippet;
 	}
 
-	let { title, icon, active, options, change }: Props = $props();
+	let { title, icon, active, options, change, extra }: Props = $props();
 
-	const toneText: Record<StatusTone, string> = {
-		success: 'text-success',
-		warning: 'text-warning',
-		error: 'text-error',
-		neutral: 'text-base-content/60'
-	};
-	const toneButton: Record<StatusTone, string> = {
-		success: 'btn-success',
-		warning: 'btn-warning',
-		error: 'btn-error',
-		neutral: 'btn-neutral'
-	};
+	/** The state that settles it, if it is not settled */
+	const done = $derived(
+		options.find((option) => option.tone === 'success' && option.value !== active)
+	);
 
-	const current = $derived(options.find((option) => option.value === active));
+	let pending = $state(false);
 
-	let pending = $state<S>();
-
-	const select = async (value: S) => {
-		if (value === active) return;
-		pending = value;
+	async function select(value: S) {
+		pending = true;
 		try {
 			await change(value);
 		} finally {
-			pending = undefined;
+			pending = false;
 		}
-	};
+	}
 </script>
 
-<div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-	<i
-		aria-hidden="true"
-		class="ph-duotone ph-{icon.replace(/^ph-/, '')} text-base-content/60 w-6 text-center text-lg"
-	></i>
-	<div class="flex min-w-48 grow flex-col">
-		<span class="font-semibold">{title}</span>
-		{#if current}
-			<span class="text-sm {toneText[current.tone]}">
-				<i aria-hidden="true" class="ph-duotone ph-{current.icon.replace(/^ph-/, '')} mr-1"></i>
-				{current.label}
-			</span>
-		{/if}
-	</div>
-	<div class="join">
-		{#each options as option (option.value)}
-			<button
-				class="btn btn-sm join-item tooltip w-24 {option.value === active
-					? toneButton[option.tone]
-					: ''}"
-				data-tip={option.label}
-				aria-label={option.label}
-				aria-pressed={option.value === active}
-				disabled={pending !== undefined}
-				onclick={() => select(option.value)}
-			>
-				{#if pending === option.value}
-					<i aria-hidden="true" class="ph-fill animate-spin ph-spinner-gap"></i>
-				{:else}
-					<i aria-hidden="true" class="ph-fill ph-{option.icon.replace(/^ph-/, '')}"></i>
-				{/if}
-			</button>
-		{/each}
-	</div>
-</div>
+{#snippet settle()}
+	{#if done}
+		{@const option = done}
+		<button
+			class="btn btn-sm btn-soft"
+			aria-label="{title}: {option.label}"
+			disabled={pending}
+			onclick={() => select(option.value)}
+		>
+			<i
+				aria-hidden="true"
+				class={pending ? 'ph-fill ph-spinner-gap animate-spin' : 'ph-duotone ph-check-circle'}
+			></i>
+			{option.label}
+		</button>
+	{/if}
+{/snippet}
+
+<Row {icon} {title} actions={done ? settle : undefined}>
+	<span class="flex flex-wrap items-center gap-x-3">
+		<StateMenu name={title} {active} {options} disabled={pending} onSelect={select} />
+		{@render extra?.()}
+	</span>
+</Row>

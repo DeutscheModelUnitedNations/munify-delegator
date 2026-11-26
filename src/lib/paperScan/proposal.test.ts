@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { PaperField } from './fields';
-import { combineReadings, proposePaperChange, type PostalStatus } from './proposal';
+import {
+	combineReadings,
+	proposePaperChange,
+	rejectedDocuments,
+	type PostalStatus
+} from './proposal';
 import type { FieldReading, FieldState } from './readPaper';
 
 const pending: PostalStatus = {
@@ -89,7 +94,7 @@ describe('proposePaperChange', () => {
 		const readings = [
 			...read(['termsAccepted', 'termsSignature']),
 			...read(['termsPlaceDate'], 'no'),
-			...read(GUARDIAN.slice(0, 5)),
+			...read(GUARDIAN.slice(0, -1)),
 			...read(['guardian2Signature'], 'unclear')
 		];
 		expect(propose({ readings, status: { ...pending, termsAndConditions: 'DONE' } })).toEqual({
@@ -173,5 +178,119 @@ describe('proposePaperChange', () => {
 			mediaConsentStatus: 'ALLOWED_ALL'
 		};
 		expect(propose({ readings: mediaConsent(() => 'yes'), status }).change).toEqual({});
+	});
+
+	it('completes a document with what earlier scans told of its other pages', () => {
+		const known = [
+			...USES.map((field) => ({ field, state: 'yes' as const, source: 'SCAN' as const })),
+			{ field: 'termsSignature' as const, state: 'yes' as const, source: 'SCAN' as const }
+		];
+		expect(
+			proposePaperChange({
+				readings: read(MEDIA_SIGNED),
+				known,
+				status: pending,
+				confirm: false,
+				minor: false
+			})
+		).toEqual({ change: { mediaConsent: 'DONE', mediaConsentStatus: 'ALLOWED_ALL' }, notes: [] });
+	});
+
+	it('lets an earlier clear reading stand in for one unclear now, not for an empty one', () => {
+		const known = [
+			{ field: 'termsSignature' as const, state: 'yes' as const, source: 'SCAN' as const }
+		];
+		const contract = (state: FieldState) => [
+			...read(['termsAccepted', 'termsPlaceDate']),
+			...read(['termsSignature'], state)
+		];
+		const change = (state: FieldState) =>
+			proposePaperChange({
+				readings: contract(state),
+				known,
+				status: pending,
+				confirm: false,
+				minor: false
+			}).change;
+		expect(change('unclear')).toEqual({ termsAndConditions: 'DONE' });
+		expect(change('no')).toEqual({});
+	});
+
+	it("does not wait for the child's name, which the form may print itself", () => {
+		expect(
+			propose({ readings: read(GUARDIAN.filter((field) => field !== 'guardianChildName')) }).change
+		).toEqual({ guardianConsent: 'DONE' });
+	});
+
+	it('counts what a person set over what is read, either way', () => {
+		const change = ({ set, read: state }: { set: FieldState; read: FieldState }) =>
+			proposePaperChange({
+				readings: [
+					...read(['termsAccepted', 'termsPlaceDate']),
+					...read(['termsSignature'], state)
+				],
+				known: [{ field: 'termsSignature', state: set, source: 'MANUAL' }],
+				status: pending,
+				confirm: false,
+				minor: false
+			}).change;
+		expect(change({ set: 'no', read: 'yes' })).toEqual({});
+		expect(change({ set: 'unclear', read: 'yes' })).toEqual({});
+		expect(change({ set: 'yes', read: 'no' })).toEqual({ termsAndConditions: 'DONE' });
+	});
+
+	describe('of a document marked as a problem', () => {
+		const status: PostalStatus = {
+			...pending,
+			guardianConsent: 'PROBLEM',
+			mediaConsent: 'PROBLEM'
+		};
+		const readings = [...read(GUARDIAN), ...mediaConsent(() => 'yes')];
+
+		it('changes nothing unattended, the media choice neither, and says so', () => {
+			expect(propose({ readings, status })).toEqual({
+				change: {},
+				notes: [
+					{ kind: 'rejected', document: 'guardianConsent' },
+					{ kind: 'rejected', document: 'mediaConsent' }
+				]
+			});
+		});
+
+		it('is not completed by a poor scan of it and what earlier ones told', () => {
+			const known = GUARDIAN.map((field) => ({ field, state: 'yes', source: 'SCAN' }) as const);
+			const poor = { readings: read(GUARDIAN, 'unclear'), known, status, minor: true };
+			expect(proposePaperChange({ ...poor, confirm: false }).change).toEqual({});
+		});
+
+		it('is taken as in when a person confirms it', () => {
+			expect(propose({ readings, status, confirm: true })).toEqual({
+				change: {
+					guardianConsent: 'DONE',
+					mediaConsent: 'DONE',
+					mediaConsentStatus: 'ALLOWED_ALL'
+				},
+				notes: []
+			});
+		});
+
+		it('says nothing more than what is missing of one not complete', () => {
+			expect(propose({ readings: read(GUARDIAN, 'no'), status }).notes).not.toContainEqual({
+				kind: 'rejected',
+				document: 'guardianConsent'
+			});
+		});
+	});
+});
+
+describe('rejectedDocuments', () => {
+	it('names those newly marked as a problem', () => {
+		expect(
+			rejectedDocuments({
+				before: { ...pending, mediaConsent: 'PROBLEM' },
+				set: { termsAndConditions: 'DONE', guardianConsent: 'PROBLEM', mediaConsent: 'PROBLEM' }
+			})
+		).toEqual(['guardianConsent']);
+		expect(rejectedDocuments({ before: pending, set: {} })).toEqual([]);
 	});
 });

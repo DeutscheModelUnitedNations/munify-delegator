@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { randomInt } from 'node:crypto';
 import { type Transaction, db, schema } from '#api/db/db';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { asc } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import {
 	conferenceParticipantPubsub,
@@ -36,9 +37,33 @@ function generateSEPASafeId() {
 }
 
 /**
+ * Locks the participants' rows and reads their payment status, waiting for whoever is changing it.
+ * Always in id order, so two callers locking the same people cannot block each other.
+ */
+function lockPaymentStatus({
+	tx,
+	participantIds
+}: {
+	tx: Transaction;
+	participantIds: readonly string[];
+}) {
+	return tx
+		.select({ paymentStatus: schema.conferenceParticipant.paymentStatus })
+		.from(schema.conferenceParticipant)
+		.where(
+			whereRows({
+				table: schema.conferenceParticipant,
+				filter: { id: { in: [...new Set(participantIds)] } }
+			})
+		)
+		.orderBy(asc(schema.conferenceParticipant.id))
+		.for('no key update');
+}
+
+/**
  * Refuses a reference that involves somebody whose fee is already paid: once paid, a person
- * makes no new references and is covered by nobody else's. Locks their status rows, so a payment
- * marked received at the same moment cannot slip past.
+ * makes no new references and is covered by nobody else's. Keeps everybody involved locked, paid or
+ * not (`lockPaymentStatus`), so a payment marked received at the same moment cannot slip past.
  */
 async function assertNobodyPaid({
 	tx,
@@ -47,20 +72,8 @@ async function assertNobodyPaid({
 	tx: Transaction;
 	participantIds: readonly string[];
 }) {
-	const paid = await tx
-		.select({ id: schema.conferenceParticipant.id })
-		.from(schema.conferenceParticipant)
-		.where(
-			whereRows({
-				table: schema.conferenceParticipant,
-				filter: {
-					id: { in: [...new Set(participantIds)] },
-					paymentStatus: 'DONE'
-				}
-			})
-		)
-		.for('update');
-	if (paid.length > 0) {
+	const people = await lockPaymentStatus({ tx, participantIds });
+	if (people.some((person) => person.paymentStatus === 'DONE')) {
 		throw apiError({ code: 'CONFLICT', message: m.paymentAlreadyPaid() });
 	}
 }
@@ -69,10 +82,10 @@ async function assertNobodyPaid({
  * A reference id no payment has yet. With 22^16 possible ids a clash is all but impossible, so a
  * few tries are plenty; running out of them is a fault, not something the caller did.
  */
-async function freePaymentId() {
+async function freePaymentId({ tx }: { tx: Transaction }) {
 	for (let attempt = 0; attempt < 10; attempt++) {
 		const id = generateSEPASafeId();
-		const clash = await db.query.paymentTransaction.findFirst({
+		const clash = await tx.query.paymentTransaction.findFirst({
 			where: { id },
 			columns: { id: true }
 		});
@@ -81,11 +94,49 @@ async function freePaymentId() {
 	throw new Error('No free payment reference id found');
 }
 
+/** The first of the payments that covers exactly these participants, in whatever order. */
+export function paymentCovering<
+	T extends { paymentFor: readonly { conferenceParticipantId: string }[] }
+>({ payments, paymentFor }: { payments: readonly T[]; paymentFor: readonly string[] }) {
+	const wanted = new Set(paymentFor);
+	return payments.find((payment) => {
+		const covered = new Set(payment.paymentFor.map((row) => row.conferenceParticipantId));
+		return covered.size === wanted.size && [...wanted].every((id) => covered.has(id));
+	});
+}
+
 /**
- * Records a payment reference paid by the participant `payerParticipantId` for the participants
- * `paymentFor` (participant row ids), at the conference's fee per participant. Refuses
- * (INVALID_INPUT) while the conference has no fee, and (CONFLICT) when somebody involved has paid
- * already (`assertNobodyPaid`). Returns the new reference's id.
+ * The payer's reference for exactly these participants and this amount whose money has not
+ * arrived, the newest should there be several. One made at another fee no longer fits, its amount
+ * is the old one. Looks under the payer's lock (`assertNobodyPaid`), so the same reference asked for
+ * twice at once is made once.
+ */
+async function openPaymentFor({
+	tx,
+	payerParticipantId,
+	paymentFor,
+	amount
+}: {
+	tx: Transaction;
+	payerParticipantId: string;
+	paymentFor: readonly string[];
+	amount: number;
+}) {
+	const payments = await tx.query.paymentTransaction.findMany({
+		where: { payerParticipantId, amount, recievedAt: { isNull: true } },
+		columns: { id: true },
+		with: { paymentFor: { columns: { conferenceParticipantId: true } } },
+		orderBy: { createdAt: 'desc' }
+	});
+	return paymentCovering({ payments, paymentFor });
+}
+
+/**
+ * The payment reference paid by the participant `payerParticipantId` for the participants
+ * `paymentFor` (participant row ids), at the conference's fee per participant: the one the payer
+ * already has (`openPaymentFor`), otherwise a new one. Refuses (INVALID_INPUT) while the
+ * conference has no fee, and (CONFLICT) when somebody involved has paid already
+ * (`assertNobodyPaid`). Returns the reference's id.
  */
 export async function createPaymentTransaction({
 	conferenceId,
@@ -102,16 +153,16 @@ export async function createPaymentTransaction({
 	if (!feeAmount) {
 		throw apiError({ code: 'INVALID_INPUT', message: m.paymentFeeNotSet() });
 	}
+	const amount = paymentFor.length * feeAmount;
 
-	const id = await freePaymentId();
-
-	await db.transaction(async (tx) => {
+	const { id, created } = await db.transaction(async (tx) => {
 		await assertNobodyPaid({ tx, participantIds: [payerParticipantId, ...paymentFor] });
-		await tx.insert(schema.paymentTransaction).values({
-			id,
-			amount: paymentFor.length * feeAmount,
-			payerParticipantId
-		});
+
+		const open = await openPaymentFor({ tx, payerParticipantId, paymentFor, amount });
+		if (open) return { id: open.id, created: false };
+
+		const id = await freePaymentId({ tx });
+		await tx.insert(schema.paymentTransaction).values({ id, amount, payerParticipantId });
 		if (paymentFor.length > 0) {
 			await tx.insert(schema.userReferenceInPaymentTransaction).values(
 				paymentFor.map((conferenceParticipantId) => ({
@@ -120,9 +171,12 @@ export async function createPaymentTransaction({
 				}))
 			);
 		}
+		return { id, created: true };
 	});
-	paymentTransactionPubsub.created();
-	if (paymentFor.length > 0) userReferenceInPaymentTransactionPubsub.created();
+	if (created) {
+		paymentTransactionPubsub.created();
+		if (paymentFor.length > 0) userReferenceInPaymentTransactionPubsub.created();
+	}
 
 	return id;
 }
@@ -143,6 +197,7 @@ export async function applyPaymentStatus({
 	// The payment status is carried over to every participant the transaction covers.
 	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
 	await db.transaction(async (tx) => {
+		if (covered.length > 0) await lockPaymentStatus({ tx, participantIds: covered });
 		if (assignedStatus === 'DONE') {
 			await tx
 				.update(schema.paymentTransaction)

@@ -17,6 +17,7 @@ export const conferenceSettingsFormSchema = z
 		isOpenPaperSubmission: z.boolean().default(false),
 		showCalendar: z.boolean().default(false),
 		messagingEnabled: z.boolean().default(false),
+		guidePublished: z.boolean().default(false),
 		qrCorporateDesign: z.boolean().default(true),
 		timezone: z.string().min(1).default('Europe/Berlin'),
 		longTitle: z

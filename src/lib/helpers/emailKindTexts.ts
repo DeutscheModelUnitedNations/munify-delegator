@@ -200,6 +200,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		recipients: m.emailKindPaperSubmittedRecipients(),
 		content: m.emailKindPaperSubmittedContent()
 	}),
+	SCAN_PROBLEM: () => ({
+		title: m.emailKindScanProblemTitle(),
+		trigger: m.emailKindScanProblemTrigger(),
+		recipients: m.emailKindScanProblemRecipients(),
+		content: m.emailKindScanProblemContent()
+	}),
 	BADGE_FOUND: () => ({
 		title: m.emailKindBadgeFoundTitle(),
 		trigger: m.emailKindBadgeFoundTrigger(),

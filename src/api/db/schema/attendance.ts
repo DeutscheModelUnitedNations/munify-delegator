@@ -8,7 +8,15 @@ import { surveyOption } from './surveys';
 
 /** Scanner sessions and the attendance they record. */
 
-export const attendanceSessionMode = pgEnum('attendance_session_mode', ['CHECK', 'RECORD']);
+/**
+ * What a scan does: the person is checked (`CHECK`), only recorded (`RECORD`), or checked and given
+ * an access card, whose number is stored with the scan (`BADGE`).
+ */
+export const attendanceSessionMode = pgEnum('attendance_session_mode', [
+	'CHECK',
+	'RECORD',
+	'BADGE'
+]);
 
 /**
  * One occasion of the scanner, started by a team member and ended by them; every device scanning

@@ -3,9 +3,11 @@ import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { identityOf } from '#api/handlers/auth/authService';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
 import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
+	completePostalGuide,
 	countConferenceParticipations,
 	profileArgsSchema,
 	removeParticipation,
@@ -13,6 +15,7 @@ import {
 	type UserChanges
 } from './userService';
 import {
+	assertCanCompletePostalGuide,
 	assertCanImpersonate,
 	assertCanManageUser,
 	assertCanUpdateNewsletterPreferences,
@@ -222,6 +225,20 @@ schemaBuilder.mutationFields((t) => {
 			}
 		}),
 
+		completePostalGuide: t.drizzleField({
+			description:
+				'The caller watched the guide to sending their postal documents to its end, so they may skip it from now on (`User.postalGuideCompletedAt`, which keeps the first time). FORBIDDEN for an AI assistant and while impersonating.',
+			type: UserRef,
+			resolve: async (query, _root, _args, ctx) => {
+				const id = assertCanCompletePostalGuide(ctx);
+				await completePostalGuide(id);
+
+				return db.query.user
+					.findFirst(query(await allowedUser({ ctx, id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
 		startImpersonation: t.field({
 			description:
 				"Acts as `targetUserId` from the next request on, until `stopImpersonation`, the session ends or the impersonation token expires. The provider issues the target's tokens through a token exchange that names the caller as their actor (`act`), and the OIDC library keeps them next to the caller's own session and checks them against it on every request. Whether the caller may still impersonate the target is checked on every request too (`impersonationHandle` in `userPermissions.ts`). FORBIDDEN when the caller may not or already impersonates somebody, or the deployment is not set up for it; CONFLICT when the provider refuses the exchange.",
@@ -280,17 +297,10 @@ schemaBuilder.queryFields((t) => ({
 			if (!user || !impersonator) {
 				return { isImpersonating: false, originalUser: null, impersonatedUser: null };
 			}
-			const identity = (person: typeof user | typeof impersonator) => ({
-				sub: person.sub,
-				email: person.email ?? '',
-				preferred_username: person.preferred_username ?? null,
-				given_name: person.given_name ?? null,
-				family_name: person.family_name ?? null
-			});
 			return {
 				isImpersonating: true,
-				originalUser: identity(impersonator),
-				impersonatedUser: identity(user)
+				originalUser: identityOf(impersonator),
+				impersonatedUser: identityOf(user)
 			};
 		}
 	})

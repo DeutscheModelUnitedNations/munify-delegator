@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { m } from '#lib/paraglide/messages';
 	import { client, type MediaconsentstatusEnum } from '#lib/api/rumbleClient/client';
@@ -20,11 +21,15 @@
 	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import { userIdOfCode } from '#lib/components/scanner/scanAcceptance';
+	import { addPicture, mergeFrames, type TakenPage } from '#lib/paperScan/frames';
 	import { readPageOfCode } from '#lib/paperScan/readScan';
 	import { changesAnything, proposePaperChange } from '#lib/paperScan/proposal';
 	import type { FieldReading } from '#lib/paperScan/readPaper';
 	import PaperReading from './PaperReading.svelte';
 	import PaperBatch from './PaperBatch.svelte';
+	import AgreementDetails from '#lib/components/postal/AgreementDetails.svelte';
+	import PostalScans from '#lib/components/postal/PostalScans.svelte';
+	import LoadBoundary from '#lib/components/LoadBoundary.svelte';
 
 	let { params: routeParams }: PageProps = $props();
 
@@ -32,8 +37,7 @@
 		await client.liveQuery.conference({
 			__args: { id: routeParams.conferenceId },
 			id: true,
-			startConference: true,
-			nextDocumentNumber: true
+			startConference: true
 		})
 	);
 
@@ -46,7 +50,8 @@
 		guardianConsent: true,
 		mediaConsent: true,
 		mediaConsentStatus: true,
-		assignedDocumentNumber: true
+		assignedDocumentNumber: true,
+		agreementDetails: { field: true, state: true, source: true }
 	} as const;
 
 	/** The postal paperwork we are here to tick off. */
@@ -88,26 +93,33 @@
 
 	/** What was read off each person's pages so far, by user id: a later page adds to it. */
 	let readings = $state<Record<string, FieldReading[]>>({});
-	/** How often each code's page could not be read in a picture. */
-	const failedReads: Record<string, number> = {};
-	/** About three seconds of pictures: then the person is shown all the same. */
-	const MAX_FAILED_READS = 10;
+	/** The pictures taken of each code's page so far. */
+	const taken: Record<string, TakenPage> = {};
 
-	/** Reads the page a code was scanned on; true once read, or once given up on. */
-	// fallow-ignore-next-line complexity
+	/**
+	 * Reads the page a code was scanned on, over several pictures that have to agree; true once it
+	 * is done with, settled or given up on.
+	 */
 	async function readPage({ frame, code }: { frame: ImageData; code: string }) {
-		const read = readPageOfCode({ picture: frame, code });
-		if (!read) {
-			const failed = (failedReads[code] ?? 0) + 1;
-			failedReads[code] = failed;
-			if (failed < MAX_FAILED_READS) return false;
-			toast.info(m.paperPageNotReadable());
-		} else {
-			const userId = userIdOfCode(code);
-			readings[userId] = [...(readings[userId] ?? []), ...read];
-		}
-		delete failedReads[code];
+		const page = addPicture({
+			taken: taken[code],
+			read: readPageOfCode({ picture: frame, code })
+		});
+		taken[code] = page;
+		if (!page.done) return false;
+		delete taken[code];
+		keepReadings({ code, frames: page.frames });
 		return true;
+	}
+
+	/** Adds what a page's pictures say to its person's readings. */
+	function keepReadings({ code, frames }: { code: string; frames: FieldReading[][] }) {
+		if (frames.length === 0) {
+			toast.info(m.paperPageNotReadable());
+			return;
+		}
+		const userId = userIdOfCode(code);
+		readings[userId] = [...(readings[userId] ?? []), ...mergeFrames(frames)];
 	}
 
 	/** What the scanned person's pages say, against their status as it stands. */
@@ -118,6 +130,7 @@
 		if (!readsPages || !current || !read || read.length === 0) return undefined;
 		return proposePaperChange({
 			readings: read,
+			known: current.status?.agreementDetails ?? [],
 			status: postalStatusOf(current.status),
 			confirm: true,
 			minor: !ofAgeAtConference({
@@ -127,16 +140,36 @@
 		});
 	});
 
+	/** Keeps the details behind the statuses; failing that does not stop the scanning. */
+	async function recordDetails(userId: string) {
+		try {
+			await client.mutate.recordPaperReadings({
+				__args: {
+					conferenceId: routeParams.conferenceId,
+					userId,
+					readings: readings[userId] ?? [],
+					confirm: true
+				}
+			});
+		} catch (error) {
+			logger.warn('Saving the details of a page failed', error);
+			toast.error(m.genericToastError());
+		}
+	}
+
 	/** Saves what the paper says and readies the scanner for the next page. */
 	const confirmPaper = () =>
 		flow.runExclusive(async () => {
 			const scanned = scannedUserWithStatus(flow.data);
-			if (scanned && proposal && changesAnything(proposal.change)) {
-				await changeAdministrativestatusEnum({
-					statusId: scanned.status.id,
-					userId: scanned.user.id,
-					change: proposal.change
-				});
+			if (scanned && proposal) {
+				if (changesAnything(proposal.change)) {
+					await changeAdministrativestatusEnum({
+						statusId: scanned.status.id,
+						userId: scanned.user.id,
+						change: proposal.change
+					});
+				}
+				await recordDetails(scanned.user.id);
 			}
 			flow.reset();
 		});
@@ -285,5 +318,23 @@
 				hotkeys={{ NOT_ALLOWED: 'alt+1', PARTIALLY_ALLOWED: 'alt+2', ALLOWED_ALL: 'alt+3' }}
 			/>
 		</div>
+
+		{#if postalRegistrationDetails}
+			{@const conferenceParticipantId = postalRegistrationDetails.id}
+			<LoadBoundary>
+				<section class="mt-6 flex flex-col gap-3">
+					<h3 class="text-lg font-bold">{m.userCardDocuments()}</h3>
+					<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y px-4 py-1">
+						<PostalScans
+							conferenceId={routeParams.conferenceId}
+							userId={userDetails.id}
+							{conferenceParticipantId}
+							unfolded
+						/>
+						<AgreementDetails {conferenceParticipantId} />
+					</div>
+				</section>
+			</LoadBoundary>
+		{/if}
 	{/snippet}
 </ScanFlowPage>

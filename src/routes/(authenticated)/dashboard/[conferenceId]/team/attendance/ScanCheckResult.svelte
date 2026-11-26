@@ -18,8 +18,10 @@
 		person: FoundPerson;
 		/** Whether the name and birthday may be corrected here, which only participant care may. */
 		canEdit: boolean;
-		/** What the scanner waits for: the open points to be read, or a decision on them. */
+		/** What the scanner waits for: an access card number, the open points to be read, or a decision on them. */
 		awaiting: ShownPerson['awaiting'];
+		/** The access card number being typed (badge mode). */
+		badgeInput: string;
 		busy: boolean;
 		onConfirm: () => void;
 		/** Records the person despite the open points (check mode). */
@@ -29,8 +31,30 @@
 		onChanged: () => Promise<void>;
 	}
 
-	let { person, canEdit, awaiting, busy, onConfirm, onRecordAnyway, onClose, onChanged }: Props =
-		$props();
+	let {
+		person,
+		canEdit,
+		awaiting,
+		badgeInput = $bindable(),
+		busy,
+		onConfirm,
+		onRecordAnyway,
+		onClose,
+		onChanged
+	}: Props = $props();
+
+	let badgeInputElem = $state<HTMLInputElement>();
+
+	// The card number is the next thing to type once the person is shown
+	$effect(() => {
+		if (awaiting === 'badge') badgeInputElem?.focus();
+	});
+
+	/** The hotkeys rest while something is typed, so the field answers them itself. */
+	function onBadgeKey(event: KeyboardEvent) {
+		if (event.key === 'Enter') onConfirm();
+		if (event.key === 'Escape') onClose();
+	}
 
 	const issueMessages: Record<ScanIssue, () => string> = {
 		teamMember: m.scanTeamMemberNotRecorded,
@@ -141,6 +165,20 @@
 				</ul>
 			</div>
 		</div>
+	{/if}
+
+	{#if awaiting === 'badge'}
+		<label class="input input-lg w-full">
+			<span class="label">{m.accessCardId()}</span>
+			<input
+				bind:this={badgeInputElem}
+				bind:value={badgeInput}
+				type="text"
+				autocomplete="off"
+				onkeydown={onBadgeKey}
+			/>
+		</label>
+		<p class="text-sm text-base-content/60">{m.scanWaitsForBadge()}</p>
 	{/if}
 
 	{#if awaiting}

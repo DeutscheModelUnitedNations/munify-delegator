@@ -88,21 +88,6 @@ export function registerConferenceAbilities() {
 }
 
 /**
- * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
- * participant care) in the conference, who hand out the document numbers on the postal page; the
- * next number tells how many were handed out so far.
- */
-export async function assertCanReadNextDocumentNumber({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-}
-
-/**
  * The arguments of `updateConference` the content roles (`editConferenceContent`: project
  * management, participant care, content lead) may send: links, postal address, templates, the
  * participants' announcement, the conference status and the feature switches.
@@ -128,7 +113,8 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'unlockPostals',
 	'isOpenPaperSubmission',
 	'showCalendar',
-	'messagingEnabled'
+	'messagingEnabled',
+	'guidePublished'
 ];
 
 /**

@@ -4,7 +4,7 @@ import {
 	POINTS_PER_MM,
 	type LayoutDocument
 } from '#lib/helpers/documentLayout';
-import type { PageAreas } from './areas';
+import type { PageAreas, PrintedInk } from './areas';
 
 /** The documents a participant signs and sends back, whose fields a scan is read for. */
 export const POSTAL_DOCUMENTS = [
@@ -14,8 +14,17 @@ export const POSTAL_DOCUMENTS = [
 ] as const satisfies readonly LayoutDocument[];
 export type PostalDocument = (typeof POSTAL_DOCUMENTS)[number];
 
-/** A page of the application documents: which document's template, which page of it, its size in points. */
-export type PrintedPage = { document: PostalDocument; page: number; width: number; height: number };
+/**
+ * A page of the application documents: which document's template, which page of it, its size in
+ * points, and what it prints in its fields itself (`undefined`: not measured).
+ */
+export type PrintedPage = {
+	document: PostalDocument;
+	page: number;
+	width: number;
+	height: number;
+	printedInk?: PrintedInk[];
+};
 
 /** The layout's alignment marks, corner by corner clockwise from the top left. */
 const MARKER_ELEMENTS = [

@@ -8,7 +8,7 @@
 	import { mutationForm } from '#lib/components/form/mutationForm';
 	import { applicationFormSchema } from '#lib/schemata/applicationForm';
 	import type { ApplicationAnswers } from '../../../dashboard/[conferenceId]/applicationForm';
-	import FlowStep from './FlowStep.svelte';
+	import FlowStep from '#lib/components/flowSteps/FlowStep.svelte';
 
 	/**
 	 * The questions every application answers, one step each, sent through whichever mutation

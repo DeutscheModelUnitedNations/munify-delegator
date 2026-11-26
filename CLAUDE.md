@@ -119,6 +119,7 @@ bun run preview
 | `mcp-server.md`          | `/mcp` for AI assistants: auth, confinement, classification/redaction, tools                                                                    |
 | `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                         |
 | `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates |
+| `postal-scans.md`        | Reading scanned paper, taking in scans (browser and server), agreement details, scanners delivering by WebDAV/folder                            |
 | `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                    |
 | `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                              |
 | `user-manual.md`         | `/docs` manual, help links, tours, generated screenshots                                                                                        |
@@ -192,7 +193,7 @@ bun run preview
   (`args.x ?? undefined`). Upserts created on first change put only given fields + `updatedAt` in
   the conflict `set`. Cross-field rules are checked on the written row inside the transaction.
   Values meaningful only whole (address, document layout) stay one argument. Clients send only
-  what changed.
+  what changed; an `undefined` argument is left out (rumble ≥ 0.34), clearing takes `null`.
 - **Authorization = ability filters** (drizzle filters that compose into queries):
   `ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where`. Enforced by
   `e2e/authorization/`:
@@ -344,6 +345,10 @@ bun run preview
 - **Locally the provider is oidc-mock**, started by the `oidcMock()` Vite plugin (no container);
   users in `oidc-mock.yaml`, login page under `/oidc`. The e2e suite signs in via its custom-claims
   form.
+- **Seed small: `bun run db:seed:dev:small`** for testing, verifying and anything automated
+  (scripts, CI). It has every persona, conference and scenario; only the ~490k anonymous bulk
+  users (`seed-dev/bulk.ts`) are missing. Use the full `db:seed:dev` only when the volume matters
+  (performance work on tables, statistics, assignment or queries).
 - **Dev accounts and dev seed belong together.** `seed-data/devAccounts.ts` lists every account;
   `bun run dev:accounts` writes `oidc-mock.yaml` (never edit its users; `devAccounts.test.ts` fails
   on drift); `db:seed:dev` gives each a user row (id = `sub`) and a part. Ten conferences cover the
@@ -448,6 +453,21 @@ bun run preview
   loads the stored one or keeps theirs) and takes over the old browser-only `reviewDraft_<paperId>` entry;
   `createPaperReview` deletes the draft. No MCP tool sends a review or sets a status; keep it so.
   `e2e/authorization/review-drafts.spec.ts`, `e2e/papers/review-draft.spec.ts`.
+- **Preparation guide** (`docs/plans/guide.md`; `#api/handlers/guidePage/`, `guideOutline/`,
+  `conferenceSeries/`, pure logic in `#lib/guide/`): pages (`guide_page`, draft + published
+  versions) shared by scope — everywhere, year, series (`conference_series`, system admins) or one
+  conference; shared scopes reach only conferences of a series. Who may edit is `editGuide` in a
+  conference the draft **and** the published scope reach (`guideReach.ts`, SQL on the page's own
+  columns). Each conference has one sidebar (`guide_outline`, draft/published JSON checked by
+  `outlineSchema`) with audiences and a committee template; readers never read the tables:
+  `myGuide` / `guideReaderPage` build their part (`guideReaderService.ts`) once `guidePublished`
+  and the release are on (the team always, with previews). The team works in one workspace
+  (`team/guide/`: tree + editor, visibility, committee matrix; CLAUDE-UI.md "Guide Components"); its views and the sidebar's
+  single changes are API fields too (`guideOutlineTools.ts`, all draft writes through `editOutlineDraft`, which refuses a stale
+  `expectedDraftUpdatedAt`). Agenda item pages render their
+  committee text with Typst on publish (`committeeText.ts`). Files in page texts are `file:<id>`,
+  kept by `guide_page_file` for the cleanup job. MCP: Markdown ↔ TipTap in `guideMarkdown.ts`
+  (shares `#api/services/markdownTokens` with review drafts). `e2e/authorization/guide.spec.ts`.
 - Domain specifics (calendar, scanner, age limits, waiting list, certificates, document layouts):
   `docs/architecture/conference-features.md`.
 
@@ -476,8 +496,10 @@ condition in `imports` appending `.ts`, plus keys for Paraglide's `.js` and `…
 ## Integrations
 
 PDFs `pdf-lib` (custom fonts); barcodes/QR `@bwip-js/browser`, `@svelte-put/qr`,
-`barcode-detector`; TipTap rich text; maps via `svelte-maplibre` with OpenFreeMap styles (`#lib/components/map/`); Listmonk (`src/jobs/apis/`); S3 via
-`s3mini`.
+`barcode-detector`; TipTap rich text; maps via `svelte-maplibre` with OpenFreeMap styles
+(`#lib/components/map/`); Listmonk (`src/jobs/apis/`); S3 via `s3mini`. Logos, favicons, manifest,
+launch images: `@deutschemodelunitednations/munify-brand` (`Logo`, `BrandHead`, the `munifyBrand`
+Vite plugin; see "Brand" in CLAUDE-UI.md).
 
 ## UI
 
@@ -540,7 +562,7 @@ participant filter conditions), and `boardState` (`memoizeLast` compares args on
   `$derived(await client.liveQuery.…)`, no `load`, translations in `messages/`.
 - **Schema change**: edit `src/api/db/schema/` (new tables exported from `schema/index.ts`) and
   `relations.ts`; `bun run db:generate` then `db:migrate`; restart dev server; update `seed-data/`
-  for new required columns; test with `bun run db:nuke && bun run db:seed:dev`.
+  for new required columns; test with `bun run db:nuke && bun run db:seed:dev:small`.
 - **Background job**: see `docs/architecture/jobs.md`.
 - **UI change touching a manual page**: update `docs/de` and `docs/en`, keep `data-tour` anchors,
   rerun affected screenshots (`docs/architecture/user-manual.md`).
@@ -554,7 +576,7 @@ participant filter conditions), and `boardState` (`memoizeLast` compares args on
 
 See `.env.example` and `src/env.ts`. Core: `DATABASE_URL` (`DATABASE_POOL_SIZE`, default 20),
 `NODE_ENV`, `PUBLIC_OIDC_AUTHORITY`, `PUBLIC_OIDC_CLIENT_ID`, `OIDC_SCOPES` (incl. `openid`),
-`OIDC_ROLE_CLAIM` (claim name or dot path; `#api/services/oidc/roleClaims.ts`, userinfo fallback) +
+`APP_URL` (links in notifications about scans, `docs/architecture/postal-scans.md`), `OIDC_ROLE_CLAIM` (claim name or dot path; `#api/services/oidc/roleClaims.ts`, userinfo fallback) +
 `OIDC_ROLE_MAP` (JSON → `admin`/`member`/`service_user`), `CERTIFICATE_SECRET` (also derives the
 Slack token key — changing it means re-entering tokens), `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`,
 `S3_SECRET_ACCESS_KEY` (`S3_PUBLIC_ENDPOINT`, `S3_REGION`), optional OTel (`OTEL_ENDPOINT_URL` full

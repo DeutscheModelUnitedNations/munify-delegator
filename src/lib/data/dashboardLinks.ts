@@ -2,7 +2,6 @@ import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
 import { m } from '#lib/paraglide/messages';
-import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
 import MessagesLinkInfo from '#lib/components/chat/MessagesLinkInfo.svelte';
 import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink';
 
@@ -19,6 +18,8 @@ export interface DashboardLinkContext {
 	unlockPayments?: boolean;
 	unlockPostals?: boolean;
 	linkToPreparationGuide?: string | null;
+	/** Whether the guide inside the app is open to the caller: published, roles released. */
+	guideOpen?: boolean;
 	isOpenPaperSubmission?: boolean;
 	showCalendar?: boolean;
 	linkToPaperInbox?: string | null;
@@ -134,10 +135,15 @@ const dashboardLinks: DashboardLink[] = [
 		icon: 'book-bookmark',
 		getTitle: () => m.preparation(),
 		getDescription: () => m.preparationDescription(),
-		getHref: (ctx) => ({ externalUrl: ctx.linkToPreparationGuide ?? '' }),
-		external: true,
+		// the guide inside the app once it is open, the old external guide until then
+		getHref: (ctx) =>
+			ctx.guideOpen
+				? resolve('/(authenticated)/dashboard/[conferenceId]/guide', {
+						conferenceId: ctx.conferenceId
+					})
+				: { externalUrl: ctx.linkToPreparationGuide ?? '' },
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => !!ctx.linkToPreparationGuide,
+		isVisible: (ctx) => !!ctx.guideOpen || !!ctx.linkToPreparationGuide,
 		isDisabled: () => false
 	},
 	{
@@ -193,7 +199,6 @@ const dashboardLinks: DashboardLink[] = [
 			resolve('/(authenticated)/dashboard/[conferenceId]/calendar', {
 				conferenceId: ctx.conferenceId
 			}),
-		info: CalendarLinkInfo,
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		// Shown once the team has switched the schedule on
 		isVisible: (ctx) => !!ctx.showCalendar,

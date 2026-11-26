@@ -63,6 +63,35 @@ with `overwriteAppEdits: true`. The server does not check that the reviewer agre
 assistant sets it only after asking. A replacement makes the draft the assistant's again: later
 changes need no flag until the reviewer edits it in the app once more.
 
+The preparation guide (`docs/plans/guide.md`) is written over MCP as well, so an assistant can
+move the old guide.dmun.de in. `graphql_query` reads pages (`guideLibrary`, `guidePage` with
+`draftMarkdown` and `versions { markdown }`) and sidebars (`guideOutlineOf`); `createGuidePage` and
+`updateGuidePageDraft` take Markdown (preferred) or TipTap JSON, and refuse (CONFLICT) Markdown
+that would drop callouts, toggles, buttons or embeds unless `replaceRichBlocks: true`;
+`setGuidePageScope` and `ensureGuidePageOf` (committee and agenda item pages) change pages.
+
+The sidebar changes one step at a time, so an assistant does not rewrite JSON it only read:
+`addGuideSection`, `updateGuideSection`, `removeGuideSection`, `moveGuideSection` (a section, the
+committee template or the topic overview, among the blocks), `addGuideEntry`, `updateGuideEntry`, `moveGuideEntry`
+(also into the template), `removeGuideEntry`, `setGuideTemplate`, `moveGuideTemplateSlot` and
+`setGuideTopicOverview` (one section with every committee's page and topics, for non-state
+actors, supervisors and chosen custom roles; never delegates).
+Sections are named by id, entries by section and page, never by index, so another person's change
+in between does not hit the wrong entry (a page listed twice in one section is found as its first
+entry). `updateGuideOutlineDraft` still replaces the whole draft. Each of them answers the draft
+and its `draftUpdatedAt`; passed back as `expectedDraftUpdatedAt`, a draft changed since (in the
+app, by someone else) is left alone (CONFLICT), and the app's autosave checks the same way.
+
+The workspace's views read as the team sees them: `guideVisibility` (who sees which section),
+`guideCommitteeMatrix` (the committee template against the committees, with missing pages and
+progress) and `guidePendingChanges` (pages waiting to be published, whether the sidebar changed).
+`publishGuidePage`, `publishGuideOutline` and `publishGuideChanges` (the pending pages, then the
+sidebar, like "publish changes" in the app) reach participants and preview first (read
+`guidePendingChanges` and `guidePagePublishPreview` for the conferences a page reaches).
+`importGuideFile` downloads an image or PDF from the allowed hosts (`GUIDE_IMPORT_HOSTS`, by
+default guide.dmun.de and cdn.dmun.de) and answers its id for `file:<id>` in a page. Deleting
+pages and restoring sidebar versions stay in the app.
+
 ## Skills
 
 The server offers skills, instructions for whole tasks, through the MCP skills extension

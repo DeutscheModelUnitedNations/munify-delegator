@@ -61,6 +61,11 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 			nullable: true,
 			description: "A single participant's custom role."
 		}),
+		accessCardId: t.string({
+			nullable: true,
+			description:
+				'The access card they carry; only told for a running session that hands out cards (`BADGE`).'
+		}),
 		didAttend: t.boolean({ description: 'Whether their attendance has been recorded.' }),
 		paymentStatus: t.field({ type: administrativeStatusEnum, description: 'Their payment.' }),
 		termsAndConditions: t.field({

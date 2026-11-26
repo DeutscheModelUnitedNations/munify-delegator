@@ -4,22 +4,23 @@
 	import EmailLogTable from '#lib/components/EmailLogTable.svelte';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { canManageEmails } from '#lib/helpers/teamAccess';
+	import { fetchParticipantStatus, owedEmailsRevision } from '../tabs/participantStatus';
 	import OwedEmails from './OwedEmails.svelte';
 
 	/**
-	 * The mails the conference sent the person, or tried to: what answers "I never got the mail".
-	 * Above it, for participant care, what the person is owed and can be sent by hand. Only
+	 * In the grid of the history tab, the mails the conference sent the person, or tried to: what answers "I never got the mail".
+	 * Across it above, for participant care, what the person is owed and can be sent by hand. Only
 	 * participant care reads the log; for everyone else it stays empty.
 	 */
 	interface Props {
 		userId: string;
 		conferenceId: string;
-		/** Changes with the person's statuses, which decide what they are owed. */
-		statusRevision: string;
 	}
 
-	let { userId, conferenceId, statusRevision }: Props = $props();
+	let { userId, conferenceId }: Props = $props();
 
+	const statuses = $derived(await fetchParticipantStatus({ userId, conferenceId }));
+	const statusRevision = $derived(owedEmailsRevision(statuses.at(0)));
 	const mayManage = $derived(canManageEmails(await fetchTeamAccess(conferenceId)));
 
 	const entries = $derived(
@@ -42,13 +43,13 @@
 	const logRevision = $derived(`${entries.length}:${entries[0]?.id}:${entries[0]?.status}`);
 </script>
 
-<div class="flex flex-col gap-6">
-	{#if mayManage}
+{#if mayManage}
+	<div class="col-span-full min-w-0">
 		<OwedEmails {userId} {conferenceId} revision={`${statusRevision}|${logRevision}`} />
-	{/if}
+	</div>
+{/if}
 
-	<section class="flex flex-col gap-2">
-		<h3 class="text-lg font-bold">{m.userCardEmails()}</h3>
-		<EmailLogTable {entries} empty={m.userCardNoEmails()} />
-	</section>
-</div>
+<section class="flex min-w-0 flex-col gap-2">
+	<h3 class="text-lg font-bold">{m.userCardEmails()}</h3>
+	<EmailLogTable {entries} empty={m.userCardNoEmails()} />
+</section>

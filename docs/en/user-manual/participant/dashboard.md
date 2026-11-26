@@ -123,6 +123,12 @@ Once the team has set them up, the quick links also hold:
 
 While the conference is being prepared, a notice asks you to set up MUNify DELEGATOR on your phone (see [At the conference](#at-the-conference)). **Done, hide** hides it on this device.
 
+## Preparation guide {#guide}
+
+Once the roles are released and the team opened the guide, the **Preparation** card on the dashboard takes you to the guide inside the app. On the left the sidebar shows the sections for you: as a delegate your committee's steps and its topics, as a non-state actor or in a custom role the pages for you. Supervisors see every section. On the right **On this page** leads to the headings, at the bottom **Previous** and **Next** through the pages. On a topic you download the committee text as a PDF. Videos load only once you click them.
+
+Before that the card links the guide on an external site, if the conference gave one.
+
 ## Payment {#payment}
 
 The **Fee Payment** card opens the payment page once the team unlocks payments. Depending on the conference's settings you then get an email. You pay the participation fee by bank transfer:
@@ -141,12 +147,15 @@ Check every detail especially carefully and use the right currency. You bear the
 
 The **Postal Registration** card lets you download your documents once the team unlocks them. Depending on the conference's settings you then get an email.
 
-1. Check your address and date of birth. If something is missing, the download is locked. Add it with **Update Profile**.
-2. Click **Download Documents**. The PDF contains:
+The page takes you through it step by step:
+
+1. Check your address and date of birth. If something is missing, you can only go on once you have added it with **Update Profile**. Then confirm whether you are of legal age at the start of the conference.
+2. Watch the short hints on sending the documents. The first time they are part of it, later you can skip them.
+3. Click **Download Documents**. The PDF contains:
    - the **binding registration**, which you sign yourself,
    - the **declaration of consent from all parents or guardians**, if you are not of legal age when the conference starts. Normally both parents sign it,
    - the **declaration of consent for image use**, signed by you and, for minors, by your parents too.
-3. Print the documents, fill them in, sign them and send the originals by post to the address on the page. Mind the postage when sending from abroad.
+4. Print the documents, fill them in, sign them and send the originals by post to the address on the page. Mind the postage when sending from abroad.
 
 A scan or an electronic signature is not enough. You should read the terms and conditions at the end of the PDF, but you need not print them.
 
@@ -187,7 +196,7 @@ The quick links also hold:
 
 ## Schedule {#schedule}
 
-Once the team switches the schedule on, the **Schedule** card appears. Right on the dashboard it shows what is happening now on your track and what comes next. A click opens the conference's whole schedule, day by day. Clicking a session shows its details, with the place, directions and, where there is one, the site plan. Some sessions are only for those who picked a particular answer in a survey.
+Once the team switches the schedule on, **Next on the schedule** on the dashboard shows what is happening now on your track and what comes next, with the time and place. During the conference it is at the very top. **Full schedule** and the **Schedule** card open the conference's schedule, day by day and on your track first. Clicking a session shows its details, with the place, directions and, where there is one, the site plan. Some sessions are only for those who picked a particular answer in a survey.
 
 ## Surveys {#surveys}
 

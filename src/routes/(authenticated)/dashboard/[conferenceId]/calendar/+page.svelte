@@ -5,22 +5,32 @@
 	import { m } from '#lib/paraglide/messages';
 	import AccentStripe from '#lib/components/AccentStripe.svelte';
 	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
+	import { seatOf } from '#lib/components/calendar/calendarNow';
+	import { ownTrackIds } from '#lib/components/calendar/personalCalendar';
 	import { fetchCalendarDays } from '#lib/api/calendarDays';
+	import { liveSnapshot } from '#lib/api/liveSnapshot';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
 
 	const conferenceId = $derived(routeParams.conferenceId);
-	const [conference, calendarDays] = $derived(
+	const [conference, liveDays, participation] = $derived(
 		await Promise.all([
 			client.liveQuery.conference({
 				__args: { id: conferenceId },
 				title: true,
 				timezone: true
 			}),
-			fetchCalendarDays(conferenceId)
+			fetchCalendarDays(conferenceId),
+			fetchMyParticipation(conferenceId)
 		])
 	);
+
+	const snapshot = liveSnapshot<(typeof liveDays)[number]>();
+	const calendarDays = $derived(snapshot(liveDays));
+	// The days open on the track for the person's own committee or role
+	const ownTracks = $derived(ownTrackIds({ days: calendarDays, seat: seatOf(participation) }));
 
 	const days = $derived(
 		calendarDays.map((day) => ({
@@ -46,7 +56,7 @@
 	{/snippet}
 
 	{#if days.length > 0}
-		<CalendarDisplay {days} timezone={conference.timezone} {heading} />
+		<CalendarDisplay {days} timezone={conference.timezone} ownTrackIds={ownTracks} {heading} />
 	{:else}
 		<div class="mb-6">{@render heading()}</div>
 		<p class="text-base-content/60">{m.calendarSectionDescription()}</p>

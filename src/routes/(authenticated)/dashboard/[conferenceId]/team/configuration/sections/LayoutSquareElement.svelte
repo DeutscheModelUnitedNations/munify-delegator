@@ -1,15 +1,16 @@
 <script lang="ts">
+	import { CODE_CAPTION } from '#lib/helpers/codeCaption';
 	import type { SquarePlacement } from '#lib/helpers/documentLayout';
 
 	/**
 	 * A code on the layout editor's page, square, resized from its corner. Its captions go above it
-	 * (the certificate's) or beside it at its bottom, the last line lowest (the documents' footer).
+	 * (the certificate's) or below it (the documents').
 	 */
 	interface Props {
 		label: string;
 		placement: SquarePlacement;
 		captions: string[];
-		caption: 'above' | 'beside';
+		caption: 'above' | 'below';
 		/** Pixels per point. */
 		scale: number;
 		onmove: (event: PointerEvent) => void;
@@ -47,24 +48,18 @@
 	onpointerdown={onmove}
 	onfocus={onselect}
 >
-	{#if caption === 'above'}
+	<span
+		class="absolute left-1/2 flex -translate-x-1/2 flex-col items-center whitespace-nowrap {caption ===
+		'above'
+			? 'bottom-full pb-1'
+			: 'top-full'}"
+		style="font-size: {(caption === 'above' ? 8 : CODE_CAPTION.size) *
+			scale}px; line-height: {CODE_CAPTION.step * scale}px;"
+	>
 		{#each captions as text, index (index)}
-			<span
-				class="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full whitespace-nowrap"
-				style="font-size: {8 * scale}px;">{text}</span
-			>
+			<span>{text}</span>
 		{/each}
-	{:else}
-		<span
-			class="absolute bottom-0 flex flex-col items-end whitespace-nowrap"
-			style="right: calc(100% + {5 * scale}px); font-size: {8 * scale}px; line-height: {10 *
-				scale}px;"
-		>
-			{#each captions as text, index (index)}
-				<span>{text}</span>
-			{/each}
-		</span>
-	{/if}
+	</span>
 	<i aria-hidden="true" class="ph-duotone ph-qr-code text-2xl"></i>
 	<span
 		class="bg-accent absolute right-0 bottom-0 h-3 w-3 cursor-nwse-resize"

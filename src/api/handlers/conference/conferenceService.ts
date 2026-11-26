@@ -1,9 +1,9 @@
-import { db, schema } from '#api/db/db';
+import { db, schema, type Transaction } from '#api/db/db';
 import { assertAgeRangeInOrder, assertConferenceDatesInOrder } from './conferenceSettings';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 import { m } from '#lib/paraglide/messages';
-import { and, eq, inArray, max, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { whereRows } from '#api/db/whereRows';
 import { nullToUndefined } from '#api/services/args';
@@ -96,15 +96,6 @@ export async function countOfferedSeats(conferenceId: string) {
 	return committeeSeats.seats + nsaSeats.seats;
 }
 
-/** The document number to hand to the next participant who needs one: one above the highest. */
-export async function nextDocumentNumber(conferenceId: string) {
-	const [highest] = await db
-		.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
-		.from(schema.conferenceParticipant)
-		.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }));
-	return (highest?.max ?? 0) + 1;
-}
-
 type ConferenceInsert = typeof schema.conference.$inferInsert;
 /**
  * The arguments of `updateConference`: any column but the id, left out or cleared with null.
@@ -174,6 +165,8 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
 				showCalendar: nullToUndefined(args.showCalendar),
 				messagingEnabled: nullToUndefined(args.messagingEnabled),
+				guidePublished: nullToUndefined(args.guidePublished),
+				seriesId: args.seriesId,
 				qrCorporateDesign: nullToUndefined(args.qrCorporateDesign),
 				timezone: nullToUndefined(args.timezone),
 				nametagBinCount: nullToUndefined(args.nametagBinCount),
@@ -277,6 +270,42 @@ export const seedingDataSchema = jsonDocument({
 type ConferenceSeedingData = z.output<typeof seedingDataSchema>;
 
 /**
+ * Seats a nation, which the seeding document names by alpha-2, in a committee: it becomes a nation
+ * role of the conference (once, however many committees seat it) and is linked to the committee.
+ */
+async function seatNation({
+	tx,
+	conferenceId,
+	committeeId,
+	alpha2
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	committeeId: string;
+	alpha2: string;
+}) {
+	const nation = await tx.query.nation.findFirst({
+		where: { alpha2Code: alpha2.toLowerCase() },
+		columns: { alpha3Code: true }
+	});
+	if (!nation) return;
+	await tx
+		.insert(schema.conferenceRole)
+		.values({ conferenceId, kind: 'NATION', nationAlpha3Code: nation.alpha3Code })
+		.onConflictDoNothing();
+	const role = await tx.query.conferenceRole
+		.findFirst({
+			where: { conferenceId, nationAlpha3Code: nation.alpha3Code },
+			columns: { id: true }
+		})
+		.then(assertFindFirstExists);
+	await tx
+		.insert(schema.committeeToRole)
+		.values({ a: committeeId, b: role.id })
+		.onConflictDoNothing();
+}
+
+/**
  * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
  * document. Refuses (INVALID_INPUT) a document naming nations there are no rows for, listing them
  * all. Returns the conference's id.
@@ -329,32 +358,8 @@ export async function seedConference(data: ConferenceSeedingData) {
 				.returning()
 				.then(assertFirstEntryExists);
 
-			// The seeding document names nations by alpha-2; each one seated becomes a nation role
-			// of the conference (once, however many committees seat it) and is linked to the committee.
 			for (const alpha2 of nations) {
-				const nation = await tx.query.nation.findFirst({
-					where: { alpha2Code: alpha2.toLowerCase() },
-					columns: { alpha3Code: true }
-				});
-				if (!nation) continue;
-				await tx
-					.insert(schema.conferenceRole)
-					.values({
-						conferenceId: conference.id,
-						kind: 'NATION',
-						nationAlpha3Code: nation.alpha3Code
-					})
-					.onConflictDoNothing();
-				const role = await tx.query.conferenceRole
-					.findFirst({
-						where: { conferenceId: conference.id, nationAlpha3Code: nation.alpha3Code },
-						columns: { id: true }
-					})
-					.then(assertFindFirstExists);
-				await tx
-					.insert(schema.committeeToRole)
-					.values({ a: row.id, b: role.id })
-					.onConflictDoNothing();
+				await seatNation({ tx, conferenceId: conference.id, committeeId: row.id, alpha2 });
 			}
 		}
 

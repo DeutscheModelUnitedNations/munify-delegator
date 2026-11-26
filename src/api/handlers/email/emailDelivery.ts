@@ -107,8 +107,8 @@ export function renderAutomaticEmail({
 
 /**
  * Renders a mail sent where something happens (a found badge, a submitted paper) in the
- * recipient's language and the conference's own words. `values` and `button` are asked for in that
- * language.
+ * recipient's language and the conference's own words. `values`, `items` (the list) and `button` are
+ * asked for in that language.
  */
 export function renderNoticeEmail({
 	kind,
@@ -116,6 +116,7 @@ export function renderNoticeEmail({
 	conferenceTitle,
 	wording,
 	values = () => ({}),
+	items,
 	button
 }: {
 	kind: EmailKind;
@@ -123,6 +124,7 @@ export function renderNoticeEmail({
 	conferenceTitle: string;
 	wording: ConferenceWording;
 	values?: () => EmailPlaceholderValues;
+	items?: () => string[];
 	button?: () => { label: string; url: string };
 }): Promise<RenderedEmail> {
 	const locale = localeOfUser(recipient.locale);
@@ -140,6 +142,7 @@ export function renderNoticeEmail({
 					heading: filled.heading,
 					recipientName: recipientName(recipient),
 					paragraphs: filled.paragraphs,
+					items: items?.(),
 					closing: filled.closing,
 					button: button?.(),
 					conferenceTitle,

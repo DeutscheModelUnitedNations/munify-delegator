@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages';
 	import type { AgeIssue, ProfileField } from '#lib/api/rumbleClient/client';
 	import { applicationBlockerTexts } from '#lib/helpers/applicationBlockers';
+	import ProfileLink from '#lib/components/ProfileLink.svelte';
 	import formatNames from '#lib/helpers/formatNames';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 
@@ -35,10 +34,6 @@
 
 	const currentUser = await getCurrentUser();
 
-	// Back to this page once the profile is saved; the account page only follows its own origin.
-	const profileHref = $derived(
-		resolve(`my-account?redirect=${encodeURIComponent(`${page.url.origin}${page.url.pathname}`)}`)
-	);
 	const anyAgeIssue = $derived(blockers.some((blocker) => blocker.ageIssue));
 </script>
 
@@ -70,10 +65,7 @@
 					</p>
 					{#if blocker.invalidFields.length > 0}
 						{#if own}
-							<a class="btn btn-sm btn-primary self-start" href={profileHref}>
-								<i aria-hidden="true" class="ph-fill ph-pencil-simple-line"></i>
-								{m.completeData()}
-							</a>
+							<ProfileLink class="btn btn-sm btn-primary self-start" label={m.completeData()} />
 						{:else}
 							<p class="text-base-content/70 text-xs">{m.applicationBlockersOthersProfile()}</p>
 						{/if}

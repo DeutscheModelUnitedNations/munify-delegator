@@ -11,7 +11,7 @@ import { storedFilePubsub } from '#api/pubsub';
 import { nanoid } from '#lib/helpers/nanoid';
 import { m } from '#lib/paraglide/messages';
 import type { UploadRequest } from './fileSources';
-import { createStorage, objectKey, type Storage } from './storageClient';
+import { createStorage, objectKey, userObjectKey, type Storage } from './storageClient';
 
 let instance: Storage | undefined;
 
@@ -63,31 +63,62 @@ export async function requestUpload({
 }
 
 /**
- * Stores a file the server made itself (a resolution the link rendered), without an uploader, and
- * returns its id. The object goes first: a row whose object is missing would hand out a dead URL,
+ * Stores a file the server made or received itself (a resolution the link rendered, a scan), for a
+ * conference or a person, without an uploader, and returns its id. The object goes first: a row whose object is missing would hand out a dead URL,
  * while an object without a row is removed by the cleanup job.
  */
 export async function storeGeneratedFile({
-	conferenceId,
 	purpose,
 	fileName,
 	mimeType,
-	bytes
+	bytes,
+	...owner
 }: {
-	conferenceId: string;
 	purpose: string;
 	fileName: string;
 	mimeType: string;
 	bytes: Uint8Array;
-}) {
+} & ({ conferenceId: string } | { userId: string })) {
 	const id = nanoid();
-	const key = objectKey({ conferenceId, purpose, uniqueId: id });
+	const key =
+		'userId' in owner
+			? userObjectKey({ userId: owner.userId, purpose, uniqueId: id })
+			: objectKey({ conferenceId: owner.conferenceId, purpose, uniqueId: id });
 	await storage().put({ key, bytes, mimeType });
 	await db
 		.insert(schema.storedFile)
 		.values({ id, key, purpose, fileName, mimeType, size: bytes.byteLength });
 	storedFilePubsub.created();
 	return id;
+}
+
+/**
+ * Stores something as it comes in, of any size, that is no stored file: whoever asks keeps its key, and
+ * deletes it (`deleteObject`). Answers the key and how large it was.
+ */
+export async function storeStream({
+	userId,
+	purpose,
+	mimeType,
+	body
+}: {
+	userId: string;
+	purpose: string;
+	mimeType: string;
+	body: AsyncIterable<Uint8Array>;
+}) {
+	const key = userObjectKey({ userId, purpose, uniqueId: nanoid() });
+	return { key, size: await storage().putStream({ key, mimeType, body }) };
+}
+
+/** Part of an object. */
+export function readObjectRange(range: { key: string; from: number; to: number }) {
+	return storage().readRange(range);
+}
+
+/** Deletes an object that is no stored file. */
+export async function deleteObject(key: string) {
+	await storage().delete([key]);
 }
 
 /** A stored file's bytes, or null when the bucket has none under its key. */

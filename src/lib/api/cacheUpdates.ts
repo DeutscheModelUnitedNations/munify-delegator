@@ -1,4 +1,4 @@
-import type { Data, Link, UpdatesConfig } from '@urql/exchange-graphcache';
+import type { Cache, Data, Link, UpdatesConfig } from '@urql/exchange-graphcache';
 import type { IntrospectionQuery } from 'graphql';
 
 type IntrospectionType = IntrospectionQuery['__schema']['types'][number];
@@ -34,6 +34,13 @@ function isLinked(item: Link<Data> | undefined): item is Link<Data> {
 	return item !== undefined;
 }
 
+/** Whether graphcache can link the value: null, or entities it can key (every one of a list). */
+function isKeyed({ link, cache }: { link: Link<Data>; cache: Cache }): boolean {
+	if (link === null) return true;
+	if (Array.isArray(link)) return link.every((item) => isKeyed({ link: item, cache }));
+	return cache.keyOfEntity(link) !== null;
+}
+
 /**
  * Graphcache's `updates`: every subscription result is also written to the query field of the same
  * name and arguments.
@@ -44,6 +51,11 @@ function isLinked(item: Link<Data> | undefined): item is Link<Data> {
  * records they share change, graphcache re-reads the query from its stale list and emits that, and
  * whichever arrives last wins: a created row flickers in and vanishes, a removed one never goes.
  * Changes to existing rows were never affected, since those live in the shared entity records.
+ *
+ * Only keyed entities can be linked: `cache.link` turns an object without a key (a computed view
+ * like `GuideView`, stored embedded) into null, and the query field read null from then on - the
+ * guide showed "not yet available" on the next page until a reload. Such a query field is
+ * invalidated instead, and graphcache fetches it again.
  */
 export function liveQueryUpdates(schema: IntrospectionQuery): UpdatesConfig {
 	const queryType = schema.__schema.queryType?.name;
@@ -56,7 +68,9 @@ export function liveQueryUpdates(schema: IntrospectionQuery): UpdatesConfig {
 		if (!queryFields.has(fieldName)) continue;
 		updaters[fieldName] = (result, args, cache) => {
 			const link = toLink(result[fieldName]);
-			if (link !== undefined) cache.link(queryType, fieldName, args, link);
+			if (link === undefined) return;
+			if (isKeyed({ link, cache })) cache.link(queryType, fieldName, args, link);
+			else cache.invalidate(queryType, fieldName, args);
 		};
 	}
 	return { Subscription: updaters };

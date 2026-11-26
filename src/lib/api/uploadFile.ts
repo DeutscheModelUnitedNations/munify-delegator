@@ -6,7 +6,9 @@ export type UploadTarget =
 	| { kind: 'conference'; field: ConferenceFileField; conferenceId: string }
 	| { kind: 'place'; field: 'sitePlan'; conferenceId: string }
 	| { kind: 'resolution'; field: 'content'; conferenceId: string }
-	| { kind: 'announcement'; field: 'attachment'; conferenceId: string };
+	| { kind: 'announcement'; field: 'attachment'; conferenceId: string }
+	| { kind: 'postalScan'; field: 'scan'; conferenceId: string }
+	| { kind: 'guide'; field: 'file'; conferenceId: string };
 
 export type ConferenceFileField =
 	| 'image'
@@ -22,8 +24,8 @@ export type ConferenceFileField =
  * Uploads `file` straight to the storage, through a URL the API hands out for `target`, and
  * returns the id the mutation saving the row takes for it (`logoFileId`, `fileId`, …).
  *
- * Returning `undefined` for "no file" matters: the mutations treat `null` as "remove the file", so
- * a form submitted without touching an upload field has to leave the stored file alone.
+ * Returns `undefined` for "no file", which the client leaves out of the mutation, so the stored file
+ * is kept; `null` would remove it.
  */
 export async function uploadFile({
 	file,

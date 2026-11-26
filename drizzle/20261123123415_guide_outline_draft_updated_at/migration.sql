@@ -1,0 +1,1 @@
+ALTER TABLE "guide_outline" ADD COLUMN "draft_updated_at" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL;

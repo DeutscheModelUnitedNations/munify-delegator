@@ -1,5 +1,22 @@
 import { describe, expect, test } from 'vitest';
-import { entryTrackSummary, todayIndex } from './calendarDisplay';
+import { entryTrackSummary, isToday, todayIndex } from './calendarDisplay';
+
+describe('isToday', () => {
+	const date = new Date('2026-03-02T00:00:00Z');
+
+	test('is only true on the day itself, whatever the hour', () => {
+		expect(isToday({ date, timezone: 'UTC', now: new Date('2026-03-02T15:30:00Z') })).toBe(true);
+		expect(isToday({ date, timezone: 'UTC', now: new Date('2026-03-07T15:30:00Z') })).toBe(false);
+	});
+
+	test('changes at midnight of the timezone', () => {
+		const at = (now: string) => isToday({ date, timezone: 'Europe/Berlin', now: new Date(now) });
+		expect(at('2026-03-01T22:59:00Z')).toBe(false);
+		expect(at('2026-03-01T23:01:00Z')).toBe(true);
+		expect(at('2026-03-02T22:59:00Z')).toBe(true);
+		expect(at('2026-03-02T23:01:00Z')).toBe(false);
+	});
+});
 
 describe('todayIndex', () => {
 	const days = [

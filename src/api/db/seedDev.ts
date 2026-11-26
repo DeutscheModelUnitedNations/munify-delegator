@@ -39,6 +39,8 @@ import { addEmails } from './seed-dev/emails';
 import { addMergedMembers } from './seed-dev/schools';
 import { addBulk, bulkScale } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
+import { addPostalScans } from './seed-dev/postalScans';
+import { addScannerAccesses } from './seed-dev/scannerAccesses';
 import { addResolutions } from './seed-dev/resolutions';
 import { printOverview } from './seed-dev/overview';
 import {
@@ -50,6 +52,7 @@ import { conferencePlans } from './seed-dev/plans';
 import { addMessages, addMessagingAccountSettings } from './seed-dev/messages';
 import { addAnnouncements } from './seed-dev/announcements';
 import { addNotifications, addSlackWorkspaces } from './seed-dev/notifications';
+import { addGuide, addGuideBasics } from './seed-dev/guide';
 import { logger } from '#lib/logger';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
@@ -96,7 +99,9 @@ for (const account of devAccounts) {
 addReviewerSnippets(batch);
 addMessagingAccountSettings(batch);
 addSlackWorkspaces(batch);
+addScannerAccesses(batch);
 addDuplicateScenarioAccounts(batch);
+addGuideBasics(batch);
 
 for (const plan of conferencePlans) {
 	const templates = await conferenceTemplatePdfs(
@@ -125,6 +130,8 @@ for (const plan of conferencePlans) {
 	addEmails(cs);
 	await addCalendar(cs);
 	await addResolutions(cs);
+	await addPostalScans(cs);
+	addGuide(cs);
 	addBulk({ cs, scale });
 	addDuplicateScenarioParticipants(cs);
 }

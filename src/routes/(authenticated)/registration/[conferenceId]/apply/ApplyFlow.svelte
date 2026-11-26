@@ -5,12 +5,12 @@
 	import { cubicOut } from 'svelte/easing';
 	import DelegationPreview from '#lib/components/DelegationPreview.svelte';
 	import { createEntryCodeInput } from '#lib/helpers/entryCodeInput.svelte.js';
-	import FlowStep from './FlowStep.svelte';
+	import FlowStep from '#lib/components/flowSteps/FlowStep.svelte';
 	import CreateDelegationSteps from './CreateDelegationSteps.svelte';
 	import IndividualSteps from './IndividualSteps.svelte';
 	import SupervisorSteps from './SupervisorSteps.svelte';
 	import type { ApplyPath } from './applyPaths';
-	import { setFlowInteraction } from './flowInteraction';
+	import { setFlowInteraction } from '#lib/components/flowSteps/flowInteraction';
 	import AgeNotice from '#lib/components/registration/AgeNotice.svelte';
 
 	/**

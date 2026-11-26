@@ -17,6 +17,8 @@ import { preferencesOfMembers, workspaceOfConference } from './notificationStore
 import { sendSlackDirectMessage, slackEscape } from './slackApi';
 import { decryptSlackToken } from './slackToken';
 import { slackUserOf } from './slackUsers';
+import { nanoid } from '#lib/helpers/nanoid';
+import { scanPageUrl, type ScanProblemNotice } from '#api/handlers/email/scanProblemEmail';
 import {
 	paperSubmissionValues,
 	submittedPaperUrl,
@@ -128,7 +130,7 @@ async function claim({
 	});
 }
 
-/** Tells one member, and takes the claim back when the message did not reach them. */
+/** Tells one member, and takes the claim back when the message did not reach them; whether it did. */
 async function tell({
 	recipients,
 	member,
@@ -143,9 +145,9 @@ async function tell({
 	subjectId: string;
 	oncePerSubject: boolean;
 	text: () => string;
-}) {
+}): Promise<boolean> {
 	const claimed = await claim({ teamMemberId: member.id, key, subjectId, oncePerSubject });
-	if (!claimed) return;
+	if (!claimed) return false;
 	const unclaim = async () => {
 		await db.delete(schema.slackNotification).where(eq(schema.slackNotification.id, claimed));
 	};
@@ -155,15 +157,20 @@ async function tell({
 			user: member.user
 		});
 		// not in the workspace (or Slack did not answer): told once they are, with the next message
-		if (!slackUserId) return await unclaim();
+		if (!slackUserId) {
+			await unclaim();
+			return false;
+		}
 		await sendSlackDirectMessage({
 			token: await decryptSlackToken(recipients.workspace.botTokenCiphertext),
 			slackUserId,
 			text: runWithLocale({ locale: localeOfUser(member.user.locale), fn: text })
 		});
+		return true;
 	} catch (error) {
 		await unclaim();
 		logger.error('Sending a Slack notification failed', { error, teamMemberId: member.id });
+		return false;
 	}
 }
 
@@ -213,6 +220,27 @@ export const reportSlackText = ({
 /** A version of a paper was submitted; `url` is where it opens. */
 export const paperSlackText = ({ paper, url }: { paper: SubmittedPaper; url: string }) =>
 	`${m.slackPaperSubmitted(paperSubmissionValues({ paper, escape: slackEscape }))}\n${slackLink({ url, label: m.slackOpenPaper() })}`;
+
+/** Pages of the member's own scanner came to nothing. */
+export const scanProblemSlackText = ({
+	notice,
+	origin
+}: {
+	notice: ScanProblemNotice;
+	origin: string | undefined;
+}) =>
+	[
+		m.slackScanProblem({ scanner: slackEscape(notice.scanner) }),
+		...notice.problems().map((line) => `• ${slackEscape(line)}`),
+		...(origin
+			? [
+					slackLink({
+						url: scanPageUrl({ origin, conferenceId: notice.conferenceId }),
+						label: m.slackOpenScanPage()
+					})
+				]
+			: [])
+	].join('\n');
 
 /** Tells everybody answering the inbox of `chat` that a participant wrote there. */
 async function tellInbox({
@@ -310,6 +338,30 @@ async function tellPaper({ paper, origin }: { paper: SubmittedPaper; origin: str
 				})
 			)
 	);
+}
+
+/** Tells a scanner's owner of pages that came to nothing; each delivery tells once. Answers whether it reached them. */
+export async function tellScanProblemOnSlack({
+	teamMemberId,
+	notice,
+	origin
+}: {
+	teamMemberId: string;
+	notice: ScanProblemNotice;
+	origin: string | undefined;
+}): Promise<boolean> {
+	const recipients = await loadRecipients(notice.conferenceId);
+	const member = recipients?.members.find(({ id }) => id === teamMemberId);
+	if (!recipients || !member) return false;
+	if (!wantsSlack({ member, key: { topic: 'SCAN_PROBLEM', teamFunctionId: null } })) return false;
+	return tell({
+		recipients,
+		member,
+		key: 'scan',
+		subjectId: nanoid(),
+		oncePerSubject: true,
+		text: () => scanProblemSlackText({ notice, origin })
+	});
 }
 
 /** Runs in the background: what was written is written, whether or not Slack hears of it. */

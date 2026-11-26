@@ -106,10 +106,13 @@ function idAfter(id: string | undefined) {
 	return id === undefined ? {} : { id: { gt: id } };
 }
 
-/** Objects in the bucket no file knows, older than `cutoff`. */
+/** Objects in the bucket nothing knows, older than `cutoff`. */
 async function orphanedObjects({ storage, cutoff }: { storage: Storage; cutoff: Date }) {
-	const knownKeys = new Set(
-		(await db.query.storedFile.findMany({ columns: { key: true } })).map((row) => row.key)
-	);
+	const [files, deliveries] = await Promise.all([
+		db.query.storedFile.findMany({ columns: { key: true } }),
+		// what scanners delivered is stored on its own until it was split into pages
+		db.query.scanDelivery.findMany({ columns: { key: true } })
+	]);
+	const knownKeys = new Set([...files, ...deliveries].map((row) => row.key));
 	return orphanedObjectKeys({ objects: await storage.list(), knownKeys, cutoff });
 }

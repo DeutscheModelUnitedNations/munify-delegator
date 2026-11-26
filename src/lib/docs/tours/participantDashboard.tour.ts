@@ -3,8 +3,8 @@ import { m } from '#lib/paraglide/messages';
 
 /**
  * A participant's (or supervisor's) dashboard of one conference. Anchors live in
- * `ConferenceHeader.svelte`, `DashboardQuickLinks.svelte` and the dashboard page; steps whose
- * anchor is not on screen (the quick links appear in preparation) are skipped.
+ * `ConferenceHeader.svelte`, `DashboardQuickLinks.svelte`, `NextEntries.svelte` and the dashboard
+ * page; steps whose anchor is not on screen (the quick links appear in preparation) are skipped.
  */
 export const participantDashboardTour: Tour = {
 	id: 'participant.dashboard',
@@ -23,6 +23,12 @@ export const participantDashboardTour: Tour = {
 			anchor: 'dashboard.quick-links',
 			title: () => m.tourDashboardQuickLinksTitle(),
 			body: () => m.tourDashboardQuickLinksBody(),
+			side: 'top'
+		},
+		{
+			anchor: 'dashboard.next-entries',
+			title: () => m.tourDashboardNextEntriesTitle(),
+			body: () => m.tourDashboardNextEntriesBody(),
 			side: 'top'
 		},
 		{

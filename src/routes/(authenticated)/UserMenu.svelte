@@ -14,9 +14,6 @@
 	const user = await getOptionalCurrentUser();
 
 	const displayName = [user?.given_name, user?.family_name].filter(Boolean).join(' ').trim();
-	const initials =
-		`${user?.given_name?.[0] ?? ''}${user?.family_name?.[0] ?? ''}`.toUpperCase() ||
-		(user?.email?.[0] ?? '?').toUpperCase();
 
 	let logoutUrl = $state<string>();
 
@@ -36,13 +33,8 @@
 	</a>
 {:else}
 	<div class="dropdown dropdown-end z-30">
-		<div
-			tabindex="0"
-			role="button"
-			class="from-primary to-primary/70 grid size-9 cursor-pointer place-items-center rounded-full bg-gradient-to-br text-xs font-bold tracking-wide text-white"
-		>
-			<!-- Initials only say something to whoever sees the full name in the menu -->
-			<span aria-hidden="true">{initials}</span>
+		<div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-circle">
+			<i aria-hidden="true" class="ph-duotone ph-user-circle text-2xl"></i>
 			<span class="sr-only">{displayName || user.email}</span>
 		</div>
 		<div
@@ -100,6 +92,12 @@
 									<a href={resolve('dashboard/slack-workspaces')}>
 										<i aria-hidden="true" class="ph-duotone ph-slack-logo w-4"></i>
 										{m.slackWorkspaces()}
+									</a>
+								</li>
+								<li>
+									<a href={resolve('dashboard/conference-series')}>
+										<i aria-hidden="true" class="ph-duotone ph-stack w-4"></i>
+										{m.conferenceSeriesTitle()}
 									</a>
 								</li>
 							</ul>

@@ -13,10 +13,26 @@ import {
 	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
-import { liveWhere } from '#api/services/authHelper/callerFacts';
+import {
+	assertAllowed,
+	callerAsThemselves,
+	callerUserId,
+	grantWhere
+} from '#api/services/authHelper/utils';
+import { liveRule, liveWhere } from '#api/services/authHelper/callerFacts';
 import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
+
+/**
+ * How far somebody is in their postal registration is for them and participant care. What they
+ * confirmed says who is a minor, and the fingerprint of their details gives a birthday or an address
+ * away to whoever knows the rest of them.
+ */
+const WITHOUT_POSTAL_PROGRESS = {
+	postalInfoRead: false,
+	postalConfirmedDetails: false,
+	postalConfirmedOfAge: false
+};
 
 export function registerConferenceParticipantAbilities() {
 	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
@@ -37,26 +53,22 @@ export function registerConferenceParticipantAbilities() {
 
 	// Supervisors read those of their students. Supervision links this very row, so only the
 	// conference they supervise them in.
-	abilityBuilder.conferenceParticipant
-		.allow('read')
-		.when(
-			liveWhere(({ ctx, facts }) =>
-				callerUserId(ctx)
-					? { id: idIn(facts.supervised.map((person) => person.participantId)) }
-					: undefined
-			)
-		);
+	abilityBuilder.conferenceParticipant.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			if (!callerUserId(ctx)) return undefined;
+			const where = { id: idIn(facts.supervised.map((person) => person.participantId)) };
+			return { where, columns: WITHOUT_POSTAL_PROGRESS };
+		})
+	);
 
 	// Every delegate reads those of their co-delegates.
-	abilityBuilder.conferenceParticipant
-		.allow('read')
-		.when(
-			liveWhere(({ ctx, facts }) =>
-				callerUserId(ctx)
-					? { id: idIn(facts.delegationMates.map((mate) => mate.participantId)) }
-					: undefined
-			)
-		);
+	abilityBuilder.conferenceParticipant.allow('read').when(
+		liveRule(({ ctx, facts }) => {
+			if (!callerUserId(ctx)) return undefined;
+			const where = { id: idIn(facts.delegationMates.map((mate) => mate.participantId)) };
+			return { where, columns: WITHOUT_POSTAL_PROGRESS };
+		})
+	);
 
 	// Participant care (project management and participant care) reads, updates and deletes the
 	// participant rows of its conference.
@@ -215,4 +227,32 @@ export async function assertCanSetParticipantSchool({
 	});
 	if (!own) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	return { participantId: own.id };
+}
+
+/** The person's participant row in the conference; NOT_FOUND for somebody without one. */
+export async function partIn({ conferenceId, userId }: { conferenceId: string; userId: string }) {
+	const participant = await db.query.conferenceParticipant.findFirst({
+		where: { conferenceId, userId },
+		columns: { id: true }
+	});
+	if (!participant) throw apiError({ code: 'NOT_FOUND', message: m.userNotInConference() });
+	return { participantId: participant.id };
+}
+
+/**
+ * The caller's own participant row in the conference, whose postal registration they go through.
+ * FORBIDDEN for an AI assistant and for whoever impersonates, who confirm nothing for somebody
+ * else; NOT_FOUND for a caller without a part in it.
+ */
+export async function assertCanUpdatePostalProgress({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	ctx.mustBeLoggedIn();
+	const userId = callerAsThemselves(ctx);
+	if (!userId) throw apiError({ code: 'FORBIDDEN', message: m.postalGuideOnlyOwn() });
+	return partIn({ conferenceId, userId });
 }

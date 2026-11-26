@@ -25,6 +25,8 @@ export function notificationTopicLabel({
 			return m.notificationTopicTrustedPersonal();
 		case 'CHAT_REPORT':
 			return m.notificationTopicChatReport();
+		case 'SCAN_PROBLEM':
+			return m.notificationTopicScanProblem();
 		case 'COMMITTEE_PAPERS': {
 			const papers =
 				functionKind === 'CONSULTANT'

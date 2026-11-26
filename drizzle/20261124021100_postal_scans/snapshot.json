@@ -1,0 +1,2002 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c282a67c-9b8f-4e8a-b6ce-07f4bd1243cb",
+  "prevIds": [
+    "b8258880-7af8-4b8f-abb0-db7129ff9830"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "agreement_field"
+      ],
+      "writes": [
+        "s|enum|public.agreement_field",
+        "n|enum|public.agreement_field",
+        "e|enum|public.agreement_field",
+        "n|type|public.agreement_field"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "agreement_source"
+      ],
+      "writes": [
+        "s|enum|public.agreement_source",
+        "n|enum|public.agreement_source",
+        "e|enum|public.agreement_source",
+        "n|type|public.agreement_source"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "agreement_state"
+      ],
+      "writes": [
+        "s|enum|public.agreement_state",
+        "n|enum|public.agreement_state",
+        "e|enum|public.agreement_state",
+        "n|type|public.agreement_state"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "postal_scan_source"
+      ],
+      "writes": [
+        "s|enum|public.postal_scan_source",
+        "n|enum|public.postal_scan_source",
+        "e|enum|public.postal_scan_source",
+        "n|type|public.postal_scan_source"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "scan_task_kind"
+      ],
+      "writes": [
+        "s|enum|public.scan_task_kind",
+        "n|enum|public.scan_task_kind",
+        "e|enum|public.scan_task_kind",
+        "n|type|public.scan_task_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "email_kind"
+      ],
+      "writes": [
+        "s|enum|public.email_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "notification_topic"
+      ],
+      "writes": [
+        "s|enum|public.notification_topic"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "agreement_detail"
+      ],
+      "writes": [
+        "s|tbl|public.agreement_detail",
+        "n|tbl|public.agreement_detail",
+        "e|tbl|public.agreement_detail",
+        "n|rel|public.agreement_detail",
+        "n|type|public.agreement_detail",
+        "n|rel|public.agreement_detail_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.agreement_field",
+        "n|enum|public.agreement_state",
+        "n|enum|public.agreement_source"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "postal_scan"
+      ],
+      "writes": [
+        "s|tbl|public.postal_scan",
+        "n|tbl|public.postal_scan",
+        "e|tbl|public.postal_scan",
+        "n|rel|public.postal_scan",
+        "n|type|public.postal_scan",
+        "n|rel|public.postal_scan_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.postal_scan_source"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_delivery"
+      ],
+      "writes": [
+        "s|tbl|public.scan_delivery",
+        "n|tbl|public.scan_delivery",
+        "e|tbl|public.scan_delivery",
+        "n|rel|public.scan_delivery",
+        "n|type|public.scan_delivery",
+        "n|rel|public.scan_delivery_pkey",
+        "n|rel|public.scan_delivery_key_key"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_task"
+      ],
+      "writes": [
+        "s|tbl|public.scan_task",
+        "n|tbl|public.scan_task",
+        "e|tbl|public.scan_task",
+        "n|rel|public.scan_task",
+        "n|type|public.scan_task",
+        "n|rel|public.scan_task_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.scan_task_kind"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "scanner_access"
+      ],
+      "writes": [
+        "s|tbl|public.scanner_access",
+        "n|tbl|public.scanner_access",
+        "e|tbl|public.scanner_access",
+        "n|rel|public.scanner_access",
+        "n|type|public.scanner_access",
+        "n|rel|public.scanner_access_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "agreement_detail",
+        "agreement_detail_conference_participant_id_field_key"
+      ],
+      "writes": [
+        "s|idx|public.agreement_detail_conference_participant_id_field_key",
+        "n|idx|public.agreement_detail_conference_participant_id_field_key",
+        "e|idx|public.agreement_detail_conference_participant_id_field_key",
+        "n|rel|public.agreement_detail_conference_participant_id_field_key"
+      ],
+      "reads": [
+        "n|tbl|public.agreement_detail",
+        "n|sch|public",
+        "n|col|public.agreement_detail.conference_participant_id",
+        "n|col|public.agreement_detail.field"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "postal_scan",
+        "postal_scan_conference_participant_id_page_key_key"
+      ],
+      "writes": [
+        "s|idx|public.postal_scan_conference_participant_id_page_key_key",
+        "n|idx|public.postal_scan_conference_participant_id_page_key_key",
+        "e|idx|public.postal_scan_conference_participant_id_page_key_key",
+        "n|rel|public.postal_scan_conference_participant_id_page_key_key"
+      ],
+      "reads": [
+        "n|tbl|public.postal_scan",
+        "n|sch|public",
+        "n|col|public.postal_scan.conference_participant_id",
+        "n|col|public.postal_scan.page_key"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "postal_scan",
+        "postal_scan_file_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.postal_scan_file_id_idx",
+        "n|idx|public.postal_scan_file_id_idx",
+        "e|idx|public.postal_scan_file_id_idx",
+        "n|rel|public.postal_scan_file_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.postal_scan",
+        "n|sch|public",
+        "n|col|public.postal_scan.file_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_delivery",
+        "scan_delivery_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.scan_delivery_user_id_idx",
+        "n|idx|public.scan_delivery_user_id_idx",
+        "e|idx|public.scan_delivery_user_id_idx",
+        "n|rel|public.scan_delivery_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scan_delivery",
+        "n|sch|public",
+        "n|col|public.scan_delivery.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_task",
+        "scan_task_delivery_id_kind_page_key"
+      ],
+      "writes": [
+        "s|idx|public.scan_task_delivery_id_kind_page_key",
+        "n|idx|public.scan_task_delivery_id_kind_page_key",
+        "e|idx|public.scan_task_delivery_id_kind_page_key",
+        "n|rel|public.scan_task_delivery_id_kind_page_key"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|col|public.scan_task.delivery_id",
+        "n|col|public.scan_task.kind",
+        "n|col|public.scan_task.page"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_task",
+        "scan_task_due_at_idx"
+      ],
+      "writes": [
+        "s|idx|public.scan_task_due_at_idx",
+        "n|idx|public.scan_task_due_at_idx",
+        "e|idx|public.scan_task_due_at_idx",
+        "n|rel|public.scan_task_due_at_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|col|public.scan_task.due_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scan_task",
+        "scan_task_file_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.scan_task_file_id_idx",
+        "n|idx|public.scan_task_file_id_idx",
+        "e|idx|public.scan_task_file_id_idx",
+        "n|rel|public.scan_task_file_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|col|public.scan_task.file_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scanner_access",
+        "scanner_access_username_key"
+      ],
+      "writes": [
+        "s|idx|public.scanner_access_username_key",
+        "n|idx|public.scanner_access_username_key",
+        "e|idx|public.scanner_access_username_key",
+        "n|rel|public.scanner_access_username_key"
+      ],
+      "reads": [
+        "n|tbl|public.scanner_access",
+        "n|sch|public",
+        "n|col|public.scanner_access.username"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "scanner_access",
+        "scanner_access_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.scanner_access_user_id_idx",
+        "n|idx|public.scanner_access_user_id_idx",
+        "e|idx|public.scanner_access_user_id_idx",
+        "n|rel|public.scanner_access_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.scanner_access",
+        "n|sch|public",
+        "n|col|public.scanner_access.user_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "agreement_detail"
+      ],
+      "writes": [
+        "s|fk|public.agreement_detail.agreement_detail_448UKGdZ5C3A_fkey",
+        "n|fk|public.agreement_detail.agreement_detail_448UKGdZ5C3A_fkey",
+        "e|fk|public.agreement_detail.agreement_detail_448UKGdZ5C3A_fkey",
+        "n|con|public.agreement_detail.agreement_detail_448UKGdZ5C3A_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.agreement_detail",
+        "n|sch|public",
+        "n|tbl|public.conference_participant",
+        "n|sch|public",
+        "n|col|public.agreement_detail.conference_participant_id",
+        "n|col|public.conference_participant.id",
+        "e|uniqueness|public.conference_participant.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "postal_scan"
+      ],
+      "writes": [
+        "s|fk|public.postal_scan.postal_scan_N4fsn5QMRyKr_fkey",
+        "n|fk|public.postal_scan.postal_scan_N4fsn5QMRyKr_fkey",
+        "e|fk|public.postal_scan.postal_scan_N4fsn5QMRyKr_fkey",
+        "n|con|public.postal_scan.postal_scan_N4fsn5QMRyKr_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.postal_scan",
+        "n|sch|public",
+        "n|tbl|public.conference_participant",
+        "n|sch|public",
+        "n|col|public.postal_scan.conference_participant_id",
+        "n|col|public.conference_participant.id",
+        "e|uniqueness|public.conference_participant.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "postal_scan"
+      ],
+      "writes": [
+        "s|fk|public.postal_scan.postal_scan_file_id_stored_file_id_fkey",
+        "n|fk|public.postal_scan.postal_scan_file_id_stored_file_id_fkey",
+        "e|fk|public.postal_scan.postal_scan_file_id_stored_file_id_fkey",
+        "n|con|public.postal_scan.postal_scan_file_id_stored_file_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.postal_scan",
+        "n|sch|public",
+        "n|tbl|public.stored_file",
+        "n|sch|public",
+        "n|col|public.postal_scan.file_id",
+        "n|col|public.stored_file.id",
+        "e|uniqueness|public.stored_file.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "postal_scan"
+      ],
+      "writes": [
+        "s|fk|public.postal_scan.postal_scan_uploaded_by_id_user_id_fkey",
+        "n|fk|public.postal_scan.postal_scan_uploaded_by_id_user_id_fkey",
+        "e|fk|public.postal_scan.postal_scan_uploaded_by_id_user_id_fkey",
+        "n|con|public.postal_scan.postal_scan_uploaded_by_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.postal_scan",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.postal_scan.uploaded_by_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_delivery"
+      ],
+      "writes": [
+        "s|fk|public.scan_delivery.scan_delivery_user_id_user_id_fkey",
+        "n|fk|public.scan_delivery.scan_delivery_user_id_user_id_fkey",
+        "e|fk|public.scan_delivery.scan_delivery_user_id_user_id_fkey",
+        "n|con|public.scan_delivery.scan_delivery_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scan_delivery",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.scan_delivery.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_task"
+      ],
+      "writes": [
+        "s|fk|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey",
+        "n|fk|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey",
+        "e|fk|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey",
+        "n|con|public.scan_task.scan_task_delivery_id_scan_delivery_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|tbl|public.scan_delivery",
+        "n|sch|public",
+        "n|col|public.scan_task.delivery_id",
+        "n|col|public.scan_delivery.id",
+        "e|uniqueness|public.scan_delivery.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "scan_task"
+      ],
+      "writes": [
+        "s|fk|public.scan_task.scan_task_file_id_stored_file_id_fkey",
+        "n|fk|public.scan_task.scan_task_file_id_stored_file_id_fkey",
+        "e|fk|public.scan_task.scan_task_file_id_stored_file_id_fkey",
+        "n|con|public.scan_task.scan_task_file_id_stored_file_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scan_task",
+        "n|sch|public",
+        "n|tbl|public.stored_file",
+        "n|sch|public",
+        "n|col|public.scan_task.file_id",
+        "n|col|public.stored_file.id",
+        "e|uniqueness|public.stored_file.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "scanner_access"
+      ],
+      "writes": [
+        "s|fk|public.scanner_access.scanner_access_user_id_user_id_fkey",
+        "n|fk|public.scanner_access.scanner_access_user_id_user_id_fkey",
+        "e|fk|public.scanner_access.scanner_access_user_id_user_id_fkey",
+        "n|con|public.scanner_access.scanner_access_user_id_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.scanner_access",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.scanner_access.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "agreement_detail",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "postal_scan",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scan_delivery",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scan_task",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scanner_access",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "agreement_field",
+        "values": [
+          "termsAccepted",
+          "termsPlaceDate",
+          "termsSignature",
+          "guardianPlaceDate",
+          "guardian1Name",
+          "guardian2Name",
+          "guardian1Signature",
+          "guardian2Signature",
+          "mediaPhoto",
+          "mediaVideo",
+          "mediaByDmun",
+          "mediaByOthers",
+          "mediaInternal",
+          "mediaDocumentation",
+          "mediaPapers",
+          "mediaPress",
+          "mediaWebsite",
+          "mediaSocial",
+          "mediaSearch",
+          "mediaAdvertising",
+          "mediaPlaceDate",
+          "mediaSignature",
+          "mediaGuardian1Name",
+          "mediaGuardian2Name",
+          "mediaGuardianPlaceDate",
+          "mediaGuardian1Signature",
+          "mediaGuardian2Signature"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "agreement_source",
+        "values": [
+          "SCAN",
+          "MANUAL"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "agreement_state",
+        "values": [
+          "yes",
+          "no",
+          "unclear"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "postal_scan_source",
+        "values": [
+          "UPLOAD",
+          "FOLDER",
+          "WEBDAV"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "scan_task_kind",
+        "values": [
+          "SPLIT",
+          "PAGE",
+          "FINISH"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "conference_participant_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "field",
+        "type": "agreement_field",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "state",
+        "type": "agreement_state",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "source",
+        "type": "agreement_source",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "conference_participant_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "file_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "source",
+        "type": "postal_scan_source",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "page_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "fields",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 1,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "readings",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "uploaded_by_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "access_name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "file_name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "size",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "delivery_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "kind",
+        "type": "scan_task_kind",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "page",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "file_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "held_by",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "attempts",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "due_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "done_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "result",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "created_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "updated_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "CURRENT_TIMESTAMP",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "user_id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "name",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "username",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "password_hash",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "expires_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "last_used_at",
+        "type": "timestamp(3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "agreement_detail_conference_participant_id_field_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conference_participant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "field",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "postal_scan_conference_participant_id_page_key_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conference_participant_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "page_key",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "postal_scan_file_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "file_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_user_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_delivery_id_kind_page_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "delivery_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "kind",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "page",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_due_at_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "due_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "(\"done_at\" is null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_file_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "file_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "scanner_access_username_key",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "username",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "scanner_access_user_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "agreement_detail_448UKGdZ5C3A_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_participant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference_participant",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "postal_scan_N4fsn5QMRyKr_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "conference_participant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conference_participant",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "postal_scan_file_id_stored_file_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "file_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "stored_file",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "postal_scan_uploaded_by_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "uploaded_by_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_delivery_id_scan_delivery_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "delivery_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "scan_delivery",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_file_id_stored_file_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "file_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "stored_file",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "scanner_access_user_id_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "agreement_detail",
+        "name": "agreement_detail_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "postal_scan",
+        "name": "postal_scan_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_task",
+        "name": "scan_task_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scanner_access",
+        "name": "scanner_access_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "scan_delivery",
+        "name": "scan_delivery_key_key",
+        "nameExplicit": false,
+        "columns": [
+          "key"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"email_kind\"]",
+      "set": {
+        "values": [
+          "DELEGATION_CREATED",
+          "DELEGATION_JOINED",
+          "DELEGATION_MEMBER_JOINED",
+          "APPLICATION_SENT",
+          "WAITING_LIST_REGISTERED",
+          "SUPERVISOR_CONNECTED",
+          "SURVEY_PUBLISHED",
+          "ASSIGNMENT_ACCEPTED",
+          "ASSIGNMENT_REJECTED",
+          "SUPERVISOR_ASSIGNMENT_SUMMARY",
+          "WAITING_LIST_SEATED",
+          "POSTAL_UNLOCKED",
+          "PAYMENT_UNLOCKED",
+          "POSTAL_RECEIVED",
+          "PAYMENT_RECEIVED",
+          "PAPERWORK_PROBLEM",
+          "APPLICATION_DEADLINE_REMINDER",
+          "OPEN_ISSUES_REMINDER",
+          "PHONE_READY_REMINDER",
+          "SURVEY_REMINDER",
+          "CHASE_INTRO_REMINDER",
+          "CERTIFICATE_AVAILABLE",
+          "SUPERVISOR_STUDENT_LINKED",
+          "PAPER_REVIEWED",
+          "TEAM_INVITATION",
+          "TEAM_WELCOME",
+          "BADGE_FOUND",
+          "UNREAD_MESSAGES",
+          "ANNOUNCEMENT",
+          "CHAT_REPORTED",
+          "PAPER_SUBMITTED",
+          "SCAN_PROBLEM"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"notification_topic\"]",
+      "set": {
+        "values": [
+          "PARTICIPANT_CARE",
+          "COMMITTEE_INBOX",
+          "TRUSTED_SHARED",
+          "TRUSTED_PERSONAL",
+          "CHAT_REPORT",
+          "COMMITTEE_PAPERS",
+          "SCAN_PROBLEM"
+        ]
+      }
+    }
+  ]
+}
