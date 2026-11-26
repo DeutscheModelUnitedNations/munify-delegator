@@ -296,12 +296,16 @@ width/height, rounding), `keepFocus` (don't move focus in on open), `children`.
 
 `#lib/components/postal/`, on the user card's formalities tab and the postal registration page:
 `PostalScans` (a "Scans" row with the count and `UploadScanButton`, folded below it the person's
-stored scans: open, delete; `unfolded` lists them right away) and `AgreementDetails` (every box and line of the documents, filled in by scans,
-folded in a `CollapsibleRow`, `userCard/sections/`: lower priority than the statuses on purpose; its groups stand in as many columns as fit, so it gets the
-full width) are
-rows of a `Section` (or any list) without a heading of their own, beside
-the statuses. Both take `conferenceParticipantId`, `PostalScans` also `conferenceId` and `userId`, and
-need a `svelte:boundary`.
+stored scans as `PostalScanList`: cards with a thumbnail (`ScanThumbnail`), opened large in
+`ScanPreview` with where the fields are read laid over it (`ScanZones`: green detected, warning colour
+not), deleted; `unfolded` lists them right away) and `AgreementDetails` (every box and line of the
+documents, filled in by scans, folded in a `CollapsibleRow` around `AgreementDetailList`: lower priority
+than the statuses on purpose; its groups stand in as many columns as fit) are rows of a list without a
+heading of their own, as on the postal registration page. Both take `conferenceParticipantId`,
+`PostalScans` also `conferenceId` and `userId`, and need a `svelte:boundary`. The formalities tab
+shows the lists themselves instead, across the whole width below its columns, as always-open tabs
+(`userCard/sections/FormalityRecords`): scans (`PostalScanList` with the upload), `AttendanceLog`
+(with a confirmed place) and `AgreementDetailList`.
 
 ## BarcodeScanner Component
 

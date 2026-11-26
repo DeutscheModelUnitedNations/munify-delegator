@@ -105,8 +105,8 @@ And what the person holds in the conference: their delegation's role and the mem
 
 Everything that has to be settled before the conference, and during and after the conference participation and the access card at the top. How payments and postal registration work is explained under [Payments](./formalities#payments) and [Postal registration](./formalities#postal-registration).
 
-- **Payment**: the **Fee Payment** and, folded, the person's **Payment References**, including who paid for them.
-- **Postal Registration**: **Binding Registration**, **Parental Agreement** (only for people under age on the first conference day, never for supervisors) and **Media Usage Agreement**, with the **Media Status** beside it (**Photos not set**, **No photos**, **Photos partially**, when the consent form has to be checked for details, **Photos allowed**). Below are the **Filing number** the originals are filed under and, folded, the **Scans**. **Assign next filing number** gives the number after the highest one in the conference. **Download documents** creates the documents for the postal registration as a PDF.
+- **Payment**: the **Fee Payment** and each **Payment reference** of the person: whether it arrived, who paid for them, and **Open in Fee Payment**.
+- **Postal Registration**: **Binding Registration**, **Parental Agreement** (only for people under age on the first conference day, never for supervisors) and **Media Usage Agreement**, with the **Media Status** beside it (**Photos not set**, **No photos**, **Photos partially**, when the consent form has to be checked for details, **Photos allowed**). Below are the **Filing number** the originals are filed under. **Assign next filing number** gives the number after the highest one in the conference. **Download documents** creates the documents for the postal registration as a PDF. At the very bottom, always open, are the tabs **Scans**, **Attendance Log** (for people with a seat) and **Details of the agreements**.
 - Every status is **Pending**, **Problem** or **Done**. A click on the state opens the choice, and an open one has the **Done** button to settle it right away.
 - **On site**: participation, the access card and **Download** for the **Certificate of participation** (only for people who participated).
 
@@ -114,7 +114,7 @@ Everything that has to be settled before the conference, and during and after th
 - **Access Card ID**: the number of the access card. The pencil opens the field, **Save** (the floppy disk) keeps it. If another person already carries that number, DELEGATOR refuses.
 - **Badge found** (once there is a number) asks **Send notification?** and then emails the person right away that their badge waits for them at Participant Care. Every confirmation sends it again.
 - **NSA card** (only for members of a non-state actor): **Print** creates the card with its current number. **New card** and then **Void earlier cards** is for a lost card: the new one gets the next number, and earlier cards no longer scan.
-- **Attendance Log**: every scan of the person with the check-in, the time and who scanned. **Delete attendance entry** removes a scan. See [Check-in](./formalities#check-in).
+- **Attendance Log** (tab at the very bottom): every scan of the person with the check-in, the time and who scanned. **Delete attendance entry** removes a scan. See [Check-in](./formalities#check-in).
 
 :::warning Changing a status makes emails due
 Once the assignment is released and the person has a seat, a status makes emails due: **Done** for the payment the confirmation that it arrived, complete documents the confirmation of the postal registration, and **Problem** for payment, terms and conditions, media usage or guardian consent one email about that problem each. They go out with the next automatic run if that kind is set to **Send automatically**. Otherwise they wait on the [Emails](./communication#emails) page and in the card in the **History** tab.

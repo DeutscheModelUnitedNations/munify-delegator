@@ -4,7 +4,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { resolve } from '$app/paths';
 	import formatNames from '#lib/helpers/formatNames';
-	import CollapsibleRow from './userCard/sections/CollapsibleRow.svelte';
+	import Row from './userCard/ui/Row.svelte';
 
 	interface Props {
 		userId: string;
@@ -34,6 +34,12 @@
 		})
 	);
 
+	const formatAmount = (transaction: (typeof transactions)[number]) =>
+		transaction.amount.toLocaleString(getLocale(), {
+			style: 'currency',
+			currency: transaction.conference.currency ?? 'EUR'
+		});
+
 	const nameOf = (user: { givenName: string; familyName: string }) =>
 		formatNames({
 			givenName: user.givenName,
@@ -45,68 +51,46 @@
 		});
 </script>
 
-{#snippet transactionRow(transaction: (typeof transactions)[number])}
-	{@const currency = transaction.conference.currency ?? 'EUR'}
+{#each transactions as transaction (transaction.id)}
+	{@const amount = formatAmount(transaction)}
 	{@const others = transaction.paymentFor.filter((covered) => covered.user.id !== userId)}
-	<div class="bg-base-100 flex flex-col gap-1 rounded-box px-3 py-2">
-		<div class="flex flex-wrap items-center gap-3">
-			{#if transaction.recievedAt}
-				<i aria-hidden="true" class="ph-duotone ph-check-circle text-success"></i>
-				<span class="font-mono text-sm">{transaction.id}</span>
-				<p>
-					{m.commandPalettePaymentReceived({
-						amount: transaction.amount,
-						currency,
+	<Row
+		icon={transaction.recievedAt ? 'check-circle' : 'hourglass-medium'}
+		tone={transaction.recievedAt ? 'success' : 'warning'}
+		title={m.paymentReference()}
+	>
+		<span class="font-mono">{transaction.id}</span>
+		<span class="text-base-content/70 block">
+			{transaction.recievedAt
+				? m.paymentReferenceReceived({
+						amount,
 						date: new Date(transaction.recievedAt).toLocaleDateString(getLocale(), {
-							year: 'numeric',
-							month: 'long',
-							day: 'numeric'
+							dateStyle: 'medium'
 						})
-					})}
-				</p>
-			{:else}
-				<i aria-hidden="true" class="ph-duotone ph-x-circle text-error"></i>
-				<span class="font-mono text-sm">{transaction.id}</span>
-				<p>{m.commandPalettePaymentNotReceived({ amount: transaction.amount, currency })}</p>
-			{/if}
+					})
+				: m.paymentReferencePending({ amount })}
+		</span>
+		<!-- Who else the payment concerns: whoever paid for the person, or whom they paid for -->
+		{#if transaction.user.id !== userId}
+			<span class="text-base-content/60 block text-xs">
+				{m.paymentPaidBy({ name: nameOf(transaction.user) })}
+			</span>
+		{:else if others.length > 0}
+			<span class="text-base-content/60 block text-xs">
+				{m.paymentAlsoCovers({ names: others.map((covered) => nameOf(covered.user)).join(', ') })}
+			</span>
+		{/if}
+		{#snippet actions()}
 			<a
-				class="btn btn-ghost btn-xs btn-square"
+				class="btn btn-ghost btn-sm text-primary"
 				href={resolve(
 					`/(authenticated)/dashboard/[conferenceId]/team/payments?searchValue=${transaction.id}`,
 					{ conferenceId }
 				)}
-				title={m.payment()}
 			>
-				<i aria-hidden="true" class="ph-duotone ph-money-wavy"></i>
+				<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
+				{m.paymentReferenceOpen()}
 			</a>
-		</div>
-		<!-- Who else the payment concerns: whoever paid for the person, or whom they paid for -->
-		{#if transaction.user.id !== userId}
-			<p class="text-base-content/70 text-xs">
-				{m.paymentPaidBy({ name: nameOf(transaction.user) })}
-			</p>
-		{:else if others.length > 0}
-			<p class="text-base-content/70 text-xs">
-				{m.paymentAlsoCovers({ names: others.map((covered) => nameOf(covered.user)).join(', ') })}
-			</p>
-		{/if}
-	</div>
-{/snippet}
-
-{#snippet references()}
-	<div class="flex flex-col gap-2">
-		{#each transactions as transaction (transaction.id)}
-			{@render transactionRow(transaction)}
-		{/each}
-	</div>
-{/snippet}
-
-{#if transactions.length > 0}
-	<CollapsibleRow
-		icon="money-wavy"
-		title={m.paymentReferences()}
-		value={m.userCardPaymentReferencesCount({ count: transactions.length })}
-	>
-		{@render references()}
-	</CollapsibleRow>
-{/if}
+		{/snippet}
+	</Row>
+{/each}

@@ -1,12 +1,25 @@
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { PDFDocument, StandardFonts, type PDFPage } from 'pdf-lib';
-import { POINTS_PER_MM, resolveDocumentLayout } from '#lib/helpers/documentLayout';
+import { createCodeSigner } from '#api/handlers/signedCode/codeSigner';
+import { drawQr } from '#lib/api/pdfQr';
+import {
+	DOCUMENT_ELEMENTS,
+	POINTS_PER_MM,
+	resolveDocumentLayout,
+	type DocumentLayout,
+	squareInPoints
+} from '#lib/helpers/documentLayout';
+import { fitQrSquare, minQrSide, qrMatrix } from '#lib/helpers/qrSize';
 import { planDetails, type AgreementField } from '#lib/paperScan/agreementDetails';
-import type { PaperArea } from '#lib/paperScan/areas';
+import { areasAsPrinted, encodeAreas, type PageAreas, type PaperArea } from '#lib/paperScan/areas';
+import { drawPaperPage } from '#lib/paperScan/drawPaper';
 import { PAPER_FIELDS, type PaperField } from '#lib/paperScan/fields';
 import { pageAreas, POSTAL_DOCUMENTS, type PostalDocument } from '#lib/paperScan/pageAreas';
+import { printedInkOf } from '#lib/paperScan/printedInk';
 import type { FieldReading, FieldState } from '#lib/paperScan/readPaper';
+import { renderPdfPage, simulateScan, type Pixels } from '#lib/paperScan/scanSimulation';
+import { signedCodeLink } from '#lib/signedCode/signedCode';
 import type * as schema from '../schema';
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import { applicationTemplate } from '../seed-data/pdfDocuments';
@@ -108,10 +121,18 @@ function readingOf({ field, plan }: { field: PaperField; plan: PaperPlan }): Fie
 	return { field, state: differing[field] ?? (empty ? 'no' : 'yes') };
 }
 
-/** A page of a persona's documents, its fields and what was read off it (`null`: nothing). */
+/** A postal document's layout: each places the footer's code and the fields. */
+type PostalLayout = DocumentLayout<PostalDocument>;
+
+/**
+ * A page of a persona's documents, where its marks and fields are, and what was read off it
+ * (`null`: nothing).
+ */
 interface ScannedPage {
 	document: PostalDocument;
 	page: number;
+	layout: PostalLayout;
+	placed: PageAreas;
 	areas: PaperArea[];
 	readings: FieldReading[] | null;
 }
@@ -124,15 +145,12 @@ export async function paperPages({ plan, layouts }: { plan: PaperPlan; layouts: 
 		const template = await PDFDocument.load(applicationTemplate(document));
 		for (const [page, sheet] of template.getPages().entries()) {
 			const { width, height } = sheet.getSize();
-			const { areas } = pageAreas({
-				document,
-				layout: resolveDocumentLayout({ document, stored: layouts }),
-				page,
-				size: { width, height }
-			});
+			const layout = resolveDocumentLayout({ document, stored: layouts });
+			const placed = pageAreas({ document, layout, page, size: { width, height } });
+			const { areas } = placed;
 			const unreadable = plan.unreadable?.includes(`${document}:${page}`) ?? false;
 			const readings = unreadable ? null : areas.map(({ field }) => readingOf({ field, plan }));
-			pages.push({ document, page, areas, readings });
+			pages.push({ document, page, layout, placed, areas, readings });
 		}
 	}
 	return pages;
@@ -167,18 +185,145 @@ function fillIn({ page, area, state }: { page: PDFPage; area: PaperArea; state: 
 	}
 }
 
-/** A page of the conference's form, filled in as it was read. */
-async function filledPage({ document, page, areas, readings }: ScannedPage) {
+/**
+ * Signs the seed's codes with the keys the dev server checks them against: the same
+ * `CERTIFICATE_SECRET`, which Bun reads from `.env`.
+ */
+const signer = createCodeSigner(() => {
+	const secret = process.env.CERTIFICATE_SECRET;
+	if (!secret) throw new Error('CERTIFICATE_SECRET is not set');
+	return secret;
+});
+
+/** Where the dev server answers the links the codes stand for. */
+const ORIGIN = process.env.APP_URL ?? 'https://localhost:5173';
+
+/** Pixels a millimetre of a blank page is rendered at to measure what the form prints in its fields. */
+const MEASURE_PER_MM = 6;
+
+/**
+ * The signed code of a person's page, as `issuePrintCodes` makes it: where its marks and fields
+ * are, with what the form prints in them, measured on the blank page.
+ */
+async function codeOf({
+	pdf,
+	placed,
+	userId,
+	conferenceId,
+	issuedAt
+}: {
+	pdf: PDFDocument;
+	placed: PageAreas;
+	userId: string;
+	conferenceId: string;
+	issuedAt: number;
+}) {
+	const blank = await renderPdfPage({ bytes: await pdf.save(), dpi: MEASURE_PER_MM * 25.4 });
+	const printedInk = printedInkOf({
+		picture: blank,
+		toPicture: ({ x, y }) => ({ x: x * MEASURE_PER_MM, y: y * MEASURE_PER_MM }),
+		areas: placed.areas
+	});
+	const areas = encodeAreas({
+		...placed,
+		areas: areasAsPrinted({ areas: placed.areas, printedInk })
+	});
+	return signer.signCode({ kind: 'print', userId, conferenceId, issuedAt, areas });
+}
+
+/** Draws a page's code where its layout places it, as the generator does. */
+async function drawCode({
+	pdf,
+	sheet,
+	layout,
+	code
+}: {
+	pdf: PDFDocument;
+	sheet: PDFPage;
+	layout: ScannedPage['layout'];
+	code: string;
+}) {
+	const { width, height } = sheet.getSize();
+	const text = signedCodeLink({ origin: ORIGIN, code });
+	const modules = qrMatrix({ text, withEmblem: false }).size;
+	const square = fitQrSquare({
+		square: squareInPoints({ placement: layout.code, width, height }),
+		minSide: Math.max(
+			DOCUMENT_ELEMENTS.contract.code.minSide * POINTS_PER_MM,
+			minQrSide({ modules, corporate: false })
+		),
+		page: { width, height }
+	});
+	await drawQr({
+		pdf,
+		page: sheet,
+		text,
+		box: { x: square.left, top: square.bottom + square.side, side: square.side },
+		corporate: false
+	});
+}
+
+/** `picture` as a JPEG. */
+function jpegOf(picture: Pixels) {
+	const canvas = createCanvas(picture.width, picture.height);
+	const context = canvas.getContext('2d');
+	const image = context.createImageData(picture.width, picture.height);
+	image.data.set(picture.data);
+	context.putImageData(image, 0, 0);
+	return canvas.toBuffer('image/jpeg', 80);
+}
+
+/** A scanner's PDF: the scanned picture as its one page, the size of the paper. */
+async function scannerPdf({
+	jpeg,
+	size
+}: {
+	jpeg: Uint8Array;
+	size: { width: number; height: number };
+}) {
+	const pdf = await PDFDocument.create();
+	const image = await pdf.embedJpg(jpeg);
+	pdf.addPage([size.width, size.height]).drawImage(image, { x: 0, y: 0, ...size });
+	return pdf.save();
+}
+
+/**
+ * A person's page of the conference's form as it came back: printed with its marks and signed code,
+ * filled in as it was read, and scanned a little crooked, as a scanner's PDF or, uploaded, a JPEG.
+ */
+export async function scannedPage({
+	scanned: { document, page, layout, placed, areas, readings },
+	userId,
+	conferenceId,
+	issuedAt,
+	angle,
+	asPicture
+}: {
+	scanned: ScannedPage;
+	userId: string;
+	conferenceId: string;
+	issuedAt: number;
+	/** How crooked it was scanned, in degrees */
+	angle: number;
+	asPicture: boolean;
+}) {
 	const pdf = await PDFDocument.create();
 	const [sheet] = await pdf.copyPages(await PDFDocument.load(applicationTemplate(document)), [
 		page
 	]);
 	pdf.addPage(sheet);
+	const code = await codeOf({ pdf, placed, userId, conferenceId, issuedAt });
+	drawPaperPage({ page: sheet, document, layout, pageIndex: page });
+	await drawCode({ pdf, sheet, layout, code });
 	for (const area of areas) {
 		const state = readings?.find(({ field }) => field === area.field)?.state;
 		if (state) fillIn({ page: sheet, area, state });
 	}
-	return pdf.save();
+	const printed = await renderPdfPage({ bytes: await pdf.save(), dpi: 150 });
+	const jpeg = jpegOf(simulateScan({ picture: printed, angle, scale: 0.98, noise: 12 }));
+	return asPicture
+		? { bytes: jpeg, mimeType: 'image/jpeg' }
+		: { bytes: await scannerPdf({ jpeg, size: sheet.getSize() }), mimeType: 'application/pdf' };
 }
 
 /** A photo nothing can be read off. */
@@ -201,6 +346,33 @@ async function extraPage() {
 		.addPage([595, 842])
 		.drawText('Seed: Anschreiben ohne Code', { x: 60, y: 760, size: 18, font });
 	return pdf.save();
+}
+
+/** The kept file of the `index`th page of a pile: the page as scanned, or a photo nothing was read off. */
+async function pageFile({
+	page,
+	index,
+	asPicture,
+	...code
+}: {
+	page: ScannedPage;
+	index: number;
+	userId: string;
+	conferenceId: string;
+	issuedAt: number;
+	asPicture: boolean;
+}) {
+	if (!page.readings) {
+		return { bytes: blurredPhoto(), fileName: 'IMG_2041.png', mimeType: 'image/png' };
+	}
+	// each page a little otherwise crooked, as fed in by hand
+	const scan = await scannedPage({
+		scanned: page,
+		angle: ((index % 5) - 2) * 0.6,
+		asPicture,
+		...code
+	});
+	return { ...scan, fileName: `Stapel_${index + 1}.${asPicture ? 'jpg' : 'pdf'}` };
 }
 
 /**
@@ -244,15 +416,21 @@ export async function addPostalScans(cs: ConferenceSeed) {
 			});
 
 		const pages = await paperPages({ plan, layouts: cs.conference.documentLayouts });
+		const asPicture = plan.source === 'UPLOAD';
 		for (const [index, page] of pages.entries()) {
 			keep({
 				key: `${page.document}:${page.page}`,
 				source: plan.source,
 				fields: page.areas.map(({ field }) => field),
 				readings: page.readings,
-				file: page.readings
-					? { bytes: await filledPage(page), fileName: `Stapel_${index + 1}.pdf` }
-					: { bytes: blurredPhoto(), fileName: 'IMG_2041.png', mimeType: 'image/png' }
+				file: await pageFile({
+					page,
+					index,
+					userId,
+					conferenceId: cs.id,
+					issuedAt: Math.floor(+at / 1000) - 7 * 24 * 60 * 60,
+					asPicture
+				})
 			});
 		}
 		if (plan.extraPage) {

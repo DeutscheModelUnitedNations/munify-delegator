@@ -470,6 +470,34 @@ export function readPaper({
 	);
 }
 
+/** Where a field is read on the picture: the corners of the part of its box looked at, clockwise from the top left. */
+export type FieldZone = { field: PaperField; corners: Point[] };
+
+/**
+ * Where the fields of `areas` are read in a picture whose markers are `located`, as `readPaper` reads
+ * them; `null` when the markers do not tell how the page lies.
+ */
+export function pageZones({
+	areas,
+	located
+}: {
+	areas: PageAreas;
+	located: readonly FoundMarker[];
+}): FieldZone[] | null {
+	const aligned = alignPage({ found: located, markers: areas.markers });
+	if (!aligned) return null;
+	return areas.areas.map(({ field, x, y, width, height }) => {
+		const box = innerBox({ box: { x, y, width, height }, mark: PAPER_FIELDS[field].mark });
+		const corners = [
+			{ x: box.x, y: box.y },
+			{ x: box.x + box.width, y: box.y },
+			{ x: box.x + box.width, y: box.y + box.height },
+			{ x: box.x, y: box.y + box.height }
+		];
+		return { field, corners: corners.map(aligned.toPicture) };
+	});
+}
+
 /** The ink in a field: its share, how far it spans, and for a box the share of its middle. */
 export function fieldInk({
 	picture,

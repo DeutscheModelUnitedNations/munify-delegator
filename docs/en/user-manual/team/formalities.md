@@ -135,9 +135,9 @@ If participant care opens the QR code with a phone's camera app, it lands on thi
 
 Below the scanner you can **Drop files here or choose them**: PDFs from a scanner's feeder or photos, also of several people mixed. DELEGATOR reads the QR code of every page, stores the pages with the person and enters what is signed and ticked. Every page is stored once, even if you scan it again; when it comes back signed, the new scan replaces the old one. Nothing is set back. Pages without a QR code are skipped; others that match nobody are not stored, but listed.
 
-The stored scans are on the user card under **Formalities & access** in the **Postal Registration** section at **Scans**. There you can open and delete them and add more with **Upload a scan**. They are deleted with the person. Only participant care can see them.
+The stored scans are on the user card under **Formalities & access** at the very bottom in the **Scans** tab, side by side, each with a small picture. Opened, a scan shows where its fields are read: green what was detected as ticked or signed, orange what was not. You can also delete scans and add more with **Upload a scan**. They are deleted with the person. Only participant care can see them.
 
-What exactly was ticked and signed is in the last row of the tab, **Details of the agreements**, folded away. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
+What exactly was ticked and signed is beside it in the **Details of the agreements** tab. Reading the scans fills them in, there is nothing to keep up. If something is wrong you can change it; what you set yourself no scan changes any more. The statuses above stay as they are.
 
 So that you need not upload anything by hand:
 
@@ -312,7 +312,7 @@ For participant care, the **Scanned people** list of the running session is belo
 - The bin removes a scan after asking **Remove the scan of … from this session? They can be scanned again afterwards.**
 - **Export CSV** downloads every scan of the session, whatever the search, with **Time Stamp**, **Given Name**, **Family Name**, **E-mail**, **Access Card ID**, **Check passed**, **Scanned by** and **User ID**. For sessions of the type **Record**, **Check passed** stays empty.
 
-All scans of a person across all sessions are in the **Attendance Log** in the **Formalities & access** tab of their user card.
+All scans of a person across all sessions are in the **Attendance Log** at the very bottom of the **Formalities & access** tab of their user card.
 
 ### Access cards and a lost card {#access-cards}
 

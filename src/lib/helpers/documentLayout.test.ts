@@ -69,11 +69,9 @@ describe('the page margin', () => {
 	});
 
 	test('every placeable default already keeps it (the page number and the marks stay put)', () => {
+		const aspect = 595 / 842;
+		const margin = pageMargin({ width: 595, height: 842 });
 		for (const document of LAYOUT_DOCUMENTS) {
-			const aspect = document === 'certificate' ? LANDSCAPE : 595 / 842;
-			const margin = pageMargin(
-				document === 'certificate' ? { width: 842, height: 595 } : { width: 595, height: 842 }
-			);
 			const layout = defaultLayout(document);
 			for (const { id, spec } of elementsOf(document)) {
 				if ('fixed' in spec && spec.fixed) continue;
@@ -96,15 +94,14 @@ describe('the document layouts', () => {
 		}
 	});
 
-	test('the defaults put things where the generator always did', () => {
+	test('the defaults put things where the generator always did, the certificate on portrait A4', () => {
 		const certificate = defaultLayout('certificate');
-		expect(textInPoints({ placement: certificate.name, width: 842, height: 595 })).toMatchObject({
-			baseline: 595 - 215,
-			size: 18
-		});
-		const qr = squareInPoints({ placement: certificate.qr, width: 842, height: 595 });
+		const name = textInPoints({ placement: certificate.name, width: 595, height: 842 });
+		expect(name.baseline).toBeCloseTo(842 - 215);
+		expect(name.size).toBe(18);
+		const qr = squareInPoints({ placement: certificate.qr, width: 595, height: 842 });
 		expect(qr.side / POINTS_PER_MM).toBeCloseTo(36);
-		expect(qr.left + qr.side).toBeCloseTo(842 - 48);
+		expect(qr.left + qr.side).toBeCloseTo(595 - 48);
 		expect(qr.bottom).toBeCloseTo(48);
 		const contract = defaultLayout('contract');
 		expect(
@@ -178,7 +175,7 @@ describe('the document layouts', () => {
 				dy: 0,
 				aspect: LANDSCAPE
 			}).x
-		).toBeCloseTo(0.35);
+		).toBeCloseTo(0.3);
 		expect(resizeText({ start: name, step: 100 }).size).toBe(72);
 		expect(boxInPoints({ placement: sessions, width: 842, height: 595 }).top).toBeGreaterThan(
 			boxInPoints({ placement: sessions, width: 842, height: 595 }).bottom

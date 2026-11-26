@@ -2,7 +2,7 @@ import { parseSignedCode } from '#lib/signedCode/signedCode';
 import { decodeAreas, type PageAreas } from './areas';
 import type { PaperField } from './fields';
 import type { FoundMarker } from './markers';
-import { readPaper, type FieldReading } from './readPaper';
+import { pageZones, readPaper, type FieldReading, type FieldZone } from './readPaper';
 import type { Picture } from './picture';
 
 /** The fields a page's code says it carries; `null` for a code of a page without any. */
@@ -34,3 +34,18 @@ export function readPageOfCode({
 /** The fields printed on the page whose code is `code`; none for a page without any. */
 export const fieldsOfCode = (code: string): PaperField[] =>
 	areasOfCode(code)?.areas.map(({ field }) => field) ?? [];
+
+/**
+ * Where the fields of the page whose code is `code` are read in a picture whose markers are `located`;
+ * `null` for a page without any, or where the markers do not tell how it lies.
+ */
+export function zonesOfCode({
+	code,
+	located
+}: {
+	code: string;
+	located: readonly FoundMarker[];
+}): FieldZone[] | null {
+	const areas = areasOfCode(code);
+	return areas && pageZones({ areas, located });
+}

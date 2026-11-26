@@ -137,7 +137,13 @@ asks for it, `issueDocumentCodes` does not.
 - `applyPaperReadings` writes details and statuses together, under a lock on the participant row.
 
 The dev seed (`seed-dev/postalScans.ts`, `scannerAccesses.ts`) has scans and details in every state for the
-personas of the conferences with statuses, and scanner logins on profiles; it prints one that works.
+personas of the conferences with statuses, and scanner logins on profiles; it prints one that works. Its pages
+are printed as the app prints them (marks, a code signed with `CERTIFICATE_SECRET` through `createCodeSigner`),
+filled in as planned and scanned a little crooked, so they read as real ones (`postalScans.test.ts`).
+
+**Where the fields were read** is not stored: opening a scan (`ScanPreview`) draws its kept file in the
+browser and looks for its code and marks again (`scanZones` → `pageZones`, the same alignment and boxes
+`readPaper` reads), which on the same file finds the same zones; the stored `readings` colour them.
 
 ## Scanners delivering by themselves
 

@@ -41,6 +41,10 @@
 		})
 	);
 
+	/** Whether a person born on `dateOfBirth` still needs a guardian's consent at the conference. */
+	const needsGuardian = (dateOfBirth: Date | string | undefined | null) =>
+		!ofAgeAtConference({ startConference: conference?.startConference, dateOfBirth });
+
 	// --- Data queries ---
 
 	/** The status fields this page shows and changes. */
@@ -133,10 +137,7 @@
 			known: current.status?.agreementDetails ?? [],
 			status: postalStatusOf(current.status),
 			confirm: true,
-			minor: !ofAgeAtConference({
-				startConference: conference?.startConference,
-				dateOfBirth: current.user?.birthday
-			})
+			minor: needsGuardian(current.user?.birthday)
 		});
 	});
 
@@ -251,6 +252,7 @@
 				userId: userDetails.id,
 				change: statusChange
 			})}
+		{@const guardianNeeded = needsGuardian(userDetails.birthday)}
 
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
@@ -292,7 +294,7 @@
 				changeStatus={async (newStatus: AdministrativestatusEnum) =>
 					await change({ termsAndConditions: newStatus })}
 			/>
-			{#if !ofAgeAtConference( { startConference: conference?.startConference, dateOfBirth: userDetails.birthday } )}
+			{#if guardianNeeded}
 				<StatusWidget
 					title={m.guardianAgreement()}
 					icon="ph-shield-star"
@@ -331,7 +333,7 @@
 							{conferenceParticipantId}
 							unfolded
 						/>
-						<AgreementDetails {conferenceParticipantId} />
+						<AgreementDetails {conferenceParticipantId} {guardianNeeded} />
 					</div>
 				</section>
 			</LoadBoundary>

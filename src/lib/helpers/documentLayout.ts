@@ -76,8 +76,6 @@ const mm = (millimetres: number) => (millimetres * A4.long) / 297;
 
 /** Portrait A4: a fraction of the width or height from points. */
 const portrait = { x: (pt: number) => pt / A4.short, y: (pt: number) => pt / A4.long };
-/** Landscape A4. */
-const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.short };
 
 /**
  * The side of the footer code by default, in points: larger than its minimum, so the densest
@@ -250,25 +248,27 @@ const nameAndBirthday = ({ top, gap }: { top: number; gap: number }) =>
  * generator used before anything could be placed.
  */
 export const DOCUMENT_ELEMENTS = {
+	// portrait like DMUN's certificates: the name below the title and the line introducing it, the
+	// sessions below the text about the conference
 	certificate: {
 		name: {
 			shape: 'text',
 			align: 'center',
-			default: { x: 0.5, y: landscape.y(215), size: 18 }
+			default: { x: 0.5, y: portrait.y(215), size: 18 }
 		},
 		sessions: {
 			shape: 'box',
 			list: true,
-			default: { x: 0.25, y: landscape.y(255), width: 0.5, height: 0.3 }
+			default: { x: 0.2, y: 0.62, width: 0.5, height: 0.25 }
 		},
 		qr: {
 			shape: 'square',
 			caption: 'above',
 			minSide: 35,
 			default: {
-				x: landscape.x(A4.long - 48 - CERTIFICATE_CODE),
-				y: landscape.y(A4.short - 48 - CERTIFICATE_CODE),
-				size: landscape.x(CERTIFICATE_CODE)
+				x: portrait.x(A4.short - 48 - CERTIFICATE_CODE),
+				y: portrait.y(A4.long - 48 - CERTIFICATE_CODE),
+				size: portrait.x(CERTIFICATE_CODE)
 			}
 		}
 	},

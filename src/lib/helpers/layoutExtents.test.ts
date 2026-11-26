@@ -3,7 +3,6 @@ import { defaultLayout, LAYOUT_DOCUMENTS } from './documentLayout';
 import { breaksReading, layoutExtents, layoutOverlaps } from './layoutExtents';
 
 const A4 = { width: 595.28, height: 841.89 };
-const LANDSCAPE = { width: 841.89, height: 595.28 };
 /** Sample lines, as the editor shows them. */
 const SAMPLES: Record<string, string[]> = {
 	name: ['Antonio Guterres'],
@@ -11,7 +10,8 @@ const SAMPLES: Record<string, string[]> = {
 	address: ['405 E 45th St, New York, NY 10017, USA'],
 	recipient: ['DMUN e.V.', 'Musterstraße 1', '12345 Musterstadt', 'Deutschland'],
 	code: ['x7k2m9p4q1w8', 'Antonio Guterres'],
-	qr: ['Echtheit prüfen']
+	qr: ['Echtheit prüfen'],
+	sessions: ['Eröffnung', 'Abschluss']
 };
 const lines = (id: string) => SAMPLES[id] ?? [];
 
@@ -51,9 +51,24 @@ describe('layoutExtents', () => {
 
 describe('layoutOverlaps', () => {
 	test.each(LAYOUT_DOCUMENTS)('finds nothing in the defaults of %s', (document) => {
-		const page = document === 'certificate' ? LANDSCAPE : A4;
-		const extents = layoutExtents({ document, layout: defaultLayout(document), page, lines });
+		const extents = layoutExtents({ document, layout: defaultLayout(document), page: A4, lines });
 		expect(layoutOverlaps(extents).map(({ a, b }) => `${a.id} × ${b.id}`)).toEqual([]);
+	});
+
+	test('a certificate without check-in sessions has no list for the code to cover', () => {
+		const layout = defaultLayout('certificate');
+		const moved = { ...layout, qr: { ...layout.qr, x: layout.sessions.x, y: layout.sessions.y } };
+		const overlapping = (sessions: string[]) =>
+			layoutOverlaps(
+				layoutExtents({
+					document: 'certificate',
+					layout: moved,
+					page: A4,
+					lines: (id) => (id === 'sessions' ? sessions : lines(id))
+				})
+			).map(({ a, b }) => `${a.id} × ${b.id}`);
+		expect(overlapping(['Eröffnung'])).toEqual(['sessions × qr']);
+		expect(overlapping([])).toEqual([]);
 	});
 
 	test('finds a code over a text, which breaks reading', () => {

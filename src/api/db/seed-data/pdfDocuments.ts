@@ -134,10 +134,13 @@ function createWriter({
 	};
 }
 
-/** The certificate, landscape: the name centred 215 pt below the top, the QR code bottom right. */
+/**
+ * The certificate, portrait: the name centred 215 pt below the top, the sessions' room below the
+ * signatures, the QR code bottom right.
+ */
 async function certificate(conference: string) {
 	const { pdf, fonts } = await createDocument('Teilnahmezertifikat');
-	const page = pdf.addPage(A4_LANDSCAPE);
+	const page = pdf.addPage(A4);
 	const { width, height } = page.getSize();
 	const centred = ({
 		text,
@@ -178,8 +181,8 @@ async function certificate(conference: string) {
 	});
 	centred({
 		text: 'TEILNAHMEZERTIFIKAT',
-		y: height - 110,
-		size: 30,
+		y: height - 120,
+		size: 28,
 		font: fonts.bold,
 		color: NAVY
 	});
@@ -191,20 +194,20 @@ async function certificate(conference: string) {
 		color: GRAY
 	});
 	centred({ text: 'erfolgreich an der Konferenz', y: height - 260, size: 13, font: fonts.italic });
-	centred({ text: conference, y: height - 292, size: 18, font: fonts.bold, color: NAVY });
+	centred({ text: conference, y: height - 292, size: 16, font: fonts.bold, color: NAVY });
 	centred({ text: 'teilgenommen hat.', y: height - 322, size: 11, font: fonts.regular });
 
 	for (const [index, label] of ['Generalsekretariat', 'Projektleitung'].entries()) {
-		const x = 150 + index * 330;
+		const x = 90 + index * 230;
 		page.drawLine({
-			start: { x, y: 110 },
-			end: { x: x + 210, y: 110 },
+			start: { x, y: height - 450 },
+			end: { x: x + 185, y: height - 450 },
 			thickness: 0.6,
 			color: BLACK
 		});
-		page.drawText(label, { x, y: 96, size: 9, font: fonts.regular, color: GRAY });
+		page.drawText(label, { x, y: height - 464, size: 9, font: fonts.regular, color: GRAY });
 	}
-	page.drawText('Hannover', { x: 150, y: 70, size: 9, font: fonts.italic, color: GRAY });
+	page.drawText('Hannover', { x: 90, y: 70, size: 9, font: fonts.italic, color: GRAY });
 	return pdf.save();
 }
 

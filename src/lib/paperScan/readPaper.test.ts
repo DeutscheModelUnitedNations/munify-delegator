@@ -10,7 +10,8 @@ import {
 import { fieldOfCode } from './fields';
 import { MARKER_CELLS, markerCells } from './markers';
 import { MARKER, type Point } from './markerGeometry';
-import { judgeMark, perspective, readPaper } from './readPaper';
+import { judgeMark, pageZones, perspective, readPaper } from './readPaper';
+import type { FoundMarker } from './markers';
 
 const A4 = { width: 210, height: 297 };
 
@@ -314,5 +315,52 @@ describe('areasAsPrinted', () => {
 		expect(areasAsPrinted({ areas: [signature], printedInk: undefined })[0].printed).toEqual(
 			UNKNOWN_PRINT
 		);
+	});
+});
+
+describe('pageZones', () => {
+	/** The markers found where a page lies at `scale` pixels per millimetre, `corners` of them. */
+	const foundAt = ({ scale, corners }: { scale: number; corners: number[] }): FoundMarker[] =>
+		corners.map((corner) => {
+			const { x, y } = areas.markers[corner];
+			const half = MARKER.side / 2;
+			return {
+				corner,
+				wrongBits: 0,
+				corners: [
+					{ x: x - half, y: y - half },
+					{ x: x + half, y: y - half },
+					{ x: x + half, y: y + half },
+					{ x: x - half, y: y + half }
+				].map((point) => ({ x: point.x * scale, y: point.y * scale }))
+			};
+		});
+
+	it('places each field where it is read: inside a box past its frame, above a line', () => {
+		const zones = pageZones({ areas, located: foundAt({ scale: 4, corners: [0, 1, 2, 3] }) });
+		expect(zones?.map(({ field }) => field)).toEqual(areas.areas.map(({ field }) => field));
+		const [box, , , line] = zones ?? [];
+		// a 5 mm box is read 1 mm in from each side
+		box.corners.forEach((point, index) => {
+			const expected = [
+				{ x: 31, y: 101 },
+				{ x: 34, y: 101 },
+				{ x: 34, y: 104 },
+				{ x: 31, y: 104 }
+			][index];
+			expect(point.x).toBeCloseTo(expected.x * 4);
+			expect(point.y).toBeCloseTo(expected.y * 4);
+		});
+		expect(line.corners[2].y).toBeCloseTo((150 + 18 - 2) * 4);
+	});
+
+	it('aligns on three markers, a thumb on the fourth', () => {
+		expect(pageZones({ areas, located: foundAt({ scale: 3, corners: [0, 1, 3] }) })).toHaveLength(
+			4
+		);
+	});
+
+	it('places nothing where too few markers tell how the page lies', () => {
+		expect(pageZones({ areas, located: foundAt({ scale: 3, corners: [0, 2] }) })).toBeNull();
 	});
 });

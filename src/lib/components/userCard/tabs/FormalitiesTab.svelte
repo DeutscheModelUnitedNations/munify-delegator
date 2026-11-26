@@ -2,9 +2,8 @@
 	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
-	import AgreementDetails from '#lib/components/postal/AgreementDetails.svelte';
-	import PostalScans from '#lib/components/postal/PostalScans.svelte';
 	import AccessPanel from '../sections/AccessPanel.svelte';
+	import FormalityRecords from '../sections/FormalityRecords.svelte';
 	import FormalityRow from '../sections/FormalityRow.svelte';
 	import Empty from '../ui/Empty.svelte';
 	import Section from '../ui/Section.svelte';
@@ -118,9 +117,6 @@
 			onSave={(number) =>
 				change({ assignedDocumentNumber: number, assignNextDocumentNumber: !number })}
 		/>
-		{#if statusId}
-			<PostalScans {conferenceId} {userId} conferenceParticipantId={statusId} />
-		{/if}
 		<!-- Its icon below the texts of the rows -->
 		<div class="pt-1 pl-6">
 			<button class="btn btn-sm btn-ghost text-primary" onclick={downloadPostalDocs}>
@@ -148,9 +144,15 @@
 		{@render onSiteSection()}
 	{/if}
 	{#if statusId}
-		<!-- Across the columns, as its many lines stand beside each other once it is unfolded -->
+		<!-- Across the columns, as scans and agreement details stand side by side -->
 		<div class="border-base-content/15 col-span-full min-w-0 border-t pt-3">
-			<AgreementDetails conferenceParticipantId={statusId} />
+			<FormalityRecords
+				{userId}
+				{conferenceId}
+				conferenceParticipantId={statusId}
+				access={access && !!status}
+				guardianNeeded={guardian}
+			/>
 		</div>
 	{/if}
 </div>

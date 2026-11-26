@@ -135,9 +135,9 @@ Jede Änderung speichert sofort, ohne Rückfrage. Einen falschen Klick korrigier
 
 Unter dem Scanner kannst du **Dateien hierher ziehen oder auswählen**: PDFs aus dem Einzug eines Scanners oder Fotos, auch von mehreren Personen gemischt. DELEGATOR liest den QR-Code jeder Seite, speichert die Seiten bei der Person und trägt ein, was unterschrieben und angekreuzt ist. Jede Seite wird nur einmal gespeichert, auch wenn du sie noch einmal scannst; kommt sie später unterschrieben zurück, ersetzt der neue Scan den alten. Nichts wird zurückgesetzt. Seiten ohne QR-Code werden übersprungen; andere, die niemandem zuzuordnen sind, werden nicht gespeichert, sondern aufgelistet.
 
-Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten & Zugang** im Abschnitt **Postalische Anmeldung** bei **Scans**. Dort kannst du sie öffnen und löschen und mit **Scan hochladen** weitere hinzufügen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
+Die gespeicherten Scans stehen in der Teilnehmendenkarte unter **Formalitäten & Zugang** ganz unten im Reiter **Scans**, nebeneinander, jeder mit einem kleinen Bild. Geöffnet zeigt ein Scan, wo die Felder gelesen werden: grün, was als angekreuzt oder unterschrieben erkannt wurde, orange, was nicht. Du kannst Scans auch löschen und mit **Scan hochladen** weitere hinzufügen. Sie werden mit der Person gelöscht. Sehen kann sie nur die Teilnehmendenbetreuung.
 
-Was im Einzelnen angekreuzt und unterschrieben ist, steht in der letzten Zeile des Reiters, **Details der Einwilligungen**, eingeklappt. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
+Was im Einzelnen angekreuzt und unterschrieben ist, steht daneben im Reiter **Details der Einwilligungen**. Das Auslesen füllt sie aus, du musst dort nichts pflegen. Stimmt etwas nicht, kannst du es ändern; was du selbst setzt, ändert kein Scan mehr. Die Status oben ändern sich dadurch nicht.
 
 Damit du nichts von Hand hochladen musst:
 
@@ -312,7 +312,7 @@ Für die Teilnehmendenbetreuung steht unter dem Scanner die Liste **Gescannte Pe
 - Der Papierkorb entfernt einen Scan nach der Rückfrage **Den Scan von … aus dieser Sitzung entfernen? Die Person kann danach wieder gescannt werden.**
 - **CSV exportieren** lädt alle Scans der Sitzung herunter, unabhängig von der Suche, mit **Zeitstempel**, **Vorname**, **Nachname**, **E-Mail**, **Zugangsausweis-Nr.**, **Prüfung bestanden**, **Gescannt von** und **Benutzer-ID**. Bei Sitzungen der Art **Erfassen** bleibt **Prüfung bestanden** leer.
 
-Alle Scans einer Person über alle Sitzungen stehen in ihrer Teilnehmendenkarte im Reiter **Formalitäten & Zugang** im **Anwesenheitsprotokoll**.
+Alle Scans einer Person über alle Sitzungen stehen in ihrer Teilnehmendenkarte im Reiter **Formalitäten & Zugang** ganz unten im **Anwesenheitsprotokoll**.
 
 ### Zugangsausweise und ein verlorener Ausweis {#access-cards}
 

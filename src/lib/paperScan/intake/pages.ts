@@ -2,8 +2,8 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 import { looksLikeSignedCode } from '#lib/signedCode/signedCode';
 import { locateMarkers, uprightTurn } from '../markers';
 import type { Picture } from '../picture';
-import type { FieldReading } from '../readPaper';
-import { readPageOfCode } from '../readScan';
+import type { FieldReading, FieldZone } from '../readPaper';
+import { readPageOfCode, zonesOfCode } from '../readScan';
 import { isBlank } from './blank';
 import { messageOf, PageError } from './errors';
 import { findCodes, type CodeReader } from './findCodes';
@@ -64,14 +64,16 @@ const MAX_SIDE = 3600;
 /** Renders the page of an opened PDF. */
 async function renderPage<C>({
 	pdf,
-	platform
+	platform,
+	maxSide
 }: {
 	pdf: PDFDocumentProxy;
 	platform: ScanPlatform<C>;
+	maxSide: number;
 }) {
 	const page = await pdf.getPage(1);
 	const points = page.getViewport({ scale: 1 });
-	const scale = Math.min(SCALE, MAX_SIDE / Math.max(points.width, points.height));
+	const scale = Math.min(SCALE, maxSide / Math.max(points.width, points.height));
 	const viewport = page.getViewport({ scale });
 	const canvas = platform.createCanvas({
 		width: Math.round(viewport.width),
@@ -88,15 +90,17 @@ async function renderPage<C>({
 
 async function pdfPicture<C>({
 	bytes,
-	platform
+	platform,
+	maxSide
 }: {
 	bytes: Uint8Array<ArrayBuffer>;
 	platform: ScanPlatform<C>;
+	maxSide: number;
 }) {
 	// pdf.js takes over what it is given
 	const task = await platform.openPdf(bytes.slice());
 	try {
-		return await ofPage(async () => renderPage({ pdf: await task.promise, platform }));
+		return await ofPage(async () => renderPage({ pdf: await task.promise, platform, maxSide }));
 	} finally {
 		await task.destroy();
 	}
@@ -104,14 +108,16 @@ async function pdfPicture<C>({
 
 async function imagePicture<C>({
 	scan,
-	platform
+	platform,
+	maxSide
 }: {
 	scan: ScanContent;
 	platform: ScanPlatform<C>;
+	maxSide: number;
 }) {
 	const image = await ofPage(() => platform.openImage(scan));
 	try {
-		const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height));
+		const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
 		const canvas = platform.createCanvas({
 			width: Math.round(image.width * scale),
 			height: Math.round(image.height * scale)
@@ -165,6 +171,48 @@ async function ofPage<T>(work: () => Promise<T>) {
 }
 
 /**
+ * The picture a page is read off: a PDF rendered, a picture file drawn, its longer side at most `maxSide`
+ * pixels (smaller for a preview). Throws a `PageError` where it cannot be.
+ */
+export function scanPicture<C>({
+	scan,
+	platform,
+	maxSide = MAX_SIDE
+}: {
+	scan: ScanContent;
+	platform: ScanPlatform<C>;
+	maxSide?: number;
+}): Promise<Picture> {
+	return scan.type === 'application/pdf'
+		? pdfPicture({ bytes: scan.bytes, platform, maxSide })
+		: imagePicture({ scan, platform, maxSide });
+}
+
+/**
+ * Where the fields of the page in `picture` are read, in its pixels: those of the first of its codes that
+ * prints any; `null` for a page without, or one whose markers do not tell how it lies.
+ */
+export async function scanZones({
+	picture,
+	readCodes
+}: {
+	picture: Picture;
+	readCodes: CodeReader;
+}): Promise<FieldZone[] | null> {
+	if (isBlank(picture)) return null;
+	const codes = (await findCodes({ picture, read: readCodes })).filter(({ rawValue }) =>
+		looksLikeSignedCode(rawValue)
+	);
+	if (codes.length === 0) return null;
+	const located = locateMarkers(picture);
+	for (const { rawValue } of codes) {
+		const zones = zonesOfCode({ code: rawValue, located });
+		if (zones) return zones;
+	}
+	return null;
+}
+
+/**
  * Reads a page, which is a file of its own (`scanPages`). One that cannot be read says so (`error`). Throws
  * where what reads it could not be loaded.
  */
@@ -176,10 +224,7 @@ export async function readScanPage<C>({
 	platform: ScanPlatform<C>;
 }): Promise<ReadPage> {
 	try {
-		const picture =
-			scan.type === 'application/pdf'
-				? await pdfPicture({ bytes: scan.bytes, platform })
-				: await imagePicture({ scan, platform });
+		const picture = await scanPicture({ scan, platform });
 		const { read, turn } = await ofPage(() =>
 			readPicture({ picture, readCodes: platform.readCodes })
 		);

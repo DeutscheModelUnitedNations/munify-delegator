@@ -155,7 +155,9 @@ export function layoutExtents({
 		});
 		extents.push({ id, rects: [ofPage(rect, page)], page: 0, fixed: false, shape: 'text' });
 	}
-	for (const { id, placement, fixed } of boxes) {
+	for (const { id, placement, fixed, list } of boxes) {
+		// a list with nothing to list (a certificate without check-in sessions) prints nothing
+		if (list && lines(id).length === 0) continue;
 		// the page number and the marks print on every page, the check-in list on the first
 		extents.push({ id, rects: [placement], page: fixed ? 'every' : 0, fixed, shape: 'box' });
 	}
