@@ -1,3 +1,4 @@
+import { errorToastMessage } from '#lib/utils/toast';
 import { formatClockMinutes } from '#lib/helpers/formatClock';
 import { SvelteMap } from 'svelte/reactivity';
 import { toast } from 'svelte-sonner';
@@ -177,7 +178,7 @@ function toEditorEntry({ day, entry }: { day: EditorDay; entry: EditorDayEntry }
 }
 
 function showError(error: unknown) {
-	toast.error(error instanceof Error ? error.message : m.genericToastError());
+	toast.error(errorToastMessage(error));
 }
 
 /**

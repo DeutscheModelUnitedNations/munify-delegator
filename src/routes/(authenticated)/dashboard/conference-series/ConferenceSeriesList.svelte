@@ -3,7 +3,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { confirmDialog, promptDialog } from '#lib/state/dialogs.svelte.js';
-	import { conflictAwareToastMessages, genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 
 	const seriesList = $derived(
 		await client.liveQuery.conferenceSeriesList({
@@ -55,7 +55,7 @@
 		}
 		toast.promise(
 			Promise.resolve(client.mutate.deleteConferenceSeries({ __args: { id: series.id } })),
-			conflictAwareToastMessages
+			genericPromiseToastMessages
 		);
 	}
 </script>

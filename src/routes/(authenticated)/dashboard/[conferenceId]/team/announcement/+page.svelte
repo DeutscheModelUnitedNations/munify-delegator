@@ -4,7 +4,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { conflictAwareToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import AnnouncementEditor from './AnnouncementEditor.svelte';
 	import PublishDialog from './PublishDialog.svelte';
 	import { fetchAnnouncements, type AnnouncementRow as Row } from './announcementRows';
@@ -113,7 +113,7 @@
 	/** Runs a mutation with a toast that shows the server's reason when it refuses. */
 	function run(promise: Promise<unknown>, success?: string) {
 		toast.promise(promise, {
-			...conflictAwareToastMessages,
+			...genericPromiseToastMessages,
 			...(success ? { success } : {})
 		});
 	}

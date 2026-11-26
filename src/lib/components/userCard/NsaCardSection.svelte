@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import Row from './ui/Row.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
@@ -38,7 +39,7 @@
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
 			success: m.genericToastSuccess(),
-			error: (error) => (error instanceof Error ? error.message : m.genericToastError())
+			error: errorToastMessage
 		});
 		await promise.catch(() => undefined);
 		busy = false;

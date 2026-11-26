@@ -5,7 +5,7 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { m } from '#lib/paraglide/messages';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import { uploadScanFor } from './uploadScan';
 
 	interface Props {
@@ -17,8 +17,7 @@
 
 	let uploading = $state(false);
 
-	const uploadError = (error: unknown) =>
-		error instanceof Error ? error.message : m.genericToastError();
+	const uploadError = (error: unknown) => errorToastMessage(error);
 
 	/** Uploads one file; what fails is toasted, and the next is uploaded all the same. */
 	async function uploadOne(file: File) {

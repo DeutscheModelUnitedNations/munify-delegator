@@ -1,4 +1,5 @@
-import { hasErrorCode } from '#lib/api/errorCodes';
+import { CombinedError } from '@urql/core';
+import { apiErrorMessageOf, hasErrorCode } from '#lib/api/errorCodes';
 import { neverReachedServer, type QueueEntry } from './attendanceQueue';
 import type { FoundPerson } from './scanLoad';
 
@@ -34,7 +35,7 @@ export function fullName(user: { givenName?: string | null; familyName?: string 
 	return [user.givenName, user.familyName].filter(Boolean).join(' ');
 }
 
-/** The text a failed lookup or save shows: offline, the error's own message, else the fallback. */
+/** The text a failed lookup or save shows: offline, the API's or the error's own message, else the fallback. */
 export function scanErrorText({
 	err,
 	offlineText,
@@ -45,6 +46,7 @@ export function scanErrorText({
 	fallback: string;
 }) {
 	if (neverReachedServer(err)) return offlineText;
+	if (err instanceof CombinedError) return apiErrorMessageOf(err) ?? fallback;
 	return err instanceof Error ? err.message : fallback;
 }
 

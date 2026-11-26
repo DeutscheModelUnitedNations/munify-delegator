@@ -1,3 +1,4 @@
+import { errorToastMessage } from '#lib/utils/toast';
 import { get } from 'svelte/store';
 import type { PapertypeEnum } from '#lib/api/rumbleClient/client';
 import {
@@ -121,7 +122,7 @@ function safelyValidateResolution(content: unknown): ReturnType<typeof validateR
 	try {
 		return validateResolution(content);
 	} catch (error) {
-		return { valid: false, error: error instanceof Error ? error.message : String(error) };
+		return { valid: false, error: errorToastMessage(error) };
 	}
 }
 

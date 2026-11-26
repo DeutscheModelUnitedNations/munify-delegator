@@ -15,7 +15,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -36,7 +36,7 @@
 			resetForm: false,
 			validationMethod: 'oninput',
 			validators: zod4Client(schema),
-			onError: (e) => toast.error(e.result.error.message),
+			onError: (e) => toast.error(errorToastMessage(e.result.error)),
 			async onUpdate({ form: validated }) {
 				if (!validated.valid) return;
 				const promise = client.mutate.updateConference({
@@ -115,7 +115,7 @@
 
 	function reportDownloadError(error: unknown) {
 		logger.error('Check-in failed', error);
-		toast.error(error instanceof Error ? error.message : String(error));
+		toast.error(errorToastMessage(error));
 	}
 
 	const totalParticipants = $derived(bins.reduce((sum, bin) => sum + bin.participants, 0) || 1);

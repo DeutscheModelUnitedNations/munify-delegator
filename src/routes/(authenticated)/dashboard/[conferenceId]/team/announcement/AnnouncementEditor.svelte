@@ -5,6 +5,7 @@
 	it is (a new one as a draft); publishing is the list's.
 -->
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
@@ -144,7 +145,7 @@
 			toast.promise(promise, {
 				loading: m.genericToastLoading(),
 				success: savedMessage,
-				error: (error) => (error instanceof Error ? error.message : m.genericToastError())
+				error: errorToastMessage
 			});
 			await promise;
 			open = false;

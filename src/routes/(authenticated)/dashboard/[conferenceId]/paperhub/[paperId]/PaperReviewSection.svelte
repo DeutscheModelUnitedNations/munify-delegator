@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages';
 	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client';
@@ -319,7 +320,7 @@
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
 			success: m.reviewDraftDiscarded(),
-			error: (err) => (err instanceof Error ? err.message : null) || m.genericToastError()
+			error: errorToastMessage
 		});
 		try {
 			await promise;

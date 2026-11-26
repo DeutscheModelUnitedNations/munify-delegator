@@ -1,17 +1,19 @@
+import { CombinedError } from '@urql/core';
 import { m } from '#lib/paraglide/messages';
-import { conflictMessageOf } from '#lib/api/errorCodes';
+import { apiErrorMessageOf } from '#lib/api/errorCodes';
+
+/**
+ * What a failure's toast says. A failed operation shows the message the API worded for the person
+ * (`apiErrorMessageOf`), never its raw `message` ("[GraphQL] …", or an unexpected error's text not
+ * meant for people). Errors the client throws itself carry translated text and show it.
+ */
+export function errorToastMessage(error: unknown) {
+	if (error instanceof CombinedError) return apiErrorMessageOf(error) ?? m.genericToastError();
+	return error instanceof Error && error.message ? error.message : m.genericToastError();
+}
 
 export const genericPromiseToastMessages = {
 	loading: m.genericToastLoading(),
 	success: m.genericToastSuccess(),
-	error: m.genericToastError()
-};
-
-/**
- * `genericPromiseToastMessages`, but a refusal of the current state (CONFLICT) shows the server's
- * message, which says what to do instead.
- */
-export const conflictAwareToastMessages = {
-	...genericPromiseToastMessages,
-	error: (error: unknown) => conflictMessageOf(error) ?? m.genericToastError()
+	error: errorToastMessage
 };

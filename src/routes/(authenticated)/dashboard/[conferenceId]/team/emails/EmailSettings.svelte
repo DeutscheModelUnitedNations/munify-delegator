@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorToastMessage } from '#lib/utils/toast';
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -104,7 +105,7 @@
 			const count = await client.mutate.sendOpenEmails({ __args: { conferenceId, kinds: [kind] } });
 			toast.success(m.emailSendingStarted({ count: Number(count) }));
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		} finally {
 			sending = undefined;
 			actions++;
@@ -123,7 +124,7 @@
 			});
 			toast.success(m.emailSkippedToast({ count: Number(count) }));
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : m.genericToastError());
+			toast.error(errorToastMessage(error));
 		} finally {
 			actions++;
 		}

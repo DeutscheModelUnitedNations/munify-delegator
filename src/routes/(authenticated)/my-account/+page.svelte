@@ -22,7 +22,7 @@
 	import AddressSection from '#lib/components/form/AddressSection.svelte';
 	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules';
 	import { page } from '$app/state';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { genericPromiseToastMessages, errorToastMessage } from '#lib/utils/toast';
 
 	const user = await getCurrentUser();
 
@@ -73,7 +73,7 @@
 			validationMethod: 'oninput',
 			validators: zod4Client(userFormSchema),
 			onError(e) {
-				toast.error(e.result.error.message);
+				toast.error(errorToastMessage(e.result.error));
 			},
 			async onUpdate({ form: validated }) {
 				if (!validated.valid) return;
