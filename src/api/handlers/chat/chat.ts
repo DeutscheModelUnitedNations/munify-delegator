@@ -5,7 +5,7 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { callerFacts, refreshCallerAbilities } from '#api/services/authHelper/callerFacts';
 import { isSystemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
-import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
+import { chatPubsub, conferencePubsub, teamFunctionPubsub } from '#api/pubsub';
 import { isGroupChat, messagePreview } from '#lib/helpers/chat';
 import { m } from '#lib/paraglide/messages';
 import { conferenceContacts, type Contact } from './chatContacts';
@@ -486,7 +486,10 @@ async function groupsOfCaller({ ctx, conferenceId }: { ctx: ApiContext; conferen
 	];
 }
 
-/** A list that changes with the functions handed out and the chats opened. */
+/**
+ * A list that changes with the functions handed out, the chats opened and the conference's
+ * switches (the groups opening, the seats being released).
+ */
 function listenToFunctionsAndChats(
 	subscriptions: Parameters<typeof chatPubsub.registerOnInstance>[0]['instance']
 ) {
@@ -494,6 +497,7 @@ function listenToFunctionsAndChats(
 		teamFunctionPubsub.registerOnInstance({ instance: subscriptions, action });
 		chatPubsub.registerOnInstance({ instance: subscriptions, action });
 	}
+	conferencePubsub.registerOnInstance({ instance: subscriptions, action: 'updated' });
 }
 
 const readableChatQuery = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>

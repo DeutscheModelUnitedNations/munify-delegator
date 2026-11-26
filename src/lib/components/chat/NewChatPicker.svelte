@@ -21,7 +21,7 @@
 	import PickedContactInboxes from './PickedContactInboxes.svelte';
 	import PickerContactGroups from './PickerContactGroups.svelte';
 	import PickerTeamOptions from './PickerTeamOptions.svelte';
-	import { contactSearchText, groupName, inboxName, matchesSearch } from './chatLabels';
+	import { contactSearchText, groupName, inboxName, matchesSearch, normalize } from './chatLabels';
 	import { groupLabelSource } from './chatGroups';
 	import { groupContacts } from './contactGroups';
 	import { inboxChoice } from './inboxChoice';
@@ -90,7 +90,7 @@
 		committee === null
 			? groups.filter((group) =>
 					matchesSearch({
-						haystack: groupName(groupLabelSource(group)).toLocaleLowerCase(),
+						haystack: normalize(groupName(groupLabelSource(group))),
 						search
 					})
 				)

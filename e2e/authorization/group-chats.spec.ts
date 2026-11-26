@@ -89,12 +89,20 @@ type MessageRow = {
 	authorParticipantId: string | null;
 };
 
+/** A read that must succeed: a refusal would otherwise pass for an empty list. */
+function listOf<T>(result: GraphQLResult<Record<string, T[]>>, field: string) {
+	expect(result.errors).toBeUndefined();
+	const rows = result.data?.[field];
+	expect(rows).toBeDefined();
+	return rows ?? [];
+}
+
 const groupsOf = async (page: Page) =>
-	(await gql<{ chatGroups: GroupRow[] }>(page, GROUPS, { c: CONFERENCE })).data?.chatGroups ?? [];
+	listOf(await gql<{ chatGroups: GroupRow[] }>(page, GROUPS, { c: CONFERENCE }), 'chatGroups');
 const chatsOf = async (page: Page) =>
-	(await gql<{ chats: ChatRow[] }>(page, CHATS, { c: CONFERENCE })).data?.chats ?? [];
+	listOf(await gql<{ chats: ChatRow[] }>(page, CHATS, { c: CONFERENCE }), 'chats');
 const messagesOf = async (page: Page, chat: string) =>
-	(await gql<{ chatMessages: MessageRow[] }>(page, MESSAGES, { chat })).data?.chatMessages ?? [];
+	listOf(await gql<{ chatMessages: MessageRow[] }>(page, MESSAGES, { chat }), 'chatMessages');
 const send = (page: Page, chat: string, body: string) => gql(page, SEND, { chat, body });
 const openGroup = async (page: Page, group: { committee?: string; role?: string }) => {
 	const result = await gql<{ openGroupChat: { id: string; kind: string; side: string } }>(

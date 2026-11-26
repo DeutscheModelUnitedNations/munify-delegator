@@ -259,7 +259,9 @@ export function contactAvatar(
 	return { icon: contact.roleIcon ?? (contact.roleKind === 'CUSTOM' ? 'user-focus' : 'megaphone') };
 }
 
-const normalize = (text: string) => text.toLocaleLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+/** Lower case without accents, as the searches compare text. */
+export const normalize = (text: string) =>
+	text.toLocaleLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 /** Everything a contact can be found by: the role in the reader's language, its short name, the committee. */
 export function contactSearchText(contact: ContactLabelSource) {

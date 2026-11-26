@@ -329,6 +329,19 @@ describe('the group of a committee or role', () => {
 		).toBe('Person ohne Rolle');
 	});
 
+	test('two people sharing a label never merge into one bubble', () => {
+		const bubbles = bubblesOf({
+			messages: [
+				fromParticipant('a', false, 'p-gone'),
+				fromParticipant('b', false, 'p-left'),
+				fromParticipant('c', false, 'p-left')
+			],
+			side: 'PARTICIPANT',
+			chat: group
+		});
+		expect(bubbles.map((bubble) => bubble.continues)).toEqual([false, false, true]);
+	});
+
 	test("a role's inbox names the role its team answers for", () => {
 		const roleInbox: ThreadChat = {
 			kind: 'TEAM',

@@ -108,7 +108,7 @@ export const notificationPreference = snakeCase.table(
 		// compared as text: a value added to the enum cannot be used in the migration adding it
 		check(
 			'notification_preference_function_check',
-			sql`(${table.topic}::text in ('COMMITTEE_INBOX', 'COMMITTEE_PAPERS')) = (${table.teamFunctionId} is not null)`
+			sql`(${table.topic}::text in ('COMMITTEE_INBOX', 'COMMITTEE_PAPERS', 'ROLE_INBOX', 'CHAT_GROUP')) = (${table.teamFunctionId} is not null)`
 		)
 	]
 );

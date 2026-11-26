@@ -112,12 +112,18 @@ export function bubblesOf<M extends ThreadMessage>({
 	side: ChatSide;
 	chat: ThreadChat;
 }): Bubble<M>[] {
-	let previous: { own: boolean; author: string | undefined } | undefined;
+	let previous: { own: boolean; author: string | undefined; writer: string } | undefined;
 	return messages.map((message) => {
 		const own = standsOnOwnSide({ message, side, chat });
 		const author = messageAuthor({ message, side, chat });
-		const continues = previous !== undefined && previous.own === own && previous.author === author;
-		previous = { own, author };
+		// two people can share a label (former participants of a group), never a writer
+		const writer = message.fromTeam ? 'team' : (message.authorParticipantId ?? '');
+		const continues =
+			previous !== undefined &&
+			previous.own === own &&
+			previous.author === author &&
+			previous.writer === writer;
+		previous = { own, author, writer };
 		// a participant needs no name above their own messages
 		const shown = continues || (own && side === 'PARTICIPANT') ? undefined : author;
 		return { message, own, author: shown, continues };
