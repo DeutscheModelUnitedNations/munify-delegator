@@ -64,3 +64,20 @@ export function transactionStatusUpdate({
 		}
 	};
 }
+
+/**
+ * The icon telling where a referenced person's payment stands: done (beating while the reference
+ * itself is not received), problem, waiting for review, pending.
+ */
+export function statusIcon({
+	status,
+	transactionReceived
+}: {
+	status: string;
+	transactionReceived: boolean;
+}): string {
+	if (status === 'DONE') return transactionReceived ? 'ph-check' : 'ph-seal-check icon-beat-fade';
+	if (status === 'PROBLEM') return 'ph-warning icon-beat-fade';
+	if (status === 'NEEDS_HUMAN_REVIEW') return 'ph-magnifying-glass icon-beat-fade';
+	return 'ph-hourglass-medium';
+}

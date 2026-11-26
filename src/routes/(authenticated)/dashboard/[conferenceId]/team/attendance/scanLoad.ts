@@ -1,4 +1,5 @@
 import { client, type ScanIssue } from '#lib/api/rumbleClient/client';
+import type { AdministrativeStatus } from '#lib/helpers/administrativeStatus';
 
 /**
  * A scanned person as the entrance scanner shows them. The code is a user id; the server answers
@@ -27,9 +28,9 @@ export interface FoundPerson {
 	};
 	status: {
 		didAttend: boolean;
-		paymentStatus: 'DONE' | 'PROBLEM' | 'PENDING';
-		termsAndConditions: 'DONE' | 'PROBLEM' | 'PENDING';
-		guardianConsent: 'DONE' | 'PROBLEM' | 'PENDING';
+		paymentStatus: AdministrativeStatus;
+		termsAndConditions: AdministrativeStatus;
+		guardianConsent: AdministrativeStatus;
 	};
 	/** The access card the person carries, known only in a session that hands out cards. */
 	accessCardId: string | null;

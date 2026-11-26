@@ -1,3 +1,5 @@
+import type { AdministrativeStatus } from '#lib/helpers/administrativeStatus';
+
 /** The open points the check can find for a scanned person. */
 export const SCAN_ISSUES = [
 	'teamMember',
@@ -10,8 +12,6 @@ export const SCAN_ISSUES = [
 ] as const;
 
 export type ScanIssue = (typeof SCAN_ISSUES)[number];
-
-type AdministrativeStatus = 'DONE' | 'PROBLEM' | 'PENDING';
 
 export interface ScanCheckInput {
 	/** Whether the person has any part in the conference as a participant. */

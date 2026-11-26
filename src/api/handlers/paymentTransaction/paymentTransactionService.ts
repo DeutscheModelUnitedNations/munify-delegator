@@ -11,36 +11,33 @@ import {
 } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import {
+	PAYMENT_REFERENCE_ALPHABET,
+	PAYMENT_REFERENCE_LENGTH,
+	formatPaymentReference
+} from './paymentReference';
 
-type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
+export type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
 
 /** Whom a new payment covers: somebody, or it would be a reference for nothing. */
 export const paymentForSchema = z
 	.array(z.string())
 	.min(1, { error: () => m.paymentCoversNobody() });
 
-/**
- * Payment reference ids are printed on transfer forms, so they avoid characters that are easy to
- * misread and are grouped in fours. Same alphabet and shape as the legacy generator.
- */
+/** A new payment reference id, same alphabet and shape as the legacy generator. */
 function generateSEPASafeId() {
-	const chars = 'ACDEFHJKMNPRTUVWXY3479';
-	const length = 16;
-	let id = '';
-	for (let i = 0; i < length; i++) {
-		id += chars[randomInt(chars.length)];
-		if (i % 4 === 3 && i !== length - 1) {
-			id += '-';
-		}
+	let chars = '';
+	for (let i = 0; i < PAYMENT_REFERENCE_LENGTH; i++) {
+		chars += PAYMENT_REFERENCE_ALPHABET[randomInt(PAYMENT_REFERENCE_ALPHABET.length)];
 	}
-	return id;
+	return formatPaymentReference(chars);
 }
 
 /**
  * Locks the participants' rows and reads their payment status, waiting for whoever is changing it.
  * Always in id order, so two callers locking the same people cannot block each other.
  */
-function lockPaymentStatus({
+export function lockPaymentStatus({
 	tx,
 	participantIds
 }: {
@@ -200,25 +197,105 @@ export async function applyPaymentStatus({
 	assignedStatus: AdministrativeStatus;
 	recievedAt: Date | null | undefined;
 }) {
-	// The payment status is carried over to every participant the transaction covers.
-	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
-	await db.transaction(async (tx) => {
-		if (covered.length > 0) await lockPaymentStatus({ tx, participantIds: covered });
-		if (assignedStatus === 'DONE') {
-			await tx
-				.update(schema.paymentTransaction)
-				.set({ recievedAt: recievedAt ?? undefined })
-				.where(whereRows({ table: schema.paymentTransaction, filter: { id: payment.id } }));
-		}
-		if (covered.length > 0) {
-			await tx
-				.update(schema.conferenceParticipant)
-				.set({ paymentStatus: assignedStatus })
-				.where(whereRows({ table: schema.conferenceParticipant, filter: { id: { in: covered } } }));
-		}
-	});
+	const covered = await db.transaction((tx) =>
+		writePaymentStatus({ tx, payment, assignedStatus, recievedAt })
+	);
 	paymentTransactionPubsub.updated(payment.id);
 	if (covered.length > 0) conferenceParticipantPubsub.updated(covered);
+}
+
+/**
+ * Who a payment whose money arrived only in part settles: `paidFor` (participant row ids) become
+ * `DONE`, everybody else it covers goes back to `PENDING` to pay anew. `whole` when that is
+ * everybody, so the payment counts as received. Undefined for a `paidFor` that is empty or names
+ * somebody the payment does not cover.
+ */
+export function partialReceipt({
+	covered,
+	paidFor
+}: {
+	covered: readonly string[];
+	paidFor: readonly string[];
+}): { done: string[]; pending: string[]; whole: boolean } | undefined {
+	const paid = new Set(paidFor);
+	if (paid.size === 0 || [...paid].some((id) => !covered.includes(id))) return undefined;
+	const done = covered.filter((id) => paid.has(id));
+	const pending = covered.filter((id) => !paid.has(id));
+	return { done, pending, whole: pending.length === 0 };
+}
+
+/**
+ * Marks only some of the people a payment covers paid (`partialReceipt`), as when a transfer
+ * brought less than the payment's amount: they become `DONE`, the others `PENDING`. With everybody
+ * named it is `applyPaymentStatus(DONE)` and the payment is received on `recievedAt`; otherwise
+ * the payment itself stays open. INVALID_INPUT for an empty selection or somebody not covered.
+ */
+export async function receivePaymentFor({
+	payment,
+	paidFor,
+	recievedAt
+}: {
+	payment: { id: string; paymentFor: { conferenceParticipantId: string }[] };
+	paidFor: readonly string[];
+	recievedAt: Date | null | undefined;
+}) {
+	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
+	const receipt = partialReceipt({ covered, paidFor });
+	if (!receipt) throw apiError({ code: 'INVALID_INPUT', message: m.paymentPaidForNotCovered() });
+	if (receipt.whole) return applyPaymentStatus({ payment, assignedStatus: 'DONE', recievedAt });
+
+	await db.transaction(async (tx) => {
+		await lockPaymentStatus({ tx, participantIds: covered });
+		await tx
+			.update(schema.conferenceParticipant)
+			.set({ paymentStatus: 'DONE' })
+			.where(
+				whereRows({ table: schema.conferenceParticipant, filter: { id: { in: receipt.done } } })
+			);
+		await tx
+			.update(schema.conferenceParticipant)
+			.set({ paymentStatus: 'PENDING' })
+			.where(
+				whereRows({ table: schema.conferenceParticipant, filter: { id: { in: receipt.pending } } })
+			);
+	});
+	paymentTransactionPubsub.updated(payment.id);
+	conferenceParticipantPubsub.updated(covered);
+}
+
+/**
+ * `applyPaymentStatus` inside the caller's transaction `tx`: locks everybody the payment covers,
+ * marks it received when `DONE` and carries the status over to them. Publishes nothing, so the
+ * caller announces the payment and the returned participant row ids once `tx` has committed.
+ */
+export async function writePaymentStatus({
+	tx,
+	payment,
+	assignedStatus,
+	recievedAt
+}: {
+	tx: Transaction;
+	payment: { id: string; paymentFor: { conferenceParticipantId: string }[] };
+	assignedStatus: AdministrativeStatus;
+	recievedAt: Date | null | undefined;
+}) {
+	// The payment status is carried over to every participant the transaction covers.
+	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
+	if (covered.length > 0) await lockPaymentStatus({ tx, participantIds: covered });
+	// without a date the stored one stays (`updatePaymentTransaction`'s `recievedAt` left out)
+	if (assignedStatus === 'DONE' && recievedAt) {
+		await tx
+			.update(schema.paymentTransaction)
+			.set({ recievedAt })
+			.where(whereRows({ table: schema.paymentTransaction, filter: { id: payment.id } }));
+	}
+	if (covered.length > 0) {
+		await tx
+			.update(schema.conferenceParticipant)
+			.set({ paymentStatus: assignedStatus })
+			.where(whereRows({ table: schema.conferenceParticipant, filter: { id: { in: covered } } }));
+	}
+	return covered;
 }
 
 /**

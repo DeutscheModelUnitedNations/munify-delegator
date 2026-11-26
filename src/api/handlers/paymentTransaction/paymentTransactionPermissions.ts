@@ -16,6 +16,16 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
+/**
+ * For the rows about a payment (whom it covers, the bank transfers matched to it): participant care
+ * (project management and participant care) of the payment's conference (its payer's).
+ */
+export const careOfThePayment = () =>
+	liveWhere((args) => {
+		const payer = isTeamMemberOfConference({ ...args, roles: PARTICIPANT_CARE_ROLES });
+		return hop(payer, (payer) => ({ paymentTransaction: { payer } }));
+	});
+
 /** The abilities of payment references. Nobody but a system admin deletes one. */
 export function registerPaymentTransactionAbilities() {
 	abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
