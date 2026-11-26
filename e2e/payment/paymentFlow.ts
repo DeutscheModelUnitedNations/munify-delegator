@@ -17,9 +17,19 @@ export async function openPaymentFlow(
 	});
 	expect((await watched.json()).errors).toBeUndefined();
 
+	await discardOpenPayments(page, conferenceId);
+
 	await page.goto(`/dashboard/${conferenceId}/payment`);
 	await waitForHydration(page);
-	await page.getByRole('button', { name: NEXT }).click();
+	// A retry finds the information read already (it is kept)
+	const info = page.getByText(/sieh dir die hinweise bis zum ende an|watch the hints to the end/i);
+	const infoOpen = await info
+		.waitFor({ timeout: 10_000 })
+		.then(() => true)
+		.catch(() => false);
+	if (infoOpen) {
+		await page.getByRole('button', { name: NEXT }).click();
+	}
 	if (payForOthers !== undefined) {
 		if (payForOthers) await page.getByLabel(/für andere mitbezahlen|pay for others too/i).check();
 		await page.getByRole('button', { name: NEXT }).click();
@@ -46,4 +56,26 @@ export async function transferInputs(page: Page) {
 		reference: await inputs.nth(0).inputValue(),
 		amount: parseFloat(await inputs.nth(1).inputValue())
 	};
+}
+
+/**
+ * Gives up the references the caller made in the conference that are still open, so a retry
+ * starts with none (a payment covering the caller but made by somebody else is refused, NOT_FOUND).
+ */
+async function discardOpenPayments(page: Page, conferenceId: string) {
+	const open = await page.request.post('/api/graphql', {
+		data: {
+			query: `query ($c: ID!) { paymentTransactions(where: { conference: { id: { eq: $c } }, recievedAt: { isNull: true }, discardedAt: { isNull: true } }) { id } }`,
+			variables: { c: conferenceId }
+		}
+	});
+	const payments: { id: string }[] = (await open.json())?.data?.paymentTransactions ?? [];
+	for (const { id } of payments) {
+		await page.request.post('/api/graphql', {
+			data: {
+				query: `mutation ($id: ID!) { discardPaymentTransaction(id: $id) { id } }`,
+				variables: { id }
+			}
+		});
+	}
 }
