@@ -3946,6 +3946,7 @@
 	"statsWithRole": "Mit Rolle",
 	"statsWithoutCommittee": "Ohne Gremium",
 	"statsWithoutRole": "Ohne Rolle",
+	"statsZipAreaUnknown": "Postleitzahlgebiet unbekannt",
 	"status": "Status",
 	"statusAccepted": "Angenommen",
 	"statusAndFeatures": "Status & Funktionen",

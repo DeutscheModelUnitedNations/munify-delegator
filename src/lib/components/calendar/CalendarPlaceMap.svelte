@@ -1,4 +1,6 @@
 <script lang="ts">
+	// MapLibre is large: loaded only when a map shows.
+	const loadPlaceMap = () => import('#lib/components/map/PlaceMap.svelte');
 	interface Props {
 		name: string;
 		lat: number;
@@ -28,26 +30,9 @@
 	</a>
 {/snippet}
 
-{#await import('sveaflet') then { Map, TileLayer, Marker, Popup }}
-	<div class="h-[250px] overflow-hidden rounded-box" data-vaul-no-drag>
-		<Map
-			options={{
-				center: [lat, lng],
-				zoom: 15,
-				scrollWheelZoom: false
-			}}
-		>
-			<TileLayer
-				url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}
-				options={{
-					attribution:
-						'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-				}}
-			/>
-			<Marker latLng={[lat, lng]}>
-				<Popup>{name}</Popup>
-			</Marker>
-		</Map>
+{#await loadPlaceMap() then { default: PlaceMap }}
+	<div data-vaul-no-drag>
+		<PlaceMap {lat} {lng} {name} class="h-[250px] overflow-hidden rounded-box" />
 	</div>
 {/await}
 

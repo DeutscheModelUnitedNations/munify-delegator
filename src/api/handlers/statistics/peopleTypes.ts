@@ -185,8 +185,19 @@ export const addressesType = schemaBuilder.simpleObject('StatisticsResultAddress
 			nullable: true,
 			description: 'The first three digits of the ZIP code; the view groups by area, not by ZIP.'
 		}),
-		lat: t.float({ nullable: true, description: 'Centre of the area; German ZIPs only.' }),
-		lng: t.float({ nullable: true, description: 'Centre of the area; German ZIPs only.' })
+		lat: t.float({
+			nullable: true,
+			description: 'Centre of the area, or of the country when the area is unknown.'
+		}),
+		lng: t.float({
+			nullable: true,
+			description: 'Centre of the area, or of the country when the area is unknown.'
+		}),
+		atCountryCentre: t.boolean({
+			nullable: true,
+			description:
+				'True when lat/lng are the centre of the country: no ZIP, or one without known coordinates.'
+		})
 	})
 });
 

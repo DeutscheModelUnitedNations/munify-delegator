@@ -3946,6 +3946,7 @@
 	"statsWithRole": "With Role",
 	"statsWithoutCommittee": "Without Committee",
 	"statsWithoutRole": "Without Role",
+	"statsZipAreaUnknown": "ZIP area unknown",
 	"status": "Status",
 	"statusAccepted": "Accepted",
 	"statusAndFeatures": "Status & Features",

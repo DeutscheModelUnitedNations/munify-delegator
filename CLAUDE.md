@@ -31,6 +31,7 @@ bun run db:reset         # drop every table and enum
 bun run db:seed:dev      # wipe + refill dev DB and bucket (all stages, personas, crowd, ~490k bulk users, ~6 min)
 bun run db:seed:dev:small # same without the bulk: ~570 users, seconds
 bun run dev:accounts     # rewrite oidc-mock.yaml users from seed-data/devAccounts.ts
+bun scripts/buildZipCoordinates.ts # rebuild the stats map's ZIP area centres from GeoNames
 bun run db:nuke          # recreate the container and migrate
 bun run db:studio
 
@@ -268,6 +269,9 @@ bun run preview
     Pages computing over many live rows copy each result once (`#lib/api/liveSnapshot`) in its own
     `$derived` and compute over copies; `memoizeLast` skips repeated work. Don't read live results
     in an `$effect` there (trips Svelte's "Batch has scheduled effects").
+  - **Never read an awaited `$derived` inside a library's snippet that renders later** (map
+    children after the map exists): Svelte compiles the read into an async block that never renders
+    there. Pass the value to a child component as a plain prop (`stats/widgets/AreaMap.svelte`).
   - Several queries in one component: `Promise.all` in one `$derived(await …)`. A shared fetch
     function + result type module is fine when several components share a shape.
 - **A layout shows the next page's skeleton while its first data loads.** Page-rendering layouts
@@ -492,9 +496,10 @@ condition in `imports` appending `.ts`, plus keys for Paraglide's `.js` and `…
 ## Integrations
 
 PDFs `pdf-lib` (custom fonts); barcodes/QR `@bwip-js/browser`, `@svelte-put/qr`,
-`barcode-detector`; TipTap rich text; Leaflet via `sveaflet`; Listmonk (`src/jobs/apis/`); S3 via
-`s3mini`. Logos, favicons, manifest, launch images: `@deutschemodelunitednations/munify-brand`
-(`Logo`, `BrandHead`, the `munifyBrand` Vite plugin; see "Brand" in CLAUDE-UI.md).
+`barcode-detector`; TipTap rich text; maps via `svelte-maplibre` with OpenFreeMap styles
+(`#lib/components/map/`); Listmonk (`src/jobs/apis/`); S3 via `s3mini`. Logos, favicons, manifest,
+launch images: `@deutschemodelunitednations/munify-brand` (`Logo`, `BrandHead`, the `munifyBrand`
+Vite plugin; see "Brand" in CLAUDE-UI.md).
 
 ## UI
 

@@ -6998,6 +6998,7 @@ export type StatisticsResult = {
 };
 		
 export type StatisticsResultAddresses = {
+  atCountryCentre: Boolean | null,
   count: Int,
   country: String | null,
   lat: Float | null,
