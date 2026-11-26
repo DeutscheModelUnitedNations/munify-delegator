@@ -14,6 +14,12 @@ import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/document
 import { jsonDocument } from '#api/services/argSchemas';
 import { z } from 'zod';
 import {
+	newlyUnmetFeatures,
+	type ConferenceFeatureFacts,
+	type FeatureSwitches
+} from '#lib/helpers/conferenceFeatures';
+import { featureLabel, featureRequirementLabel } from '#lib/helpers/conferenceFeatureLabels';
+import {
 	committeePubsub,
 	conferencePubsub,
 	conferenceRolePubsub,
@@ -148,6 +154,12 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 	};
 
 	await db.transaction(async (tx) => {
+		// Locked, so the feature check below compares against what this write started from.
+		const [before] = await tx
+			.select(featureColumns)
+			.from(schema.conference)
+			.where(whereRows({ table: schema.conference, filter: { id: args.id } }))
+			.for('update');
 		const [written] = await tx
 			.update(schema.conference)
 			// An omitted argument arrives as `undefined` and leaves the column alone; an
@@ -215,16 +227,125 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				startConference: schema.conference.startConference,
 				endConference: schema.conference.endConference,
 				participantMinAge: schema.conference.participantMinAge,
-				participantMaxAge: schema.conference.participantMaxAge
+				participantMaxAge: schema.conference.participantMaxAge,
+				...featureColumns
 			});
 		// Checked on the row as written: a change may give only one of the dates or ages.
 		if (written) {
 			assertConferenceDatesInOrder(written);
 			assertAgeRangeInOrder(written);
 		}
+		if (before && written) {
+			const content = await loadConferenceFeatureContent({ conferenceId: args.id, tx });
+			assertFeatureRequirementsMet({
+				before: featureState({ row: before, content }),
+				after: featureState({ row: written, content })
+			});
+		}
 	});
 	conferencePubsub.updated(args.id);
 	if (args.assignmentReleased !== undefined) await announceReleaseVisibility(args.id);
+}
+
+/** The conference columns the feature switches and their requirements are decided on. */
+const featureColumns = {
+	unlockPayments: schema.conference.unlockPayments,
+	unlockPostals: schema.conference.unlockPostals,
+	isOpenPaperSubmission: schema.conference.isOpenPaperSubmission,
+	showCalendar: schema.conference.showCalendar,
+	messagingEnabled: schema.conference.messagingEnabled,
+	guidePublished: schema.conference.guidePublished,
+	feeAmount: schema.conference.feeAmount,
+	currency: schema.conference.currency,
+	bankAccountHolder: schema.conference.bankAccountHolder,
+	iban: schema.conference.iban,
+	postalName: schema.conference.postalName,
+	postalStreet: schema.conference.postalStreet,
+	postalZip: schema.conference.postalZip,
+	postalCity: schema.conference.postalCity,
+	postalCountry: schema.conference.postalCountry,
+	contractFileId: schema.conference.contractFileId,
+	guardianConsentFileId: schema.conference.guardianConsentFileId,
+	mediaConsentFileId: schema.conference.mediaConsentFileId,
+	termsAndConditionsFileId: schema.conference.termsAndConditionsFileId
+};
+type FeatureRow = Pick<typeof schema.conference.$inferSelect, keyof typeof featureColumns>;
+
+/** What feature requirements other tables decide: agenda items, calendar days, the published guide. */
+export type ConferenceFeatureContent = Pick<
+	ConferenceFeatureFacts,
+	'hasAgendaItem' | 'hasCalendarDay' | 'hasPublishedGuide'
+>;
+
+/** Loads the feature requirements that live outside the conference row. */
+export async function loadConferenceFeatureContent({
+	conferenceId,
+	tx = db
+}: {
+	conferenceId: string;
+	tx?: Transaction | typeof db;
+}): Promise<ConferenceFeatureContent> {
+	const [agendaItem, calendarDay, outline] = await Promise.all([
+		tx.query.committeeAgendaItem.findFirst({
+			where: { committee: { conferenceId } },
+			columns: { id: true }
+		}),
+		tx.query.calendarDay.findFirst({ where: { conferenceId }, columns: { id: true } }),
+		tx.query.guideOutline.findFirst({
+			where: { conferenceId, published: { isNotNull: true } },
+			columns: { id: true }
+		})
+	]);
+	return {
+		hasAgendaItem: !!agendaItem,
+		hasCalendarDay: !!calendarDay,
+		hasPublishedGuide: !!outline
+	};
+}
+
+function featureState({ row, content }: { row: FeatureRow; content: ConferenceFeatureContent }) {
+	const switches: FeatureSwitches = {
+		unlockPayments: row.unlockPayments,
+		unlockPostals: row.unlockPostals,
+		isOpenPaperSubmission: row.isOpenPaperSubmission,
+		showCalendar: row.showCalendar,
+		messagingEnabled: row.messagingEnabled,
+		guidePublished: row.guidePublished
+	};
+	const facts: ConferenceFeatureFacts = {
+		...content,
+		feeAmount: row.feeAmount,
+		currency: row.currency,
+		bankAccountHolder: row.bankAccountHolder,
+		iban: row.iban,
+		postalName: row.postalName,
+		postalStreet: row.postalStreet,
+		postalZip: row.postalZip,
+		postalCity: row.postalCity,
+		postalCountry: row.postalCountry,
+		postalTemplates:
+			!!row.contractFileId &&
+			!!row.guardianConsentFileId &&
+			!!row.mediaConsentFileId &&
+			!!row.termsAndConditionsFileId
+	};
+	return { switches, facts };
+}
+
+/**
+ * Refuses (CONFLICT) a change that leaves a feature switched on without something it needs, naming
+ * what is missing (`newlyUnmetFeatures`).
+ */
+function assertFeatureRequirementsMet(change: Parameters<typeof newlyUnmetFeatures>[0]) {
+	const [unmet] = newlyUnmetFeatures(change);
+	if (!unmet) return;
+	throw apiError({
+		code: 'CONFLICT',
+		message: m.conferenceFeatureRequirementsMissing({
+			feature: featureLabel(unmet.feature),
+			missing: unmet.missing.map(featureRequirementLabel).join(', ')
+		})
+	});
 }
 
 /** Announces the rows whose readable columns the release flag decides. */

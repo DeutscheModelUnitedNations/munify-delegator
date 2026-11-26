@@ -140,7 +140,7 @@ Under **Committees** every step of the committee template is a row and every com
 
 ### Opening it
 
-Participants read the guide once the **Guide published** switch is on and their roles are released. Until then the dashboard keeps linking the external guide from the settings. The switch sits in the guide and, with the same name, in the [settings](./configuration) under status; both are the same setting.
+Participants read the guide once the **Guide published** switch is on and their roles are released. Until then the dashboard keeps linking the external guide from the settings. The switch sits in the guide and, as the **Preparation guide** card, in the [settings](./configuration#features); both are the same setting.
 
 ### AI assistants
 
@@ -298,8 +298,8 @@ Four kinds have no switch. **Announcement** carries **Decided per announcement**
 | **Summary for supervisors**                | supervisors with at least one supervised person who applied                                                | when the assignment is released, once only                                                      |
 | **Signed up for the waiting list**         | the person on the waiting list                                                                             | on signing up, as long as they have no seat                                                     |
 | **Moved up from the waiting list**         | the person who moved up                                                                                    | when the team gives them a seat and the assignment is released                                  |
-| **Postal registration unlocked**           | seated people and supervisors coming along whose documents are not complete                                | as soon as **Allow Postal Registration** is on, also for everyone who gets a seat later         |
-| **Participation fee unlocked**             | seated people and supervisors coming along whose payment has not arrived                                   | as soon as **Allow Payments** is on, also for everyone who gets a seat later                    |
+| **Postal registration unlocked**           | seated people and supervisors coming along whose documents are not complete                                | as soon as **Postal registration** is on, also for everyone who gets a seat later               |
+| **Participation fee unlocked**             | seated people and supervisors coming along whose payment has not arrived                                   | as soon as **Payments** is on, also for everyone who gets a seat later                          |
 | **Documents received**                     | the person whose documents are complete                                                                    | as soon as all documents they need are marked as done                                           |
 | **Payment received**                       | the person whose payment arrived                                                                           | as soon as the payment is marked as done                                                        |
 | **Problem with documents or payment**      | the person concerned, at most once per document                                                            | as soon as a status is set to "Problem"                                                         |
@@ -366,7 +366,7 @@ On the **Calendar** page participant care builds the conference's schedule. It h
 
 ### Who sees the schedule
 
-The whole team always sees the schedule. Participants see it once **Show calendar for participants** is on in the **Status & Features** tab of the settings. That applies to delegates, single participants and supervisors, with or without a seat, but not to the waiting list. So build the schedule at your own pace and only switch it on once it is ready.
+The whole team always sees the schedule. Participants see it once **Calendar** is on in the **Status & Features** tab of the settings. That applies to delegates, single participants and supervisors, with or without a seat, but not to the waiting list. So build the schedule at your own pace and only switch it on once it is ready.
 
 ### Days and tracks
 

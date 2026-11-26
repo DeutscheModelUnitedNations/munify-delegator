@@ -140,7 +140,7 @@ Unter **Gremien** steht jeder Schritt der Gremienvorlage als Zeile und jedes Gre
 
 ### Freigeben
 
-Die Teilnehmenden lesen den Leitfaden, sobald der Schalter **Leitfaden veröffentlicht** an und ihre Rollen verteilt sind. Bis dahin verlinkt das Dashboard weiter den externen Leitfaden aus den Einstellungen. Den Schalter findest du im Leitfaden und gleichlautend in den [Einstellungen](./configuration) unter Status; beide sind dieselbe Einstellung.
+Die Teilnehmenden lesen den Leitfaden, sobald der Schalter **Leitfaden veröffentlicht** an und ihre Rollen verteilt sind. Bis dahin verlinkt das Dashboard weiter den externen Leitfaden aus den Einstellungen. Den Schalter findest du im Leitfaden und als Karte **Vorbereitungsleitfaden** in den [Einstellungen](./configuration#features); beide sind dieselbe Einstellung.
 
 ### KI-Assistenten
 
@@ -298,8 +298,8 @@ Vier Arten haben keinen Schalter. **Ankündigung** trägt **Wird je Ankündigung
 | **Übersicht für Betreuende**                    | Betreuende mit mindestens einer betreuten Person, die sich beworben hat                                                      | mit der Freigabe der Zuteilung, nur einmal                                                               |
 | **Auf die Warteliste eingetragen**              | die Person auf der Warteliste                                                                                                | beim Eintragen, solange sie keinen Platz hat                                                             |
 | **Von der Warteliste nachgerückt**              | die nachgerückte Person                                                                                                      | wenn das Team ihr einen Platz gibt und die Zuteilung freigegeben ist                                     |
-| **Postalische Anmeldung freigeschaltet**        | Personen mit Platz und mitfahrende Betreuende, deren Unterlagen nicht vollständig sind                                       | sobald **Postalische Anmeldungen erlauben** an ist, auch für alle, die später einen Platz bekommen       |
-| **Teilnahmebeitrag freigeschaltet**             | Personen mit Platz und mitfahrende Betreuende, deren Zahlung nicht eingegangen ist                                           | sobald **Zahlungen erlauben** an ist, auch für alle, die später einen Platz bekommen                     |
+| **Postalische Anmeldung freigeschaltet**        | Personen mit Platz und mitfahrende Betreuende, deren Unterlagen nicht vollständig sind                                       | sobald **Postalische Anmeldung** an ist, auch für alle, die später einen Platz bekommen                  |
+| **Teilnahmebeitrag freigeschaltet**             | Personen mit Platz und mitfahrende Betreuende, deren Zahlung nicht eingegangen ist                                           | sobald **Zahlungen** an ist, auch für alle, die später einen Platz bekommen                              |
 | **Unterlagen eingegangen**                      | die Person, deren Unterlagen vollständig sind                                                                                | sobald alle nötigen Unterlagen als erledigt markiert sind                                                |
 | **Zahlung eingegangen**                         | die Person, deren Zahlung eingegangen ist                                                                                    | sobald die Zahlung als erledigt markiert ist                                                             |
 | **Problem mit Unterlagen oder Zahlung**         | die betroffene Person, je Unterlage höchstens einmal                                                                         | sobald ein Status auf „Problem“ steht                                                                    |
@@ -366,7 +366,7 @@ Auf der Seite **Kalender** baut die Teilnehmendenbetreuung den Zeitplan der Konf
 
 ### Wer den Zeitplan sieht
 
-Das ganze Team sieht den Zeitplan immer. Teilnehmende sehen ihn, sobald im Reiter **Status & Funktionen** der Einstellungen **Kalender für Teilnehmende anzeigen** an ist. Das gilt für Delegierte, Einzelteilnehmende und Betreuende, mit oder ohne Platz, nicht für die Warteliste. Baue den Zeitplan also in Ruhe auf und schalte ihn erst frei, wenn er fertig ist.
+Das ganze Team sieht den Zeitplan immer. Teilnehmende sehen ihn, sobald im Reiter **Status & Funktionen** der Einstellungen **Kalender** an ist. Das gilt für Delegierte, Einzelteilnehmende und Betreuende, mit oder ohne Platz, nicht für die Warteliste. Baue den Zeitplan also in Ruhe auf und schalte ihn erst frei, wenn er fertig ist.
 
 ### Tage und Tracks
 
