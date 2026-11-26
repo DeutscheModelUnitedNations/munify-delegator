@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { enum_, object, query, schemaBuilder } from '#api/rumble';
+import { type ApiContext, enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	assertCanActAsPayer,
@@ -26,6 +26,12 @@ const PaymentTransactionRef = object({
 });
 query({ table: 'paymentTransaction' });
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
+
+/** The payment `id` as far as the caller reads it: what a mutation answers after its write. */
+async function readable({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return (await ctx.abilities.paymentTransaction.filter('read')).merge({ where: { id } }).query
+		.single;
+}
 
 schemaBuilder.mutationFields((t) => ({
 	createPaymentTransaction: t.drizzleField({
@@ -97,13 +103,7 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			return db.query.paymentTransaction
-				.findFirst(
-					query(
-						(await ctx.abilities.paymentTransaction.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readable({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -132,13 +132,7 @@ schemaBuilder.mutationFields((t) => ({
 			await receivePaymentFor({ payment, paidFor: args.paidFor, recievedAt: args.recievedAt });
 
 			return db.query.paymentTransaction
-				.findFirst(
-					query(
-						(await ctx.abilities.paymentTransaction.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readable({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -155,13 +149,7 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanActAsPayer({ ctx, id: args.id });
 			await reportPaymentTransfer({ id: args.id, reported: args.reported });
 			return db.query.paymentTransaction
-				.findFirst(
-					query(
-						(await ctx.abilities.paymentTransaction.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readable({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -175,13 +163,7 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanActAsPayer({ ctx, id: args.id });
 			await discardPaymentTransaction(args.id);
 			return db.query.paymentTransaction
-				.findFirst(
-					query(
-						(await ctx.abilities.paymentTransaction.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readable({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	})

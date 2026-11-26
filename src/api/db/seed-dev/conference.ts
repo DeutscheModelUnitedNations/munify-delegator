@@ -358,8 +358,15 @@ function addSeatedCrowdStatuses({
 	index: number;
 	userIds: string[];
 }) {
+	const review =
+		cs.plan.conference.state === 'PREPARATION' ? CROWD_REVIEW_CASES.get(index) : undefined;
 	for (const userId of userIds) {
-		const statusId = addStatus({ cs, userId, plan: crowdStatus(cs) });
+		const plan = crowdStatus(cs);
+		const statusId = addStatus({
+			cs,
+			userId,
+			plan: review ? { ...plan, paymentStatus: 'NEEDS_HUMAN_REVIEW' } : plan
+		});
 		if (cs.plan.with.attendance && faker.datatype.boolean(0.9)) {
 			addAttendance({
 				cs,
@@ -369,7 +376,9 @@ function addSeatedCrowdStatuses({
 			});
 		}
 	}
-	if (index % 2 === 0) {
+	if (review) {
+		addReviewCase({ cs, kind: review, userIds });
+	} else if (index % 2 === 0) {
 		const received = faker.datatype.boolean(0.7);
 		addPayment({
 			cs,
@@ -377,11 +386,87 @@ function addSeatedCrowdStatuses({
 			forUserIds: userIds,
 			received,
 			// most arrive through the bank payment sync, the rest were confirmed by hand
-			bankTransfer:
+			bankTransfers:
 				received && faker.datatype.boolean(0.8)
-					? { amount: (cs.conference.feeAmount ?? 0) * userIds.length, result: 'RECEIVED' }
-					: undefined
+					? [{ amount: (cs.conference.feeAmount ?? 0) * userIds.length, result: 'RECEIVED' }]
+					: []
 		});
+	}
+}
+
+type CrowdReviewCase = 'tooLow' | 'paidTwice' | 'twoReferencesTooHigh';
+
+/**
+ * Delegations of a conference in preparation whose payment the bank payment sync left for the
+ * payments page to decide, one of each kind of case it shows. Their transfers have ids of their own
+ * (51 on, above the random ones), since the page makes one case of each transfer.
+ */
+const CROWD_REVIEW_CASES = new Map<number, CrowdReviewCase>([
+	[2, 'tooLow'],
+	[4, 'paidTwice'],
+	[6, 'twoReferencesTooHigh']
+]);
+
+/** A review case: the delegation's payment(s) and the transfer that flagged them. */
+function addReviewCase({
+	cs,
+	kind,
+	userIds
+}: {
+	cs: ConferenceSeed;
+	kind: CrowdReviewCase;
+	userIds: string[];
+}) {
+	const fee = cs.conference.feeAmount ?? 0;
+	if (kind === 'tooLow') {
+		// one fee short: somebody of the delegation was left out of the transfer
+		addPayment({
+			cs,
+			payerId: userIds[0],
+			forUserIds: userIds,
+			received: false,
+			bankTransfers: [
+				{ externalId: 51, amount: fee * (userIds.length - 1), result: 'AMOUNT_MISMATCH' }
+			]
+		});
+	} else if (kind === 'paidTwice') {
+		const amount = fee * userIds.length;
+		addPayment({
+			cs,
+			payerId: userIds[0],
+			forUserIds: userIds,
+			received: true,
+			bankTransfers: [
+				{ amount, result: 'RECEIVED' },
+				{ externalId: 52, amount, result: 'ALREADY_RECEIVED' }
+			]
+		});
+	} else {
+		// two references paid in one transfer, with a little more than both ask for
+		const [first, ...others] = userIds;
+		const shared = {
+			externalId: 53,
+			amount: fee * userIds.length + 5,
+			result: 'AMOUNT_MISMATCH' as const
+		};
+		addPayment({
+			cs,
+			payerId: first,
+			forUserIds: [first],
+			received: false,
+			bankTransfers: [shared]
+		});
+		addPayment({
+			cs,
+			payerId: first,
+			forUserIds: others,
+			received: false,
+			bankTransfers: [shared]
+		});
+		// one transfer: one sender, and a purpose naming both references
+		const rows = cs.batch.bankTransfer.slice(-2);
+		const purpose = `Beiträge ${rows.map((row) => row.paymentTransactionId).join(' ')}`;
+		for (const row of rows) Object.assign(row, { counterparty: rows[0].counterparty, purpose });
 	}
 }
 

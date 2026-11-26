@@ -33,7 +33,9 @@ Eine Referenz besteht aus 16 Zeichen in Vierergruppen mit Bindestrichen, etwa `A
 
 ### Eine Zahlung bestätigen {#confirming-a-payment}
 
-Die Seite **Beitragszahlung** ist dafür gemacht, einen Kontoauszug Zeile für Zeile abzuarbeiten:
+Die Seite **Beitragszahlung** hat drei Teile: oben **Zur Prüfung**, die Fälle, die der [Abgleich mit dem Bankkonto](#bank-sync) dir überlässt (siehe [Fälle prüfen](#reviewing)), darunter **Referenz nachschlagen**, zuletzt eingeklappt **Automatisch bestätigt**, die Zahlungen, die der Abgleich selbst als erhalten markiert hat, mit Buchungstag, Referenz, abgedeckten Personen, Betrag und Umsatznummer.
+
+**Referenz nachschlagen** ist für Überweisungen, die der Abgleich nicht erkennen konnte, etwa mit vertippter Referenz, und dafür gemacht, einen Kontoauszug Zeile für Zeile abzuarbeiten:
 
 1. Oben steht die zuletzt bestätigte Transaktion mit Datum. So siehst du, wo du oder jemand anderes aufgehört hat.
 2. Gib die Referenz aus dem Verwendungszweck in **Referenzsuche** ein, genau wie sie dort steht. Auch die Befehlspalette (Strg+K) findet Referenzen und öffnet sie auf dieser Seite.
@@ -66,7 +68,17 @@ Einmal am Tag liest DELEGATOR die eingegangenen Überweisungen aller Konten aus 
 
 Nennt eine Überweisung mehrere Referenzen, muss sie deren Summe sein. Unter **Banküberweisungen** zeigt die Seite **Beitragszahlung** bei jeder Referenz, welche Überweisungen der Abgleich ihr zugeordnet hat, mit Betrag, Buchungstag und der Umsatznummer in BuchhaltungsButler.
 
-Wer auf **Prüfung nötig** steht, findest du in der [Teilnehmendentabelle](./participants) mit einem Filter auf die Spalte Zahlung. Hast du dir den Fall angesehen, setze den Status in der Teilnehmendenkarte auf **Erledigt**, **Problem** oder **Ausstehend**. Der Abgleich fasst eine Überweisung nur einmal an und überschreibt deine Entscheidung nicht.
+Der Abgleich fasst eine Überweisung nur einmal an und überschreibt deine Entscheidung nicht.
+
+### Fälle prüfen {#reviewing}
+
+Unter **Zur Prüfung** steht jede Überweisung, die Personen auf **Prüfung nötig** gesetzt hat, als ein Fall, die älteste zuerst; nennt sie zwei Referenzen, ist das ein Fall. Jeder Fall zeigt, was erwartet war, was eingegangen ist und die Differenz, dazu Absender\*in und Verwendungszweck, wie die Bank sie liefert, die Umsatznummer und die abgedeckten Personen. Ist ein Fall entschieden, verschwindet er aus der Liste.
+
+- **Betrag zu niedrig** oder **Betrag zu hoch**: Hake an, wessen Beitrag die Überweisung bezahlt; bei zu wenig sind so viele Personen vorausgewählt, wie der Betrag deckt. **… als erhalten markieren** setzt die Angehakten auf **Erledigt**, mit dem Buchungstag als Eingangsdatum. Die anderen stehen wieder auf **Ausstehend** und zahlen mit einer neuen Referenz. Sind alle angehakt, ist die Referenz als erhalten markiert. **Als Problem markieren** setzt alle auf **Problem**.
+- **Schon bezahlt**: Die Referenz war schon eingegangen. **Erstattung nötig – als Problem markieren** setzt alle auf **Problem**, **Kein Handlungsbedarf – bleibt erhalten** setzt sie zurück auf **Erledigt**; das Eingangsdatum bleibt.
+- **Nachricht an überweisende Person** öffnet den Chat mit der Person, die die Referenz erstellt hat. Wer überwiesen hat (etwa ein Förderverein), hat meist kein Konto in DELEGATOR.
+
+Den Status einer einzelnen Person kannst du auch weiter in ihrer Teilnehmendenkarte setzen.
 
 ### Rückgängig machen
 

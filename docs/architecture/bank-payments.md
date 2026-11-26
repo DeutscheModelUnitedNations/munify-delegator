@@ -6,13 +6,14 @@ BuchhaltungsButler, which pulls DMUN's bank accounts, and settles the payments i
 
 ## Pieces
 
-| Where                                                     | What                                                                                  |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/jobs/bankPaymentSync.ts`                             | The run: reads pages of transactions, hands incoming ones on, logs a summary          |
-| `src/jobs/apis/buchhaltungsbutler/`                       | `POST /transactions/get` of BuchhaltungsButler's REST API v1 (Basic auth + `api_key`) |
-| `src/api/handlers/bankTransfer/bankTransferService.ts`    | `handleIncomingTransfer`: find the named payments, `decideTransfer`, apply, record    |
-| `src/api/handlers/paymentTransaction/paymentReference.ts` | The reference alphabet, and `paymentReferenceCandidates` (references in a purpose)    |
-| `bank_transfer` table                                     | One row per (transfer, payment it names): amount, booking day, `result`               |
+| Where                                                     | What                                                                                     |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `src/jobs/bankPaymentSync.ts`                             | The run: reads pages of transactions, hands incoming ones on, logs a summary             |
+| `src/jobs/apis/buchhaltungsbutler/`                       | `POST /transactions/get` of BuchhaltungsButler's REST API v1 (Basic auth + `api_key`)    |
+| `src/api/handlers/bankTransfer/bankTransferService.ts`    | `handleIncomingTransfer`: find the named payments, `decideTransfer`, apply, record       |
+| `src/api/handlers/paymentTransaction/paymentReference.ts` | The reference alphabet, and `paymentReferenceCandidates` (references in a purpose)       |
+| `bank_transfer` table                                     | One row per (transfer, payment it names): amount, booking day, sender, purpose, `result` |
+| `team/payments/` (`reviewCases.ts`, `ReviewCase.svelte`)  | The payments page: review cases, reference lookup, what the sync confirmed               |
 
 ## Rules
 
@@ -25,9 +26,11 @@ BuchhaltungsButler, which pulls DMUN's bank accounts, and settles the payments i
   transfer's amount their sum (to half a cent). `applyPaymentStatus(DONE)` with the booking day as
   `recievedAt`, so the "payment received" mail follows as from the payments page.
 - **Otherwise everybody covered becomes `NEEDS_HUMAN_REVIEW`**: `AMOUNT_MISMATCH` for open payments,
-  `ALREADY_RECEIVED` for settled ones (paid twice; `recievedAt` stays). A person resolves it in the
-  user card. No mail is sent for the status, and participants and supervisors see it as pending
-  (`participantFacingStatus`, `#lib/helpers/administrativeStatus`).
+  `ALREADY_RECEIVED` for settled ones (paid twice; `recievedAt` stays). A person resolves it on the
+  payments page (below) or the user card. No mail is sent for the status, and participants and
+  supervisors see it as pending (`participantFacingStatus`, `#lib/helpers/administrativeStatus`).
+- **The sender and the purpose are kept** (`counterparty` from `to_from`, `purpose`), so the
+  review shows them; they name people, so the MCP classification redacts both.
 - **Once per transfer, all or nothing.** A transfer with a `bank_transfer` row is skipped, so a
   person's decision is never overwritten. Each transfer is settled in one transaction under an
   advisory lock on its id (overlapping runs wait for each other): the check, the decision (on the
@@ -39,6 +42,24 @@ BuchhaltungsButler, which pulls DMUN's bank accounts, and settles the payments i
   the first run, so the API answers in id order), but never
   before `--lookback-days` (default 60) ago, so a first run reads two months, not the whole history.
   Daily is enough; `--dry-run` logs what would happen without writing.
+
+## The payments page
+
+`team/payments/+page.svelte`, for participant care:
+
+- **Zur Prüfung**: every payment with somebody covered on `NEEDS_HUMAN_REVIEW`, grouped by the
+  newest transfer that did not settle it (`reviewCases`, one case per `externalId`; a payment
+  flagged by hand is a case of its own). The kind follows the rows: `ALREADY_RECEIVED` is "paid
+  twice", otherwise the transfer's amount against the payments' sum. Deciding writes through
+  `updatePaymentTransaction` (all received, problem, back to pending) or `receivePaymentFor`
+  (only some covered people paid: they become `DONE`, the others `PENDING`, the payment stays open;
+  `paidDecisions`). Live, so a decided case leaves the list.
+- **Referenz nachschlagen**: the lookup by reference, for transfers without a recognised one.
+- **Automatisch bestätigt** (collapsed, fetched only when opened): `RECEIVED` rows, newest first,
+  25 at a time, counted by `bankTransfersCount`.
+
+The dev seed's preparation conference has one case of each kind (`CROWD_REVIEW_CASES`, transfer
+ids from 51).
 
 ## Running it
 

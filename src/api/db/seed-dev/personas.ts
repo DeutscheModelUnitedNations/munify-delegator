@@ -406,14 +406,16 @@ function addPersonaStatuses({ cs, nsaPartner }: { cs: ConferenceSeed; nsaPartner
 			payerId: 'dev-delegate',
 			forUserIds: ['dev-delegate', 'dev-delegate-minor'],
 			received: true,
-			bankTransfer: { amount: (cs.conference.feeAmount ?? 0) * 2, result: 'RECEIVED' }
+			bankTransfers: [{ amount: (cs.conference.feeAmount ?? 0) * 2, result: 'RECEIVED' }]
 		});
 		addPayment({
 			cs,
 			payerId: 'dev-head-delegate',
 			forUserIds: ['dev-head-delegate'],
 			received: false,
-			bankTransfer: { amount: (cs.conference.feeAmount ?? 0) / 2, result: 'AMOUNT_MISMATCH' }
+			bankTransfers: [
+				{ externalId: 54, amount: (cs.conference.feeAmount ?? 0) / 2, result: 'AMOUNT_MISMATCH' }
+			]
 		});
 		addPayment({
 			cs,

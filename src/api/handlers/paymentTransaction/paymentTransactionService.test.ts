@@ -225,12 +225,24 @@ describe('applyPaymentStatus', () => {
 		await applyPaymentStatus({
 			payment: payment({ id: 'existing', covers: ['b', 'a'] }),
 			assignedStatus: 'DONE',
-			recievedAt: undefined
+			recievedAt: new Date('2026-11-20T00:00:00Z')
 		});
 
 		expect(steps).toEqual(['lock no key update', 'update', 'update']);
 		expect(lockOrder).toHaveBeenCalledWith('participant.id asc');
 		expect(updated).toHaveBeenLastCalledWith({ paymentStatus: 'DONE' });
+	});
+
+	it('keeps the stored date when marking received without one', async () => {
+		await applyPaymentStatus({
+			payment: payment({ id: 'existing', covers: ['a'] }),
+			assignedStatus: 'DONE',
+			recievedAt: undefined
+		});
+
+		expect(updated).not.toHaveBeenCalledWith(expect.objectContaining({ recievedAt: undefined }));
+		expect(updated).toHaveBeenCalledTimes(1);
+		expect(updated).toHaveBeenCalledWith({ paymentStatus: 'DONE' });
 	});
 
 	it('locks nobody for a payment that covers nobody any more', async () => {

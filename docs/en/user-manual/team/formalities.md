@@ -33,7 +33,9 @@ A reference has 16 characters in groups of four with hyphens, such as `ACDE-FH34
 
 ### Confirming a payment {#confirming-a-payment}
 
-The **Fee Payment** page is made for working through a bank statement line by line:
+The **Fee Payment** page has three parts: at the top **To review**, the cases the [bank account sync](#bank-sync) leaves to you (see [Reviewing cases](#reviewing)), below it **Look up a reference**, and last, collapsed, **Confirmed automatically**: the payments the sync marked as received by itself, with booking day, reference, people covered, amount and transaction number.
+
+**Look up a reference** is for transfers the sync could not recognise, e.g. with a mistyped reference, and is made for working through a bank statement line by line:
 
 1. At the top it shows the last confirmed transaction with its date. That way you see where you or someone else stopped.
 2. Enter the reference from the payment reference line into **Reference Search**, exactly as it appears there. The command palette (Ctrl+K) also finds references and opens them on this page.
@@ -66,7 +68,17 @@ Once a day DELEGATOR reads the incoming transfers of all accounts from Buchhaltu
 
 A transfer naming several references has to be their sum. Under **Bank transfers** the **Fee Payment** page shows, for each reference, which transfers the sync matched to it, with amount, booking day and the transaction number in BuchhaltungsButler.
 
-You find who needs review in the [participants table](./participants) with a filter on the payment column. Once you have looked at the case, set the status in the user card to **Done**, **Problem** or **Pending**. The sync handles a transfer only once and does not overwrite your decision.
+The sync handles a transfer only once and does not overwrite your decision.
+
+### Reviewing cases {#reviewing}
+
+Under **To review**, every transfer that set people to **Needs review** is one case, oldest first; a transfer naming two references is one case. Each case shows what was expected, what arrived and the difference, the sender and the purpose as the bank gives them, the transaction number and the people covered. Once a case is decided, it leaves the list.
+
+- **Amount too low** or **Amount too high**: tick whose fee the transfer pays; for too little, as many people as the amount covers are ticked to begin with. **Mark … as received** sets the ticked people to **Done**, with the booking day as the date received. The others are **Pending** again and pay with a new reference. With everybody ticked, the reference is marked as received. **Mark as problem** sets everybody to **Problem**.
+- **Paid already**: the reference had arrived before. **Refund needed – mark as problem** sets everybody to **Problem**, **Nothing to do – stays received** sets them back to **Done**; the date received stays.
+- **Message the person paying** opens the chat with the person who created the reference. Whoever sent the money (e.g. a school association) usually has no DELEGATOR account.
+
+You can still set a single person's status in their user card.
 
 ### Undoing
 

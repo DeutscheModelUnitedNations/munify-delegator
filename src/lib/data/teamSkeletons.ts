@@ -735,15 +735,19 @@ const postalRegistration = {
 	]
 };
 
-/** The scanned payments so far: a heading over a list */
-const scanHistory: SkeletonNode = {
-	class: 'flex flex-col gap-2',
+/** A review case of the payments page: its header line, the amounts and the people */
+const paymentCase: SkeletonNode = {
+	class: 'border-base-300 bg-base-100 rounded-box flex flex-col gap-4 border p-4 sm:p-5',
 	children: [
-		block('h-4 w-20 rounded-full'),
+		block('h-6 w-64'),
 		{
-			class: 'border-base-200 rounded-box flex flex-col gap-3 border p-3',
-			children: times(4, block('h-8 w-full'))
-		}
+			class: 'grid grid-cols-1 gap-6 lg:grid-cols-2',
+			children: [
+				block('h-24 w-full'),
+				{ class: 'flex flex-col gap-1', children: times(3, block('h-10 w-full')) }
+			]
+		},
+		block('h-10 w-72')
 	]
 };
 
@@ -751,12 +755,18 @@ const payments = {
 	name: 'payments',
 	nodes: [
 		{
-			class: 'flex w-full flex-col gap-6 md:p-10',
+			class: 'flex w-full flex-col gap-10 md:p-10',
 			children: [
-				paragraph({ lines: 2 }),
-				alert(),
-				scanSearch,
-				{ class: 'grid grid-cols-1 items-start gap-6 lg:grid-cols-2', children: [scanHistory] }
+				paragraph({ lines: 1 }),
+				{
+					class: 'bg-base-200 rounded-box flex flex-col gap-4 p-4 sm:p-6',
+					children: [block('h-8 w-48'), paragraph({ lines: 1 }), paymentCase, paymentCase]
+				},
+				{
+					class: 'flex flex-col gap-4',
+					children: [block('h-8 w-56'), paragraph({ lines: 1 }), scanSearch]
+				},
+				block('h-24 w-full')
 			]
 		}
 	]

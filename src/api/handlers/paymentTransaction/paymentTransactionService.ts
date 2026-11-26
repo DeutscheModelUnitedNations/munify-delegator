@@ -282,10 +282,11 @@ export async function writePaymentStatus({
 	// The payment status is carried over to every participant the transaction covers.
 	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
 	if (covered.length > 0) await lockPaymentStatus({ tx, participantIds: covered });
-	if (assignedStatus === 'DONE') {
+	// without a date the stored one stays (`updatePaymentTransaction`'s `recievedAt` left out)
+	if (assignedStatus === 'DONE' && recievedAt) {
 		await tx
 			.update(schema.paymentTransaction)
-			.set({ recievedAt: recievedAt ?? undefined })
+			.set({ recievedAt })
 			.where(whereRows({ table: schema.paymentTransaction, filter: { id: payment.id } }));
 	}
 	if (covered.length > 0) {
