@@ -34,6 +34,7 @@ bun run dev:accounts     # rewrite oidc-mock.yaml users from seed-data/devAccoun
 bun scripts/buildZipCoordinates.ts # rebuild the stats map's ZIP area centres from GeoNames
 bun run db:nuke          # recreate the container and migrate
 bun run db:studio
+bash scripts/migrationUpgrade.sh [ref] # migrate + small-seed the last release, then migrate this checkout (wipes the DB)
 
 bun run format
 bun run check            # PREFERRED type check (svelte-check --tsgo, incremental)
@@ -611,6 +612,10 @@ Slack token key — changing it means re-entering tokens), `S3_ENDPOINT`, `S3_AC
 - **Release** from a clean `main`: `npm version patch|minor|major && git push --follow-tags`. The tag
   runs CI, publishes images (`x.y.z`, `x.y`, `x`; ghcr + DockerHub, app + jobs), uploads sourcemaps
   to Bugsink, deploys via Dokploy and creates the GitHub release. Never tag by hand.
+  Before publishing, `migration-upgrade` (CI, also on PRs changing `drizzle/`) applies the
+  release's migrations to a database seeded (`db:seed:dev:small`) by the previous release tag, so
+  a migration that works only on empty tables (NOT NULL without default, unique index, trigger)
+  stops the release: backfill or default new required columns in the migration itself.
 
 ## Dev tooling
 
