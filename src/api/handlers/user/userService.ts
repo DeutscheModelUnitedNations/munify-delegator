@@ -344,3 +344,11 @@ export async function completePostalGuide(userId: string) {
 		changes: { postalGuideCompletedAt: new Date() }
 	});
 }
+
+/** Records that the user watched the guide to transferring the fee to its end; the first time stays. */
+export async function completePaymentGuide(userId: string) {
+	await updateUser({
+		where: and(eq(schema.user.id, userId), isNull(schema.user.paymentGuideCompletedAt)),
+		changes: { paymentGuideCompletedAt: new Date() }
+	});
+}

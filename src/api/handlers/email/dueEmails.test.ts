@@ -81,6 +81,7 @@ function snapshot(
 			unlockPostals: false,
 			unlockPayments: false,
 			applicationDeadline: new Date(now.getTime() - 30 * DAY),
+			paymentDeadline: null,
 			startConference: new Date(now.getTime() + 60 * DAY),
 			timezone: 'Europe/Berlin',
 			certificateAvailable: false,
@@ -234,6 +235,33 @@ describe('reminders', () => {
 			`APPLICATION_DEADLINE_REMINDER:${a.user.id}:${deadline.toISOString().slice(0, 10)}`
 		]);
 		expect(onlyKinds({ snap, kinds, at: new Date(now.getTime() - 5 * DAY) })).toEqual([]);
+	});
+
+	test('reminds of the payment deadline in its last days whoever has not paid', () => {
+		const open = seated();
+		const paid = { ...seated(), paymentStatus: 'DONE' as const };
+		const deadline = new Date(now.getTime() + 3 * DAY);
+		const snap = snapshot([open, paid], { unlockPayments: true, paymentDeadline: deadline });
+		const kinds = ['PAYMENT_DEADLINE_REMINDER'];
+		expect(onlyKinds({ snap, kinds })).toEqual([
+			`PAYMENT_DEADLINE_REMINDER:${open.user.id}:${deadline.toISOString().slice(0, 10)}`
+		]);
+		// not before its window, not after the deadline
+		expect(onlyKinds({ snap, kinds, at: new Date(now.getTime() - 5 * DAY) })).toEqual([]);
+		expect(onlyKinds({ snap, kinds, at: new Date(now.getTime() + 4 * DAY) })).toEqual([]);
+	});
+
+	test('reminds of no payment deadline without one or while payments are locked', () => {
+		const open = seated();
+		const kinds = ['PAYMENT_DEADLINE_REMINDER'];
+		const deadline = new Date(now.getTime() + 3 * DAY);
+		expect(onlyKinds({ snap: snapshot([open], { unlockPayments: true }), kinds })).toEqual([]);
+		expect(
+			onlyKinds({
+				snap: snapshot([open], { unlockPayments: false, paymentDeadline: deadline }),
+				kinds
+			})
+		).toEqual([]);
 	});
 
 	test('reminds open issues two weeks and the phone one week before the start', () => {

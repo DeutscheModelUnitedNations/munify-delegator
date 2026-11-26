@@ -25,6 +25,8 @@ Sobald **Zahlungen** eingeschaltet ist (siehe [Status und Phasen](./configuratio
 - Eine Referenz kann mehrere Personen abdecken. Der Betrag ist dann der **Teilnahmebeitrag** mal die Zahl der Personen.
 - Mitbezahlen kann man für sich selbst, die eigene Delegation, die Teilnehmenden, die man betreut, und Betreuende, mit denen man eine betreute Person teilt. Alles andere lehnt DELEGATOR ab.
 - Wer schon bezahlt hat, erstellt keine neue Referenz und kann in keine neue aufgenommen werden.
+- Wer eine Referenz erstellt hat, kann sie mit **Zahlung neu beginnen** verwerfen. Sie bleibt hier auffindbar und ist als verworfen markiert, damit du eine Überweisung, die doch noch mit ihr kommt, trotzdem zuordnen kannst.
+- Mit **Ich habe überwiesen** sagen Teilnehmende, dass sie überwiesen haben. Die Seite zeigt das bei der Referenz an, am Zahlungsstatus ändert es nichts: Den setzt weiter nur ihr, wenn das Geld da ist.
 - Ist in den [Überweisungsinformationen](./configuration#payment-details) kein Beitrag hinterlegt, lässt sich keine Referenz erstellen.
 
 Eine Referenz besteht aus 16 Zeichen in Vierergruppen mit Bindestrichen, etwa `ACDE-FH34-…`. Sie enthält keine leicht verwechselbaren Zeichen.

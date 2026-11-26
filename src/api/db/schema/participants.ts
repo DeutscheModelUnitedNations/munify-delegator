@@ -85,6 +85,8 @@ export const conferenceParticipant = snakeCase.table(
 		postalConfirmedDetails: text(),
 		/** and that they are, or are not, of age at the conference. */
 		postalConfirmedOfAge: boolean(),
+		/** Whether the person read what the fee payment is about, the first step of the payment page. */
+		paymentInfoRead: boolean().default(false).notNull(),
 		/**
 		 * The person's own school, the only place a school of someone taking part is kept. Given when
 		 * they apply (or carried over from their waiting list entry), changed by themselves or by

@@ -6,6 +6,7 @@ import {
 	PHONE_READY_REMINDER_DAYS,
 	CHASE_INTRO_REMINDER_DAYS,
 	SURVEY_REMINDER_DAYS,
+	PAYMENT_REMINDER_DAYS,
 	type EmailGroupId
 } from '#lib/helpers/emailKinds';
 import { UNREAD_MESSAGE_MAIL_MINUTES } from '#lib/helpers/chat';
@@ -121,6 +122,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		trigger: m.emailKindApplicationReminderTrigger({ days: APPLICATION_REMINDER_DAYS }),
 		recipients: m.emailKindApplicationReminderRecipients(),
 		content: m.emailKindApplicationReminderContent()
+	}),
+	PAYMENT_DEADLINE_REMINDER: () => ({
+		title: m.emailKindPaymentReminderTitle(),
+		trigger: m.emailKindPaymentReminderTrigger({ days: PAYMENT_REMINDER_DAYS }),
+		recipients: m.emailKindPaymentReminderRecipients(),
+		content: m.emailKindPaymentReminderContent()
 	}),
 	OPEN_ISSUES_REMINDER: () => ({
 		title: m.emailKindOpenIssuesTitle(),

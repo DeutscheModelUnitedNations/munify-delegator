@@ -76,6 +76,11 @@ export const conference = snakeCase.table('conference', {
 	bic: text(),
 	currency: text().default('EUR'),
 	feeAmount: doublePrecision(),
+	/**
+	 * Until when the fee is to be paid; shown on the payment page and reminded of by mail. `null` for
+	 * no deadline. Paying stays possible after it.
+	 */
+	paymentDeadline: timestamp({ precision: 3 }),
 	guardianConsentFileId: fileRef(),
 	iban: text(),
 	mediaConsentFileId: fileRef(),

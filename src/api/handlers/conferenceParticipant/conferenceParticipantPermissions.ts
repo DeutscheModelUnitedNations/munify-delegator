@@ -31,7 +31,9 @@ import { whereRows } from '#api/db/whereRows';
 const WITHOUT_POSTAL_PROGRESS = {
 	postalInfoRead: false,
 	postalConfirmedDetails: false,
-	postalConfirmedOfAge: false
+	postalConfirmedOfAge: false,
+	// and how far they are in the payment page
+	paymentInfoRead: false
 };
 
 export function registerConferenceParticipantAbilities() {
@@ -240,7 +242,8 @@ export async function partIn({ conferenceId, userId }: { conferenceId: string; u
 }
 
 /**
- * The caller's own participant row in the conference, whose postal registration they go through.
+ * The caller's own participant row in the conference, whose postal registration or payment page
+ * they go through.
  * FORBIDDEN for an AI assistant and for whoever impersonates, who confirm nothing for somebody
  * else; NOT_FOUND for a caller without a part in it.
  */

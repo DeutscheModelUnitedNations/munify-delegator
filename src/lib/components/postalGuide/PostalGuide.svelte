@@ -1,11 +1,12 @@
 <!--
 	@component
 	How to send the postal documents so they can be processed: one step after the other, each a
-	looping animation of the mistake and the right way. The bar at the bottom fills while a step plays; only
+	looping animation of the mistake and the right way. Other guides (the payment guide) pass their own
+	`steps`, end picture and texts and share the frame. The bar at the bottom fills while a step plays; only
 	then the next one opens, unless the guide was watched to its end before (`progress`).
 -->
 <script lang="ts">
-	import { tick, type ComponentProps } from 'svelte';
+	import { tick, type Component, type ComponentProps } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { m } from '#lib/paraglide/messages';
@@ -14,7 +15,7 @@
 	import GuideWarning from './GuideWarning.svelte';
 	import type { GuideProgress } from './guideProgress.svelte.js';
 	import Finale from './scenes/Finale.svelte';
-	import { GUIDE_STEPS } from './steps';
+	import { GUIDE_STEPS, type GuideStep } from './steps';
 
 	type FooterProps = ComponentProps<typeof GuideFooter>;
 
@@ -28,11 +29,29 @@
 		onSkip?: () => void;
 		/** Only where the guide may be left before its end. */
 		onLeave?: () => void;
+		/** The guide's steps; the postal guide's by default. */
+		steps?: readonly GuideStep[];
+		/** The picture at the end. */
+		finale?: Component;
+		/** The heading at the end, above the list of what was shown. */
+		doneTitle?: string;
+		/** Highlighted under that list. */
+		closingWarning?: string;
 	}
 
-	let { progress, onComplete, finish, onSkip, onLeave }: Props = $props();
+	let {
+		progress,
+		onComplete,
+		finish,
+		onSkip,
+		onLeave,
+		steps = GUIDE_STEPS,
+		finale: FinaleScene = Finale,
+		doneTitle = m.postalGuideDoneTitle(),
+		closingWarning = m.postalGuideWarning()
+	}: Props = $props();
 
-	const step = $derived(GUIDE_STEPS.at(progress.index));
+	const step = $derived(steps.at(progress.index));
 
 	let guide = $state<HTMLElement>();
 	/** The scenes loop until they are held, which also holds the ones after. */
@@ -84,7 +103,7 @@
 		{#if step}
 			<step.scene />
 		{:else}
-			<Finale />
+			<FinaleScene />
 		{/if}
 		<!-- Without motion there is nothing to hold -->
 		<button
@@ -103,7 +122,7 @@
 	<!-- The longest text's height, so the buttons stay where they are -->
 	<div class="mx-auto mt-4 max-w-xl text-center" class:min-h-40={step}>
 		<h3 class="text-2xl font-bold outline-none" tabindex="-1" {@attach focusTitle}>
-			{step ? step.title() : m.postalGuideDoneTitle()}
+			{step ? step.title() : doneTitle}
 		</h3>
 		{#if step}
 			<div class="mt-2 flex items-center justify-center gap-2 sm:gap-4">
@@ -116,7 +135,7 @@
 				<GuideWarning text={step.warning()} />
 			{/if}
 		{:else}
-			<GuideClosing />
+			<GuideClosing {steps} warning={closingWarning} />
 		{/if}
 	</div>
 {/snippet}
@@ -137,6 +156,14 @@
 	</p>
 
 	<div class="mt-6">
-		<GuideFooter {progress} onNext={next} onBack={back} {finish} {onSkip} {onLeave} />
+		<GuideFooter
+			{progress}
+			count={steps.length}
+			onNext={next}
+			onBack={back}
+			{finish}
+			{onSkip}
+			{onLeave}
+		/>
 	</div>
 </div>

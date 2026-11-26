@@ -2,6 +2,7 @@ import { db } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
+	assertCanActAsPayer,
 	assertCanCreatePaymentTransaction,
 	assertCanUpdatePaymentTransaction,
 	registerPaymentTransactionAbilities
@@ -9,7 +10,9 @@ import {
 import {
 	applyPaymentStatus,
 	createPaymentTransaction,
-	paymentForSchema
+	discardPaymentTransaction,
+	paymentForSchema,
+	reportPaymentTransfer
 } from './paymentTransactionService';
 import { mcpTool } from '#api/mcp/mcpTool';
 
@@ -92,6 +95,49 @@ schemaBuilder.mutationFields((t) => ({
 				recievedAt: args.recievedAt
 			});
 
+			return db.query.paymentTransaction
+				.findFirst(
+					query(
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	reportPaymentTransfer: t.drizzleField({
+		description:
+			"The payer says they transferred the money (`reported: true`, kept as `transferReportedAt`) or takes that back (`false`). Only their word: nobody's payment status changes. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND for a payment the caller did not make, CONFLICT once its money arrived or it was discarded.",
+		type: PaymentTransactionRef,
+		args: {
+			id: t.arg.id({ required: true }),
+			reported: t.arg.boolean({ required: true })
+		},
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanActAsPayer({ ctx, id: args.id });
+			await reportPaymentTransfer({ id: args.id, reported: args.reported });
+			return db.query.paymentTransaction
+				.findFirst(
+					query(
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	discardPaymentTransaction: t.drizzleField({
+		description:
+			'The payer gives a reference up to start over with another selection (`discardedAt`). It is kept, so participant care can still match a transfer made with it, but `createPaymentTransaction` no longer answers it. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND for a payment the caller did not make, CONFLICT once its money arrived or it was discarded already.',
+		type: PaymentTransactionRef,
+		args: { id: t.arg.id({ required: true }) },
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanActAsPayer({ ctx, id: args.id });
+			await discardPaymentTransaction(args.id);
 			return db.query.paymentTransaction
 				.findFirst(
 					query(

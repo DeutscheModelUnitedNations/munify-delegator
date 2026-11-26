@@ -2,7 +2,7 @@
 	import Selection from '#lib/components/selection/index';
 	import { sortByNames } from '#lib/helpers/formatNames';
 	import SelectableParticipant from './SelectableParticipant.svelte';
-	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte';
+	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte.js';
 
 	/** A group of people a payment can cover, by name, each with a checkbox. */
 	interface Props {

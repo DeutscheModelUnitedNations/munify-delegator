@@ -85,7 +85,8 @@ describe('the postal progress of others', () => {
 	const hidden = {
 		postalInfoRead: false,
 		postalConfirmedDetails: false,
-		postalConfirmedOfAge: false
+		postalConfirmedOfAge: false,
+		paymentInfoRead: false
 	};
 	const reaching = (grants: Awaited<ReturnType<typeof grantsWith>>, id: string) =>
 		grants.filter(({ where }) => JSON.stringify(where).includes(`"${id}"`));

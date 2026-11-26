@@ -9,6 +9,7 @@ export function fetchConferencePaymentData(conferenceId: string) {
 		longTitle: true,
 		bankAccountHolder: true,
 		feeAmount: true,
+		paymentDeadline: true,
 		iban: true,
 		bic: true,
 		bankName: true,

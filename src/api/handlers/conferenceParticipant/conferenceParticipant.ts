@@ -6,6 +6,7 @@ import {
 	isOfAgeAtConference,
 	postalFingerprintSchema,
 	setAttendanceForAll,
+	updatePaymentProgress,
 	updatePostalProgress,
 	upsertParticipantStatus
 } from './conferenceParticipantService';
@@ -164,6 +165,24 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, { conferenceId, ...progress }, ctx) => {
 			const { participantId } = await assertCanUpdatePostalProgress({ ctx, conferenceId });
 			await updatePostalProgress({ participantId, progress });
+
+			return db.query.conferenceParticipant
+				.findFirst(query(await readableParticipant({ ctx, id: participantId })))
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	updatePaymentProgress: t.drizzleField({
+		description:
+			'How far the caller is on their own payment page; fields left out or `null` stay as they are. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND without a part in the conference.',
+		type: ConferenceParticipantRef,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			infoRead: t.arg.boolean({ description: 'They read what the payment is about.' })
+		},
+		resolve: async (query, _root, { conferenceId, ...progress }, ctx) => {
+			const { participantId } = await assertCanUpdatePostalProgress({ ctx, conferenceId });
+			await updatePaymentProgress({ participantId, progress });
 
 			return db.query.conferenceParticipant
 				.findFirst(query(await readableParticipant({ ctx, id: participantId })))

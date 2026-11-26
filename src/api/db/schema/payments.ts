@@ -20,6 +20,16 @@ export const paymentTransaction = snakeCase.table(
 		amount: doublePrecision().notNull(),
 		...defaultTimestamps,
 		recievedAt: timestamp({ precision: 3 }),
+		/**
+		 * When the payer said they transferred the money (`reportPaymentTransfer`): their own word, which
+		 * changes no payment status. `null` while they have not, or took it back.
+		 */
+		transferReportedAt: timestamp({ precision: 3 }),
+		/**
+		 * When the payer gave the reference up to start over (`discardPaymentTransaction`). It stays,
+		 * so participant care can still match a transfer made with it, but is no longer offered.
+		 */
+		discardedAt: timestamp({ precision: 3 }),
 		/** Who pays: a participant of the conference the payment is for. */
 		payerParticipantId: participantRef()
 	},

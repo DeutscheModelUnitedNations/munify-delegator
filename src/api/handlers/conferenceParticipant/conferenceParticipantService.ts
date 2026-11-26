@@ -352,3 +352,18 @@ export async function updatePostalProgress({
 		.where(eq(schema.conferenceParticipant.id, participantId));
 	conferenceParticipantPubsub.updated(participantId);
 }
+
+/** Writes how far somebody is on their payment page; what is not given stays. */
+export async function updatePaymentProgress({
+	participantId,
+	progress
+}: {
+	participantId: string;
+	progress: { infoRead?: boolean | null };
+}) {
+	await db
+		.update(schema.conferenceParticipant)
+		.set({ paymentInfoRead: progress.infoRead ?? undefined, updatedAt: new Date() })
+		.where(eq(schema.conferenceParticipant.id, participantId));
+	conferenceParticipantPubsub.updated(participantId);
+}

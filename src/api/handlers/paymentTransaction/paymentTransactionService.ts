@@ -104,7 +104,8 @@ export function paymentCovering<
 
 /**
  * The payer's reference for exactly these participants and this amount whose money has not
- * arrived, the newest should there be several. One made at another fee no longer fits, its amount
+ * arrived and which they did not give up (`discardPaymentTransaction`), the newest should there be
+ * several. One made at another fee no longer fits, its amount
  * is the old one. Looks under the payer's lock (`assertNobodyPaid`), so the same reference asked for
  * twice at once is made once.
  */
@@ -120,7 +121,12 @@ async function openPaymentFor({
 	amount: number;
 }) {
 	const payments = await tx.query.paymentTransaction.findMany({
-		where: { payerParticipantId, amount, recievedAt: { isNull: true } },
+		where: {
+			payerParticipantId,
+			amount,
+			recievedAt: { isNull: true },
+			discardedAt: { isNull: true }
+		},
 		columns: { id: true },
 		with: { paymentFor: { columns: { conferenceParticipantId: true } } },
 		orderBy: { createdAt: 'desc' }
@@ -210,4 +216,70 @@ export async function applyPaymentStatus({
 	});
 	paymentTransactionPubsub.updated(payment.id);
 	if (covered.length > 0) conferenceParticipantPubsub.updated(covered);
+}
+
+/**
+ * Writes `changes` to a payment whose money has not arrived and which is not given up; refuses
+ * (CONFLICT) one that has arrived or was given up, which nothing on the payer's side changes any more.
+ */
+async function updateOpenPayment({
+	id,
+	changes
+}: {
+	id: string;
+	changes: Partial<
+		Pick<typeof schema.paymentTransaction.$inferInsert, 'transferReportedAt' | 'discardedAt'>
+	>;
+}) {
+	const payment = await db.query.paymentTransaction
+		.findFirst({ where: { id }, columns: { recievedAt: true, discardedAt: true } })
+		.then(assertFindFirstExists);
+	const problem = openPaymentProblem(payment);
+	if (problem === 'RECEIVED') {
+		throw apiError({ code: 'CONFLICT', message: m.paymentAlreadyReceived() });
+	}
+	if (problem === 'DISCARDED') {
+		throw apiError({ code: 'CONFLICT', message: m.paymentReferenceDiscarded() });
+	}
+	const written = await db
+		.update(schema.paymentTransaction)
+		.set({ ...changes, updatedAt: new Date() })
+		.where(
+			whereRows({
+				table: schema.paymentTransaction,
+				filter: { id, recievedAt: { isNull: true }, discardedAt: { isNull: true } }
+			})
+		)
+		.returning({ id: schema.paymentTransaction.id });
+	// changed between the read and the write
+	if (written.length === 0) {
+		throw apiError({ code: 'CONFLICT', message: m.paymentReferenceDiscarded() });
+	}
+	paymentTransactionPubsub.updated(id);
+}
+
+/** Why the payer can no longer change a payment: its money arrived, or they gave it up. */
+export function openPaymentProblem(payment: {
+	recievedAt: Date | null;
+	discardedAt: Date | null;
+}): 'RECEIVED' | 'DISCARDED' | undefined {
+	if (payment.recievedAt) return 'RECEIVED';
+	if (payment.discardedAt) return 'DISCARDED';
+	return undefined;
+}
+
+/**
+ * The payer says they transferred the money (`reported`), or takes that back. Only their word: it
+ * changes nobody's payment status, which participant care sets once the money is there.
+ */
+export async function reportPaymentTransfer({ id, reported }: { id: string; reported: boolean }) {
+	await updateOpenPayment({ id, changes: { transferReportedAt: reported ? new Date() : null } });
+}
+
+/**
+ * The payer gives the reference up to start over. It is kept, marked given up, so participant care
+ * can still match a transfer made with it; a new reference for the same people is a new one.
+ */
+export async function discardPaymentTransaction(id: string) {
+	await updateOpenPayment({ id, changes: { discardedAt: new Date() } });
 }

@@ -261,6 +261,17 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 			)
 		})
 	},
+	PAYMENT_DEADLINE_REMINDER: {
+		placeholders: ['date'],
+		text: (locale) => ({
+			subject: m.emailAutoPaymentReminderSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoPaymentReminderHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoPaymentReminderBody({ conference: P.conference, date: P.date }, { locale }),
+				m.emailAutoPaymentReminderClosing({}, { locale })
+			)
+		})
+	},
 	OPEN_ISSUES_REMINDER: {
 		placeholders: ['date', 'list'],
 		text: (locale) => ({
