@@ -37,7 +37,7 @@ function generateSEPASafeId() {
  * Locks the participants' rows and reads their payment status, waiting for whoever is changing it.
  * Always in id order, so two callers locking the same people cannot block each other.
  */
-function lockPaymentStatus({
+export function lockPaymentStatus({
 	tx,
 	participantIds
 }: {
@@ -197,25 +197,45 @@ export async function applyPaymentStatus({
 	assignedStatus: AdministrativeStatus;
 	recievedAt: Date | null | undefined;
 }) {
-	// The payment status is carried over to every participant the transaction covers.
-	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
-	await db.transaction(async (tx) => {
-		if (covered.length > 0) await lockPaymentStatus({ tx, participantIds: covered });
-		if (assignedStatus === 'DONE') {
-			await tx
-				.update(schema.paymentTransaction)
-				.set({ recievedAt: recievedAt ?? undefined })
-				.where(whereRows({ table: schema.paymentTransaction, filter: { id: payment.id } }));
-		}
-		if (covered.length > 0) {
-			await tx
-				.update(schema.conferenceParticipant)
-				.set({ paymentStatus: assignedStatus })
-				.where(whereRows({ table: schema.conferenceParticipant, filter: { id: { in: covered } } }));
-		}
-	});
+	const covered = await db.transaction((tx) =>
+		writePaymentStatus({ tx, payment, assignedStatus, recievedAt })
+	);
 	paymentTransactionPubsub.updated(payment.id);
 	if (covered.length > 0) conferenceParticipantPubsub.updated(covered);
+}
+
+/**
+ * `applyPaymentStatus` inside the caller's transaction `tx`: locks everybody the payment covers,
+ * marks it received when `DONE` and carries the status over to them. Publishes nothing, so the
+ * caller announces the payment and the returned participant row ids once `tx` has committed.
+ */
+export async function writePaymentStatus({
+	tx,
+	payment,
+	assignedStatus,
+	recievedAt
+}: {
+	tx: Transaction;
+	payment: { id: string; paymentFor: { conferenceParticipantId: string }[] };
+	assignedStatus: AdministrativeStatus;
+	recievedAt: Date | null | undefined;
+}) {
+	// The payment status is carried over to every participant the transaction covers.
+	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
+	if (covered.length > 0) await lockPaymentStatus({ tx, participantIds: covered });
+	if (assignedStatus === 'DONE') {
+		await tx
+			.update(schema.paymentTransaction)
+			.set({ recievedAt: recievedAt ?? undefined })
+			.where(whereRows({ table: schema.paymentTransaction, filter: { id: payment.id } }));
+	}
+	if (covered.length > 0) {
+		await tx
+			.update(schema.conferenceParticipant)
+			.set({ paymentStatus: assignedStatus })
+			.where(whereRows({ table: schema.conferenceParticipant, filter: { id: { in: covered } } }));
+	}
+	return covered;
 }
 
 /**

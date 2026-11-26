@@ -1,6 +1,14 @@
-import { db, schema } from '#api/db/db';
-import { bankTransferPubsub } from '#api/pubsub';
-import { applyPaymentStatus } from '#api/handlers/paymentTransaction/paymentTransactionService';
+import { sql } from 'drizzle-orm';
+import { type Transaction, db, schema } from '#api/db/db';
+import {
+	bankTransferPubsub,
+	conferenceParticipantPubsub,
+	paymentTransactionPubsub
+} from '#api/pubsub';
+import {
+	lockPaymentStatus,
+	writePaymentStatus
+} from '#api/handlers/paymentTransaction/paymentTransactionService';
 import { paymentReferenceCandidates } from '#api/handlers/paymentTransaction/paymentReference';
 
 type BankTransferResult = (typeof schema.bankTransferResult.enumValues)[number];
@@ -55,12 +63,18 @@ export function decideTransfer({
 	}));
 }
 
-/** The payments a purpose names, with what `decideTransfer` needs of them. */
-function paymentsNamedIn(purpose: string): Promise<NamedPayment[]> {
-	const candidates = paymentReferenceCandidates(purpose);
-	if (candidates.length === 0) return Promise.resolve([]);
-	return db.query.paymentTransaction.findMany({
-		where: { id: { in: candidates } },
+type Reader = Pick<typeof db, 'query'>;
+
+/** The payments these reference candidates name, with what `decideTransfer` needs of them. */
+function paymentsNamed({
+	reader,
+	candidates
+}: {
+	reader: Reader;
+	candidates: readonly string[];
+}): Promise<NamedPayment[]> {
+	return reader.query.paymentTransaction.findMany({
+		where: { id: { in: [...candidates] } },
 		columns: { id: true, amount: true, recievedAt: true },
 		with: {
 			paymentFor: {
@@ -86,10 +100,72 @@ export type TransferOutcome =
 	| { kind: 'handled'; results: { paymentId: string; result: BankTransferResult }[] };
 
 /**
+ * Settles the payments a transfer names in `tx`, under a lock on the transfer: skips a transfer
+ * recorded before, decides on the payments as they stand once everybody they cover is locked (so a
+ * person changing a status at the same moment is waited for, not overwritten), writes the statuses
+ * and records the transfer. All of it commits together or not at all.
+ */
+async function settleTransfer({
+	tx,
+	transfer,
+	candidates
+}: {
+	tx: Transaction;
+	transfer: IncomingTransfer;
+	candidates: readonly string[];
+}) {
+	// overlapping runs handle one transfer one after the other
+	await tx.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${`bank_transfer:${transfer.externalId}`}, 0))`
+	);
+	const before = await tx.query.bankTransfer.findFirst({
+		where: { externalId: transfer.externalId },
+		columns: { id: true }
+	});
+	if (before) return undefined;
+
+	const named = await paymentsNamed({ reader: tx, candidates });
+	await lockPaymentStatus({
+		tx,
+		participantIds: named.flatMap((payment) =>
+			payment.paymentFor.map((p) => p.conferenceParticipantId)
+		)
+	});
+	// read again under the locks: what the decision rests on can no longer change
+	const payments = await paymentsNamed({ reader: tx, candidates });
+	const results = decideTransfer({ amount: transfer.amount, payments });
+
+	const covered: string[] = [];
+	for (const payment of payments) {
+		const received = results.find((r) => r.paymentId === payment.id)?.result === 'RECEIVED';
+		covered.push(
+			...(await writePaymentStatus({
+				tx,
+				payment,
+				assignedStatus: received ? 'DONE' : 'NEEDS_HUMAN_REVIEW',
+				recievedAt: received ? transfer.bookedAt : undefined
+			}))
+		);
+	}
+	await tx.insert(schema.bankTransfer).values(
+		results.map(({ paymentId, result }) => ({
+			externalId: transfer.externalId,
+			paymentTransactionId: paymentId,
+			amount: transfer.amount,
+			bookedAt: transfer.bookedAt,
+			result
+		}))
+	);
+	return { results, covered };
+}
+
+/**
  * Handles one incoming transfer: finds the payments its purpose names, marks them received when
  * the transfer settles them (`decideTransfer`), with the transfer's booking day, and otherwise sets
  * everybody they cover to `NEEDS_HUMAN_REVIEW`. Records what it did per payment (`bankTransfer`),
- * which also keeps a transfer from being handled twice. With `dryRun` only says what it would do.
+ * which also keeps a transfer from being handled twice; the statuses and the record commit in one
+ * transaction (`settleTransfer`), and are announced after it. With `dryRun` it only says what it
+ * would do.
  */
 export async function handleIncomingTransfer({
 	transfer,
@@ -98,40 +174,29 @@ export async function handleIncomingTransfer({
 	transfer: IncomingTransfer;
 	dryRun?: boolean;
 }): Promise<TransferOutcome> {
-	const payments = await paymentsNamedIn(transfer.purpose);
-	if (payments.length === 0) return { kind: 'noReference' };
+	const candidates = paymentReferenceCandidates(transfer.purpose);
+	if (candidates.length === 0) return { kind: 'noReference' };
+	// most transfers name no payment: find that out without a transaction
+	const named = await paymentsNamed({ reader: db, candidates });
+	if (named.length === 0) return { kind: 'noReference' };
 
-	const before = await db.query.bankTransfer.findFirst({
-		where: { externalId: transfer.externalId },
-		columns: { id: true }
-	});
-	if (before) return { kind: 'handledBefore' };
-
-	const results = decideTransfer({ amount: transfer.amount, payments });
-	if (dryRun) return { kind: 'handled', results };
-
-	for (const payment of payments) {
-		const received = results.find((r) => r.paymentId === payment.id)?.result === 'RECEIVED';
-		await applyPaymentStatus({
-			payment,
-			assignedStatus: received ? 'DONE' : 'NEEDS_HUMAN_REVIEW',
-			recievedAt: received ? transfer.bookedAt : undefined
+	if (dryRun) {
+		const before = await db.query.bankTransfer.findFirst({
+			where: { externalId: transfer.externalId },
+			columns: { id: true }
 		});
+		if (before) return { kind: 'handledBefore' };
+		return {
+			kind: 'handled',
+			results: decideTransfer({ amount: transfer.amount, payments: named })
+		};
 	}
-	const rows = await db
-		.insert(schema.bankTransfer)
-		.values(
-			results.map(({ paymentId, result }) => ({
-				externalId: transfer.externalId,
-				paymentTransactionId: paymentId,
-				amount: transfer.amount,
-				bookedAt: transfer.bookedAt,
-				result
-			}))
-		)
-		.onConflictDoNothing()
-		.returning({ id: schema.bankTransfer.id });
-	if (rows.length > 0) bankTransferPubsub.created();
 
-	return { kind: 'handled', results };
+	const settled = await db.transaction((tx) => settleTransfer({ tx, transfer, candidates }));
+	if (!settled) return { kind: 'handledBefore' };
+
+	paymentTransactionPubsub.updated(settled.results.map((r) => r.paymentId));
+	if (settled.covered.length > 0) conferenceParticipantPubsub.updated(settled.covered);
+	bankTransferPubsub.created();
+	return { kind: 'handled', results: settled.results };
 }

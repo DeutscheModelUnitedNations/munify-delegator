@@ -33,14 +33,14 @@ describe('transactions', () => {
 		});
 	});
 
-	it('leaves the cursor out without one', async () => {
+	it('sends the cursor 0 without one, so the answer is in id order from the start', async () => {
 		const fetchFn = respond({ body: { success: true, rows: 0, data: [] } });
 		await createBuchhaltungsButlerClient({ config, fetchFn }).transactions({
 			dateFrom: '2026-09-27'
 		});
-		expect(JSON.parse(String(fetchFn.mock.calls[0][1]?.body))).not.toHaveProperty(
-			'id_by_customer_from'
-		);
+		expect(JSON.parse(String(fetchFn.mock.calls[0][1]?.body))).toMatchObject({
+			id_by_customer_from: 0
+		});
 	});
 
 	it('reads ids and amounts the API sends as strings', async () => {

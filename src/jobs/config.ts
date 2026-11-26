@@ -65,7 +65,10 @@ export function sendEmailsConfig() {
  * → API).
  */
 const bankPaymentSyncSchema = z.object({
-	BUCHHALTUNGSBUTLER_API_URL: z.url().default('https://webapp.buchhaltungsbutler.de/api/v1'),
+	// the requests carry the API secret and key: never without TLS
+	BUCHHALTUNGSBUTLER_API_URL: z
+		.url({ protocol: /^https$/, error: 'must be an https:// URL' })
+		.default('https://webapp.buchhaltungsbutler.de/api/v1'),
 	BUCHHALTUNGSBUTLER_API_CLIENT: z.string().min(1, 'is not set'),
 	BUCHHALTUNGSBUTLER_API_SECRET: z.string().min(1, 'is not set'),
 	BUCHHALTUNGSBUTLER_API_KEY: z.string().min(1, 'is not set')

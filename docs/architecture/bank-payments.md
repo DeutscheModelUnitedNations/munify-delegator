@@ -28,9 +28,15 @@ BuchhaltungsButler, which pulls DMUN's bank accounts, and settles the payments i
   `ALREADY_RECEIVED` for settled ones (paid twice; `recievedAt` stays). A person resolves it in the
   user card. No mail is sent for the status, and participants and supervisors see it as pending
   (`participantFacingStatus`, `#lib/helpers/administrativeStatus`).
-- **Once per transfer.** A transfer with a `bank_transfer` row is skipped, so a person's decision is
-  never overwritten. Transfers without a known reference leave no row.
-- **Where a run starts:** after the highest recorded transfer id (`id_by_customer_from`), but never
+- **Once per transfer, all or nothing.** A transfer with a `bank_transfer` row is skipped, so a
+  person's decision is never overwritten. Each transfer is settled in one transaction under an
+  advisory lock on its id (overlapping runs wait for each other): the check, the decision (on the
+  payments re-read once everybody they cover is locked, so a status changed by hand at that moment
+  is waited for), the status writes (`writePaymentStatus`) and the `bank_transfer` rows commit
+  together; the pubsub announcements follow the commit. Transfers without a known reference leave
+  no row and open no transaction.
+- **Where a run starts:** after the highest recorded transfer id (`id_by_customer_from`, `0` on
+  the first run, so the API answers in id order), but never
   before `--lookback-days` (default 60) ago, so a first run reads two months, not the whole history.
   Daily is enough; `--dry-run` logs what would happen without writing.
 
@@ -43,7 +49,8 @@ delegator-jobs bank-payment-sync --lookback-days 60
 
 Needs the app's `DATABASE_URL` and `REDIS_URL` (live pages hear of the changes) and
 `BUCHHALTUNGSBUTLER_API_CLIENT`, `_API_SECRET`, `_API_KEY` (optional `_API_URL`), see
-`.env.example`. BuchhaltungsButler offers no webhooks and no sandbox; its rate limit (100
+`.env.example`; the URL has to be `https://`, since the requests carry the secret and key.
+BuchhaltungsButler offers no webhooks and no sandbox; its rate limit (100
 requests/minute per customer) is far above what a run needs (one request per 500 transactions).
 
 ## Not covered

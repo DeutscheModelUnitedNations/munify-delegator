@@ -6,49 +6,85 @@ const state = vi.hoisted(() => ({
 	handledBefore: false,
 	lastId: undefined as number | undefined
 }));
+/** What happened, in order: reads, locks, writes, the commit and what was announced. */
+const steps = vi.hoisted(() => new Array<string>());
 const findPayments = vi.hoisted(() => vi.fn());
-const applyPaymentStatus = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+const writePaymentStatus = vi.hoisted(() =>
+	vi.fn(({ payment }: { payment: { paymentFor: { conferenceParticipantId: string }[] } }) => {
+		steps.push('write status');
+		return Promise.resolve(payment.paymentFor.map((p) => p.conferenceParticipantId));
+	})
+);
+const lockPaymentStatus = vi.hoisted(() =>
+	vi.fn(() => {
+		steps.push('lock participants');
+		return Promise.resolve([]);
+	})
+);
 const inserted = vi.hoisted(() => vi.fn());
-const created = vi.hoisted(() => vi.fn());
+const announced = vi.hoisted(() => ({
+	transfers: vi.fn(() => steps.push('announce transfers')),
+	payments: vi.fn(),
+	participants: vi.fn()
+}));
 
-vi.mock('#api/db/db', () => ({
-	schema: { bankTransfer: { id: 'bank_transfer.id' } },
-	db: {
-		query: {
-			paymentTransaction: {
-				findMany: (args: unknown) => {
-					findPayments(args);
-					return Promise.resolve(state.payments);
-				}
-			},
-			bankTransfer: {
-				findFirst: (args: { where?: unknown }) =>
-					Promise.resolve(
-						args.where
-							? state.handledBefore
-								? { id: 'before' }
-								: undefined
-							: state.lastId === undefined
-								? undefined
-								: { externalId: state.lastId }
-					)
+vi.mock('#api/db/db', () => {
+	const query = {
+		paymentTransaction: {
+			findMany: (args: unknown) => {
+				steps.push('read payments');
+				findPayments(args);
+				return Promise.resolve(state.payments);
 			}
+		},
+		bankTransfer: {
+			findFirst: (args: { where?: unknown }) =>
+				Promise.resolve(
+					args.where
+						? state.handledBefore
+							? { id: 'before' }
+							: undefined
+						: state.lastId === undefined
+							? undefined
+							: { externalId: state.lastId }
+				)
+		}
+	};
+	const tx = {
+		query,
+		execute: () => {
+			steps.push('lock transfer');
+			return Promise.resolve();
 		},
 		insert: () => ({
 			values: (values: unknown[]) => {
+				steps.push('record transfer');
 				inserted(values);
-				return {
-					onConflictDoNothing: () => ({
-						returning: () => Promise.resolve(values.map((_, i) => ({ id: `row-${i}` })))
-					})
-				};
+				return Promise.resolve();
 			}
 		})
-	}
+	};
+	return {
+		schema: { bankTransfer: {} },
+		db: {
+			query,
+			transaction: async (run: (t: typeof tx) => unknown) => {
+				const result = await run(tx);
+				steps.push('commit');
+				return result;
+			}
+		}
+	};
+});
+vi.mock('drizzle-orm', () => ({ sql: () => 'sql' }));
+vi.mock('#api/pubsub', () => ({
+	bankTransferPubsub: { created: announced.transfers },
+	paymentTransactionPubsub: { updated: announced.payments },
+	conferenceParticipantPubsub: { updated: announced.participants }
 }));
-vi.mock('#api/pubsub', () => ({ bankTransferPubsub: { created } }));
 vi.mock('#api/handlers/paymentTransaction/paymentTransactionService', () => ({
-	applyPaymentStatus
+	writePaymentStatus,
+	lockPaymentStatus
 }));
 
 const { decideTransfer, handleIncomingTransfer, lastHandledTransferId } =
@@ -147,15 +183,20 @@ describe('handleIncomingTransfer', () => {
 	beforeEach(() => {
 		state.payments = [];
 		state.handledBefore = false;
+		steps.length = 0;
 		vi.clearAllMocks();
 	});
 
-	it('skips a transfer naming no payment, without looking further', async () => {
+	it('skips a transfer without a reference-shaped string, without looking further', async () => {
 		expect(await handleIncomingTransfer({ transfer: { ...transfer, purpose: 'Miete' } })).toEqual({
 			kind: 'noReference'
 		});
 		expect(findPayments).not.toHaveBeenCalled();
-		expect(applyPaymentStatus).not.toHaveBeenCalled();
+	});
+
+	it('skips a transfer naming no payment, without a transaction', async () => {
+		expect(await handleIncomingTransfer({ transfer })).toEqual({ kind: 'noReference' });
+		expect(steps).toEqual(['read payments']);
 	});
 
 	it('looks the candidates of the purpose up as payment ids', async () => {
@@ -165,18 +206,34 @@ describe('handleIncomingTransfer', () => {
 		);
 	});
 
-	it('marks a fitting payment received on the booking day and records the transfer', async () => {
+	it('settles in one transaction: lock, re-read under the locks, write, record, then announce', async () => {
 		const open = payment({ id: REFERENCE });
 		state.payments = [open];
 		expect(await handleIncomingTransfer({ transfer })).toEqual({
 			kind: 'handled',
 			results: [{ paymentId: REFERENCE, result: 'RECEIVED' }]
 		});
-		expect(applyPaymentStatus).toHaveBeenCalledWith({
-			payment: open,
-			assignedStatus: 'DONE',
-			recievedAt: transfer.bookedAt
-		});
+		expect(steps).toEqual([
+			'read payments',
+			'lock transfer',
+			'read payments',
+			'lock participants',
+			'read payments',
+			'write status',
+			'record transfer',
+			'commit',
+			'announce transfers'
+		]);
+		expect(lockPaymentStatus).toHaveBeenCalledWith(
+			expect.objectContaining({ participantIds: [`${REFERENCE}-p0`] })
+		);
+		expect(writePaymentStatus).toHaveBeenCalledWith(
+			expect.objectContaining({
+				payment: open,
+				assignedStatus: 'DONE',
+				recievedAt: transfer.bookedAt
+			})
+		);
 		expect(inserted).toHaveBeenCalledWith([
 			{
 				externalId: 42,
@@ -186,26 +243,30 @@ describe('handleIncomingTransfer', () => {
 				result: 'RECEIVED'
 			}
 		]);
-		expect(created).toHaveBeenCalled();
+		expect(announced.payments).toHaveBeenCalledWith([REFERENCE]);
+		expect(announced.participants).toHaveBeenCalledWith([`${REFERENCE}-p0`]);
 	});
 
 	it('flags everybody a mismatching payment covers for review, without a date', async () => {
 		const open = payment({ id: REFERENCE });
 		state.payments = [open];
 		await handleIncomingTransfer({ transfer: { ...transfer, amount: 20 } });
-		expect(applyPaymentStatus).toHaveBeenCalledWith({
-			payment: open,
-			assignedStatus: 'NEEDS_HUMAN_REVIEW',
-			recievedAt: undefined
-		});
+		expect(writePaymentStatus).toHaveBeenCalledWith(
+			expect.objectContaining({
+				payment: open,
+				assignedStatus: 'NEEDS_HUMAN_REVIEW',
+				recievedAt: undefined
+			})
+		);
 	});
 
-	it('does nothing for a transfer it handled before', async () => {
+	it('does nothing for a transfer it handled before, checked under the transfer lock', async () => {
 		state.payments = [payment({ id: REFERENCE })];
 		state.handledBefore = true;
 		expect(await handleIncomingTransfer({ transfer })).toEqual({ kind: 'handledBefore' });
-		expect(applyPaymentStatus).not.toHaveBeenCalled();
-		expect(inserted).not.toHaveBeenCalled();
+		expect(steps).toEqual(['read payments', 'lock transfer', 'commit']);
+		expect(writePaymentStatus).not.toHaveBeenCalled();
+		expect(announced.transfers).not.toHaveBeenCalled();
 	});
 
 	it('only tells what it would do on a dry run', async () => {
@@ -214,7 +275,8 @@ describe('handleIncomingTransfer', () => {
 			kind: 'handled',
 			results: [{ paymentId: REFERENCE, result: 'RECEIVED' }]
 		});
-		expect(applyPaymentStatus).not.toHaveBeenCalled();
+		expect(steps).toEqual(['read payments']);
+		expect(writePaymentStatus).not.toHaveBeenCalled();
 		expect(inserted).not.toHaveBeenCalled();
 	});
 });

@@ -71,7 +71,7 @@ export function createBuchhaltungsButlerClient({
 	return {
 		/**
 		 * One page of the bank transactions booked on or after `dateFrom` (`YYYY-MM-DD`), of every
-		 * account, and with `afterId` only those after that id, in id order.
+		 * account, after the id `afterId` (all of them without one), in id order.
 		 */
 		async transactions({
 			dateFrom,
@@ -86,7 +86,9 @@ export function createBuchhaltungsButlerClient({
 		}): Promise<BankTransaction[]> {
 			const json = await call('/transactions/get', {
 				date_from: dateFrom,
-				...(afterId === undefined ? {} : { id_by_customer_from: afterId }),
+				// always given, so the API answers in id order (it promises that only with the filter);
+				// ids are positive and the filter exclusive, so 0 leaves nothing out
+				id_by_customer_from: afterId ?? 0,
 				limit,
 				offset
 			});
