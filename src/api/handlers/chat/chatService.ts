@@ -395,7 +395,7 @@ export function sameInbox({
  * The account behind a trusted person as `chatInboxes` names them (their function's id); CONFLICT
  * when nobody of the conference is that trusted person (any more).
  */
-export async function trustedUserIdOf({
+async function trustedUserIdOf({
 	conferenceId,
 	trustedPersonId
 }: {
@@ -409,6 +409,51 @@ export async function trustedUserIdOf({
 	});
 	if (!held) throw apiError({ code: 'CONFLICT', message: m.chatInboxNotAvailable() });
 	return held.teamMember.userId;
+}
+
+/** A team inbox of a conference as `openTeamChat` names it. */
+export interface TeamChatTarget {
+	conferenceId: string;
+	inbox: ChatInbox;
+	committeeId: string | null;
+	roleId: string | null;
+	trustedUserId: string | null;
+}
+
+/**
+ * The inbox `openTeamChat`'s arguments name, with the one trusted person resolved to their
+ * account (`trustedUserIdOf`).
+ */
+export async function teamChatTarget(args: {
+	conferenceId: string;
+	inbox: ChatInbox;
+	committeeId?: string | null;
+	roleId?: string | null;
+	trustedPersonId?: string | null;
+}): Promise<TeamChatTarget> {
+	const { conferenceId, inbox, trustedPersonId } = args;
+	return {
+		conferenceId,
+		inbox,
+		committeeId: args.committeeId ?? null,
+		roleId: args.roleId ?? null,
+		trustedUserId: trustedPersonId ? await trustedUserIdOf({ conferenceId, trustedPersonId }) : null
+	};
+}
+
+/** Who writes a message, by the caller's side of the chat: a party as themselves, else the team. */
+export function messageAuthor({
+	side,
+	participantId,
+	userId
+}: {
+	side: 'PARTICIPANT' | 'TEAM';
+	participantId: string | null;
+	userId: string;
+}): MessageAuthor {
+	return side === 'PARTICIPANT' && participantId
+		? { side: 'PARTICIPANT', participantId, userId }
+		: { side: 'TEAM', userId };
 }
 
 /** Who writes a message: a participant as their part in the conference, or a team member from the inbox. */

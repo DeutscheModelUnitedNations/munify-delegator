@@ -6,6 +6,7 @@ import {
 	inboxKey,
 	inboxesOf,
 	listedChats,
+	teamInboxName,
 	unreadByInbox
 } from './teamInboxes';
 
@@ -279,5 +280,23 @@ describe('the groups and the inboxes of custom roles', () => {
 		expect(inboxKey({ kind: 'TEAM', inbox: 'ROLE_SUPPORT', roleId: 'press' })).toBe(
 			'ROLE_SUPPORT:role:press'
 		);
+	});
+});
+
+describe('teamInboxName', () => {
+	test('names groups, role inboxes and committee inboxes in full', () => {
+		const [roleInbox, committeeGroup, roleGroup] = inboxesOf({
+			cares: false,
+			functions: [
+				{ kind: 'ROLE_SUPPORT', committeeId: null, roleId: 'press', role: { name: 'Presse' } },
+				fn('CHAIR', 'ga', 'GV')
+			]
+		}).filter((inbox) => inbox.inbox !== 'CHAIR');
+		expect(roleInbox && teamInboxName(roleInbox)).toBe('Betreuung Presse');
+		expect(committeeGroup && teamInboxName(committeeGroup)).toBe('Gruppe GV');
+		expect(roleGroup && teamInboxName(roleGroup)).toBe('Gruppe Presse');
+		expect(
+			teamInboxName({ key: 'CHAIR:ga', inbox: 'CHAIR', committeeAbbreviation: 'GV', own: false })
+		).toBe('Vorsitz · GV');
 	});
 });

@@ -25,7 +25,7 @@ import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { isGroupChat, type ChatInbox, type ChatSide } from '#lib/helpers/chat';
 import { hasAcceptedTerms } from '#api/handlers/messagingTerms/messagingTermsService';
-import type { ChatRow } from './chatService';
+import type { ChatRow, InboxOption, TeamChatTarget } from './chatService';
 
 /**
  * Who reads which chat. A chat is read by its parties: the two people of a direct chat, the
@@ -536,7 +536,7 @@ export async function assertDelegationMember({
 }
 
 /** Refuses (FORBIDDEN) unless the caller answers the inbox (`holdsInbox`). */
-export async function assertHoldsInbox({
+async function assertHoldsInbox({
 	ctx,
 	conferenceId,
 	inbox,
@@ -685,4 +685,45 @@ export async function assertCanMuteChat({ ctx, id }: { ctx: ApiContext; id: stri
 		throw apiError({ code: 'FORBIDDEN', message: m.chatOnlyGroupsCanBeMuted() });
 	}
 	return found;
+}
+
+/** The inboxes of `options` the caller answers (`holdsInbox`), for a team member writing to somebody. */
+export function inboxesHeldBy({
+	ctx,
+	facts,
+	conferenceId,
+	options
+}: RuleArgs & { conferenceId: string; options: readonly InboxOption[] }) {
+	return options.filter((option) =>
+		holdsInbox({
+			ctx,
+			facts,
+			conferenceId,
+			inbox: option.inbox,
+			committeeId: option.committee?.id ?? null,
+			roleId: option.role?.id ?? null,
+			trustedUserId: option.person?.userId ?? null
+		})
+	);
+}
+
+/**
+ * Who a team chat is opened for: with `participantId` a team member opens that person's chat with
+ * an inbox they answer (FORBIDDEN otherwise), without it a participant opens their own. Returns the
+ * participant row.
+ */
+export async function assertCanOpenTeamChat({
+	ctx,
+	target,
+	participantId
+}: {
+	ctx: ApiContext;
+	target: TeamChatTarget;
+	participantId?: string | null;
+}) {
+	if (!participantId) {
+		return assertWritingParticipant({ ctx, conferenceId: target.conferenceId });
+	}
+	await assertHoldsInbox({ ctx, ...target });
+	return participantId;
 }

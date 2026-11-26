@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from '#api/db/db';
-import { oldestUnreadPerMember } from './unreadInboxes';
+import { oldestPerReader, oldestUnreadPerMember } from './unreadInboxes';
 import { preferencesOfMembers } from '#api/handlers/notification/notificationStore';
 import {
 	hearsOfReports,
@@ -176,17 +176,6 @@ export async function loadUnreadOfTeam({
 				: [];
 		})
 	]);
-}
-
-/** Of several unread messages per team member, the oldest. */
-function oldestPerReader(unread: SnapshotUnreadMessage[]): SnapshotUnreadMessage[] {
-	const oldest = new Map<string, SnapshotUnreadMessage>();
-	for (const one of unread) {
-		const reader = 'teamMemberId' in one.reader ? one.reader.teamMemberId : '';
-		const known = oldest.get(reader);
-		if (!known || one.writtenAt < known.writtenAt) oldest.set(reader, one);
-	}
-	return [...oldest.values()];
 }
 
 /**

@@ -72,3 +72,14 @@ export function oldestUnreadPerMember({
 		reader: { teamMemberId }
 	}));
 }
+
+/** Of several unread messages per team member, the oldest. */
+export function oldestPerReader(unread: SnapshotUnreadMessage[]): SnapshotUnreadMessage[] {
+	const oldest = new Map<string, SnapshotUnreadMessage>();
+	for (const one of unread) {
+		const reader = 'teamMemberId' in one.reader ? one.reader.teamMemberId : '';
+		const known = oldest.get(reader);
+		if (!known || one.writtenAt < known.writtenAt) oldest.set(reader, one);
+	}
+	return [...oldest.values()];
+}

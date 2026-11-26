@@ -6,7 +6,7 @@ import { callerFacts, refreshCallerAbilities } from '#api/services/authHelper/ca
 import { isSystemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { chatPubsub, teamFunctionPubsub } from '#api/pubsub';
-import { isGroupChat, messagePreview, type ChatInbox } from '#lib/helpers/chat';
+import { isGroupChat, messagePreview } from '#lib/helpers/chat';
 import { m } from '#lib/paraglide/messages';
 import { conferenceContacts, type Contact } from './chatContacts';
 import { hideChatMessages, hideReasonSchema, type HideTarget } from './chatModeration';
@@ -18,7 +18,8 @@ import {
 	assertCanModerateMessage,
 	assertCanSuspend,
 	assertDelegationMember,
-	assertHoldsInbox,
+	assertCanOpenTeamChat,
+	inboxesHeldBy,
 	assertAcceptedTerms,
 	assertAnswersInboxOfChat,
 	assertPartyOfChat,
@@ -26,7 +27,6 @@ import {
 	assertWritingParticipant,
 	chatSide,
 	groupIdsIn,
-	holdsInbox,
 	knowsPeopleOf,
 	readableChat,
 	registerChatAbilities,
@@ -57,7 +57,8 @@ import {
 	unreadCount,
 	personOfParticipant,
 	earlierReportCount,
-	trustedUserIdOf,
+	messageAuthor,
+	teamChatTarget,
 	userNameOf,
 	type ChatRow,
 	type InboxOption
@@ -559,17 +560,7 @@ schemaBuilder.queryFields((t) => ({
 				participantId
 			});
 			const options = args.participantId
-				? reaching.filter(({ inbox, committee, role, person }) =>
-						holdsInbox({
-							ctx,
-							facts,
-							conferenceId: args.conferenceId,
-							inbox,
-							committeeId: committee?.id ?? null,
-							roleId: role?.id ?? null,
-							trustedUserId: person?.userId ?? null
-						})
-					)
+				? inboxesHeldBy({ ctx, facts, conferenceId: args.conferenceId, options: reaching })
 				: reaching;
 			const chats = await db.query.chat.findMany({
 				where: { kind: 'TEAM', participantId, conferenceId: args.conferenceId },
@@ -668,37 +659,13 @@ schemaBuilder.mutationFields((t) => {
 				participantId: t.arg.id()
 			},
 			resolve: async (select, _root, args, ctx) => {
-				const inbox: ChatInbox = args.inbox;
-				const committeeId = args.committeeId ?? null;
-				const roleId = args.roleId ?? null;
-				const trustedUserId = args.trustedPersonId
-					? await trustedUserIdOf({
-							conferenceId: args.conferenceId,
-							trustedPersonId: args.trustedPersonId
-						})
-					: null;
-				let participantId: string;
-				if (args.participantId) {
-					await assertHoldsInbox({
-						ctx,
-						conferenceId: args.conferenceId,
-						inbox,
-						committeeId,
-						roleId,
-						trustedUserId
-					});
-					participantId = args.participantId;
-				} else {
-					participantId = await assertWritingParticipant({ ctx, conferenceId: args.conferenceId });
-				}
-				const chat = await openTeamChat({
-					conferenceId: args.conferenceId,
-					participantId,
-					inbox,
-					committeeId,
-					roleId,
-					trustedUserId
+				const target = await teamChatTarget(args);
+				const participantId = await assertCanOpenTeamChat({
+					ctx,
+					target,
+					participantId: args.participantId
 				});
+				const chat = await openTeamChat({ ...target, participantId });
 				await refreshCallerAbilities(ctx);
 				return db.query.chat
 					.findFirst(select(await readableChatQuery({ ctx, id: chat.id })))
@@ -761,10 +728,7 @@ schemaBuilder.mutationFields((t) => {
 				if (side === 'PARTICIPANT') await assertAcceptedTerms(userId);
 				const id = await sendMessage({
 					chat,
-					author:
-						side === 'PARTICIPANT' && participantId
-							? { side: 'PARTICIPANT', participantId, userId }
-							: { side: 'TEAM', userId },
+					author: messageAuthor({ side, participantId, userId }),
 					body: args.body.trim(),
 					paperId: args.paperId ?? null,
 					origin: ctx.requestUrl().origin

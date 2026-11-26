@@ -80,6 +80,26 @@ describe('participantCandidates', () => {
 		expect(render(filter(['APPLICATION_DEADLINE_REMINDER'])).sql).toBe('false');
 	});
 
+	test('reminds of open issues shortly before the start, while something can still be open', () => {
+		const soon = { startConference: new Date(now.getTime() + 5 * DAY) };
+		expect(render(filter(['OPEN_ISSUES_REMINDER'], soon)).sql).toBe('false');
+		expect(kindsIn(filter(['OPEN_ISSUES_REMINDER'], { ...soon, unlockPayments: true }))).toEqual(
+			new Set(['OPEN_ISSUES_REMINDER'])
+		);
+		expect(
+			kindsIn(
+				filter(['OPEN_ISSUES_REMINDER'], { ...soon, unlockPayments: true, unlockPostals: true })
+			)
+		).toEqual(new Set(['OPEN_ISSUES_REMINDER']));
+		expect(render(filter(['OPEN_ISSUES_REMINDER'], { unlockPayments: true })).sql).toBe('false');
+	});
+
+	test('counts the groups of a seat among the chats with unread messages', () => {
+		const { sql } = render(filter(['UNREAD_MESSAGES']));
+		expect(sql).toMatch(/c\.kind = 'COMMITTEE'/);
+		expect(sql).toMatch(/c\.kind = 'ROLE'/);
+	});
+
 	test('gives up on a mail only after the last try', () => {
 		const { sql, params } = render(filter(['PAPER_REVIEWED']));
 		expect(sql).toMatch(/l\.status in \('SENT', 'SKIPPED'\)/);

@@ -20,6 +20,7 @@ const {
 	chatSide,
 	groupIdsIn,
 	holdsInbox,
+	inboxesHeldBy,
 	knowsPeopleOf,
 	writingParticipantId
 } = await import('./chatPermissions');
@@ -428,5 +429,19 @@ describe('the groups of committees and custom roles', () => {
 		expect(holdsInbox({ ctx, facts: chair, ...roleInbox, roleId: 'press' })).toBe(false);
 		const inboxChat = { ...teamChat, inbox: 'ROLE_SUPPORT' as const, committeeId: null };
 		expect(chatSide({ ctx, facts: support, chat: { ...inboxChat, roleId: 'press' } })).toBe('TEAM');
+	});
+});
+
+describe('inboxesHeldBy', () => {
+	test('keeps the inboxes the caller answers', () => {
+		const ctx = contextFor({ sub: 'u' });
+		const option = (inbox: 'CHAIR' | 'CONSULTANT', committeeId: string) => ({
+			inbox,
+			committee: { id: committeeId, abbreviation: committeeId, name: committeeId },
+			role: null,
+			person: null
+		});
+		const options = [option('CHAIR', 'ga'), option('CONSULTANT', 'ga'), option('CHAIR', 'sc')];
+		expect(inboxesHeldBy({ ctx, facts: chair, conferenceId: 'c1', options })).toEqual([options[0]]);
 	});
 });
