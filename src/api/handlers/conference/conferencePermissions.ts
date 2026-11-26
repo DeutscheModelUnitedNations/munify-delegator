@@ -110,6 +110,7 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'certificateFileId',
 	'state',
 	'unlockPayments',
+	'paymentDeadline',
 	'unlockPostals',
 	'isOpenPaperSubmission',
 	'showCalendar',

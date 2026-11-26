@@ -194,6 +194,11 @@ schemaBuilder.mutationFields((t) => ({
 			unlockPayments: t.arg.boolean(),
 			unlockPostals: t.arg.boolean(),
 			feeAmount: t.arg.float().validate(conferenceSettingSchemas.feeAmount),
+			paymentDeadline: t.arg({
+				type: 'DateTime',
+				description:
+					'Until when the fee is to be paid; shown on the payment page and reminded of by mail. `null` clears it.'
+			}),
 			bankAccountHolder: t.arg.string(),
 			iban: t.arg.string(),
 			bic: t.arg.string(),

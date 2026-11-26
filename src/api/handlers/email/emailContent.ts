@@ -244,6 +244,13 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 		},
 		button: dashboard
 	}),
+	PAYMENT_DEADLINE_REMINDER: ({ conference, origin }) => ({
+		values: { date: conference.paymentDeadline ? day(conference.paymentDeadline) : '' },
+		button: {
+			label: m.emailAutoPaymentReminderButton(),
+			url: `${origin}/dashboard/${conference.id}/payment`
+		}
+	}),
 	OPEN_ISSUES_REMINDER: ({ conference, dashboard }) => ({
 		values: { date: day(conference.startConference) },
 		items: [

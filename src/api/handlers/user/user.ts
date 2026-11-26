@@ -7,6 +7,7 @@ import { identityOf } from '#api/handlers/auth/authService';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
 import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
+	completePaymentGuide,
 	completePostalGuide,
 	countConferenceParticipations,
 	profileArgsSchema,
@@ -232,6 +233,20 @@ schemaBuilder.mutationFields((t) => {
 			resolve: async (query, _root, _args, ctx) => {
 				const id = assertCanCompletePostalGuide(ctx);
 				await completePostalGuide(id);
+
+				return db.query.user
+					.findFirst(query(await allowedUser({ ctx, id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		completePaymentGuide: t.drizzleField({
+			description:
+				'The caller watched the guide to transferring the fee to its end, so they may skip it from now on (`User.paymentGuideCompletedAt`, which keeps the first time). FORBIDDEN for an AI assistant and while impersonating.',
+			type: UserRef,
+			resolve: async (query, _root, _args, ctx) => {
+				const id = assertCanCompletePostalGuide(ctx);
+				await completePaymentGuide(id);
 
 				return db.query.user
 					.findFirst(query(await allowedUser({ ctx, id })))
