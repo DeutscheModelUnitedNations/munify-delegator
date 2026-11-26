@@ -166,7 +166,8 @@ const PARTICIPANT_PREDICATES: Record<
 	>,
 	Predicate
 > = {
-	// A message of one of the person's chats they have not read and were not told about. The
+	// A message of one of the person's chats (their groups included) they have not read and were
+	// not told about. The
 	// quarter of an hour it has to wait, and that only the oldest one counts, is `dueEmails`'.
 	UNREAD_MESSAGES: (ctx) => sql`exists (
 				select 1 from chat c
@@ -178,7 +179,16 @@ const PARTICIPANT_PREDICATES: Record<
 						or (c.kind = 'DELEGATION' and exists (
 							select 1 from delegation_member cdm
 							where cdm.delegation_id = c.delegation_id
-								and cdm.conference_participant_id = ${ctx.id})))
+								and cdm.conference_participant_id = ${ctx.id}))
+						-- the groups of their seat; whether they are open to them is decided by the loader
+						or (c.kind = 'COMMITTEE' and exists (
+							select 1 from delegation_member gdm
+							where gdm.assigned_committee_id = c.committee_id
+								and gdm.conference_participant_id = ${ctx.id}))
+						or (c.kind = 'ROLE' and exists (
+							select 1 from single_participant gsp
+							where gsp.assigned_role_id = c.role_id
+								and gsp.conference_participant_id = ${ctx.id})))
 					and (cr.read_at is null or m.created_at > cr.read_at)
 					and ${ctx.open({ kind: 'UNREAD_MESSAGES', key: sql`m.id` })})`,
 	DELEGATION_CREATED: (ctx) =>
