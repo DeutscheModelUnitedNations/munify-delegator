@@ -176,11 +176,10 @@ test('a batch of scans marks a signed contract in, unattended, and ignores pages
 	});
 	expect((await gracePaper(page)).postalScans).toHaveLength(1);
 
-	// on her card: the scan, and the details behind a fold, which can be set by hand
+	// on her card: the scan, and the details in a tab of their own, which can be set by hand
 	await page.goto(`/dashboard/${conferenceId}/team/user/${E2E_PAPER_GRACE_ID}`);
 	await waitForHydration(page);
 	await page.getByRole('tab', { name: /formalitäten|formalities/i }).click();
-	await page.getByRole('button', { name: /^scans/i }).click();
 	const scans = page.getByRole('list', { name: /scans der unterlagen|scans of the documents/i });
 	await expect(scans.getByText('stapel_1.pdf')).toBeVisible();
 	const terms = (state: string) =>
@@ -188,7 +187,9 @@ test('a batch of scans marks a signed contract in, unattended, and ignores pages
 			name: new RegExp(`^(vertragsbedingungen akzeptiert|.*terms.*): (${state})$`, 'i')
 		});
 	await expect(terms('.*')).toHaveCount(0);
-	await page.getByText(/details der einwilligungen|details of the agreements/i).click();
+	await page
+		.getByRole('tab', { name: /details der einwilligungen|details of the agreements/i })
+		.click();
 	await terms('ja|yes').click();
 	await page
 		.locator('[popover]:popover-open')
@@ -204,6 +205,7 @@ test('a batch of scans marks a signed contract in, unattended, and ignores pages
 	// the status is the team's own
 	expect(await graceStatus(page)).toBe('DONE');
 
+	await page.getByRole('tab', { name: /^scans$/i }).click();
 	await scans.getByRole('button', { name: /löschen|delete/i }).click();
 	await page
 		.getByRole('dialog')
