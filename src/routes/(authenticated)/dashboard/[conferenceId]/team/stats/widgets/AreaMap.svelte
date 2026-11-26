@@ -14,7 +14,7 @@
 	import { mapStyle } from '#lib/components/map/mapStyle.svelte.js';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { alpha3ToAlpha2 } from '#lib/helpers/countryCodes';
-	import type { ZipArea } from './mapAreas';
+	import { clickedAreas, type ZipArea } from './mapAreas';
 
 	// A component of its own on purpose: inside `Maps.svelte` the layers would read the awaited
 	// `stats`, and Svelte (5.57) wraps such reads in an async block that never renders when it
@@ -100,16 +100,19 @@
 			}}
 		>
 			<Popup openOn="click">
-				{#snippet children({ data })}
-					{#if data?.properties}
-						{#if data.properties.zipPrefix}
-							<strong>{m.zipCode()}: {data.properties.zipPrefix}xx</strong><br />
-						{:else}
-							<strong>{countryName(data.properties.country)}</strong><br />
-							{m.statsZipAreaUnknown()}<br />
-						{/if}
-						{m.participants()}: {data.properties.count}
-					{/if}
+				<!-- Every area under the click: some ZIP areas share their centre, no zoom splits them. -->
+				{#snippet children({ features })}
+					{#each clickedAreas(features) as area, index (`${area.country}:${area.zipPrefix}`)}
+						<p class:mt-2={index > 0}>
+							{#if area.zipPrefix}
+								<strong>{m.zipCode()}: {area.zipPrefix}xx</strong><br />
+							{:else}
+								<strong>{countryName(area.country)}</strong><br />
+								{m.statsZipAreaUnknown()}<br />
+							{/if}
+							{m.participants()}: {area.count}
+						</p>
+					{/each}
 				{/snippet}
 			</Popup>
 		</CircleLayer>

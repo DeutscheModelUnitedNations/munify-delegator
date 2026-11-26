@@ -33,3 +33,29 @@ export function mapAreas(addresses: Address[]): FeatureCollection<Point, ZipArea
 	}
 	return { type: 'FeatureCollection', features: [...points.values()] };
 }
+
+function isZipArea(value: unknown): value is ZipArea {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		'country' in value &&
+		typeof value.country === 'string' &&
+		'zipPrefix' in value &&
+		typeof value.zipPrefix === 'string' &&
+		'count' in value &&
+		typeof value.count === 'number'
+	);
+}
+
+/**
+ * The areas of the features under a click, each once (MapLibre can report a feature once per
+ * tile it touches). Several ZIP areas can share a centre, so a click may hit more than one.
+ */
+export function clickedAreas(features: { properties?: unknown }[] | undefined): ZipArea[] {
+	const areas = new Map<string, ZipArea>();
+	for (const { properties } of features ?? []) {
+		if (isZipArea(properties))
+			areas.set(`${properties.country}:${properties.zipPrefix}`, properties);
+	}
+	return [...areas.values()];
+}

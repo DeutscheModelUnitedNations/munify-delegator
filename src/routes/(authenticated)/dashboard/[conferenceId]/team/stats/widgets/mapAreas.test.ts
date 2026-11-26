@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { mapAreas } from './mapAreas';
+import { clickedAreas, mapAreas } from './mapAreas';
 
 const row = (over: Partial<Parameters<typeof mapAreas>[0][number]>) => ({
 	country: 'DEU',
@@ -46,5 +46,25 @@ describe('mapAreas', () => {
 		expect(features.map((f) => f.properties)).toEqual([
 			{ country: 'GBR', zipPrefix: 'SW1', count: 5 }
 		]);
+	});
+});
+
+describe('clickedAreas', () => {
+	test('lists every area under the click once', () => {
+		const albania100 = { country: 'ALB', zipPrefix: '100', count: 2 };
+		const albania101 = { country: 'ALB', zipPrefix: '101', count: 1 };
+		expect(
+			clickedAreas([
+				{ properties: albania100 },
+				{ properties: albania101 },
+				{ properties: albania100 },
+				{ properties: { cluster_id: 4 } },
+				{}
+			])
+		).toEqual([albania100, albania101]);
+	});
+
+	test('nothing clicked is no area', () => {
+		expect(clickedAreas(undefined)).toEqual([]);
 	});
 });
