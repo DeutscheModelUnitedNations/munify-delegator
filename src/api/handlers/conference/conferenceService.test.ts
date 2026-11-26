@@ -68,7 +68,19 @@ const { writes, published, tx, stored } = vi.hoisted(() => {
 });
 
 vi.mock('#api/db/db', async () => ({
-	db: { query: tx.query, transaction: (run: (t: typeof tx) => unknown) => run(tx) },
+	db: {
+		query: tx.query,
+		// A refused change rolls back, as the database does: the row is what it was before
+		transaction: async (run: (t: typeof tx) => unknown) => {
+			const before = stored.row;
+			try {
+				return await run(tx);
+			} catch (error) {
+				stored.row = before;
+				throw error;
+			}
+		}
+	},
 	schema: await import('#api/db/schema/index')
 }));
 vi.mock('#api/pubsub', () => ({
@@ -184,6 +196,7 @@ describe('updateConference', () => {
 		await expect(updateConference({ id: 'c', unlockPayments: true })).rejects.toMatchObject({
 			extensions: { code: 'CONFLICT' }
 		});
+		expect(stored.row).toEqual(nothingSetUp);
 		expect(published).toEqual([]);
 	});
 
@@ -198,6 +211,7 @@ describe('updateConference', () => {
 		await expect(updateConference({ id: 'c', iban: null })).rejects.toMatchObject({
 			extensions: { code: 'CONFLICT' }
 		});
+		expect(stored.row).toEqual({ ...nothingSetUp, ...bankDetails, unlockPayments: true });
 		await updateConference({ id: 'c', unlockPayments: false, iban: null });
 		expect(stored.row).toMatchObject({ unlockPayments: false, iban: null });
 	});
@@ -206,6 +220,7 @@ describe('updateConference', () => {
 		await expect(updateConference({ id: 'c', showCalendar: true })).rejects.toMatchObject({
 			extensions: { code: 'CONFLICT' }
 		});
+		expect(stored.row).toEqual(nothingSetUp);
 		stored.content = { agendaItem: true, calendarDay: true, guide: true };
 		await updateConference({
 			id: 'c',
