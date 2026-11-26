@@ -85,6 +85,13 @@ test('everybody is offered exactly the topics they can be told about, all on', a
 			teamFunctionId: fixture.chairFunctionId,
 			functionKind: 'CHAIR',
 			committeeAbbreviation: fixture.gv
+		}),
+		// the chair is in the committee's group too, by the same function
+		expect.objectContaining({
+			topic: 'CHAT_GROUP',
+			teamFunctionId: fixture.chairFunctionId,
+			functionKind: 'CHAIR',
+			committeeAbbreviation: fixture.gv
 		})
 	]);
 
