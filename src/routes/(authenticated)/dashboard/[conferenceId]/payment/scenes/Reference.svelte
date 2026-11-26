@@ -6,6 +6,7 @@
 	import AccountDisplay from './AccountDisplay.svelte';
 	import Coin from './Coin.svelte';
 	import Phone from './Phone.svelte';
+	import ReferenceCode from './ReferenceCode.svelte';
 </script>
 
 <Scene>
@@ -18,7 +19,7 @@
 			/>
 			<g class="reference">
 				<rect x="72" y="114" width="68" height="12" rx="2" class="marked" />
-				<text x="106" y="123" class="code">K7MX-3RPA-…</text>
+				<ReferenceCode x={106} y={123} />
 			</g>
 		{/snippet}
 	</Phone>
@@ -40,14 +41,6 @@
 
 	.marked {
 		fill: color-mix(in oklab, var(--color-primary) 18%, var(--paper));
-	}
-
-	.code {
-		font-family: ui-monospace, monospace;
-		font-size: 8.5px;
-		font-weight: 700;
-		text-anchor: middle;
-		fill: var(--ink);
 	}
 
 	.reference {

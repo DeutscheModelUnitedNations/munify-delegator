@@ -3,8 +3,8 @@
 	import { m } from '#lib/paraglide/messages';
 	import PostalGuide from '#lib/components/postalGuide/PostalGuide.svelte';
 	import { createGuideProgress } from '#lib/components/postalGuide/guideProgress.svelte.js';
-	import PaymentGuideFinale from './PaymentGuideFinale.svelte';
 	import { PAYMENT_GUIDE_DURATIONS, PAYMENT_GUIDE_STEPS } from './paymentGuideSteps';
+	import Finale from './scenes/Finale.svelte';
 
 	/**
 	 * The payment guide as a step of the page: how to transfer the fee so it can be matched. Whoever
@@ -29,7 +29,7 @@
 <PostalGuide
 	{progress}
 	steps={PAYMENT_GUIDE_STEPS}
-	finale={PaymentGuideFinale}
+	finale={Finale}
 	doneTitle={m.paymentGuideDoneTitle()}
 	closingWarning={m.paymentGuideWarning()}
 	{onComplete}

@@ -17,10 +17,8 @@ import { SCENE_MS } from './timing';
 /** One step of an animated guide (`PostalGuide`, and the payment guide that shares its frame). */
 export interface GuideStep {
 	id: string;
-	/** The looping animation; a step without one shows `icon` in its place until it has one. */
-	scene?: Component;
-	/** Phosphor name of the stand-in for a scene still to be drawn. */
-	icon?: string;
+	/** The looping animation (`scenes/Scene`). */
+	scene: Component;
 	title: () => string;
 	text: () => string;
 	/** Highlighted below the text. */

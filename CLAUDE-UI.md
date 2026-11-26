@@ -145,9 +145,9 @@ steps stay in the page.
 
 `#lib/components/postalGuide/`: what whoever downloads postal documents watches first, animated step
 by step (`PostalGuide`). The payment guide (`dashboard/[conferenceId]/payment/PaymentHints`) shares its
-frame: `PostalGuide` takes `steps`, `finale`, `doneTitle` and `closingWarning`, and a step without a
-`scene` shows its `icon` breathing on the stage (`ScenePlaceholder`) until its animation is drawn
-(`plannedScene` in `paymentGuideSteps.ts` says what it is to show). Mandatory once per account there too
+frame: `PostalGuide` takes `steps`, `finale`, `doneTitle` and `closingWarning`; its scenes
+(`payment/scenes/`) put a bank (`AccountDisplay`) where the postal ones have the scanner, and share
+`Scene`, `Strike`, `Check`, `ScreenSigns` and `Jam` with them. Mandatory once per account there too
 (`user.paymentGuideCompletedAt`). A step of the postal registration page
 (`SendingHints`); elsewhere (supervisors) `passPostalGuide()` (`#lib/state/postalGuide`), which
 `downloadPostalRegistration` calls, opens it as a dialog (`PostalGuideHost` in the authenticated layout).

@@ -15,7 +15,6 @@
 	import GuideWarning from './GuideWarning.svelte';
 	import type { GuideProgress } from './guideProgress.svelte.js';
 	import Finale from './scenes/Finale.svelte';
-	import ScenePlaceholder from './ScenePlaceholder.svelte';
 	import { GUIDE_STEPS, type GuideStep } from './steps';
 
 	type FooterProps = ComponentProps<typeof GuideFooter>;
@@ -101,10 +100,8 @@
 		class="bg-base-200 relative mx-auto max-w-xl overflow-hidden rounded-box"
 		data-paused={paused}
 	>
-		{#if step?.scene}
+		{#if step}
 			<step.scene />
-		{:else if step}
-			<ScenePlaceholder icon={step.icon ?? 'info'} />
 		{:else}
 			<FinaleScene />
 		{/if}
