@@ -205,6 +205,65 @@ export async function applyPaymentStatus({
 }
 
 /**
+ * Who a payment whose money arrived only in part settles: `paidFor` (participant row ids) become
+ * `DONE`, everybody else it covers goes back to `PENDING` to pay anew. `whole` when that is
+ * everybody, so the payment counts as received. Undefined for a `paidFor` that is empty or names
+ * somebody the payment does not cover.
+ */
+export function partialReceipt({
+	covered,
+	paidFor
+}: {
+	covered: readonly string[];
+	paidFor: readonly string[];
+}): { done: string[]; pending: string[]; whole: boolean } | undefined {
+	const paid = new Set(paidFor);
+	if (paid.size === 0 || [...paid].some((id) => !covered.includes(id))) return undefined;
+	const done = covered.filter((id) => paid.has(id));
+	const pending = covered.filter((id) => !paid.has(id));
+	return { done, pending, whole: pending.length === 0 };
+}
+
+/**
+ * Marks only some of the people a payment covers paid (`partialReceipt`), as when a transfer
+ * brought less than the payment's amount: they become `DONE`, the others `PENDING`. With everybody
+ * named it is `applyPaymentStatus(DONE)` and the payment is received on `recievedAt`; otherwise
+ * the payment itself stays open. INVALID_INPUT for an empty selection or somebody not covered.
+ */
+export async function receivePaymentFor({
+	payment,
+	paidFor,
+	recievedAt
+}: {
+	payment: { id: string; paymentFor: { conferenceParticipantId: string }[] };
+	paidFor: readonly string[];
+	recievedAt: Date | null | undefined;
+}) {
+	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
+	const receipt = partialReceipt({ covered, paidFor });
+	if (!receipt) throw apiError({ code: 'INVALID_INPUT', message: m.paymentPaidForNotCovered() });
+	if (receipt.whole) return applyPaymentStatus({ payment, assignedStatus: 'DONE', recievedAt });
+
+	await db.transaction(async (tx) => {
+		await lockPaymentStatus({ tx, participantIds: covered });
+		await tx
+			.update(schema.conferenceParticipant)
+			.set({ paymentStatus: 'DONE' })
+			.where(
+				whereRows({ table: schema.conferenceParticipant, filter: { id: { in: receipt.done } } })
+			);
+		await tx
+			.update(schema.conferenceParticipant)
+			.set({ paymentStatus: 'PENDING' })
+			.where(
+				whereRows({ table: schema.conferenceParticipant, filter: { id: { in: receipt.pending } } })
+			);
+	});
+	paymentTransactionPubsub.updated(payment.id);
+	conferenceParticipantPubsub.updated(covered);
+}
+
+/**
  * `applyPaymentStatus` inside the caller's transaction `tx`: locks everybody the payment covers,
  * marks it received when `DONE` and carries the status over to them. Publishes nothing, so the
  * caller announces the payment and the returned participant row ids once `tx` has committed.

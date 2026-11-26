@@ -816,6 +816,7 @@ export type AttendancesessionmodeEnum = "BADGE" | "CHECK" | "RECORD";
 export type Banktransfer = {
   amount: Float,
   bookedAt: DateTime,
+  counterparty: String | null,
   createdAt: DateTime,
   externalId: Int,
   id: ID,
@@ -824,6 +825,7 @@ export type Banktransfer = {
     where?: PaymenttransactionWhereInputArgument | null | undefined
   }) => Paymenttransaction,
   paymentTransactionId: ID,
+  purpose: String | null,
   result: BanktransferresultEnum,
   search_distance: Float | null,
   updatedAt: DateTime    
@@ -832,15 +834,17 @@ export type Banktransfer = {
 export type BanktransferOrderInputArgument = {
   amount?: SortingParameter | null | undefined,
   bookedAt?: SortingParameter | null | undefined,
+  counterparty?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   externalId?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   paymentTransactionId?: SortingParameter | null | undefined,
+  purpose?: SortingParameter | null | undefined,
   result?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
-export type BanktransferSearchFieldEnum = "id" | "paymentTransactionId";
+export type BanktransferSearchFieldEnum = "counterparty" | "id" | "paymentTransactionId" | "purpose";
 		
 export type BanktransferSearchInputArgument = {
   fields?: BanktransferSearchFieldEnum[] | undefined,
@@ -853,11 +857,13 @@ export type BanktransferWhereInputArgument = {
   OR?: BanktransferWhereInputArgument[] | undefined,
   amount?: FloatWhereInputArgument | null | undefined,
   bookedAt?: DateTimeWhereInputArgument | null | undefined,
+  counterparty?: StringWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   externalId?: IntWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   paymentTransaction?: PaymenttransactionWhereInputArgument | null | undefined,
   paymentTransactionId?: IDWhereInputArgument | null | undefined,
+  purpose?: StringWhereInputArgument | null | undefined,
   result?: BanktransferresultEnum | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
@@ -4266,6 +4272,11 @@ export type Mutation = {
   publishGuidePage: (p: {
     id: ID
   }) => Guidepage,
+  receivePaymentFor: (p: {
+    id: ID,
+    paidFor: ID[],
+    recievedAt?: DateTime | null | undefined
+  }) => Paymenttransaction,
   recordPaperReadings: (p: {
     conferenceId: ID,
     confirm: Boolean,
@@ -5738,6 +5749,9 @@ export type Query = {
     search?: BanktransferSearchInputArgument | null | undefined,
     where?: BanktransferWhereInputArgument | null | undefined
   }) => Banktransfer[],
+  bankTransfersCount: (p?: {
+    where?: BanktransferWhereInputArgument | null | undefined
+  }) => Int,
   calendarDay: (p: {
     id: ID
   }) => Calendarday,
@@ -7599,6 +7613,9 @@ export type Subscription = {
     search?: BanktransferSearchInputArgument | null | undefined,
     where?: BanktransferWhereInputArgument | null | undefined
   }) => Banktransfer[],
+  bankTransfersCount: (p?: {
+    where?: BanktransferWhereInputArgument | null | undefined
+  }) => Int,
   calendarDay: (p: {
     id: ID
   }) => Calendarday,
@@ -8988,7 +9005,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query, false, 'id'>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "bankTransfer", "bankTransfers", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceFeatureContent", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["agreementDetail", "agreementDetails", "announcement", "announcementFeed", "announcements", "assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "bankTransfer", "bankTransfers", "bankTransfersCount", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "chat", "chatMessage", "chatMessages", "chatReport", "chatReports", "chats", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceFeatureContent", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSeriesList", "conferenceSlackWorkspace", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "guideLibrary", "guideOutlineOf", "guidePage", "guidePages", "guideReaderPage", "instanceLink", "instanceLinks", "mcpAuditEntries", "mcpAuditEntry", "myGuide", "myNotificationSettings", "myPaperReviewDraft", "myPaperReviewDrafts", "myScanners", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "postalScan", "postalScans", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "slackWorkspaces", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "tableView", "tableViewDefault", "tableViewDefaults", "tableViews", "teamFunction", "teamFunctions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

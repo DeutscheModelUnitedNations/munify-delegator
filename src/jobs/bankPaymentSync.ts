@@ -27,7 +27,8 @@ export function incomingTransfer(transaction: BankTransaction): IncomingTransfer
 		externalId: transaction.id_by_customer,
 		amount: transaction.amount,
 		bookedAt,
-		purpose: transaction.purpose ?? ''
+		purpose: transaction.purpose ?? '',
+		counterparty: transaction.to_from?.trim() || undefined
 	};
 }
 

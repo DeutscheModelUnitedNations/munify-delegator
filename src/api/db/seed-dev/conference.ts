@@ -369,13 +369,20 @@ function addSeatedCrowdStatuses({
 			});
 		}
 	}
-	if (index % 2 === 0)
+	if (index % 2 === 0) {
+		const received = faker.datatype.boolean(0.7);
 		addPayment({
 			cs,
 			payerId: userIds[0],
 			forUserIds: userIds,
-			received: faker.datatype.boolean(0.7)
+			received,
+			// most arrive through the bank payment sync, the rest were confirmed by hand
+			bankTransfer:
+				received && faker.datatype.boolean(0.8)
+					? { amount: (cs.conference.feeAmount ?? 0) * userIds.length, result: 'RECEIVED' }
+					: undefined
 		});
+	}
 }
 
 /** The crowd's single participants; returns their ids. */

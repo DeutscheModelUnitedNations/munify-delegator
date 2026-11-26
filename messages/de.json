@@ -3026,6 +3026,7 @@
 	"paymentOnlyPayer": "Nur die Person, die zahlt, kann das angeben.",
 	"paymentOpen": "Zahlungen erlauben",
 	"paymentPaidBy": "Bezahlt von {name}",
+	"paymentPaidForNotCovered": "Die Auswahl muss Personen dieser Zahlung enthalten, und nur diese.",
 	"paymentPaidName": "{name} (bereits bezahlt)",
 	"paymentPayerNotParticipant": "Die zahlende Person muss an dieser Konferenz teilnehmen.",
 	"paymentPending": "Beitragszahlung noch nicht abgeschlossen",

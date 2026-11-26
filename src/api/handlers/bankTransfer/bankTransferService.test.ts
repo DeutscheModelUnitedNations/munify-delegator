@@ -117,7 +117,8 @@ const transfer = {
 	externalId: 42,
 	amount: 50,
 	bookedAt: new Date('2026-11-20T00:00:00Z'),
-	purpose: `Beitrag ${REFERENCE}`
+	purpose: `Beitrag ${REFERENCE}`,
+	counterparty: 'Förderverein'
 };
 
 describe('decideTransfer', () => {
@@ -240,6 +241,8 @@ describe('handleIncomingTransfer', () => {
 				paymentTransactionId: REFERENCE,
 				amount: 50,
 				bookedAt: transfer.bookedAt,
+				counterparty: 'Förderverein',
+				purpose: `Beitrag ${REFERENCE}`,
 				result: 'RECEIVED'
 			}
 		]);

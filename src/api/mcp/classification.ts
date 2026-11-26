@@ -377,9 +377,10 @@ const FIELDS: Record<string, TypeClassification> = {
 			'discardedAt'
 		]
 	},
-	// what the bank payment sync matched: amounts and dates, no payer or purpose
+	// what the bank payment sync matched: amounts and dates; the sender and the purpose name people
 	Banktransfer: {
-		visible: [...ROW, 'externalId', 'paymentTransactionId', 'amount', 'bookedAt', 'result']
+		visible: [...ROW, 'externalId', 'paymentTransactionId', 'amount', 'bookedAt', 'result'],
+		redacted: ['counterparty', 'purpose']
 	},
 	Userreferenceinpaymenttransaction: {
 		visible: [...ROW, 'conferenceParticipantId', 'paymentTransactionId']
@@ -1156,6 +1157,7 @@ const FIELDS: Record<string, TypeClassification> = {
 	Query: {
 		visible: [
 			'assignmentReviewsCount',
+			'bankTransfersCount',
 			'canImpersonateUser',
 			'canUpdateSchool',
 			'delegationsCount',

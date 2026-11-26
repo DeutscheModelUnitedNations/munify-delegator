@@ -30,13 +30,19 @@ describe('lookbackStart', () => {
 });
 
 describe('incomingTransfer', () => {
-	it('reads the booking day and the purpose', () => {
+	it('reads the booking day, the purpose and the sender', () => {
 		expect(incomingTransfer(transaction())).toEqual({
 			externalId: 1,
 			amount: 50,
 			bookedAt: new Date('2026-11-20T00:00:00Z'),
-			purpose: 'ACDE-FHJK-MNPR-TUVW'
+			purpose: 'ACDE-FHJK-MNPR-TUVW',
+			counterparty: 'Somebody'
 		});
+	});
+
+	it('leaves a missing or blank sender out', () => {
+		expect(incomingTransfer(transaction({ to_from: null }))?.counterparty).toBeUndefined();
+		expect(incomingTransfer(transaction({ to_from: '  ' }))?.counterparty).toBeUndefined();
 	});
 
 	it('takes a missing purpose as empty', () => {

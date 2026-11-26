@@ -247,6 +247,12 @@ export function addPayment({
 			paymentTransactionId: id,
 			amount: bankTransfer.amount,
 			bookedAt: faker.date.between({ from: createdAt, to: new Date() }),
+			// a school's association or a parent, as on most transfers
+			counterparty: faker.helpers.arrayElement([
+				`Förderverein ${faker.location.city()} e. V.`,
+				faker.person.fullName()
+			]),
+			purpose: `Teilnahmebeitrag ${id} ${forUserIds.length} Pers.`,
 			result: bankTransfer.result
 		});
 	}

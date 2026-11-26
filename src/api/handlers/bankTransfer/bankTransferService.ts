@@ -21,6 +21,8 @@ export interface IncomingTransfer {
 	bookedAt: Date;
 	/** The Verwendungszweck. */
 	purpose: string;
+	/** Who sent the money, as the bank names them; `undefined` when the bank gave no name. */
+	counterparty?: string;
 }
 
 /** A payment a transfer names, with what decides whether the transfer settles it. */
@@ -153,6 +155,8 @@ async function settleTransfer({
 			paymentTransactionId: paymentId,
 			amount: transfer.amount,
 			bookedAt: transfer.bookedAt,
+			counterparty: transfer.counterparty ?? null,
+			purpose: transfer.purpose || null,
 			result
 		}))
 	);

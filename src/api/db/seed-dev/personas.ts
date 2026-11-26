@@ -405,7 +405,8 @@ function addPersonaStatuses({ cs, nsaPartner }: { cs: ConferenceSeed; nsaPartner
 			cs,
 			payerId: 'dev-delegate',
 			forUserIds: ['dev-delegate', 'dev-delegate-minor'],
-			received: true
+			received: true,
+			bankTransfer: { amount: (cs.conference.feeAmount ?? 0) * 2, result: 'RECEIVED' }
 		});
 		addPayment({
 			cs,

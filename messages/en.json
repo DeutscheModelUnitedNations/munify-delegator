@@ -3026,6 +3026,7 @@
 	"paymentOnlyPayer": "Only the person paying can state this.",
 	"paymentOpen": "Allow Payments",
 	"paymentPaidBy": "Paid by {name}",
+	"paymentPaidForNotCovered": "Choose people this payment covers, and only them.",
 	"paymentPaidName": "{name} (already paid)",
 	"paymentPayerNotParticipant": "The payer has to take part in this conference.",
 	"paymentPending": "payment pending",

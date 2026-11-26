@@ -107,7 +107,9 @@ const {
 	createPaymentTransaction,
 	discardPaymentTransaction,
 	openPaymentProblem,
+	partialReceipt,
 	paymentCovering,
+	receivePaymentFor,
 	reportPaymentTransfer
 } = await import('./paymentTransactionService');
 
@@ -238,6 +240,61 @@ describe('applyPaymentStatus', () => {
 			recievedAt: undefined
 		});
 
+		expect(steps).toEqual([]);
+	});
+});
+
+describe('partialReceipt', () => {
+	it('settles the people named and sends the others back to pending', () => {
+		expect(partialReceipt({ covered: ['a', 'b', 'c'], paidFor: ['c', 'a'] })).toEqual({
+			done: ['a', 'c'],
+			pending: ['b'],
+			whole: false
+		});
+	});
+
+	it('is whole once everybody is named, each once', () => {
+		expect(partialReceipt({ covered: ['a', 'b'], paidFor: ['b', 'a', 'a'] })).toEqual({
+			done: ['a', 'b'],
+			pending: [],
+			whole: true
+		});
+	});
+
+	it('refuses nobody and people the payment does not cover', () => {
+		expect(partialReceipt({ covered: ['a'], paidFor: [] })).toBeUndefined();
+		expect(partialReceipt({ covered: ['a'], paidFor: ['a', 'x'] })).toBeUndefined();
+	});
+});
+
+describe('receivePaymentFor', () => {
+	const covering = payment({ id: 'p', covers: ['b', 'a', 'c'] });
+
+	it('marks the people named paid and the others pending, leaving the payment open', async () => {
+		await receivePaymentFor({ payment: covering, paidFor: ['a', 'c'], recievedAt: new Date() });
+
+		expect(steps).toEqual(['lock no key update', 'update', 'update']);
+		expect(updated).toHaveBeenNthCalledWith(1, { paymentStatus: 'DONE' });
+		expect(where).toHaveBeenCalledWith(
+			expect.objectContaining({ filter: { id: { in: ['a', 'c'] } } })
+		);
+		expect(updated).toHaveBeenNthCalledWith(2, { paymentStatus: 'PENDING' });
+		expect(where).toHaveBeenCalledWith(expect.objectContaining({ filter: { id: { in: ['b'] } } }));
+		expect(paymentUpdated).toHaveBeenCalledWith('p');
+	});
+
+	it('receives the payment when everybody is named', async () => {
+		const recievedAt = new Date('2026-11-20T00:00:00Z');
+		await receivePaymentFor({ payment: covering, paidFor: ['a', 'b', 'c'], recievedAt });
+
+		expect(updated).toHaveBeenCalledWith({ recievedAt });
+		expect(updated).toHaveBeenLastCalledWith({ paymentStatus: 'DONE' });
+	});
+
+	it('refuses somebody the payment does not cover, writing nothing', async () => {
+		await expect(
+			receivePaymentFor({ payment: covering, paidFor: ['x'], recievedAt: undefined })
+		).rejects.toMatchObject({ extensions: { code: 'INVALID_INPUT' } });
 		expect(steps).toEqual([]);
 	});
 });

@@ -12,6 +12,7 @@ import {
 	createPaymentTransaction,
 	discardPaymentTransaction,
 	paymentForSchema,
+	receivePaymentFor,
 	reportPaymentTransfer
 } from './paymentTransactionService';
 import { mcpTool } from '#api/mcp/mcpTool';
@@ -94,6 +95,41 @@ schemaBuilder.mutationFields((t) => ({
 				assignedStatus: args.assignedStatus,
 				recievedAt: args.recievedAt
 			});
+
+			return db.query.paymentTransaction
+				.findFirst(
+					query(
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	receivePaymentFor: t.drizzleField({
+		// Settles the payers' payment status, which the payment mails follow from.
+		extensions: mcpTool({ outward: true }),
+		description:
+			"Marks only some of the people a payment covers paid, as when a transfer brought less than the payment's amount: `paidFor` become DONE, everybody else the payment covers PENDING, to pay with a new reference. Naming everybody is `updatePaymentTransaction` with DONE. Participant care only; NOT_FOUND for a payment the caller may not update, INVALID_INPUT for an empty selection or somebody the payment does not cover.",
+		type: PaymentTransactionRef,
+		args: {
+			id: t.arg.id({ required: true }),
+			paidFor: t.arg.idList({
+				required: true,
+				description: 'The participant rows (`conferenceParticipant` ids) whose fee arrived.'
+			}),
+			recievedAt: t.arg({
+				type: 'DateTime',
+				description:
+					'When the money arrived, stored only when `paidFor` is everybody; left out keeps what is stored.'
+			})
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const payment = await assertCanUpdatePaymentTransaction({ ctx, id: args.id });
+
+			await receivePaymentFor({ payment, paidFor: args.paidFor, recievedAt: args.recievedAt });
 
 			return db.query.paymentTransaction
 				.findFirst(

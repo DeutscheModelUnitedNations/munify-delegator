@@ -91,6 +91,13 @@ export const bankTransfer = snakeCase.table(
 		/** The whole transfer's amount, which may cover several payments. */
 		amount: doublePrecision().notNull(),
 		bookedAt: timestamp({ precision: 3 }).notNull(),
+		/**
+		 * Who sent the money, as the bank names them (BuchhaltungsButler's `to_from`): often a school's
+		 * Förderverein or a parent, nobody with an account here. Null for transfers recorded before.
+		 */
+		counterparty: text(),
+		/** The transfer's Verwendungszweck, as the bank gave it. Null for transfers recorded before. */
+		purpose: text(),
 		result: bankTransferResult().notNull()
 	},
 	(table) => [

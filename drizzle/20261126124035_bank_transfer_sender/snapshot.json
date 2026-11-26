@@ -1,0 +1,81 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "2a6e172d-baff-452a-801d-39770051c864",
+  "prevIds": [
+    "1fccc961-65a2-4bc1-93d3-e8f5ecb0dd80"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "bank_transfer",
+        "counterparty"
+      ],
+      "writes": [
+        "s|col|public.bank_transfer.counterparty",
+        "n|col|public.bank_transfer.counterparty",
+        "e|col|public.bank_transfer.counterparty"
+      ],
+      "reads": [
+        "n|tbl|public.bank_transfer",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "bank_transfer",
+        "purpose"
+      ],
+      "writes": [
+        "s|col|public.bank_transfer.purpose",
+        "n|col|public.bank_transfer.purpose",
+        "e|col|public.bank_transfer.purpose"
+      ],
+      "reads": [
+        "n|tbl|public.bank_transfer",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "bank_transfer",
+        "name": "counterparty",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "bank_transfer",
+        "name": "purpose",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}
