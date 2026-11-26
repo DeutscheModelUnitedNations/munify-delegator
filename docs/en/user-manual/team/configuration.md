@@ -48,7 +48,7 @@ Changes in the tabs are not saved right away. A tab with unsaved changes carries
 - the switches under **Features**, which unlock or lock a feature for everyone immediately,
 - fee, currency and bank details, which appear on payment requests already sent.
 
-A newly picked file replaces the one stored so far, a removed one is listed as **removed**. Only **Save** writes it all.
+A newly picked file replaces the one stored so far, a removed one is listed as **removed**. Only **Save** writes it all. If you leave the page with unsaved changes, for example through **Set up** to the calendar, DELEGATOR first asks whether to discard them. Switching between the tabs keeps them.
 
 If the end of the application period lies after the conference starts, the start after the end, or the participants' minimum age above their maximum age, you cannot save. The message is shown at the field concerned.
 

@@ -14,7 +14,8 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import { goto } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { page } from '$app/state';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Form from '#lib/components/form/Form.svelte';
@@ -328,6 +329,32 @@
 			}
 		})
 	);
+
+	// Leaving the page unmounts the editor and drops what is unsaved, so it asks first. Switching
+	// tabs stays on the page; reloading or closing the tab gets the browser's own question.
+	let leavingConfirmed = false;
+	beforeNavigate((navigation) => {
+		if (leavingConfirmed || pendingChanges.length === 0) return;
+		if (navigation.to?.url.pathname === navigation.from?.url.pathname) return;
+		navigation.cancel();
+		const target = navigation.to?.url;
+		if (navigation.type === 'leave' || !target) return;
+		void confirmDialog({
+			title: m.configLeaveUnsavedTitle(),
+			text: m.configLeaveUnsavedText({ count: pendingChanges.length }),
+			confirmLabel: m.configLeaveUnsavedConfirm(),
+			danger: true
+		}).then(async (leave) => {
+			if (!leave) return;
+			leavingConfirmed = true;
+			try {
+				// eslint-disable-next-line svelte/no-navigation-without-resolve -- the URL the person was already headed to
+				await goto(target);
+			} finally {
+				leavingConfirmed = false;
+			}
+		});
+	});
 
 	let changeCountPerTab = $derived.by(() => {
 		const counts: Partial<Record<TabType | ChangeGroupKey, number>> = {};

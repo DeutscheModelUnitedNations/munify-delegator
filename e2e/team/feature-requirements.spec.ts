@@ -80,3 +80,31 @@ test('the API refuses payments without bank details, and taking the IBAN away wh
 	const off = await update(page, { on: false, iban: null });
 	expect(off.errors, JSON.stringify(off)).toBeUndefined();
 });
+
+test('asks before a setup link leaves unsaved changes behind; switching tabs does not', async ({
+	page
+}) => {
+	const messaging = page.locator('input[name="messagingEnabled"]');
+	await expect(messaging).toBeEnabled({ timeout: 15_000 });
+	await messaging.check();
+
+	// A tab of the same page keeps the edit and asks nothing
+	await page.getByRole('tab', { name: /überweisungsinfo|banking/i }).click();
+	await page.getByRole('tab', { name: /status/i }).click();
+	await expect(messaging).toBeChecked();
+
+	const calendarSetUp = page
+		.locator('li', { has: page.locator('input[name="showCalendar"]') })
+		.getByRole('link', { name: /einrichten|set up/i });
+	const dialog = page.getByRole('alertdialog');
+
+	await calendarSetUp.click();
+	await expect(dialog).toContainText(/ungespeicherte änderungen|unsaved changes/i);
+	await dialog.getByRole('button', { name: /abbruch|cancel/i }).click();
+	await expect(page).toHaveURL(/\/team\/configuration/);
+	await expect(messaging).toBeChecked();
+
+	await calendarSetUp.click();
+	await dialog.getByRole('button', { name: /verwerfen|discard/i }).click();
+	await expect(page).toHaveURL(/\/team\/calendar/);
+});

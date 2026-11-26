@@ -48,7 +48,7 @@ Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines
 - die Schalter unter **Funktionen**: Sie schalten eine Funktion für alle sofort frei oder sperren sie.
 - Beitrag, Währung und Bankdaten: Sie erscheinen auf Zahlungsaufforderungen, die schon verschickt sind.
 
-Eine neu gewählte Datei ersetzt die bisher hinterlegte, eine entfernte steht als **entfernt** in der Liste. Erst **Speichern** schreibt alles.
+Eine neu gewählte Datei ersetzt die bisher hinterlegte, eine entfernte steht als **entfernt** in der Liste. Erst **Speichern** schreibt alles. Verlässt du die Seite mit ungespeicherten Änderungen, etwa über **Einrichten** zum Kalender, fragt DELEGATOR vorher, ob du sie verwerfen willst. Ein Wechsel zwischen den Tabs behält sie.
 
 Liegt das Ende der Bewerbungsphase nach dem Konferenzbeginn, der Beginn nach dem Ende oder das Mindestalter der Teilnehmenden über ihrem Höchstalter, lässt sich nicht speichern. Die Meldung steht am betroffenen Feld.
 
