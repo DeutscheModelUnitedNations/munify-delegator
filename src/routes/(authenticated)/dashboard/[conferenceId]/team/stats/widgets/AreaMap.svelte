@@ -34,12 +34,20 @@
 	}
 
 	// A cluster click zooms in until it splits, as the marker cluster of the Leaflet map did.
-	async function zoomIntoCluster({ map, source, features, event }: LayerClickInfo) {
-		const clusterId = features[0]?.properties?.cluster_id;
+	// Centred on the cluster, not the pointer: an off-centre click would grow with the zoom.
+	async function zoomIntoCluster({ map, source, features }: LayerClickInfo) {
+		const cluster = features[0];
+		const clusterId = cluster?.properties?.cluster_id;
 		const clusters = map.getSource(source);
-		if (typeof clusterId !== 'number' || !(clusters instanceof GeoJSONSource)) return;
+		if (
+			typeof clusterId !== 'number' ||
+			cluster?.geometry.type !== 'Point' ||
+			!(clusters instanceof GeoJSONSource)
+		)
+			return;
 		const zoom = await clusters.getClusterExpansionZoom(clusterId);
-		map.easeTo({ center: event.lngLat, zoom });
+		const [lng = 0, lat = 0] = cluster.geometry.coordinates;
+		map.easeTo({ center: [lng, lat], zoom });
 	}
 </script>
 

@@ -20,7 +20,8 @@ export function mapAreas(addresses: Address[]): FeatureCollection<Point, ZipArea
 	const points = new Map<string, Feature<Point, ZipArea>>();
 	for (const { country, zipPrefix, lat, lng, atCountryCentre, count } of addresses) {
 		if (country === null || lat === null || lng === null) continue;
-		const area = atCountryCentre ? '' : (zipPrefix ?? '');
+		// Postal codes are stored as typed: `sw1` and `SW1` are one area (as in `zipKey`).
+		const area = atCountryCentre ? '' : (zipPrefix?.toUpperCase() ?? '');
 		const known = points.get(`${country}:${area}`);
 		if (known) known.properties.count += count;
 		else

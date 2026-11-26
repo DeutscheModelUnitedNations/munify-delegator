@@ -37,4 +37,14 @@ describe('mapAreas', () => {
 				.features
 		).toEqual([]);
 	});
+
+	test('case variants of a prefix are one area', () => {
+		const { features } = mapAreas([
+			row({ country: 'GBR', zipPrefix: 'sw1', count: 2 }),
+			row({ country: 'GBR', zipPrefix: 'SW1', count: 3 })
+		]);
+		expect(features.map((f) => f.properties)).toEqual([
+			{ country: 'GBR', zipPrefix: 'SW1', count: 5 }
+		]);
+	});
 });
