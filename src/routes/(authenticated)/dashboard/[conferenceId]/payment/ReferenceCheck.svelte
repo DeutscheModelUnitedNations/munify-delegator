@@ -7,7 +7,7 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { formatMoney } from '#lib/helpers/paymentFormat';
 	import PayerNames from './PayerNames.svelte';
-	import type { PayableUser } from './participantSelection.svelte';
+	import type { PayableUser } from './participantSelection.svelte.js';
 
 	/**
 	 * The last look before the reference is made: whom it covers and what that comes to. Making it

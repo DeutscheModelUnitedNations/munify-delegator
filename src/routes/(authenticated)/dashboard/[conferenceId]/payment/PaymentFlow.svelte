@@ -23,7 +23,7 @@
 	import {
 		createPaymentParticipantSelection,
 		type PayableUser
-	} from './participantSelection.svelte';
+	} from './participantSelection.svelte.js';
 	import ParticipantSelection from './ParticipantSelection.svelte';
 	import PaymentArrival from './PaymentArrival.svelte';
 	import PaymentHints from './PaymentHints.svelte';

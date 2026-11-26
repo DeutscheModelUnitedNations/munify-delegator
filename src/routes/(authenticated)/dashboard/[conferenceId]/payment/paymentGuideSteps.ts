@@ -1,20 +1,17 @@
 import { m } from '#lib/paraglide/messages';
 import type { GuideStep } from '#lib/components/postalGuide/steps';
-
-/** How long a step of the payment guide has to be watched before the next one opens. */
-const STEP_MS = 4000;
+import { SCENE_MS } from '#lib/components/postalGuide/timing';
+import Reference from './scenes/Reference.svelte';
 
 /**
  * What the payment guide goes through, from the reference to the money arriving. Its scenes are
  * still to be drawn: each step shows its icon until then (`ScenePlaceholder`), and `plannedScene`
  * says what its animation is to show, the mistake and then the right way, like the postal guide's.
  */
-export const PAYMENT_GUIDE_STEPS: readonly (GuideStep & { plannedScene: string })[] = [
+export const PAYMENT_GUIDE_STEPS: readonly (GuideStep & { plannedScene?: string })[] = [
 	{
 		id: 'reference',
-		icon: 'textbox',
-		plannedScene:
-			'The purpose reads "Fee Lena" and the coin lands on a pile with a question mark; then the reference is pasted and the coin clicks into place.',
+		scene: Reference,
 		title: m.paymentGuideReferenceTitle,
 		text: m.paymentGuideReferenceText,
 		warning: m.paymentGuideReferenceWarning,
@@ -87,4 +84,4 @@ export const PAYMENT_GUIDE_STEPS: readonly (GuideStep & { plannedScene: string }
 	}
 ];
 
-export const PAYMENT_GUIDE_DURATIONS = PAYMENT_GUIDE_STEPS.map(() => STEP_MS);
+export const PAYMENT_GUIDE_DURATIONS = PAYMENT_GUIDE_STEPS.map(() => SCENE_MS);
