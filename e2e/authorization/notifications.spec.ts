@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../support/test';
-import { fixedTestUser, loginAs } from '../support/auth';
+import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { notificationsFixture as fixture } from '../seed/notifications';
 
 // The team's notification settings (`src/api/handlers/notification/`): everybody reads and
@@ -282,6 +282,8 @@ test('a bot token is no field of the API', async ({ browser }) => {
 test('the page lists the topics and a switch saves', async ({ browser }) => {
 	const page = await signedIn(browser, care.id);
 	await page.goto('/dashboard');
+	// a click before hydration attaches the handler is lost
+	await waitForHydration(page);
 	await page.getByRole('button', { name: /Nora Care/ }).click();
 	// the notifications are a tab of the account
 	await page.locator('a[href$="/my-account"]').click();
@@ -322,6 +324,8 @@ test('the page lists the topics and a switch saves', async ({ browser }) => {
 test('a conference is switched off and on at once', async ({ browser }) => {
 	const page = await signedIn(browser, care.id);
 	await page.goto('/my-account/notifications');
+	// the switches are server-rendered: a click before hydration is lost and nothing is saved
+	await waitForHydration(page);
 	const section = page.getByTestId('notifications-conference').filter({ hasText: fixture.title });
 	const switches = section.getByRole('checkbox');
 	await expect(switches).toHaveCount(6);
