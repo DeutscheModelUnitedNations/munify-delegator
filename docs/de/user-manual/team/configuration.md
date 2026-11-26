@@ -38,7 +38,7 @@ Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines
 
 ![Die Konferenzeinstellungen mit ihren Reitern und dem Speichern-Knopf](shot:team/configuration)
 
-Öffnen dürfen die Seite **Projektleitung**, **Teilnehmendenbetreuung** und **Leitung Inhalt**. Alles ändern darf nur die Projektleitung. Teilnehmendenbetreuung und Leitung Inhalt ändern den Status, die Funktionsschalter, die Links, die Postadresse, die Vorlagen samt Anordnung und die Resolutionen. **Allgemeines** und **Überweisungsinformationen** sehen sie gesperrt, und oben steht ein Hinweis, was sie ändern können.
+Öffnen dürfen die Seite **Projektleitung**, **Teilnehmendenbetreuung** und **Leitung Inhalt**. Alles ändern darf nur die Projektleitung. Teilnehmendenbetreuung und Leitung Inhalt ändern den Status, die Funktionsschalter, die Links, die Postadresse, die Zahlungsfrist, die Vorlagen samt Anordnung und die Resolutionen. **Allgemeines** und den Rest der **Überweisungsinformationen** sehen sie gesperrt, und oben steht ein Hinweis, was sie ändern können.
 
 ### Speichern mit Vorschau {#saving}
 
@@ -87,7 +87,7 @@ Ein leeres Feld blendet den Link aus. Ändern dürfen das Projektleitung, Teilne
 
 ### Überweisungsinformationen {#payment-details}
 
-Unter **Teilnahmegebühr** stehen **Teilnahmebeitrag** und **Währung** (drei Buchstaben, anfangs EUR), unter **Bankkonto** **Kontoinhaber\*in**, **Name der Bank**, **IBAN** (22 Zeichen ohne Leerzeichen) und **BIC**. Nur die Projektleitung ändert sie. Teilnehmende sehen diese Angaben, wenn sie [ihren Beitrag zahlen](../participant/dashboard#payment), samt einem QR-Code für die Überweisung.
+Unter **Teilnahmegebühr** stehen **Teilnahmebeitrag** und **Währung** (drei Buchstaben, anfangs EUR), unter **Bankkonto** **Kontoinhaber\*in**, **Name der Bank**, **IBAN** (22 Zeichen ohne Leerzeichen) und **BIC**. Nur die Projektleitung ändert sie. Teilnehmende sehen diese Angaben, wenn sie [ihren Beitrag zahlen](../participant/dashboard#payment), samt einem QR-Code für die Überweisung. Die **Zahlungsfrist** darunter dürfen auch Teilnehmendenbetreuung und Leitung Inhalt ändern. Sie ist freiwillig: Sie steht auf der Zahlungsseite, nach ihrem Ablauf als **Frist überschritten**, und wenige Tage davor erinnert eine E-Mail alle, deren Beitrag noch fehlt. Bezahlen bleibt auch danach möglich.
 
 ## Status und Phasen {#stages}
 

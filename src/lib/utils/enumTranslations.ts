@@ -78,6 +78,8 @@ export function translateAdministrativeStatus(status: string) {
 			return m.statusPending();
 		case 'PROBLEM':
 			return m.statusProblem();
+		case 'NEEDS_HUMAN_REVIEW':
+			return m.statusNeedsHumanReview();
 		default:
 			return status;
 	}

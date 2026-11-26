@@ -4,6 +4,7 @@ import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import {
 	APPLICATION_REMINDER_DAYS,
 	CHASE_INTRO_REMINDER_DAYS,
+	PAYMENT_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
 	SURVEY_REMINDER_DAYS,
@@ -157,6 +158,8 @@ export interface EmailSnapshot {
 		unlockPostals: boolean;
 		unlockPayments: boolean;
 		applicationDeadline: Date;
+		/** Until when the fee is to be paid; `null` for no deadline. */
+		paymentDeadline: Date | null;
 		startConference: Date;
 		/** The conference's IANA time zone, which times in its mails are given in. */
 		timezone: string;
@@ -437,6 +440,27 @@ const paperworkProblems: Rule = ({ ofAge }, person) => {
 		);
 };
 
+/**
+ * The reminder to pay the fee in the last days before the payment deadline, while payments are
+ * open and the fee has not arrived. Keyed by the deadline: a deadline moved later reminds again.
+ */
+const paymentReminder: Rule = ({ conference, remindBefore }, person) => {
+	const deadline = conference.paymentDeadline;
+	return conference.unlockPayments &&
+		deadline &&
+		!paid(person) &&
+		remindBefore({ date: deadline, days: PAYMENT_REMINDER_DAYS })
+		? [
+				email({
+					kind: 'PAYMENT_DEADLINE_REMINDER',
+					person,
+					subjectKey: deadline.toISOString().slice(0, 10),
+					extra: { remindsOf: deadline }
+				})
+			]
+		: [];
+};
+
 /** The reminders before the conference: open tasks, then the phone. */
 const conferenceReminders: Rule = ({ conference, remindBefore, postalDone }, person) => {
 	const openIssues =
@@ -524,7 +548,9 @@ const surveyReminders: Rule = ({ conference, remindBefore, surveys }, person) =>
 /** Everything an accepted person gets once the assignment is released. */
 const acceptedEmails: Rule = (ctx, person) =>
 	ctx.conference.assignmentReleased && ctx.accepted(person)
-		? [paperworkSteps, paperworkProblems, conferenceReminders].flatMap((rule) => rule(ctx, person))
+		? [paperworkSteps, paperworkProblems, paymentReminder, conferenceReminders].flatMap((rule) =>
+				rule(ctx, person)
+			)
 		: [];
 
 const applicationReminder: Rule = ({ conference, remindBefore }, person) =>

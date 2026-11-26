@@ -112,6 +112,8 @@ export const user = snakeCase.table(
 		 * from then on they may skip it.
 		 */
 		postalGuideCompletedAt: timestamp({ precision: 3 }),
+		/** When they first watched the guide to transferring the fee (`paymentGuide/`) to its end. */
+		paymentGuideCompletedAt: timestamp({ precision: 3 }),
 		gender: gender(),
 		emergencyContacts: text(),
 		// care notes for the team, not the public, survive conferences

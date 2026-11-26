@@ -201,6 +201,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				unlockPayments: nullToUndefined(args.unlockPayments),
 				unlockPostals: nullToUndefined(args.unlockPostals),
 				feeAmount: args.feeAmount,
+				paymentDeadline: args.paymentDeadline,
 				bankAccountHolder: args.bankAccountHolder,
 				iban: args.iban,
 				bic: args.bic,

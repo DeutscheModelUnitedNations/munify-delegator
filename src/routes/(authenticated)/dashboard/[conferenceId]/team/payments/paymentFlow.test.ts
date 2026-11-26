@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { canMarkReceived, transactionReadyFor, transactionStatusUpdate } from './paymentFlow';
+import {
+	canMarkReceived,
+	statusIcon,
+	transactionReadyFor,
+	transactionStatusUpdate
+} from './paymentFlow';
 
 describe('transactionReadyFor', () => {
 	test('is true once the searched transaction has loaded', () => {
@@ -83,5 +88,19 @@ describe('transactionStatusUpdate', () => {
 		).toEqual({
 			args: { id: 't1', assignedStatus: 'PROBLEM', recievedAt: undefined }
 		});
+	});
+});
+
+describe('statusIcon', () => {
+	test('tells done, problem, review and pending apart', () => {
+		expect(statusIcon({ status: 'DONE', transactionReceived: true })).toBe('ph-check');
+		expect(statusIcon({ status: 'DONE', transactionReceived: false })).toContain('ph-seal-check');
+		expect(statusIcon({ status: 'PROBLEM', transactionReceived: false })).toContain('ph-warning');
+		expect(statusIcon({ status: 'NEEDS_HUMAN_REVIEW', transactionReceived: false })).toContain(
+			'ph-magnifying-glass'
+		);
+		expect(statusIcon({ status: 'PENDING', transactionReceived: false })).toBe(
+			'ph-hourglass-medium'
+		);
 	});
 });

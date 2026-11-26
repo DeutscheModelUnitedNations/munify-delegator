@@ -144,7 +144,11 @@ steps stay in the page.
 ## Postal Guide
 
 `#lib/components/postalGuide/`: what whoever downloads postal documents watches first, animated step
-by step (`PostalGuide`). A step of the postal registration page
+by step (`PostalGuide`). The payment guide (`dashboard/[conferenceId]/payment/PaymentHints`) shares its
+frame: `PostalGuide` takes `steps`, `finale`, `doneTitle` and `closingWarning`; its scenes
+(`payment/scenes/`) put a bank (`AccountDisplay`) where the postal ones have the scanner, and share
+`Scene`, `Strike`, `Check`, `ScreenSigns` and `Jam` with them. Mandatory once per account there too
+(`user.paymentGuideCompletedAt`). A step of the postal registration page
 (`SendingHints`); elsewhere (supervisors) `passPostalGuide()` (`#lib/state/postalGuide`), which
 `downloadPostalRegistration` calls, opens it as a dialog (`PostalGuideHost` in the authenticated layout).
 Mandatory once per account (`user.postalGuideCompletedAt`), then skippable, and asked for once per page
@@ -487,7 +491,8 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
   every word must match, "ger ga" works), chips per committee, team inboxes, the caller's group and
   delegation group on top. `mode="team"`: person first, then the inbox to write from.
 - **`WriteToDelegateButton`**: `conferenceId`, `participantId`, optional `paperId`, `compact` (icon
-  only, table rows); asks for inboxes on click.
+  only, table rows), `label` (other wording, e.g. the payments page's "message the person paying");
+  asks for inboxes on click.
 - **`FilterChips`** (`#lib/components/FilterChips.svelte`, shared): "all" first, pressing the
   pressed chip lifts the filter; `options` (with `key`), `selected`, `onSelect`, `label`, `chip`
   snippet. `CommitteeChips` and the announcement state chips build on it.

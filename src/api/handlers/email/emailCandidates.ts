@@ -3,6 +3,7 @@ import type { schema } from '#api/db/db';
 import { birthdayBoundsForAge } from '#lib/helpers/ageChecker';
 import {
 	APPLICATION_REMINDER_DAYS,
+	PAYMENT_REMINDER_DAYS,
 	CHASE_INTRO_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
@@ -302,6 +303,20 @@ const PARTICIPANT_PREDICATES: Record<
 					}
 				)})`
 		),
+	PAYMENT_DEADLINE_REMINDER: (ctx) => {
+		const { unlockPayments, paymentDeadline } = ctx.conference;
+		return when(
+			released(ctx) &&
+				unlockPayments &&
+				!!paymentDeadline &&
+				inWindowBefore({ now: ctx.now, date: paymentDeadline, days: PAYMENT_REMINDER_DAYS }),
+			() =>
+				sql`(${accepted(ctx)} and ${paymentIs(ctx, false)} and ${ctx.open({
+					kind: 'PAYMENT_DEADLINE_REMINDER',
+					key: dateKey(paymentDeadline ?? new Date(0))
+				})})`
+		);
+	},
 	OPEN_ISSUES_REMINDER: (ctx) => {
 		const { unlockPostals, unlockPayments, startConference } = ctx.conference;
 		const open = [

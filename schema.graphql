@@ -22,6 +22,7 @@ input AddressInput {
 
 enum AdministrativestatusEnum {
   DONE
+  NEEDS_HUMAN_REVIEW
   PENDING
   PROBLEM
 }
@@ -1060,6 +1061,82 @@ enum AttendancesessionmodeEnum {
   BADGE
   CHECK
   RECORD
+}
+
+type Banktransfer {
+  amount: Float!
+  bookedAt: DateTime!
+  counterparty: String
+  createdAt: DateTime!
+  externalId: Int!
+  id: ID!
+
+  """Get the paymentTransactions related to this bankTransfer"""
+  paymentTransaction(orderBy: PaymenttransactionOrderInputArgument, where: PaymenttransactionWhereInputArgument): Paymenttransaction!
+  paymentTransactionId: ID!
+  purpose: String
+  result: BanktransferresultEnum!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  updatedAt: DateTime!
+}
+
+input BanktransferOrderInputArgument {
+  amount: SortingParameter
+  bookedAt: SortingParameter
+  counterparty: SortingParameter
+  createdAt: SortingParameter
+  externalId: SortingParameter
+  id: SortingParameter
+  paymentTransactionId: SortingParameter
+  purpose: SortingParameter
+  result: SortingParameter
+  updatedAt: SortingParameter
+}
+
+"""A column of bankTransfer the search can look at"""
+enum BanktransferSearchFieldEnum {
+  counterparty
+  id
+  paymentTransactionId
+  purpose
+}
+
+"""
+Fuzzy search on bankTransfer, ranked by how close the columns are to the term
+"""
+input BanktransferSearchInputArgument {
+  """
+  Limits the search to these columns. Without it every listed column is searched. Columns the caller may not read are left out, so an empty or fully hidden selection finds no rows.
+  """
+  fields: [BanktransferSearchFieldEnum!]
+  term: String!
+}
+
+input BanktransferWhereInputArgument {
+  AND: [BanktransferWhereInputArgument!]
+  NOT: BanktransferWhereInputArgument
+  OR: [BanktransferWhereInputArgument!]
+  amount: FloatWhereInputArgument
+  bookedAt: DateTimeWhereInputArgument
+  counterparty: StringWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  externalId: IntWhereInputArgument
+  id: IDWhereInputArgument
+  paymentTransaction: PaymenttransactionWhereInputArgument
+  paymentTransactionId: IDWhereInputArgument
+  purpose: StringWhereInputArgument
+  result: BanktransferresultEnum
+  updatedAt: DateTimeWhereInputArgument
+}
+
+enum BanktransferresultEnum {
+  ALREADY_RECEIVED
+  AMOUNT_MISMATCH
+  RECEIVED
 }
 
 """
@@ -2169,6 +2246,7 @@ type Conference {
   papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
   participantMaxAge: Int
   participantMinAge: Int
+  paymentDeadline: DateTime
 
   """Get the paymentTransactions related to this conference"""
   paymentTransactions(limit: Int, offset: Int, orderBy: PaymenttransactionOrderInputArgument, search: PaymenttransactionSearchInputArgument, where: PaymenttransactionWhereInputArgument): [Paymenttransaction!]!
@@ -2318,6 +2396,7 @@ input ConferenceOrderInputArgument {
   nametagBinCount: SortingParameter
   participantMaxAge: SortingParameter
   participantMinAge: SortingParameter
+  paymentDeadline: SortingParameter
   postalApartment: SortingParameter
   postalCity: SortingParameter
   postalCountry: SortingParameter
@@ -2457,6 +2536,7 @@ input ConferenceWhereInputArgument {
   papers: PaperWhereInputArgument
   participantMaxAge: IntWhereInputArgument
   participantMinAge: IntWhereInputArgument
+  paymentDeadline: DateTimeWhereInputArgument
   paymentTransactions: PaymenttransactionWhereInputArgument
   places: PlaceWhereInputArgument
   postalApartment: StringWhereInputArgument
@@ -2707,6 +2787,7 @@ type Conferenceparticipant {
   18 by the start of the conference, so no guardian has to consent; see `isOfAgeAtConference`.
   """
   ofAgeAtConference: Boolean!
+  paymentInfoRead: Boolean!
   paymentStatus: AdministrativestatusEnum!
   postalConfirmedDetails: String
   postalConfirmedOfAge: Boolean
@@ -2749,6 +2830,7 @@ input ConferenceparticipantOrderInputArgument {
   mediaConsentStatus: SortingParameter
   messagingSuspended: SortingParameter
   nsaCardNumber: SortingParameter
+  paymentInfoRead: SortingParameter
   paymentStatus: SortingParameter
   postalConfirmedDetails: SortingParameter
   postalConfirmedOfAge: SortingParameter
@@ -2800,6 +2882,7 @@ input ConferenceparticipantWhereInputArgument {
   mediaConsentStatus: MediaconsentstatusEnum
   messagingSuspended: BooleanWhereInputArgument
   nsaCardNumber: IntWhereInputArgument
+  paymentInfoRead: BooleanWhereInputArgument
   paymentStatus: AdministrativestatusEnum
   postalConfirmedDetails: StringWhereInputArgument
   postalConfirmedOfAge: BooleanWhereInputArgument
@@ -3410,6 +3493,7 @@ enum EmailkindEnum {
   PAPERWORK_PROBLEM
   PAPER_REVIEWED
   PAPER_SUBMITTED
+  PAYMENT_DEADLINE_REMINDER
   PAYMENT_RECEIVED
   PAYMENT_UNLOCKED
   PHONE_READY_REMINDER
@@ -4702,6 +4786,11 @@ type Mutation {
   autoAssignSingleParticipants(conferenceId: ID!): Int!
 
   """
+  The caller watched the guide to transferring the fee to its end, so they may skip it from now on (`User.paymentGuideCompletedAt`, which keeps the first time). FORBIDDEN for an AI assistant and while impersonating.
+  """
+  completePaymentGuide: User!
+
+  """
   The caller watched the guide to sending their postal documents to its end, so they may skip it from now on (`User.postalGuideCompletedAt`, which keeps the first time). FORBIDDEN for an AI assistant and while impersonating.
   """
   completePostalGuide: User!
@@ -5346,6 +5435,11 @@ type Mutation {
   discardAssignmentDraft(conferenceId: ID!): Boolean!
 
   """
+  The payer gives a reference up to start over with another selection (`discardedAt`). It is kept, so participant care can still match a transfer made with it, but `createPaymentTransaction` no longer answers it. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND for a payment the caller did not make, CONFLICT once its money arrived or it was discarded already.
+  """
+  discardPaymentTransaction(id: ID!): Paymenttransaction!
+
+  """
   Ends a supervision, so the supervisor no longer looks after the person: the person, the supervisor, or participant care.
   """
   disconnectFromConferenceSupervisor(
@@ -5579,6 +5673,21 @@ type Mutation {
   publishGuidePage(id: ID!): Guidepage!
 
   """
+  Marks only some of the people a payment covers paid, as when a transfer brought less than the payment's amount: `paidFor` become DONE, everybody else the payment covers PENDING, to pay with a new reference. Naming everybody is `updatePaymentTransaction` with DONE. Participant care only; NOT_FOUND for a payment the caller may not update, INVALID_INPUT for an empty selection or somebody the payment does not cover.
+  """
+  receivePaymentFor(
+    id: ID!
+
+    """The participant rows (`conferenceParticipant` ids) whose fee arrived."""
+    paidFor: [ID!]!
+
+    """
+    When the money arrived, stored only when `paidFor` is everybody; left out keeps what is stored.
+    """
+    recievedAt: DateTime
+  ): Paymenttransaction!
+
+  """
   Takes in what the pages of a person's application documents say, as read off them (participant care): the details of what they agreed to, and the postal statuses those make. `confirm`: a person looked at it, so a choice may replace the stored one; otherwise nothing stored is taken back. A detail set by hand always stays. Answers whether a status changed. Somebody without a part in the conference answers NOT_FOUND.
   """
   recordPaperReadings(conferenceId: ID!, confirm: Boolean!, readings: [PaperReadingInput!]!, userId: ID!): Boolean!
@@ -5665,6 +5774,11 @@ type Mutation {
   Asks participant care to look at a direct chat or a delegation group the caller is a party of (FORBIDDEN otherwise): while the report is open, participant care reads the chat.
   """
   reportChat(chatId: ID!, reason: String!): Boolean!
+
+  """
+  The payer says they transferred the money (`reported: true`, kept as `transferReportedAt`) or takes that back (`false`). Only their word: nobody's payment status changes. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND for a payment the caller did not make, CONFLICT once its money arrived or it was discarded.
+  """
+  reportPaymentTransfer(id: ID!, reported: Boolean!): Paymenttransaction!
 
   """
   A new card for a lost one: raises the person's card number, so the earlier cards stop scanning, and answers the new card (participant care).
@@ -6268,6 +6382,11 @@ type Mutation {
     How old participants are at least on the first conference day; `null` for no lower limit. Outside the range the entry flows warn, nothing is refused.
     """
     participantMinAge: Int
+
+    """
+    Until when the fee is to be paid; shown on the payment page and reminded of by mail. `null` clears it.
+    """
+    paymentDeadline: DateTime
     postalApartment: String
     postalCity: String
     postalCountry: String
@@ -6455,6 +6574,16 @@ type Mutation {
     """
     status: PaperstatusEnum
   ): Paper!
+
+  """
+  How far the caller is on their own payment page; fields left out or `null` stay as they are. FORBIDDEN for an AI assistant and while impersonating, NOT_FOUND without a part in the conference.
+  """
+  updatePaymentProgress(
+    conferenceId: ID!
+
+    """They read what the payment is about."""
+    infoRead: Boolean
+  ): Conferenceparticipant!
 
   """
   Sets a payment's status and carries it over to everybody the payment covers. Participant care only; NOT_FOUND for a payment the caller may not update.
@@ -7211,9 +7340,13 @@ input PaperversionWhereInputArgument {
 type Paymenttransaction {
   amount: Float!
 
+  """Get the bankTransfers related to this paymentTransaction"""
+  bankTransfers(limit: Int, offset: Int, orderBy: BanktransferOrderInputArgument, search: BanktransferSearchInputArgument, where: BanktransferWhereInputArgument): [Banktransfer!]!
+
   """Get the conferences related to this paymentTransaction"""
   conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
   createdAt: DateTime!
+  discardedAt: DateTime
   id: ID!
 
   """Get the conferenceParticipants related to this paymentTransaction"""
@@ -7230,6 +7363,7 @@ type Paymenttransaction {
   The search distance of the object. If a search is provided, this field will be populated with the search distance.
   """
   search_distance: Float
+  transferReportedAt: DateTime
   updatedAt: DateTime!
 
   """Get the users related to this paymentTransaction"""
@@ -7239,9 +7373,11 @@ type Paymenttransaction {
 input PaymenttransactionOrderInputArgument {
   amount: SortingParameter
   createdAt: SortingParameter
+  discardedAt: SortingParameter
   id: SortingParameter
   payerParticipantId: SortingParameter
   recievedAt: SortingParameter
+  transferReportedAt: SortingParameter
   updatedAt: SortingParameter
 }
 
@@ -7266,13 +7402,16 @@ input PaymenttransactionWhereInputArgument {
   NOT: PaymenttransactionWhereInputArgument
   OR: [PaymenttransactionWhereInputArgument!]
   amount: FloatWhereInputArgument
+  bankTransfers: BanktransferWhereInputArgument
   conference: ConferenceWhereInputArgument
   createdAt: DateTimeWhereInputArgument
+  discardedAt: DateTimeWhereInputArgument
   id: IDWhereInputArgument
   payer: ConferenceparticipantWhereInputArgument
   payerParticipantId: IDWhereInputArgument
   paymentFor: UserreferenceinpaymenttransactionWhereInputArgument
   recievedAt: DateTimeWhereInputArgument
+  transferReportedAt: DateTimeWhereInputArgument
   updatedAt: DateTimeWhereInputArgument
   user: UserWhereInputArgument
 }
@@ -7748,6 +7887,15 @@ type Query {
 
   """List all attendanceSessions"""
   attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
+
+  """Get a single bankTransfer by ID"""
+  bankTransfer(id: ID!): Banktransfer!
+
+  """List all bankTransfers"""
+  bankTransfers(limit: Int, offset: Int, orderBy: BanktransferOrderInputArgument, search: BanktransferSearchInputArgument, where: BanktransferWhereInputArgument): [Banktransfer!]!
+
+  """Count all bankTransfers"""
+  bankTransfersCount(where: BanktransferWhereInputArgument): Int!
 
   """Get a single calendarDay by ID"""
   calendarDay(id: ID!): Calendarday!
@@ -10377,6 +10525,15 @@ type Subscription {
   """List all attendanceSessions"""
   attendanceSessions(limit: Int, offset: Int, orderBy: AttendancesessionOrderInputArgument, search: AttendancesessionSearchInputArgument, where: AttendancesessionWhereInputArgument): [Attendancesession!]!
 
+  """Get a single bankTransfer by ID"""
+  bankTransfer(id: ID!): Banktransfer!
+
+  """List all bankTransfers"""
+  bankTransfers(limit: Int, offset: Int, orderBy: BanktransferOrderInputArgument, search: BanktransferSearchInputArgument, where: BanktransferWhereInputArgument): [Banktransfer!]!
+
+  """Count all bankTransfers"""
+  bankTransfersCount(where: BanktransferWhereInputArgument): Int!
+
   """Get a single calendarDay by ID"""
   calendarDay(id: ID!): Calendarday!
 
@@ -11423,6 +11580,7 @@ type User {
 
   """Get the papers related to this user"""
   papers(limit: Int, offset: Int, orderBy: PaperOrderInputArgument, search: PaperSearchInputArgument, where: PaperWhereInputArgument): [Paper!]!
+  paymentGuideCompletedAt: DateTime
 
   """Get the userReferenceInPaymentTransactions related to this user"""
   paymentTransactionsReferences(limit: Int, offset: Int, orderBy: UserreferenceinpaymenttransactionOrderInputArgument, search: UserreferenceinpaymenttransactionSearchInputArgument, where: UserreferenceinpaymenttransactionWhereInputArgument): [Userreferenceinpaymenttransaction!]!
@@ -11478,6 +11636,7 @@ input UserOrderInputArgument {
   id: SortingParameter
   locale: SortingParameter
   messageNotificationEmails: SortingParameter
+  paymentGuideCompletedAt: SortingParameter
   phone: SortingParameter
   postalGuideCompletedAt: SortingParameter
   preferredUsername: SortingParameter
@@ -11538,6 +11697,7 @@ input UserWhereInputArgument {
   ownPaymentTransactions: PaymenttransactionWhereInputArgument
   paperReviews: PaperreviewWhereInputArgument
   papers: PaperWhereInputArgument
+  paymentGuideCompletedAt: DateTimeWhereInputArgument
   paymentTransactionsReferences: UserreferenceinpaymenttransactionWhereInputArgument
   phone: StringWhereInputArgument
   postalGuideCompletedAt: DateTimeWhereInputArgument

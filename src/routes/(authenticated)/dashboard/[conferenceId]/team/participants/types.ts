@@ -1,3 +1,5 @@
+import type { AdministrativeStatus } from '#lib/helpers/administrativeStatus';
+
 export type ParticipationRole =
 	| 'SUPERVISOR'
 	| 'SINGLE_PARTICIPANT'
@@ -6,7 +8,7 @@ export type ParticipationRole =
 	/** Waiting for a seat, without any registration in the conference */
 	| 'WAITING_LIST';
 
-export type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
+export type { AdministrativeStatus };
 
 export interface ParticipantRow {
 	userId: string;

@@ -13,7 +13,8 @@
 	const tone: Record<AdministrativeStatus, { badge: string; icon: string }> = {
 		DONE: { badge: 'badge-success', icon: 'ph-check' },
 		PENDING: { badge: 'badge-warning', icon: 'ph-hourglass-medium' },
-		PROBLEM: { badge: 'badge-error', icon: 'ph-warning' }
+		PROBLEM: { badge: 'badge-error', icon: 'ph-warning' },
+		NEEDS_HUMAN_REVIEW: { badge: 'badge-warning', icon: 'ph-magnifying-glass' }
 	};
 </script>
 

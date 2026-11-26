@@ -10,7 +10,11 @@ const state = vi.hoisted(() => ({
 	/** The payment status of the people involved, as their locked rows hold it. */
 	people: new Array<{ paymentStatus: string }>(),
 	payments: new Array<StoredPayment>(),
-	fee: 50 as number | null
+	fee: 50 as number | null,
+	/** The payment the payer changes, as it is stored. */
+	stored: { recievedAt: null as Date | null, discardedAt: null as Date | null },
+	/** What the conditional write of a payer's change hits. */
+	written: [{ id: 'p' }] as { id: string }[]
 }));
 const steps = vi.hoisted(() => new Array<string>());
 const findPayments = vi.hoisted(() => vi.fn());
@@ -69,8 +73,19 @@ vi.mock('#api/db/db', () => {
 		},
 		db: {
 			query: {
-				conference: { findFirst: () => Promise.resolve({ feeAmount: state.fee }) }
+				conference: { findFirst: () => Promise.resolve({ feeAmount: state.fee }) },
+				paymentTransaction: { findFirst: () => Promise.resolve(state.stored) }
 			},
+			update: () => ({
+				set: (values: unknown) => ({
+					where: () => ({
+						returning: () => {
+							updated(values);
+							return Promise.resolve(state.written);
+						}
+					})
+				})
+			}),
 			transaction: (run: (t: typeof tx) => unknown) => run(tx)
 		}
 	};
@@ -80,14 +95,23 @@ vi.mock('drizzle-orm', () => ({ asc: (column: unknown) => `${String(column)} asc
 
 const paymentCreated = vi.hoisted(() => vi.fn());
 const coveredCreated = vi.hoisted(() => vi.fn());
+const paymentUpdated = vi.hoisted(() => vi.fn());
 vi.mock('#api/pubsub', () => ({
 	conferenceParticipantPubsub: { updated: vi.fn() },
-	paymentTransactionPubsub: { created: paymentCreated, updated: vi.fn() },
+	paymentTransactionPubsub: { created: paymentCreated, updated: paymentUpdated },
 	userReferenceInPaymentTransactionPubsub: { created: coveredCreated }
 }));
 
-const { applyPaymentStatus, createPaymentTransaction, paymentCovering } =
-	await import('./paymentTransactionService');
+const {
+	applyPaymentStatus,
+	createPaymentTransaction,
+	discardPaymentTransaction,
+	openPaymentProblem,
+	partialReceipt,
+	paymentCovering,
+	receivePaymentFor,
+	reportPaymentTransfer
+} = await import('./paymentTransactionService');
 
 const payment = ({ id, covers }: { id: string; covers: string[] }): StoredPayment => ({
 	id,
@@ -101,6 +125,8 @@ beforeEach(() => {
 	state.people = [{ paymentStatus: 'PENDING' }, { paymentStatus: 'PROBLEM' }];
 	state.payments = [];
 	state.fee = 50;
+	state.stored = { recievedAt: null, discardedAt: null };
+	state.written = [{ id: 'p' }];
 	steps.length = 0;
 	vi.clearAllMocks();
 });
@@ -138,12 +164,17 @@ describe('createPaymentTransaction', () => {
 		expect(coveredCreated).not.toHaveBeenCalled();
 	});
 
-	it('looks only at the payer’s references of this amount that have not arrived, newest first', async () => {
+	it('looks only at the payer’s references of this amount that have not arrived and were not given up, newest first', async () => {
 		await create(['a', 'b']);
 
 		expect(findPayments).toHaveBeenCalledWith(
 			expect.objectContaining({
-				where: { payerParticipantId: 'a', amount: 100, recievedAt: { isNull: true } },
+				where: {
+					payerParticipantId: 'a',
+					amount: 100,
+					recievedAt: { isNull: true },
+					discardedAt: { isNull: true }
+				},
 				orderBy: { createdAt: 'desc' }
 			})
 		);
@@ -194,12 +225,24 @@ describe('applyPaymentStatus', () => {
 		await applyPaymentStatus({
 			payment: payment({ id: 'existing', covers: ['b', 'a'] }),
 			assignedStatus: 'DONE',
-			recievedAt: undefined
+			recievedAt: new Date('2026-11-20T00:00:00Z')
 		});
 
 		expect(steps).toEqual(['lock no key update', 'update', 'update']);
 		expect(lockOrder).toHaveBeenCalledWith('participant.id asc');
 		expect(updated).toHaveBeenLastCalledWith({ paymentStatus: 'DONE' });
+	});
+
+	it('keeps the stored date when marking received without one', async () => {
+		await applyPaymentStatus({
+			payment: payment({ id: 'existing', covers: ['a'] }),
+			assignedStatus: 'DONE',
+			recievedAt: undefined
+		});
+
+		expect(updated).not.toHaveBeenCalledWith(expect.objectContaining({ recievedAt: undefined }));
+		expect(updated).toHaveBeenCalledTimes(1);
+		expect(updated).toHaveBeenCalledWith({ paymentStatus: 'DONE' });
 	});
 
 	it('locks nobody for a payment that covers nobody any more', async () => {
@@ -210,5 +253,124 @@ describe('applyPaymentStatus', () => {
 		});
 
 		expect(steps).toEqual([]);
+	});
+});
+
+describe('partialReceipt', () => {
+	it('settles the people named and sends the others back to pending', () => {
+		expect(partialReceipt({ covered: ['a', 'b', 'c'], paidFor: ['c', 'a'] })).toEqual({
+			done: ['a', 'c'],
+			pending: ['b'],
+			whole: false
+		});
+	});
+
+	it('is whole once everybody is named, each once', () => {
+		expect(partialReceipt({ covered: ['a', 'b'], paidFor: ['b', 'a', 'a'] })).toEqual({
+			done: ['a', 'b'],
+			pending: [],
+			whole: true
+		});
+	});
+
+	it('refuses nobody and people the payment does not cover', () => {
+		expect(partialReceipt({ covered: ['a'], paidFor: [] })).toBeUndefined();
+		expect(partialReceipt({ covered: ['a'], paidFor: ['a', 'x'] })).toBeUndefined();
+	});
+});
+
+describe('receivePaymentFor', () => {
+	const covering = payment({ id: 'p', covers: ['b', 'a', 'c'] });
+
+	it('marks the people named paid and the others pending, leaving the payment open', async () => {
+		await receivePaymentFor({ payment: covering, paidFor: ['a', 'c'], recievedAt: new Date() });
+
+		expect(steps).toEqual(['lock no key update', 'update', 'update']);
+		expect(updated).toHaveBeenNthCalledWith(1, { paymentStatus: 'DONE' });
+		expect(where).toHaveBeenCalledWith(
+			expect.objectContaining({ filter: { id: { in: ['a', 'c'] } } })
+		);
+		expect(updated).toHaveBeenNthCalledWith(2, { paymentStatus: 'PENDING' });
+		expect(where).toHaveBeenCalledWith(expect.objectContaining({ filter: { id: { in: ['b'] } } }));
+		expect(paymentUpdated).toHaveBeenCalledWith('p');
+	});
+
+	it('receives the payment when everybody is named', async () => {
+		const recievedAt = new Date('2026-11-20T00:00:00Z');
+		await receivePaymentFor({ payment: covering, paidFor: ['a', 'b', 'c'], recievedAt });
+
+		expect(updated).toHaveBeenCalledWith({ recievedAt });
+		expect(updated).toHaveBeenLastCalledWith({ paymentStatus: 'DONE' });
+	});
+
+	it('refuses somebody the payment does not cover, writing nothing', async () => {
+		await expect(
+			receivePaymentFor({ payment: covering, paidFor: ['x'], recievedAt: undefined })
+		).rejects.toMatchObject({ extensions: { code: 'INVALID_INPUT' } });
+		expect(steps).toEqual([]);
+	});
+});
+
+describe('openPaymentProblem', () => {
+	it('says why the payer can no longer change a payment', () => {
+		expect(openPaymentProblem({ recievedAt: null, discardedAt: null })).toBeUndefined();
+		expect(openPaymentProblem({ recievedAt: new Date(), discardedAt: null })).toBe('RECEIVED');
+		expect(openPaymentProblem({ recievedAt: null, discardedAt: new Date() })).toBe('DISCARDED');
+		// money that arrived on a discarded reference is what counts
+		expect(openPaymentProblem({ recievedAt: new Date(), discardedAt: new Date() })).toBe(
+			'RECEIVED'
+		);
+	});
+});
+
+describe('reportPaymentTransfer', () => {
+	it('keeps when the payer said they transferred, and clears it when they take it back', async () => {
+		await reportPaymentTransfer({ id: 'p', reported: true });
+		expect(updated).toHaveBeenLastCalledWith(
+			expect.objectContaining({ transferReportedAt: expect.any(Date) })
+		);
+
+		await reportPaymentTransfer({ id: 'p', reported: false });
+		expect(updated).toHaveBeenLastCalledWith(expect.objectContaining({ transferReportedAt: null }));
+		expect(paymentUpdated).toHaveBeenCalledWith('p');
+	});
+
+	it('refuses once the money arrived or the reference was given up', async () => {
+		state.stored = { recievedAt: new Date(), discardedAt: null };
+		await expect(reportPaymentTransfer({ id: 'p', reported: true })).rejects.toMatchObject({
+			extensions: { code: 'CONFLICT' }
+		});
+
+		state.stored = { recievedAt: null, discardedAt: new Date() };
+		await expect(reportPaymentTransfer({ id: 'p', reported: false })).rejects.toMatchObject({
+			extensions: { code: 'CONFLICT' }
+		});
+		expect(updated).not.toHaveBeenCalled();
+	});
+
+	it('refuses when the payment changed between reading and writing it', async () => {
+		state.written = [];
+		await expect(reportPaymentTransfer({ id: 'p', reported: true })).rejects.toMatchObject({
+			extensions: { code: 'CONFLICT' }
+		});
+		expect(paymentUpdated).not.toHaveBeenCalled();
+	});
+});
+
+describe('discardPaymentTransaction', () => {
+	it('marks the reference given up and keeps it', async () => {
+		await discardPaymentTransaction('p');
+
+		expect(updated).toHaveBeenCalledWith(
+			expect.objectContaining({ discardedAt: expect.any(Date) })
+		);
+		expect(paymentUpdated).toHaveBeenCalledWith('p');
+	});
+
+	it('refuses a reference whose money arrived', async () => {
+		state.stored = { recievedAt: new Date(), discardedAt: null };
+		await expect(discardPaymentTransaction('p')).rejects.toMatchObject({
+			extensions: { code: 'CONFLICT' }
+		});
 	});
 });

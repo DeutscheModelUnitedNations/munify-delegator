@@ -23,9 +23,17 @@
 		paperId?: string;
 		/** Only the icon, for a table row */
 		compact?: boolean;
+		/** What the button says, where "write to delegate" is not the whole story */
+		label?: string;
 	}
 
-	let { conferenceId, participantId, paperId, compact = false }: Props = $props();
+	let {
+		conferenceId,
+		participantId,
+		paperId,
+		compact = false,
+		label = m.chatWriteToDelegate()
+	}: Props = $props();
 
 	let busy = $state(false);
 	let choices = $state<ChatInboxRow[]>([]);
@@ -81,8 +89,8 @@
 	<button
 		type="button"
 		class="btn btn-ghost btn-xs btn-square"
-		title={m.chatWriteToDelegate()}
-		aria-label={m.chatWriteToDelegate()}
+		title={label}
+		aria-label={label}
 		disabled={busy}
 		onclick={(event) => {
 			event.stopPropagation();
@@ -101,11 +109,11 @@
 		data-testid="write-to-delegate"
 	>
 		<i aria-hidden="true" class="ph-duotone ph-chat-circle-dots"></i>
-		{m.chatWriteToDelegate()}
+		{label}
 	</button>
 {/if}
 
-<Modal bind:open={choosing} title={m.chatWriteToDelegate()}>
+<Modal bind:open={choosing} title={label}>
 	<p class="text-base-content/70 mb-3 text-sm">{m.chatChooseInbox()}</p>
 	<InboxChoices options={choices} onChoose={choose} />
 	{#snippet action()}

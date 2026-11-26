@@ -22,6 +22,7 @@ const conference: EmailSnapshot['conference'] = {
 	unlockPostals: false,
 	unlockPayments: false,
 	applicationDeadline: new Date(now.getTime() - 30 * DAY),
+	paymentDeadline: null,
 	startConference: new Date(now.getTime() + 60 * DAY),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: false,

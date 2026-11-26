@@ -18,6 +18,12 @@ export const FORMALITY_META: Record<FormalityKey, { icon: string; title: () => s
 export const administrativeOptions = (): StatusOption<AdministrativestatusEnum>[] => [
 	{ value: 'PENDING', label: m.statusPending(), icon: 'hourglass-medium', tone: 'warning' },
 	{ value: 'PROBLEM', label: m.statusProblem(), icon: 'warning', tone: 'error' },
+	{
+		value: 'NEEDS_HUMAN_REVIEW',
+		label: m.statusNeedsHumanReview(),
+		icon: 'magnifying-glass',
+		tone: 'warning'
+	},
 	{ value: 'DONE', label: m.statusDone(), icon: 'check-circle', tone: 'success' }
 ];
 

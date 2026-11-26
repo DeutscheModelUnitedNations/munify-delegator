@@ -131,13 +131,18 @@ Vorher verlinkt die Karte den Leitfaden auf einer externen Seite, wenn die Konfe
 
 ## Zahlung {#payment}
 
-Die Karte **Beitragszahlung** öffnet die Zahlungsseite, sobald das Team die Zahlung freischaltet. Je nach Einstellung der Konferenz bekommst du dann eine E-Mail. Den Teilnahmebeitrag zahlst du per Überweisung:
+Die Karte **Beitragszahlung** öffnet die Zahlungsseite, sobald das Team die Zahlung freischaltet. Je nach Einstellung der Konferenz bekommst du dann eine E-Mail. Den Teilnahmebeitrag zahlst du per Überweisung. Die Seite führt dich Schritt für Schritt hindurch, wie die postalische Anmeldung, und merkt sich, wie weit du bist:
 
-1. Bist du in einer Delegation oder Betreuende\*r, kannst du mit **Für andere mitbezahlen** mehrere Personen mit einer Überweisung bezahlen und sie unter **Für wen zahlst du?** auswählen. Wer schon bezahlt hat, steht dort mit **(bereits bezahlt)** und lässt sich nicht auswählen.
-2. Prüfe, für wen die Überweisung zahlt, und klicke **Überweisungs-Referenz generieren**. Danach ist die Auswahl fest.
-3. Überweise den Betrag mit genau dem angezeigten **Verwendungszweck**. Am einfachsten scannst du den **GiroCode** mit deiner Banking-App, sonst kopierst du die Felder, statt sie abzutippen.
+1. **Worum es geht:** Beitrag pro Person, die **Zahlungsfrist**, falls die Konferenz eine hat, und der Zahlungsweg.
+2. **Für wen zahlst du?** Nur wenn du in einer Delegation oder Betreuende\*r bist: Mit **Für andere mitbezahlen** bezahlst du mehrere Personen mit einer Überweisung. Wer schon bezahlt hat, steht dort mit **(bereits bezahlt)** und lässt sich nicht auswählen.
+3. **Betrag und Referenz:** Prüfe, für wen die Überweisung zahlt und was das ausmacht, und klicke **Überweisungs-Referenz generieren**. Damit stehen Personen und Betrag fest.
+4. **So kommt deine Zahlung gut an:** kurze Hinweise, Schritt für Schritt, worauf es bei der Überweisung ankommt. Beim ersten Mal siehst du sie bis zum Ende an, danach kannst du sie überspringen.
+5. **Überweisen:** Überweise den Betrag mit genau dem angezeigten **Verwendungszweck**. Am einfachsten scannst du den **GiroCode** mit deiner Banking-App, sonst kopierst du die Felder, statt sie abzutippen. Danach klickst du **Ich habe überwiesen**.
+6. **Zahlungseingang:** Bis das Team die Überweisung sieht und abhakt, können ein paar Werktage vergehen. Die Seite zeigt dir, wie weit die Zahlung ist.
 
-Nur mit diesem Verwendungszweck kann das Team die Zahlung zuordnen. Hat in der Zwischenzeit jemand aus deiner Auswahl bezahlt, lehnt DELEGATOR die Referenz ab, wähle dann neu. Ist deine Zahlung eingegangen und vom Team abgehakt, steht dort **Dein Teilnahmebeitrag ist bezahlt**, die Karte verschwindet aus dem Schnellzugriff, und je nach Einstellung der Konferenz bekommst du eine Bestätigung per E-Mail. Neue Referenzen kannst du danach nicht mehr erstellen, auch nicht für andere.
+Nur mit diesem Verwendungszweck kann das Team die Zahlung zuordnen. **Ich habe überwiesen** ist nur deine Angabe, sie ändert deinen Status nicht. Hast du dich vertan, nimmst du sie mit **Angabe zurücknehmen** zurück. Stimmen Personen oder Betrag nicht, verwirfst du die Referenz mit **Zahlung neu beginnen** und wählst neu aus. Die alte Referenz sieht das Team weiter, damit eine Überweisung damit trotzdem ankommt. Hat in der Zwischenzeit jemand aus deiner Auswahl bezahlt, lehnt DELEGATOR die Referenz ab, wähle dann neu. Hat jemand anderes eine Zahlung erstellt, die dich abdeckt, steht das oben auf der Seite, damit niemand doppelt zahlt.
+
+Ist deine Zahlung eingegangen und vom Team abgehakt, steht dort **Dein Teilnahmebeitrag ist bezahlt**, die Karte verschwindet aus dem Schnellzugriff, und je nach Einstellung der Konferenz bekommst du eine Bestätigung per E-Mail. Neue Referenzen kannst du danach nicht mehr erstellen, auch nicht für andere.
 
 :::caution Aus dem Ausland
 Prüfe alle Angaben besonders genau und achte auf die richtige Währung. Die Kosten einer Auslandsüberweisung trägst du selbst. Sie dürfen nicht vom Betrag abgezogen werden, der ankommt. Kannst du keine SWIFT-Überweisung machen, wende dich zuerst an die Teilnehmendenbetreuung.
@@ -299,7 +304,7 @@ Zu vielen Schritten kann dir die Konferenz eine E-Mail schicken. Welche davon au
 - **Bewerbung:** der Code für die Delegationsleitung, eine Bestätigung beim Beitritt, eine Nachricht an die bisherigen Mitglieder über jedes neue Mitglied, die Bestätigung der abgeschlossenen Bewerbung und eine Erinnerung drei Tage vor dem Bewerbungsschluss, solange die Bewerbung offen ist.
 - **Ergebnis:** die Zusage mit deiner Rolle oder die Absage mit dem Hinweis auf die Warteliste, sobald die Zuteilung freigegeben ist. Betreuende bekommen eine Übersicht über ihre Schüler\*innen.
 - **Warteliste:** die Bestätigung des Eintrags und, wenn du nachrückst, deine neue Rolle.
-- **Formalitäten:** wenn Zahlung oder postalische Anmeldung freigeschaltet sind, wenn sie eingegangen sind, wenn es ein Problem gibt, und zwei Wochen vor der Konferenz eine Erinnerung an alles, was noch offen ist.
+- **Formalitäten:** wenn Zahlung oder postalische Anmeldung freigeschaltet sind, wenn sie eingegangen sind, wenn es ein Problem gibt, wenige Tage vor der Zahlungsfrist eine Erinnerung an den Beitrag und zwei Wochen vor der Konferenz eine Erinnerung an alles, was noch offen ist.
 - **Vorbereitung:** neue Umfragen und eine Erinnerung drei Tage vor ihrer Frist, Feedback zu deinen Papieren, Ankündigungen, ungelesene Nachrichten, die Einladung zu MUNify CHASE und eine Woche vorher die Bitte, dein Smartphone einzurichten.
 - **Betreuung:** an Betreuende für jede neu verbundene Person, an die Person über ihre Betreuung.
 - **Danach:** dass dein Zertifikat bereitsteht, wenn du teilgenommen hast.

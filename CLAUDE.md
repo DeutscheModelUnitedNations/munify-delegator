@@ -34,6 +34,7 @@ bun run dev:accounts     # rewrite oidc-mock.yaml users from seed-data/devAccoun
 bun scripts/buildZipCoordinates.ts # rebuild the stats map's ZIP area centres from GeoNames
 bun run db:nuke          # recreate the container and migrate
 bun run db:studio
+bash scripts/migrationUpgrade.sh [ref] # migrate + small-seed the last release, then migrate this checkout (wipes the DB)
 
 bun run format
 bun run check            # PREFERRED type check (svelte-check --tsgo, incremental)
@@ -120,6 +121,7 @@ bun run preview
 | `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                         |
 | `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates |
 | `postal-scans.md`        | Reading scanned paper, taking in scans (browser and server), agreement details, scanners delivering by WebDAV/folder                            |
+| `bank-payments.md`       | Bank payment sync from BuchhaltungsButler: matching references, `NEEDS_HUMAN_REVIEW`, `bank_transfer`                                           |
 | `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                    |
 | `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                              |
 | `user-manual.md`         | `/docs` manual, help links, tours, generated screenshots                                                                                        |
@@ -439,7 +441,9 @@ bun run preview
   `#api/services/registration/participation.ts`), deferred `assert_one_part` triggers at commit
   under an advisory lock. Swapping parts happens in one transaction. `e2e/authorization/one-part.spec.ts`.
 - Conference states: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`.
-  Supervisor connection codes are unique across conferences. Payments: `PaymentTransaction`.
+  Supervisor connection codes are unique across conferences. Payments: `PaymentTransaction`; the daily `bank-payment-sync` job settles them from
+  BuchhaltungsButler and flags what it cannot as `NEEDS_HUMAN_REVIEW`; a transfer without a known
+  reference is not flagged and still needs matching by hand (`docs/architecture/bank-payments.md`).
   Papers are versioned with reviews.
 - **Review drafts** (`#api/handlers/paperReviewDraft/`, `paper_review_draft`): an AI assistant
   prepares a review over MCP (`upsertPaperReviewDraft`, Markdown → TipTap in `reviewMarkdown.ts`,
@@ -611,6 +615,10 @@ Slack token key — changing it means re-entering tokens), `S3_ENDPOINT`, `S3_AC
 - **Release** from a clean `main`: `npm version patch|minor|major && git push --follow-tags`. The tag
   runs CI, publishes images (`x.y.z`, `x.y`, `x`; ghcr + DockerHub, app + jobs), uploads sourcemaps
   to Bugsink, deploys via Dokploy and creates the GitHub release. Never tag by hand.
+  Before publishing, `migration-upgrade` (CI, also on PRs changing `drizzle/`) applies the
+  release's migrations to a database seeded (`db:seed:dev:small`) by the previous release tag, so
+  a migration that works only on empty tables (NOT NULL without default, unique index, trigger)
+  stops the release: backfill or default new required columns in the migration itself.
 
 ## Dev tooling
 

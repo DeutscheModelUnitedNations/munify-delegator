@@ -58,7 +58,9 @@ const fullName = (user: SnapshotUser) =>
 		}
 	});
 
-const day = (date: Date) => date.toLocaleDateString(getLocale(), { dateStyle: 'long' });
+/** A calendar day; in `timeZone` where given, else in the server's. */
+const day = (date: Date, timeZone?: string) =>
+	date.toLocaleDateString(getLocale(), { dateStyle: 'long', timeZone });
 /** A deadline down to the minute, in the conference's time zone: a survey closes at its time. */
 const dateTime = ({ date, timeZone }: { date: Date; timeZone: string }) =>
 	date.toLocaleString(getLocale(), {
@@ -243,6 +245,16 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			delegationHint: email.person?.delegation ? m.emailAutoApplicationReminderDelegation() : ''
 		},
 		button: dashboard
+	}),
+	PAYMENT_DEADLINE_REMINDER: ({ conference, origin }) => ({
+		// the deadline's day where the conference is: late in the evening it is the next one in UTC
+		values: {
+			date: conference.paymentDeadline ? day(conference.paymentDeadline, conference.timezone) : ''
+		},
+		button: {
+			label: m.emailAutoPaymentReminderButton(),
+			url: `${origin}/dashboard/${conference.id}/payment`
+		}
 	}),
 	OPEN_ISSUES_REMINDER: ({ conference, dashboard }) => ({
 		values: { date: day(conference.startConference) },

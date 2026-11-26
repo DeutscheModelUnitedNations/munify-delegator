@@ -25,13 +25,17 @@ Once **Payments** is on (see [Status and stages](./configuration#stages)), parti
 - One reference can cover several people. The amount is then the **Fee** times the number of people.
 - People can pay for themselves, their own delegation, the participants they supervise and supervisors they share a supervised person with. DELEGATOR refuses anything else.
 - Someone who has paid makes no new reference and cannot be included in a new one.
+- Whoever created a reference can discard it with **Start the payment over**. It stays findable here, marked as discarded, so you can still match a transfer that arrives with it after all.
+- With **I have transferred the money** participants state that they transferred. The page shows that with the reference, but it does not change the payment status: only you set that, once the money is there.
 - While no fee is set in the [Banking Information](./configuration#payment-details), no reference can be created.
 
 A reference has 16 characters in groups of four with hyphens, such as `ACDE-FH34-…`. It contains no characters that are easy to mix up.
 
 ### Confirming a payment {#confirming-a-payment}
 
-The **Fee Payment** page is made for working through a bank statement line by line:
+The **Fee Payment** page has three parts: at the top **To review**, the cases the [bank account sync](#bank-sync) leaves to you (see [Reviewing cases](#reviewing)), below it **Look up a reference**, and last, collapsed, **Confirmed automatically**: the payments the sync marked as received by itself, with booking day, reference, people covered, amount and transaction number.
+
+**Look up a reference** is for transfers the sync could not recognise, e.g. with a mistyped reference, and is made for working through a bank statement line by line:
 
 1. At the top it shows the last confirmed transaction with its date. That way you see where you or someone else stopped.
 2. Enter the reference from the payment reference line into **Reference Search**, exactly as it appears there. The command palette (Ctrl+K) also finds references and opens them on this page.
@@ -45,13 +49,36 @@ If the page finds nothing, it says **No transaction with this reference found**.
 
 **Mark as Received** stores today as the date of receipt and sets the payment status of **everybody** the reference covers to **Done**. The payer only counts if they are covered as well. **Mark as Problem** sets everybody covered to **Problem**.
 
-| Status      | What follows                                                                                                                                                                                |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pending** | The initial state. At the entrance, **Payment is still open** shows.                                                                                                                        |
-| **Problem** | The email **Problem with documents or payment** becomes due. It names the payment and asks the person to contact participant care, without details. At the entrance the payment stays open. |
-| **Done**    | The email **Payment received** becomes due. The person makes no new references and cannot be included in a new one. At the entrance the payment is no longer an open point.                 |
+| Status           | What follows                                                                                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pending**      | The initial state. At the entrance, **Payment is still open** shows.                                                                                                                                 |
+| **Problem**      | The email **Problem with documents or payment** becomes due. It names the payment and asks the person to contact participant care, without details. At the entrance the payment stays open.          |
+| **Done**         | The email **Payment received** becomes due. The person makes no new references and cannot be included in a new one. At the entrance the payment is no longer an open point.                          |
+| **Needs review** | Set only by the [bank account sync](#bank-sync) when it could not match a transfer on its own. No email. Participants and supervisors still see **Pending**; at the entrance the payment stays open. |
 
 Both emails only become due for people with a seat once the assignment is released, and for supervisors who attend themselves and supervise someone with a seat. Whether they go out right away or wait on the [Emails](./communication#emails) page depends on whether the kind is set to automatic. Each of these emails reaches each person at most once.
+
+### Bank account sync {#bank-sync}
+
+Once a day DELEGATOR reads the incoming transfers of all accounts from BuchhaltungsButler and looks for references in every payment purpose. A reference counts wherever it is in the purpose, also in lower case, without dashes or broken across lines.
+
+- **The amount fits** and the payment is still open: the reference is confirmed as with **Mark as received**, with the booking day as the date received.
+- **The amount does not fit**, too little or too much: everybody the reference covers is set to **Needs review**.
+- **The payment was settled already**, e.g. transferred twice: everybody is set to **Needs review** as well; the date received stays.
+
+A transfer naming several references has to be their sum. Under **Bank transfers** the **Fee Payment** page shows, for each reference, which transfers the sync matched to it, with amount, booking day and the transaction number in BuchhaltungsButler.
+
+The sync handles a transfer only once and does not overwrite your decision.
+
+### Reviewing cases {#reviewing}
+
+Under **To review**, every transfer that set people to **Needs review** is one case, oldest first; a transfer naming two references is one case. Each case shows what was expected, what arrived and the difference, the sender and the purpose as the bank gives them, the transaction number and the people covered. Once a case is decided, it leaves the list.
+
+- **Amount too low** or **Amount too high**: tick whose fee the transfer pays; for too little, as many people as the amount covers are ticked to begin with. **Mark … as received** sets the ticked people to **Done**, with the booking day as the date received. The others are **Pending** again and pay with a new reference. With everybody ticked, the reference is marked as received. **Mark as problem** sets everybody to **Problem**.
+- **Paid already**: the reference had arrived before. **Refund needed – mark as problem** sets everybody to **Problem**, **Nothing to do – stays received** sets them back to **Done**; the date received stays.
+- **Message the person paying** opens the chat with the person who created the reference. Whoever sent the money (e.g. a school association) usually has no DELEGATOR account.
+
+You can still set a single person's status in their user card.
 
 ### Undoing
 

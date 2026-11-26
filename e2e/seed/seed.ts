@@ -37,6 +37,7 @@ import { seedAttendance } from './attendance';
 import { seedPaperScanning } from './paperScanning';
 import { seedPostalGuide } from './postalGuide';
 import { seedDocumentNumbers } from './documentNumbers';
+import { seedBankTransfers } from './bankTransfers';
 import { seedEmailPace } from './emailPace';
 import { seedFeatureRequirements } from './featureRequirements';
 import { seedInvitations } from './invitations';
@@ -1061,6 +1062,7 @@ export default async function seed() {
 	await seedPaperScanning(db);
 	await seedPostalGuide(db);
 	await seedDocumentNumbers(db);
+	await seedBankTransfers(db);
 	await seedEmailPace(db);
 	await seedFeatureRequirements(db);
 	await seedInvitations(db);

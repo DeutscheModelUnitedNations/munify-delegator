@@ -160,7 +160,8 @@ const NSA_PREPARATION_STATUS: StatusPlan = {
 /** Preparation: every combination of done, pending and problem somewhere among the personas. */
 const preparationStatuses: Statuses = {
 	'dev-head-delegate': {
-		paymentStatus: 'PENDING',
+		// their transfer paid too little: the bank payment sync flagged it
+		paymentStatus: 'NEEDS_HUMAN_REVIEW',
 		termsAndConditions: 'PENDING',
 		mediaConsent: 'PENDING',
 		mediaConsentStatus: 'NOT_SET'
@@ -398,18 +399,23 @@ function addPersonaStatuses({ cs, nsaPartner }: { cs: ConferenceSeed; nsaPartner
 	});
 
 	if (preparing) {
-		// Paid for themselves and the minor; the head delegate's own transfer is still open.
+		// Paid for themselves and the minor; the head delegate's own transfer paid too little, so the
+		// bank payment sync flagged it for review.
 		addPayment({
 			cs,
 			payerId: 'dev-delegate',
 			forUserIds: ['dev-delegate', 'dev-delegate-minor'],
-			received: true
+			received: true,
+			bankTransfers: [{ amount: (cs.conference.feeAmount ?? 0) * 2, result: 'RECEIVED' }]
 		});
 		addPayment({
 			cs,
 			payerId: 'dev-head-delegate',
 			forUserIds: ['dev-head-delegate'],
-			received: false
+			received: false,
+			bankTransfers: [
+				{ externalId: 54, amount: (cs.conference.feeAmount ?? 0) / 2, result: 'AMOUNT_MISMATCH' }
+			]
 		});
 		addPayment({
 			cs,

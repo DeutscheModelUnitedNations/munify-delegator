@@ -131,13 +131,18 @@ Before that the card links the guide on an external site, if the conference gave
 
 ## Payment {#payment}
 
-The **Fee Payment** card opens the payment page once the team unlocks payments. Depending on the conference's settings you then get an email. You pay the participation fee by bank transfer:
+The **Fee Payment** card opens the payment page once the team unlocks payments. Depending on the conference's settings you then get an email. You pay the participation fee by bank transfer. The page takes you through it step by step, like the postal registration, and remembers how far you got:
 
-1. If you are in a delegation or a supervisor, **Pay for others too** lets you cover several people with one transfer and select them under **Who are you paying for?**. Anyone who has already paid is listed with **(already paid)** and cannot be selected.
-2. Check whom the transfer pays for and click **Generate Transaction Reference**. The selection is fixed from then on.
-3. Transfer the amount with exactly the **Reason** shown. Scanning the **GiroCode** with your banking app is easiest. Otherwise copy the fields rather than typing them.
+1. **What it is about:** the fee per person, the **payment deadline** if the conference has one, and the payment method.
+2. **Who are you paying for?** Only if you are in a delegation or a supervisor: **Pay for others too** lets you cover several people with one transfer. Anyone who has already paid is listed with **(already paid)** and cannot be selected.
+3. **Amount and reference:** check whom the transfer pays for and what that comes to, and click **Generate Transaction Reference**. People and amount are fixed from then on.
+4. **How your payment arrives safely:** short hints, step by step, on what matters for the transfer. The first time you watch them to the end, afterwards you can skip them.
+5. **Transfer:** transfer the amount with exactly the **Reason** shown. Scanning the **GiroCode** with your banking app is easiest. Otherwise copy the fields rather than typing them. Then click **I have transferred the money**.
+6. **Payment arrival:** it can take a few working days until the team sees the transfer and ticks it off. The page shows you how far the payment is.
 
-This reference is the only way the team can match your payment. If someone in your selection has paid in the meantime, DELEGATOR refuses the reference, so select again. Once your payment has arrived and the team has ticked it off, the page says **Your fee is paid**, the card disappears from the quick links, and depending on the conference's settings you get a confirmation by email. You can then no longer create references, not even for others.
+This reference is the only way the team can match your payment. **I have transferred the money** is only your statement and does not change your status. If you made a mistake, **Take back** undoes it. If the people or the amount are wrong, **Start the payment over** discards the reference and you select again. The team still sees the old reference, so a transfer made with it still arrives. If someone in your selection has paid in the meantime, DELEGATOR refuses the reference, so select again. If someone else created a payment that covers you, the top of the page says so, so that nobody pays twice.
+
+Once your payment has arrived and the team has ticked it off, the page says **Your fee is paid**, the card disappears from the quick links, and depending on the conference's settings you get a confirmation by email. You can then no longer create references, not even for others.
 
 :::caution From abroad
 Check every detail especially carefully and use the right currency. You bear the cost of an international transfer yourself. It must not be deducted from the amount that arrives. If you cannot make a SWIFT transfer, contact participant care first.
@@ -299,7 +304,7 @@ For many steps the conference can send you an email. Which of them go out automa
 - **Application:** the code for the head delegate, a confirmation when you join, a note to the earlier members about each new member, the confirmation of the completed application, and a reminder three days before the application deadline while the application is still open.
 - **Result:** the acceptance with your role, or the rejection with a pointer to the waiting list, once the assignment is released. Supervisors get an overview of their students.
 - **Waiting list:** the confirmation of your entry and, if you move up, your new role.
-- **Formalities:** when payment or postal registration is unlocked, when they have arrived, when there is a problem, and two weeks before the conference a reminder of everything still open.
+- **Formalities:** when payment or postal registration is unlocked, when they have arrived, when there is a problem, a few days before the payment deadline a reminder of the fee, and two weeks before the conference a reminder of everything still open.
 - **Preparation:** new surveys and a reminder three days before their deadline, feedback on your papers, announcements, unread messages, the invitation to MUNify CHASE and, a week before, the request to set up your phone.
 - **Supervision:** to supervisors for every newly connected person, to the person about their supervisor.
 - **Afterwards:** that your certificate is ready, if you attended.

@@ -18,7 +18,9 @@ export function createPaperGroupsSnapshot<Grouped, Introduction>(
 ): PaperGroupsSnapshot<Grouped, Introduction> {
 	let grouped = $state<Grouped>();
 	let introduction = $state<Introduction>();
-	let loading = $state(false);
+	// Loading from the start: the effect runs only after the first render, and a first render that
+	// saw "not loading, nothing loaded" would show the note that there are no papers.
+	let loading = $state(true);
 	let error = $state<string>();
 
 	$effect(() => {

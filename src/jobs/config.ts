@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { StorageConfig } from '#api/handlers/storedFile/storageClient';
+import type { BuchhaltungsButlerConfig } from './apis/buchhaltungsbutler/buchhaltungsbutlerClient';
 
 /**
  * Everything the jobs read from the environment, validated with zod. Jobs run outside SvelteKit,
@@ -56,6 +57,31 @@ const sendEmailsSchema = z.object({
  */
 export function sendEmailsConfig() {
 	return parseEnv({ schema: sendEmailsSchema, group: 'sending the automatic emails' });
+}
+
+/**
+ * BuchhaltungsButler's API, which the bank payment sync reads the bank accounts through: the API
+ * client and secret and the customer's API key, all from BuchhaltungsButler's settings (Einstellungen
+ * → API).
+ */
+const bankPaymentSyncSchema = z.object({
+	// the requests carry the API secret and key: never without TLS
+	BUCHHALTUNGSBUTLER_API_URL: z
+		.url({ protocol: /^https$/, error: 'must be an https:// URL' })
+		.default('https://webapp.buchhaltungsbutler.de/api/v1'),
+	BUCHHALTUNGSBUTLER_API_CLIENT: z.string().min(1, 'is not set'),
+	BUCHHALTUNGSBUTLER_API_SECRET: z.string().min(1, 'is not set'),
+	BUCHHALTUNGSBUTLER_API_KEY: z.string().min(1, 'is not set')
+});
+
+export function bankPaymentSyncConfig(): BuchhaltungsButlerConfig {
+	const env = parseEnv({ schema: bankPaymentSyncSchema, group: 'the bank payment sync' });
+	return {
+		baseUrl: env.BUCHHALTUNGSBUTLER_API_URL,
+		apiClient: env.BUCHHALTUNGSBUTLER_API_CLIENT,
+		apiSecret: env.BUCHHALTUNGSBUTLER_API_SECRET,
+		apiKey: env.BUCHHALTUNGSBUTLER_API_KEY
+	};
 }
 
 export function databaseConfig() {

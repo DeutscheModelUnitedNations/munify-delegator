@@ -608,6 +608,13 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.paperReview.paperVersionId
 		})
 	},
+	bankTransfer: {
+		paymentTransaction: r.one.paymentTransaction({
+			from: r.bankTransfer.paymentTransactionId,
+			to: r.paymentTransaction.id,
+			optional: false
+		})
+	},
 	paymentTransaction: {
 		payer: r.one.conferenceParticipant({
 			from: r.paymentTransaction.payerParticipantId,
@@ -622,6 +629,10 @@ export const relations = defineRelations(schema, (r) => ({
 		paymentFor: r.many.userReferenceInPaymentTransaction({
 			from: r.paymentTransaction.id,
 			to: r.userReferenceInPaymentTransaction.paymentTransactionId
+		}),
+		bankTransfers: r.many.bankTransfer({
+			from: r.paymentTransaction.id,
+			to: r.bankTransfer.paymentTransactionId
 		}),
 		user: r.one.user({
 			from: r.paymentTransaction.payerParticipantId.through(r.conferenceParticipant.id),
