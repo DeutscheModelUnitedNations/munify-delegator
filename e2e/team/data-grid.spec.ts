@@ -48,8 +48,12 @@ test('the participants table filters, groups and keeps a personal view', async (
 	const groupHeader = page.locator('tbody button[aria-expanded]').first();
 	await expect(groupHeader).toBeVisible({ timeout: 15_000 });
 	await expect(groupHeader).toHaveAttribute('aria-expanded', 'true');
-	await groupHeader.click();
-	await expect(groupHeader).toHaveAttribute('aria-expanded', 'false');
+	// a click while the grouped rows still render can be lost; a second one only while still open
+	await expect(async () => {
+		if ((await groupHeader.getAttribute('aria-expanded')) === 'true')
+			await groupHeader.click({ timeout: 2_000 });
+		await expect(groupHeader).toHaveAttribute('aria-expanded', 'false', { timeout: 2_000 });
+	}).toPass({ timeout: 15_000 });
 
 	// Saved as a personal view, the table opens on it from the views menu
 	const name = `E2E view ${Date.now()}`;
