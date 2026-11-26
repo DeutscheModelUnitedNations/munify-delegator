@@ -8,8 +8,13 @@
 <script lang="ts">
 	import { inboxName, INBOX_ICON } from '#lib/components/chat/chatLabels';
 	import { m } from '#lib/paraglide/messages';
-	import type { ChatInbox } from '#lib/helpers/chat';
-	import { inboxFilterRows, type InboxGroup, type TeamInbox } from './teamInboxes';
+	import {
+		inboxFilterRows,
+		teamInboxName,
+		type InboxGroup,
+		type InboxKind,
+		type TeamInbox
+	} from './teamInboxes';
 
 	/** A button of the filter (`inboxFilterRows`). */
 	type FilterOption = NonNullable<ReturnType<typeof inboxFilterRows>['members']>['all'];
@@ -30,18 +35,22 @@
 		rows.kinds && rows.members ? groupLabel(rows.members.group.kind) : m.chatFilterByInbox()
 	);
 
-	function groupLabel(kind: ChatInbox) {
+	function groupLabel(kind: InboxKind) {
 		if (kind === 'PARTICIPANT_CARE') return m.chatInboxGroupCare();
 		if (kind === 'TRUSTED_PERSON') return m.chatInboxTrustedPersons();
+		if (kind === 'GROUP') return m.chatGroups();
+		if (kind === 'ROLE_SUPPORT') return m.chatInboxRoleSupportKind();
 		return inboxName({ inbox: kind });
 	}
-	const groupTitle = (kind: ChatInbox) =>
+	const groupIcon = (kind: InboxKind) => (kind === 'GROUP' ? 'users-four' : INBOX_ICON[kind]);
+	const groupTitle = (kind: InboxKind) =>
 		kind === 'PARTICIPANT_CARE' ? m.chatInboxParticipantCare() : undefined;
 	const memberLabel = (inbox: TeamInbox) =>
 		inbox.committeeAbbreviation ??
+		inbox.roleName ??
 		(inbox.own ? m.chatInboxTrustedOwn() : m.chatInboxTrustedPersons());
 	const memberTitle = (inbox: TeamInbox) =>
-		inbox.committeeAbbreviation ? inboxName(inbox) : undefined;
+		inbox.committeeAbbreviation || inbox.roleName ? teamInboxName(inbox) : undefined;
 
 	const segment = (pressed: boolean) => [
 		'btn btn-xs h-7 flex-1 gap-1 border-0 px-2 font-medium',
@@ -90,7 +99,7 @@
 	</button>
 {/snippet}
 
-<div class="flex flex-col gap-1.5" data-testid="inbox-filter">
+<div class="flex flex-col gap-1.5" data-testid="inbox-filter" data-tour="team.messages.inboxes">
 	{#if rows.kinds}
 		<div
 			class="bg-base-content/5 flex flex-wrap gap-0.5 rounded-field p-0.5"
@@ -103,7 +112,7 @@
 					option: kind,
 					classes: segment,
 					label: groupLabel(kind.group.kind),
-					icon: INBOX_ICON[kind.group.kind],
+					icon: groupIcon(kind.group.kind),
 					title: groupTitle(kind.group.kind)
 				})}
 			{/each}

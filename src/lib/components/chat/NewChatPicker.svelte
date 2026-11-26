@@ -10,6 +10,7 @@
 	import { toast } from 'svelte-sonner';
 	import {
 		fetchChatContacts,
+		fetchChatGroups,
 		fetchChatInboxes,
 		fetchReachingInboxes,
 		type ChatContactRow,
@@ -20,7 +21,8 @@
 	import PickedContactInboxes from './PickedContactInboxes.svelte';
 	import PickerContactGroups from './PickerContactGroups.svelte';
 	import PickerTeamOptions from './PickerTeamOptions.svelte';
-	import { contactSearchText, inboxName, matchesSearch } from './chatLabels';
+	import { contactSearchText, groupName, inboxName, matchesSearch, normalize } from './chatLabels';
+	import { groupLabelSource } from './chatGroups';
 	import { groupContacts } from './contactGroups';
 	import { inboxChoice } from './inboxChoice';
 	import { createChatOpener } from './chatOpener.svelte.js';
@@ -36,10 +38,11 @@
 
 	let { conferenceId, mode, delegationGroup = false, onOpened }: Props = $props();
 
-	const [contacts, inboxes] = $derived(
+	const [contacts, inboxes, groups] = $derived(
 		await Promise.all([
 			fetchChatContacts(conferenceId),
-			mode === 'participant' ? fetchChatInboxes({ conferenceId }) : []
+			mode === 'participant' ? fetchChatInboxes({ conferenceId }) : [],
+			mode === 'participant' ? fetchChatGroups(conferenceId) : []
 		])
 	);
 
@@ -53,7 +56,7 @@
 	/** Team mode: the person picked, while the inbox to write from is chosen. */
 	let picked = $state<{ contact: ChatContactRow; inboxes: ChatInboxRow[] }>();
 
-	const groups = $derived(groupContacts(contacts));
+	const contactGroups = $derived(groupContacts(contacts));
 	const searchable = $derived(
 		contacts.map((contact) => ({ contact, haystack: contactSearchText(contact) }))
 	);
@@ -65,7 +68,7 @@
 		)
 	);
 	const shownGroups = $derived(
-		groups
+		contactGroups
 			.filter((group) => committee === null || group.key === committee)
 			.map((group) => ({
 				...group,
@@ -83,13 +86,26 @@
 				)
 			: []
 	);
+	const shownChatGroups = $derived(
+		committee === null
+			? groups.filter((group) =>
+					matchesSearch({
+						haystack: normalize(groupName(groupLabelSource(group))),
+						search
+					})
+				)
+			: []
+	);
 	const showDelegation = $derived(
 		delegationGroup &&
 			committee === null &&
 			matchesSearch({ haystack: m.chatMyDelegation().toLocaleLowerCase(), search })
 	);
 	const nothingFound = $derived(
-		shownGroups.length === 0 && shownInboxes.length === 0 && !showDelegation
+		shownGroups.length === 0 &&
+			shownInboxes.length === 0 &&
+			shownChatGroups.length === 0 &&
+			!showDelegation
 	);
 	const nobody = $derived(contacts.length === 0 && inboxes.length === 0);
 
@@ -134,8 +150,12 @@
 			/>
 		</label>
 
-		{#if groups.length > 1}
-			<CommitteeChips {groups} selected={committee} onSelect={(key) => (committee = key)} />
+		{#if contactGroups.length > 1}
+			<CommitteeChips
+				groups={contactGroups}
+				selected={committee}
+				onSelect={(key) => (committee = key)}
+			/>
 		{/if}
 
 		<!-- a fixed height, so the dialog does not jump while the search narrows the list -->
@@ -145,10 +165,12 @@
 		>
 			<PickerTeamOptions
 				inboxes={shownInboxes}
+				groups={shownChatGroups}
 				delegation={showDelegation}
 				disabled={opening}
 				onInbox={(option) => opener.inbox({ option })}
 				onDelegation={opener.delegation}
+				onGroup={opener.group}
 			/>
 			<PickerContactGroups groups={shownGroups} disabled={opening} onPick={pick} />
 

@@ -8,6 +8,7 @@ const FEATURE_LABELS: Record<ConferenceFeature, () => string> = {
 	isOpenPaperSubmission: m.featurePaperSubmission,
 	showCalendar: m.featureCalendar,
 	messagingEnabled: m.featureMessaging,
+	groupChatsEnabled: m.featureGroupChats,
 	guidePublished: m.featureGuide
 };
 

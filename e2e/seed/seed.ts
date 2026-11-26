@@ -45,6 +45,7 @@ import { seedMcp } from './mcp';
 import { seedReviewDrafts } from './reviewDrafts';
 import { seedGuide } from './guide';
 import { seedMessages } from './messages';
+import { seedGroupChats } from './groupChats';
 import { seedNextEntries } from './nextEntries';
 import { seedNotifications } from './notifications';
 import { seedPaperNotifications } from './paperNotifications';
@@ -1071,6 +1072,7 @@ export default async function seed() {
 	await seedReviewDrafts(db);
 	await seedGuide(db);
 	await seedMessages(db);
+	await seedGroupChats(db);
 	await seedNextEntries(db);
 	await seedNotifications(db);
 	await seedPaperNotifications(db);

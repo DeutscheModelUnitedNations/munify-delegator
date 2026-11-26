@@ -5,12 +5,17 @@ import type { NotificationTopic } from '#lib/helpers/teamNotifications';
 export function notificationTopicLabel({
 	topic,
 	functionKind,
-	committeeAbbreviation
+	committeeAbbreviation,
+	roleName
 }: {
 	topic: NotificationTopic;
-	/** `COMMITTEE_INBOX` / `COMMITTEE_PAPERS`: the function whose topic it is, and its committee. */
+	/**
+	 * `COMMITTEE_INBOX` / `COMMITTEE_PAPERS` / `CHAT_GROUP`: the function whose topic it is, and its
+	 * committee or (`ROLE_INBOX`, `CHAT_GROUP`) custom role.
+	 */
 	functionKind?: string | null;
 	committeeAbbreviation?: string | null;
+	roleName?: string | null;
 }) {
 	switch (topic) {
 		case 'PARTICIPANT_CARE':
@@ -27,6 +32,12 @@ export function notificationTopicLabel({
 			return m.notificationTopicChatReport();
 		case 'SCAN_PROBLEM':
 			return m.notificationTopicScanProblem();
+		case 'ROLE_INBOX':
+			return m.chatInboxRoleSupport({ role: roleName ?? '' });
+		case 'CHAT_GROUP':
+			return functionKind === 'ROLE_SUPPORT'
+				? m.notificationTopicRoleGroup({ role: roleName ?? '' })
+				: m.notificationTopicCommitteeGroup({ committee: committeeAbbreviation ?? '' });
 		case 'COMMITTEE_PAPERS': {
 			const papers =
 				functionKind === 'CONSULTANT'

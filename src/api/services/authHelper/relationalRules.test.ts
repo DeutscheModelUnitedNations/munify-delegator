@@ -66,7 +66,7 @@ function callerWith(facts: Partial<CallerFacts>): Context {
 	return ctx as Context;
 }
 
-const released = { assignmentReleased: true, showCalendar: true };
+const released = { assignmentReleased: true, showCalendar: true, groupChatsEnabled: false };
 
 const participant = callerWith({
 	participants: [{ id: 'p1', conferenceId: 'c1', registered: true }],

@@ -1,7 +1,8 @@
 <!--
 	@component
 	What a party of a chat between participants can do about it: block the other party of a direct
-	chat, and report the chat to participant care.
+	chat, mute a group for themselves (the team in a group too), and report the chat to participant
+	care.
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
@@ -14,9 +15,25 @@
 		/** A direct chat, whose other party can be blocked */
 		direct: boolean;
 		blockedByMe: boolean;
+		/** A group: whether the caller muted it; undefined for every other chat */
+		muted?: boolean;
+		/** Whether the caller can report the chat: its participants */
+		canReport?: boolean;
 	}
 
-	let { chatId, direct, blockedByMe }: Props = $props();
+	let { chatId, direct, blockedByMe, muted, canReport = true }: Props = $props();
+
+	async function setMuted(mute: boolean) {
+		const promise = Promise.resolve(
+			client.mutate.setChatMuted({ __args: { chatId, muted: mute } })
+		);
+		toast.promise(promise, {
+			loading: m.chatSaving(),
+			success: mute ? m.chatMutedDone() : m.chatUnmutedDone(),
+			error: m.chatSaveFailed()
+		});
+		await promise;
+	}
 
 	let reportOpen = $state(false);
 
@@ -51,12 +68,27 @@
 				</button>
 			</li>
 		{/if}
-		<li>
-			<button type="button" onclick={() => (reportOpen = true)} data-testid="chat-report">
-				<i aria-hidden="true" class="ph-duotone ph-flag"></i>
-				{m.chatReport()}
-			</button>
-		</li>
+		{#if muted !== undefined}
+			<li>
+				<button
+					type="button"
+					onclick={() => setMuted(!muted)}
+					aria-pressed={muted}
+					data-testid="chat-mute"
+				>
+					<i aria-hidden="true" class={['ph-duotone', muted ? 'ph-bell' : 'ph-bell-slash']}></i>
+					{muted ? m.chatUnmute() : m.chatMute()}
+				</button>
+			</li>
+		{/if}
+		{#if canReport}
+			<li>
+				<button type="button" onclick={() => (reportOpen = true)} data-testid="chat-report">
+					<i aria-hidden="true" class="ph-duotone ph-flag"></i>
+					{m.chatReport()}
+				</button>
+			</li>
+		{/if}
 	</ul>
 </div>
 

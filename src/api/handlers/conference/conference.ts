@@ -100,6 +100,7 @@ schemaBuilder.mutationFields((t) => ({
 				'state',
 				'showCalendar',
 				'messagingEnabled',
+				'groupChatsEnabled',
 				'guidePublished',
 				'qrCorporateDesign',
 				'unlockPayments',
@@ -135,6 +136,10 @@ schemaBuilder.mutationFields((t) => ({
 			}),
 			messagingEnabled: t.arg.boolean({
 				description: 'Whether the people of the conference can write each other in the chats.'
+			}),
+			groupChatsEnabled: t.arg.boolean({
+				description:
+					'Whether the groups of the committees and custom roles are open to the participants seated there, once their seat is released. The team in a group writes any time.'
 			}),
 			qrCorporateDesign: t.arg.boolean({
 				description:

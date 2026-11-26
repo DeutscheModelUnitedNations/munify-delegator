@@ -12,19 +12,24 @@ const HOUR = 60 * MINUTE;
 type Inbox = NonNullable<(typeof schema.chat.$inferInsert)['inbox']>;
 type FunctionKind = (typeof schema.teamFunction.$inferInsert)['kind'];
 
-/** The id of a team persona's committee function (or trusted person, without a committee). */
+/**
+ * The id of a team persona's committee function, custom role support (`roleId`), or trusted
+ * person (without either).
+ */
 export function teamFunctionId({
 	cs,
 	userId,
 	kind,
-	committeeId
+	committeeId,
+	roleId = null
 }: {
 	cs: ConferenceSeed;
 	userId: DevAccountSub;
 	kind: FunctionKind;
 	committeeId: string | null;
+	roleId?: string | null;
 }) {
-	return cs.rowId(`function-${userId}-${kind}-${committeeId ?? 'conference'}`);
+	return cs.rowId(`function-${userId}-${kind}-${committeeId ?? roleId ?? 'conference'}`);
 }
 
 /** The id of the `index`th message of a seeded chat, for what points at it (mails, Slack). */
@@ -44,31 +49,74 @@ interface SeedMessage {
 
 /**
  * Up to when each person has read a seeded chat: whoever is in `readBy` everything, whoever else
- * wrote in it up to their own last message.
+ * wrote in it up to their own last message (in a group the team too).
  */
 function readMarkers({
 	chatId,
 	messages,
 	readBy,
-	at
+	at,
+	groupChat
 }: {
 	chatId: string;
 	messages: SeedMessage[];
 	readBy: string[];
 	at: (minutesAgo: number) => Date;
+	/** A group of a committee or role, where team members read for themselves */
+	groupChat: boolean;
 }) {
 	const lastWritten = new Map<string, number>();
 	for (const { from, minutesAgo } of messages) {
-		if (!('participant' in from) || readBy.includes(from.participant)) continue;
-		lastWritten.set(
-			from.participant,
-			Math.min(lastWritten.get(from.participant) ?? minutesAgo, minutesAgo)
-		);
+		// the team reads a team chat as its inbox (`teamReadAt`), a group each for themselves
+		const author = 'participant' in from ? from.participant : groupChat ? from.team : undefined;
+		if (!author || readBy.includes(author)) continue;
+		lastWritten.set(author, Math.min(lastWritten.get(author) ?? minutesAgo, minutesAgo));
 	}
 	return [
 		...readBy.map((userId) => ({ chatId, userId, readAt: at(0) })),
 		...[...lastWritten].map(([userId, minutesAgo]) => ({ chatId, userId, readAt: at(minutesAgo) }))
 	];
+}
+
+/**
+ * The team personas' functions (see `addMessages`). Returns the custom role the single
+ * participant persona holds (the press), which `dev-team-content-lead` looks after.
+ */
+function addTeamFunctions(cs: ConferenceSeed) {
+	const [first, second] = cs.committees;
+	if (!first || !second) return undefined;
+	for (const [userId, committeeId, kind] of [
+		['dev-team-member', first.id, 'CHAIR'],
+		['dev-team-reviewer', first.id, 'CONSULTANT'],
+		['dev-team-reviewer', second.id, 'CONSULTANT'],
+		// trusted persons of the whole conference
+		['dev-team-member', null, 'TRUSTED_PERSON'],
+		['dev-team-content-lead', null, 'TRUSTED_PERSON']
+	] as const) {
+		cs.batch.teamFunction.push({
+			id: teamFunctionId({ cs, userId, kind, committeeId }),
+			teamMemberId: teamMemberId({ cs, userId }),
+			committeeId,
+			kind
+		});
+	}
+	// the press, which the single participant persona holds
+	const [pressRoleId] = cs.customRoleIds;
+	if (pressRoleId) {
+		cs.batch.teamFunction.push({
+			id: teamFunctionId({
+				cs,
+				userId: 'dev-team-content-lead',
+				kind: 'ROLE_SUPPORT',
+				committeeId: null,
+				roleId: pressRoleId
+			}),
+			teamMemberId: teamMemberId({ cs, userId: 'dev-team-content-lead' }),
+			roleId: pressRoleId,
+			kind: 'ROLE_SUPPORT'
+		});
+	}
+	return pressRoleId;
 }
 
 /**
@@ -87,6 +135,12 @@ function readMarkers({
  * their delegation's group, which participant care (`dev-team-care`) finds on the team's
  * messages page. Before the release only the chat with participant care exists.
  *
+ * `dev-team-content-lead` looks after the custom role `dev-single` holds (the press): where the
+ * groups are open (`groupChatsEnabled`), the first committee's group has the head delegate, a
+ * neighbour and the chair talking (unread for the consultant, who muted it), the press group has
+ * the single participant and their support, and the single participant's question to their role's
+ * inbox waits unread.
+ *
  * The team and the own delegation are reached from the registration on, whatever the switch says:
  * in "Registration open" (switch off) `dev-reg-head-ready` asked participant care about the
  * application, and their not yet applied delegation talks in its group with `dev-reg-member`.
@@ -99,21 +153,7 @@ export function addMessages(cs: ConferenceSeed) {
 	const now = Date.now();
 	const participantId = (userId: string) => cs.participant(userId).id;
 
-	for (const [userId, committeeId, kind] of [
-		['dev-team-member', first.id, 'CHAIR'],
-		['dev-team-reviewer', first.id, 'CONSULTANT'],
-		['dev-team-reviewer', second.id, 'CONSULTANT'],
-		// trusted persons of the whole conference
-		['dev-team-member', null, 'TRUSTED_PERSON'],
-		['dev-team-content-lead', null, 'TRUSTED_PERSON']
-	] as const) {
-		cs.batch.teamFunction.push({
-			id: teamFunctionId({ cs, userId, kind, committeeId }),
-			teamMemberId: teamMemberId({ cs, userId }),
-			committeeId,
-			kind
-		});
-	}
+	const pressRoleId = addTeamFunctions(cs);
 
 	const addChat = ({
 		id,
@@ -168,7 +208,8 @@ export function addMessages(cs: ConferenceSeed) {
 					: {})
 			});
 		}
-		cs.batch.chatRead.push(...readMarkers({ chatId, messages, readBy, at }));
+		const groupChat = chat.kind === 'COMMITTEE' || chat.kind === 'ROLE';
+		cs.batch.chatRead.push(...readMarkers({ chatId, messages, readBy, at, groupChat }));
 		return chatId;
 	};
 
@@ -532,6 +573,113 @@ export function addMessages(cs: ConferenceSeed) {
 		acceptTerms({ batch: cs.batch, userIds: [stranger.userId] });
 	}
 	if (neighbour) acceptTerms({ batch: cs.batch, userIds: [neighbour.userId] });
+
+	addRoleChats({
+		cs,
+		addChat,
+		pressRoleId,
+		// only somebody seated in the first committee writes in its group
+		neighbour: neighbour?.committeeId === first.id ? neighbour : undefined
+	});
+}
+
+/** The press inbox's waiting question and, where the groups are open, the groups. */
+function addRoleChats({ cs, addChat, pressRoleId, neighbour }: Parameters<typeof addGroups>[0]) {
+	if (pressRoleId) {
+		addChat({
+			id: 'role-inbox-press',
+			chat: {
+				kind: 'TEAM',
+				participantId: cs.participant('dev-single').id,
+				inbox: 'ROLE_SUPPORT',
+				roleId: pressRoleId
+			},
+			messages: [
+				{
+					from: { participant: 'dev-single' },
+					minutesAgo: 45,
+					body: 'Hallo! Bekommen wir Presseausweise, oder reicht der normale Teilnahmeausweis?'
+				}
+			],
+			readBy: ['dev-single'],
+			teamRead: false
+		});
+	}
+	if (cs.conference.groupChatsEnabled) addGroups({ cs, addChat, neighbour, pressRoleId });
+}
+
+/** The groups of the first committee and of the press (see `addMessages`). */
+function addGroups({
+	cs,
+	addChat,
+	neighbour,
+	pressRoleId
+}: {
+	cs: ConferenceSeed;
+	addChat: (args: {
+		id: string;
+		chat: Omit<typeof schema.chat.$inferInsert, 'conferenceId'>;
+		messages: SeedMessage[];
+		readBy?: string[];
+		teamRead?: boolean;
+	}) => string;
+	neighbour: { userId: string } | undefined;
+	pressRoleId: string | undefined;
+}) {
+	const [first] = cs.committees;
+	if (!first) return;
+	const committeeChatId = addChat({
+		id: 'group-committee-first',
+		chat: { kind: 'COMMITTEE', committeeId: first.id },
+		messages: [
+			{
+				from: { team: 'dev-team-member' },
+				minutesAgo: 3 * 24 * 60,
+				body: 'Herzlich willkommen im Gremium! Hier geben wir Ablauf und Fristen bekannt. Fragen gern jederzeit.'
+			},
+			{
+				from: { participant: 'dev-head-delegate' },
+				minutesAgo: 2 * 24 * 60,
+				body: 'Danke! Gibt es eine Rednerliste schon vor der ersten Sitzung?'
+			},
+			{
+				from: { team: 'dev-team-member' },
+				minutesAgo: 2 * 24 * 60 - 60,
+				body: 'Ja, die Rednerliste öffnet am ersten Konferenztag um 9 Uhr.'
+			},
+			...(neighbour
+				? [
+						{
+							from: { participant: neighbour.userId },
+							minutesAgo: 35,
+							body: 'Wollen wir vor der Konferenz noch einen gemeinsamen Videocall machen?'
+						}
+					]
+				: [])
+		],
+		readBy: ['dev-team-member', ...(neighbour ? [neighbour.userId] : [])]
+	});
+	// the consultant reads along now and then; the group stays quiet for them
+	cs.batch.chatMute.push({ chatId: committeeChatId, userId: 'dev-team-reviewer' });
+
+	if (!pressRoleId) return;
+	addChat({
+		id: 'group-role-press',
+		chat: { kind: 'ROLE', roleId: pressRoleId },
+		messages: [
+			{
+				from: { team: 'dev-team-content-lead' },
+				minutesAgo: 26 * 60,
+				body: 'Hallo Presseteam! Die Redaktionssitzung ist jeden Morgen um 8:30 Uhr im Pressebüro.'
+			},
+			{
+				from: { participant: 'dev-single' },
+				minutesAgo: 25 * 60,
+				body: 'Super, ich bringe Kamera und Laptop mit.'
+			}
+		],
+		readBy: ['dev-single']
+	});
 }
 
 /**

@@ -11,6 +11,8 @@ import type { SnapshotUnreadMessage } from './dueEmails';
 export interface UnreadInbox {
 	inbox: ChatInbox;
 	committeeId: string | null;
+	/** The custom role of a `ROLE_SUPPORT` inbox. */
+	roleId?: string | null;
 	/** A chat with one trusted person: only theirs to read */
 	trustedUserId: string | null;
 	messageId: string;
@@ -69,4 +71,15 @@ export function oldestUnreadPerMember({
 		writtenAt,
 		reader: { teamMemberId }
 	}));
+}
+
+/** Of several unread messages per team member, the oldest. */
+export function oldestPerReader(unread: SnapshotUnreadMessage[]): SnapshotUnreadMessage[] {
+	const oldest = new Map<string, SnapshotUnreadMessage>();
+	for (const one of unread) {
+		const reader = 'teamMemberId' in one.reader ? one.reader.teamMemberId : '';
+		const known = oldest.get(reader);
+		if (!known || one.writtenAt < known.writtenAt) oldest.set(reader, one);
+	}
+	return [...oldest.values()];
 }

@@ -177,6 +177,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
 				showCalendar: nullToUndefined(args.showCalendar),
 				messagingEnabled: nullToUndefined(args.messagingEnabled),
+				groupChatsEnabled: nullToUndefined(args.groupChatsEnabled),
 				guidePublished: nullToUndefined(args.guidePublished),
 				seriesId: args.seriesId,
 				qrCorporateDesign: nullToUndefined(args.qrCorporateDesign),
@@ -255,6 +256,7 @@ const featureColumns = {
 	isOpenPaperSubmission: schema.conference.isOpenPaperSubmission,
 	showCalendar: schema.conference.showCalendar,
 	messagingEnabled: schema.conference.messagingEnabled,
+	groupChatsEnabled: schema.conference.groupChatsEnabled,
 	guidePublished: schema.conference.guidePublished,
 	feeAmount: schema.conference.feeAmount,
 	currency: schema.conference.currency,
@@ -311,6 +313,7 @@ function featureState({ row, content }: { row: FeatureRow; content: ConferenceFe
 		isOpenPaperSubmission: row.isOpenPaperSubmission,
 		showCalendar: row.showCalendar,
 		messagingEnabled: row.messagingEnabled,
+		groupChatsEnabled: row.groupChatsEnabled,
 		guidePublished: row.guidePublished
 	};
 	const facts: ConferenceFeatureFacts = {

@@ -85,6 +85,13 @@ test('everybody is offered exactly the topics they can be told about, all on', a
 			teamFunctionId: fixture.chairFunctionId,
 			functionKind: 'CHAIR',
 			committeeAbbreviation: fixture.gv
+		}),
+		// the chair is in the committee's group too, by the same function
+		expect.objectContaining({
+			topic: 'CHAT_GROUP',
+			teamFunctionId: fixture.chairFunctionId,
+			functionKind: 'CHAIR',
+			committeeAbbreviation: fixture.gv
 		})
 	]);
 
@@ -176,6 +183,20 @@ test('nobody chooses for a topic that is not theirs', async ({ browser }) => {
 	});
 	expect(own.errors).toBeUndefined();
 	expect((await settingsOf(chairPage))?.settings[0]).toMatchObject({ email: false, slack: true });
+	// and the committee's group, which the same function puts them in
+	const group = await gql(chairPage, SET, {
+		c: CONFERENCE,
+		topic: 'CHAT_GROUP',
+		fn: fixture.chairFunctionId,
+		channel: 'SLACK',
+		on: false
+	});
+	expect(group.errors).toBeUndefined();
+	expect((await settingsOf(chairPage))?.settings[1]).toMatchObject({
+		topic: 'CHAT_GROUP',
+		email: true,
+		slack: false
+	});
 });
 
 const TEST = `mutation ($c: ID!, $topic: NotificationtopicEnum!, $fn: ID, $channel: NotificationchannelEnum!) {

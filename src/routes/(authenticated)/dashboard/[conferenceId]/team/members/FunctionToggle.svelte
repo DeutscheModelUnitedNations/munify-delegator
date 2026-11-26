@@ -1,7 +1,8 @@
 <!--
 	@component
 	One function of a team member as a switch that saves on its own: in a committee (chair,
-	consultant) or, without one, for the whole conference (trusted person).
+	consultant), for a custom role (its support) or, without either, for the whole conference
+	(trusted person).
 -->
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
@@ -10,14 +11,16 @@
 
 	interface Props {
 		teamMemberId: string;
-		kind: 'CHAIR' | 'CONSULTANT' | 'TRUSTED_PERSON';
+		kind: 'CHAIR' | 'CONSULTANT' | 'TRUSTED_PERSON' | 'ROLE_SUPPORT';
 		committeeId?: string;
+		/** The custom role of a `ROLE_SUPPORT` */
+		roleId?: string;
 		/** The function's id while the member holds it */
 		heldId?: string;
 		label: string;
 	}
 
-	let { teamMemberId, kind, committeeId, heldId, label }: Props = $props();
+	let { teamMemberId, kind, committeeId, roleId, heldId, label }: Props = $props();
 
 	async function save(input: HTMLInputElement) {
 		try {
@@ -25,7 +28,7 @@
 				await client.mutate.removeTeamFunction({ __args: { id: heldId } });
 			} else {
 				await client.mutate.giveTeamFunction({
-					__args: { teamMemberId, committeeId, kind },
+					__args: { teamMemberId, committeeId, roleId, kind },
 					id: true
 				});
 			}

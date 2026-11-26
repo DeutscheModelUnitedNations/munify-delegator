@@ -105,6 +105,7 @@
 			setUp: { page: 'calendar' }
 		},
 		messagingEnabled: { icon: 'chats-circle', description: m.messagingEnabledDescription },
+		groupChatsEnabled: { icon: 'users-four', description: m.groupChatsEnabledDescription },
 		guidePublished: {
 			icon: 'book-open-text',
 			description: m.guidePublishedHint,

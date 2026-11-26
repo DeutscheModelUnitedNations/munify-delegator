@@ -11,6 +11,7 @@ export const CONFERENCE_FEATURES = [
 	'isOpenPaperSubmission',
 	'showCalendar',
 	'messagingEnabled',
+	'groupChatsEnabled',
 	'guidePublished'
 ] as const;
 export type ConferenceFeature = (typeof CONFERENCE_FEATURES)[number];
@@ -81,6 +82,7 @@ export function missingFeatureRequirements(
 		isOpenPaperSubmission: unmet([['agendaItem', facts.hasAgendaItem]]),
 		showCalendar: unmet([['calendarDay', facts.hasCalendarDay]]),
 		messagingEnabled: [],
+		groupChatsEnabled: [],
 		guidePublished: unmet([['publishedGuide', facts.hasPublishedGuide]])
 	};
 }

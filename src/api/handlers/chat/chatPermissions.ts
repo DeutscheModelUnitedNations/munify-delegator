@@ -23,9 +23,9 @@ import {
 import { callerUserId } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
-import type { ChatInbox, ChatSide } from '#lib/helpers/chat';
+import { isGroupChat, type ChatInbox, type ChatSide } from '#lib/helpers/chat';
 import { hasAcceptedTerms } from '#api/handlers/messagingTerms/messagingTermsService';
-import type { ChatRow } from './chatService';
+import type { ChatRow, InboxOption, TeamChatTarget } from './chatService';
 
 /**
  * Who reads which chat. A chat is read by its parties: the two people of a direct chat, the
@@ -39,10 +39,17 @@ import type { ChatRow } from './chatService';
  * persons of the conference (`teamFunction` `TRUSTED_PERSON`), a chat with one of them by that
  * person alone. Not by participant care, not by a system admin, not by an assistant, and nobody
  * learns the participant's name there.
+ *
+ * The group of a committee or custom role is read by the people seated there, once their seat is
+ * released and while the conference opened the groups (`groupChatsEnabled`), and by the team
+ * members holding a function there: the committee's chairs and consultants, whoever looks after
+ * the role (`ROLE_SUPPORT`). Like a chat between participants, participant care reads it only
+ * while a report is open, and a system admin only then.
  */
 export function registerChatAbilities() {
 	abilityBuilder.chat.allow('read').when(adminChats);
 	abilityBuilder.chat.allow('read').when(liveWhere(partyOfChat));
+	abilityBuilder.chat.allow('read').when(liveWhere(teamGroupOfChat));
 	abilityBuilder.chat.allow('read').when(liveWhere(inboxOfChat));
 	abilityBuilder.chat.allow('read').when(liveWhere(trustedChats));
 
@@ -51,18 +58,19 @@ export function registerChatAbilities() {
 		const where = adminChats(ctx)?.where;
 		return where ? { where: { chat: where } } : undefined;
 	});
-	// The parties read a message participant care hid without its text and without who hid it
-	// and why (`hiddenAt` tells them it is hidden). Masked, the text cannot be filtered by either.
+	// The parties (and the team in a group) read a message participant care hid without its text
+	// and without who hid it and why (`hiddenAt` tells them it is hidden). Masked, the text cannot
+	// be filtered by either.
 	abilityBuilder.chatMessage
 		.allow('read')
 		.when(
 			liveWhere((args) =>
-				hop(partyOfChat(args), (chat) => ({ chat, hiddenAt: { isNull: true as const } }))
+				hop(takesPartIn(args), (chat) => ({ chat, hiddenAt: { isNull: true as const } }))
 			)
 		);
 	abilityBuilder.chatMessage.allow('read').when(
 		liveRule((args) => {
-			const where = hop(partyOfChat(args), (chat) => ({
+			const where = hop(takesPartIn(args), (chat) => ({
 				chat,
 				hiddenAt: { isNotNull: true as const }
 			}));
@@ -106,10 +114,72 @@ function adminChats(ctx: Context) {
 		: undefined;
 }
 
+/** The committees and custom roles whose groups somebody is in. */
+export interface GroupIds {
+	committeeIds: readonly string[];
+	roleIds: readonly string[];
+}
+
+/**
+ * The groups the caller is in as a participant: of the committee they are seated in or the custom
+ * role they hold, where the conference released the seats and opened the groups. Undefined for an
+ * anonymous caller and an assistant.
+ */
+function seatedGroupIds({ ctx, facts }: RuleArgs): GroupIds | undefined {
+	if (!callerUserId(ctx)) return undefined;
+	const open = facts.groupSeats.filter((seat) => {
+		const flags = facts.conferences.get(seat.conferenceId);
+		return flags?.assignmentReleased === true && flags.groupChatsEnabled;
+	});
+	return {
+		committeeIds: open.flatMap((seat) => (seat.committeeId ? [seat.committeeId] : [])),
+		roleIds: open.flatMap((seat) => (seat.roleId ? [seat.roleId] : []))
+	};
+}
+
+/**
+ * The groups the caller is in for the team: of the committees they chair or advise, and of the
+ * custom roles they look after.
+ */
+function teamGroupIds(facts: Pick<CallerFacts, 'teamFunctions'>): GroupIds {
+	return {
+		committeeIds: [
+			...functionCommitteeIds({ facts, kind: 'CHAIR' }),
+			...functionCommitteeIds({ facts, kind: 'CONSULTANT' })
+		],
+		roleIds: facts.teamFunctions.flatMap((held) =>
+			held.kind === 'ROLE_SUPPORT' && held.roleId ? [held.roleId] : []
+		)
+	};
+}
+
+/** Matches the groups of `ids`. */
+function groupsOf(ids: GroupIds) {
+	return [
+		{ kind: 'COMMITTEE' as const, committeeId: idIn(ids.committeeIds) },
+		{ kind: 'ROLE' as const, roleId: idIn(ids.roleIds) }
+	];
+}
+
+/** Whether a group chat is one of `ids`. */
+function isGroupIn({
+	chat,
+	ids
+}: {
+	chat: Pick<ChatRow, 'kind' | 'committeeId' | 'roleId'>;
+	ids: GroupIds;
+}) {
+	if (chat.kind === 'COMMITTEE')
+		return !!chat.committeeId && ids.committeeIds.includes(chat.committeeId);
+	if (chat.kind === 'ROLE') return !!chat.roleId && ids.roleIds.includes(chat.roleId);
+	return false;
+}
+
 /** Matches the chats the caller is a party of; undefined for an anonymous caller and an assistant. */
 function partyOfChat(args: RuleArgs) {
 	const ids = ownParticipantIds(args);
-	if (!ids) return undefined;
+	const groups = seatedGroupIds(args);
+	if (!ids || !groups) return undefined;
 	const delegationIds = args.facts.delegationMemberships.map(
 		(membership) => membership.delegationId
 	);
@@ -117,16 +187,32 @@ function partyOfChat(args: RuleArgs) {
 		OR: [
 			{ participantId: idIn(ids) },
 			{ otherParticipantId: idIn(ids) },
-			{ kind: 'DELEGATION' as const, delegationId: idIn(delegationIds) }
+			{ kind: 'DELEGATION' as const, delegationId: idIn(delegationIds) },
+			...groupsOf(groups)
 		]
 	};
+}
+
+/**
+ * Matches the groups the caller is in for the team (`teamGroupIds`); undefined for an anonymous
+ * caller.
+ */
+function teamGroupOfChat({ ctx, facts }: RuleArgs) {
+	if (!ctx.oidc.user?.sub) return undefined;
+	return { OR: groupsOf(teamGroupIds(facts)) };
+}
+
+/** Matches the chats the caller writes in as a party, or as the team in a group. */
+function takesPartIn(args: RuleArgs) {
+	const parts = [partyOfChat(args), teamGroupOfChat(args)].filter((part) => part !== undefined);
+	return parts.length > 0 ? { OR: parts } : undefined;
 }
 
 function functionCommitteeIds({
 	facts,
 	kind
 }: {
-	facts: CallerFacts;
+	facts: Pick<CallerFacts, 'teamFunctions'>;
 	kind: 'CHAIR' | 'CONSULTANT';
 }) {
 	return facts.teamFunctions.flatMap((held) =>
@@ -188,6 +274,11 @@ function inboxOfChat({ ctx, facts }: RuleArgs) {
 				kind: 'TEAM' as const,
 				inbox: 'CONSULTANT' as const,
 				committeeId: idIn(functionCommitteeIds({ facts, kind: 'CONSULTANT' }))
+			},
+			{
+				kind: 'TEAM' as const,
+				inbox: 'ROLE_SUPPORT' as const,
+				roleId: idIn(teamGroupIds(facts).roleIds)
 			}
 		]
 	};
@@ -203,11 +294,14 @@ export function holdsInbox({
 	conferenceId,
 	inbox,
 	committeeId,
+	roleId = null,
 	trustedUserId = null
 }: RuleArgs & {
 	conferenceId: string;
 	inbox: ChatInbox;
 	committeeId: string | null;
+	/** The custom role of a `ROLE_SUPPORT` inbox. */
+	roleId?: string | null;
 	/** The one trusted person a chat is with; null for their shared inbox and every other one */
 	trustedUserId?: string | null;
 }) {
@@ -217,6 +311,9 @@ export function holdsInbox({
 	const care = teamConferenceIds({ ctx, facts, roles: PARTICIPANT_CARE_ROLES });
 	if (care === 'all') return true;
 	if (inbox === 'PARTICIPANT_CARE') return care?.includes(conferenceId) ?? false;
+	if (inbox === 'ROLE_SUPPORT') {
+		return facts.teamFunctions.some((held) => held.kind === inbox && held.roleId === roleId);
+	}
 	return facts.teamFunctions.some(
 		(held) => held.kind === inbox && held.committeeId === committeeId
 	);
@@ -261,7 +358,8 @@ export function writingParticipantId({
 
 /**
  * How the caller relates to a chat they can read: a party (`PARTICIPANT`), somebody answering its
- * inbox (`TEAM`), or participant care reading a reported chat (`REVIEW`).
+ * inbox or in its group for the team (`TEAM`), or participant care reading a reported chat
+ * (`REVIEW`).
  */
 export function chatSide({
 	ctx,
@@ -277,6 +375,7 @@ export function chatSide({
 		| 'delegationId'
 		| 'inbox'
 		| 'committeeId'
+		| 'roleId'
 		| 'trustedUserId'
 	>;
 }): ChatSide {
@@ -290,6 +389,11 @@ export function chatSide({
 				(membership) => membership.delegationId === chat.delegationId
 			));
 	if (isParty) return 'PARTICIPANT';
+	if (isGroupChat(chat.kind)) {
+		const seated = seatedGroupIds({ ctx, facts });
+		if (seated && isGroupIn({ chat, ids: seated })) return 'PARTICIPANT';
+		return isGroupIn({ chat, ids: teamGroupIds(facts) }) ? 'TEAM' : 'REVIEW';
+	}
 	if (
 		chat.kind === 'TEAM' &&
 		chat.inbox &&
@@ -299,6 +403,7 @@ export function chatSide({
 			conferenceId: chat.conferenceId,
 			inbox: chat.inbox,
 			committeeId: chat.committeeId,
+			roleId: chat.roleId,
 			trustedUserId: chat.trustedUserId
 		})
 	) {
@@ -431,22 +536,24 @@ export async function assertDelegationMember({
 }
 
 /** Refuses (FORBIDDEN) unless the caller answers the inbox (`holdsInbox`). */
-export async function assertHoldsInbox({
+async function assertHoldsInbox({
 	ctx,
 	conferenceId,
 	inbox,
 	committeeId,
+	roleId = null,
 	trustedUserId = null
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
 	inbox: ChatInbox;
 	committeeId: string | null;
+	roleId?: string | null;
 	trustedUserId?: string | null;
 }) {
 	ctx.mustBeLoggedIn();
 	const facts = await callerFacts(ctx);
-	if (!holdsInbox({ ctx, facts, conferenceId, inbox, committeeId, trustedUserId })) {
+	if (!holdsInbox({ ctx, facts, conferenceId, inbox, committeeId, roleId, trustedUserId })) {
 		throw apiError({ code: 'FORBIDDEN', message: m.chatInboxNotYours() });
 	}
 }
@@ -515,4 +622,108 @@ export async function assertCanModerateMessage({
 	});
 	if (!message) throw apiError({ code: 'NOT_FOUND', message: m.chatMessageNotFound() });
 	return assertCanModerateChat({ ctx, chatId: message.chatId });
+}
+
+/**
+ * The groups of the conference the caller is in: as a participant those of their seat, once it is
+ * released and while the groups are open, for the team those of the functions they hold there.
+ */
+export function groupIdsIn({
+	ctx,
+	facts,
+	conferenceId
+}: RuleArgs & { conferenceId: string }): GroupIds {
+	const seated = callerUserId(ctx)
+		? facts.groupSeats.filter((seat) => seat.conferenceId === conferenceId)
+		: [];
+	const flags = facts.conferences.get(conferenceId);
+	const open = flags?.assignmentReleased === true && flags.groupChatsEnabled ? seated : [];
+	const team = ctx.oidc.user?.sub
+		? teamGroupIds({
+				teamFunctions: facts.teamFunctions.filter((held) => held.conferenceId === conferenceId)
+			})
+		: { committeeIds: [], roleIds: [] };
+	return {
+		committeeIds: [
+			...new Set([
+				...open.flatMap((seat) => (seat.committeeId ? [seat.committeeId] : [])),
+				...team.committeeIds
+			])
+		],
+		roleIds: [
+			...new Set([...open.flatMap((seat) => (seat.roleId ? [seat.roleId] : [])), ...team.roleIds])
+		]
+	};
+}
+
+/**
+ * Refuses (FORBIDDEN) unless the caller is in the group of the committee or custom role
+ * (`groupIdsIn`): seated there with the groups open, or holding a function there.
+ */
+export async function assertInGroup({
+	ctx,
+	conferenceId,
+	group
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	group: { committeeId: string } | { roleId: string };
+}) {
+	ctx.mustBeLoggedIn();
+	const ids = groupIdsIn({ ctx, facts: await callerFacts(ctx), conferenceId });
+	const inIt =
+		'committeeId' in group
+			? ids.committeeIds.includes(group.committeeId)
+			: ids.roleIds.includes(group.roleId);
+	if (!inIt) throw apiError({ code: 'FORBIDDEN', message: m.chatNotInGroup() });
+}
+
+/** Refuses (FORBIDDEN) unless the caller may mute the chat: somebody in its group. */
+export async function assertCanMuteChat({ ctx, id }: { ctx: ApiContext; id: string }) {
+	const found = await readableChat({ ctx, id });
+	if (found.side === 'REVIEW' || !isGroupChat(found.chat.kind)) {
+		throw apiError({ code: 'FORBIDDEN', message: m.chatOnlyGroupsCanBeMuted() });
+	}
+	return found;
+}
+
+/** The inboxes of `options` the caller answers (`holdsInbox`), for a team member writing to somebody. */
+export function inboxesHeldBy({
+	ctx,
+	facts,
+	conferenceId,
+	options
+}: RuleArgs & { conferenceId: string; options: readonly InboxOption[] }) {
+	return options.filter((option) =>
+		holdsInbox({
+			ctx,
+			facts,
+			conferenceId,
+			inbox: option.inbox,
+			committeeId: option.committee?.id ?? null,
+			roleId: option.role?.id ?? null,
+			trustedUserId: option.person?.userId ?? null
+		})
+	);
+}
+
+/**
+ * Who a team chat is opened for: with `participantId` a team member opens that person's chat with
+ * an inbox they answer (FORBIDDEN otherwise), without it a participant opens their own. Returns the
+ * participant row.
+ */
+export async function assertCanOpenTeamChat({
+	ctx,
+	target,
+	participantId
+}: {
+	ctx: ApiContext;
+	target: TeamChatTarget;
+	participantId?: string | null;
+}) {
+	if (!participantId) {
+		return assertWritingParticipant({ ctx, conferenceId: target.conferenceId });
+	}
+	await assertHoldsInbox({ ctx, ...target });
+	return participantId;
 }

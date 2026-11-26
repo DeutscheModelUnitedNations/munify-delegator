@@ -1,0 +1,1 @@
+ALTER TABLE "notification_preference" DROP CONSTRAINT "notification_preference_function_check", ADD CONSTRAINT "notification_preference_function_check" CHECK (("topic"::text in ('COMMITTEE_INBOX', 'COMMITTEE_PAPERS', 'ROLE_INBOX', 'CHAT_GROUP')) = ("team_function_id" is not null));

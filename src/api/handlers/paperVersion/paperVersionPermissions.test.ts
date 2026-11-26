@@ -74,8 +74,8 @@ function callerWith(facts: Partial<CallerFacts>, mcp: Context['mcp'] = undefined
 }
 
 const conferences = new Map([
-	['released', { assignmentReleased: true, showCalendar: false }],
-	['unreleased', { assignmentReleased: false, showCalendar: false }]
+	['released', { assignmentReleased: true, showCalendar: false, groupChatsEnabled: false }],
+	['unreleased', { assignmentReleased: false, showCalendar: false, groupChatsEnabled: false }]
 ]);
 /** Holds a seat in both conferences; only one has released its assignment. */
 const seated = callerWith({ seatConferenceIds: ['released', 'unreleased'], conferences });

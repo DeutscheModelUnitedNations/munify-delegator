@@ -24,7 +24,7 @@ const {
 	teamFacts
 } = await import('./callerFacts');
 
-const flags = { assignmentReleased: true, showCalendar: false };
+const flags = { assignmentReleased: true, showCalendar: false, groupChatsEnabled: false };
 
 /** Answers every query with nothing but the public conference `pub`. */
 function emptyDatabase() {
@@ -64,12 +64,12 @@ describe('teamFacts', () => {
 					conferenceId: 'c1',
 					roles: ['MEMBER'],
 					conference,
-					functions: [{ committeeId: 'k1', kind: 'CHAIR' }]
+					functions: [{ committeeId: 'k1', roleId: null, kind: 'CHAIR' }]
 				}
 			])
 		).toEqual({
 			team: [{ conferenceId: 'c1', roles: ['REVIEWER', 'MEMBER'] }],
-			teamFunctions: [{ conferenceId: 'c1', committeeId: 'k1', kind: 'CHAIR' }],
+			teamFunctions: [{ conferenceId: 'c1', committeeId: 'k1', roleId: null, kind: 'CHAIR' }],
 			teammates: [
 				{ conferenceId: 'c1', userId: 'u1' },
 				{ conferenceId: 'c1', userId: 'u2' }
@@ -95,6 +95,7 @@ describe('participationFacts', () => {
 					id: 'm1',
 					delegationId: 'd1',
 					isHeadDelegate: true,
+					assignedCommitteeId: null,
 					delegation: {
 						applied: false,
 						assignedRoleId: 'r1',
@@ -108,7 +109,7 @@ describe('participationFacts', () => {
 			{
 				id: 'p2',
 				conferenceId: 'c2',
-				conference: { assignmentReleased: false, showCalendar: true },
+				conference: { assignmentReleased: false, showCalendar: true, groupChatsEnabled: false },
 				delegationMember: null,
 				singleParticipant: null,
 				conferenceSupervisor: { id: 'own-s' },
@@ -167,7 +168,11 @@ describe('participationFacts', () => {
 			{ id: 'm1', delegationId: 'd1', conferenceId: 'c1', isHeadDelegate: true, applied: false }
 		]);
 		expect(facts.supervisorRegistrations).toEqual([{ id: 'own-s', conferenceId: 'c2' }]);
-		expect(facts.conferences.get('c2')).toEqual({ assignmentReleased: false, showCalendar: true });
+		expect(facts.conferences.get('c2')).toEqual({
+			assignmentReleased: false,
+			showCalendar: true,
+			groupChatsEnabled: false
+		});
 	});
 
 	test('the people around them', () => {

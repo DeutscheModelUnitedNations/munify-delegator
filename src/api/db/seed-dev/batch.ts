@@ -40,6 +40,7 @@ export interface SeedBatch {
 	chatRead: (typeof schema.chatRead.$inferInsert)[];
 	chatReport: (typeof schema.chatReport.$inferInsert)[];
 	chatBlock: (typeof schema.chatBlock.$inferInsert)[];
+	chatMute: (typeof schema.chatMute.$inferInsert)[];
 	announcementAttachment: (typeof schema.announcementAttachment.$inferInsert)[];
 	announcementRead: (typeof schema.announcementRead.$inferInsert)[];
 	slackWorkspace: (typeof schema.slackWorkspace.$inferInsert)[];
@@ -120,6 +121,7 @@ export function emptyBatch(): SeedBatch {
 		chatRead: [],
 		chatReport: [],
 		chatBlock: [],
+		chatMute: [],
 		announcementAttachment: [],
 		announcementRead: [],
 		slackWorkspace: [],
@@ -462,6 +464,10 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.chatBlock,
 		insert: (rows) => db.insert(s.chatBlock).values(rows)
+	});
+	await insertChunked({
+		rows: batch.chatMute,
+		insert: (rows) => db.insert(s.chatMute).values(rows)
 	});
 	await insertChunked({
 		rows: batch.announcementAttachment,

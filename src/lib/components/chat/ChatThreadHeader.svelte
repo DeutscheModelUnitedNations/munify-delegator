@@ -13,6 +13,7 @@
 	import ChatAvatar from './ChatAvatar.svelte';
 	import ChatThreadMenu from './ChatThreadMenu.svelte';
 	import { chatAvatar, chatTitle, threadSubtitle } from './chatLabels';
+	import { isGroupChat } from '#lib/helpers/chat';
 
 	interface Props {
 		chat: OpenChat;
@@ -44,7 +45,15 @@
 	</div>
 
 	<!-- reviewing, the case file beside the chat already names everybody with their card -->
-	{#if side === 'TEAM'}
+	{#if isGroupChat(chat.kind) && side !== 'REVIEW'}
+		<ChatThreadMenu
+			chatId={chat.id}
+			direct={false}
+			blockedByMe={false}
+			muted={chat.muted}
+			canReport={asParticipant}
+		/>
+	{:else if side === 'TEAM'}
 		<div class="flex shrink-0 gap-1">
 			{#each chat.people as person (person.participantId)}
 				<UserCardButton userId={person.userId} name={person.name} />

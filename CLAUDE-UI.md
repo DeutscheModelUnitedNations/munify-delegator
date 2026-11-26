@@ -450,12 +450,17 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
   fixed-height page column). Surfaces, not frame lines: a `bg-base-200` list column, a faint ring,
   `border-base-content/10` dividers. The thread and composer keep to a `max-w-4xl` column.
 - **Participant messages page**: compact header, `ChatStartPane` beside the list (delegation group,
-  team inboxes without single trusted persons, "new message", the role-not-name note) through
+  the group of their committee or custom role (`fetchChatGroups`, labelled through
+  `groupLabelSource`, `chatGroups.ts`), team inboxes without single trusted persons, "new message",
+  the role-not-name note) through
   `createChatOpener` (`chatOpener.svelte.ts`, shared with the picker). `ChatSettingsMenu` (gear in
   `ChatListHeader`'s `actions`) holds the unread-mail switch and the terms.
 - **`ChatThread`**: fetches itself by `chatId`, marks read while on screen, messages by day,
   composer (Enter sends, Shift+Enter breaks) or why the caller can't write (`chat.writeRefusal`).
-  Menu blocks and reports. Reviewing a report: `ChatReviewBanner`, plus each open report (`reports`) as a
+  Menu (`ChatThreadMenu`) blocks, reports and, in a group (`COMMITTEE`/`ROLE`), mutes for the
+  caller (`muted`; the team in a group gets the mute only). In a group everybody's own messages stand
+  on their side, the team writes by name, participants by role (`standsOnOwnSide`,
+  `messageAuthor`). Reviewing a report: `ChatReviewBanner`, plus each open report (`reports`) as a
   note where it was filed (`placeReports`: above the next message, before its day's heading if
   filed on a quieter day, or closing the thread). `firstUnreadId` (`threadMessages.ts`), taken once on
   open: `ChatMessages` draws "new messages" above it and the thread opens there, until reopened.
@@ -487,8 +492,8 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
 - **Corners follow the theme**: `rounded-box` (cards, panels, bubbles), `rounded-field` (small
   things); never `rounded-lg` / `rounded-xl` (DMUN's theme is near-square).
 - **`NewChatDialog` / `NewChatPicker`**: one search over role, country, committee (`matchesSearch`:
-  every word must match, "ger ga" works), chips per committee, team inboxes and delegation group on
-  top. `mode="team"`: person first, then the inbox to write from.
+  every word must match, "ger ga" works), chips per committee, team inboxes, the caller's group and
+  delegation group on top. `mode="team"`: person first, then the inbox to write from.
 - **`WriteToDelegateButton`**: `conferenceId`, `participantId`, optional `paperId`, `compact` (icon
   only, table rows), `label` (other wording, e.g. the payments page's "message the person paying");
   asks for inboxes on click.
@@ -501,15 +506,19 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
   `fetchTeamInboxes` + `teamInboxesOf`.
   `team/messages` is always the messenger (`InboxChats`, `fill`): every inbox's chats in one list,
   `InboxFilter` (only with several inboxes) narrows it in two rows: a segmented row of inbox kinds
-  (`inboxGroups`: care, trusted persons, chairs, consultants; only with several kinds), then for a
-  kind of several inboxes chips per committee / shared vs own; unread per segment and chip.
+  (`inboxGroups`: care, trusted persons, chairs, consultants, custom role support, groups; only with
+  several kinds), then for a kind of several inboxes chips per committee / role / shared vs own;
+  unread per segment and chip. Groups are a pseudo-inbox kind `GROUP` (`TeamInbox.group`, keys
+  `GROUP:committee:<id>` / `GROUP:role:<id>`); the empty list and the "nothing open" pane offer
+  "write in the group" (`team-open-group`) for the groups in view, and a hint shows while
+  `groupChatsEnabled` is off.
   `?inbox=` holds an inbox key or a kind's `group:<KIND>` (`inboxFilter`). Each chat names its
   inbox (badge) unless one inbox is chosen, and the open chat's header too; a red
   banner links waiting reports, the bell in the list header links the notification settings.
 - **Archive**: `ChatArchiveButton` (thread header, team side) toggles it; archived chats are hidden
   until `ArchiveToggle` in `InboxChats` (`?archive=1`) lists them after the open ones, marked
   (`listedChats`).
-- **Small parts**: `ChatList` → `ChatListItem`, `ChatMessages` → `ChatBubble`, `ChatThread` →
+- **Small parts**: `ChatList` → `ChatListItem` → `ChatListBadges` (muted, archived, `listBadge`), `ChatMessages` → `ChatBubble`, `ChatThread` →
   `ChatThreadHeader`, picker → `PickerTeamOptions`, `PickerContactGroups`, `PickedContactInboxes`.
   Decisions live in tested helpers, not templates: `listBadge`, `kindHint` (`chatLabels.ts`),
   `unreadStateOf` (`threadMessages.ts`), `inboxChoice` (`inboxChoice.ts`).

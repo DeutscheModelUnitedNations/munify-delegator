@@ -1,0 +1,40 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0c67a163-c84e-4264-b07b-a85bfe44c9af",
+  "prevIds": [
+    "d84c9e8e-ea5d-4c8f-9a58-c6fcdd3a71ce"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_preference"
+      ],
+      "writes": [
+        "s|ck|public.notification_preference.notification_preference_function_check"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preference",
+        "n|sch|public",
+        "n|col|public.notification_preference.topic",
+        "n|col|public.notification_preference.team_function_id",
+        "e|col|public.notification_preference.topic",
+        "e|col|public.notification_preference.team_function_id"
+      ],
+      "sqlHash": "f0495252f4a71791"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"notification_preference\",\"notification_preference_function_check\"]",
+      "set": {
+        "value": "(\"topic\"::text in ('COMMITTEE_INBOX', 'COMMITTEE_PAPERS', 'ROLE_INBOX', 'CHAT_GROUP')) = (\"team_function_id\" is not null)"
+      }
+    }
+  ]
+}

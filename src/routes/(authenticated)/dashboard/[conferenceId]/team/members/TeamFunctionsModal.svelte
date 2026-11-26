@@ -1,14 +1,17 @@
 <!--
 	@component
 	The functions of a team member, next to their team role: being a trusted person of the
-	conference, and which committees they chair or advise. Whoever holds a function answers its
-	inbox in the chats. A switch per function; each saves on its own.
+	conference, which committees they chair or advise, and which custom roles (the press, …) they
+	look after. Whoever holds a function answers its inbox in the chats, and a committee's or role's
+	is in its group. A switch per function; each saves on its own.
 -->
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
 	import FunctionToggle from './FunctionToggle.svelte';
+	import RoleSupportSwitches from './RoleSupportSwitches.svelte';
+	import { heldFunctionId } from './heldFunction';
 
 	interface Props {
 		open: boolean;
@@ -36,22 +39,29 @@
 
 {#snippet matrix()}
 	{@const memberId = member.id}
-	{@const [committees, functions] = await Promise.all([
+	{@const [committees, roles, functions] = await Promise.all([
 		client.liveQuery.committees({
 			__args: { where: { conferenceId: { eq: conferenceId } }, orderBy: { abbreviation: 'asc' } },
 			abbreviation: true,
 			name: true
 		}),
+		client.liveQuery.conferenceRoles({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, kind: 'CUSTOM' },
+				orderBy: { name: 'asc' }
+			},
+			name: true,
+			icon: true
+		}),
 		client.liveQuery.teamFunctions({
 			__args: { where: { teamMemberId: { eq: memberId } } },
 			kind: true,
-			committeeId: true
+			committeeId: true,
+			roleId: true
 		})
 	])}
-	{@const heldId = ({ kind, committeeId }: { kind: string; committeeId: string | null }) =>
-		functions.find(
-			(candidate) => candidate.kind === kind && (candidate.committeeId ?? null) === committeeId
-		)?.id}
+	{@const heldId = (wanted: { kind: string; committeeId: string | null; roleId?: string | null }) =>
+		heldFunctionId({ functions, ...wanted })}
 	<label
 		class="bg-base-200 mb-4 flex cursor-pointer items-start gap-3 rounded-box p-3"
 		data-testid="team-function-trusted"
@@ -103,4 +113,10 @@
 			</tbody>
 		</table>
 	{/if}
+
+	<RoleSupportSwitches
+		{roles}
+		teamMemberId={memberId}
+		heldIdOf={(roleId) => heldId({ kind: 'ROLE_SUPPORT', committeeId: null, roleId })}
+	/>
 {/snippet}

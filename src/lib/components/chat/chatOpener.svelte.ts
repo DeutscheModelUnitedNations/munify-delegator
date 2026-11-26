@@ -1,6 +1,6 @@
 import { toast } from 'svelte-sonner';
 import { client } from '#lib/api/rumbleClient/client';
-import type { ChatInboxRow } from '#lib/api/chats';
+import type { ChatGroupRow, ChatInboxRow } from '#lib/api/chats';
 import { chatOpenError } from './inboxChoice';
 
 /**
@@ -40,8 +40,21 @@ export function createChatOpener({
 						conferenceId: conferenceId(),
 						inbox: option.inbox,
 						committeeId: option.committeeId,
+						roleId: option.roleId,
 						trustedPersonId: option.trustedPersonId,
 						participantId
+					},
+					id: true
+				})
+			),
+		/** The group of a committee or custom role the caller is in */
+		group: (group: Pick<ChatGroupRow, 'committeeId' | 'roleId'>) =>
+			open(() =>
+				client.mutate.openGroupChat({
+					__args: {
+						conferenceId: conferenceId(),
+						committeeId: group.committeeId,
+						roleId: group.roleId
 					},
 					id: true
 				})

@@ -1,28 +1,47 @@
-import type { ChatInbox } from '#lib/helpers/chat';
+import type { ChatInbox, ChatKind } from '#lib/helpers/chat';
+import { groupName, inboxName } from '#lib/components/chat/chatLabels';
 
-/** A team inbox the caller answers, with the key the page filters its chats by. */
+/**
+ * What the team's list is narrowed by: a team inbox, or (`GROUP`) the group of a committee or
+ * custom role the caller is in.
+ */
+export type InboxKind = ChatInbox | 'GROUP';
+
+/** A team inbox the caller answers, or a group they are in, with the key the page filters by. */
 export interface TeamInbox {
 	key: string;
-	inbox: ChatInbox;
+	inbox: InboxKind;
 	committeeAbbreviation: string | null;
+	/** A custom role's inbox or group: the role */
+	roleName?: string | null;
 	/** A trusted person's own inbox: the chats written to them alone */
 	own: boolean;
+	/** A group: whose it is, to open it */
+	group?: { committeeId: string | null; roleId: string | null };
 }
 
 /**
- * What tells the inboxes apart: the kind, the committee of a chairs' or consultants' one, and for
- * a trusted person whether a chat is written to all of them or to them alone.
+ * What tells the inboxes apart: the kind, the committee of a chairs' or consultants' one, the role
+ * of a custom role's, and for a trusted person whether a chat is written to all of them or to them
+ * alone. A group is keyed by its committee or role.
  */
 export function inboxKey({
+	kind,
 	inbox,
 	committeeId,
+	roleId,
 	trustedPersonName
 }: {
+	kind?: ChatKind;
 	inbox?: ChatInbox | null;
 	committeeId?: string | null;
+	roleId?: string | null;
 	/** Set on a chat with one trusted person, which only that person reads */
 	trustedPersonName?: string | null;
 }) {
+	if (kind === 'COMMITTEE') return `GROUP:committee:${committeeId ?? ''}`;
+	if (kind === 'ROLE') return `GROUP:role:${roleId ?? ''}`;
+	if (inbox === 'ROLE_SUPPORT') return `${inbox}:role:${roleId ?? ''}`;
 	if (inbox === 'PARTICIPANT_CARE') return inbox;
 	if (inbox === 'TRUSTED_PERSON') return trustedPersonName ? `${inbox}:own` : inbox;
 	return `${inbox ?? ''}:${committeeId ?? ''}`;
@@ -54,11 +73,81 @@ const committeeInbox = ({
 	own: false
 });
 
+/** A function of the caller as the inboxes and groups ask. */
+interface HeldFunction {
+	kind: ChatInbox;
+	committeeId?: string | null;
+	committee?: { abbreviation: string } | null;
+	roleId?: string | null;
+	role?: { name: string | null } | null;
+}
+
+/**
+ * The inbox and group of each custom role somebody looks after (`ROLE_SUPPORT`), by role, and the
+ * group of each committee they chair or advise (once, holding both), by committee.
+ */
+function rolesAndGroupsOf(functions: readonly HeldFunction[]) {
+	const roles = functions.flatMap((held) =>
+		held.kind === 'ROLE_SUPPORT' && held.roleId
+			? [roleEntries({ ...held, roleId: held.roleId })]
+			: []
+	);
+	const committeeGroups = new Map(
+		functions.flatMap((held) => {
+			const group = committeeGroupOf(held);
+			return group ? [[group.key, group] as const] : [];
+		})
+	);
+	return {
+		roleInboxes: roles.map((role) => role.inbox).sort(byName),
+		groups: [
+			...[...committeeGroups.values()].sort(byName),
+			...roles.map((role) => role.group).sort(byName)
+		]
+	};
+}
+
+const byName = (a: TeamInbox, b: TeamInbox) =>
+	(a.committeeAbbreviation ?? a.roleName ?? '').localeCompare(
+		b.committeeAbbreviation ?? b.roleName ?? ''
+	);
+
+/** The inbox and the group of a custom role somebody looks after. */
+function roleEntries(held: HeldFunction & { roleId: string }) {
+	const base = { committeeAbbreviation: null, roleName: held.role?.name ?? null, own: false };
+	const inbox: TeamInbox = {
+		...base,
+		key: inboxKey({ inbox: 'ROLE_SUPPORT', roleId: held.roleId }),
+		inbox: 'ROLE_SUPPORT'
+	};
+	const group: TeamInbox = {
+		...base,
+		key: inboxKey({ kind: 'ROLE', roleId: held.roleId }),
+		inbox: 'GROUP',
+		group: { committeeId: null, roleId: held.roleId }
+	};
+	return { inbox, group };
+}
+
+/** The group of the committee somebody chairs or advises; undefined for every other function. */
+function committeeGroupOf(held: HeldFunction): TeamInbox | undefined {
+	if ((held.kind !== 'CHAIR' && held.kind !== 'CONSULTANT') || !held.committeeId) return undefined;
+	return {
+		key: inboxKey({ kind: 'COMMITTEE', committeeId: held.committeeId }),
+		inbox: 'GROUP',
+		committeeAbbreviation: held.committee?.abbreviation ?? null,
+		own: false,
+		group: { committeeId: held.committeeId, roleId: null }
+	};
+}
+
 /**
  * The inboxes somebody answers: participant care's for who cares for the participants, a trusted
- * person's two (all of them together, and their own), and one per committee function they hold,
- * by committee. A system admin reads every inbox but the trusted persons': participant care's
- * and the chairs' and consultants' of every committee.
+ * person's two (all of them together, and their own), one per committee function they hold, by
+ * committee, and one per custom role they look after. A system admin reads every inbox but the
+ * trusted persons' and the roles': participant care's and the chairs' and consultants' of every
+ * committee. Last the groups they are in by their functions, which a system admin is not in by
+ * being one.
  */
 export function inboxesOf({
 	cares,
@@ -67,11 +156,7 @@ export function inboxesOf({
 	committees = []
 }: {
 	cares: boolean;
-	functions: readonly {
-		kind: ChatInbox;
-		committeeId?: string | null;
-		committee?: { abbreviation: string } | null;
-	}[];
+	functions: readonly HeldFunction[];
 	isAdmin?: boolean;
 	/** The conference's committees: an admin reads the inboxes of all of them */
 	committees?: readonly { id: string; abbreviation: string }[];
@@ -81,7 +166,7 @@ export function inboxesOf({
 				COMMITTEE_INBOXES.map((kind) => committeeInbox({ kind, committee }))
 			)
 		: functions.flatMap((held) =>
-				held.committeeId && held.committee
+				held.committeeId && held.committee && held.kind !== 'ROLE_SUPPORT'
 					? [
 							committeeInbox({
 								kind: held.kind,
@@ -97,14 +182,35 @@ export function inboxesOf({
 		own: false
 	};
 	const trusted = functions.some((held) => held.kind === 'TRUSTED_PERSON');
-	return [...(cares ? [care] : []), ...(trusted ? TRUSTED : []), ...held.sort(byCommittee)];
+	const { roleInboxes, groups } = rolesAndGroupsOf(functions);
+	return [
+		...(cares ? [care] : []),
+		...(trusted ? TRUSTED : []),
+		...held.sort(byCommittee),
+		...roleInboxes,
+		...groups
+	];
+}
+
+/** What an inbox or group of the filter is called in full: "Chairs · GA", "Group Press". */
+export function teamInboxName(inbox: TeamInbox) {
+	if (inbox.inbox === 'GROUP') {
+		return groupName({
+			kind: inbox.group?.roleId ? 'ROLE' : 'COMMITTEE',
+			committee: inbox.committeeAbbreviation ? { abbreviation: inbox.committeeAbbreviation } : null,
+			role: { name: inbox.roleName ?? null }
+		});
+	}
+	return inboxName({ ...inbox, inbox: inbox.inbox });
 }
 
 /** How much of each inbox is unread, by its key. */
 export function unreadByInbox(
 	chats: readonly {
+		kind?: ChatKind;
 		inbox?: ChatInbox | null;
 		committeeId?: string | null;
+		roleId?: string | null;
 		trustedPersonName?: string | null;
 		unreadCount: number;
 	}[]
@@ -140,13 +246,13 @@ export function listedChats<T extends { archived: boolean }>({
  */
 export interface InboxGroup {
 	key: string;
-	kind: ChatInbox;
+	kind: InboxKind;
 	inboxes: TeamInbox[];
 }
 
 /** The inbox groups, in the order their first inbox comes in. */
 export function inboxGroups(inboxes: readonly TeamInbox[]): InboxGroup[] {
-	const byKind = new Map<ChatInbox, TeamInbox[]>();
+	const byKind = new Map<InboxKind, TeamInbox[]>();
 	for (const inbox of inboxes) byKind.set(inbox.inbox, [...(byKind.get(inbox.inbox) ?? []), inbox]);
 	return [...byKind].map(([kind, members]) => {
 		const [only] = members;

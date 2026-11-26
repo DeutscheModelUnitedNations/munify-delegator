@@ -26,6 +26,7 @@ import { renderScanProblemEmail, sampleScanProblem } from '#api/handlers/email/s
 import { workspaceOfConference } from './notificationStore';
 import { sendSlackTo } from './notificationService';
 import {
+	groupSlackText,
 	inboxSlackText,
 	paperSlackText,
 	reportSlackText,
@@ -51,6 +52,8 @@ export function testEmailKind(topic: NotificationTopic) {
 		case 'COMMITTEE_INBOX':
 		case 'TRUSTED_SHARED':
 		case 'TRUSTED_PERSONAL':
+		case 'ROLE_INBOX':
+		case 'CHAT_GROUP':
 			return 'UNREAD_MESSAGES' as const;
 		case 'CHAT_REPORT':
 			return 'CHAT_REPORTED' as const;
@@ -121,6 +124,8 @@ interface TestSetting {
 	user: SnapshotUser;
 	held: TestedMember['functions'][number] | undefined;
 	committee: Awaited<ReturnType<typeof loadCommittee>>;
+	/** The custom role of the member's `ROLE_SUPPORT`. */
+	role: { name: string | null } | undefined;
 	paper: SubmittedPaper | undefined;
 	/** Where the sample paper's link leads: there is no paper to open. */
 	paperUrl: string;
@@ -128,7 +133,7 @@ interface TestSetting {
 
 /** The topic's Slack message, as `slackNotifications.ts` writes it, with a test line on top. */
 async function sendSlackTest(test: TestSetting): Promise<NotificationTestResult> {
-	const { conferenceId, key, origin, conference, held, committee, paper, paperUrl } = test;
+	const { conferenceId, key, origin, conference, held, committee, role, paper, paperUrl } = test;
 	const workspace = await workspaceOfConference(conferenceId);
 	if (!workspace) throw apiError({ code: 'CONFLICT', message: m.slackNoWorkspace() });
 	const text = () => {
@@ -138,7 +143,9 @@ async function sendSlackTest(test: TestSetting): Promise<NotificationTestResult>
 			return scanProblemSlackText({ notice: sampleScanProblem(at), origin });
 		}
 		if (key.topic === 'COMMITTEE_PAPERS' && paper) return paperSlackText({ paper, url: paperUrl });
-		return inboxSlackText({ ...at, key, held: held && { kind: held.kind, committee } });
+		const told = held && { kind: held.kind, committee, role };
+		if (key.topic === 'CHAT_GROUP') return groupSlackText({ ...at, held: told });
+		return inboxSlackText({ ...at, key, held: told });
 	};
 	const connection = await sendSlackTo({
 		workspace,
@@ -217,10 +224,13 @@ export async function sendNotificationTest({
 		throw apiError({ code: 'INVALID_INPUT', message: m.notificationTopicNotYours() });
 	}
 	const held = member.functions.find((fn) => fn.id === key.teamFunctionId);
-	const [conference, user, committee] = await Promise.all([
+	const [conference, user, committee, role] = await Promise.all([
 		loadEmailConference(conferenceId),
 		db.query.user.findFirst({ where: { id: member.userId }, ...MAIL_USER }),
-		held?.committeeId ? loadCommittee(held.committeeId) : undefined
+		held?.committeeId ? loadCommittee(held.committeeId) : undefined,
+		held?.roleId
+			? db.query.conferenceRole.findFirst({ where: { id: held.roleId }, columns: { name: true } })
+			: undefined
 	]);
 	if (!conference || !user) {
 		throw apiError({ code: 'NOT_FOUND', message: m.notificationsNotOnTeam() });
@@ -243,6 +253,7 @@ export async function sendNotificationTest({
 		user,
 		held,
 		committee,
+		role,
 		paper,
 		paperUrl: `${origin}/dashboard/${conferenceId}/paperhub`
 	};

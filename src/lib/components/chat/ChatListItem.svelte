@@ -11,7 +11,8 @@
 	import { getLocale } from '#lib/paraglide/runtime';
 	import type { ChatSummary } from '#lib/api/chats';
 	import ChatAvatar from './ChatAvatar.svelte';
-	import { chatAvatar, chatSubtitle, chatTitle, inboxName, listBadge } from './chatLabels';
+	import ChatListBadges from './ChatListBadges.svelte';
+	import { chatAvatar, chatSubtitle, chatTitle } from './chatLabels';
 	import { listTime } from './chatTime';
 
 	interface Props {
@@ -27,7 +28,6 @@
 
 	const subtitle = $derived(chatSubtitle(chat));
 	const unread = $derived(chat.unreadCount > 0);
-	const badge = $derived(listBadge({ chat, showInbox }));
 	const time = $derived(
 		chat.lastMessageAt
 			? listTime({ date: new Date(chat.lastMessageAt), now, locale: getLocale() })
@@ -66,24 +66,7 @@
 			>
 				{chat.lastMessagePreview ?? ''}
 			</span>
-			{#if chat.archived}
-				<span class="badge badge-ghost badge-sm shrink-0 gap-1">
-					<i aria-hidden="true" class="ph-duotone ph-archive"></i>
-					{m.chatArchived()}
-				</span>
-			{/if}
-			{#if badge === 'reported'}
-				<span class="badge badge-warning badge-sm shrink-0">{m.chatReported()}</span>
-			{:else if badge}
-				<span class="badge badge-ghost badge-sm shrink-0">
-					{badge.own
-						? m.chatInboxTrustedOwn()
-						: inboxName({
-								inbox: badge.inbox,
-								committeeAbbreviation: chat.committee?.abbreviation
-							})}
-				</span>
-			{/if}
+			<ChatListBadges {chat} {showInbox} />
 			{#if unread}
 				<span
 					class="badge badge-primary badge-sm shrink-0"

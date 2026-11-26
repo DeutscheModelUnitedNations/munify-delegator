@@ -216,6 +216,12 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 		highImpact: true,
 		note: featureToggleNote
 	},
+	groupChatsEnabled: {
+		group: 'status',
+		label: () => m.groupChatsEnabled(),
+		highImpact: true,
+		note: featureToggleNote
+	},
 	guidePublished: {
 		group: 'status',
 		label: () => m.guidePublishedSwitch(),

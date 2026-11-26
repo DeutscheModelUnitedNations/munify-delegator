@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	answersInbox,
+	oldestPerReader,
 	oldestUnreadPerMember,
 	type InboxMember,
 	type UnreadInbox
@@ -155,5 +156,27 @@ describe('mail choices', () => {
 			]
 		};
 		expect(oldestUnreadPerMember({ inboxes: [care], members: [onAgain] })).toHaveLength(1);
+	});
+});
+
+describe('oldestPerReader', () => {
+	it('keeps the oldest unread message of each reader', () => {
+		const unread = (
+			messageId: string,
+			minute: number,
+			reader: { teamMemberId: string } | { participantId: string }
+		) => ({
+			messageId,
+			writtenAt: at(minute),
+			reader
+		});
+		expect(
+			oldestPerReader([
+				unread('late', 30, { teamMemberId: 'm1' }),
+				unread('early', 10, { teamMemberId: 'm1' }),
+				unread('later', 20, { teamMemberId: 'm1' }),
+				unread('other', 40, { teamMemberId: 'm2' })
+			]).map((one) => one.messageId)
+		).toEqual(['early', 'other']);
 	});
 });

@@ -256,8 +256,8 @@ describe('conferences the caller has a part in', () => {
 			{ id: 'p2', conferenceId: 'hidden', registered: true }
 		],
 		conferences: new Map([
-			['shown', { assignmentReleased: false, showCalendar: true }],
-			['hidden', { assignmentReleased: false, showCalendar: false }]
+			['shown', { assignmentReleased: false, showCalendar: true, groupChatsEnabled: false }],
+			['hidden', { assignmentReleased: false, showCalendar: false, groupChatsEnabled: false }]
 		]),
 		publicConferenceIds: ['p']
 	});
@@ -280,8 +280,8 @@ describe('releasedIds', () => {
 	test('keeps the rows of conferences whose assignment is released', () => {
 		const facts = factsWith({
 			conferences: new Map([
-				['open', { assignmentReleased: true, showCalendar: false }],
-				['closed', { assignmentReleased: false, showCalendar: false }]
+				['open', { assignmentReleased: true, showCalendar: false, groupChatsEnabled: false }],
+				['closed', { assignmentReleased: false, showCalendar: false, groupChatsEnabled: false }]
 			])
 		});
 		const rows = [
@@ -297,9 +297,9 @@ describe('seatedConferenceIds', () => {
 	const facts = factsWith({
 		seatConferenceIds: ['open', 'closed'],
 		conferences: new Map([
-			['open', { assignmentReleased: true, showCalendar: false }],
-			['closed', { assignmentReleased: false, showCalendar: false }],
-			['seatless', { assignmentReleased: true, showCalendar: false }]
+			['open', { assignmentReleased: true, showCalendar: false, groupChatsEnabled: false }],
+			['closed', { assignmentReleased: false, showCalendar: false, groupChatsEnabled: false }],
+			['seatless', { assignmentReleased: true, showCalendar: false, groupChatsEnabled: false }]
 		])
 	});
 

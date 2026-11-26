@@ -889,6 +889,10 @@ export const relations = defineRelations(schema, (r) => ({
 		committee: r.one.committee({
 			from: r.teamFunction.committeeId,
 			to: r.committee.id
+		}),
+		role: r.one.conferenceRole({
+			from: r.teamFunction.roleId,
+			to: r.conferenceRole.id
 		})
 	},
 	chat: {
@@ -914,6 +918,10 @@ export const relations = defineRelations(schema, (r) => ({
 		committee: r.one.committee({
 			from: r.chat.committeeId,
 			to: r.committee.id
+		}),
+		role: r.one.conferenceRole({
+			from: r.chat.roleId,
+			to: r.conferenceRole.id
 		}),
 		messages: r.many.chatMessage({
 			from: r.chat.id,

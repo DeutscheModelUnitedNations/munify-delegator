@@ -3,8 +3,8 @@ import { m } from '#lib/paraglide/messages';
 
 /**
  * The team inboxes. Anchors live in `#lib/components/chat/` (`chat.*`, shared with the
- * participants' messages page) and in `team/messages/InboxChats.svelte`; the reports banner and
- * "new message" show only when they apply.
+ * participants' messages page) and in `team/messages/InboxChats.svelte` and `InboxFilter.svelte`; the reports banner, the inbox
+ * filter (several inboxes or groups) and "new message" show only when they apply.
  */
 export const messagesTour: Tour = {
 	id: 'team.messages',
@@ -17,6 +17,12 @@ export const messagesTour: Tour = {
 			anchor: 'chat.list',
 			title: () => m.tourTeamMessagesListTitle(),
 			body: () => m.tourTeamMessagesListBody(),
+			side: 'right'
+		},
+		{
+			anchor: 'team.messages.inboxes',
+			title: () => m.tourTeamMessagesInboxesTitle(),
+			body: () => m.tourTeamMessagesInboxesBody(),
 			side: 'right'
 		},
 		{

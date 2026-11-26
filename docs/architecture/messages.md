@@ -40,6 +40,25 @@ Chats, inboxes, trusted persons, reports and hiding, write rules, messaging term
   (`callerUserId`). Nobody learns the participant's name there, participant care included
   (`knowsPeopleOf`), and a team chat cannot be reported. `chat.trustedUserId` has no relation on
   purpose and answers only its own person. Anything new that reads chats has to keep this.
+- **Every committee and custom role has a group** (`chat.kind` `COMMITTEE` with `committeeId`,
+  `ROLE` with `roleId`), opened on first use (`openGroupChat`, one per committee/role by the
+  `chat_committee_key` / `chat_role_key` indexes). In it: the people seated there (a delegation
+  member's `assignedCommitteeId` under a delegation holding a role; a single participant's custom
+  role), once the assignment is released **and** the conference opened the groups
+  (`conference.groupChatsEnabled`, its own switch), and the team members holding a function there:
+  a committee's `CHAIR`/`CONSULTANT`, a custom role's `ROLE_SUPPORT` ("Betreuung", `teamFunction.roleId`,
+  only custom roles: `team_function_role_kind`). The team is in its groups whatever the switch
+  says and writes as itself (`side` `TEAM`, by name); participants see each other by role
+  (`chat.contacts` lists everybody seated there). The caller's seat is in their facts
+  (`groupSeats`); `seatedGroupIds` / `teamGroupIds` / `groupIdsIn` turn it into rules, `chatGroups`
+  lists the groups of a conference. Each person reads a group for themselves (`chatRead`, the team
+  too: no `teamReadAt`), and anybody in it mutes it for themselves (`chat_mute`, `setChatMuted`):
+  no unread count, no mail, no Slack. Groups are chats between participants for everything else:
+  reportable by their participants, read by participant care (and a system admin) only under an
+  open report, hidden messages masked for everybody in them, the team included. No supervisor,
+  no participant care by role.
+- **A custom role has an inbox** (`ROLE_SUPPORT`, `chat.roleId`), answered by whoever looks after it,
+  reaching the people holding that role once released (`inboxReaches`), whatever the switches say.
 - **Who reads a chat** is `chatPermissions.ts`: its parties; for a team chat whoever answers its
   inbox; participant care a chat between participants only while a report is open
   (`chat.underReview`, set by `reportChat`, cleared when the last report is resolved:
@@ -88,7 +107,10 @@ Chats, inboxes, trusted persons, reports and hiding, write rules, messaging term
   writes without. **Raise `version` (in a new file, keeping the old one) when the terms change in
   meaning**, and everybody is asked again; raise `revision` for wording only. `terms/revisions.json`
   pins each revision's hash, so `terms.test.ts` fails on a text changed without either.
-- **Mails notify, they do not relay.** `UNREAD_MESSAGES` is an automatic mail like any other (see
+- **Mails notify, they do not relay.** Groups are in the unread mail too: participants turn
+  groups off on their own (`user.groupMessageNotificationEmails`), the team per function
+  (`CHAT_GROUP`, and `ROLE_INBOX` for a role's inbox; `groupTopicsOf`, told once whichever
+  function wants it); a muted group sends nothing. `UNREAD_MESSAGES` is an automatic mail like any other (see
   "Automatic emails"): `unreadMessages.ts` finds, for the people of the page the sweep reads (`loadUnreadOfParticipants`, `loadUnreadOfTeam`), the oldest message they have not
   read, and once it has waited `UNREAD_MESSAGE_MAIL_MINUTES` the reader is owed one mail, keyed by
   that message, without the text. A participant turns it off for themselves
@@ -98,5 +120,5 @@ Chats, inboxes, trusted persons, reports and hiding, write rules, messaging term
   inboxes the caller answers, and the reports for participant care), both built from
   `#lib/components/chat/` (see CLAUDE-UI.md). `WriteToDelegateButton` opens the chat of a team
   inbox with a participant from wherever the team meets them (a paper, the paper tables) and
-  attaches the paper to the first message. `e2e/authorization/messages.spec.ts` pins the rules
+  attaches the paper to the first message. `e2e/authorization/messages.spec.ts` and `group-chats.spec.ts` pin the rules
   down, `e2e/messages/` the flows; the dev seed's `seed-dev/messages.ts` has every state.

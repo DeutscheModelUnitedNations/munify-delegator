@@ -209,7 +209,8 @@ describe('setAllNotificationPreferences', () => {
 				['m1', 'PARTICIPANT_CARE', null],
 				['m1', 'CHAT_REPORT', null],
 				['m1', 'SCAN_PROBLEM', null],
-				['m2', 'COMMITTEE_INBOX', 'f1']
+				['m2', 'COMMITTEE_INBOX', 'f1'],
+				['m2', 'CHAT_GROUP', 'f1']
 			].flatMap(([teamMemberId, topic, teamFunctionId]) =>
 				['EMAIL', 'SLACK'].map((channel) => ({
 					teamMemberId,

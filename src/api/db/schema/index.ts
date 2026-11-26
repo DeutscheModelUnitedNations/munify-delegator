@@ -114,6 +114,7 @@ export {
 	chatMessage,
 	chatRead,
 	chatBlock,
+	chatMute,
 	chatReportStatus,
 	chatReport,
 	messagingTermsAcceptance

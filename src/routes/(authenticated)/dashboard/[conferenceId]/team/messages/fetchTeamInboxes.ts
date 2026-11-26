@@ -24,7 +24,9 @@ export function fetchTeamInboxes({
 			},
 			kind: true,
 			committeeId: true,
-			committee: { abbreviation: true }
+			committee: { abbreviation: true },
+			roleId: true,
+			role: { name: true }
 		}),
 		client.liveQuery.committees({
 			__args: { where: { conferenceId: { eq: conferenceId } } },

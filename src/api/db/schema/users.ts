@@ -105,6 +105,8 @@ export const user = snakeCase.table(
 		wantsJoinTeamInformation: boolean().default(false).notNull(),
 		/** Whether a mail tells them about chat messages they have not read for a while. */
 		messageNotificationEmails: boolean().default(true).notNull(),
+		/** Whether that mail also tells them about the groups of their committee or role. */
+		groupMessageNotificationEmails: boolean().default(true).notNull(),
 		/**
 		 * When they first watched the guide to sending their documents (`postalGuide/`) to its end;
 		 * from then on they may skip it.

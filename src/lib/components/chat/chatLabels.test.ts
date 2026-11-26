@@ -286,3 +286,37 @@ describe('trusted persons', () => {
 		expect(kindHint({ kind: 'DELEGATION' })).not.toContain('Vertraulich');
 	});
 });
+
+describe('groups and the inboxes of custom roles', () => {
+	const committeeGroup = {
+		kind: 'COMMITTEE' as const,
+		side: 'PARTICIPANT',
+		committee: { abbreviation: 'GV' },
+		contacts: [germany]
+	};
+	const roleGroup = {
+		kind: 'ROLE' as const,
+		side: 'TEAM',
+		role: { name: 'Presse', icon: 'newspaper' },
+		contacts: [press]
+	};
+
+	test('a group is named after its committee or role, for everybody in it', () => {
+		expect(chatTitle(committeeGroup)).toBe('Gruppe GV');
+		expect(chatTitle(roleGroup)).toBe('Gruppe Presse');
+		expect(chatTitle({ ...committeeGroup, side: 'TEAM' })).toBe('Gruppe GV');
+	});
+
+	test('a group shows its role icon, and says what it is instead of names', () => {
+		expect(chatAvatar(roleGroup)).toEqual({ icon: 'newspaper' });
+		expect(chatAvatar(committeeGroup)).toEqual({ icon: 'users-four' });
+		expect(chatSubtitle(roleGroup)).toBeUndefined();
+		expect(threadSubtitle(committeeGroup)).toBe(kindHint(committeeGroup));
+	});
+
+	test("a custom role's inbox is its support", () => {
+		const inbox = { inbox: 'ROLE_SUPPORT' as const, roleName: 'Presse' };
+		expect(inboxName(inbox)).toBe('Betreuung Presse');
+		expect(inboxDescription(inbox)).toBe('Fragen an das Team, das deine Rolle betreut');
+	});
+});

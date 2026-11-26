@@ -70,6 +70,7 @@
 		isOpenPaperSubmission: true,
 		showCalendar: true,
 		messagingEnabled: true,
+		groupChatsEnabled: true,
 		guidePublished: true,
 		qrCorporateDesign: true,
 		timezone: true,
@@ -144,6 +145,7 @@
 		timezone: storedConference.timezone,
 		showCalendar: storedConference.showCalendar,
 		messagingEnabled: storedConference.messagingEnabled,
+		groupChatsEnabled: storedConference.groupChatsEnabled,
 		guidePublished: storedConference.guidePublished,
 		qrCorporateDesign: storedConference.qrCorporateDesign,
 		isOpenPaperSubmission: storedConference.isOpenPaperSubmission,
@@ -245,6 +247,7 @@
 					isOpenPaperSubmission: settings.isOpenPaperSubmission,
 					showCalendar: settings.showCalendar,
 					messagingEnabled: settings.messagingEnabled,
+					groupChatsEnabled: settings.groupChatsEnabled,
 					guidePublished: settings.guidePublished
 				};
 				const promise = client.mutate.updateConference({

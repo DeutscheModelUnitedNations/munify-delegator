@@ -84,6 +84,7 @@ NotificationSettingRef.implement({
 			resolve: (setting) => setting.committeeAbbreviation
 		}),
 		committeeName: t.string({ nullable: true, resolve: (setting) => setting.committeeName }),
+		roleName: t.string({ nullable: true, resolve: (setting) => setting.roleName }),
 		email: t.boolean({ resolve: (setting) => setting.email }),
 		slack: t.boolean({ resolve: (setting) => setting.slack })
 	})
