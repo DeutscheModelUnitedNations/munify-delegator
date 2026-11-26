@@ -5,8 +5,8 @@ const NEXT = /^(weiter|next)$/i;
 
 /**
  * Opens the payment page and goes through its first steps: what it is about, and - where the
- * caller may pay for others - whom it covers. The payment guide counts as watched before, so it can
- * be skipped (a fresh account would have to watch every step for its time).
+ * caller may pay for others - whom it covers. The payment guide counts as watched before, so its
+ * step is done (a fresh account would have to watch every step for its time).
  */
 export async function openPaymentFlow(
 	page: Page,
@@ -26,12 +26,15 @@ export async function openPaymentFlow(
 	}
 }
 
-/** Makes the reference, skips the guide and answers the reference the transfer step shows. */
+/**
+ * Makes the reference and answers the reference the transfer step shows. The guide was watched
+ * before (`openPaymentFlow`), so its step counts as done, like the postal guide's, and the transfer
+ * step opens right away.
+ */
 export async function createReference(page: Page) {
 	const generateButton = page.locator('button:has(.ph-sparkle)');
 	await expect(generateButton).toBeEnabled({ timeout: 15_000 });
 	await generateButton.click();
-	await page.getByRole('button', { name: /überspringen|skip/i }).click({ timeout: 15_000 });
 	return transferInputs(page);
 }
 
