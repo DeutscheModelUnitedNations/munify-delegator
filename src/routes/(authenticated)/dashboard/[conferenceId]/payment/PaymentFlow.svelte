@@ -338,7 +338,11 @@
 
 {#snippet restart()}
 	{#if payment}
-		<RestartPayment paymentId={payment.id} transferReported={!!payment.transferReportedAt} />
+		<RestartPayment
+			paymentId={payment.id}
+			transferReported={!!payment.transferReportedAt}
+			onDiscarded={() => (whoConfirmed = false)}
+		/>
 	{/if}
 {/snippet}
 

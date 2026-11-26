@@ -13,9 +13,11 @@
 		paymentId: string;
 		/** They said they transferred already: then the money may be on its way with the old one. */
 		transferReported: boolean;
+		/** The reference was given up: whom to pay for is asked again. */
+		onDiscarded: () => void;
 	}
 
-	let { paymentId, transferReported }: Props = $props();
+	let { paymentId, transferReported, onDiscarded }: Props = $props();
 
 	let open = $state(false);
 	let discarding = $state(false);
@@ -30,6 +32,7 @@
 		try {
 			await promise;
 			open = false;
+			onDiscarded();
 		} finally {
 			discarding = false;
 		}

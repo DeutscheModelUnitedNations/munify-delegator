@@ -68,4 +68,14 @@ test('a head delegate can generate a delegation payment reference covering all m
 	await openPaymentFlow(headPage, { conferenceId, payForOthers: true });
 	const { amount } = await createReference(headPage);
 	expect(amount).toBeCloseTo(feeAmount * 2, 1);
+
+	// Started over, whom the payment covers is asked again, though it was confirmed in this visit
+	await headPage
+		.getByRole('button', { name: /zahlung neu beginnen|start the payment over/i })
+		.click();
+	await headPage.getByRole('button', { name: /referenz verwerfen|discard the reference/i }).click();
+	await expect(headPage.getByLabel(/für andere mitbezahlen|pay for others too/i)).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(headPage.locator('button:has(.ph-sparkle)')).toHaveCount(0);
 });

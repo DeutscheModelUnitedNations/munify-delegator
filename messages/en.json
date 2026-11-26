@@ -1257,7 +1257,7 @@
 	"conferenceSeriesRename": "Rename",
 	"conferenceSeriesTitle": "Conference series",
 	"conferenceSettings": "Conference Settings",
-	"conferenceSettingsContentOnly": "You can change the status, features, links, postal address, templates and resolutions here. Everything else is up to project management.",
+	"conferenceSettingsContentOnly": "You can change the status, features, links, postal address, payment deadline, templates and resolutions here. Everything else is up to project management.",
 	"conferenceSettingsDescription": "You must be <span class=\"underline\">a project manager</span> or <span class=\"underline\">administrator</span> to change these settings.",
 	"conferenceSettingsReadOnly": "You can view these settings, but only project management can change them.",
 	"conferenceSignupIntroduction": "There are different roles at the conference. For a <strong>state</strong> or <strong>non-state actor,</strong> you register as a group of at least two people; for <strong>specific roles</strong> such as the conference press, you register as an individual.",

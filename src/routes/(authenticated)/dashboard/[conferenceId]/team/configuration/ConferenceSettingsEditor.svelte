@@ -34,6 +34,7 @@
 	import AgeSettings from './sections/AgeSettings.svelte';
 	import LinkSettings from './sections/LinkSettings.svelte';
 	import PaymentSettings from './sections/PaymentSettings.svelte';
+	import PaymentDeadlineSettings from './sections/PaymentDeadlineSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
 	import ResolutionManager from './ResolutionManager.svelte';
 	import EmailPrompt from '#lib/components/email/EmailPrompt.svelte';
@@ -238,7 +239,8 @@
 					postalCountry: settings.postalCountry,
 					state: settings.state,
 					unlockPayments: settings.unlockPayments,
-					paymentDeadline: settings.paymentDeadline,
+					// emptied, the deadline is cleared
+					paymentDeadline: settings.paymentDeadline ?? null,
 					unlockPostals: settings.unlockPostals,
 					isOpenPaperSubmission: settings.isOpenPaperSubmission,
 					showCalendar: settings.showCalendar,
@@ -257,7 +259,11 @@
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
 				clearSavedDocuments(validated.data);
-				savedSettings = { ...savedSettings, ...content };
+				savedSettings = {
+					...savedSettings,
+					...content,
+					paymentDeadline: settings.paymentDeadline
+				};
 				void offerEmailsFor(changedFields);
 				return;
 			}
@@ -480,8 +486,12 @@
 			</div>
 		</fieldset>
 
-		<!-- Status, features, links, postal address and templates are also kept by participant care and the content lead. -->
+		<!-- Status, features, links, postal address, templates and the payment deadline are also kept by participant care and the content lead. -->
 		<fieldset class="contents" disabled={!canEditContent}>
+			<div class:hidden={currentTab !== 'payments'}>
+				<PaymentDeadlineSettings {form} />
+			</div>
+
 			<div class:hidden={currentTab !== 'status'}>
 				<FeatureSettings
 					{form}

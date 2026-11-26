@@ -19,7 +19,8 @@ const conference: EmailSnapshot['conference'] = {
 	unlockPostals: true,
 	unlockPayments: true,
 	applicationDeadline: new Date('2026-12-01T12:00:00Z'),
-	paymentDeadline: null,
+	// late in the evening in Berlin: still the 14th there, the 15th in UTC
+	paymentDeadline: new Date('2027-02-14T22:30:00Z'),
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: true,
@@ -130,6 +131,11 @@ const kindChecks: Partial<
 		expect(content.subject).toContain('Workshop-Wahl');
 		// 17:00 UTC is 18:00 in Berlin, the conference's time zone
 		expect(bodyOf(content)).toMatch(/18:00|6:00\s?PM/);
+	},
+	PAYMENT_DEADLINE_REMINDER: ({ content }) => {
+		// 22:30 UTC on the 14th is 23:30 in Berlin, the conference's time zone: still the 14th
+		expect(bodyOf(content)).toMatch(/14\. Februar 2027|February 14, 2027/);
+		expect(content.button?.url).toBe('https://delegator.example.org/dashboard/c1/payment');
 	},
 	TEAM_WELCOME: ({ content, locale }) => {
 		expect(bodyOf(content)).toContain('Robin Reviewer');
