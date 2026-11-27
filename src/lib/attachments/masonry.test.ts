@@ -11,6 +11,14 @@ let columns: string;
 
 const heights = new Map<Element, number>();
 
+/** Animation frames wait until the test runs them */
+let frames: (time: number) => void[] = [];
+function nextFrame() {
+	const due = frames;
+	frames = [];
+	due.forEach((callback) => callback(0));
+}
+
 function item(height: number, style = '') {
 	const element = document.createElement('div');
 	element.setAttribute('style', style);
@@ -33,6 +41,12 @@ describe('masonry', () => {
 		observed.clear();
 		disconnected = 0;
 		columns = '100px 100px';
+		frames = [];
+		vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => {
+			frames.push(callback);
+			return frames.length;
+		});
+		vi.stubGlobal('cancelAnimationFrame', () => (frames = []));
 		grid = document.body.appendChild(document.createElement('div'));
 		vi.stubGlobal(
 			'ResizeObserver',
@@ -94,6 +108,7 @@ describe('masonry', () => {
 		attach(only);
 		columns = '100px';
 		resized();
+		nextFrame();
 		expect(placeOf(only)).toBe('- | -');
 		expect(grid.style.gridAutoRows).toBe('');
 	});
@@ -102,11 +117,15 @@ describe('masonry', () => {
 		const [first, second] = [item(100), item(100)];
 		attach(first);
 		grid.append(second);
-		await vi.waitFor(() => expect([...observed]).toEqual([first, second]));
+		await vi.waitFor(() => expect(frames).toHaveLength(1));
+		nextFrame();
+		expect([...observed]).toEqual([first, second]);
 		expect(placeOf(second)).toBe('2 | 1 / span 100');
 
 		first.remove();
-		await vi.waitFor(() => expect([...observed]).toEqual([second]));
+		await vi.waitFor(() => expect(frames).toHaveLength(1));
+		nextFrame();
+		expect([...observed]).toEqual([second]);
 		expect(placeOf(first)).toBe('- | -');
 		expect(placeOf(second)).toBe('1 | 1 / span 100');
 	});
@@ -117,7 +136,25 @@ describe('masonry', () => {
 		only.style.gridRow = '7';
 		only.append('text');
 		await new Promise((done) => setTimeout(done));
+		nextFrame();
 		expect(placeOf(only)).toBe('1 | 7');
+	});
+
+	test('measures new items once the DOM settled, not while it is being changed', async () => {
+		const [first, second] = [item(100), item(100)];
+		attach(first, second);
+		// Mid-update an item can measure nothing for a moment; it is back before the next frame,
+		// so the ResizeObserver has nothing to tell
+		const tile = item(0);
+		grid.prepend(tile);
+		await new Promise((done) => setTimeout(done));
+		heights.set(tile, 120);
+		nextFrame();
+		expect([tile, first, second].map(placeOf)).toEqual([
+			'1 | 1 / span 120',
+			'2 | 1 / span 100',
+			'1 | 131 / span 100'
+		]);
 	});
 
 	test('stops watching once it is taken off', () => {
