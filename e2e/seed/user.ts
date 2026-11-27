@@ -3,10 +3,14 @@ import * as schema from '../../src/api/db/schema';
 
 /**
  * What the my-account form schema asks for, or every login lands on /my-account (see
- * upsertActorUser in seed.ts).
+ * upsertActorUser in seed.ts). The address is whole: `makeSeedUser` draws the zip for the country
+ * it picked, four digits for Austria or Switzerland, which a German one is not.
  */
 export const COMPLETE_PROFILE = {
 	country: 'DEU',
+	street: 'Teststraße 1',
+	zip: '24103',
+	city: 'Kiel',
 	phone: '+4917612345678',
 	emergencyContacts: 'Emergency contact: +49 176 12345678'
 };

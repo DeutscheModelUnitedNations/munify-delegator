@@ -206,11 +206,15 @@ test('a batch of scans marks a signed contract in, unattended, and ignores pages
 	expect(await graceStatus(page)).toBe('DONE');
 
 	await page.getByRole('tab', { name: /^scans$/i }).click();
-	await scans.getByRole('button', { name: /löschen|delete/i }).click();
-	await page
+	// the tab mounts the list afresh; a click before it settles opens no dialog
+	const confirmDelete = page
 		.getByRole('dialog')
-		.getByRole('button', { name: /^(löschen|delete)$/i })
-		.click();
+		.getByRole('button', { name: /^(löschen|delete)$/i });
+	await expect(async () => {
+		await scans.getByRole('button', { name: /löschen|delete/i }).click({ timeout: 2_000 });
+		await expect(confirmDelete).toBeVisible({ timeout: 2_000 });
+	}).toPass({ timeout: 15_000 });
+	await confirmDelete.click();
 	await expect.poll(async () => (await gracePaper(page)).postalScans).toEqual([]);
 });
 
