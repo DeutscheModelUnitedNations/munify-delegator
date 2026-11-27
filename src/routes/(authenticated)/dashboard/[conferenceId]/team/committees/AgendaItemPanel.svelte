@@ -39,9 +39,11 @@
 	let draft = $state<AgendaItemDraft>(untrack(() => draftOf(item)));
 	let saving = $state(false);
 
-	// take over what was saved elsewhere, unless the fields hold an edit
+	// take over what was saved elsewhere, unless the fields hold an edit; not while this form's own
+	// save runs (its result may arrive first), after it the base is what was sent
 	$effect.pre(() => {
 		const next = stored;
+		if (saving) return;
 		if (same(draft, base) && !same(next, base)) {
 			base = draftOf(item);
 			draft = draftOf(item);
