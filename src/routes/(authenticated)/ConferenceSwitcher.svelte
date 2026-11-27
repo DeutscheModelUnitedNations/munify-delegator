@@ -1,22 +1,38 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { pathInOtherConference, teamRelativePath } from '#lib/data/teamRoutes';
 	import {
 		conferenceGroupIcon,
 		conferenceGroupLabel,
 		groupConferencesByState
 	} from './dashboard/conferenceGroups';
-	import { fetchSelectableConferences } from './dashboard/conferenceSelector';
+	import { fetchMyTeamRoles, fetchSelectableConferences } from './dashboard/conferenceSelector';
 
-	/** The breadcrumb's conference crumb: names the current conference and switches to another. */
+	/**
+	 * The breadcrumb's conference crumb: names the current conference and switches to another,
+	 * staying on the open team page where the caller may open it there (`pathInOtherConference`).
+	 */
 	interface Props {
 		conferenceId: string;
 	}
 
 	let { conferenceId }: Props = $props();
 
-	const conferences = $derived(await fetchSelectableConferences());
+	const user = await getCurrentUser();
+	const [conferences, teamRoles] = $derived(
+		await Promise.all([fetchSelectableConferences(), fetchMyTeamRoles(user.sub)])
+	);
+	const relativePath = $derived(teamRelativePath({ pathname: page.url.pathname, conferenceId }));
+
+	function hrefFor(targetId: string) {
+		const roles = teamRoles.filter((row) => row.conferenceId === targetId).map((row) => row.role);
+		const path = pathInOtherConference({ relativePath, access: { isAdmin: user.isAdmin, roles } });
+		return resolve(path ? `dashboard/${targetId}/${path}` : `dashboard/${targetId}`);
+	}
 	const groups = $derived(groupConferencesByState(conferences));
 	const current = $derived(conferences.find((conference) => conference.id === conferenceId));
 </script>
@@ -48,9 +64,7 @@
 							{#snippet child({ props })}
 								<a
 									{...props}
-									href={resolve('/(authenticated)/dashboard/[conferenceId]', {
-										conferenceId: conference.id
-									})}
+									href={hrefFor(conference.id)}
 									class="flex items-center gap-2 rounded-field px-3 py-2 text-sm data-highlighted:bg-base-200 {conference.id ===
 									conferenceId
 										? 'bg-primary/10 text-primary font-semibold'

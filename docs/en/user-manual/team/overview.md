@@ -20,6 +20,8 @@ After that come cards:
 
 On the home page, a button with the conference's name leads straight back to the overview of the conference whose team you last worked in in this browser, as long as you are still on its team.
 
+The conference's name at the top of the bar switches to another conference. On a team page you land on the same page of the other conference if you may open it there, otherwise on its overview. A single school, survey or preparation guide page leads to its list, a person's card to the overview. The page's filters and search are not carried over.
+
 What participants see you open from the team's page: **Seats** and **Calendar** have the link **Participant view** at the top.
 
 ### The side navigation
