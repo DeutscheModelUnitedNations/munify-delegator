@@ -5,6 +5,7 @@ import {
 	escapeTypstText,
 	typstFactBox,
 	typstLang,
+	typstLogoImage,
 	typstPreamble
 } from './typstTemplate';
 
@@ -64,6 +65,24 @@ describe('typstFactBox', () => {
 	test('escapes labels and values', () => {
 		expect(typstFactBox([{ label: 'Thema', value: '#1' }])).toContain(
 			'[Thema] #linebreak() #text(size: 9.5pt)[\\#1]'
+		);
+	});
+});
+
+describe('typstLogoImage', () => {
+	const logo = { path: 'a.svg', darkPath: 'a-dark.svg', clearSpace: true };
+
+	test('sets a file with its clear space larger', () => {
+		expect(typstLogoImage({ logo })).toBe('image("a.svg", height: 2.1cm)');
+		expect(typstLogoImage({ logo: { path: 'b.png', clearSpace: false } })).toBe(
+			'image("b.png", height: 1.3cm)'
+		);
+	});
+
+	test('takes the white version on dark, when there is one', () => {
+		expect(typstLogoImage({ logo, dark: true })).toBe('image("a-dark.svg", height: 2.1cm)');
+		expect(typstLogoImage({ logo: { path: 'b.png', clearSpace: false }, dark: true })).toBe(
+			'image("b.png", height: 1.3cm)'
 		);
 	});
 });

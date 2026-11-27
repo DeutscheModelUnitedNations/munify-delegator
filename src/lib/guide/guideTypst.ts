@@ -4,8 +4,10 @@ import {
 	escapeTypstString as escapeString,
 	escapeTypstText as escapeText,
 	typstFooter,
+	typstLogoImage,
 	typstPreamble,
-	type TypstBrand
+	type TypstBrand,
+	type TypstLogo
 } from '#lib/helpers/typstTemplate';
 
 /**
@@ -21,8 +23,8 @@ export type CommitteeTextHeader = {
 	conference: string;
 	committee: string;
 	agendaItem: string;
-	/** The conference logo's file name next to the source, if there is one. */
-	logoPath?: string;
+	/** The conference logo next to the source, if there is one. */
+	logo?: TypstLogo;
 	/** "Thema": the label in front of the agenda item in the footer. */
 	agendaItemLabel: string;
 	brand: TypstBrand;
@@ -178,14 +180,17 @@ export function imageFileIdsOf(doc: GuideDocument) {
 	return ids;
 }
 
-/** The head of the first page: the logo on white, then the title on the dark background. */
+/**
+ * The head of the first page: the title on the dark background, with the white logo in it. A logo
+ * without a white version (an uploaded one) sits above the block on white: it cannot be recoloured.
+ */
 function titleBlock(header: CommitteeTextHeader) {
-	const logo = header.logoPath
-		? `#image("${escapeString(header.logoPath)}", height: 1.3cm)\n#v(14pt)\n`
-		: '';
-	return `${logo}#pad(x: -25mm)[#block(fill: dmun-navy, width: 100%, inset: (x: 25mm, top: 14mm, bottom: 15mm))[
+	const { logo } = header;
+	const onWhite = logo && !logo.darkPath ? `#${typstLogoImage({ logo })}\n#v(14pt)\n` : '';
+	const inBlock = logo?.darkPath ? `#${typstLogoImage({ logo, dark: true })}\n  #v(10pt)\n  ` : '';
+	return `${onWhite}#pad(x: -25mm, top: ${logo?.darkPath ? '-20mm' : '0mm'})[#block(fill: dmun-navy, width: 100%, inset: (x: 25mm, top: ${logo?.darkPath ? '10mm' : '14mm'}, bottom: 15mm))[
   #set text(fill: white)
-  #text(size: 15pt, weight: "bold")[${escapeText(header.committee)}]
+  ${inBlock}#text(size: 15pt, weight: "bold")[${escapeText(header.committee)}]
   #v(12pt)
   #dmun-stripe(color: white)
   #block(above: 16pt)[#set par(leading: 0.15em)

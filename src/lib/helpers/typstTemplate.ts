@@ -4,7 +4,7 @@
  * the Hausschrift Outfit, DMUN-Blau headings, the Akzentstreifen in the conference brand's
  * accent, square text boxes on the light background. Written for the bundled Typst 0.10.
  *
- * Outfit ships in `typst-fonts/` and is handed to the compiler by `#api/services/typst`; a source
+ * Outfit ships in `typst-assets/fonts/` and is handed to the compiler by `#api/services/typst`; a source
  * compiled elsewhere without it falls back to DejaVu Sans.
  */
 
@@ -27,6 +27,19 @@ export function brandOfSeries(abbreviation: string | null | undefined): TypstBra
 	if (key === 'MUNSH') return 'mun-sh';
 	if (key === 'MUNBW') return 'munbw';
 	return 'dmun';
+}
+
+/**
+ * A logo next to the source. `darkPath` is its white version for the dark background, when there
+ * is one; `clearSpace` says the file carries its Schutzzone (DMUN's own logos), so it is set
+ * larger for the same visible size.
+ */
+export type TypstLogo = { path: string; darkPath?: string; clearSpace: boolean };
+
+/** The Typst image of a logo, its white version with `dark`. */
+export function typstLogoImage({ logo, dark = false }: { logo: TypstLogo; dark?: boolean }) {
+	const path = dark && logo.darkPath ? logo.darkPath : logo.path;
+	return `image("${escapeTypstString(path)}", height: ${logo.clearSpace ? '2.1cm' : '1.3cm'})`;
 }
 
 /** ISO 639-3 codes Typst knows by their two-letter form (hyphenation and quotes need it). */

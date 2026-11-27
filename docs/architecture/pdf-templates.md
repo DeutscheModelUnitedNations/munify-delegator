@@ -30,27 +30,40 @@ into Typst's `lang` (hyphenation, quotes).
 ## Branding on the server
 
 `#api/services/typstBranding` (`typstBrandingOf`) reads a conference's title, series, language and
-logo, writing the logo (else the emblem) next to the source if Typst can read its type (PNG, JPEG,
-GIF, SVG; `writeTypstImage`). Papers used to be built in the browser and sent as raw Typst; now the
-browser sends the editor content and its translated labels, and the server builds the source, so
-the logo can be included and the compiler sees only generated source. The `.typ` download still
-builds the source in the browser, without the logo.
+logo and writes the logo next to the source:
 
-## Fonts
+- **MUN-SH and MUNBW** print their official Wort-Bild-Marke from `typst-assets/logos/`
+  (`copyBrandLogo`): the colour file on white, the white `-darkmode` file on the dark background.
+- **Any other conference** prints its uploaded logo, else its emblem, if Typst can read its type
+  (PNG, JPEG, GIF, SVG; `writeTypstImage`). Without either, a conference of another series gets
+  DMUN's mark; one without a series none (it may be another organizer's).
 
-Outfit (ExtraLight, Light, Regular, Bold; SIL OFL, `typst-fonts/OFL.txt`) lies as static TTFs in
-`typst-fonts/` — Typst 0.10 reads neither WOFF nor variable weights. `compileTypst` passes the
-folder with `--font-path` when it exists (repository root in development and tests, `/app` in the
-image, `Dockerfile`). Without it the PDFs fall back to DejaVu Sans.
+`TypstLogo.clearSpace` marks DMUN's files, whose Schutzzone is part of the file, so they are set
+larger (2.1 cm box) than an uploaded logo (1.3 cm). A logo without a white version cannot sit on
+the committee text's dark block (Typst cannot recolour an image); it goes above the block on white.
+
+Papers used to be built in the browser and sent as raw Typst; now the browser sends the editor
+content and its translated labels, and the server builds the source, so the logo can be included
+and the compiler sees only generated source. The `.typ` download still builds the source in the
+browser, without the logo.
+
+## Assets
+
+`typst-assets/` (copied into the image by the `Dockerfile`; `typst-assets/README.md`):
+
+- `fonts/` — Outfit (ExtraLight, Light, Regular, Bold; SIL OFL) as static TTFs: Typst 0.10 reads
+  neither WOFF nor variable weights. `compileTypst` passes the folder with `--font-path` when it
+  exists; without it the PDFs fall back to DejaVu Sans.
+- `logos/` — DMUN's, MUN-SH's and MUNBW's Wort-Bild-Marke with the written-out name, colour and
+  white, from `https://cdn.dmun.de/cdn/logos/` (`manifest.json`). Fetched once into the repository:
+  the compiler has no network.
 
 ## Tests
 
 `#api/services/typst.test.ts` compiles both templates with the real binary and checks that Outfit
-is embedded; the template modules have unit tests for their output.
+is embedded and the official logos are there; the template modules have unit tests for their output.
 
 ## Not yet
 
 - Upgrading Typst beyond 0.10 would bring tagged (screen-reader) PDFs and PDF/A; the templates use
   0.10 APIs (`locate`, no `context`) and need small changes then.
-- The committee text's dark title block cannot show a logo in white (Typst cannot recolour an
-  image), so the logo sits above it on white.

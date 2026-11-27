@@ -54,7 +54,7 @@ describe('committeeTextToTypst', () => {
 			committee: 'Sicherheitsrat (SR)',
 			agendaItem: 'Klima',
 			agendaItemLabel: 'Thema',
-			logoPath: 'logo.png',
+			logo: { path: 'logo.png', clearSpace: false },
 			brand: 'munbw',
 			lang: 'en'
 		}
@@ -85,11 +85,32 @@ describe('committeeTextToTypst', () => {
 	test('puts the logo and the title block first, in the brand and language', () => {
 		expect(source).toContain('#let dmun-accent = rgb("#DC770A")');
 		expect(source).toContain('lang: "en"');
+		// an uploaded logo has no white version: it stays on white above the dark block
 		expect(source.indexOf('#image("logo.png", height: 1.3cm)')).toBeLessThan(
-			source.indexOf('Zusammenfassung')
+			source.indexOf('fill: dmun-navy')
 		);
 		expect(source).toContain('#text(size: 50pt, weight: "extralight")[Klima]');
 		expect(source).toContain('MUN\\-SH 2027 · Sicherheitsrat (SR) · Thema: Klima');
+	});
+
+	test('puts a white logo into the dark block', () => {
+		const withMark = committeeTextToTypst({
+			doc: { type: 'doc', content: [] },
+			images: new Map(),
+			header: {
+				conference: 'C',
+				committee: 'K',
+				agendaItem: 'T',
+				agendaItemLabel: 'Thema',
+				brand: 'mun-sh',
+				lang: 'de',
+				logo: { path: 'mun-sh-lang.svg', darkPath: 'mun-sh-lang-darkmode.svg', clearSpace: true }
+			}
+		});
+		expect(withMark).not.toContain('image("mun-sh-lang.svg"');
+		expect(withMark.indexOf('fill: dmun-navy')).toBeLessThan(
+			withMark.indexOf('#image("mun-sh-lang-darkmode.svg", height: 2.1cm)')
+		);
 	});
 
 	test('leaves the logo out without one and tints other callouts in the accent', () => {

@@ -11,7 +11,7 @@
  * gracefully (children are still rendered).
  *
  * The page follows the DMUN corporate design (`./typstTemplate`). The only side file is the
- * conference logo (`branding.logoPath`), which the server writes next to the source; without it
+ * conference logo (`branding.logo`), which the server writes next to the source; without it
  * (the client-side `.typ` download) the document is self-contained.
  */
 
@@ -20,8 +20,10 @@ import {
 	escapeTypstText as escapeText,
 	typstFactBox,
 	typstFooter,
+	typstLogoImage,
 	typstPreamble,
-	type TypstBrand
+	type TypstBrand,
+	type TypstLogo
 } from './typstTemplate';
 
 export interface TipTapMark {
@@ -63,8 +65,8 @@ export interface PaperTypstBranding {
 	brand: TypstBrand;
 	/** Typst `lang` (`typstLang`). */
 	lang: string;
-	/** The logo's file name next to the source, if there is one. */
-	logoPath?: string;
+	/** The logo next to the source, if there is one. */
+	logo?: TypstLogo;
 }
 
 function attrString({
@@ -187,9 +189,7 @@ function renderBlock(node: TipTapNode): string {
 
 /** The first page's head: logo and conference left/right, the stripe, title, delegation, facts. */
 function titleBlock({ meta, branding }: { meta: PaperTypstMeta; branding: PaperTypstBranding }) {
-	const logo = branding.logoPath
-		? `image("${escapeString(branding.logoPath)}", height: 1.3cm)`
-		: '[]';
+	const logo = branding.logo ? typstLogoImage({ logo: branding.logo }) : '[]';
 	const corner = [`#strong[${escapeText(branding.conferenceName)}]`];
 	if (meta.documentNumber) corner.push(escapeText(meta.documentNumber));
 	const facts: { label: string; value: string }[] = [];

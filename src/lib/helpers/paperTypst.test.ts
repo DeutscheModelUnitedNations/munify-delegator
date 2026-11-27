@@ -38,8 +38,15 @@ describe('paperToTypst', () => {
 	test('shows the logo only when there is one', () => {
 		expect(paperToTypst({ content: null, meta, branding })).not.toContain('image(');
 		expect(
-			paperToTypst({ content: null, meta, branding: { ...branding, logoPath: 'logo.svg' } })
-		).toContain('image("logo.svg", height: 1.3cm)');
+			paperToTypst({
+				content: null,
+				meta,
+				branding: {
+					...branding,
+					logo: { path: 'mun-sh-lang.svg', darkPath: 'mun-sh-lang-darkmode.svg', clearSpace: true }
+				}
+			})
+		).toContain('image("mun-sh-lang.svg", height: 2.1cm)');
 	});
 
 	test('lists only the facts and header parts that are given', () => {

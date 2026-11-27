@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { committeeTextToTypst } from '#lib/guide/guideTypst';
 import { paperToTypst } from '#lib/helpers/paperTypst';
-import { compileTypst, typstFontArgs } from './typst';
+import { compileTypst, copyBrandLogo, typstFontArgs } from './typst';
 
 /**
  * The templates compiled by the real compiler with the shipped fonts: a template that stops
@@ -33,11 +33,27 @@ const pdfText = (pdf: Buffer) => pdf.toString('latin1');
 
 describe('typstFontArgs', () => {
 	test('points the compiler at the fonts of the checkout', () => {
-		expect(typstFontArgs()).toEqual(['--font-path', join(process.cwd(), 'typst-fonts')]);
+		expect(typstFontArgs()).toEqual(['--font-path', join(process.cwd(), 'typst-assets', 'fonts')]);
 	});
 
 	test('passes nothing where the folder is missing', () => {
 		expect(typstFontArgs('/nonexistent')).toEqual([]);
+	});
+});
+
+describe('copyBrandLogo', () => {
+	test('copies the official mark in colour and white', async () => {
+		for (const brand of ['dmun', 'mun-sh', 'munbw'] as const) {
+			expect(await copyBrandLogo({ brand, dir })).toEqual({
+				path: `${brand}-lang.svg`,
+				darkPath: `${brand}-lang-darkmode.svg`,
+				clearSpace: true
+			});
+		}
+	});
+
+	test('is undefined without the assets', async () => {
+		expect(await copyBrandLogo({ brand: 'mun-sh', dir, assets: '/nonexistent' })).toBeUndefined();
 	});
 });
 
@@ -66,7 +82,12 @@ describe('templates', () => {
 				disclaimer: 'Simulation',
 				documentNumber: 'PP-2027-ABCDEF'
 			},
-			branding: { conferenceName: 'MUN-SH 2027', brand: 'mun-sh', lang: 'de', logoPath: 'logo.svg' }
+			branding: {
+				conferenceName: 'MUN-SH 2027',
+				brand: 'mun-sh',
+				lang: 'de',
+				logo: await copyBrandLogo({ brand: 'mun-sh', dir })
+			}
 		});
 		const pdf = await compileTypst({ dir, source });
 		expect(pdfText(pdf).startsWith('%PDF')).toBe(true);
@@ -89,7 +110,7 @@ describe('templates', () => {
 				committee: 'Generalversammlung (GV)',
 				agendaItem: 'Schutz kritischer Infrastruktur im Cyberraum',
 				agendaItemLabel: 'Thema',
-				logoPath: 'logo.svg',
+				logo: await copyBrandLogo({ brand: 'munbw', dir }),
 				brand: 'munbw',
 				lang: 'de'
 			}

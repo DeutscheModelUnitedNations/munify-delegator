@@ -63,7 +63,7 @@ export async function renderCommitteeText(page: {
 				conference: committee.conference.title,
 				committee: `${committee.name} (${committee.abbreviation})`,
 				agendaItem: item.title,
-				logoPath: branding?.logoPath,
+				logo: branding?.logo,
 				agendaItemLabel: m.guideAgendaItemLabel(),
 				brand: branding?.brand ?? 'dmun',
 				lang: branding?.lang ?? 'de'
