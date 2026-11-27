@@ -2974,6 +2974,12 @@ export type EmailstatusEnum = "FAILED" | "SENDING" | "SENT" | "SKIPPED";
 		
 export type EmailtriggerEnum = "AUTOMATIC" | "MANUAL";
 		
+export type EntranceSummary = {
+  checkedIn: Int,
+  expected: Int,
+  minorsWithoutConsent: Int    
+};
+		
 export type FlagCollectionData = {
   flags: () => FlagProgress[],
   stats: () => FlagCollectionStats    
@@ -5853,6 +5859,9 @@ export type Query = {
   canUpdateSchool: (p: {
     id: ID
   }) => Boolean,
+  certificateHoldersCount: (p: {
+    conferenceId: ID
+  }) => Int,
   chasePresence: (p: {
     conferenceId: ID
   }) => ChasePresence | null,
@@ -6066,6 +6075,10 @@ export type Query = {
     conferenceId: ID,
     revision?: Int | null | undefined
   }) => EmailKindStats[],
+  entranceSummary: (p: {
+    conferenceId: ID,
+    since: DateTime
+  }) => EntranceSummary,
   findIntroductionPapers: (p: {
     conferenceId: ID
   }) => Paper[],
@@ -7263,6 +7276,7 @@ export type StatisticsResultPapersByStatus = {
   accepted: Int,
   changesRequested: Int,
   draft: Int,
+  revised: Int,
   submitted: Int    
 };
 		
@@ -8336,6 +8350,7 @@ export type Surveyquestion = {
     where?: SurveyanswerWhereInputArgument | null | undefined
   }) => Surveyanswer[],
   title: String,
+  unansweredCount: Int | null,
   updatedAt: DateTime    
 };
 		

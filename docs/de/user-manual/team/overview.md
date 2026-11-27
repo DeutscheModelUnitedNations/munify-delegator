@@ -11,12 +11,26 @@ Diese Seite erklärt, was für alle Seiten des Teams gilt: wie du in den Team-Be
 
 Alles, woran das Team einer Konferenz arbeitet, liegt in einem gemeinsamen Team-Bereich. Sobald du im Team einer Konferenz bist, steht auf jeder ihrer Seiten links die Navigation der Konferenz. Ihr erster Eintrag ist die **Übersicht** der Konferenz. Neben dem Namen der Konferenz stehen deine Rollen im Team. Darunter zeigt je eine Kachel, was in deinen Bereichen gerade wartet: ungelesene Nachrichten, gemeldete Chats, mögliche Doppelkonten, Schulzusammenführungen, Personen auf der Warteliste, fällige oder fehlgeschlagene E-Mails, Ankündigungen im Entwurf, Papiere zum Bewerten und Tagesordnungspunkte, die Hilfe beim Bewerten brauchen. Ein Klick führt zur passenden Seite.
 
+Darunter stehen die **Widgets** der Konferenz. Jedes beantwortet eine Frage und führt mit dem Pfeil oben rechts zur Seite, auf der du daran arbeitest. Welche du siehst, hängt von der Phase der Konferenz ab und davon, welche Seiten du mit deiner Rolle öffnen darfst. Die wichtigsten einer Phase stehen groß oben, die übrigen kleiner darunter. Hat ein Widget nichts zu melden, sagt es das in einem Satz („Alles beantwortet.“). Zahlen aus den [Statistiken](./maintenance#statistics) tragen den Zeitpunkt, zu dem sie zuletzt berechnet wurden („Stand …“).
+
+| Widget                     | Was es zeigt                                                                                                                                                                                                                                                                                                                                                                  | Wann                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Fahrplan & Fristen**     | die Phasen der Konferenz, die zuletzt verstrichene Frist und die nächsten: Bewerbungsschluss, Zahlungsfrist, Veröffentlichung der Zuteilung, Fristen der Umfragen, Beginn und Ende, mit der Zahl dahinter („178 haben noch nicht bezahlt“). Sagen die Daten, dass die nächste Phase dran ist, weist es die Projektleitung darauf hin; die Phase wechselst du weiterhin selbst | in jeder Phase                            |
+| **Startklar**              | was vor der Bewerbung (Plätze, Bewerbungsschluss, Beitrag, Bankverbindung, Vertrag) oder vor der Konferenz (Leitfaden, Zeitplan für jeden Tag, Diskussionspunkte, Zertifikatsvorlage, Einlass-Sitzung, CHASE) noch fehlt. Ein offener Punkt führt dorthin, wo du ihn erledigst                                                                                                | vor der Bewerbung und in der Vorbereitung |
+| **Teilnehmende**           | Angemeldete beziehungsweise vergebene Plätze, nach Delegierten, Einzelrollen und Betreuenden, und die Warteliste                                                                                                                                                                                                                                                              | Bewerbung, Vorbereitung                   |
+| **Zahlungen & Unterlagen** | wie viele bezahlt und ihre postalische Anmeldung vollständig haben, und wie viele Zahlungen auf deine Entscheidung warten                                                                                                                                                                                                                                                     | Bewerbung bis Konferenz                   |
+| **Gremien & Zuteilung**    | wie voll die Gremien sind, freie Plätze, ob ein Entwurf der Zuteilung noch nicht angewendet ist                                                                                                                                                                                                                                                                               | Bewerbung, Vorbereitung                   |
+| **Papiere**                | die Papiere nach Status, wie viele gerade auf ein Review warten, deine Reviews und Themen, die Hilfe suchen                                                                                                                                                                                                                                                                   | Vorbereitung, Konferenz                   |
+| **Kommunikation**          | die letzte Ankündigung und wie viele sie gelesen haben, und die fälligen E-Mails                                                                                                                                                                                                                                                                                              | in jeder Phase                            |
+| **Jetzt & gleich**         | was gerade im Zeitplan läuft und was als Nächstes kommt, über alle Tracks, und der Weg zur Konferenz in CHASE                                                                                                                                                                                                                                                                 | während der Konferenz                     |
+| **Einlass heute**          | wie viele mit Platz heute die Einlasskontrolle bestanden haben, wer noch fehlt und wie viele Minderjährige noch kein Einverständnis ihrer Eltern haben                                                                                                                                                                                                                        | während der Konferenz                     |
+| **Meldungen & Anliegen**   | offene gemeldete Chats, ungelesene Nachrichten je Postfach und wie lange die älteste schon wartet. Während der Konferenz ersetzt es die Kacheln für Nachrichten und Meldungen                                                                                                                                                                                                 | Vorbereitung bis nach der Konferenz       |
+| **Abschluss**              | wer ein Teilnahmezertifikat bekommt und wie viele davon per E-Mail erfahren haben, das offene Geld und ob ihr euch nach dem Ende schon bei allen bedankt habt                                                                                                                                                                                                                 | nach der Konferenz                        |
+
 Danach folgen Karten:
 
 - **Team-Wiki**, **Dienste** und **Inhaltliche Vorbereitung**, sobald die Konferenz diese Links in den [Einstellungen](./configuration) hinterlegt hat
 - **App-Dokumentation**, falls der Server einen Link dazu hat
-- **Papier-Hub**, wenn du Papiere prüfen darfst
-- **Verbindung zu CHASE**, solange eine CHASE-Instanz verbunden ist (siehe [unten](#chase-link))
 
 Auf der Startseite führt ein Knopf mit dem Namen der Konferenz direkt zurück zur Übersicht der Konferenz, in deren Team du in diesem Browser zuletzt warst, solange du noch in ihrem Team bist.
 
@@ -339,18 +353,20 @@ DELEGATOR kann mit einer Instanz von MUNify CHASE verbunden sein, der App für d
 
 Dazu prüft CHASE die NSA-Karten, die ihr unter [**Downloads**](./maintenance#downloads) oder in der Teilnehmendenkarte einer Person druckt, und die E-Mail **MUNify CHASE kennenlernen** gibt es auf der Seite [E-Mails](./communication#emails) nur, solange die Verbindung besteht.
 
-### Die CHASE-Karte auf dem Dashboard
+### CHASE auf der Übersicht
 
-Solange eine CHASE-Instanz verbunden ist, sieht jedes Teammitglied auf dem Dashboard der Konferenz die Karte **Verbindung zu CHASE**:
+Solange eine CHASE-Instanz verbunden ist, steht die Verbindung in der Vorbereitung als Punkt im Widget **Startklar** der Übersicht, mit diesen Angaben darunter:
 
 - **Konferenz in CHASE öffnen** führt zur Konferenz in CHASE.
 - Daneben steht, wann DELEGATOR zuletzt aus CHASE gelesen hat (**Zuletzt aus CHASE gelesen: …** oder **Noch nichts aus CHASE gelesen**).
 - Vor der Freigabe der Zuteilung erinnert ein Hinweis, dass die Teilnehmenden erst danach in CHASE erscheinen.
 - Wer Papiere lesen darf, sieht unter **Angenommene Arbeitspapiere, die nicht nach CHASE gehen** jedes angenommene Arbeitspapier, das CHASE nicht übernimmt, mit dem Grund: **kein Tagesordnungspunkt** oder **die Delegation hat keinen Sitz in diesem Gremium**.
 
+Während der Konferenz führt **Konferenz in CHASE öffnen** im Widget **Jetzt & gleich** dorthin.
+
 ### Jetzt synchronisieren
 
-Administrator\*innen finden auf der Karte und auf der Seite **Verbindung zu CHASE** den Knopf **Jetzt synchronisieren**. Er lässt DELEGATOR alles aus CHASE neu lesen und bittet CHASE, dasselbe mit DELEGATOR zu tun. Normalerweise braucht es ihn nicht, denn beide Seiten hören Änderungen sofort. Ist CHASE gerade nicht erreichbar, gleicht DELEGATOR trotzdem auf seiner Seite ab und sagt das in der Meldung.
+Administrator\*innen finden dort und auf der Seite **Verbindung zu CHASE** den Knopf **Jetzt synchronisieren**. Er lässt DELEGATOR alles aus CHASE neu lesen und bittet CHASE, dasselbe mit DELEGATOR zu tun. Normalerweise braucht es ihn nicht, denn beide Seiten hören Änderungen sofort. Ist CHASE gerade nicht erreichbar, gleicht DELEGATOR trotzdem auf seiner Seite ab und sagt das in der Meldung.
 
 Die Seite **Verbindung zu CHASE** öffnen Administrator\*innen im Menü hinter dem Personensymbol oben rechts unter **Administration**. Sie zeigt, mit welcher Adresse DELEGATOR verbunden ist, **Letzte Meldung von CHASE**, **Letzter Abgleich** und den letzten Fehler, dazu **CHASE öffnen**. Ohne Verbindung erklärt sie, welche Einstellungen des Servers dafür nötig sind.
 

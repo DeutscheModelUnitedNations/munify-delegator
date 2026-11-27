@@ -21,7 +21,14 @@
 	import { duplicatesOfConference } from '../../team/plausibility/possibleDuplicatesWhere';
 	import { mayAskFor, waitingItems, type WaitingCounts } from './teamWaiting';
 
-	let { conferenceId }: { conferenceId: string } = $props();
+	let {
+		conferenceId,
+		hide = []
+	}: {
+		conferenceId: string;
+		/** Tiles a widget of the overview already shows */
+		hide?: readonly (keyof WaitingCounts)[];
+	} = $props();
 
 	/** Every kind the team sends, apart from those that go out where they happen */
 	const SENT_KINDS: EmailkindEnum[] = EMAIL_GROUPS.flatMap((group) => group.kinds).filter(
@@ -125,7 +132,9 @@
 		waitingList: waiting.length,
 		failedEmails: failed.length
 	});
-	const items = $derived(waitingItems({ counts, access }));
+	const items = $derived(
+		waitingItems({ counts, access }).filter((item) => !hide.includes(item.id))
+	);
 </script>
 
 {#if items.length === 0}

@@ -1,4 +1,5 @@
-import { db } from '#api/db/db';
+import { db, schema } from '#api/db/db';
+import { whereRows } from '#api/db/whereRows';
 import { CERTIFICATE_SECRET } from '$app/env/private';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { exportJWK } from 'jose';
@@ -88,4 +89,15 @@ export async function issueCertificate({
 
 	const code = await issueCertificateCode({ certificate: contents.payload });
 	return { code, fullName: contents.fullName, sessions };
+}
+
+/** How many people of the conference get a certificate: those whose attendance is recorded. */
+export function countCertificateHolders(conferenceId: string) {
+	return db.$count(
+		schema.conferenceParticipant,
+		whereRows({
+			table: schema.conferenceParticipant,
+			filter: { conferenceId, didAttend: true }
+		})
+	);
 }

@@ -2,9 +2,15 @@ import { db, schema } from '#api/db/db';
 import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
-import { recordScan, startSession, updateAttendanceSession } from './attendanceEntryService';
+import {
+	entranceSummary,
+	recordScan,
+	startSession,
+	updateAttendanceSession
+} from './attendanceEntryService';
 import {
 	assertCanCreateAttendanceEntry,
+	assertCanReadEntranceSummary,
 	assertCanManageAttendanceSession,
 	assertCanStartAttendanceSession,
 	assertSessionOfConference,
@@ -58,6 +64,36 @@ const accessCardSchema = z
 	.nullish();
 
 query({ table: 'attendanceEntry' });
+
+const EntranceSummaryRef = schemaBuilder.simpleObject('EntranceSummary', {
+	description: "The conference's entrance on one day, as counts.",
+	fields: (t) => ({
+		expected: t.int({ description: 'People holding a seat in the conference.' }),
+		checkedIn: t.int({
+			description: 'Of them, how many passed the entrance check of a checking session since then.'
+		}),
+		minorsWithoutConsent: t.int({
+			description:
+				"Of them, how many are under 18 at the conference's start and their guardians' consent is not done."
+		})
+	})
+});
+
+schemaBuilder.queryFields((t) => ({
+	entranceSummary: t.field({
+		description:
+			"How many people holding a seat passed the entrance check since `since` (the start of the caller's day) and how many minors lack their guardians' consent. Participant care only.",
+		type: EntranceSummaryRef,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			since: t.arg({ type: 'DateTime', required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanReadEntranceSummary({ ctx, conferenceId: args.conferenceId });
+			return entranceSummary({ conferenceId: args.conferenceId, since: args.since });
+		}
+	})
+}));
 query({ table: 'attendanceSession' });
 
 schemaBuilder.mutationFields((t) => ({

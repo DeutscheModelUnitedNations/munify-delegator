@@ -1,4 +1,5 @@
 import type { ApiContext } from '#api/rumble';
+import { assertTeamPermission } from '#api/services/authHelper/rules';
 import { assertCanIssueCodeFor } from '#api/handlers/signedCode/signedCodePermissions';
 import { m } from '#lib/paraglide/messages';
 
@@ -22,4 +23,15 @@ export function assertCanGetCertificate({
 		userId,
 		message: m.certificateOnlyHolder()
 	});
+}
+
+/** Refuses (FORBIDDEN) unless the caller holds `manageParticipants` in the conference. */
+export async function assertCanCountCertificates({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }

@@ -761,6 +761,11 @@ blockquote .blockquote-content {
 	opacity: 0.85;
 }
 
+/* daisyUI dims a menu's group titles too (the team navigation's collapsible groups) */
+:root[data-contrast='more'] .menu-title {
+	color: var(--color-base-content);
+}
+
 /* daisyUI dims the tabs that are not selected; the selected one keeps its underline or fill */
 :root[data-contrast='more'] .tab {
 	color: var(--color-base-content);

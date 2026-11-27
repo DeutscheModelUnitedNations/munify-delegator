@@ -48,6 +48,7 @@ import { seedGuide } from './guide';
 import { seedMessages } from './messages';
 import { seedGroupChats } from './groupChats';
 import { seedNextEntries } from './nextEntries';
+import { seedTeamOverview } from './teamOverview';
 import { seedNotifications } from './notifications';
 import { seedPaperNotifications } from './paperNotifications';
 import { seedAnnouncements } from './announcements';
@@ -1076,6 +1077,7 @@ export default async function seed() {
 	await seedMessages(db);
 	await seedGroupChats(db);
 	await seedNextEntries(db);
+	await seedTeamOverview(db);
 	await seedNotifications(db);
 	await seedPaperNotifications(db);
 	await seedAnnouncements(db);

@@ -2,8 +2,10 @@ import { db } from '#api/db/db';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertCanCreateSurveyQuestion,
+	canReadSurveyProgress,
 	registerSurveyQuestionAbilities
 } from './surveyQuestionPermissions';
+import { countUnanswered } from '#api/handlers/surveyAnswer/surveyAnswerService';
 import { createSurveyQuestion, refusingSurveyConflicts } from './surveyQuestionService';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { nullToUndefined } from '#api/services/args';
@@ -14,7 +16,20 @@ import { mcpTool } from '#api/mcp/mcpTool';
 
 registerSurveyQuestionAbilities();
 
-const SurveyQuestionRef = object({ table: 'surveyQuestion' });
+const SurveyQuestionRef = object({
+	table: 'surveyQuestion',
+	adjust: (t) => ({
+		unansweredCount: t.int({
+			nullable: true,
+			description:
+				'How many people holding a seat in the conference have not answered yet. Null for whoever does not manage its participants.',
+			resolve: async (question, _args, ctx) =>
+				(await canReadSurveyProgress({ ctx, conferenceId: question.conferenceId }))
+					? countUnanswered({ conferenceId: question.conferenceId, questionId: question.id })
+					: null
+		})
+	})
+});
 query({ table: 'surveyQuestion' });
 
 /** The question with this id, as far as the caller may read it. */

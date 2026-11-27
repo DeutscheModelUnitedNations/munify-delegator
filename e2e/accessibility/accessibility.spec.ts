@@ -7,6 +7,7 @@ import {
 	E2E_PREP_PARTICIPANT_USER_ID,
 	E2E_SUPERVISOR_FOR_CONNECT_USER_ID
 } from '../seed/seed';
+import { TEAM_OVERVIEW } from '../seed/teamOverview';
 
 // axe-core over the pages participants use, and the keyboard paths it cannot judge. The default
 // DMUN look keeps its pale semantic colours (a design decision), so contrast is checked in the
@@ -86,6 +87,32 @@ test.describe('participant dashboard', () => {
 	test('passes contrast in high contrast', async ({ page }) => {
 		await highContrast(page);
 		expect(await scan(page, PARTICIPANT_ROUTES, { contrast: true })).toEqual([]);
+	});
+});
+
+// The team's overview in each stage, with the widgets of that stage (`teamWidgets.ts`)
+const TEAM_OVERVIEW_ROUTES = [
+	TEAM_OVERVIEW.preparationId,
+	TEAM_OVERVIEW.activeId,
+	TEAM_OVERVIEW.postId
+].map((conferenceId) => `/dashboard/${conferenceId}`);
+
+test.describe('team overview', () => {
+	test.setTimeout(180_000);
+
+	test.beforeEach(async ({ page }) => {
+		await loginAs(page, fixedTestUser(TEAM_OVERVIEW.managementId), {
+			startUrl: TEAM_OVERVIEW_ROUTES[0]
+		});
+	});
+
+	test('has no serious violations', async ({ page }) => {
+		expect(await scan(page, TEAM_OVERVIEW_ROUTES, { contrast: false })).toEqual([]);
+	});
+
+	test('passes contrast in high contrast', async ({ page }) => {
+		await highContrast(page);
+		expect(await scan(page, TEAM_OVERVIEW_ROUTES, { contrast: true })).toEqual([]);
 	});
 });
 
