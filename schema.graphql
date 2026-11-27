@@ -5534,7 +5534,7 @@ type Mutation {
   importPostalScan(code: String, conferenceId: ID!, contentKey: String!, fileId: ID, readings: [PaperReadingInput!], source: PostalscansourceEnum!, userId: ID!): PostalScanOutcome
 
   """
-  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
     conferenceId: ID!
@@ -8218,7 +8218,7 @@ type Query {
   getAllConferenceNations(conferenceId: ID!): [Nation!]!
 
   """
-  Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
+  Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
   """
   getCertificate(
     conferenceId: ID!
@@ -9765,6 +9765,11 @@ type StatisticsResult {
   roleBased: StatisticsResultRoleBased!
 
   """
+  Every nation and non-state actor with its seats and the wishes for it of the delegations the filter selects, by rank. Sorted by seats, then least popular first.
+  """
+  rolePopularity: [StatisticsResultRolePopularity!]!
+
+  """
   The schools of the delegation members and single participants the filter selects, most people first.
   """
   schoolStats: [StatisticsResultSchool!]!
@@ -10279,6 +10284,59 @@ type StatisticsResultRoleBased {
 
   """Single participants without a custom role."""
   singleParticipantsWithoutRole: Int!
+}
+
+"""
+One nation or non-state actor, its seats and how many delegations the filter selects wished for it, by rank. Roles nobody wished for are listed with 0.
+"""
+type StatisticsResultRolePopularity {
+  """A non-state actor's abbreviation."""
+  abbreviation: String
+
+  """Delegations that named the role among their wishes."""
+  applications: Int!
+
+  """Delegations that named the role as their first wish."""
+  firstChoice: Int!
+
+  """A non-state actor's Phosphor icon name."""
+  icon: String
+
+  """NATION or NON_STATE_ACTOR."""
+  kind: ConferencerolekindEnum!
+
+  """Delegations that named the role fourth or later."""
+  laterChoice: Int!
+
+  """
+  A non-state actor's name; null for a nation (the client translates its code).
+  """
+  name: String
+
+  """A nation's ISO alpha-2 code, for its flag; null for a non-state actor."""
+  nationAlpha2Code: String
+
+  """A nation's ISO alpha-3 code; null for a non-state actor."""
+  nationAlpha3Code: String
+
+  """The role's id."""
+  roleId: ID!
+
+  """
+  The people the role seats: a nation the seats of every committee it sits in, a non-state actor its seat amount. Read live, not from the views.
+  """
+  seats: Int!
+
+  """Delegations that named the role as their second wish."""
+  secondChoice: Int!
+
+  """Delegations that named the role as their third wish."""
+  thirdChoice: Int!
+
+  """
+  The sum over the wishes of 1 / rank: a first wish counts 1, a second 0.5, …
+  """
+  weightedPopularity: Float!
 }
 
 """The people of one school."""

@@ -72,6 +72,21 @@ export const statisticsRoleApplications = snakeCase
 	})
 	.existing();
 
+/**
+ * The delegations' wishes for nations and non-state actors: per role, rank and filter dimension
+ * how many delegations named it. Roles nobody wished for have no row.
+ */
+export const statisticsRolePopularity = snakeCase
+	.materializedView('statistics_role_popularity', {
+		conferenceId: text().notNull(),
+		roleId: text().notNull(),
+		rank: integer().notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		count: integer().notNull()
+	})
+	.existing();
+
 export const statisticsAges = snakeCase
 	.materializedView('statistics_ages', {
 		conferenceId: text().notNull(),

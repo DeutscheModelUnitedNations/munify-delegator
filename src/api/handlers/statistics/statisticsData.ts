@@ -19,6 +19,7 @@ export function statisticsRowsOf(conferenceId: string) {
 			| typeof schema.statisticsSchools
 			| typeof schema.statisticsRegistrationDays
 			| typeof schema.statisticsRoleApplications
+			| typeof schema.statisticsRolePopularity
 			| typeof schema.statisticsAges
 			| typeof schema.statisticsAddresses
 			| typeof schema.statisticsParticipantStatus
@@ -35,13 +36,43 @@ export function statisticsRowsOf(conferenceId: string) {
 		schools: rowsOf(schema.statisticsSchools),
 		registrationDays: rowsOf(schema.statisticsRegistrationDays),
 		roleApplications: rowsOf(schema.statisticsRoleApplications),
+		rolePopularity: rowsOf(schema.statisticsRolePopularity),
 		ages: rowsOf(schema.statisticsAges),
 		addresses: rowsOf(schema.statisticsAddresses),
 		participantStatus: rowsOf(schema.statisticsParticipantStatus),
 		committeeFill: rowsOf(schema.statisticsCommitteeFill),
 		waitingList: rowsOf(schema.statisticsWaitingList),
-		papers: rowsOf(schema.statisticsPapers)
+		papers: rowsOf(schema.statisticsPapers),
+		popularityRoles: once(() => popularityRolesOf(conferenceId))
 	};
+}
+
+/**
+ * The nations and non-state actors of a conference and its committees' seats, read live: the
+ * role popularity lists every role, also those nobody wished for, with the seats it has now.
+ */
+async function popularityRolesOf(conferenceId: string) {
+	const [roles, committees] = await Promise.all([
+		db.query.conferenceRole.findMany({
+			where: { conferenceId, kind: { in: ['NATION', 'NON_STATE_ACTOR'] } },
+			columns: {
+				id: true,
+				kind: true,
+				name: true,
+				abbreviation: true,
+				icon: true,
+				nationAlpha3Code: true,
+				seatAmount: true
+			},
+			with: { nation: { columns: { alpha2Code: true } } }
+		}),
+		db.query.committee.findMany({
+			where: { conferenceId },
+			columns: { numOfSeatsPerDelegation: true },
+			with: { roles: { columns: { id: true } } }
+		})
+	]);
+	return { roles, committees };
 }
 
 export type StatisticsRows = ReturnType<typeof statisticsRowsOf>;
