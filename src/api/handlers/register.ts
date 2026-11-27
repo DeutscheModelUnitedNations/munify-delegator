@@ -20,6 +20,7 @@ import './conferenceParticipant/conferenceParticipant';
 import './conferenceRole/conferenceRole';
 import './conferenceSeries/conferenceSeries';
 import './conferenceSupervisor/conferenceSupervisor';
+import './countryIndicator/countryIndicator';
 import './delegation/delegation';
 import './delegationMember/delegationMember';
 import './email/email';

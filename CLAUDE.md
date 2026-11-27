@@ -107,27 +107,28 @@ bun run preview
 
 ## Architecture docs (`docs/architecture/`)
 
-| File                     | Covers                                                                                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `assignment.md`          | Roles, draft/apply/release, board, required applications, release masking                                                                       |
-| `schools.md`             | Schools, school choice, visibility, school rules (groups, foreign schools)                                                                      |
-| `emails.md`              | Automatic emails: `dueEmails`, snapshot paging, sweep, log, texts, footers, pacing                                                              |
-| `messages.md`            | Chats, inboxes, trusted persons, committee/role groups, reports, hiding messages, write rules, messaging terms                                  |
-| `announcements.md`       | Announcement states, audiences, feed, reads, mails                                                                                              |
-| `team-notifications.md`  | Per-topic/channel team notifications, Slack workspaces                                                                                          |
-| `data-tables.md`         | DataGrid model, table engine sources, saved views, presets                                                                                      |
-| `chase-link.md`          | Link to MUNify CHASE, link worker, sync, NSA cards (plan: `docs/plans/chase-link.md`)                                                           |
-| `mcp-server.md`          | `/mcp` for AI assistants: auth, confinement, classification/redaction, tools                                                                    |
-| `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                         |
-| `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates |
-| `postal-scans.md`        | Reading scanned paper, taking in scans (browser and server), agreement details, scanners delivering by WebDAV/folder                            |
-| `pdf-templates.md`       | Typst PDFs in the DMUN corporate design: shared template, brands, fonts, papers and committee texts                                             |
-| `bank-payments.md`       | Bank payment sync from BuchhaltungsButler: matching references, `NEEDS_HUMAN_REVIEW`, `bank_transfer`                                           |
-| `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                    |
-| `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                              |
-| `user-manual.md`         | `/docs` manual, help links, tours, generated screenshots                                                                                        |
-| `jobs.md`                | Job CLI, schedule and required variables per job                                                                                                |
-| `dependencies.md`        | **Read before upgrading anything**: pinned/patched packages and why                                                                             |
+| File                     | Covers                                                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assignment.md`          | Roles, draft/apply/release, board, required applications, release masking                                                                                |
+| `schools.md`             | Schools, school choice, visibility, school rules (groups, foreign schools)                                                                               |
+| `emails.md`              | Automatic emails: `dueEmails`, snapshot paging, sweep, log, texts, footers, pacing                                                                       |
+| `messages.md`            | Chats, inboxes, trusted persons, committee/role groups, reports, hiding messages, write rules, messaging terms                                           |
+| `announcements.md`       | Announcement states, audiences, feed, reads, mails                                                                                                       |
+| `team-notifications.md`  | Per-topic/channel team notifications, Slack workspaces                                                                                                   |
+| `data-tables.md`         | DataGrid model, table engine sources, saved views, presets                                                                                               |
+| `chase-link.md`          | Link to MUNify CHASE, link worker, sync, NSA cards (plan: `docs/plans/chase-link.md`)                                                                    |
+| `mcp-server.md`          | `/mcp` for AI assistants: auth, confinement, classification/redaction, tools                                                                             |
+| `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                                  |
+| `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates          |
+| `postal-scans.md`        | Reading scanned paper, taking in scans (browser and server), agreement details, scanners delivering by WebDAV/folder                                     |
+| `pdf-templates.md`       | Typst PDFs in the DMUN corporate design: shared template, brands, fonts, papers and committee texts                                                      |
+| `bank-payments.md`       | Bank payment sync from BuchhaltungsButler: matching references, `NEEDS_HUMAN_REVIEW`, `bank_transfer`                                                    |
+| `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                             |
+| `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                                       |
+| `user-manual.md`         | `/docs` manual, help links, tours, generated screenshots                                                                                                 |
+| `jobs.md`                | Job CLI, schedule and required variables per job                                                                                                         |
+| `country-information.md` | Country info for delegates/supervisors: globe, world-countries facts, World Bank figures cached by the server (plan: `docs/plans/country-comparison.md`) |
+| `dependencies.md`        | **Read before upgrading anything**: pinned/patched packages and why                                                                                      |
 
 ## GraphQL API (rumble)
 

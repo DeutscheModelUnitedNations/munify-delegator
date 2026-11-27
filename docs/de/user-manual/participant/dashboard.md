@@ -108,7 +108,7 @@ Mit der Freigabe siehst du, wen du vertrittst. So sieht das Dashboard einer Dele
 - **Delegationsstatus:** das Land oder der nichtstaatliche Akteur eurer Delegation, die Gremien, in denen ihr sitzt, die Zahl der Mitglieder und der Delegationsname.
 - **Delegationsmitglieder:** jedes Mitglied mit Gremium, E-Mail-Adresse, Zahlungs- und Anmeldestatus. So erreicht ihr euch auch außerhalb der App.
 - **Betreuer\*innen:** eure Betreuenden, auch jetzt noch zum Verbinden.
-- **Informationen zu deinem Land** oder **Informationen zu deinem nichtstaatlichen Akteur**.
+- **Informationen zu deinem Land** oder **Informationen zu deinem nichtstaatlichen Akteur**. Für ein Land zeigt ein Globus das Land und seine Nachbarstaaten (fahre über einen Nachbarstaat für seinen Namen, das Fadenkreuz bringt dich zurück zum Land). Daneben stehen Fakten wie Hauptstadt, Fläche, Region, Sprachen, Währung und Vorwahl, darunter Zahlen der World Bank wie Bevölkerung, BIP und Lebenserwartung, jeweils mit dem Jahr, für das sie gelten.
 
 Als Einzelteilnehmende\*r siehst du statt Delegationsstatus und Mitgliedern deine **Rolle**.
 
@@ -291,7 +291,7 @@ Als Betreuende\*r siehst du den Stand deiner Schüler\*innen. Hinzufügen kannst
 
 Nach dem Bewerbungsschluss siehst du, wer von deinen Schüler\*innen am Auswahlverfahren teilnimmt. Bis zur Freigabe steht dann **Die Zuteilung läuft noch**. Je nach Einstellung der Konferenz bekommst du mit der Freigabe einmalig eine E-Mail mit der Rolle jeder betreuten Person.
 
-Danach listet das Dashboard nur noch die Schüler\*innen mit Platz, mit Gremium, Zahlungs- und Anmeldestatus und der Zahl ihrer Papiere. Ist die postalische Anmeldung freigeschaltet, lädst du bei jeder Person mit **Dokumente für postalische Anmeldung herunterladen** ihre Unterlagen herunter. Die **Delegationsstatistiken** zeigen, wie viele bezahlt, ihre Unterlagen geschickt und Papiere eingereicht haben. Der Abschnitt **Persönlicher Status** zeigt deinen eigenen Stand, wenn du mitkommst, bis alle bezahlt haben.
+Danach listet das Dashboard nur noch die Schüler\*innen mit Platz, mit Gremium, Zahlungs- und Anmeldestatus und der Zahl ihrer Papiere. Ist die postalische Anmeldung freigeschaltet, lädst du bei jeder Person mit **Dokumente für postalische Anmeldung herunterladen** ihre Unterlagen herunter. Vertritt eine Delegation ein Land, öffnet **Länderinfos** neben der Rolle dieselben Informationen zum Land, die auch die Delegation sieht. Die **Delegationsstatistiken** zeigen, wie viele bezahlt, ihre Unterlagen geschickt und Papiere eingereicht haben. Der Abschnitt **Persönlicher Status** zeigt deinen eigenen Stand, wenn du mitkommst, bis alle bezahlt haben.
 
 Hat mindestens eine Person einen Platz, bekommst du den **Schnellzugriff**. Über **Beitragszahlung** kannst du auch für deine Schüler\*innen und für andere Betreuende derselben Schüler\*innen zahlen, und den **Papier-Hub** siehst du aus Sicht der Betreuung (siehe [Papier-Hub](./paper-hub)). Nachrichten und Umfragen gibt es für Betreuende nicht. Fehlt in einer deiner Delegationen noch die Gremienzuteilung, weist dich das Dashboard darauf hin.
 
