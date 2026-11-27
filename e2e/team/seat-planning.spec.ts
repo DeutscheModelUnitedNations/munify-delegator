@@ -153,7 +153,7 @@ test('a content lead adds committees on their page, but only project management 
 	await expect(committeeHeading(page, `E2E Lead Committee (${abbreviation})`)).toBeVisible({
 		timeout: 15_000
 	});
-	await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeEnabled();
+	await expect(settingsName(page)).toBeEnabled();
 	await expect(page.getByRole('button', { name: /gremium löschen/i })).toHaveCount(0);
 
 	const committees = await graphql<{ committees: { id: string; abbreviation: string }[] }>(
@@ -179,7 +179,7 @@ test('the content lead renames a committee in place', async ({ page }) => {
 	await expect(committeeHeading(page, 'Generalversammlung (SPGV)')).toBeVisible({
 		timeout: 15_000
 	});
-	const name = page.getByRole('textbox', { name: 'Name', exact: true });
+	const name = settingsName(page);
 	const save = page.getByRole('button', { name: 'Speichern', exact: true });
 	await expect(save).toBeDisabled();
 
@@ -206,7 +206,7 @@ test('participant care reads the committees but changes nothing', async ({ page 
 		timeout: 15_000
 	});
 	await expect(committeeHeading(page, 'Generalversammlung (SPGV)')).toBeVisible();
-	await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeDisabled();
+	await expect(settingsName(page)).toBeDisabled();
 	await expect(page.getByRole('button', { name: /gremium hinzufügen/i })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Speichern', exact: true })).toHaveCount(0);
 
@@ -242,6 +242,13 @@ test('participant care cannot open the seat planning', async ({ page }) => {
 	);
 	expect(seat.errors?.length).toBeGreaterThan(0);
 });
+
+/** The picked committee's name field, in its settings (the add dialog has one too). */
+function settingsName(page: Page) {
+	return page
+		.getByRole('group', { name: 'Einstellungen des Gremiums' })
+		.getByRole('textbox', { name: 'Name', exact: true });
+}
 
 /** The picked committee's heading on the committees page. */
 function committeeHeading(page: Page, text: string) {

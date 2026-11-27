@@ -34,8 +34,8 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		const created = await promise;
-		onCreated?.(created.id);
 		open = false;
+		onCreated?.(created.id);
 		name = '';
 		abbreviation = '';
 		numOfSeatsPerDelegation = 1;
