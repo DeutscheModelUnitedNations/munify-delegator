@@ -269,6 +269,9 @@ async function addCommittee(
 	await modal.getByPlaceholder('Kürzel').fill(abbreviation);
 	await modal.getByPlaceholder('Sitze pro Delegation').fill(seats);
 	await modal.getByRole('button', { name: /erstellen/i }).click();
+	await expect(page.getByRole('dialog', { name: 'Gremium hinzufügen' })).toBeHidden({
+		timeout: 15_000
+	});
 }
 
 test('the project management adds and deletes a committee', async ({ page }) => {
@@ -289,7 +292,11 @@ test('the project management adds and deletes a committee', async ({ page }) => 
 	await expect(committeeHeading(page, `E2E Committee (${abbreviation})`)).toBeVisible({
 		timeout: 15_000
 	});
-	await expect(page.getByRole('spinbutton', { name: /Sitze pro Delegation/ })).toHaveValue('2');
+	await expect(
+		page
+			.getByRole('group', { name: 'Einstellungen des Gremiums' })
+			.getByRole('spinbutton', { name: /Sitze pro Delegation/ })
+	).toHaveValue('2');
 	await expect(
 		page
 			.getByRole('navigation', { name: 'Gremien' })
