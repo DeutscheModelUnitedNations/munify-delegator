@@ -1,4 +1,4 @@
-import { schemaBuilder } from '#api/rumble';
+import { enum_, schemaBuilder } from '#api/rumble';
 
 // The GraphQL types of the statistics about registrations: how many registered and applied, the
 // roles they got, the committee seats and the registrations over time. `statisticsViews.ts`
@@ -175,3 +175,43 @@ export const registrationTimelineEntry = schemaBuilder.simpleObject(
 		})
 	}
 );
+
+const conferenceRoleKindEnum = enum_({ tsName: 'conferenceRoleKind' });
+
+export const rolePopularityEntry = schemaBuilder.simpleObject('StatisticsResultRolePopularity', {
+	description:
+		'One nation or non-state actor, its seats and how many delegations the filter selects wished for it, by rank. Roles nobody wished for are listed with 0.',
+	fields: (t) => ({
+		roleId: t.id({ description: "The role's id." }),
+		kind: t.field({
+			type: conferenceRoleKindEnum,
+			description: 'NATION or NON_STATE_ACTOR.'
+		}),
+		nationAlpha3Code: t.string({
+			nullable: true,
+			description: "A nation's ISO alpha-3 code; null for a non-state actor."
+		}),
+		nationAlpha2Code: t.string({
+			nullable: true,
+			description: "A nation's ISO alpha-2 code, for its flag; null for a non-state actor."
+		}),
+		name: t.string({
+			nullable: true,
+			description: "A non-state actor's name; null for a nation (the client translates its code)."
+		}),
+		abbreviation: t.string({ nullable: true, description: "A non-state actor's abbreviation." }),
+		icon: t.string({ nullable: true, description: "A non-state actor's Phosphor icon name." }),
+		seats: t.int({
+			description:
+				'The people the role seats: a nation the seats of every committee it sits in, a non-state actor its seat amount. Read live, not from the views.'
+		}),
+		applications: t.int({ description: 'Delegations that named the role among their wishes.' }),
+		firstChoice: t.int({ description: 'Delegations that named the role as their first wish.' }),
+		secondChoice: t.int({ description: 'Delegations that named the role as their second wish.' }),
+		thirdChoice: t.int({ description: 'Delegations that named the role as their third wish.' }),
+		laterChoice: t.int({ description: 'Delegations that named the role fourth or later.' }),
+		weightedPopularity: t.float({
+			description: 'The sum over the wishes of 1 / rank: a first wish counts 1, a second 0.5, …'
+		})
+	})
+});

@@ -10,6 +10,7 @@ export const STATISTICS_VIEWS = [
 	'statistics_schools',
 	'statistics_registration_days',
 	'statistics_role_applications',
+	'statistics_role_popularity',
 	'statistics_ages',
 	'statistics_addresses',
 	'statistics_participant_status',

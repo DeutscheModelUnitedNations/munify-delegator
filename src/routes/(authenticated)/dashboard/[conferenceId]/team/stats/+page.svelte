@@ -5,6 +5,7 @@
 	import Filter from './widgets/Filter.svelte';
 	import DistributionChart from './widgets/DistributionChart.svelte';
 	import IndividualRoles from './widgets/IndividualRoles.svelte';
+	import RolePopularity from './widgets/RolePopularity.svelte';
 	import DietMatrix from './widgets/DietMatrix.svelte';
 	import GenderMatrix from './widgets/GenderMatrix.svelte';
 	import RoleStats from './widgets/RoleStats.svelte';
@@ -52,6 +53,8 @@
 	<DistributionChart conferenceId={params.conferenceId} />
 
 	<IndividualRoles conferenceId={params.conferenceId} />
+
+	<RolePopularity conferenceId={params.conferenceId} />
 
 	<PostalPaymentProgress conferenceId={params.conferenceId} />
 

@@ -27,8 +27,10 @@ import {
 	countdownsType,
 	registeredType,
 	registrationTimelineEntry,
-	roleBasedStats
+	roleBasedStats,
+	rolePopularityEntry
 } from './registrationTypes';
+import { rolePopularityOf } from './rolePopularity';
 import {
 	addressesType,
 	ageStatsType,
@@ -131,6 +133,29 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 			description: 'Who got a role, among the registrations the filter selects.',
 			resolve: async ({ rows, filter }) =>
 				roleBasedOf({ people: await rows.people(), delegations: await rows.delegations(), filter })
+		}),
+		rolePopularity: t.field({
+			type: [rolePopularityEntry],
+			description:
+				'Every nation and non-state actor with its seats and the wishes for it of the delegations the filter selects, by rank. Sorted by seats, then least popular first.',
+			resolve: async ({ rows, filter }) => {
+				const [{ roles, committees }, wishes] = await Promise.all([
+					rows.popularityRoles(),
+					rows.rolePopularity()
+				]);
+				return rolePopularityOf({ roles, committees, wishes, filter }).map(
+					({ role, ...counts }) => ({
+						roleId: role.id,
+						kind: role.kind,
+						nationAlpha3Code: role.nationAlpha3Code,
+						nationAlpha2Code: role.nation?.alpha2Code ?? null,
+						name: role.kind === 'NATION' ? null : role.name,
+						abbreviation: role.abbreviation,
+						icon: role.icon,
+						...counts
+					})
+				);
+			}
 		}),
 		committeeFillRates: t.field({
 			type: [committeeFillRate],

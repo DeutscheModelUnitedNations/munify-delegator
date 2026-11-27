@@ -7168,6 +7168,7 @@ export type StatisticsResult = {
   registered: () => StatisticsResultRegistered,
   registrationTimeline: () => StatisticsResultRegistrationTimeline[],
   roleBased: () => StatisticsResultRoleBased,
+  rolePopularity: () => StatisticsResultRolePopularity[],
   schoolStats: () => StatisticsResultSchool[],
   supervisorStats: () => StatisticsResultSupervisorStats,
   waitingList: () => StatisticsResultWaitingList    
@@ -7369,6 +7370,23 @@ export type StatisticsResultRoleBased = {
   delegationsWithoutAssignment: Int,
   singleParticipantsWithRole: Int,
   singleParticipantsWithoutRole: Int    
+};
+		
+export type StatisticsResultRolePopularity = {
+  abbreviation: String | null,
+  applications: Int,
+  firstChoice: Int,
+  icon: String | null,
+  kind: ConferencerolekindEnum,
+  laterChoice: Int,
+  name: String | null,
+  nationAlpha2Code: String | null,
+  nationAlpha3Code: String | null,
+  roleId: ID,
+  seats: Int,
+  secondChoice: Int,
+  thirdChoice: Int,
+  weightedPopularity: Float    
 };
 		
 export type StatisticsResultSchool = {

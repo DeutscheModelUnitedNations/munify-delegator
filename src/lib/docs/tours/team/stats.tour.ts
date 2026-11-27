@@ -22,6 +22,12 @@ export const statsTour: Tour = {
 			side: 'bottom'
 		},
 		{
+			anchor: 'team.stats.rolePopularity',
+			title: () => m.tourTeamStatsRolePopularityTitle(),
+			body: () => m.tourTeamStatsRolePopularityBody(),
+			side: 'top'
+		},
+		{
 			anchor: 'team.stats.history',
 			title: () => m.tourTeamStatsHistoryTitle(),
 			body: () => m.tourTeamStatsHistoryBody(),
