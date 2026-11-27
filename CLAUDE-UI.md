@@ -687,7 +687,7 @@ in a `flex flex-col xl:flex-row` container.
   `details.collapse`), `NewAgendaItemForm`. Each keeps a draft plus the stored values it started
   from (`base`): while draft equals base, live changes from elsewhere replace both; an edit in
   progress stays. Save sends only the changed fields (`committeeChanges`, `agendaItemChanges`) and
-  is disabled until something changed; Discard resets to the stored values. Read-only readers get
+  is disabled until something changed; Discard resets to the stored values (both `SaveDiscardButtons`). Read-only readers get
   the same fields in a disabled `fieldset`, no buttons.
 - Deleting (committee, agenda item) still confirms in a `Modal`.
 

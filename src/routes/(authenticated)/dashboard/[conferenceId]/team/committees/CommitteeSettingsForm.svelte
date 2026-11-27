@@ -5,12 +5,14 @@
 	elsewhere; an edit in progress is kept.
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { errorToastMessage, genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import CommitteeNameFields from './CommitteeNameFields.svelte';
+	import SaveDiscardButtons from './SaveDiscardButtons.svelte';
 	import SeatsPerDelegationField from './SeatsPerDelegationField.svelte';
 	import {
 		committeeChanges,
@@ -28,19 +30,11 @@
 	let { committee, canEdit }: Props = $props();
 
 	const stored = $derived(committeeDraftOf(committee));
+	// Seeded from the stored values right away (effects do not run while rendering on the server);
+	// the effect below only takes over later changes.
 	/** What the fields started from: the stored values when they were last taken over. */
-	let base = $state<CommitteeDraft>({
-		name: '',
-		abbreviation: '',
-		resolutionHeadline: '',
-		seats: 1
-	});
-	let draft = $state<CommitteeDraft>({
-		name: '',
-		abbreviation: '',
-		resolutionHeadline: '',
-		seats: 1
-	});
+	let base = $state<CommitteeDraft>(untrack(() => committeeDraftOf(committee)));
+	let draft = $state<CommitteeDraft>(untrack(() => committeeDraftOf(committee)));
 	let saving = $state(false);
 
 	const same = (a: CommitteeDraft, b: CommitteeDraft) => JSON.stringify(a) === JSON.stringify(b);
@@ -97,28 +91,16 @@
 			{m.resolutionHeadlineHint()}
 		</p>
 		{#if canEdit}
-			<div class="flex flex-wrap gap-2">
-				<button
-					type="button"
-					class="btn btn-primary btn-sm"
-					disabled={!changes || !valid || saving}
-					onclick={save}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
-					{m.save()}
-				</button>
-				<button
-					type="button"
-					class="btn btn-ghost btn-sm"
-					disabled={!changes || saving}
-					onclick={() => {
-						base = { ...stored };
-						draft = { ...stored };
-					}}
-				>
-					{m.discardChanges()}
-				</button>
-			</div>
+			<SaveDiscardButtons
+				changed={!!changes}
+				{valid}
+				{saving}
+				onSave={save}
+				onDiscard={() => {
+					base = { ...stored };
+					draft = { ...stored };
+				}}
+			/>
 		{/if}
 	</fieldset>
 </FormFieldset>

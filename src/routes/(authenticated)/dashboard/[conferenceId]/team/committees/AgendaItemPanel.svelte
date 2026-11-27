@@ -5,11 +5,13 @@
 	While nothing is edited, the fields follow changes saved elsewhere; an edit in progress is kept.
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import AgendaItemFields from './AgendaItemFields.svelte';
+	import SaveDiscardButtons from './SaveDiscardButtons.svelte';
 	import { agendaItemChanges, type AgendaItemDraft } from './agendaItemChanges';
 	import type { AgendaItem } from './types';
 
@@ -31,8 +33,10 @@
 	const same = (a: AgendaItemDraft, b: AgendaItemDraft) => JSON.stringify(a) === JSON.stringify(b);
 
 	const stored = $derived(draftOf(item));
-	let base = $state<AgendaItemDraft>({ title: '', teaserText: '', discussionPoints: [] });
-	let draft = $state<AgendaItemDraft>({ title: '', teaserText: '', discussionPoints: [] });
+	// Seeded from the stored values right away (effects do not run while rendering on the server);
+	// the effect below only takes over later changes.
+	let base = $state<AgendaItemDraft>(untrack(() => draftOf(item)));
+	let draft = $state<AgendaItemDraft>(untrack(() => draftOf(item)));
 	let saving = $state(false);
 
 	// take over what was saved elsewhere, unless the fields hold an edit
@@ -75,8 +79,11 @@
 <details class="collapse-arrow border-base-300 bg-base-100 collapse border" open={initiallyOpen}>
 	<summary class="collapse-title flex flex-wrap items-center gap-x-4 gap-y-1 pe-12">
 		<span class="min-w-0 flex-1 basis-48 font-bold break-words hyphens-auto">{item.title}</span>
-		<span class="badge badge-sm {points === 0 ? 'badge-warning badge-outline' : 'badge-ghost'}">
-			<i aria-hidden="true" class="ph-duotone ph-chats-circle"></i>
+		<span class="badge badge-sm badge-ghost {points === 0 ? 'font-bold' : ''}">
+			<i
+				aria-hidden="true"
+				class="ph-duotone {points === 0 ? 'ph-warning text-warning' : 'ph-chats-circle'}"
+			></i>
 			{points === 0 ? m.noDiscussionPoints() : m.discussionPointsCount({ count: points })}
 		</span>
 		<span
@@ -100,29 +107,12 @@
 			/>
 		</fieldset>
 		{#if canEdit}
-			<div class="flex flex-wrap items-center gap-2">
-				<button
-					type="button"
-					class="btn btn-primary btn-sm"
-					disabled={!changed || !valid || saving}
-					onclick={save}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-floppy-disk"></i>
-					{m.save()}
-				</button>
-				<button
-					type="button"
-					class="btn btn-ghost btn-sm"
-					disabled={!changed || saving}
-					onclick={discard}
-				>
-					{m.discardChanges()}
-				</button>
+			<SaveDiscardButtons {changed} {valid} {saving} onSave={save} onDiscard={discard}>
 				<button type="button" class="btn btn-ghost btn-sm text-error ms-auto" onclick={onDelete}>
 					<i aria-hidden="true" class="ph-duotone ph-trash"></i>
 					{m.deleteAgendaItem()}
 				</button>
-			</div>
+			</SaveDiscardButtons>
 		{/if}
 	</div>
 </details>
