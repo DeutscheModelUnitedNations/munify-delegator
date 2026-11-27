@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '#lib/paraglide/messages';
-	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { pathInOtherConference, teamRelativePath } from '#lib/data/teamRoutes';
 	import {
 		conferenceGroupIcon,
@@ -22,15 +22,22 @@
 
 	let { conferenceId }: Props = $props();
 
-	const user = await getCurrentUser();
+	// visitors open public conference pages too: no account, no team roles
+	const user = await getOptionalCurrentUser();
 	const [conferences, teamRoles] = $derived(
-		await Promise.all([fetchSelectableConferences(), fetchMyTeamRoles(user.sub)])
+		await Promise.all([
+			fetchSelectableConferences(),
+			user ? fetchMyTeamRoles(user.sub) : Promise.resolve([])
+		])
 	);
 	const relativePath = $derived(teamRelativePath({ pathname: page.url.pathname, conferenceId }));
 
 	function hrefFor(targetId: string) {
 		const roles = teamRoles.filter((row) => row.conferenceId === targetId).map((row) => row.role);
-		const path = pathInOtherConference({ relativePath, access: { isAdmin: user.isAdmin, roles } });
+		const path = pathInOtherConference({
+			relativePath,
+			access: { isAdmin: user?.isAdmin ?? false, roles }
+		});
 		return resolve(path ? `dashboard/${targetId}/${path}` : `dashboard/${targetId}`);
 	}
 	const groups = $derived(groupConferencesByState(conferences));
