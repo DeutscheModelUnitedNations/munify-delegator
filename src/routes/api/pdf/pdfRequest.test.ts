@@ -13,6 +13,7 @@ import {
 	decodeEmblemDataUrl,
 	emblemSvgFor,
 	readBody,
+	nestingDepth,
 	readHeader,
 	readPaperRequest
 } from './pdfRequest';
@@ -115,6 +116,15 @@ describe('readBody', () => {
 	});
 });
 
+describe('nestingDepth', () => {
+	test('counts nested objects and arrays', () => {
+		expect(nestingDepth('x')).toBe(0);
+		expect(nestingDepth({})).toBe(1);
+		expect(nestingDepth({ content: [{ text: 'a' }] })).toBe(3);
+		expect(nestingDepth([[], [[{}]]])).toBe(4);
+	});
+});
+
 describe('readPaperRequest', () => {
 	const meta = {
 		paperType: 'Positionspapier',
@@ -146,6 +156,14 @@ describe('readPaperRequest', () => {
 
 	test('is undefined for a structured resolution', () => {
 		expect(readPaperRequest({ resolution: {} })).toBeUndefined();
+	});
+
+	test('refuses content nested deeper than any editor produces, without recursing', async () => {
+		let deep: Record<string, unknown> = { type: 'text', text: 'x' };
+		for (let i = 0; i < 50_000; i++) deep = { type: 'paragraph', content: [deep] };
+		expect(
+			await statusOf(() => readPaperRequest({ paper: { conferenceId: 'c1', content: deep, meta } }))
+		).toBe(400);
 	});
 
 	test('rejects malformed papers', async () => {

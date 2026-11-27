@@ -45,6 +45,11 @@ describe('escaping', () => {
 		expect(escapeTypstText('Kenia „Nairobi“')).toBe('Kenia „Nairobi“');
 	});
 
+	test('keeps a number with a period from starting a numbered list', () => {
+		expect(escapeTypstText('1. Ausschuss')).toBe('1\\. Ausschuss');
+		expect(escapeTypstText('Artikel 2.4, Satz 3. Ende.')).toBe('Artikel 2\\.4, Satz 3\\. Ende.');
+	});
+
 	test('escapes quotes and backslashes in strings', () => {
 		expect(escapeTypstString('a"b\\c')).toBe('a\\"b\\\\c');
 	});

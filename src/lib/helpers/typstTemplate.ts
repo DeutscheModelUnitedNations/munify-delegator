@@ -76,7 +76,12 @@ export function typstLang(language: string | null | undefined): string {
 
 /** Escape text for use inside a Typst content block or as markup: every markup-starting character. */
 export function escapeTypstText(value: string): string {
-	return value.replace(/[\\#$*_`<>@~[\]=/+-]/g, (c) => `\\${c}`);
+	return (
+		value
+			.replace(/[\\#$*_`<>@~[\]=/+-]/g, (c) => `\\${c}`)
+			// "1. " at the start of a line or block would become a numbered list
+			.replace(/(\d)\./g, '$1\\.')
+	);
 }
 
 /** Escape a string for use inside a Typst double-quoted string literal. */

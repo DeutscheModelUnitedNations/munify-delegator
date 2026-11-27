@@ -146,6 +146,25 @@ const tipTapNode: z.ZodType<TipTapNode> = z.lazy(() =>
 	})
 );
 
+/**
+ * How deep a paper request may nest: the editor's lists and quotes stay far below it. Checked
+ * before the recursive schema, which would otherwise recurse as deep as the body nests.
+ */
+const MAX_PAPER_DEPTH = 64;
+
+/** How deeply objects and arrays nest in `value`, counted without recursion. */
+export function nestingDepth(value: unknown): number {
+	let deepest = 0;
+	const stack: [unknown, number][] = [[value, 0]];
+	for (let next = stack.pop(); next; next = stack.pop()) {
+		const [item, depth] = next;
+		if (typeof item !== 'object' || item === null) continue;
+		deepest = Math.max(deepest, depth + 1);
+		for (const child of Object.values(item)) stack.push([child, depth + 1]);
+	}
+	return deepest;
+}
+
 /** A position or introduction paper to set: its conference, its editor content and labels. */
 const paperRequest = z.object({
 	conferenceId: z.string().min(1).max(100),
@@ -162,6 +181,7 @@ export type PaperRequest = z.infer<typeof paperRequest>;
  */
 export function readPaperRequest(body: Record<string, unknown>): PaperRequest | undefined {
 	if (body.paper === undefined) return undefined;
+	if (nestingDepth(body.paper) > MAX_PAPER_DEPTH) throw error(400, 'Invalid paper data');
 	const parsed = paperRequest.safeParse(body.paper);
 	if (!parsed.success) throw error(400, 'Invalid paper data');
 	return parsed.data;

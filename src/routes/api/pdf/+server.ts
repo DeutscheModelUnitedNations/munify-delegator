@@ -80,6 +80,8 @@ async function paperSource({ paper, dir }: { paper: PaperRequest; dir: string })
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const caller = assertSignedIn(locals);
 	const body = await readBody(request);
+	// Before validating the content: a refused request costs the allowance too
+	await compileLimiter.take(caller);
 
 	// Two input shapes, both turned into Typst here so the compiler only sees generated source:
 	//  - { paper: { conferenceId, content, meta } }  position/introduction paper, set in the
@@ -88,7 +90,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const paper = readPaperRequest(body);
 	const header = readHeader(body.header);
 
-	await compileLimiter.take(caller);
 	const release = compileSlots.take();
 	if (!release) throw error(503, 'PDF generation is busy, please try again in a moment');
 	try {
