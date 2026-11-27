@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import pg from 'pg';
 import { test, expect } from '../support/test';
-import { fixedTestUser, loginAs } from '../support/auth';
+import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { callTool, mcpToken } from '../support/mcp';
 import { E2E_POINTS, E2E_POINTS_SEEDED, E2E_POINTS_TITLES } from '../seed/discussionPoints';
 
@@ -88,6 +88,7 @@ test.describe('points for discussion', () => {
 
 		// a new paper: the box follows the agenda item picked, none for one without points
 		await page.goto(`/dashboard/${C}/paperhub/newPaper`);
+		await waitForHydration(page);
 		const agendaItem = page.locator('select[name="agendaItemId"]');
 		await agendaItem.selectOption({ label: E2E_POINTS_TITLES.withPoints });
 		await expect(box(page)).toContainText(E2E_POINTS_SEEDED[1]);
@@ -113,13 +114,12 @@ test.describe('points for discussion', () => {
 		const text = await content.innerText();
 		expect(text.indexOf('Einleitung')).toBeLessThan(text.indexOf(E2E_POINTS_SEEDED[0]));
 		expect(text.indexOf(E2E_POINTS_SEEDED[0])).toBeLessThan(text.indexOf('Hintergrund'));
-		// and in the table of contents
-		await expect(
-			page.getByRole('link', { name: /Punkte zur Diskussion|Points for discussion/ })
-		).toBeVisible();
+		// its heading carries the anchor the table of contents links to (shown on wide screens)
+		await expect(page.locator('#punkte-zur-diskussion')).toBeVisible();
 
 		// a page without the placeholder and an agenda item without points: no box ...
 		await page.goto(`/dashboard/${C}/guide/${E2E_POINTS.pages.withoutPoints}`);
+		await waitForHydration(page);
 		await expect(content).toContainText('Ein Punkt aus dem alten Guide');
 		await expect(box(page)).toHaveCount(0);
 		// ... until it has points: then they come first, below the title
