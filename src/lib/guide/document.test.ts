@@ -162,8 +162,11 @@ describe('fillPlaceholders', () => {
 			expect(filled.content).toHaveLength(1);
 			const parts = filled.content?.[0].content;
 			// the sentence's own formatting stays, the placeholder is filled in its place
-			expect(parts?.[0]).toEqual({ type: 'text', text: 'Fragen: ', marks: [{ type: 'italic' }] });
-			expect(parts?.[1].text).toBe('Finanzierung?; Mandat? und mehr');
+			expect(parts).toEqual([
+				{ type: 'text', text: 'Fragen: ', marks: [{ type: 'italic' }] },
+				{ type: 'text', text: 'Finanzierung?; Mandat?' },
+				{ type: 'text', text: ' und mehr', marks: [{ type: 'bold' }] }
+			]);
 		});
 
 		test('stay as they are off agenda item pages', () => {
@@ -172,6 +175,32 @@ describe('fillPlaceholders', () => {
 			});
 			expect(filled.content?.[0].content?.[0].text).toBe('{{Diskussionspunkte}}');
 		});
+	});
+
+	test('fills several placeholders split in one paragraph, keeping the formatting around them', () => {
+		const filled = fillPlaceholders(
+			{
+				type: 'doc',
+				content: [
+					{
+						type: 'paragraph',
+						content: [
+							{ type: 'text', text: 'Bei {{Kon' },
+							{ type: 'text', text: 'ferenz}} im {{Gre', marks: [{ type: 'bold' }] },
+							{ type: 'text', text: 'mium}}!', marks: [{ type: 'italic' }] }
+						]
+					}
+				]
+			},
+			{ conference: 'MUN-SH 2027', committee: { name: 'Sicherheitsrat', agendaItems: [] } }
+		);
+		expect(filled.content?.[0].content).toEqual([
+			{ type: 'text', text: 'Bei ' },
+			{ type: 'text', text: 'MUN-SH 2027' },
+			{ type: 'text', text: ' im ', marks: [{ type: 'bold' }] },
+			{ type: 'text', text: 'Sicherheitsrat', marks: [{ type: 'bold' }] },
+			{ type: 'text', text: '!', marks: [{ type: 'italic' }] }
+		]);
 	});
 
 	test('placeholdersIn lists what is used', () => {

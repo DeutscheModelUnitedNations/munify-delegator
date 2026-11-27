@@ -265,56 +265,68 @@ function isPlaceholderParagraph(node: GuideNode, name: Placeholder) {
 	);
 }
 
-const textOfNodes = (nodes: readonly GuideNode[]) => nodes.map((node) => node.text ?? '').join('');
-
-/**
- * The ranges of text nodes (first, last) that placeholders split by formatting span, merged where
- * they touch.
- */
-function splitPlaceholderRanges(children: readonly GuideNode[]) {
-	let length = 0;
-	const ends = children.map((child) => (length += (child.text ?? '').length));
-	const nodeAt = (offset: number) => ends.findIndex((end) => offset < end);
-	return [...textOfNodes(children).matchAll(PLACEHOLDER_PATTERN)]
-		.map((match): [number, number] => [
-			nodeAt(match.index),
-			nodeAt(match.index + match[0].length - 1)
-		])
-		.filter(([first, last]) => first !== last)
-		.reduce<[number, number][]>((merged, range) => {
-			const previous = merged.at(-1);
-			if (previous && range[0] <= previous[1]) previous[1] = Math.max(previous[1], range[1]);
-			else merged.push(range);
-			return merged;
-		}, []);
-}
-
-/** The text nodes with each range joined into one, which keeps the marks of its first. */
-function joinRanges({
-	children,
-	ranges
-}: {
-	children: readonly GuideNode[];
-	ranges: readonly [number, number][];
-}) {
-	return children.flatMap((child, index) => {
-		if (ranges.some(([first, last]) => index > first && index <= last)) return [];
-		const range = ranges.find(([first]) => first === index);
-		return range
-			? [{ ...child, text: textOfNodes(children.slice(range[0], range[1] + 1)) }]
-			: [child];
+/** Where each text node starts in the block's text, with the node. */
+function withOffsets(children: readonly GuideNode[]) {
+	let offset = 0;
+	return children.map((node) => {
+		const start = offset;
+		offset += (node.text ?? '').length;
+		return { node, start, end: offset };
 	});
 }
 
+/** The placeholders (start, end in the block's text) that formatting split over text nodes. */
+function splitPlaceholders(children: readonly GuideNode[]) {
+	const nodes = withOffsets(children);
+	const text = children.map((node) => node.text ?? '').join('');
+	return [...text.matchAll(PLACEHOLDER_PATTERN)]
+		.map((match): [number, number] => [match.index, match.index + match[0].length])
+		.filter(([start, end]) => nodes.some((node) => node.start > start && node.start < end));
+}
+
+/** The text nodes cut where `cuts` fall inside them, each piece with its node's marks. */
+function cutAt({ children, cuts }: { children: readonly GuideNode[]; cuts: readonly number[] }) {
+	return withOffsets(children).flatMap(({ node, start, end }) => {
+		const bounds = [start, ...cuts.filter((cut) => cut > start && cut < end), end];
+		return bounds.slice(1).map((to, index) => ({
+			node: { ...node, text: (node.text ?? '').slice(bounds[index] - start, to - start) },
+			start: bounds[index]
+		}));
+	});
+}
+
+/** The pieces of the text nodes, those inside a placeholder joined to the one before them. */
+function joinPieces({
+	children,
+	placeholders
+}: {
+	children: readonly GuideNode[];
+	placeholders: readonly [number, number][];
+}) {
+	const isInside = (offset: number) =>
+		placeholders.some(([start, end]) => offset > start && offset < end);
+	return cutAt({ children, cuts: placeholders.flat() }).reduce<GuideNode[]>((content, piece) => {
+		const previous = content.at(-1);
+		if (previous && isInside(piece.start)) {
+			content[content.length - 1] = { ...previous, text: `${previous.text}${piece.node.text}` };
+		} else if (piece.node.text) {
+			content.push(piece.node);
+		}
+		return content;
+	}, []);
+}
+
 /**
- * A text block whose placeholders formatting split over text nodes, with the nodes each of them
- * spans joined into one, so they can be filled like any other.
+ * A text block whose placeholders formatting split over text nodes, with the pieces of each
+ * placeholder joined into one (with the marks of its first piece), so they can be filled like any
+ * other. The text around them keeps its own formatting.
  */
 function joinSplitPlaceholders(node: GuideNode): GuideNode {
 	const children = node.content ?? [];
 	if (!TEXT_BLOCKS.has(node.type) || children.some((child) => child.type !== 'text')) return node;
-	const ranges = splitPlaceholderRanges(children);
-	return ranges.length === 0 ? node : { ...node, content: joinRanges({ children, ranges }) };
+	const placeholders = splitPlaceholders(children);
+	if (placeholders.length === 0) return node;
+	return { ...node, content: joinPieces({ children, placeholders }) };
 }
 
 /**
