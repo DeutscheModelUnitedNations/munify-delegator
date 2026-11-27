@@ -749,7 +749,9 @@ levels: **global** ("Konferenzen" at `/dashboard`, "Mein Konto", administration)
 conference** ("Übersicht" and below). "Dashboard" names neither in the UI.
 
 - Wordmark (`MUNify DELEGATOR`) → `/dashboard`; then breadcrumbs, whose conference crumb is
-  `ConferenceSwitcher.svelte` (dropdown), also beside the conference side nav.
+  `ConferenceSwitcher.svelte` (dropdown), also beside the conference side nav. Switching keeps
+  the open team page where the caller's roles there allow it (`pathInOtherConference` in
+  `#lib/data/teamRoutes`: detail pages lead to their list, query dropped), else the overview.
 - Account menu (`UserMenu.svelte`): name + email (→ "Mein Konto": profile, notifications for team
   members), "Konferenzen", "Administration" for system admins (create conference, CHASE link, Slack
   workspaces), feedback, logout, language.

@@ -538,3 +538,38 @@ export function teamSkeletonForPath(relativePath: string): SkeletonLayout {
 	const normalized = relativePath.replace(/^\/+|\/+$/g, '');
 	return teamSubpageSkeleton(normalized) ?? teamRouteForPath(normalized)?.skeleton ?? PAGE_SKELETON;
 }
+
+/**
+ * Team pages about one row of their conference (a school, a survey, …) and the page they lead to
+ * in another conference, where that row does not exist. `''` is the conference's overview.
+ * `teamRoutes.test.ts` fails for a parameter folder under `team/` missing here.
+ */
+const TEAM_DETAIL_PAGES: readonly { prefix: string; parent: string }[] = [
+	{ prefix: 'team/schools/', parent: 'team/schools' },
+	{ prefix: 'team/survey/', parent: 'team/survey' },
+	{ prefix: 'team/guide/page/', parent: 'team/guide' },
+	{ prefix: 'team/user/', parent: '' }
+];
+
+/**
+ * Where switching to another conference leads, relative to its dashboard: the same team page
+ * when the caller may open it there (a detail page's list instead of the detail page), else the
+ * overview (`''`). Pages outside the team area always lead to the overview.
+ */
+export function pathInOtherConference({
+	relativePath,
+	access
+}: {
+	/** The open page, relative to its conference's dashboard (`teamRelativePath`) */
+	relativePath: string;
+	/** The caller's team access in the target conference */
+	access: TeamAccess;
+}): string {
+	const normalized = relativePath.replace(/^\/+|\/+$/g, '');
+	if (!normalized.startsWith('team/')) return '';
+	const detail = TEAM_DETAIL_PAGES.find(({ prefix }) => normalized.startsWith(prefix));
+	const target = detail ? detail.parent : normalized;
+	if (target === '' || !isOnTeam(access)) return '';
+	const route = teamRouteForPath(target);
+	return !route || mayOpenTeamRoute({ route, access }) ? target : '';
+}
