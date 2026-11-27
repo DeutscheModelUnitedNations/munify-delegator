@@ -10,6 +10,7 @@ vi.mock('#api/handlers/bankTransfer/bankTransferService', () => ({
 }));
 
 const { incomingTransfer, runBankPaymentSync } = await import('./bankPaymentSync');
+const { logger } = await import('#lib/logger');
 const { lookbackStart } = await import('./bankLookback');
 
 function transaction(overrides: Partial<BankTransaction> = {}): BankTransaction {
@@ -126,6 +127,74 @@ describe('runBankPaymentSync', () => {
 				transfer: expect.objectContaining({ externalId: 1 })
 			})
 		);
-		expect(summary).toEqual({ read: 3, received: 1, flagged: 1 });
+		expect(summary).toMatchObject({
+			read: 3,
+			pages: 1,
+			outgoing: 1,
+			incoming: 2,
+			matchedTransfers: 1,
+			handledBefore: 1,
+			received: 1,
+			receivedAmount: 50,
+			flagged: 1,
+			amountMismatch: 1,
+			alreadyReceived: 0
+		});
+	});
+});
+
+describe('runBankPaymentSync summary', () => {
+	const now = new Date('2026-11-26T10:00:00Z');
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		lastHandledTransferId.mockResolvedValue(undefined);
+	});
+
+	it('closes with a summary in counts, even when nothing matched', async () => {
+		const info = vi.spyOn(logger, 'info');
+		handleIncomingTransfer
+			.mockResolvedValueOnce({ kind: 'noReference' })
+			.mockResolvedValueOnce({
+				kind: 'handled',
+				results: [
+					{ paymentId: 'a', result: 'RECEIVED' },
+					{ paymentId: 'b', result: 'RECEIVED' }
+				]
+			})
+			.mockResolvedValueOnce({
+				kind: 'handled',
+				results: [{ paymentId: 'c', result: 'ALREADY_RECEIVED' }]
+			});
+		const transactions = vi.fn(() =>
+			Promise.resolve([
+				transaction({ id_by_customer: 1, booking_date: '2026-11-03 00:00:00' }),
+				transaction({ id_by_customer: 2, amount: 0.1, booking_date: '2026-11-21 00:00:00' }),
+				transaction({ id_by_customer: 3, amount: 0.2 }),
+				transaction({ id_by_customer: 4, booking_date: 'soon' })
+			])
+		);
+		await runBankPaymentSync({ client: { transactions }, now });
+		expect(info).toHaveBeenCalledWith('Bank payment sync done', {
+			read: 4,
+			pages: 1,
+			outgoing: 0,
+			unreadable: 1,
+			incoming: 3,
+			withoutReference: 1,
+			handledBefore: 0,
+			matchedTransfers: 2,
+			received: 2,
+			// counted once per transfer, in cents
+			receivedAmount: 0.1,
+			flagged: 1,
+			alreadyReceived: 1,
+			amountMismatch: 0,
+			bookedFrom: '2026-11-03',
+			bookedTo: '2026-11-21',
+			dateFrom: '2026-09-27',
+			afterId: undefined,
+			dryRun: false
+		});
 	});
 });
