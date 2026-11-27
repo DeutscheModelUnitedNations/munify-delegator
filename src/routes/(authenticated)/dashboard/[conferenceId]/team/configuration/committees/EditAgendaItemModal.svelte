@@ -4,7 +4,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import { withoutBlankPoints } from '#lib/schemata/discussionPoints';
+	import { agendaItemChanges, type AgendaItemDraft } from './agendaItemChanges';
 	import AgendaItemFields from './AgendaItemFields.svelte';
 	import type { AgendaItem } from './types';
 
@@ -15,7 +15,7 @@
 
 	let { item = $bindable() }: Props = $props();
 
-	let draft = $state<{ title: string; teaserText: string; discussionPoints: string[] }>({
+	let draft = $state<AgendaItemDraft>({
 		title: '',
 		teaserText: '',
 		discussionPoints: []
@@ -31,14 +31,9 @@
 		}
 	});
 
-	async function save(id: string) {
+	async function save(stored: AgendaItem) {
 		const promise = client.mutate.updateAgendaItem({
-			__args: {
-				id,
-				title: draft.title,
-				teaserText: draft.teaserText,
-				discussionPoints: withoutBlankPoints(draft.discussionPoints)
-			},
+			__args: { id: stored.id, ...agendaItemChanges({ stored, draft }) },
 			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
@@ -55,6 +50,6 @@
 	/>
 	{#snippet action()}
 		<button class="btn" onclick={() => (item = undefined)}>{m.cancel()}</button>
-		<button class="btn btn-primary" onclick={() => item && save(item.id)}>{m.save()}</button>
+		<button class="btn btn-primary" onclick={() => item && save(item)}>{m.save()}</button>
 	{/snippet}
 </Modal>

@@ -27,6 +27,8 @@
 
 	async function save() {
 		saving = true;
+		// what was sent: edits made while the save runs are kept
+		const sent = JSON.stringify(points);
 		try {
 			const promise = client.mutate.setAgendaItemDiscussionPoints({
 				__args: { agendaItemId, discussionPoints: withoutBlankPoints(points) },
@@ -35,7 +37,7 @@
 			toast.promise(promise, genericPromiseToastMessages);
 			const result = await promise;
 			saved = [...result.discussionPoints];
-			points = [...result.discussionPoints];
+			if (JSON.stringify(points) === sent) points = [...result.discussionPoints];
 		} catch {
 			// the toast shows the failure
 		} finally {

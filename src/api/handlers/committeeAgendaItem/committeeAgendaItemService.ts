@@ -43,14 +43,17 @@ export async function updateAgendaItem({
 	discussionPoints?: string[] | null;
 	reviewHelpStatus?: ReviewHelpStatus;
 }) {
+	const values = {
+		title: title ?? undefined,
+		teaserText: teaserText ?? undefined,
+		discussionPoints: discussionPoints ?? undefined,
+		reviewHelpStatus
+	};
+	// a save that changed nothing (the client sends only what changed) writes nothing
+	if (Object.values(values).every((value) => value === undefined)) return;
 	await db
 		.update(schema.committeeAgendaItem)
-		.set({
-			title: title ?? undefined,
-			teaserText: teaserText ?? undefined,
-			discussionPoints: discussionPoints ?? undefined,
-			reviewHelpStatus
-		})
+		.set(values)
 		.where(whereRows({ table: schema.committeeAgendaItem, filter: { id } }));
 	committeeAgendaItemPubsub.updated(id);
 }

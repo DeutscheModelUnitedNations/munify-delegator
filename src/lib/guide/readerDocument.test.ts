@@ -45,3 +45,29 @@ test('resolveDocument resolves images, buttons and links and anchors the heading
 	expect(content.content?.[2].content?.[0].marks).toEqual([{ type: 'bold' }]);
 	expect(content.content?.[2].content?.[1].marks?.[0].attrs?.href).toBe('guide:in');
 });
+
+test('an empty heading takes no anchor, so later headings and the points box keep theirs', () => {
+	const heading = (text?: string) => ({
+		type: 'heading',
+		attrs: { level: 2 },
+		...(text ? { content: [{ type: 'text', text }] } : {})
+	});
+	const doc: GuideDocument = {
+		type: 'doc',
+		content: [
+			heading(),
+			{
+				type: 'discussionPoints',
+				attrs: { heading: 'Punkte zur Diskussion', points: ['Eins'] }
+			},
+			heading('Hintergrund')
+		]
+	};
+	const { content, headings } = resolveDocument({ doc, resolve });
+	expect(headings.map((h) => h.id)).toEqual(['punkte-zur-diskussion', 'hintergrund']);
+	expect(content.content?.map((node) => node.attrs?.id)).toEqual([
+		undefined,
+		'punkte-zur-diskussion',
+		'hintergrund'
+	]);
+});

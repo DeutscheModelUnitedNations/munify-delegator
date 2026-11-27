@@ -609,7 +609,9 @@ export const agendaItemDataSchema = z.object({
 		.nullable()
 });
 
-const DISCUSSION_POINTS_HEADING = /^#{1,6}\s+(punkte zur diskussion|points for discussion)\s*$/i;
+/** The heading, also bold or italic (`guideDocumentToMarkdown` writes the marks of a heading). */
+const DISCUSSION_POINTS_HEADING =
+	/^#{1,6}\s+[*_]{0,3}(punkte zur diskussion|points for discussion)[*_]{0,3}\s*$/i;
 
 /**
  * The points for discussion a committee text lists under its own heading ("Punkte zur Diskussion",

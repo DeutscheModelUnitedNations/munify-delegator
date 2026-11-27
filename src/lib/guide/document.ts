@@ -204,11 +204,15 @@ export const AGENDA_ITEM_PLACEHOLDERS: readonly Placeholder[] = ['Diskussionspun
 
 const PLACEHOLDER_PATTERN = /\{\{\s*(Konferenz|Gremium|Themen|Diskussionspunkte)\s*\}\}/g;
 
+/** The blocks whose text placeholders are read from: formatting may split one over text nodes. */
+const TEXT_BLOCKS = new Set(['paragraph', 'heading']);
+
 /** The placeholders a document uses. */
 export function placeholdersIn(doc: GuideDocument): Placeholder[] {
 	const found = new Set<Placeholder>();
 	walk(doc, (node) => {
-		for (const match of (node.text ?? '').matchAll(PLACEHOLDER_PATTERN)) {
+		if (!TEXT_BLOCKS.has(node.type)) return;
+		for (const match of textOf(node).matchAll(PLACEHOLDER_PATTERN)) {
 			const name = PLACEHOLDERS.find((placeholder) => placeholder === match[1]);
 			if (name) found.add(name);
 		}
@@ -256,8 +260,8 @@ export function discussionPointsOf(node: GuideNode) {
 function isPlaceholderParagraph(node: GuideNode, name: Placeholder) {
 	return (
 		node.type === 'paragraph' &&
-		node.content?.length === 1 &&
-		new RegExp(`^\\s*\\{\\{\\s*${name}\\s*\\}\\}\\s*$`).test(node.content[0].text ?? '')
+		(node.content ?? []).every((child) => child.type === 'text') &&
+		new RegExp(`^\\s*\\{\\{\\s*${name}\\s*\\}\\}\\s*$`).test(textOf(node))
 	);
 }
 
@@ -321,15 +325,22 @@ function headingSlug(text: string) {
 	);
 }
 
+/**
+ * The text a node stands in the table of contents with: a heading's, the points for discussion's
+ * heading; empty for anything else and for empty headings, which get no anchor.
+ */
+export function headingTextOf(node: GuideNode) {
+	if (node.type === 'heading') return textOf(node).trim();
+	if (node.type === 'discussionPoints') return discussionPointsOf(node).heading.trim();
+	return '';
+}
+
 /** The headings, for the table of contents, with unique anchors in document order. */
 export function headingsOf(doc: GuideDocument): GuideHeading[] {
 	const headings: GuideHeading[] = [];
 	const used = new Map<string, number>();
 	walk(doc, (node) => {
-		if (node.type !== 'heading' && node.type !== 'discussionPoints') return;
-		const text = (
-			node.type === 'discussionPoints' ? discussionPointsOf(node).heading : textOf(node)
-		).trim();
+		const text = headingTextOf(node);
 		if (!text) return;
 		const base = headingSlug(text);
 		const count = used.get(base) ?? 0;

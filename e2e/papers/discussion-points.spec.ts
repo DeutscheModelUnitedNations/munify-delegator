@@ -66,7 +66,10 @@ test.describe('points for discussion', () => {
 			.getByRole('textbox', { name: /Punkt zur Diskussion 2|Point for discussion 2/ })
 			.press('End');
 		await page.keyboard.press('Enter');
-		await page.keyboard.type('Wer kontrolliert die Umsetzung?');
+		// Enter added point 3; fill that field, not whatever has focus
+		await dialog
+			.getByRole('textbox', { name: /Punkt zur Diskussion 3|Point for discussion 3/ })
+			.fill('Wer kontrolliert die Umsetzung?');
 		await dialog.getByRole('button', { name: /Punkt 3 nach oben|Move point 3 up/ }).click();
 		await dialog.getByRole('button', { name: /Punkt 1 entfernen|Remove point 1/ }).click();
 		// a blank point is left out when saving

@@ -1,6 +1,7 @@
 import {
 	fileIdOf,
 	headingsOf,
+	headingTextOf,
 	mapNodes,
 	pageIdOf,
 	type GuideDocument,
@@ -53,7 +54,10 @@ export function resolveDocument({ doc, resolve }: { doc: GuideDocument; resolve:
 		switch (node.type) {
 			case 'heading':
 			case 'discussionPoints':
-				return { ...node, attrs: { ...node.attrs, id: anchors.shift() } };
+				// as headingsOf: an empty heading is not in the table of contents and takes no anchor
+				return headingTextOf(node)
+					? { ...node, attrs: { ...node.attrs, id: anchors.shift() } }
+					: node;
 			case 'image':
 				return withAttr({ node, key: 'src', resolve });
 			case 'button':

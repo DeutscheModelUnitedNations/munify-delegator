@@ -130,6 +130,23 @@ describe('fillPlaceholders', () => {
 			).toHaveLength(1);
 		});
 
+		test('are found when formatting split the placeholder over text nodes', () => {
+			const split = page({
+				type: 'paragraph',
+				content: [
+					{ type: 'text', text: '{{Diskussions' },
+					{ type: 'text', text: 'punkte}}', marks: [{ type: 'bold' }] }
+				]
+			});
+			expect(placeholdersIn(split)).toEqual(['Diskussionspunkte']);
+			const filled = fillPlaceholders(split, {
+				conference: 'MUN-SH 2027',
+				discussionPoints: points
+			});
+			// in its place, not a second box first with the placeholder left behind
+			expect(filled.content?.map((node) => node.type)).toEqual(['discussionPoints']);
+		});
+
 		test('stay as they are off agenda item pages', () => {
 			const filled = fillPlaceholders(page(paragraph('{{Diskussionspunkte}}')), {
 				conference: 'MUN-SH 2027'

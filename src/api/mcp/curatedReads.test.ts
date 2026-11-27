@@ -255,6 +255,10 @@ describe('agenda item context', () => {
 			'Welche Rolle spielt die Wissenschaft?'
 		]);
 		expect(discussionPointsFromMarkdown('## Hintergrund\n- etwas')).toEqual([]);
+		// a bold heading reaches Markdown with its marks
+		expect(
+			discussionPointsFromMarkdown('## **Punkte zur Diskussion**\n- Erstens\n- Zweitens')
+		).toEqual(['Erstens', 'Zweitens']);
 	});
 
 	test("prefers the agenda item's own points", () => {
