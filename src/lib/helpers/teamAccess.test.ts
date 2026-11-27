@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
+	canCreateCommittees,
+	canDeleteCommittees,
 	canEditCommittees,
 	canEditConference,
 	canEditConferenceContent,
@@ -54,6 +56,15 @@ describe('what each role may change', () => {
 	test('committees go to project management and the content lead', () => {
 		expect(canEditCommittees(as('CONTENT_LEAD'))).toBe(true);
 		expect(canEditCommittees(as('PARTICIPANT_CARE'))).toBe(false);
+	});
+
+	test('the content lead adds committees, only project management deletes them', () => {
+		expect(canCreateCommittees(as('CONTENT_LEAD'))).toBe(true);
+		expect(canCreateCommittees(as('PROJECT_MANAGEMENT'))).toBe(true);
+		expect(canCreateCommittees(as('PARTICIPANT_CARE'))).toBe(false);
+		expect(canDeleteCommittees(as('PROJECT_MANAGEMENT'))).toBe(true);
+		expect(canDeleteCommittees(as('CONTENT_LEAD'))).toBe(false);
+		expect(canDeleteCommittees(admin)).toBe(true);
 	});
 
 	test('access cards go to the care team', () => {

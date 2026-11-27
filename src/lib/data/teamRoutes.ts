@@ -85,8 +85,8 @@ export const teamRoutes: readonly TeamRoute[] = [
 			'konferenz',
 			'conference'
 		],
-		// Everyone who can change something in there: the settings (project management), the
-		// content (+ participant care, content lead) and the committees (+ content lead).
+		// Everyone who can change something in there: the settings (project management) and the
+		// content (+ participant care, content lead).
 		roles: CONFERENCE_CONTENT_ROLES
 	},
 	{
@@ -172,6 +172,26 @@ export const teamRoutes: readonly TeamRoute[] = [
 		category: 'management',
 		keywords: ['sitzplanung', 'seat planning', 'sitzverteilung', 'matrix', 'gremien', 'staaten'],
 		roles: SEAT_PLANNING_ROLES
+	},
+	{
+		id: 'committees',
+		skeleton: TEAM_SKELETONS.committees,
+		path: teamPath('committees'),
+		title: () => m.committeesAndAgendaItems(),
+		description: () => m.committeesPageDescription(),
+		icon: 'ph-lectern',
+		group: 'workflows',
+		category: 'management',
+		keywords: [
+			'gremien',
+			'committees',
+			'themen',
+			'tagesordnungspunkte',
+			'agenda items',
+			'diskussionspunkte'
+		],
+		// Project management and the content lead edit them, participant care reads along
+		roles: CONFERENCE_CONTENT_ROLES
 	},
 	{
 		id: 'assignment',

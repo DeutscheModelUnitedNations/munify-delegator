@@ -19,6 +19,7 @@ test.describe.configure({ mode: 'serial' });
 
 const MANAGEMENT = `/dashboard/${E2E_SEAT_CONFERENCE_ID}/team`;
 const SEAT_PLANNING = `${MANAGEMENT}/seat-planning`;
+const COMMITTEES = `${MANAGEMENT}/committees`;
 
 interface GraphQLResponse<T> {
 	data?: T | null;
@@ -130,17 +131,104 @@ test('a content lead reaches the seat planning, not the care pages', async ({ pa
 	await expect(page.locator(`a[href="${SEAT_PLANNING}"]`).first()).toBeVisible();
 	await expect(page.locator(`a[href="${MANAGEMENT}/participants"]`)).toHaveCount(0);
 
-	// may plan seats, but not change the committee set-up
+	// may plan seats
 	const seat = await graphql(
 		page,
 		`mutation { setCommitteeNationSeat(committeeId: "${E2E_SEAT_SR_ID}", nationAlpha3Code: "nld", enabled: true) { id } }`
 	);
 	expect(seat.errors).toBeUndefined();
+});
+
+test('a content lead adds committees on their page, but only project management deletes them', async ({
+	page
+}) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_CONTENT_LEAD_ID), { startUrl: COMMITTEES });
+	// the page sits in the navigation right after the seat planning
+	await expect(page.locator(`a[href="${COMMITTEES}"]`).first()).toBeVisible();
+
+	const abbreviation = `L${Date.now() % 100000}`;
+	await addCommittee(page, { name: 'E2E Lead Committee', abbreviation, seats: '1' });
+
+	// the new committee is picked, its settings editable, deleting it is not offered
+	await expect(committeeHeading(page, `E2E Lead Committee (${abbreviation})`)).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(settingsName(page)).toBeEnabled();
+	await expect(page.getByRole('button', { name: /gremium löschen/i })).toHaveCount(0);
+
+	const committees = await graphql<{ committees: { id: string; abbreviation: string }[] }>(
+		page,
+		`query { committees(where: { conferenceId: { eq: "${E2E_SEAT_CONFERENCE_ID}" } }) { id abbreviation } }`
+	);
+	const created = committees.data?.committees.find((c) => c.abbreviation === abbreviation);
+	expect(created).toBeDefined();
+	const refused = await graphql(page, `mutation { deleteCommittee(id: "${created?.id}") }`);
+	expect(refused.errors?.[0]?.message).not.toMatch(/must not have a selection|Cannot query field/);
+	expect(refused.errors?.length).toBeGreaterThan(0);
+
+	// project management removes it again, so the fixture stays as it was
+	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), { startUrl: COMMITTEES });
+	const removed = await graphql(page, `mutation { deleteCommittee(id: "${created?.id}") }`);
+	expect(removed.errors).toBeUndefined();
+});
+
+test('the content lead renames a committee in place', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_CONTENT_LEAD_ID), {
+		startUrl: `${COMMITTEES}?committee=${E2E_SEAT_GV_ID}`
+	});
+	await expect(committeeHeading(page, 'Generalversammlung (SPGV)')).toBeVisible({
+		timeout: 15_000
+	});
+	const name = settingsName(page);
+	const save = page.getByRole('button', { name: 'Speichern', exact: true });
+	await expect(save).toBeDisabled();
+
+	await name.fill('Generalversammlung E2E');
+	await save.click();
+	await expect(committeeHeading(page, 'Generalversammlung E2E (SPGV)')).toBeVisible({
+		timeout: 15_000
+	});
+
+	await name.fill('Generalversammlung');
+	await save.click();
+	await expect(committeeHeading(page, 'Generalversammlung (SPGV)')).toBeVisible({
+		timeout: 15_000
+	});
+});
+
+test('participant care reads the committees but changes nothing', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_PARTICIPANT_CARE_ID), {
+		startUrl: `${COMMITTEES}?committee=${E2E_SEAT_GV_ID}`
+	});
+	expect(new URL(page.url()).pathname).toBe(COMMITTEES);
+
+	await expect(page.getByRole('status').filter({ hasText: /nur ansehen/i })).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(committeeHeading(page, 'Generalversammlung (SPGV)')).toBeVisible();
+	await expect(settingsName(page)).toBeDisabled();
+	await expect(page.getByRole('button', { name: /gremium hinzufügen/i })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Speichern', exact: true })).toHaveCount(0);
+
 	const committee = await graphql(
 		page,
 		`mutation { createCommittee(conferenceId: "${E2E_SEAT_CONFERENCE_ID}", name: "Forbidden", abbreviation: "NO", numOfSeatsPerDelegation: 1) { id } }`
 	);
 	expect(committee.errors?.length).toBeGreaterThan(0);
+});
+
+test('the settings have no committees tab any more', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
+		startUrl: `${MANAGEMENT}/configuration?tab=committees`
+	});
+	await expect(page.getByRole('tab', { name: /allgemein/i })).toHaveAttribute(
+		'aria-selected',
+		'true',
+		{ timeout: 15_000 }
+	);
+	await expect(page.getByRole('tab', { name: /gremien/i })).toHaveCount(0);
+	const old = await page.goto(`${MANAGEMENT}/configuration/committees`);
+	expect(old?.status()).toBe(404);
 });
 
 test('participant care cannot open the seat planning', async ({ page }) => {
@@ -155,43 +243,74 @@ test('participant care cannot open the seat planning', async ({ page }) => {
 	expect(seat.errors?.length).toBeGreaterThan(0);
 });
 
-/** A committee's card on the configuration page, found by the heading that names it. */
-function committeeCard(page: Page, heading: string) {
+/** The picked committee's name field, in its settings (the add dialog has one too). */
+function settingsName(page: Page) {
 	return page
-		.getByRole('heading', { name: heading, exact: true })
-		.locator('xpath=ancestor::section[1]');
+		.getByRole('group', { name: 'Einstellungen des Gremiums' })
+		.getByRole('textbox', { name: 'Name', exact: true });
 }
 
-test('the project management adds and deletes a committee', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
-		startUrl: `${MANAGEMENT}/configuration?tab=committees`
-	});
+/** The picked committee's heading on the committees page. */
+function committeeHeading(page: Page, text: string) {
+	return page.getByRole('heading', { name: text, exact: true });
+}
 
-	// a committee with an assigned delegate cannot be deleted
-	const gvCard = committeeCard(page, 'Generalversammlung (SPGV)');
-	await expect(gvCard.getByRole('button', { name: /löschen/i })).toBeDisabled({ timeout: 15_000 });
-
-	const abbreviation = `C${Date.now() % 100000}`;
+/** Adds a committee through the page's dialog. */
+async function addCommittee(
+	page: Page,
+	{ name, abbreviation, seats }: { name: string; abbreviation: string; seats: string }
+) {
 	await expect(async () => {
 		await page.getByRole('button', { name: /gremium hinzufügen/i }).click();
 		await expect(page.locator('.modal-open')).toBeVisible({ timeout: 2_000 });
 	}).toPass();
 	const modal = page.locator('.modal-open');
-	await modal.getByPlaceholder('Name').fill('E2E Committee');
+	await modal.getByPlaceholder('Name').fill(name);
 	await modal.getByPlaceholder('Kürzel').fill(abbreviation);
-	await modal.getByPlaceholder('Sitze pro Delegation').fill('2');
+	await modal.getByPlaceholder('Sitze pro Delegation').fill(seats);
 	await modal.getByRole('button', { name: /erstellen/i }).click();
+	await expect(page.getByRole('dialog', { name: 'Gremium hinzufügen' })).toBeHidden({
+		timeout: 15_000
+	});
+}
 
-	const card = committeeCard(page, `E2E Committee (${abbreviation})`);
-	await expect(card).toBeVisible({ timeout: 15_000 });
-	await expect(card.getByTitle('Sitze pro Delegation')).toHaveText('2');
+test('the project management adds and deletes a committee', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
+		startUrl: `${COMMITTEES}?committee=${E2E_SEAT_GV_ID}`
+	});
 
-	await card.getByRole('button', { name: /löschen/i }).click();
+	// a committee with an assigned delegate cannot be deleted
+	await expect(committeeHeading(page, 'Generalversammlung (SPGV)')).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(page.getByRole('button', { name: /gremium löschen/i })).toBeDisabled();
+
+	const abbreviation = `C${Date.now() % 100000}`;
+	await addCommittee(page, { name: 'E2E Committee', abbreviation, seats: '2' });
+
+	// the new committee is picked
+	await expect(committeeHeading(page, `E2E Committee (${abbreviation})`)).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(
+		page
+			.getByRole('group', { name: 'Einstellungen des Gremiums' })
+			.getByRole('spinbutton', { name: /Sitze pro Delegation/ })
+	).toHaveValue('2');
+	await expect(
+		page
+			.getByRole('navigation', { name: 'Gremien' })
+			.getByRole('button', { name: new RegExp(abbreviation) })
+	).toHaveAttribute('aria-current', 'true');
+
+	await page.getByRole('button', { name: /gremium löschen/i }).click();
 	await page
 		.locator('.modal-open')
 		.getByRole('button', { name: /löschen/i })
 		.click();
-	await expect(card).toHaveCount(0, { timeout: 15_000 });
+	await expect(committeeHeading(page, `E2E Committee (${abbreviation})`)).toHaveCount(0, {
+		timeout: 15_000
+	});
 });
 
 test('every matrix column sorts, alphabetically by state by default', async ({ page }) => {

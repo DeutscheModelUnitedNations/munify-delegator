@@ -376,8 +376,9 @@ bun run preview
 - **Team roles** (`Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, `CONTENT_LEAD`, …) live in
   `#lib/helpers/teamRoles.ts` (re-exported by `authHelper/rules.ts`). A team keeps at least one
   `PROJECT_MANAGEMENT` member: removing/demoting the last answers `CONFLICT` (under a conference
-  lock) unless a system admin does it. `CONTENT_LEAD` reaches seat planning, committees, conference
-  content, scanner and settings.
+  lock) unless a system admin does it. `CONTENT_LEAD` reaches seat planning, committees (own page
+  `team/committees`: creates and edits them, only project management deletes), conference content,
+  scanner and settings.
 - **Team area**: everything under `dashboard/[conferenceId]/team/`, one guard (`team/+layout.ts`) and
   one registry (`#lib/data/teamRoutes.ts`: path, title, icon, section, palette keywords, roles). Side
   nav (`ConferenceShell.svelte`, `ConferenceNavMenu.svelte`), command palette and guard are generated

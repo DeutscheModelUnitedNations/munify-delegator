@@ -23,7 +23,7 @@ Diese Reihenfolge ergibt sich aus dem, was DELEGATOR in den einzelnen Phasen zul
 
 1. Team einladen. Ohne Team kann außer System-Admins niemand die Konferenz einrichten. Die Einstellungen öffnen **Projektleitung**, **Teilnehmendenbetreuung** und **Leitung Inhalt**.
 2. **Allgemeines** ausfüllen (Projektleitung): Name, Ort, Konferenzsprache, Bilder, das Ende der Bewerbungsphase, Kulanzzeitraum, Konferenzdaten und Zeitzone. Dazu die [Altersgrenzen](#age-limits) und die [Schulregeln](#school-rules).
-3. Gremien und Themen anlegen: Gremien legt die Projektleitung an, Themen auch die Leitung Inhalt. Zu den Themen reichen Delegationen später ihre Papiere ein.
+3. Auf der Seite [Gremien und Themen](#committees-and-seats) Gremien und Themen anlegen (Projektleitung, Leitung Inhalt). Zu den Themen reichen Delegationen später ihre Papiere ein.
 4. Sitze planen (Projektleitung, Leitung Inhalt): Staaten in den Gremien, nichtstaatliche Akteure und Einzelrollen. Das geht am besten jetzt, solange die Konferenz **Vor Bewerbungsstart** steht. Danach ist jede Änderung sofort öffentlich und kann Bewerbungen entfernen.
 5. Links eintragen, vor allem den Link zur inhaltlichen Vorbereitung, den auch Besuchende ohne Anmeldung sehen.
 6. **Überweisungsinformationen** eintragen (Projektleitung), bevor du Zahlungen freischaltest.
@@ -34,7 +34,7 @@ Wie es danach weitergeht, steht unter [Typischer Ablauf](#typical-sequence).
 
 ## Die Einstellungen {#general-settings}
 
-Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines**, **Gremien und Themen**, **Status & Funktionen**, **Links & Inhalte**, **Überweisungsinformationen**, **Dokumente & Vorlagen**. Jeder Reiter erklärt oben kurz, wofür er da ist.
+Die Seite **Einstellungen** bündelt die Konfiguration in Reitern: **Allgemeines**, **Status & Funktionen**, **Links & Inhalte**, **Überweisungsinformationen**, **Dokumente & Vorlagen**. Jeder Reiter erklärt oben kurz, wofür er da ist. Gremien und Themen haben eine [eigene Seite](#committees-and-seats).
 
 ![Die Konferenzeinstellungen mit ihren Reitern und dem Speichern-Knopf](shot:team/configuration)
 
@@ -55,7 +55,7 @@ Liegt das Ende der Bewerbungsphase nach dem Konferenzbeginn, der Beginn nach dem
 Hat das Speichern E-Mails fällig gemacht, fragt die Seite danach **E-Mails jetzt verschicken?** und nennt, welche Arten wie oft offen sind. Das passiert bei **Zahlungen**, **Postalische Anmeldung**, beim Status **Nach der Konferenz** und bei einer neuen Zertifikatsvorlage. **{count} E-Mails jetzt verschicken** schickt sie ab, mit **Später** findest du sie auf der Seite [E-Mails](./communication#emails) wieder. Die Frage sehen nur Projektleitung und Teilnehmendenbetreuung, die die E-Mails verwalten dürfen.
 
 :::note Außerhalb des Formulars
-Gremien und Themen, Resolutionen und die Anordnung auf den Vorlagen speichern in ihren eigenen Fenstern sofort. Der Speichern-Knopf gilt nur für die Formularfelder.
+Resolutionen und die Anordnung auf den Vorlagen speichern in ihren eigenen Fenstern sofort. Der Speichern-Knopf gilt nur für die Formularfelder.
 :::
 
 ### Allgemeines {#general}
@@ -210,17 +210,17 @@ Teilnehmende mit Platz laden die Resolutionen nach dem Ende der Konferenz auf ih
 
 ## Gremien und Themen {#committees-and-seats}
 
-Im Reiter **Gremien und Themen** verwaltest du die Gremien der Konferenz mit ihren Tagesordnungspunkten. Gremien anlegen und löschen darf die **Projektleitung**, bearbeiten und Themen pflegen auch die **Leitung Inhalt**. Die Teilnehmendenbetreuung sieht die Gremien nur. Jede Änderung speichert sofort.
+Auf der Seite **Gremien und Themen**, in der Navigation direkt unter der **Sitzplanung**, verwaltest du die Gremien der Konferenz mit ihren Tagesordnungspunkten. **Projektleitung** und **Leitung Inhalt** legen Gremien an, bearbeiten sie und pflegen die Themen. Löschen darf ein Gremium nur die **Projektleitung**. Die **Teilnehmendenbetreuung** sieht die Seite nur, oben steht dann ein Hinweis.
 
 ![Die Gremien einer Konferenz mit ihren Themen](shot:team/committees)
 
-Jede Karte zeigt neben dem Namen die Zahl der Staaten und die Sitze pro Delegation. Oben führt **Zur Sitzplanung** dorthin, wo du festlegst, welche Staaten in einem Gremium sitzen.
+Links steht die Liste der Gremien, jedes mit der Zahl seiner Staaten und Themen. Fehlen einem Thema noch die Punkte zur Diskussion, steht das darunter. Ein Klick zeigt das Gremium rechts daneben; die Adresse merkt sich, welches, sodass du einen Link darauf teilen kannst. Oben führt **Zur Sitzplanung** dorthin, wo du festlegst, welche Staaten in einem Gremium sitzen.
 
-- **Gremium hinzufügen** legt ein Gremium mit **Name**, **Kürzel** und **Sitze pro Delegation** an.
-- **Bearbeiten** öffnet **Gremium bearbeiten** für Name und Kürzel, die **Sitze pro Delegation** und die **Resolutions-Überschrift**, eine eigene Überschrift für Resolutionen, etwa für den richtigen Artikel („Der Sicherheitsrat“). Leer gelassen entfällt sie.
-- **Tagesordnungspunkt hinzufügen** legt ein Thema mit **Titel** und **Teaser-Text** an. Zu den Themen reichen Delegationen ihre Papiere ein. Der Stift an einem Thema öffnet **Thema bearbeiten**, der Papierkorb **Thema löschen**.
+- **Gremium hinzufügen** unter der Liste legt ein Gremium mit **Name**, **Kürzel** und **Sitze pro Delegation** an und wählt es gleich aus.
+- **Einstellungen des Gremiums** zeigen Name und Kürzel, die **Sitze pro Delegation** und die **Resolutions-Überschrift**, eine eigene Überschrift für Resolutionen, etwa für den richtigen Artikel („Der Sicherheitsrat“). Leer gelassen entfällt sie. Du änderst sie direkt in den Feldern; **Speichern** übernimmt sie, **Verwerfen** stellt den gespeicherten Stand wieder her.
+- Unter **Tagesordnungspunkte** steht jedes Thema als Zeile mit der Zahl seiner Punkte zur Diskussion und Papiere. Zu den Themen reichen Delegationen ihre Papiere ein. Ein Klick öffnet das Thema an Ort und Stelle mit **Titel**, **Teaser-Text** und Punkten; **Speichern** übernimmt die Änderungen, ein noch nicht gespeichertes Thema trägt **Nicht gespeichert**. **Thema löschen** entfernt es nach einer Rückfrage. **Tagesordnungspunkt hinzufügen** öffnet darunter die Felder für ein neues Thema.
 - Unter **Punkte zur Diskussion** hältst du fest, was Papiere zu einem Thema beantworten sollen, ein Punkt pro Feld und in der Reihenfolge, in der sie erscheinen. **Punkt hinzufügen** oder Enter beginnt den nächsten Punkt, die Pfeile verschieben ihn, das Kreuz entfernt ihn; leere Punkte fallen beim Speichern weg. Teilnehmende sehen die Punkte beim Schreiben und auf ihrem Papier, Begutachtende neben dem Papier, und der [Leitfaden](./communication#guide-editor) zeigt sie auf der Seite des Themas. Die Zeile des Themas nennt, wie viele es hat.
-- **Löschen** entfernt ein Gremium nach einer Rückfrage.
+- **Gremium löschen** am Ende entfernt das Gremium nach einer Rückfrage (nur Projektleitung).
 
 **Sitze pro Delegation** bestimmt, wie viele Delegierte einer Delegation in diesem Gremium sitzen. Zusammen über alle Gremien ergibt das die Größe der Delegation, die einen Staat vertritt.
 

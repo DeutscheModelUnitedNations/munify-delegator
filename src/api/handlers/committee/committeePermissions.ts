@@ -43,8 +43,8 @@ export function registerCommitteeAbilities() {
 }
 
 /**
- * Refuses (FORBIDDEN) unless the caller holds `manageConference` (project management) in the
- * conference: creating and deleting committees is theirs, editing them seat planning's.
+ * Refuses (FORBIDDEN) unless the caller holds `planSeats` (project management and content lead) in
+ * the conference: who edits the committees adds them too. Deleting one stays `manageConference`.
  */
 export async function assertCanCreateCommittee({
 	ctx,
@@ -53,7 +53,7 @@ export async function assertCanCreateCommittee({
 	ctx: ApiContext;
 	conferenceId: string;
 }) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'manageConference' });
+	await assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' });
 }
 
 /**

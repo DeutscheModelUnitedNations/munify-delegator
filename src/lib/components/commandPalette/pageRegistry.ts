@@ -105,15 +105,6 @@ export function getConfigEntries(): ConfigEntry[] {
 			tab: 'general',
 			keywords: ['bild', 'image', 'foto', 'photo', 'logo', 'emblem']
 		},
-		// Committees tab
-		{
-			id: 'config-committees',
-			title: () => m.committeesAndAgendaItems(),
-			section: () => m.settings(),
-			icon: 'ph-lectern',
-			tab: 'committees',
-			keywords: ['gremien', 'committees', 'themen', 'agenda', 'items']
-		},
 		// Status tab
 		{
 			id: 'config-status-features',

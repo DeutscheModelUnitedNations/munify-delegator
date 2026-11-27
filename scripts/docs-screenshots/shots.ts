@@ -55,7 +55,7 @@ export const SHOTS: Shot[] = [
 	{
 		id: 'team/committees',
 		role: 'dev-team-content-lead',
-		path: team('preparation', 'configuration?tab=committees')
+		path: team('preparation', 'committees')
 	},
 	{
 		id: 'team/seat-planning',

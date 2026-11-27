@@ -78,6 +78,7 @@ describe('who sees what', () => {
 			'stats',
 			'settings',
 			'seatPlanning',
+			'committees',
 			'attendance',
 			'announcement',
 			'guide',
@@ -107,6 +108,18 @@ describe('who sees what', () => {
 		expect(care).not.toContain('members');
 	});
 
+	test('the committees have their own page right after the seat planning', () => {
+		const workflows = teamRoutes.filter((entry) => entry.group === 'workflows').map((e) => e.id);
+		expect(workflows.indexOf('committees')).toBe(workflows.indexOf('seatPlanning') + 1);
+		expect(teamRouteForPath('team/committees')?.id).toBe('committees');
+		for (const role of ['PROJECT_MANAGEMENT', 'CONTENT_LEAD', 'PARTICIPANT_CARE'] as const) {
+			expect(ids(as(role))).toContain('committees');
+		}
+		for (const role of ['REVIEWER', 'MEMBER', 'TEAM_COORDINATOR'] as const) {
+			expect(ids(as(role))).not.toContain('committees');
+		}
+	});
+
 	test('the navigation sections leave out what is empty', () => {
 		const sections = groupedTeamRoutes(as('CONTENT_LEAD')).map((section) => section.group);
 		// nothing of the maintenance section is the content lead's
@@ -126,7 +139,7 @@ describe('teamRouteForPath', () => {
 	test('finds a page and the pages below it', () => {
 		expect(teamRouteForPath('team/participants')?.id).toBe('participants');
 		expect(teamRouteForPath('team/user/abc')?.id).toBe('participants');
-		expect(teamRouteForPath('team/configuration/committees')?.id).toBe('settings');
+		expect(teamRouteForPath('team/configuration/x')?.id).toBe('settings');
 		expect(teamRouteForPath('team/assignment/finish')?.id).toBe('assignment');
 		expect(teamRouteForPath('team/invitations')?.id).toBe('members');
 		expect(teamRouteForPath('team/survey/xyz')?.id).toBe('survey');

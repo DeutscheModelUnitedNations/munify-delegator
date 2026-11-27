@@ -4,9 +4,9 @@ import type { AgendaItem } from './types';
 export type AgendaItemDraft = { title: string; teaserText: string; discussionPoints: string[] };
 
 /**
- * What the edit dialog sends: only the fields that differ from the stored agenda item, so a field
- * left alone keeps what someone else may have saved meanwhile. Points compare without blank ones;
- * clearing them all sends `[]`.
+ * What saving an agenda item sends: only the fields that differ from what the form started from
+ * (`stored`: the values it took over), so a field left alone keeps what someone else may have saved
+ * meanwhile. Points compare without blank ones; clearing them all sends `[]`.
  */
 export function agendaItemChanges({
 	stored,
