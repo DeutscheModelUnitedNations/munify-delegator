@@ -100,9 +100,13 @@ test('once everything is over the section is gone', async ({ page }) => {
 	await expect(section(page)).toHaveCount(0);
 });
 
-test('the team has no next entries on its overview', async ({ page }) => {
+test('the team sees the whole schedule in its overview widget instead', async ({ page }) => {
 	await openAt(page, { userId: NEXT_ENTRIES.careId, now: DURING_SESSION });
 
-	await expect(page.locator('[data-tour="dashboard.stages"]')).toBeVisible({ timeout: 20_000 });
+	const now = page.getByTestId('widget-now');
+	await expect(now).toBeVisible({ timeout: 30_000 });
 	await expect(section(page)).toHaveCount(0);
+	// Both tracks' sessions: a team member has no seat
+	await expect(now.getByRole('button', { name: /Sitzung des SR/ })).toContainText('Jetzt');
+	await expect(now.getByRole('button', { name: /Sitzung der GV/ })).toContainText('Jetzt');
 });

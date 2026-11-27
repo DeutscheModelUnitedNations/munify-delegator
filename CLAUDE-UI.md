@@ -350,7 +350,20 @@ after saving. Typical binding into URL state:
   fetches itself (e.g. `MessagesLinkInfo`: unread chats). A link definition (`dashboardLinks.ts`,
   `teamDashboardLinks.ts`) sets `info` to a component receiving `conferenceId`;
   `DashboardLinkCards` and the quick links pass it on. Team members' cards sit without a section
-  box, below `TeamWaiting` (`stages/TeamMember/`, from `teamWaiting.ts`).
+  box, below `TeamWaiting` (`stages/TeamMember/`, from `teamWaiting.ts`) and the widgets.
+- **`DashboardWidget`**: one widget of the team's overview. `icon`, `title`, `href` (resolved) +
+  `linkLabel` for the arrow link, `size` (`large` spans both columns of the `lg:grid-cols-2` grid,
+  `compact` one), `note` (e.g. `freshness(refreshedAt)` for statistics figures), `empty` (one line
+  instead of the content: nothing to show is said in words, never zeros), `headerAction`, `testId`
+  (`widget-<testId>`). **`WidgetMeter`**: label, "value / max · percent" and a native `progress`
+  (`tone` primary/accent/secondary); value alone when `max` is 0.
+- **Team overview widgets** (`stages/TeamMember/`): `teamWidgets.ts` is the registry (`widgetsFor`:
+  stage → size, gated by the team routes a widget summarises, large first; `tilesShownByWidgets`
+  hides `TeamWaiting` tiles a large widget repeats). `WidgetSlot` puts each widget behind its own
+  `svelte:boundary` (skeleton, `LoadError`); the widgets mount in the browser only. Each widget in
+  `widgets/` fetches its own data; decisions live in tested `.ts` beside them (`timeline.ts`,
+  `readiness.ts`, `messages.ts`). A new widget: registry entry, component, `WidgetSlot` branch,
+  manual table (`docs/*/user-manual/team/overview.md`), `e2e/dashboard/team-overview.spec.ts`.
 - **`DashboardContentCard`**: `title`, `description`, children.
 - **`ConferenceHeader`**: `title`, `longTitle`, `state`, `startDate`, `endDate`, `emblemDataURL`.
 - **`StatusChecklist`**: progress bar, open steps first, done ones struck through. `steps`:

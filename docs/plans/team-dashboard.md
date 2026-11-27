@@ -7,6 +7,38 @@ the CHASE status. This plan adds **widgets**: one block per question the team as
 design canvas ("Team Dashboard Widgets") shows the preparation, conference and post-conference
 overviews and which widget shows in which stage.
 
+## Status
+
+Implemented, all three phases, on one branch. Settled with the product owner before building:
+
+- Widgets show only to roles that may open the page they summarise (stricter than the statistics
+  query, which any team member may call).
+- No "papers missing" segment: the expected number depends on the conference.
+- While the conference runs, the messages widget replaces the message and report tiles.
+- The stage stays manual; the timeline only says when the next one is due.
+- The CHASE card is folded into the readiness check (in preparation); "Open in CHASE" moves to
+  "now & next" during the conference.
+- "Checked in today" counts seated people who passed the entrance check of a `CHECK` session since
+  the start of the caller's day.
+- Surveys do not appear in the wrap-up (they are choices, not feedback); their deadlines do appear
+  in the timeline, with how many seated people have not answered.
+
+Where the build differs from the text below:
+
+- The registry is `stages/TeamMember/teamWidgets.ts`, beside the route (a `#lib` module would
+  import route components). Gates: committees → `assignment`, entrance → `checkIn`, wrap-up →
+  `payments`, communication → `emails` or `announcement`. Committees are not shown before the
+  registration.
+- API: `SurveyQuestion.unansweredCount` (null without `manageParticipants`),
+  `StatisticsResultPapersByStatus.revised`, `entranceSummary(conferenceId, since)` (expected,
+  checked in, minors without consent) and `certificateHoldersCount(conferenceId)`, both
+  `manageParticipants`. No survey response rates, no per-committee attendance.
+- `NextEntries` and the "now & next" widget share `sections/UpcomingEntries.svelte`; the payments
+  and wrap-up widgets share `widgets/paymentReviews.ts` with `reviewCases`.
+- No tour for the overview (it is no team route); the widgets carry `data-tour="team.overview.widgets"`.
+- Still open, each its own plan: withdrawal history, a stored bank sync time, a paper deadline
+  column, a team calendar track, refunds, a retention path, certificate download tracking.
+
 ## Decisions
 
 | Topic              | Decision                                                                                                                                                                                                                                                                                                     |

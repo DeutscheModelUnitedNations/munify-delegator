@@ -73,7 +73,8 @@ bun run preview
     - `dashboard/[conferenceId]/` — a conference's overview and everything around it, inside
       `ConferenceShell.svelte` (`+layout@(authenticated).svelte`)
       - `team/` — **every team-facing page**, one guard, one navigation (see "Team area"). No page at
-        `team/` itself; the overview (`stages/TeamMember/TeamMemberDashboard.svelte`) is home.
+        `team/` itself; the overview (`stages/TeamMember/TeamMemberDashboard.svelte`) is home:
+        waiting tiles, then widgets per conference stage (`teamWidgets.ts`, CLAUDE-UI.md).
       - `paperhub/` — outside `team/`, participants and supervisors use it too
     - `registration/` — registration flows
   - `api/graphql/` — GraphQL endpoint; `api/health/` — liveness for the image's `HEALTHCHECK`

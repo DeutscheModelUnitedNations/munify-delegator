@@ -1,8 +1,9 @@
 <!--
 	@component
 	A labelled share of a whole on a team overview widget: the label, "value / max · percent" and a
-	bar. The bar is a native `progress` element, so assistive technology reads the share; the text
-	says it too, never the colour alone.
+	bar; without a whole to measure against (`max` 0), the value alone. The bar is a native
+	`progress` element, so assistive technology reads the share; the text says it too, never the
+	colour alone.
 -->
 <script lang="ts">
 	import { getLocale } from '#lib/paraglide/runtime';
@@ -29,12 +30,14 @@
 <div class="flex flex-col gap-1">
 	<div class="flex justify-between gap-3 text-sm">
 		<span>{label}</span>
-		<span class="tabular-nums"><b>{number(value)}</b> / {number(max)} · {percent}&thinsp;%</span>
+		{#if max > 0}
+			<span class="tabular-nums"><b>{number(value)}</b> / {number(max)} · {percent}&thinsp;%</span>
+		{:else}
+			<!-- nothing to measure against (no seats planned yet): the count alone -->
+			<b class="tabular-nums">{number(value)}</b>
+		{/if}
 	</div>
-	<progress
-		class="progress {toneClass} h-2.5 w-full"
-		{value}
-		max={Math.max(max, 1)}
-		aria-label={label}
-	></progress>
+	{#if max > 0}
+		<progress class="progress {toneClass} h-2.5 w-full" {value} {max} aria-label={label}></progress>
+	{/if}
 </div>

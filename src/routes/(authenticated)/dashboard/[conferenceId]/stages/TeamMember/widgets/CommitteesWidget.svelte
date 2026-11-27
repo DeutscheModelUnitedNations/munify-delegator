@@ -56,7 +56,7 @@
 </script>
 
 <DashboardWidget
-	icon="chairs"
+	icon="armchair"
 	title={m.teamWidgetCommitteesTitle()}
 	{size}
 	testId="committees"

@@ -11,12 +11,26 @@ This page explains what holds for every team page: how you get into the team are
 
 Everything a conference's team works on lives in one shared team area. Once you are on a conference's team, every page of the conference shows the conference's navigation on the left. Its first entry is the conference's **Overview**. Your team roles are shown next to the conference's name. Below, one tile each shows what is waiting in your parts of the team: unread messages, reported chats, possible duplicate accounts, school merges, people on the waiting list, due or failed emails, announcements in draft, papers to review and agenda items that need help with reviews. A click leads to the matching page.
 
+Below them come the conference's **widgets**. Each answers one question and leads, with the arrow at its top right, to the page where you work on it. Which ones you see depends on the conference's stage and on the pages your role lets you open. A stage's most important ones are large and on top, the others smaller below. A widget with nothing to report says so in a sentence ("Everything answered."). Figures from the [statistics](./maintenance#statistics) carry when they were last computed ("As of …").
+
+| Widget                      | What it shows                                                                                                                                                                                                                                                                                                                                    | When                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| **Timeline & deadlines**    | the conference's stages, the deadline passed last and the next ones: application deadline, payment deadline, release of the assignment, the surveys' deadlines, start and end, with the number behind them ("178 have not paid yet"). When the dates say the next stage is due, it tells project management; you still change the stage yourself | in every stage                                 |
+| **Ready**                   | what is still missing before the registration (seats, application deadline, fee, bank details, contract) or before the conference (guide, a schedule for every day, points for discussion, certificate template, entrance session, CHASE). An open item leads to where you do it                                                                 | before the registration and in the preparation |
+| **Participants**            | registered people or seats taken, by delegates, single roles and supervisors, and the waiting list                                                                                                                                                                                                                                               | registration, preparation                      |
+| **Payments & documents**    | how many have paid and completed their postal registration, and how many payments wait for your decision                                                                                                                                                                                                                                         | registration to the conference                 |
+| **Committees & assignment** | how full the committees are, free seats, whether a draft of the assignment is not applied yet                                                                                                                                                                                                                                                    | registration, preparation                      |
+| **Papers**                  | the papers by status, how many wait for a review right now, your reviews and agenda items asking for help                                                                                                                                                                                                                                        | preparation, conference                        |
+| **Communication**           | the latest announcement and how many read it, and the emails due                                                                                                                                                                                                                                                                                 | in every stage                                 |
+| **Now & next**              | what is on in the schedule right now and what comes next, over all tracks, and the way to the conference in CHASE                                                                                                                                                                                                                                | during the conference                          |
+| **Entrance today**          | how many with a seat passed the entrance check today, who is still missing and how many minors lack their guardians' consent                                                                                                                                                                                                                     | during the conference                          |
+| **Reports & requests**      | open reported chats, unread messages per inbox and how long the oldest has waited. During the conference it replaces the tiles for messages and reports                                                                                                                                                                                          | preparation to after the conference            |
+| **Wrap-up**                 | who gets a participation certificate and how many learned about it by email, the money still open and whether you have thanked everyone since the end                                                                                                                                                                                            | after the conference                           |
+
 After that come cards:
 
 - **Team Wiki**, **Services** and **Preparation**, once the conference has set these links in the [settings](./configuration)
 - **App Documentation**, if the server has a link for it
-- **Paper Hub**, if you may review papers
-- **Link to CHASE**, while a CHASE instance is linked (see [below](#chase-link))
 
 On the home page, a button with the conference's name leads straight back to the overview of the conference whose team you last worked in in this browser, as long as you are still on its team.
 
@@ -339,18 +353,20 @@ DELEGATOR can be linked to an instance of MUNify CHASE, the app for the sessions
 
 Besides, CHASE checks the NSA cards you print under [**Downloads**](./maintenance#downloads) or in a person's user card, and the **Get to know MUNify CHASE** email exists on the [Emails](./communication#emails) page only while the link is active.
 
-### The CHASE card on the dashboard
+### CHASE on the overview
 
-While a CHASE instance is linked, every team member sees the **Link to CHASE** card on the conference dashboard:
+While a CHASE instance is linked, the link is an item of the **Ready** widget on the overview during the preparation, with these details below it:
 
 - **Open the conference in CHASE** leads to the conference in CHASE.
 - Next to it, it says when DELEGATOR last read from CHASE (**Last read from CHASE: …** or **Nothing read from CHASE yet**).
 - Before the assignment is released, a note reminds you that the participants only appear in CHASE afterwards.
 - Whoever may read papers sees, under **Accepted working papers that do not go to CHASE**, every accepted working paper CHASE does not take over, with the reason: **no agenda item** or **the delegation has no seat in this committee**.
 
+During the conference, **Open the conference in CHASE** in the **Now & next** widget leads there.
+
 ### Sync now
 
-System administrators find the **Sync now** button on the card and on the **Link to CHASE** page. It makes DELEGATOR read everything from CHASE again and asks CHASE to do the same with DELEGATOR. It is not normally needed, since both sides hear changes right away. If CHASE cannot be reached at the moment, DELEGATOR still syncs on its side and says so in the message.
+System administrators find the **Sync now** button there and on the **Link to CHASE** page. It makes DELEGATOR read everything from CHASE again and asks CHASE to do the same with DELEGATOR. It is not normally needed, since both sides hear changes right away. If CHASE cannot be reached at the moment, DELEGATOR still syncs on its side and says so in the message.
 
 System administrators open the **Link to CHASE** page in the menu behind the person icon at the top right, under **Administration**. It shows which address DELEGATOR is linked to, **Last notice from CHASE**, **Last full sync** and the last error, plus **Open CHASE**. Without a link, it explains which server settings it needs.
 
