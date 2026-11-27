@@ -295,7 +295,7 @@ Danach listet das Dashboard nur noch die Schüler\*innen mit Platz, mit Gremium,
 
 Hat mindestens eine Person einen Platz, bekommst du den **Schnellzugriff**. Über **Beitragszahlung** kannst du auch für deine Schüler\*innen und für andere Betreuende derselben Schüler\*innen zahlen, und den **Papier-Hub** siehst du aus Sicht der Betreuung (siehe [Papier-Hub](./paper-hub)). Nachrichten und Umfragen gibt es für Betreuende nicht. Fehlt in einer deiner Delegationen noch die Gremienzuteilung, weist dich das Dashboard darauf hin.
 
-**Abgelehnte Teilnehmende** listet, wer keinen Platz bekommen hat. Wurde niemand angenommen, siehst du **Bewerbung nicht erfolgreich**. Nach der Konferenz findest du hier dein eigenes **Teilnahmezertifikat**, wenn du teilgenommen hast, und wie viele deiner Schüler\*innen angenommen wurden.
+**Abgelehnte Teilnehmende** listet, wer keinen Platz bekommen hat. Wurde niemand angenommen, siehst du **Bewerbung nicht erfolgreich**. Nach der Konferenz siehst du, wie viele deiner Schüler\*innen angenommen wurden, und lädst unter **Zertifikate deiner Schüler\*innen** mit **Download** das Teilnahmezertifikat jeder Person herunter, die teilgenommen hat.
 
 ## E-Mails von der Konferenz {#emails}
 

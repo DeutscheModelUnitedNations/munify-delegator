@@ -295,7 +295,7 @@ After that the dashboard only lists the students with a seat, with their committ
 
 Once at least one student has a seat, you get the **Quick Links**. Through **Fee Payment** you can also pay for your students and for other supervisors of the same students, and you see the **Paper Hub** from the supervisor's side (see [Paper Hub](./paper-hub)). Messages and surveys are not for supervisors. If a committee assignment is still missing in one of your delegations, the dashboard points it out.
 
-**Rejected Participants** lists who did not get a seat. If nobody was accepted, you see **Application Rejected**. After the conference you find your own **Certificate of participation** here if you attended, and how many of your students were accepted.
+**Rejected Participants** lists who did not get a seat. If nobody was accepted, you see **Application Rejected**. After the conference you see how many of your students were accepted, and under **Your students' certificates** **Download** gives you the certificate of participation of each one who attended.
 
 ## Emails from the conference {#emails}
 

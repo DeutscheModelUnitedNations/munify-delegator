@@ -315,7 +315,7 @@
 			{conferenceId}
 			userId={user.sub}
 			didAttend={!!status?.didAttend}
-			isSupervisor={true}
+			{supervisorId}
 			{totalStudentsCount}
 			{acceptedStudentsCount}
 		/>

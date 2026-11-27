@@ -72,7 +72,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	issueDocumentCodes: t.field({
 		description:
-			"The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.",
+			"The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.",
 		type: [SignedCode],
 		args: {
 			conferenceId: t.arg.id({ required: true }),

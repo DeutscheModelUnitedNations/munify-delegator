@@ -3,9 +3,9 @@ import { assertCanIssueCodeFor } from '#api/handlers/signedCode/signedCodePermis
 import { m } from '#lib/paraglide/messages';
 
 /**
- * Refuses (FORBIDDEN) unless the certificate of `userId` is the caller's own or the caller holds
- * `manageParticipants` (project management and participant care) in the conference. Reading
- * somebody's status (a co-delegate's, say) is not enough to be handed a signed copy.
+ * Refuses (FORBIDDEN) unless the certificate of `userId` is the caller's own, the caller supervises
+ * them or holds `manageParticipants` (project management and participant care) in the conference
+ * (`assertCanIssueCodeFor`).
  */
 export function assertCanGetCertificate({
 	ctx,

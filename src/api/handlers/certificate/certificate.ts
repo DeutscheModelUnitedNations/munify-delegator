@@ -41,7 +41,7 @@ const Certificate = schemaBuilder.simpleObject('Certificate', {
 schemaBuilder.queryFields((t) => ({
 	getCertificate: t.field({
 		description:
-			'Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".',
+			'Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".',
 		type: Certificate,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

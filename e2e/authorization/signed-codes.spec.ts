@@ -5,6 +5,7 @@ import {
 	E2E_ATTENDANCE_CARE_ID,
 	E2E_ATTENDANCE_CONFERENCE_ID
 } from '../seed/attendance';
+import { E2E_PAPERS_CONFERENCE_ID, E2E_PAPERS_PEOPLE } from '../seed/conferencePapers';
 
 // What identifies a participant is a signed code, and a scan has to be genuine to count: the
 // server checks the codes it is handed again, and a code's link (what a phone's camera app opens)
@@ -35,13 +36,13 @@ async function nametagCode(page: Page) {
 	return String(result.data?.issueNametagCode?.code);
 }
 
-async function documentCode(page: Page, userId: string) {
+async function documentCode(page: Page, userId: string, inConference = conferenceId) {
 	return gql(
 		page,
 		`mutation ($c: ID!, $u: ID!, $p: [PrintedPageInput!]!) {
 			issueDocumentCodes(conferenceId: $c, userId: $u, pages: $p) { code }
 		}`,
-		{ c: conferenceId, u: userId, p: [{ document: 'contract', page: 0, width: 595, height: 842 }] }
+		{ c: inConference, u: userId, p: [{ document: 'contract', page: 0, width: 595, height: 842 }] }
 	);
 }
 
@@ -114,6 +115,29 @@ test("nobody but the holder and participant care gets a person's document code",
 	await loginAs(care, fixedTestUser(E2E_ATTENDANCE_CARE_ID));
 	const forAda = await documentCode(care, E2E_ATTENDANCE_ADA_ID);
 	expect(forAda.errors, JSON.stringify(forAda)).toBeUndefined();
+});
+
+test("a supervisor gets their students' document codes and certificates, nobody else's", async ({
+	browser
+}) => {
+	const { supervisor, delegate, single } = E2E_PAPERS_PEOPLE;
+	const teacher = await (await browser.newContext()).newPage();
+	await loginAs(teacher, fixedTestUser(supervisor));
+	const certificate = (userId: string) =>
+		gql(
+			teacher,
+			`query ($c: ID!, $u: ID!) { getCertificate(conferenceId: $c, userId: $u) { fullName } }`,
+			{ c: E2E_PAPERS_CONFERENCE_ID, u: userId }
+		);
+
+	const forStudent = await documentCode(teacher, delegate, E2E_PAPERS_CONFERENCE_ID);
+	expect(forStudent.errors, JSON.stringify(forStudent)).toBeUndefined();
+	const studentCertificate = await certificate(delegate);
+	expect(studentCertificate.errors, JSON.stringify(studentCertificate)).toBeUndefined();
+
+	const forOther = await documentCode(teacher, single, E2E_PAPERS_CONFERENCE_ID);
+	expect(forOther.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
+	expect((await certificate(single)).errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
 });
 
 test('only those who edit the layouts get codes for a layout being edited (a test print)', async ({
