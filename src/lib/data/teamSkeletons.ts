@@ -138,7 +138,7 @@ const committees = {
 					class: 'flex flex-wrap items-start gap-8',
 					children: [
 						{
-							class: 'flex max-w-sm min-w-0 flex-[1_1_16rem] flex-col gap-2',
+							class: 'flex max-w-sm min-w-0 flex-[1_1_19rem] flex-col gap-2',
 							children: [block('h-20 w-full'), block('h-20 w-full'), block('h-20 w-full')]
 						},
 						{

@@ -5,7 +5,6 @@
 	committee (`?committee=`) and an agenda item to open (`?item=`), so links can point at either.
 -->
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { client } from '#lib/api/rumbleClient/client';
 	import {
@@ -16,6 +15,7 @@
 	} from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { m } from '#lib/paraglide/messages';
+	import CommitteesNotices from './CommitteesNotices.svelte';
 	import AddCommitteeModal from './AddCommitteeModal.svelte';
 	import CommitteeDetail from './CommitteeDetail.svelte';
 	import CommitteeNav from './CommitteeNav.svelte';
@@ -73,48 +73,16 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	{#if !canEdit}
-		<div role="status" class="alert alert-info alert-soft text-sm">
-			<i aria-hidden="true" class="ph-duotone ph-lock"></i>
-			<span>{m.committeesReadOnly()}</span>
-		</div>
-	{/if}
-	{#if showSeatPlanningHint}
-		<div
-			role="note"
-			class="alert alert-info alert-soft text-sm"
-			data-tour="team.committees.seat-planning-hint"
-		>
-			<i aria-hidden="true" class="ph-duotone ph-table"></i>
-			<span>{m.committeesSeatPlanningHint()}</span>
-			<a
-				class="btn btn-sm btn-ghost"
-				href={resolve('/(authenticated)/dashboard/[conferenceId]/team/seat-planning', {
-					conferenceId
-				})}
-			>
-				{m.seatPlanningOpen()}
-				<i aria-hidden="true" class="ph-duotone ph-arrow-right"></i>
-			</a>
-		</div>
-	{/if}
+	<CommitteesNotices {conferenceId} readOnly={!canEdit} {showSeatPlanningHint} />
 
 	<div class="flex flex-wrap items-start gap-8">
-		<div class="flex max-w-sm min-w-0 flex-[1_1_16rem] flex-col gap-2">
-			{#if committees.length > 0}
-				<CommitteeNav {committees} selectedId={selected?.id} onSelect={select} />
-			{/if}
-			{#if canCreate}
-				<button
-					type="button"
-					class="btn btn-outline btn-sm w-full"
-					data-tour="team.committees.add"
-					onclick={() => (addCommitteeModalOpen = true)}
-				>
-					<i aria-hidden="true" class="ph-duotone ph-plus"></i>
-					{m.addCommittee()}
-				</button>
-			{/if}
+		<div class="max-w-sm min-w-0 flex-[1_1_19rem]">
+			<CommitteeNav
+				{committees}
+				selectedId={selected?.id}
+				onSelect={select}
+				onAdd={canCreate ? () => (addCommitteeModalOpen = true) : undefined}
+			/>
 		</div>
 
 		<div class="min-w-0 flex-[999_1_32rem]">

@@ -679,8 +679,11 @@ in a `flex flex-col xl:flex-row` container.
 
 `team/committees/` is the reference for a list-and-detail page edited in place:
 
-- `CommitteesManager` fetches once and splits: `CommitteeNav` (daisyUI `menu`, `menu-active` +
-  `aria-current` on the picked entry, counts and a warning per committee) beside
+- `CommitteesManager` fetches once and splits: `CommitteeNav` (a framed box: header row with the
+  count and the icon-only add button, then a divided daisyUI `menu`; per entry the abbreviation as
+  a column, the name, nation/agenda item counts as small icons with an `sr-only` sentence, and a
+  `badge-warning` counting agenda items without points; `menu-active` + `aria-current` on the
+  picked one) beside
   `CommitteeDetail`, keyed by the committee id. The URL holds the pick (`?committee=`) and an agenda
   item to open (`?item=`); the command palette links there.
 - Inline forms instead of edit modals: `CommitteeSettingsForm`, `AgendaItemPanel` (a
