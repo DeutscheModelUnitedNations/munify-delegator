@@ -1135,6 +1135,24 @@ const FIELDS: Record<string, TypeClassification> = {
 			'singleParticipantsWithoutRole'
 		]
 	},
+	StatisticsResultRolePopularity: {
+		visible: [
+			'abbreviation',
+			'applications',
+			'firstChoice',
+			'icon',
+			'kind',
+			'laterChoice',
+			'name',
+			'nationAlpha2Code',
+			'nationAlpha3Code',
+			'roleId',
+			'secondChoice',
+			'seats',
+			'thirdChoice',
+			'weightedPopularity'
+		]
+	},
 	StatisticsResultSchool: { visible: ['people', 'school'] },
 	StatisticsResultSupervisorStats: {
 		visible: [
