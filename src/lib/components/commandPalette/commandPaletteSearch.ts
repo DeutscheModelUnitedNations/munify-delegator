@@ -169,12 +169,16 @@ async function searchCommittees({
 		...committees.map((committee) => ({
 			id: committee.id,
 			title: committee.name,
-			subtitle: committee.abbreviation
+			subtitle: committee.abbreviation,
+			committeeId: committee.id,
+			agendaItemId: null
 		})),
 		...agendaItems.map((item) => ({
 			id: item.id,
 			title: item.title,
-			subtitle: item.committee.abbreviation
+			subtitle: item.committee.abbreviation,
+			committeeId: item.committee.id,
+			agendaItemId: item.id
 		}))
 	];
 }

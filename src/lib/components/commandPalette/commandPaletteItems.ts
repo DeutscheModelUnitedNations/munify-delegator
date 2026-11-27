@@ -39,6 +39,10 @@ export interface SearchCommittee {
 	id: string;
 	title: string;
 	subtitle: string | null;
+	/** The committee, or the agenda item's committee: the one the committees page shows. */
+	committeeId: string;
+	/** Set for an agenda item: the one the committees page opens. */
+	agendaItemId: string | null;
 }
 
 export interface SearchForeignUser {
@@ -152,9 +156,13 @@ export function resultTarget({
 			};
 		case 'committee':
 			return {
-				href: resolve('/(authenticated)/dashboard/[conferenceId]/team/committees', {
-					conferenceId
-				})
+				href: resolve(
+					`/(authenticated)/dashboard/[conferenceId]/team/committees?${new URLSearchParams({
+						committee: item.data.committeeId,
+						...(item.data.agendaItemId ? { item: item.data.agendaItemId } : {})
+					})}`,
+					{ conferenceId }
+				)
 			};
 		case 'config':
 			return {

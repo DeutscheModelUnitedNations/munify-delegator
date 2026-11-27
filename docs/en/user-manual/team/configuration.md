@@ -210,17 +210,17 @@ Participants with a seat download the resolutions on their dashboard once the co
 
 ## Committees and agenda items {#committees-and-seats}
 
-On the **Committees and Agenda Items** page, right below **Seat planning** in the navigation, you manage the conference's committees and their agenda items. **Project Management** and **Content Lead** create committees, edit them and maintain the agenda items. Only **Project Management** deletes a committee. **Participant Care** only views the page, with a note at the top. Every change saves right away.
+On the **Committees and Agenda Items** page, right below **Seat planning** in the navigation, you manage the conference's committees and their agenda items. **Project Management** and **Content Lead** create committees, edit them and maintain the agenda items. Only **Project Management** deletes a committee. **Participant Care** only views the page, with a note at the top.
 
 ![The committees of a conference with their agenda items](shot:team/committees)
 
-Each card shows the number of states and the seats per delegation next to the name. At the top, **Open seat planning** leads to where you decide which states sit in a committee.
+On the left is the list of committees, each with its number of states and agenda items. When an agenda item still lacks points for discussion, it says so underneath. A click shows the committee on the right; the address remembers which one, so you can share a link to it. At the top, **Open seat planning** leads to where you decide which states sit in a committee.
 
-- **Add committee** creates a committee with **Name**, **Abbreviation** and **Seats per delegation**.
-- **Edit** opens **Edit Committee** for the name and abbreviation, the **Seats per delegation** and the **Resolution Headline**, a custom headline for resolutions, for example to get a gendered article right in some languages ("Der Sicherheitsrat"). Left empty, there is none.
-- **Create new Agenda Item** adds a topic with **Title** and **Teaser Text**. Delegations submit their papers on these topics. The pencil on a topic opens **Edit Agenda Item**, the bin **Delete Agenda Item**.
+- **Add committee** below the list creates a committee with **Name**, **Abbreviation** and **Seats per delegation** and picks it right away.
+- **Committee settings** show the name and abbreviation, the **Seats per delegation** and the **Resolution Headline**, a custom headline for resolutions, for example to get a gendered article right in some languages ("Der Sicherheitsrat"). Left empty, there is none. You change them right in the fields; **Save** keeps them, **Discard** brings back what is saved.
+- Under **Agenda items** each topic is a row with its number of points for discussion and papers. Delegations submit their papers on these topics. A click opens the topic in place with **Title**, **Teaser Text** and points; **Save** keeps the changes, a topic with unsaved changes says **Not saved**. **Delete Agenda Item** removes it after confirming. **Create new Agenda Item** opens the fields for a new topic below.
 - Under **Points for discussion** you note what papers on a topic should answer, one point per field, in the order they appear. **Add point** or Enter starts the next point, the arrows move it, the cross removes it; empty points are dropped when saving. Participants see the points while writing and on their paper, reviewers next to the paper, and the [guide](./communication#guide-editor) shows them on the topic's page. The topic's row says how many it has.
-- **Delete** removes a committee after confirming.
+- **Delete committee** at the end removes the committee after confirming (Project Management only).
 
 **Seats per delegation** sets how many delegates of one delegation sit in this committee. Added up over all committees, this is the size of the delegation representing a state.
 

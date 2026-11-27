@@ -126,26 +126,34 @@ const settings = {
 	]
 };
 
-/** One committee's card: its name and actions, then its agenda items */
-const committeeCard: SkeletonNode = {
-	class: 'flex flex-col gap-4',
-	children: [
-		{
-			class: 'flex items-center gap-4',
-			children: [block('h-7 w-64 rounded-full'), block('ml-auto h-6 w-32')]
-		},
-		block('h-16 w-full'),
-		block('h-16 w-full')
-	]
-};
-
-/** The committees and their agenda items (`team/committees`) */
+/** The committees page: the list of committees, the picked one beside it with its agenda items */
 const committees = {
 	name: 'committees',
 	nodes: [
 		{
-			class: 'flex w-full flex-col gap-10 py-4 sm:gap-20 sm:p-10',
-			children: [alert(), block('h-10 w-full'), committeeCard, committeeCard]
+			class: 'flex w-full flex-col gap-6 py-4 sm:p-10',
+			children: [
+				alert(),
+				{
+					class: 'flex flex-wrap items-start gap-8',
+					children: [
+						{
+							class: 'flex max-w-sm min-w-0 flex-[1_1_16rem] flex-col gap-2',
+							children: [block('h-20 w-full'), block('h-20 w-full'), block('h-20 w-full')]
+						},
+						{
+							class: 'flex min-w-0 flex-[999_1_32rem] flex-col gap-8',
+							children: [
+								block('h-8 w-72 rounded-full'),
+								block('h-48 w-full'),
+								block('h-6 w-40 rounded-full'),
+								block('h-14 w-full'),
+								block('h-14 w-full')
+							]
+						}
+					]
+				}
+			]
 		}
 	]
 } satisfies SkeletonLayout;

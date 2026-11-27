@@ -675,6 +675,22 @@ in a `flex flex-col xl:flex-row` container.
 - Hint alerts: `alert alert-warning alert-soft` rule violations, `alert-info alert-soft`
   suggestions, `alert-error alert-soft` hard limits.
 
+## Committees Page (list + picked committee)
+
+`team/committees/` is the reference for a list-and-detail page edited in place:
+
+- `CommitteesManager` fetches once and splits: `CommitteeNav` (daisyUI `menu`, `menu-active` +
+  `aria-current` on the picked entry, counts and a warning per committee) beside
+  `CommitteeDetail`, keyed by the committee id. The URL holds the pick (`?committee=`) and an agenda
+  item to open (`?item=`); the command palette links there.
+- Inline forms instead of edit modals: `CommitteeSettingsForm`, `AgendaItemPanel` (a
+  `details.collapse`), `NewAgendaItemForm`. Each keeps a draft plus the stored values it started
+  from (`base`): while draft equals base, live changes from elsewhere replace both; an edit in
+  progress stays. Save sends only the changed fields (`committeeChanges`, `agendaItemChanges`) and
+  is disabled until something changed; Discard resets to the stored values. Read-only readers get
+  the same fields in a disabled `fieldset`, no buttons.
+- Deleting (committee, agenda item) still confirms in a `Modal`.
+
 ## Assignment Board
 
 `team/assignment/` is tabbed (Sichtung, Gewichtung, Einzelteilnehmende, Zuteilung, Abschluss), a

@@ -1,10 +1,12 @@
 <!--
 	@component
-	The committees of a conference with their agenda items: create, edit and delete a committee, edit
-	or delete an agenda item, create a new one. The team's committees page (`team/committees`).
+	The team's committees page (`team/committees`): the conference's committees in a list, the one
+	picked beside it with its settings and agenda items, edited in place. The URL names the picked
+	committee (`?committee=`) and an agenda item to open (`?item=`), so links can point at either.
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { queryParameters } from 'sveltekit-search-params';
 	import { client } from '#lib/api/rumbleClient/client';
 	import {
 		canCreateCommittees,
@@ -14,16 +16,17 @@
 	} from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { m } from '#lib/paraglide/messages';
-	import AddAgendaItemModal from './AddAgendaItemModal.svelte';
 	import AddCommitteeModal from './AddCommitteeModal.svelte';
-	import CommitteeCard from './CommitteeCard.svelte';
+	import CommitteeDetail from './CommitteeDetail.svelte';
+	import CommitteeNav from './CommitteeNav.svelte';
 	import DeleteAgendaItemModal from './DeleteAgendaItemModal.svelte';
 	import DeleteCommitteeModal from './DeleteCommitteeModal.svelte';
-	import EditAgendaItemModal from './EditAgendaItemModal.svelte';
-	import EditCommitteeModal from './EditCommitteeModal.svelte';
+	import { selectedCommittee } from './committeeChanges';
 	import type { AgendaItem, ManagedCommittee } from './types';
 
 	let { conferenceId }: { conferenceId: string } = $props();
+
+	const params = queryParameters({ committee: true, item: true });
 
 	const [committees, access] = $derived(
 		await Promise.all([
@@ -32,7 +35,6 @@
 					where: { conferenceId: { eq: conferenceId } },
 					orderBy: { createdAt: 'asc' }
 				},
-				id: true,
 				name: true,
 				abbreviation: true,
 				numOfSeatsPerDelegation: true,
@@ -40,7 +42,6 @@
 				roles: { id: true },
 				delegationMembers: { id: true },
 				agendaItems: {
-					id: true,
 					title: true,
 					teaserText: true,
 					discussionPoints: true,
@@ -59,15 +60,19 @@
 	/** Seats, non-state actors and single roles live on the seat planning page */
 	const showSeatPlanningHint = $derived(canPlanSeats(access));
 
+	const selected = $derived(selectedCommittee({ committees, id: params.committee }));
+
+	function select(id: string) {
+		params.item = null;
+		params.committee = id;
+	}
+
 	let addCommitteeModalOpen = $state(false);
-	let committeeToAddAgendaItem = $state<ManagedCommittee>();
-	let committeeToEdit = $state<ManagedCommittee>();
 	let committeeToDelete = $state<ManagedCommittee>();
-	let agendaItemToEdit = $state<AgendaItem>();
 	let agendaItemToDelete = $state<AgendaItem>();
 </script>
 
-<div class="flex flex-col gap-10 sm:gap-20">
+<div class="flex flex-col gap-6">
 	{#if !canEdit}
 		<div role="status" class="alert alert-info alert-soft text-sm">
 			<i aria-hidden="true" class="ph-duotone ph-lock"></i>
@@ -94,34 +99,43 @@
 		</div>
 	{/if}
 
-	{#if canCreate}
-		<button
-			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"
-			data-tour="team.committees.add"
-			onclick={() => (addCommitteeModalOpen = true)}
-		>
-			<i aria-hidden="true" class="ph-duotone ph-plus"></i>
-			{m.addCommittee()}
-		</button>
-	{/if}
+	<div class="flex flex-wrap items-start gap-8">
+		<div class="flex max-w-sm min-w-0 flex-[1_1_16rem] flex-col gap-2">
+			{#if committees.length > 0}
+				<CommitteeNav {committees} selectedId={selected?.id} onSelect={select} />
+			{/if}
+			{#if canCreate}
+				<button
+					type="button"
+					class="btn btn-outline btn-sm w-full"
+					data-tour="team.committees.add"
+					onclick={() => (addCommitteeModalOpen = true)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-plus"></i>
+					{m.addCommittee()}
+				</button>
+			{/if}
+		</div>
 
-	{#each committees as committee (committee.id)}
-		<CommitteeCard
-			{committee}
-			{canEdit}
-			{canDelete}
-			onAddAgendaItem={() => (committeeToAddAgendaItem = committee)}
-			onEdit={() => (committeeToEdit = committee)}
-			onDelete={() => (committeeToDelete = committee)}
-			onEditAgendaItem={(item) => (agendaItemToEdit = item)}
-			onDeleteAgendaItem={(item) => (agendaItemToDelete = item)}
-		/>
-	{/each}
+		<div class="min-w-0 flex-[999_1_32rem]">
+			{#if selected}
+				{#key selected.id}
+					<CommitteeDetail
+						committee={selected}
+						{canEdit}
+						{canDelete}
+						openItemId={params.item}
+						onDeleteAgendaItem={(item) => (agendaItemToDelete = item)}
+						onDelete={() => (committeeToDelete = selected)}
+					/>
+				{/key}
+			{:else}
+				<p class="bg-base-200 rounded-box p-6 text-center opacity-70">{m.noCommittees()}</p>
+			{/if}
+		</div>
+	</div>
 </div>
 
-<AddCommitteeModal {conferenceId} bind:open={addCommitteeModalOpen} />
-<AddAgendaItemModal bind:committee={committeeToAddAgendaItem} />
-<EditCommitteeModal bind:committee={committeeToEdit} canConfigure={canEdit} />
+<AddCommitteeModal {conferenceId} bind:open={addCommitteeModalOpen} onCreated={select} />
 <DeleteCommitteeModal bind:committee={committeeToDelete} />
-<EditAgendaItemModal bind:item={agendaItemToEdit} />
 <DeleteAgendaItemModal bind:item={agendaItemToDelete} />
