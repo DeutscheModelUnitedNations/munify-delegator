@@ -476,6 +476,14 @@ bun run preview
   committee text with Typst on publish (`committeeText.ts`). Files in page texts are `file:<id>`,
   kept by `guide_page_file` for the cleanup job. MCP: Markdown ↔ TipTap in `guideMarkdown.ts`
   (shares `#api/services/markdownTokens` with review drafts). `e2e/authorization/guide.spec.ts`.
+- **Points for discussion** (`committee_agenda_item.discussion_points`, ordered lines, live, not
+  versioned; schema `#lib/schemata/discussionPoints`): what papers on an agenda item should answer.
+  Set by `create`/`updateAgendaItem` (`planSeats`) or `setAgendaItemDiscussionPoints` (`planSeats`
+  or `editGuide`). Authors see them in the paper forms and on their paper, reviewers next to the
+  paper (`DiscussionPointsBox`); agenda item pages get them as a reader-only `discussionPoints`
+  node where `{{Diskussionspunkte}}` stands, else below the title (`fillPlaceholders`), the PDF as
+  a box. MCP: `agenda_item_context` (points + published committee text as Markdown via
+  `agendaItemCommitteeText`, `reviewPapers` or `editGuide`). `e2e/papers/discussion-points.spec.ts`.
 - Domain specifics (calendar, scanner, age limits, waiting list, certificates, document layouts):
   `docs/architecture/conference-features.md`.
 

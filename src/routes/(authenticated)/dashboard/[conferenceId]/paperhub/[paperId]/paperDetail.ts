@@ -34,6 +34,7 @@ export function fetchPaperDetail(paperId: string) {
 		agendaItem: {
 			id: true,
 			title: true,
+			discussionPoints: true,
 			committee: { abbreviation: true, name: true, resolutionHeadline: true }
 		},
 		versions: {

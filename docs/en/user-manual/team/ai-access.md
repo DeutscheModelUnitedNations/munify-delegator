@@ -42,11 +42,11 @@ An assistant knows people only as ids and cannot tell you who is meant. Ask it f
 
 ## What an assistant can do {#what-an-assistant-can-do}
 
-For common questions an assistant has tools of its own: an overview of the participants with their paperwork, counts by up to three attributes, and an overview of the assignment with seats, holders, the size of the draft and warnings. Beyond that it can ask any read query the team area's pages use.
+For common questions an assistant has tools of its own: an overview of the participants with their paperwork, counts by up to three attributes, an overview of the assignment with seats, holders, the size of the draft and warnings, and, for whoever reviews papers or keeps the guide, a topic with its **points for discussion** and its published committee text from the guide. Beyond that it can ask any read query the team area's pages use.
 
 It can change much of what the team's pages change, with one tool for each action:
 
-- committees, agenda items, roles and seat planning
+- committees, agenda items with their points for discussion, roles and seat planning
 - the [assignment](./assignment#draft-apply-release) in the draft: sighting (stars, flag, **Must get a seat**, disqualifying, priority), weighting, planning roles, splitting delegations, converting single participants, assigning automatically, resetting and discarding the draft
 - the committees and seats of individual delegates
 - the schedule with its days, tracks, entries and places
@@ -65,7 +65,7 @@ Whoever reviews papers can have the assistant prepare a review. The assistant wr
 
 ### Paper correction guide {#paper-correction-skill}
 
-The server also hands the assistant DMUN's guide for correcting papers (the **papierkorrektur** skill): how to find the next paper, where the committee text on guide.dmun.de is, the correction guidelines and a template for the feedback. When you ask for a paper to be corrected, the assistant offers to follow it. Claude loads it by itself; other assistants read it through a tool of their own. The guide is maintained in its own repository. DELEGATOR keeps a copy for an hour; the first assistant request after that still gets the old copy and makes DELEGATOR read the guide again. Once that read has succeeded, later requests get the change; until then, or if it fails, they keep getting the old copy.
+The server also hands the assistant DMUN's guide for correcting papers (the **papierkorrektur** skill): how to find the next paper, how to read the committee text and points for discussion from the guide in DELEGATOR, the correction guidelines and a template for the feedback. When you ask for a paper to be corrected, the assistant offers to follow it. Claude loads it by itself; other assistants read it through a tool of their own. The guide is maintained in its own repository. DELEGATOR keeps a copy for an hour; the first assistant request after that still gets the old copy and makes DELEGATOR read the guide again. Once that read has succeeded, later requests get the change; until then, or if it fails, they keep getting the old copy.
 
 :::warning Preview first, then run
 An assistant does not run right away what reaches people outside the team. That covers the conference stage, the calendar for participants, messages between delegations, unlocking payments, postal registration or paper submission, participant statuses such as payment, documents and attendance, the status of payments, setting everybody's attendance at once, and distributing a survey. Without an explicit confirmation in the call DELEGATOR changes nothing and only answers with a preview. The assistant sets that confirmation itself, so whether it asks you first is up to the assistant. A good one does. Only confirm what you would do yourself.

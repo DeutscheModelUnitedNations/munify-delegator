@@ -224,6 +224,7 @@ describe('groupPapersByCommittee', () => {
 		teaserText: null,
 		committeeId: of?.id ?? 'gone',
 		reviewHelpStatus: 'UNSPECIFIED' as const,
+		discussionPoints: [],
 		committee: of
 	});
 	const paper = (id: string, item: ReturnType<typeof agendaItem> | null) => ({

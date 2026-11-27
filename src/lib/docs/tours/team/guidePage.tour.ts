@@ -24,6 +24,12 @@ export const guidePageTour: Tour = {
 			side: 'bottom'
 		},
 		{
+			anchor: 'team.guidePage.discussionPoints',
+			title: () => m.tourTeamGuidePageDiscussionPointsTitle(),
+			body: () => m.tourTeamGuidePageDiscussionPointsBody(),
+			side: 'left'
+		},
+		{
 			anchor: 'team.guidePage.entries',
 			title: () => m.tourTeamGuidePageEntriesTitle(),
 			body: () => m.tourTeamGuidePageEntriesBody(),

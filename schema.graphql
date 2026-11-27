@@ -65,6 +65,30 @@ enum AgeRole {
   supervisor
 }
 
+"""
+An agenda item's published committee text: the published version of its guide page, as Markdown.
+"""
+type AgendaItemCommitteeText {
+  """
+  The text with the conference, committee and topics filled in. `{{Diskussionspunkte}}` stays: the points for discussion are the agenda item's `discussionPoints`.
+  """
+  markdown: String!
+
+  """
+  The rich blocks Markdown has no syntax for (callout, toggle, button, embed), left out of `markdown`.
+  """
+  omittedBlocks: [String!]!
+  pageId: ID!
+
+  """
+  A short-lived download link of the committee text PDF rendered on publishing.
+  """
+  pdfUrl: String
+  publishedAt: DateTime!
+  title: String!
+  versionNumber: Int!
+}
+
 type AgendaItemPaperGroup {
   """
   Groups are keyed by agenda item, so there is always one - papers without an agenda item are introduction papers and have their own query.
@@ -2099,6 +2123,7 @@ type Committeeagendaitem {
   committee(orderBy: CommitteeOrderInputArgument, where: CommitteeWhereInputArgument): Committee!
   committeeId: ID!
   createdAt: DateTime!
+  discussionPoints: [String!]!
   id: ID!
 
   """Get the papers related to this committeeAgendaItem"""
@@ -2117,6 +2142,7 @@ type Committeeagendaitem {
 input CommitteeagendaitemOrderInputArgument {
   committeeId: SortingParameter
   createdAt: SortingParameter
+  discussionPoints: SortingParameter
   id: SortingParameter
   reviewHelpStatus: SortingParameter
   teaserText: SortingParameter
@@ -2148,6 +2174,7 @@ input CommitteeagendaitemWhereInputArgument {
   committee: CommitteeWhereInputArgument
   committeeId: IDWhereInputArgument
   createdAt: DateTimeWhereInputArgument
+  discussionPoints: StringArrayWhereInputArgument
   id: IDWhereInputArgument
   papers: PaperWhereInputArgument
   reviewHelpStatus: ReviewhelpstatusEnum
@@ -4827,9 +4854,9 @@ type Mutation {
   ): Tableview!
 
   """
-  Adds an agenda item (a topic) to a committee: `planSeats` (project management and content lead) in its conference. NOT_FOUND otherwise.
+  Adds an agenda item (a topic) to a committee: `planSeats` (project management and content lead) in its conference. NOT_FOUND otherwise. `discussionPoints` are its points for discussion, one line each, in order.
   """
-  createAgendaItem(committeeId: ID!, teaserText: String, title: String!): Committeeagendaitem!
+  createAgendaItem(committeeId: ID!, discussionPoints: [String!], teaserText: String, title: String!): Committeeagendaitem!
 
   """
   Writes a new announcement as a draft (the conference's content roles: project management, participant care, content lead; FORBIDDEN otherwise). It needs at least one audience block; a committee, role or survey option of another conference is refused with INVALID_INPUT. Attachments are uploaded through `requestFileUpload` (`announcement`/`attachment`) first.
@@ -5916,6 +5943,11 @@ type Mutation {
   sendSlackTestMessage(conferenceId: ID!): SlackConnection!
 
   """
+  Replaces an agenda item's points for discussion (one line each, in order; `[]` clears them): `planSeats` or `editGuide` in its conference, so guide editors set them without otherwise editing the agenda item. Authors and reviewers see them at once; guide pages show them where `{{Diskussionspunkte}}` stands, else below the title.
+  """
+  setAgendaItemDiscussionPoints(agendaItemId: ID!, discussionPoints: [String!]!): Committeeagendaitem!
+
+  """
   Marks whether an agenda item's papers need more reviewers. Paper reviewers may set it without being able to edit the agenda item otherwise.
   """
   setAgendaItemReviewHelpStatus(agendaItemId: ID!, status: ReviewhelpstatusEnum!): Committeeagendaitem!
@@ -6194,9 +6226,9 @@ type Mutation {
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
 
   """
-  Changes the given fields of an agenda item; left out or `null` keeps a field.
+  Changes the given fields of an agenda item; left out or `null` keeps a field. `discussionPoints` replaces the whole list of points for discussion (one line each, in order; `[]` clears it).
   """
-  updateAgendaItem(id: ID!, teaserText: String, title: String): Committeeagendaitem!
+  updateAgendaItem(discussionPoints: [String!], id: ID!, teaserText: String, title: String): Committeeagendaitem!
 
   """
   Sets whether everybody registered in the conference attended (participant care), creating the participant rows that are missing.
@@ -7826,6 +7858,11 @@ type Query {
   Whether a person's age on the first conference day fits the conference's range for taking part as `role`, for participant care (`myAgeNotice` for one's own); null when it does or no birthday is known.
   """
   ageNotice(conferenceId: ID!, role: AgeRole!, userId: ID!): AgeNotice
+
+  """
+  The published committee text of an agenda item (its guide page's published version) as Markdown, for judging its papers; null while nothing is published. `reviewPapers` or `editGuide` in its conference (NOT_FOUND otherwise).
+  """
+  agendaItemCommitteeText(agendaItemId: ID!): AgendaItemCommitteeText
 
   """Get a single agreementDetail by ID"""
   agreementDetail(id: ID!): Agreementdetail!

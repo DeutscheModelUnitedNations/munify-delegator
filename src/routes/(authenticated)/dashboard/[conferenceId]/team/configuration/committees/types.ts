@@ -2,6 +2,7 @@ export interface AgendaItem {
 	id: string;
 	title: string;
 	teaserText: string | null;
+	discussionPoints: string[];
 	papers: { id: string }[];
 }
 

@@ -47,7 +47,7 @@ Bis wann Papiere eingereicht sein sollen, legt das Team fest und teilt es dir mi
 ## Ein Papier schreiben {#writing-a-paper}
 
 1. Öffne **Meine Papiere** und klicke unter **Papier einreichen** bei der gewünschten Papierart auf **Erstellen**.
-2. Unter **Papier-Details** stehen deine **Delegation** und dein **Gremium**. Wähle den **Tagesordnungspunkt**. Bei einem Vorstellungspapier entfällt er.
+2. Unter **Papier-Details** stehen deine **Delegation** und dein **Gremium**. Wähle den **Tagesordnungspunkt**. Bei einem Vorstellungspapier entfällt er. Hat das Thema **Punkte zur Diskussion**, erscheinen sie darunter: Darauf sollte dein Papier eingehen. Du findest sie auch über deinem Papier und auf der Seite des Themas im Vorbereitungsleitfaden.
 3. Schreibe den Text im Editor. Unter dem Editor zählt DELEGATOR Wörter, Zeichen und Absätze und schätzt die Lesezeit.
 4. Klicke auf **Entwurf speichern**, um später weiterzuschreiben, oder auf **Papier einreichen**, um es dem Team zu geben. Danach kommst du zurück zur Übersicht.
 

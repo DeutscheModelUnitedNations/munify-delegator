@@ -47,7 +47,7 @@ The team decides by when papers should be submitted and tells you. DELEGATOR its
 ## Writing a paper {#writing-a-paper}
 
 1. Open **My Papers** and, under **Submit paper**, click **Create** for the paper type you want.
-2. Under **Paper details** you see your **Delegation** and your **Committee**. Choose the **Agenda item**. An introduction paper has none.
+2. Under **Paper details** you see your **Delegation** and your **Committee**. Choose the **Agenda item**. An introduction paper has none. If the topic has **points for discussion**, they show below it: your paper should answer them. You also find them above your paper and on the topic's page in the preparation guide.
 3. Write the text in the editor. Below the editor, DELEGATOR counts words, characters and paragraphs and estimates the reading time.
 4. Click **Save draft** to continue later, or **Submit paper** to hand it to the team. You then return to the overview.
 

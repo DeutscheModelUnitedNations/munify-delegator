@@ -15,6 +15,7 @@
 	import DraftRecoveryModal from '#lib/components/paper/draft/DraftRecoveryModal.svelte';
 	import { createPaper } from '../paperSaving';
 	import NewPaperForm from '../NewPaperForm.svelte';
+	import AgendaItemDiscussionPoints from '#lib/components/discussionPoints/AgendaItemDiscussionPoints.svelte';
 	import {
 		agendaItemOptions,
 		newPaperAgendaItemId,
@@ -150,6 +151,7 @@
 		{/if}
 		{#if $formData.type !== 'INTRODUCTION_PAPER'}
 			<FormSelect name="agendaItemId" label={m.paperAgendaItem()} {form} options={agendaItems} />
+			<AgendaItemDiscussionPoints agendaItemId={$formData.agendaItemId} compact />
 		{/if}
 	{/snippet}
 	{#snippet editor()}

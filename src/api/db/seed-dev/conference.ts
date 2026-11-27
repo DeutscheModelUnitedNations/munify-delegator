@@ -31,6 +31,13 @@ export const PERSONA_NATION = 'deu';
 /** How many committees seat the persona nation, so each of its three delegates gets one. */
 const PERSONA_COMMITTEES = 3;
 
+/** The points for discussion of each committee's first agenda item. */
+const DISCUSSION_POINTS = [
+	'Welche Lösungen haben sich in anderen Regionen bewährt?',
+	'Wer trägt die Kosten, und wie werden sie fair verteilt?',
+	'Welche Rolle spielen nichtstaatliche Akteure bei der Umsetzung?'
+];
+
 const AGENDA_TOPICS = [
 	'Klimaschutz und Anpassung',
 	'Cybersicherheit',
@@ -154,7 +161,10 @@ export function buildConferenceStructure({
 				committeeId,
 				title: AGENDA_TOPICS[(index * 2 + item) % AGENDA_TOPICS.length],
 				teaserText: item === 0 ? faker.lorem.sentence() : null,
-				reviewHelpStatus: REVIEW_HELP[(index * 2 + item) % REVIEW_HELP.length]
+				reviewHelpStatus: REVIEW_HELP[(index * 2 + item) % REVIEW_HELP.length],
+				// the first topic has points for discussion, the second none (its guide page lists
+				// them in its text, as pages taken over from the old guide do)
+				discussionPoints: item === 0 ? DISCUSSION_POINTS : []
 			});
 			return agendaItemId;
 		});

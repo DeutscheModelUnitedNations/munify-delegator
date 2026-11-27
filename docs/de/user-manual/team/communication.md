@@ -120,11 +120,13 @@ Jedes Gremium und jedes Thema hat eine eigene Seite. Sie gehören zur Konferenz 
 
 ### Der Editor {#guide-editor}
 
-Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschriften, Listen, Zitate, Links, Bilder und Dateien zum Herunterladen, Hinweisboxen, Aufklappbereiche, Buttons und Videos. Steht der Cursor in einer Hinweisbox, wählst du in der Leiste ihr Symbol (Suche über alle Phosphor-Icons) und ihre Farbe. Platzhalter setzen beim Lesen den Namen der Konferenz, des Gremiums oder die Liste der Themen ein; die beiden letzten nur in Seiten der Gremienvorlage.
+Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschriften, Listen, Zitate, Links, Bilder und Dateien zum Herunterladen, Hinweisboxen, Aufklappbereiche, Buttons und Videos. Steht der Cursor in einer Hinweisbox, wählst du in der Leiste ihr Symbol (Suche über alle Phosphor-Icons) und ihre Farbe. Platzhalter setzen beim Lesen den Namen der Konferenz, des Gremiums oder die Liste der Themen ein; die beiden letzten nur in Seiten der Gremienvorlage. `{{Diskussionspunkte}}` setzt auf der Seite eines Themas die **Punkte zur Diskussion** als hervorgehobenen Kasten ein.
 
 Rechts neben dem Text stehen die Einstellungen der Seite: ihre Freigabe, **Im Leitfaden** (in welchen Abschnitten sie steht, unter welchem Titel und für wen) und ihre Versionen.
 
 Änderungen sind ein Entwurf, bis du **Veröffentlichen** wählst. Vorher zeigt die App, welche Konferenzen die Seite danach erreichen und welche nicht mehr. Jede Veröffentlichung bleibt als Version erhalten; **Wiederherstellen** holt sie in den Entwurf zurück. Beim Veröffentlichen der Seite eines Themas entsteht der **Gremientext** als PDF im Design der Konferenz, mit ihrem Logo und dem Thema als Titel; die Teilnehmenden laden ihn auf der Seite herunter.
+
+Auf der Seite eines Themas pflegst du rechts auch seine **Punkte zur Diskussion**: was Papiere zu diesem Thema beantworten sollen. Sie gehören zum Thema, nicht zur Seite, und sind dieselben wie unter [Gremien und Themen](./configuration#committees-and-seats). Mit **Speichern** gelten sie sofort, ohne Veröffentlichen, für Papiere und Begutachtung und auf der Seite. Dort erscheinen sie als hervorgehobener Kasten, wo `{{Diskussionspunkte}}` steht, sonst direkt unter dem Titel, und im Inhaltsverzeichnis. Der Gremientext nimmt sie beim nächsten Veröffentlichen der Seite auf. Die **Vorschau** zeigt sie schon.
 
 ### Sichtbarkeit {#guide-visibility}
 

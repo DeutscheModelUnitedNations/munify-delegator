@@ -10,8 +10,10 @@
 	import GuideEditor from '#lib/components/guide/editor/GuideEditor.svelte';
 	import GuideContent from '#lib/components/guide/GuideContent.svelte';
 	import {
+		AGENDA_ITEM_PLACEHOLDERS,
 		COMMITTEE_PLACEHOLDERS,
 		fileIdOf,
+		fillPlaceholders,
 		mapNodes,
 		parseGuideDocument,
 		placeholdersIn,
@@ -25,6 +27,7 @@
 	import ScopeSection from './ScopeSection.svelte';
 	import PageStatus from './PageStatus.svelte';
 	import GuideEntries from './GuideEntries.svelte';
+	import DiscussionPointsSection from './DiscussionPointsSection.svelte';
 	import { withoutPage } from '#lib/guide/outlineEditing';
 	import { getOutlineDraft } from '../../outlineDraft.svelte';
 	import type { PageProps } from './$types';
@@ -47,6 +50,8 @@
 			client.liveQuery.guidePage({
 				__args: { id: pageId },
 				kind: true,
+				agendaItemId: true,
+				agendaItem: { discussionPoints: true },
 				scope: true,
 				publishedScope: true,
 				draftUpdatedAt: true,
@@ -88,14 +93,31 @@
 		return id ? urlOf.get(id) : src;
 	};
 
-	/** The text as the preview shows it: files as their URLs. */
+	const discussionPoints = $derived(page.agendaItem?.discussionPoints ?? null);
+
+	/**
+	 * The text as the preview shows it: files as their URLs, an agenda item page with its points
+	 * for discussion (the other placeholders stay, they depend on where the page is read).
+	 */
 	const previewDoc = $derived(
-		mapNodes(doc, (node) => {
+		mapNodes(withDiscussionPoints(doc), (node) => {
 			if (node.type === 'image' && typeof node.attrs?.src === 'string') {
 				return { ...node, attrs: { ...node.attrs, src: fileUrl(node.attrs.src) } };
 			}
 			return node;
 		})
+	);
+
+	function withDiscussionPoints(text: GuideDocument) {
+		if (!discussionPoints) return text;
+		return fillPlaceholders(text, {
+			conference: '{{Konferenz}}',
+			discussionPoints: { heading: m.discussionPoints(), points: discussionPoints }
+		});
+	}
+
+	const agendaItemPlaceholders = $derived(
+		placeholdersIn(doc).filter((name) => AGENDA_ITEM_PLACEHOLDERS.includes(name))
 	);
 
 	const committeePlaceholders = $derived(
@@ -227,6 +249,12 @@
 				<span>{m.guideCommitteePlaceholderHint()}</span>
 			</div>
 		{/if}
+		{#if agendaItemPlaceholders.length > 0 && page.kind !== 'AGENDA_ITEM'}
+			<div class="alert alert-info alert-soft text-sm">
+				<i class="ph-duotone ph-info" aria-hidden="true"></i>
+				<span>{m.guideAgendaItemPlaceholderHint()}</span>
+			</div>
+		{/if}
 
 		<div data-tour="team.guidePage.editor">
 			{#key editorKey}
@@ -261,6 +289,9 @@
 			{year}
 			onApply={setScope}
 		/>
+		{#if page.agendaItemId}
+			<DiscussionPointsSection agendaItemId={page.agendaItemId} />
+		{/if}
 		<GuideEntries {conferenceId} {pageId} kind={page.kind} />
 		<VersionList versions={page.versions} onRestore={restore} />
 		{#if page.kind === 'GENERAL'}

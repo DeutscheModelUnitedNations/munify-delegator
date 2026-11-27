@@ -4,6 +4,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
+	import { agendaItemChanges, type AgendaItemDraft } from './agendaItemChanges';
 	import AgendaItemFields from './AgendaItemFields.svelte';
 	import type { AgendaItem } from './types';
 
@@ -14,15 +15,25 @@
 
 	let { item = $bindable() }: Props = $props();
 
-	let draft = $state({ title: '', teaserText: '' });
-
-	$effect.pre(() => {
-		if (item) draft = { title: item.title, teaserText: item.teaserText ?? '' };
+	let draft = $state<AgendaItemDraft>({
+		title: '',
+		teaserText: '',
+		discussionPoints: []
 	});
 
-	async function save(id: string) {
+	$effect.pre(() => {
+		if (item) {
+			draft = {
+				title: item.title,
+				teaserText: item.teaserText ?? '',
+				discussionPoints: [...item.discussionPoints]
+			};
+		}
+	});
+
+	async function save(stored: AgendaItem) {
 		const promise = client.mutate.updateAgendaItem({
-			__args: { id, title: draft.title, teaserText: draft.teaserText },
+			__args: { id: stored.id, ...agendaItemChanges({ stored, draft }) },
 			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
@@ -32,9 +43,13 @@
 </script>
 
 <Modal open={!!item} title={m.editAgendaItem()} onclose={() => (item = undefined)}>
-	<AgendaItemFields bind:title={draft.title} bind:teaserText={draft.teaserText} />
+	<AgendaItemFields
+		bind:title={draft.title}
+		bind:teaserText={draft.teaserText}
+		bind:discussionPoints={draft.discussionPoints}
+	/>
 	{#snippet action()}
 		<button class="btn" onclick={() => (item = undefined)}>{m.cancel()}</button>
-		<button class="btn btn-primary" onclick={() => item && save(item.id)}>{m.save()}</button>
+		<button class="btn btn-primary" onclick={() => item && save(item)}>{m.save()}</button>
 	{/snippet}
 </Modal>

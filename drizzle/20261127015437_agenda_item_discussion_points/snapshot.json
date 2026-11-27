@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0b4c54fb-ff1f-4716-b9bf-964256318b21",
+  "prevIds": [
+    "0c67a163-c84e-4264-b07b-a85bfe44c9af"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "committee_agenda_item",
+        "discussion_points"
+      ],
+      "writes": [
+        "s|col|public.committee_agenda_item.discussion_points",
+        "n|col|public.committee_agenda_item.discussion_points",
+        "e|col|public.committee_agenda_item.discussion_points"
+      ],
+      "reads": [
+        "n|tbl|public.committee_agenda_item",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "committee_agenda_item",
+        "name": "discussion_points",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 1,
+        "default": "'{}'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

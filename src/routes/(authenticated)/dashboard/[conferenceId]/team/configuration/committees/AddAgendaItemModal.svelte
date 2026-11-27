@@ -4,6 +4,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
+	import { withoutBlankPoints } from '#lib/schemata/discussionPoints';
 	import AgendaItemFields from './AgendaItemFields.svelte';
 	import type { ManagedCommittee } from './types';
 
@@ -16,6 +17,7 @@
 
 	let title = $state('');
 	let teaserText = $state('');
+	let discussionPoints = $state<string[]>([]);
 
 	const valid = $derived(!!title.trim());
 
@@ -24,7 +26,8 @@
 			__args: {
 				committeeId,
 				title: title.trim(),
-				teaserText: teaserText.trim() || undefined
+				teaserText: teaserText.trim() || undefined,
+				discussionPoints: withoutBlankPoints(discussionPoints)
 			},
 			id: true
 		});
@@ -33,6 +36,7 @@
 		committee = undefined;
 		title = '';
 		teaserText = '';
+		discussionPoints = [];
 	}
 </script>
 
@@ -41,7 +45,7 @@
 	title={committee ? `${m.createNewAgendaItem()} (${committee.abbreviation})` : ''}
 	onclose={() => (committee = undefined)}
 >
-	<AgendaItemFields bind:title bind:teaserText />
+	<AgendaItemFields bind:title bind:teaserText bind:discussionPoints />
 	{#snippet action()}
 		<button class="btn" onclick={() => (committee = undefined)}>{m.cancel()}</button>
 		<button
