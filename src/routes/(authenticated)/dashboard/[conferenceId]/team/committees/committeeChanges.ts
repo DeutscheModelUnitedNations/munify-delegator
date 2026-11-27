@@ -61,6 +61,19 @@ export function agendaItemsWithoutPoints(committee: Pick<ManagedCommittee, 'agen
 	return committee.agendaItems.filter((item) => item.discussionPoints.length === 0).length;
 }
 
+/**
+ * Committees in the order they were created, ties (a seed creates several at once) by id: the
+ * database's order of equal timestamps can change between two answers, and the committee shown
+ * without one named in the URL is the first.
+ */
+export function inCreationOrder<C extends { id: string; createdAt: Date }>(
+	committees: readonly C[]
+) {
+	return [...committees].sort(
+		(a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id)
+	);
+}
+
 /** The committee to show: the one the URL names, else the first one. */
 export function selectedCommittee<C extends { id: string }>({
 	committees,

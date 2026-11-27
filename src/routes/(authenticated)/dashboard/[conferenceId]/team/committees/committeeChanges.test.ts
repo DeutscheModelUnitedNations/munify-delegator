@@ -5,6 +5,7 @@ import {
 	committeeDeletable,
 	committeeDraftOf,
 	committeeDraftValid,
+	inCreationOrder,
 	selectedCommittee
 } from './committeeChanges';
 
@@ -88,6 +89,23 @@ describe('committeeDeletable / agendaItemsWithoutPoints', () => {
 		expect(
 			agendaItemsWithoutPoints({ agendaItems: [item(0, []), item(0, ['a']), item(0, [])] })
 		).toBe(2);
+	});
+});
+
+describe('inCreationOrder', () => {
+	test('by creation, committees created at once by id, whatever order they came in', () => {
+		const at = (iso: string) => new Date(iso);
+		const committees = [
+			{ id: 'sr', createdAt: at('2026-01-01T00:00:00Z') },
+			{ id: 'late', createdAt: at('2026-02-01T00:00:00Z') },
+			{ id: 'gv', createdAt: at('2026-01-01T00:00:00Z') }
+		];
+		expect(inCreationOrder(committees).map((c) => c.id)).toEqual(['gv', 'sr', 'late']);
+		expect(inCreationOrder([...committees].reverse()).map((c) => c.id)).toEqual([
+			'gv',
+			'sr',
+			'late'
+		]);
 	});
 });
 

@@ -20,7 +20,7 @@
 		committeeDraftValid,
 		type CommitteeDraft
 	} from './committeeChanges';
-	import { takeOverStored } from './inlineDraft';
+	import { onStored } from './inlineDraft';
 	import type { ManagedCommittee } from './types';
 
 	interface Props {
@@ -40,12 +40,13 @@
 	/** The stored values from before the last save, ignored until newer ones arrive. */
 	let stale = $state<CommitteeDraft>();
 
-	// take over what was saved elsewhere, unless the fields hold an edit (`takeOverStored`)
+	// take over what was saved elsewhere, unless the fields hold an edit (`onStored`)
 	$effect.pre(() => {
-		const next = takeOverStored({ draft, base, next: stored, stale, saving });
-		if (next) {
-			base = { ...next };
-			draft = { ...next };
+		const next = onStored({ state: { draft, base, stale }, next: stored, saving });
+		if (next.stale !== stale) stale = next.stale;
+		if (next.base !== base) {
+			base = { ...next.base };
+			draft = { ...next.base };
 		}
 	});
 

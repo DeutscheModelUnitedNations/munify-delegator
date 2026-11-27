@@ -21,7 +21,7 @@
 	import CommitteeNav from './CommitteeNav.svelte';
 	import DeleteAgendaItemModal from './DeleteAgendaItemModal.svelte';
 	import DeleteCommitteeModal from './DeleteCommitteeModal.svelte';
-	import { selectedCommittee } from './committeeChanges';
+	import { inCreationOrder, selectedCommittee } from './committeeChanges';
 	import type { AgendaItem, ManagedCommittee } from './types';
 
 	let { conferenceId }: { conferenceId: string } = $props();
@@ -35,6 +35,7 @@
 					where: { conferenceId: { eq: conferenceId } },
 					orderBy: { createdAt: 'asc' }
 				},
+				createdAt: true,
 				name: true,
 				abbreviation: true,
 				numOfSeatsPerDelegation: true,
@@ -60,7 +61,8 @@
 	/** Seats, non-state actors and single roles live on the seat planning page */
 	const showSeatPlanningHint = $derived(canPlanSeats(access));
 
-	const selected = $derived(selectedCommittee({ committees, id: params.committee }));
+	const ordered = $derived(inCreationOrder(committees));
+	const selected = $derived(selectedCommittee({ committees: ordered, id: params.committee }));
 
 	function select(id: string) {
 		params.item = null;
@@ -78,7 +80,7 @@
 	<div class="flex flex-wrap items-start gap-8">
 		<div class="max-w-sm min-w-0 flex-[1_1_19rem]">
 			<CommitteeNav
-				{committees}
+				committees={ordered}
 				selectedId={selected?.id}
 				onSelect={select}
 				onAdd={canCreate ? () => (addCommitteeModalOpen = true) : undefined}
