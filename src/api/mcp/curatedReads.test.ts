@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import {
+	agendaItemContext,
 	assignmentDataSchema,
 	assignmentOverview,
 	countDataSchema,
 	countGroupingProblem,
+	discussionPointsFromMarkdown,
 	participantCounts,
 	participantOverview,
 	participantsDataSchema
@@ -210,5 +212,75 @@ describe('assignmentOverview', () => {
 		const overview = assignmentOverview({ data, offset: 1, limit: 1 });
 		expect(overview.delegations.map((delegation) => delegation.delegationId)).toEqual(['d2']);
 		expect(overview.singleParticipants).toEqual([]);
+	});
+});
+
+describe('agenda item context', () => {
+	const item = {
+		id: 'a1',
+		title: 'Klima',
+		teaserText: null,
+		discussionPoints: [],
+		reviewHelpStatus: 'UNSPECIFIED',
+		committee: { id: 'k1', name: 'Sicherheitsrat', abbreviation: 'SR', conferenceId: 'c1' }
+	};
+	const text = (markdown: string) => ({
+		pageId: 'p1',
+		title: 'Klima',
+		versionNumber: 1,
+		publishedAt: '2027-01-01T00:00:00.000Z',
+		markdown,
+		omittedBlocks: [],
+		pdfUrl: null
+	});
+	const oldGuideText = [
+		'## Hintergrund',
+		'- kein Punkt',
+		'',
+		'## Punkte zur Diskussion',
+		'',
+		'- Wie wird Klimaschutz finanziert?',
+		'- Wer trägt die Verantwortung',
+		'  für Schäden?',
+		'1. Welche Rolle spielt die Wissenschaft?',
+		'',
+		'## Wichtige Dokumente',
+		'- Pariser Abkommen'
+	].join('\n');
+
+	test('reads the points under their heading, up to the next one', () => {
+		expect(discussionPointsFromMarkdown(oldGuideText)).toEqual([
+			'Wie wird Klimaschutz finanziert?',
+			'Wer trägt die Verantwortung für Schäden?',
+			'Welche Rolle spielt die Wissenschaft?'
+		]);
+		expect(discussionPointsFromMarkdown('## Hintergrund\n- etwas')).toEqual([]);
+	});
+
+	test("prefers the agenda item's own points", () => {
+		const context = agendaItemContext({
+			committeeAgendaItem: { ...item, discussionPoints: ['Eigener Punkt'] },
+			agendaItemCommitteeText: text(oldGuideText)
+		});
+		expect(context.discussionPoints).toEqual(['Eigener Punkt']);
+		expect(context.discussionPointsSource).toBe('agendaItem');
+		expect(context).not.toHaveProperty('note');
+	});
+
+	test('falls back to the points the committee text lists', () => {
+		const context = agendaItemContext({
+			committeeAgendaItem: item,
+			agendaItemCommitteeText: text(oldGuideText)
+		});
+		expect(context.discussionPointsSource).toBe('committeeText');
+		expect(context.discussionPoints).toHaveLength(3);
+	});
+
+	test('says when there is no committee text and no points', () => {
+		const context = agendaItemContext({ committeeAgendaItem: item, agendaItemCommitteeText: null });
+		expect(context.committeeText).toBeNull();
+		expect(context.discussionPointsSource).toBe('none');
+		expect(context.note).toContain('no published committee text');
+		expect(context.note).toContain('No points for discussion');
 	});
 });

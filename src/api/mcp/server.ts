@@ -24,6 +24,9 @@ import {
 } from './mutationTools';
 import { describeSchema } from './schemaDescription';
 import {
+	AGENDA_ITEM_QUERY,
+	agendaItemContext,
+	agendaItemDataSchema,
 	ASSIGNMENT_QUERY,
 	assignmentDataSchema,
 	assignmentOverview,
@@ -57,7 +60,7 @@ Start with whoami: it lists the conferences you can work in and the person's tea
 
 Personal data never reaches you. Names, contact details, address lines, birthdays, gender, diet and every free text by or about people read "${REDACTED}"; null still means "nothing stored". Counts by redacted attributes read "${SMALL_GROUP}" for groups smaller than five. People are ids: tell the user which ids you mean, and they look the people up in the app. You cannot filter, sort or search by personal data, and tools never take personal data as input. Do not ask the user to paste personal data into the conversation.
 
-For reading, prefer the task tools (participant_overview, participant_counts, assignment_overview). graphql_query runs any read-only query; graphql_schema describes the types and marks what is redacted.
+For reading, prefer the task tools (participant_overview, participant_counts, assignment_overview, agenda_item_context). graphql_query runs any read-only query; graphql_schema describes the types and marks what is redacted.
 
 Changes go through the dedicated tools, one per action. Tools whose change reaches people outside the team (participants, the public) answer with a preview first: show it to the user and call again with confirm: true only once they agreed.`;
 
@@ -323,6 +326,34 @@ function registerReadTools({ server, call }: { server: McpServer; call: ToolCall
 						variables: { conferenceId }
 					});
 					return assignmentOverview({ data: assignmentDataSchema.parse(data), offset, limit });
+				}
+			})
+	);
+
+	server.registerTool(
+		'agenda_item_context',
+		{
+			description:
+				'What a paper on an agenda item is judged against: the agenda item (title, teaser, committee), its points for discussion (`discussionPoints`; `discussionPointsSource` says whether they are the agenda item\'s own or were read from the committee text\'s "Punkte zur Diskussion" section, or that there are none) and its published committee text (the published version of its guide page as Markdown, with a link to the PDF; null while nothing is published). A paper names its agenda item as `agendaItemId`. Needs paper review (`reviewPapers`) or guide editing in the conference.',
+			inputSchema: z.object({
+				conferenceId: conferenceIdSchema,
+				agendaItemId: z.string().min(1).describe("The agenda item (a paper's agendaItemId).")
+			}),
+			annotations: READ_ONLY
+		},
+		async ({ conferenceId, agendaItemId }) =>
+			aboutConference({
+				call,
+				tool: 'agenda_item_context',
+				args: { agendaItemId },
+				conferenceId,
+				fn: async () => {
+					const data = await runFixedQuery({
+						event: call.event,
+						source: AGENDA_ITEM_QUERY,
+						variables: { agendaItemId }
+					});
+					return agendaItemContext(agendaItemDataSchema.parse(data));
 				}
 			})
 	);

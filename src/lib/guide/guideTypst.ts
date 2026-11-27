@@ -1,5 +1,11 @@
 import { calloutColor } from './blocks';
-import { fileIdOf, type GuideDocument, type GuideMark, type GuideNode } from './document';
+import {
+	discussionPointsOf,
+	fileIdOf,
+	type GuideDocument,
+	type GuideMark,
+	type GuideNode
+} from './document';
 import {
 	escapeTypstString as escapeString,
 	escapeTypstText as escapeText,
@@ -128,6 +134,17 @@ function callout({ node, images }: { node: GuideNode; images: Images }) {
 	return `#block(width: 100%, above: 16pt, below: 16pt)[${stripe}\n#v(2pt)\n${body}\n#v(2pt)\n${stripe}]`;
 }
 
+/**
+ * The points for discussion: a tinted box with a DMUN-Blau rule on the left, a bold heading and the
+ * numbered points (the PDF's attention colour, as warning callouts).
+ */
+function discussionPoints({ node }: { node: GuideNode }) {
+	const { heading, points } = discussionPointsOf(node);
+	if (points.length === 0) return '';
+	const items = points.map((point) => `[${escapeText(point)}]`).join(', ');
+	return `#block(width: 100%, above: 18pt, below: 18pt, fill: dmun-tint, stroke: (left: 4pt + dmun-blue), inset: (left: 14pt, right: 12pt, y: 12pt))[#text(size: 13pt, weight: "bold", fill: dmun-blue)[${escapeText(heading)}]\n\n#enum(${items})]`;
+}
+
 function button({ node }: { node: GuideNode }) {
 	const href = attr(node, 'href') ?? '';
 	const label = escapeText(attr(node, 'label') ?? href);
@@ -153,6 +170,7 @@ const BLOCKS: Record<string, (args: { node: GuideNode; images: Images }) => stri
 	horizontalRule: () => '#line(length: 100%, stroke: 0.75pt + black)',
 	image,
 	callout,
+	discussionPoints,
 	toggle: ({ node, images }) =>
 		`#strong[${escapeText(attr(node, 'summary') ?? '')}]\n\n${blocks({ nodes: node.content, images })}`,
 	button,

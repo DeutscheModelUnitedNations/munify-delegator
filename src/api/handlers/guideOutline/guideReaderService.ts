@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { downloadUrl } from '#api/handlers/storedFile/storedFileService';
+import { downloadUrl, downloadUrlOf } from '#api/handlers/storedFile/storedFileService';
 import {
 	expandOutline,
 	guideForReader,
@@ -13,8 +13,10 @@ import {
 	fillPlaceholders,
 	parseGuideDocument,
 	referencedFileIds,
-	type GuideDocument
+	type GuideDocument,
+	type PlaceholderValues
 } from '#lib/guide/document';
+import { m } from '#lib/paraglide/messages';
 import { hrefResolver, resolveDocument } from '#lib/guide/readerDocument';
 import { GUIDE_FILE_PURPOSES, pageIdsReachingOf } from '../guidePage/guidePageService';
 import { outlineOf } from './guideOutlineService';
@@ -25,7 +27,14 @@ import { outlineOf } from './guideOutlineService';
  * there; or, for the team's preview, the drafts.
  */
 
-type PageInGuide = { title: string; content: unknown; pdfFileId: string | null; at: Date };
+type PageInGuide = {
+	title: string;
+	content: unknown;
+	pdfFileId: string | null;
+	at: Date;
+	/** An agenda item page's points for discussion (live, not versioned); null on other pages. */
+	discussionPoints: string[] | null;
+};
 
 async function committeesOf(conferenceId: string) {
 	const committees = await db.query.committee.findMany({
@@ -76,6 +85,7 @@ async function pagesFor({
 		where: { id: { in: [...ids] } },
 		columns: { id: true, title: true, content: true, draftUpdatedAt: true },
 		with: {
+			agendaItem: { columns: { discussionPoints: true } },
 			publishedVersion: {
 				columns: { title: true, content: true, pdfFileId: true, createdAt: true }
 			}
@@ -83,6 +93,7 @@ async function pagesFor({
 	});
 	return new Map(
 		pages.flatMap((page): [string, PageInGuide][] => {
+			const discussionPoints = page.agendaItem?.discussionPoints ?? null;
 			if (draft) {
 				return [
 					[
@@ -91,7 +102,8 @@ async function pagesFor({
 							title: page.title,
 							content: page.content,
 							pdfFileId: page.publishedVersion?.pdfFileId ?? null,
-							at: page.draftUpdatedAt
+							at: page.draftUpdatedAt,
+							discussionPoints
 						}
 					]
 				];
@@ -105,7 +117,8 @@ async function pagesFor({
 								title: version.title,
 								content: version.content,
 								pdfFileId: version.pdfFileId,
-								at: version.createdAt
+								at: version.createdAt,
+								discussionPoints
 							}
 						]
 					]
@@ -192,7 +205,7 @@ async function resolveForReader({
 }: {
 	doc: GuideDocument;
 	inGuide: (pageId: string) => boolean;
-	values: Parameters<typeof fillPlaceholders>[1];
+	values: PlaceholderValues;
 }) {
 	const filled = fillPlaceholders(doc, values);
 	const urls = await fileUrls(filled);
@@ -202,26 +215,21 @@ async function resolveForReader({
 /** What fills a page's placeholders in the section it was opened in. */
 function placeholderValues({
 	guide,
-	committeeId
+	committeeId,
+	discussionPoints
 }: {
 	guide: ReaderGuide;
 	committeeId: string | null;
-}) {
+	discussionPoints: string[] | null;
+}): PlaceholderValues {
 	const committee = committeeId ? guide.committees.get(committeeId) : undefined;
 	return {
 		conference: guide.conferenceTitle,
-		committee: committee && { name: committee.name, agendaItems: committee.agendaItems }
+		committee: committee && { name: committee.name, agendaItems: committee.agendaItems },
+		discussionPoints: discussionPoints
+			? { heading: m.discussionPoints(), points: discussionPoints }
+			: undefined
 	};
-}
-
-/** The download URL of a stored file, or null for none. */
-async function fileUrlOf(fileId: string | null) {
-	if (!fileId) return null;
-	const file = await db.query.storedFile.findFirst({
-		where: { id: fileId },
-		columns: { key: true, fileName: true }
-	});
-	return file ? downloadUrl(file) : null;
 }
 
 /**
@@ -247,7 +255,8 @@ export async function readerPage({
 		// in the topic overview each page names its own committee
 		values: placeholderValues({
 			guide,
-			committeeId: located.entry.committeeId ?? located.section.committeeId
+			committeeId: located.entry.committeeId ?? located.section.committeeId,
+			discussionPoints: page.discussionPoints
 		})
 	});
 	return {
@@ -259,7 +268,7 @@ export async function readerPage({
 		headings: headings.map(({ id, level, text }) => ({ anchor: id, level, text })),
 		previous: located.previous && titledEntry({ entry: located.previous, guide }),
 		next: located.next && titledEntry({ entry: located.next, guide }),
-		pdfUrl: await fileUrlOf(page.pdfFileId),
+		pdfUrl: await downloadUrlOf(page.pdfFileId),
 		updatedAt: page.at
 	};
 }

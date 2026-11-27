@@ -20,6 +20,7 @@
 	import { createPaper } from '../paperSaving';
 	import { paperEntityName, resolutionHeader } from '../paperDisplay';
 	import NewPaperForm from '../NewPaperForm.svelte';
+	import AgendaItemDiscussionPoints from '#lib/components/discussionPoints/AgendaItemDiscussionPoints.svelte';
 	import { agendaItemOptions } from '../newPaper/newPaperOptions';
 	import type { PageProps } from './$types';
 
@@ -171,6 +172,7 @@
 			<FormTextInput {form} name="committee" disabled label={m.committee()} />
 		{/if}
 		<FormSelect name="agendaItemId" label={m.paperAgendaItem()} {form} options={agendaItems} />
+		<AgendaItemDiscussionPoints agendaItemId={$formData.agendaItemId} compact />
 	{/snippet}
 	{#snippet editor()}
 		{#key draft.editorKey}

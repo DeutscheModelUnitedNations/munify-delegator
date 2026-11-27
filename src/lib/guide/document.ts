@@ -48,15 +48,26 @@ const markSchema = z.object({
 	attrs: z.record(z.string(), z.unknown()).optional()
 });
 
-const nodeSchema: z.ZodType<GuideNode> = z.lazy(() =>
-	z.object({
-		type: z.enum(GUIDE_NODES),
-		attrs: z.record(z.string(), z.unknown()).optional(),
-		content: z.array(nodeSchema).optional(),
-		marks: z.array(markSchema).optional(),
-		text: z.string().optional()
-	})
-);
+/**
+ * Nodes only a reader gets, made when the placeholders are filled (`fillPlaceholders`): never
+ * stored, so a page's text cannot hold them.
+ */
+const FILLED_NODES = ['discussionPoints'] as const;
+
+function nodeSchemaOf(types: readonly [string, ...string[]]) {
+	const node: z.ZodType<GuideNode> = z.lazy(() =>
+		z.object({
+			type: z.enum(types),
+			attrs: z.record(z.string(), z.unknown()).optional(),
+			content: z.array(node).optional(),
+			marks: z.array(markSchema).optional(),
+			text: z.string().optional()
+		})
+	);
+	return node;
+}
+
+const nodeSchema = nodeSchemaOf(GUIDE_NODES);
 
 function depthOf(node: GuideNode | GuideDocument): number {
 	return 1 + Math.max(0, ...(node.content ?? []).map(depthOf));
@@ -70,11 +81,23 @@ export const guideDocumentSchema = z
 		message: 'The document is too long.'
 	});
 
+/** A page as a reader gets it: also the nodes filling the placeholders made. */
+const readerDocumentSchema = z.object({
+	type: z.literal('doc'),
+	content: z.array(nodeSchemaOf([...GUIDE_NODES, ...FILLED_NODES])).optional()
+});
+
 export const EMPTY_DOCUMENT: GuideDocument = { type: 'doc', content: [{ type: 'paragraph' }] };
 
 /** The document a column holds, or the empty one for anything else. */
 export function parseGuideDocument(value: unknown): GuideDocument {
 	const parsed = guideDocumentSchema.safeParse(value);
+	return parsed.success ? parsed.data : EMPTY_DOCUMENT;
+}
+
+/** The document a reader got (`guideReaderPage`), or the empty one for anything else. */
+export function parseReaderDocument(value: unknown): GuideDocument {
+	const parsed = readerDocumentSchema.safeParse(value);
 	return parsed.success ? parsed.data : EMPTY_DOCUMENT;
 }
 
@@ -170,13 +193,16 @@ function textOf(node: GuideNode | GuideDocument): string {
 
 // --- Placeholders -----------------------------------------------------------------------------
 
-export const PLACEHOLDERS = ['Konferenz', 'Gremium', 'Themen'] as const;
+export const PLACEHOLDERS = ['Konferenz', 'Gremium', 'Themen', 'Diskussionspunkte'] as const;
 export type Placeholder = (typeof PLACEHOLDERS)[number];
 
 /** Placeholders that need a committee: only in pages of the committee template. */
 export const COMMITTEE_PLACEHOLDERS: readonly Placeholder[] = ['Gremium', 'Themen'];
 
-const PLACEHOLDER_PATTERN = /\{\{\s*(Konferenz|Gremium|Themen)\s*\}\}/g;
+/** Placeholders that need an agenda item: only on agenda item pages. */
+export const AGENDA_ITEM_PLACEHOLDERS: readonly Placeholder[] = ['Diskussionspunkte'];
+
+const PLACEHOLDER_PATTERN = /\{\{\s*(Konferenz|Gremium|Themen|Diskussionspunkte)\s*\}\}/g;
 
 /** The placeholders a document uses. */
 export function placeholdersIn(doc: GuideDocument): Placeholder[] {
@@ -194,36 +220,86 @@ export type PlaceholderValues = {
 	conference: string;
 	/** Unknown outside a committee section: the placeholder stays as it is. */
 	committee?: { name: string; agendaItems: readonly string[] };
+	/**
+	 * An agenda item page's points for discussion, with the heading of their box. Unknown on other
+	 * pages: `{{Diskussionspunkte}}` stays as it is.
+	 */
+	discussionPoints?: { heading: string; points: readonly string[] };
 };
+
+/**
+ * The points for discussion as the box that stands out: a node of its own (`discussionPoints`, with
+ * its `heading` and `points`) that the reader (`GuideDiscussionPoints.svelte`) and the committee
+ * text PDF (`guideTypst.ts`) draw. It is a heading of the table of contents.
+ */
+function discussionPointsBox({
+	heading,
+	points
+}: {
+	heading: string;
+	points: readonly string[];
+}): GuideNode {
+	return { type: 'discussionPoints', attrs: { heading, points: [...points] } };
+}
+
+/** The heading and points of a `discussionPoints` node. */
+export function discussionPointsOf(node: GuideNode) {
+	const heading = typeof node.attrs?.heading === 'string' ? node.attrs.heading : '';
+	const raw = node.attrs?.points;
+	const points = Array.isArray(raw)
+		? raw.filter((point): point is string => typeof point === 'string')
+		: [];
+	return { heading, points };
+}
+
+/** Whether a node is a paragraph holding nothing but `{{name}}`. */
+function isPlaceholderParagraph(node: GuideNode, name: Placeholder) {
+	return (
+		node.type === 'paragraph' &&
+		node.content?.length === 1 &&
+		new RegExp(`^\\s*\\{\\{\\s*${name}\\s*\\}\\}\\s*$`).test(node.content[0].text ?? '')
+	);
+}
 
 /**
  * Fills in the placeholders. `{{Themen}}` alone in a paragraph becomes a list of the agenda items;
  * elsewhere it lists them in one line. Without a committee the committee placeholders stay.
+ * `{{Diskussionspunkte}}` alone in a paragraph becomes the box of the points for discussion
+ * (nothing without points), elsewhere the points in one line; an agenda item page without it gets
+ * the box first, below its title.
  */
 export function fillPlaceholders(doc: GuideDocument, values: PlaceholderValues): GuideDocument {
+	const { committee, discussionPoints } = values;
 	const replace = (text: string) =>
 		text.replace(PLACEHOLDER_PATTERN, (whole, name: string) => {
 			if (name === 'Konferenz') return values.conference;
-			if (!values.committee) return whole;
-			return name === 'Gremium' ? values.committee.name : values.committee.agendaItems.join(', ');
+			if (name === 'Diskussionspunkte') {
+				return discussionPoints ? discussionPoints.points.join('; ') : whole;
+			}
+			if (!committee) return whole;
+			return name === 'Gremium' ? committee.name : committee.agendaItems.join(', ');
 		});
-	const committee = values.committee;
-	// first the lists, while the paragraph still reads `{{Themen}}`, then the text
-	const withLists = committee
-		? mapNodes(doc, (node) =>
-				node.type === 'paragraph' &&
-				node.content?.length === 1 &&
-				/^\s*\{\{\s*Themen\s*\}\}\s*$/.test(node.content[0].text ?? '')
-					? {
-							type: 'bulletList',
-							content: committee.agendaItems.map((title) => ({
-								type: 'listItem',
-								content: [{ type: 'paragraph', content: [{ type: 'text', text: title }] }]
-							}))
-						}
-					: node
-			)
-		: doc;
+	const box = discussionPoints && discussionPointsBox(discussionPoints);
+	const hasPoints = (discussionPoints?.points.length ?? 0) > 0;
+	// without the placeholder the box goes first; then the lists, while the paragraphs still read
+	// `{{Themen}}` and `{{Diskussionspunkte}}`, then the text
+	const placed =
+		box && hasPoints && !placeholdersIn(doc).includes('Diskussionspunkte')
+			? { ...doc, content: [box, ...(doc.content ?? [])] }
+			: doc;
+	const withLists = mapNodes(placed, (node) => {
+		if (committee && isPlaceholderParagraph(node, 'Themen')) {
+			return {
+				type: 'bulletList',
+				content: committee.agendaItems.map((title) => ({
+					type: 'listItem',
+					content: [{ type: 'paragraph', content: [{ type: 'text', text: title }] }]
+				}))
+			};
+		}
+		if (box && isPlaceholderParagraph(node, 'Diskussionspunkte')) return hasPoints ? box : null;
+		return node;
+	});
 	return mapNodes(withLists, (node) =>
 		node.type === 'text' && node.text ? { ...node, text: replace(node.text) } : node
 	);
@@ -250,8 +326,10 @@ export function headingsOf(doc: GuideDocument): GuideHeading[] {
 	const headings: GuideHeading[] = [];
 	const used = new Map<string, number>();
 	walk(doc, (node) => {
-		if (node.type !== 'heading') return;
-		const text = textOf(node).trim();
+		if (node.type !== 'heading' && node.type !== 'discussionPoints') return;
+		const text = (
+			node.type === 'discussionPoints' ? discussionPointsOf(node).heading : textOf(node)
+		).trim();
 		if (!text) return;
 		const base = headingSlug(text);
 		const count = used.get(base) ?? 0;

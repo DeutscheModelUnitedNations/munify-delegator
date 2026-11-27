@@ -24,6 +24,7 @@
 	import PaperExportButtons from './PaperExportButtons.svelte';
 	import PaperReviewSection from './PaperReviewSection.svelte';
 	import PaperHistory from './PaperHistory.svelte';
+	import AgendaItemDiscussionPoints from '#lib/components/discussionPoints/AgendaItemDiscussionPoints.svelte';
 	import PaperDangerZone from './PaperDangerZone.svelte';
 	import type { PageProps } from './$types';
 
@@ -195,6 +196,10 @@
 
 {#snippet paperBody(paper: PaperDetail)}
 	<div class="w-full flex flex-col gap-4">
+		<!-- What papers on the agenda item should answer: for writing and for reviewing -->
+		<div data-tour="paperhub.paper.discussion-points" class="empty:hidden">
+			<AgendaItemDiscussionPoints agendaItemId={paper.agendaItem?.id} />
+		</div>
 		<!-- Paper Editor - key forces re-creation when paper or editable changes -->
 		<div bind:this={paperEditorContainer} data-tour="paperhub.paper.content">
 			{#key `${paper.id}-${editorEditable}`}

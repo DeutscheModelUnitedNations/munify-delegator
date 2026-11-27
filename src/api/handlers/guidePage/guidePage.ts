@@ -5,7 +5,7 @@ import { mcpTool } from '#api/mcp/mcpTool';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { guidePagePubsub, guidePageVersionPubsub } from '#api/pubsub';
-import { downloadUrl } from '#api/handlers/storedFile/storedFileService';
+import { downloadUrlOf } from '#api/handlers/storedFile/storedFileService';
 import { GUIDE_SCOPE_KINDS, scopeKindOf } from '#lib/guide/scope';
 import { parseGuideDocument } from '#lib/guide/document';
 import { guideDocumentToMarkdown } from './guideMarkdown';
@@ -35,7 +35,8 @@ import {
 	sidebarsNaming,
 	updateGuidePageDraft
 } from './guidePageService';
-import { renderCommitteeText } from './committeeText';
+import { publishedCommitteeText, renderCommitteeText } from './committeeText';
+import { assertCanReadAgendaItemCommitteeText } from '../committeeAgendaItem/committeeAgendaItemPermissions';
 import { importGuideFile } from './guideFileImport';
 import { GUIDE_IMPORT_HOSTS } from '$app/env/private';
 
@@ -64,6 +65,29 @@ const GuideMarkdown = schemaBuilder.simpleObject('GuideMarkdown', {
 		omittedBlocks: t.stringList({
 			description:
 				'The rich blocks Markdown has no syntax for (callout, toggle, button, embed), left out of `markdown`. Read `content` (TipTap JSON) to see them; writing Markdown over them needs `replaceRichBlocks`.'
+		})
+	})
+});
+
+const AgendaItemCommitteeText = schemaBuilder.simpleObject('AgendaItemCommitteeText', {
+	description:
+		"An agenda item's published committee text: the published version of its guide page, as Markdown.",
+	fields: (t) => ({
+		pageId: t.id(),
+		title: t.string(),
+		versionNumber: t.int(),
+		publishedAt: t.field({ type: 'DateTime' }),
+		markdown: t.string({
+			description:
+				"The text with the conference, committee and topics filled in. `{{Diskussionspunkte}}` stays: the points for discussion are the agenda item's `discussionPoints`."
+		}),
+		omittedBlocks: t.stringList({
+			description:
+				'The rich blocks Markdown has no syntax for (callout, toggle, button, embed), left out of `markdown`.'
+		}),
+		pdfUrl: t.string({
+			nullable: true,
+			description: 'A short-lived download link of the committee text PDF rendered on publishing.'
 		})
 	})
 });
@@ -117,14 +141,7 @@ object({
 		pdfUrl: t.string({
 			nullable: true,
 			description: 'The committee text rendered from this version (agenda item pages).',
-			resolve: async (version) => {
-				if (!version.pdfFileId) return null;
-				const file = await db.query.storedFile.findFirst({
-					where: { id: version.pdfFileId },
-					columns: { key: true, fileName: true }
-				});
-				return file ? downloadUrl(file) : null;
-			}
+			resolve: (version) => downloadUrlOf(version.pdfFileId)
 		})
 	})
 });
@@ -193,6 +210,21 @@ const contentArgs = (t: Parameters<Parameters<typeof schemaBuilder.mutationField
 });
 
 schemaBuilder.queryFields((t) => ({
+	agendaItemCommitteeText: t.field({
+		description:
+			"The published committee text of an agenda item (its guide page's published version) as Markdown, for judging its papers; null while nothing is published. `reviewPapers` or `editGuide` in its conference (NOT_FOUND otherwise).",
+		type: AgendaItemCommitteeText,
+		nullable: true,
+		args: { agendaItemId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertCanReadAgendaItemCommitteeText({ ctx, agendaItemId: args.agendaItemId });
+			const text = await publishedCommitteeText(args.agendaItemId);
+			if (!text) return null;
+			const { pdfFileId, ...rest } = text;
+			return { ...rest, pdfUrl: await downloadUrlOf(pdfFileId) };
+		}
+	}),
+
 	guideLibrary: t.drizzleField({
 		description:
 			"The guide pages reaching a conference, drafts and published (their draft's or their published scope reaches it), by title. `editGuide` (project management, content lead) in the conference (FORBIDDEN otherwise).",

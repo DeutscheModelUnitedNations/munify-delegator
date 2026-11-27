@@ -41,6 +41,16 @@ export type AgeNotice = {
 		
 export type AgeRole = "participant" | "supervisor";
 		
+export type AgendaItemCommitteeText = {
+  markdown: String,
+  omittedBlocks: String[],
+  pageId: ID,
+  pdfUrl: String | null,
+  publishedAt: DateTime,
+  title: String,
+  versionNumber: Int    
+};
+		
 export type AgendaItemPaperGroup = {
   agendaItem: () => Committeeagendaitem,
   papers: () => Paper[]    
@@ -1620,6 +1630,7 @@ export type Committeeagendaitem = {
   }) => Committee,
   committeeId: ID,
   createdAt: DateTime,
+  discussionPoints: String[],
   id: ID,
   papers: (p?: {
     limit?: Int | null | undefined,
@@ -1638,6 +1649,7 @@ export type Committeeagendaitem = {
 export type CommitteeagendaitemOrderInputArgument = {
   committeeId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
+  discussionPoints?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   reviewHelpStatus?: SortingParameter | null | undefined,
   teaserText?: SortingParameter | null | undefined,
@@ -1659,6 +1671,7 @@ export type CommitteeagendaitemWhereInputArgument = {
   committee?: CommitteeWhereInputArgument | null | undefined,
   committeeId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
+  discussionPoints?: StringArrayWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
   reviewHelpStatus?: ReviewhelpstatusEnum | null | undefined,
@@ -3861,6 +3874,7 @@ export type Mutation = {
   }) => Tableview,
   createAgendaItem: (p: {
     committeeId: ID,
+    discussionPoints?: String[] | null | undefined,
     teaserText?: String | null | undefined,
     title: String
   }) => Committeeagendaitem,
@@ -4443,6 +4457,10 @@ export type Mutation = {
   sendSlackTestMessage: (p: {
     conferenceId: ID
   }) => SlackConnection,
+  setAgendaItemDiscussionPoints: (p: {
+    agendaItemId: ID,
+    discussionPoints: String[]
+  }) => Committeeagendaitem,
   setAgendaItemReviewHelpStatus: (p: {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
@@ -4610,6 +4628,7 @@ export type Mutation = {
     userId: ID
   }) => User,
   updateAgendaItem: (p: {
+    discussionPoints?: String[] | null | undefined,
     id: ID,
     teaserText?: String | null | undefined,
     title?: String | null | undefined
@@ -5692,6 +5711,9 @@ export type Query = {
     role: AgeRole,
     userId: ID
   }) => AgeNotice | null,
+  agendaItemCommitteeText: (p: {
+    agendaItemId: ID
+  }) => AgendaItemCommitteeText | null,
   agreementDetail: (p: {
     id: ID
   }) => Agreementdetail,

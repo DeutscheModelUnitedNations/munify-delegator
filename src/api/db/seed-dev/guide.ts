@@ -25,6 +25,42 @@ const heading = (value: string, level = 2): GuideNode => ({
 });
 const doc = (...content: GuideNode[]): GuideDocument => ({ type: 'doc', content });
 
+/**
+ * An agenda item page. The first topic has points for discussion (`conference.ts`): the first
+ * committee places them with `{{Diskussionspunkte}}`, the others get them below the title. The
+ * second topic has none and lists them in its text, as pages taken over from the old guide do.
+ */
+function agendaItemPageContent({
+	index,
+	committeeIndex
+}: {
+	index: number;
+	committeeIndex: number;
+}) {
+	const summary = [heading('Zusammenfassung'), paragraph('Worum es bei diesem Thema geht.')];
+	if (index === 0) {
+		return committeeIndex === 0
+			? [
+					...summary,
+					paragraph('{{Diskussionspunkte}}'),
+					heading('Hintergrund'),
+					paragraph('Was bisher geschah.')
+				]
+			: [...summary, heading('Hintergrund'), paragraph('Was bisher geschah.')];
+	}
+	return [
+		...summary,
+		heading('Punkte zur Diskussion'),
+		{
+			type: 'bulletList',
+			content: [
+				{ type: 'listItem', content: [paragraph('Welche Lösungen gibt es?')] },
+				{ type: 'listItem', content: [paragraph('Wer trägt die Kosten?')] }
+			]
+		}
+	];
+}
+
 /** The shared pages: written once, published, reaching every conference of a series. */
 const SHARED_PAGES: { id: string; title: string; content: GuideDocument; series?: boolean }[] = [
 	{
@@ -178,6 +214,7 @@ export function addGuide(cs: ConferenceSeed) {
 			}
 		});
 		for (const [index, agendaItemId] of committee.agendaItemIds.entries()) {
+			const committeeIndex = cs.committees.indexOf(committee);
 			publish({
 				batch: cs.batch,
 				page: {
@@ -186,18 +223,7 @@ export function addGuide(cs: ConferenceSeed) {
 					agendaItemId,
 					conferenceId: cs.id,
 					title: `${committee.abbreviation} TOP ${index + 1}`,
-					content: doc(
-						heading('Zusammenfassung'),
-						paragraph('Worum es bei diesem Thema geht.'),
-						heading('Diskussionspunkte'),
-						{
-							type: 'bulletList',
-							content: [
-								{ type: 'listItem', content: [paragraph('Welche Lösungen gibt es?')] },
-								{ type: 'listItem', content: [paragraph('Wer trägt die Kosten?')] }
-							]
-						}
-					)
+					content: doc(...agendaItemPageContent({ index, committeeIndex }))
 				}
 			});
 		}

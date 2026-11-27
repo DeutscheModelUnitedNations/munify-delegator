@@ -10,6 +10,7 @@ import {
 	teamConference,
 	hop
 } from '#api/services/authHelper/rules';
+import type { TeamPermission } from '#lib/helpers/teamRoles';
 import { liveWhere } from '#api/services/authHelper/callerFacts';
 import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
@@ -100,4 +101,66 @@ export async function assertCanSetAgendaItemReviewHelpStatus({
 			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
+}
+
+/** Refuses (NOT_FOUND) unless the caller holds one of `permissions` in the agenda item's conference. */
+async function assertAgendaItemInTeamConference({
+	ctx,
+	agendaItemId,
+	permissions
+}: {
+	ctx: ApiContext;
+	agendaItemId: string;
+	permissions: readonly TeamPermission[];
+}) {
+	const conferences = await Promise.all(
+		permissions.map((permission) => teamConference({ ctx, permission }))
+	);
+	await db.query.committeeAgendaItem
+		.findFirst({
+			where: {
+				id: agendaItemId,
+				OR: conferences.map((conference) => ({ committee: { conference } }))
+			},
+			columns: { id: true }
+		})
+		.then(assertFindFirstExists);
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller holds `planSeats` (who edits agenda items) or `editGuide`
+ * (who edits the agenda item's guide page) in the agenda item's conference. Guide editors set the
+ * points for discussion without otherwise being able to edit the agenda item.
+ */
+export async function assertCanSetAgendaItemDiscussionPoints({
+	ctx,
+	agendaItemId
+}: {
+	ctx: ApiContext;
+	agendaItemId: string;
+}) {
+	await assertAgendaItemInTeamConference({
+		ctx,
+		agendaItemId,
+		permissions: ['planSeats', 'editGuide']
+	});
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller holds `reviewPapers` (who reviews the agenda item's papers)
+ * or `editGuide` in the agenda item's conference: they read its published committee text without
+ * reading the guide's tables.
+ */
+export async function assertCanReadAgendaItemCommitteeText({
+	ctx,
+	agendaItemId
+}: {
+	ctx: ApiContext;
+	agendaItemId: string;
+}) {
+	await assertAgendaItemInTeamConference({
+		ctx,
+		agendaItemId,
+		permissions: ['reviewPapers', 'editGuide']
+	});
 }

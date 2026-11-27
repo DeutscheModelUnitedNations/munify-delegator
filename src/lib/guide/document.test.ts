@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
+	discussionPointsOf,
 	fillPlaceholders,
 	guideDocumentSchema,
 	headingsOf,
 	isSafeHref,
+	parseReaderDocument,
 	placeholdersIn,
 	referencedFileIds,
 	referencedPageIds,
@@ -68,6 +70,72 @@ describe('fillPlaceholders', () => {
 		const filled = fillPlaceholders(doc, { conference: 'MUN-SH 2027' });
 		expect(filled.content?.[0].content?.[0].text).toBe('Über {{Gremium}}');
 		expect(filled.content?.[2].type).toBe('paragraph');
+	});
+
+	describe('points for discussion', () => {
+		const points = { heading: 'Punkte zur Diskussion', points: ['Finanzierung?', 'Mandat?'] };
+		const page = (...content: NonNullable<GuideDocument['content']>) =>
+			({ type: 'doc', content }) satisfies GuideDocument;
+
+		test('become a highlighted box where the placeholder stands alone', () => {
+			const filled = fillPlaceholders(
+				page(paragraph('Einleitung'), paragraph('{{Diskussionspunkte}}'), paragraph('Ende')),
+				{ conference: 'MUN-SH 2027', discussionPoints: points }
+			);
+			expect(filled.content?.map((node) => node.type)).toEqual([
+				'paragraph',
+				'discussionPoints',
+				'paragraph'
+			]);
+			expect(discussionPointsOf(filled.content?.[1] ?? { type: 'paragraph' })).toEqual(points);
+			// a heading of the table of contents
+			expect(headingsOf(filled)).toEqual([
+				{ id: 'punkte-zur-diskussion', level: 2, text: 'Punkte zur Diskussion' }
+			]);
+			// readers get it, a stored page cannot hold it
+			expect(parseReaderDocument(filled)).toEqual(filled);
+			expect(guideDocumentSchema.safeParse(filled).success).toBe(false);
+		});
+
+		test('go below the title when the page has no placeholder', () => {
+			const filled = fillPlaceholders(page(paragraph('Einleitung')), {
+				conference: 'MUN-SH 2027',
+				discussionPoints: points
+			});
+			expect(filled.content?.map((node) => node.type)).toEqual(['discussionPoints', 'paragraph']);
+		});
+
+		test('read in one line inside a sentence', () => {
+			const filled = fillPlaceholders(page(paragraph('Fragen: {{Diskussionspunkte}}')), {
+				conference: 'MUN-SH 2027',
+				discussionPoints: points
+			});
+			expect(filled.content).toHaveLength(1);
+			expect(filled.content?.[0].content?.[0].text).toBe('Fragen: Finanzierung?; Mandat?');
+		});
+
+		test('leave nothing behind without points', () => {
+			const empty = { heading: 'Punkte zur Diskussion', points: [] };
+			expect(
+				fillPlaceholders(page(paragraph('{{Diskussionspunkte}}'), paragraph('Text')), {
+					conference: 'MUN-SH 2027',
+					discussionPoints: empty
+				}).content?.map((node) => node.type)
+			).toEqual(['paragraph']);
+			expect(
+				fillPlaceholders(page(paragraph('Text')), {
+					conference: 'MUN-SH 2027',
+					discussionPoints: empty
+				}).content
+			).toHaveLength(1);
+		});
+
+		test('stay as they are off agenda item pages', () => {
+			const filled = fillPlaceholders(page(paragraph('{{Diskussionspunkte}}')), {
+				conference: 'MUN-SH 2027'
+			});
+			expect(filled.content?.[0].content?.[0].text).toBe('{{Diskussionspunkte}}');
+		});
 	});
 
 	test('placeholdersIn lists what is used', () => {

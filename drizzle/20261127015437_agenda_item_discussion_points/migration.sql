@@ -1,0 +1,1 @@
+ALTER TABLE "committee_agenda_item" ADD COLUMN "discussion_points" text[] DEFAULT '{}'::text[] NOT NULL;

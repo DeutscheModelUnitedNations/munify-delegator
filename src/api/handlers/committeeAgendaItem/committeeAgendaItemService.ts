@@ -10,13 +10,15 @@ export async function createAgendaItem(values: {
 	committeeId: string;
 	title: string;
 	teaserText?: string | null;
+	discussionPoints?: string[] | null;
 }) {
 	const created = await db
 		.insert(schema.committeeAgendaItem)
 		.values({
 			committeeId: values.committeeId,
 			title: values.title,
-			teaserText: values.teaserText ?? undefined
+			teaserText: values.teaserText ?? undefined,
+			discussionPoints: values.discussionPoints ?? undefined
 		})
 		.returning({ id: schema.committeeAgendaItem.id })
 		.then(assertFirstEntryExists);
@@ -24,21 +26,31 @@ export async function createAgendaItem(values: {
 	return created.id;
 }
 
-/** Changes the given fields of an agenda item; `null` leaves the title and teaser as they are. */
+/**
+ * Changes the given fields of an agenda item; `null` leaves the title, teaser and points for
+ * discussion as they are. The points are one value: the whole list, in order.
+ */
 export async function updateAgendaItem({
 	id,
 	title,
 	teaserText,
+	discussionPoints,
 	reviewHelpStatus
 }: {
 	id: string;
 	title?: string | null;
 	teaserText?: string | null;
+	discussionPoints?: string[] | null;
 	reviewHelpStatus?: ReviewHelpStatus;
 }) {
 	await db
 		.update(schema.committeeAgendaItem)
-		.set({ title: title ?? undefined, teaserText: teaserText ?? undefined, reviewHelpStatus })
+		.set({
+			title: title ?? undefined,
+			teaserText: teaserText ?? undefined,
+			discussionPoints: discussionPoints ?? undefined,
+			reviewHelpStatus
+		})
 		.where(whereRows({ table: schema.committeeAgendaItem, filter: { id } }));
 	committeeAgendaItemPubsub.updated(id);
 }

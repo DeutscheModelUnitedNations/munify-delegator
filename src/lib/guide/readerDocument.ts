@@ -52,6 +52,7 @@ export function resolveDocument({ doc, resolve }: { doc: GuideDocument; resolve:
 	const content = mapNodes(doc, (node): GuideNode | null => {
 		switch (node.type) {
 			case 'heading':
+			case 'discussionPoints':
 				return { ...node, attrs: { ...node.attrs, id: anchors.shift() } };
 			case 'image':
 				return withAttr({ node, key: 'src', resolve });

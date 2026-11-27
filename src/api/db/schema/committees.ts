@@ -43,5 +43,10 @@ export const committeeAgendaItem = snakeCase.table('committee_agenda_item', {
 	committeeId: text()
 		.notNull()
 		.references(() => committee.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	reviewHelpStatus: reviewHelpStatus().default('UNSPECIFIED').notNull()
+	reviewHelpStatus: reviewHelpStatus().default('UNSPECIFIED').notNull(),
+	/**
+	 * The points for discussion ("Punkte zur Diskussion"): what papers on the agenda item should
+	 * answer, one line each, in order. Shown to authors and reviewers, filled into the guide.
+	 */
+	discussionPoints: text().array().default([]).notNull()
 });
