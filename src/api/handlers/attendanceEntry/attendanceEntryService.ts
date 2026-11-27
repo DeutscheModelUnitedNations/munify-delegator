@@ -11,6 +11,7 @@ import {
 } from '#api/pubsub';
 import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import { checkPassedForScan, findSession } from '#api/handlers/scanLookup/scanLookupService';
+import { birthdayBoundsForAge } from '#lib/helpers/ageChecker';
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one
@@ -189,4 +190,80 @@ export async function recordScan({
 	// The session's entry count changed, which its readers show
 	attendanceSessionPubsub.updated(sessionId);
 	return entryId;
+}
+
+type ParticipantWhere = NonNullable<
+	NonNullable<Parameters<typeof db.query.conferenceParticipant.findMany>[0]>['where']
+>;
+
+/** Somebody holding a seat in the conference: a member of a seated delegation, or a role holder. */
+const seatedIn = (conferenceId: string): ParticipantWhere => ({
+	conferenceId,
+	OR: [
+		{ delegationMember: { delegation: { assignedRoleId: { isNotNull: true } } } },
+		{ singleParticipant: { assignedRoleId: { isNotNull: true } } }
+	]
+});
+
+/**
+ * The entrance of a conference since `since` (the start of the caller's day), for the team's
+ * overview: how many hold a seat, how many of them passed the entrance check of a checking
+ * session since then, and how many of them are under age at the conference's start without their
+ * guardians' consent done. People without a birthday are not counted as under age.
+ */
+export async function entranceSummary({
+	conferenceId,
+	since
+}: {
+	conferenceId: string;
+	since: Date;
+}) {
+	const conference = await db.query.conference.findFirst({
+		where: { id: conferenceId },
+		columns: { startConference: true }
+	});
+	if (!conference) return { expected: 0, checkedIn: 0, minorsWithoutConsent: 0 };
+	const minorBirthdays = birthdayBoundsForAge({
+		range: { lte: 17 },
+		startConference: conference.startConference
+	});
+
+	const [expected, checkedIn, minors] = await Promise.all([
+		db.query.conferenceParticipant.findMany({
+			where: seatedIn(conferenceId),
+			columns: { id: true }
+		}),
+		db.query.conferenceParticipant.findMany({
+			where: {
+				AND: [
+					seatedIn(conferenceId),
+					{
+						attendanceEntries: {
+							timestamp: { gte: since },
+							checkPassed: true,
+							session: { mode: 'CHECK' }
+						}
+					}
+				]
+			},
+			columns: { id: true }
+		}),
+		db.query.conferenceParticipant.findMany({
+			where: {
+				AND: [
+					seatedIn(conferenceId),
+					{
+						guardianConsent: { ne: 'DONE' },
+						user: { birthday: { gt: minorBirthdays.gt ?? new Date(0) } }
+					}
+				]
+			},
+			columns: { id: true }
+		})
+	]);
+	return {
+		expected: expected.length,
+		checkedIn: checkedIn.length,
+		minorsWithoutConsent: minors.length
+	};
 }

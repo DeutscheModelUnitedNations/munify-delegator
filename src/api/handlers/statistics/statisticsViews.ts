@@ -613,6 +613,7 @@ export function paperStatsOf(papers: PapersRow[]) {
 			draft: count((row) => row.status === 'DRAFT'),
 			submitted: count((row) => row.status === 'SUBMITTED'),
 			changesRequested: count((row) => row.status === 'CHANGES_REQUESTED'),
+			revised: count((row) => row.status === 'REVISED'),
 			accepted: count((row) => row.status === 'ACCEPTED')
 		},
 		withReviews,

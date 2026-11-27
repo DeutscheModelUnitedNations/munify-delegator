@@ -5,6 +5,7 @@ import {
 	ageStatisticsOf,
 	dietOf,
 	nationalityDistributionOf,
+	paperStatsOf,
 	postalPaymentProgressOf,
 	registrationStatisticsOf,
 	registrationTimelineOf,
@@ -433,5 +434,38 @@ describe('schoolStatsOf', () => {
 		expect(
 			schoolStatsOf({ schools: [row('Kiel', 2), row('Kiel', 4, false)], filter: 'NOT_APPLIED' })
 		).toEqual([{ school: 'Kiel', people: 4 }]);
+	});
+});
+
+describe('paperStatsOf', () => {
+	const row = (
+		status: 'SUBMITTED' | 'REVISED' | 'ACCEPTED' | 'CHANGES_REQUESTED',
+		count: number
+	) => ({
+		conferenceId: 'c',
+		type: 'POSITION_PAPER' as const,
+		status,
+		hasReview: status !== 'SUBMITTED',
+		committeeId: null,
+		committeeName: null,
+		committeeAbbreviation: null,
+		count
+	});
+
+	test('counts revised papers apart from first submissions', () => {
+		const stats = paperStatsOf([
+			row('SUBMITTED', 3),
+			row('REVISED', 2),
+			row('CHANGES_REQUESTED', 1),
+			row('ACCEPTED', 4)
+		]);
+		expect(stats.byStatus).toEqual({
+			draft: 0,
+			submitted: 3,
+			changesRequested: 1,
+			revised: 2,
+			accepted: 4
+		});
+		expect(stats.total).toBe(10);
 	});
 });

@@ -1,6 +1,10 @@
 import { schemaBuilder } from '#api/rumble';
-import { assertCanGetCertificate } from './certificatePermissions';
-import { certificatePublicKey, issueCertificate } from './certificateService';
+import { assertCanCountCertificates, assertCanGetCertificate } from './certificatePermissions';
+import {
+	certificatePublicKey,
+	countCertificateHolders,
+	issueCertificate
+} from './certificateService';
 
 /**
  * The public key the certificates issued as JWTs (before signed codes) are verified with. Only the
@@ -39,6 +43,16 @@ const Certificate = schemaBuilder.simpleObject('Certificate', {
 });
 
 schemaBuilder.queryFields((t) => ({
+	certificateHoldersCount: t.int({
+		description:
+			'How many people of the conference get a participation certificate: those whose attendance is recorded. Participant care only.',
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertCanCountCertificates({ ctx, conferenceId: args.conferenceId });
+			return countCertificateHolders(args.conferenceId);
+		}
+	}),
+
 	getCertificate: t.field({
 		description:
 			'Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".',

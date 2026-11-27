@@ -91,6 +91,7 @@ const papersByStatusStats = schemaBuilder.simpleObject('StatisticsResultPapersBy
 		draft: t.int({ description: 'Papers not submitted yet.' }),
 		submitted: t.int({ description: 'Papers submitted and waiting for a review.' }),
 		changesRequested: t.int({ description: 'Papers a reviewer sent back for changes.' }),
+		revised: t.int({ description: 'Papers revised after a review and waiting for the next one.' }),
 		accepted: t.int({ description: 'Papers accepted by a reviewer.' })
 	})
 });

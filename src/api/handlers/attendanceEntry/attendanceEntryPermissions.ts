@@ -151,3 +151,17 @@ export async function assertCanCreateAttendanceEntry({
 	await assertParticipantToScan({ conferenceId: args.conferenceId, subjectId: args.userId });
 	return { callerId: ctx.mustBeLoggedIn().sub };
 }
+
+/**
+ * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` in the conference: the
+ * entrance's figures name no one, but they are participant care's.
+ */
+export async function assertCanReadEntranceSummary({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+}

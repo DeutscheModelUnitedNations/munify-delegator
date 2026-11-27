@@ -3644,6 +3644,22 @@ enum EmailtriggerEnum {
   MANUAL
 }
 
+"""The conference's entrance on one day, as counts."""
+type EntranceSummary {
+  """
+  Of them, how many passed the entrance check of a checking session since then.
+  """
+  checkedIn: Int!
+
+  """People holding a seat in the conference."""
+  expected: Int!
+
+  """
+  Of them, how many are under 18 at the conference's start and their guardians' consent is not done.
+  """
+  minorsWithoutConsent: Int!
+}
+
 type FlagCollectionData {
   flags: [FlagProgress!]!
   stats: FlagCollectionStats!
@@ -5534,7 +5550,7 @@ type Mutation {
   importPostalScan(code: String, conferenceId: ID!, contentKey: String!, fileId: ID, readings: [PaperReadingInput!], source: PostalscansourceEnum!, userId: ID!): PostalScanOutcome
 
   """
-  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
     conferenceId: ID!
@@ -7963,6 +7979,11 @@ type Query {
   canUpdateSchool(id: ID!): Boolean!
 
   """
+  How many people of the conference get a participation certificate: those whose attendance is recorded. Participant care only.
+  """
+  certificateHoldersCount(conferenceId: ID!): Int!
+
+  """
   The linked CHASE's presence records of the conference, asked of CHASE now (participant care); null while no CHASE is linked.
   """
   chasePresence(conferenceId: ID!): ChasePresence
@@ -8188,6 +8209,11 @@ type Query {
   ): [EmailKindStats!]!
 
   """
+  How many people holding a seat passed the entrance check since `since` (the start of the caller's day) and how many minors lack their guardians' consent. Participant care only.
+  """
+  entranceSummary(conferenceId: ID!, since: DateTime!): EntranceSummary!
+
+  """
   Introduction papers are the ones with no agenda item - a non-state actor writes one per conference rather than one per topic. For the reviewer hub and the participants' paper view alike; the read ability decides which papers each of them gets. FORBIDDEN for anyone without a part in the conference.
   """
   findIntroductionPapers(conferenceId: ID!): [Paper!]!
@@ -8218,7 +8244,7 @@ type Query {
   getAllConferenceNations(conferenceId: ID!): [Nation!]!
 
   """
-  Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
+  Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
   """
   getCertificate(
     conferenceId: ID!
@@ -9998,6 +10024,9 @@ type StatisticsResultPapersByStatus {
   """Papers not submitted yet."""
   draft: Int!
 
+  """Papers revised after a review and waiting for the next one."""
+  revised: Int!
+
   """Papers submitted and waiting for a review."""
   submitted: Int!
 }
@@ -11102,6 +11131,11 @@ type Surveyquestion {
   """Get the surveyAnswers related to this surveyQuestion"""
   surveyAnswers(limit: Int, offset: Int, orderBy: SurveyanswerOrderInputArgument, search: SurveyanswerSearchInputArgument, where: SurveyanswerWhereInputArgument): [Surveyanswer!]!
   title: String!
+
+  """
+  How many people holding a seat in the conference have not answered yet. Null for whoever does not manage its participants.
+  """
+  unansweredCount: Int
   updatedAt: DateTime!
 }
 

@@ -3,6 +3,7 @@ import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
+	hasTeamPermission,
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	systemAdmin,
@@ -71,4 +72,18 @@ export async function assertCanManageSurveyQuestion({
 		throw apiError({ code: 'NOT_FOUND', message: m.surveyQuestionNotFound() });
 	}
 	return { conferenceId: question.conferenceId };
+}
+
+/**
+ * Whether the caller sees how far a question's answers are (`manageParticipants`: project
+ * management and participant care), the same people who read the results page.
+ */
+export function canReadSurveyProgress({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	return hasTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }

@@ -705,7 +705,8 @@ const FIELDS: Record<string, TypeClassification> = {
 			'draft',
 			'hidden',
 			'showSelectionOnDashboard',
-			'title'
+			'title',
+			'unansweredCount'
 		]
 	},
 	Surveyoption: {
@@ -1079,7 +1080,7 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: ['abbreviation', 'committeeId', 'count', 'name']
 	},
 	StatisticsResultPapersByStatus: {
-		visible: ['accepted', 'changesRequested', 'draft', 'submitted']
+		visible: ['accepted', 'changesRequested', 'draft', 'revised', 'submitted']
 	},
 	StatisticsResultPapersByType: {
 		visible: ['introductionPaper', 'positionPaper', 'workingPaper']
@@ -1155,6 +1156,8 @@ const FIELDS: Record<string, TypeClassification> = {
 
 	// --- Identity, sessions and secrets: nothing for an assistant ---------------------------------
 	Certificate: { visible: ['sessions'], redacted: ['fullName', 'code'] },
+	// minors are counted by age, which is redacted per person
+	EntranceSummary: { visible: ['checkedIn', 'expected'], aggregate: ['minorsWithoutConsent'] },
 	SignedCode: { redacted: ['code'] },
 	SignedCodeKey: { visible: ['kid', 'publicKey'] },
 	JWK: { visible: ['alg', 'e', 'kty', 'n', 'use'] },
@@ -1190,6 +1193,7 @@ const FIELDS: Record<string, TypeClassification> = {
 		visible: [
 			'assignmentReviewsCount',
 			'bankTransfersCount',
+			'certificateHoldersCount',
 			'canImpersonateUser',
 			'canUpdateSchool',
 			'delegationsCount',

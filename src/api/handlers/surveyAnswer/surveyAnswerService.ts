@@ -137,6 +137,46 @@ async function optionIdsOfQuestion({
 }
 
 /**
+ * The people a question waits for: the same the results page lists as not having answered, those
+ * holding a seat in its conference without an answer to it.
+ */
+type ParticipantWhere = NonNullable<
+	NonNullable<Parameters<typeof db.query.conferenceParticipant.findMany>[0]>['where']
+>;
+
+function seatedWithoutAnswer({
+	conferenceId,
+	questionId
+}: {
+	conferenceId: string;
+	questionId: string;
+}): ParticipantWhere {
+	return {
+		conferenceId,
+		OR: [
+			{ delegationMember: { delegation: { assignedRoleId: { isNotNull: true } } } },
+			{ singleParticipant: { assignedRoleId: { isNotNull: true } } }
+		],
+		NOT: { user: { surveyAnswers: { questionId } } }
+	};
+}
+
+/** How many people holding a seat have not answered the question yet. */
+export async function countUnanswered({
+	conferenceId,
+	questionId
+}: {
+	conferenceId: string;
+	questionId: string;
+}) {
+	const rows = await db.query.conferenceParticipant.findMany({
+		where: seatedWithoutAnswer({ conferenceId, questionId }),
+		columns: { id: true }
+	});
+	return rows.length;
+}
+
+/**
  * Gives everybody who holds a seat in the question's conference and has not answered it yet an
  * option that still has room (`distributeToOptions`). Those for whom no option has room are left
  * without an answer. Returns how many answers were written.
@@ -160,16 +200,8 @@ export async function distributeUnansweredSurvey(questionId: string) {
 				.from(schema.surveyAnswer)
 				.where(whereRows({ table: schema.surveyAnswer, filter: { questionId } }))
 				.groupBy(schema.surveyAnswer.optionId),
-			// The same people the results page lists as not having answered: those holding a seat.
 			tx.query.conferenceParticipant.findMany({
-				where: {
-					conferenceId: question.conferenceId,
-					OR: [
-						{ delegationMember: { delegation: { assignedRoleId: { isNotNull: true } } } },
-						{ singleParticipant: { assignedRoleId: { isNotNull: true } } }
-					],
-					NOT: { user: { surveyAnswers: { questionId } } }
-				},
+				where: seatedWithoutAnswer({ conferenceId: question.conferenceId, questionId }),
 				columns: { id: true }
 			})
 		]);
