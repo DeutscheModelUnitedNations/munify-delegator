@@ -157,7 +157,7 @@ In the list you edit or delete a snippet with the buttons in its row.
 
 - **Flag Collection:** every nation and every non-state actor is a flag made of puzzle pieces. A nation has one piece per agenda item of its committees, a non-state actor three. A piece is unlocked when its paper is submitted and found once it has a review. If your review is the first for a piece, DELEGATOR shows you the piece found. You can filter by **All**, **Incomplete**, **Unlocked** and **Complete**.
 - **Reviewer Leaderboard:** the ten people who most often reviewed a paper first, under made-up names. Your own row is marked **You**.
-- **Detailed Paper Statistics:** the papers by status, type and committee, the review progress and the acceptance rate.
+- **Detailed Paper Statistics:** the papers by status, type and committee, the review progress and the acceptance rate. Below, **Papers over time by committee** shows in 3D where each committee's papers stood week by week: committees along the front, weeks going back, stacked by status. Yellow is what still waits for feedback. **Show as table** gives the figures of all committees per week.
 
 ## Exporting {#export}
 

@@ -207,8 +207,14 @@ export default defineConfig({
 		// through vite-plugin-svelte's compiler instead.
 		exclude: ['@deutschemodelunitednations/munify-resolution-editor'],
 		// Imported lazily when a tour starts; found only then, it would make Vite re-optimize and
-		// reload the page in the middle of the first tour.
-		include: ['@deutschemodelunitednations/docs-kit/tour']
+		// reload the page in the middle of the first tour. echarts-gl likewise, when the first 3D
+		// chart mounts (`Bar3DChart.svelte`): optimized apart from the echarts the page already
+		// runs, its import never settled.
+		include: [
+			'@deutschemodelunitednations/docs-kit/tour',
+			'echarts-gl/lib/chart/bar3D.js',
+			'echarts-gl/lib/component/grid3D.js'
+		]
 	},
 	ssr: {
 		// The OIDC library needs typebox >= 1.1, but the hoisted copy is the 1.0 one that

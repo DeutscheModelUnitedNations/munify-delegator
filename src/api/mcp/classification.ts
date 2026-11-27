@@ -1135,6 +1135,11 @@ const FIELDS: Record<string, TypeClassification> = {
 			'singleParticipantsWithoutRole'
 		]
 	},
+	// Delegations per role and wish place: counts about roles, never about a person.
+	StatisticsResultRoleWishRank: { visible: ['count', 'granted', 'rank'] },
+	StatisticsResultRoleWishes: {
+		visible: ['granted', 'kind', 'name', 'nationAlpha3Code', 'roleId', 'total']
+	},
 	StatisticsResultSchool: { visible: ['people', 'school'] },
 	StatisticsResultSupervisorStats: {
 		visible: [

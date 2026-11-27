@@ -20,6 +20,7 @@ type DelegationsRow = (typeof schema.statisticsDelegations)['$inferSelect'];
 type SchoolsRow = (typeof schema.statisticsSchools)['$inferSelect'];
 type RegistrationDayRow = (typeof schema.statisticsRegistrationDays)['$inferSelect'];
 type RoleApplicationsRow = (typeof schema.statisticsRoleApplications)['$inferSelect'];
+type RoleWishesRow = (typeof schema.statisticsRoleWishes)['$inferSelect'];
 type AgesRow = (typeof schema.statisticsAges)['$inferSelect'];
 type AddressesRow = (typeof schema.statisticsAddresses)['$inferSelect'];
 type ParticipantStatusRow = (typeof schema.statisticsParticipantStatus)['$inferSelect'];
@@ -619,4 +620,73 @@ export function paperStatsOf(papers: PapersRow[]) {
 		withoutReviews: total - withReviews,
 		byCommittee: [...committees].map(([committeeId, data]) => ({ committeeId, ...data }))
 	};
+}
+
+// ── Role wishes (filtered) ──────────────────────────────────────────────────
+
+/**
+ * Per role, how many delegations wished for it at which place of their list, and how many of them
+ * got it. Roles nobody wished for are left out. The most wanted first: by first wishes, then by
+ * all wishes, then by name.
+ */
+export function roleWishesOf({
+	wishes,
+	filter
+}: {
+	wishes: RoleWishesRow[];
+	filter: StatsFilterType;
+}) {
+	const roles = new Map<
+		string,
+		{
+			roleId: string;
+			kind: RoleWishesRow['kind'];
+			nationAlpha3Code: string | null;
+			name: string | null;
+			total: number;
+			granted: number;
+			ranks: Map<number, { rank: number; count: number; granted: number }>;
+		}
+	>();
+	for (const row of wishes) {
+		if (!matchesStatsFilter({ filter, row })) continue;
+		const role = accumulate({
+			map: roles,
+			key: row.roleId,
+			create: () => ({
+				roleId: row.roleId,
+				kind: row.kind,
+				nationAlpha3Code: row.nationAlpha3Code,
+				name: row.name,
+				total: 0,
+				granted: 0,
+				ranks: new Map()
+			})
+		});
+		const rank = accumulate({
+			map: role.ranks,
+			key: row.rank,
+			create: () => ({ rank: row.rank, count: 0, granted: 0 })
+		});
+		role.total += row.count;
+		rank.count += row.count;
+		if (row.granted) {
+			role.granted += row.count;
+			rank.granted += row.count;
+		}
+	}
+
+	const firstWishes = (role: { ranks: Map<number, { count: number }> }) =>
+		role.ranks.get(1)?.count ?? 0;
+	return [...roles.values()]
+		.toSorted(
+			(a, b) =>
+				firstWishes(b) - firstWishes(a) ||
+				b.total - a.total ||
+				(a.name ?? a.nationAlpha3Code ?? '').localeCompare(b.name ?? b.nationAlpha3Code ?? '')
+		)
+		.map(({ ranks, ...role }) => ({
+			...role,
+			byRank: [...ranks.values()].toSorted((a, b) => a.rank - b.rank)
+		}));
 }

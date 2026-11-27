@@ -16,6 +16,7 @@
 	import ReviewerLeaderboard from '#lib/components/paperHub/ReviewerLeaderboard.svelte';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import DetailedPaperStats from '#lib/components/paperHub/DetailedPaperStats.svelte';
+	import PaperReviewTimeline from '#lib/components/paperHub/PaperReviewTimeline.svelte';
 	import { createPaperSortState, paperHasReviews, sortPapers } from './paperSorting';
 	import { createExpandedPaperGroup, createPaperGroupsSnapshot } from './paperGroups.svelte';
 	import { page } from '$app/state';
@@ -415,6 +416,7 @@
 	{:else if section === 'statistics'}
 		<PaperGroupsState loading={papersLoading} error={snapshot.error} empty={!allPapers.length}>
 			<DetailedPaperStats {allPapers} {committeesWithPapers} />
+			<PaperReviewTimeline {conferenceId} />
 		</PaperGroupsState>
 	{/if}
 </div>

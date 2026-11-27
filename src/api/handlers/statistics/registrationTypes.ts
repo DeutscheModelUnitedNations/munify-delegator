@@ -1,4 +1,4 @@
-import { schemaBuilder } from '#api/rumble';
+import { enum_, schemaBuilder } from '#api/rumble';
 
 // The GraphQL types of the statistics about registrations: how many registered and applied, the
 // roles they got, the committee seats and the registrations over time. `statisticsViews.ts`
@@ -175,3 +175,34 @@ export const registrationTimelineEntry = schemaBuilder.simpleObject(
 		})
 	}
 );
+
+const roleKindEnum = enum_({ tsName: 'conferenceRoleKind' });
+
+const roleWishRank = schemaBuilder.simpleObject('StatisticsResultRoleWishRank', {
+	description: 'The delegations that put a role at one place of their wish list.',
+	fields: (t) => ({
+		rank: t.int({ description: "The wish's place in the delegation's list; 1 is the first wish." }),
+		count: t.int({ description: 'Delegations wishing for the role at this place.' }),
+		granted: t.int({ description: 'Of them, the delegations that got the role.' })
+	})
+});
+
+export const roleWishStats = schemaBuilder.simpleObject('StatisticsResultRoleWishes', {
+	description:
+		'How often delegations the filter selects wished for one nation or non-state actor, by place in their wish list.',
+	fields: (t) => ({
+		roleId: t.id({ description: "The role's id." }),
+		kind: t.field({ type: roleKindEnum, description: 'Nation or non-state actor.' }),
+		nationAlpha3Code: t.string({
+			nullable: true,
+			description: "A nation's alpha-3 code; null for a non-state actor."
+		}),
+		name: t.string({ nullable: true, description: "A non-state actor's name; null for a nation." }),
+		total: t.int({ description: 'Delegations wishing for the role at any place.' }),
+		granted: t.int({ description: 'Of them, the delegations that got the role.' }),
+		byRank: t.field({
+			type: [roleWishRank],
+			description: 'The wishes by place, first wishes first; places nobody chose are left out.'
+		})
+	})
+});

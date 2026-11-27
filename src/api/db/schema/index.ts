@@ -143,6 +143,7 @@ export {
 	statisticsSchools,
 	statisticsRegistrationDays,
 	statisticsRoleApplications,
+	statisticsRoleWishes,
 	statisticsAges,
 	statisticsAddresses,
 	statisticsParticipantStatus,

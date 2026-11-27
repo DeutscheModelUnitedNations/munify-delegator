@@ -7168,6 +7168,7 @@ export type StatisticsResult = {
   registered: () => StatisticsResultRegistered,
   registrationTimeline: () => StatisticsResultRegistrationTimeline[],
   roleBased: () => StatisticsResultRoleBased,
+  roleWishes: () => StatisticsResultRoleWishes[],
   schoolStats: () => StatisticsResultSchool[],
   supervisorStats: () => StatisticsResultSupervisorStats,
   waitingList: () => StatisticsResultWaitingList    
@@ -7369,6 +7370,22 @@ export type StatisticsResultRoleBased = {
   delegationsWithoutAssignment: Int,
   singleParticipantsWithRole: Int,
   singleParticipantsWithoutRole: Int    
+};
+		
+export type StatisticsResultRoleWishRank = {
+  count: Int,
+  granted: Int,
+  rank: Int    
+};
+		
+export type StatisticsResultRoleWishes = {
+  byRank: () => StatisticsResultRoleWishRank[],
+  granted: Int,
+  kind: ConferencerolekindEnum,
+  name: String | null,
+  nationAlpha3Code: String | null,
+  roleId: ID,
+  total: Int    
 };
 		
 export type StatisticsResultSchool = {

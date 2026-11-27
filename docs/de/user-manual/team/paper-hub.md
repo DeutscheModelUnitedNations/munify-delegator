@@ -157,7 +157,7 @@ In der Liste bearbeitest oder löschst du einen Baustein über die Knöpfe in se
 
 - **Flaggensammlung:** Jede Nation und jeder nichtstaatliche Akteur ist eine Flagge aus Puzzlestücken. Eine Nation hat ein Stück pro Tagesordnungspunkt ihrer Gremien, ein nichtstaatlicher Akteur drei. Ein Stück wird freigeschaltet, wenn das Papier dazu eingereicht ist, und gefunden, wenn es Feedback hat. Ist dein Feedback das erste für ein Stück, zeigt DELEGATOR das gefundene Stück an. Filtern kannst du nach **Alle**, **Unvollständig**, **Freigeschaltet** und **Vollständig**.
 - **Rangliste der Bewertenden:** die zehn Personen, die am häufigsten als Erste ein Papier begutachtet haben, unter erfundenen Namen. Deine eigene Zeile ist mit **Du** markiert.
-- **Detaillierte Paper-Statistiken:** die Papiere nach Status, Typ und Gremium, der Feedback-Fortschritt und die Annahmequote.
+- **Detaillierte Paper-Statistiken:** die Papiere nach Status, Typ und Gremium, der Feedback-Fortschritt und die Annahmequote. Darunter zeigt **Paper-Verlauf nach Gremium** in 3D, wo die Papiere jedes Gremiums Woche für Woche standen: vorne die Gremien, nach hinten die Wochen, gestapelt nach Status. Gelb ist, was noch auf Feedback wartet. **Als Tabelle anzeigen** nennt die Zahlen aller Gremien je Woche.
 
 ## Exportieren {#export}
 

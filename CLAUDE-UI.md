@@ -53,6 +53,19 @@ set a pattern are documented below too (Seat Planning, Assignment Board, Calenda
 `abbreviation`, `papers`). Shows totals, review-progress and acceptance-rate (accepted / non-draft)
 gauges, papers by type, status by type (stacked), committee breakdown. Charts from
 `#lib/components/charts/echarts/index`: `BarChart`, `MultiSeriesBarChart`, `GaugeChart`, `EChartsBase`.
+Below it `PaperReviewTimeline.svelte` (prop `conferenceId`, fetches its own history fields) shows
+each committee's papers week by week by status (`paperTimeline.ts` rebuilds the status from
+versions and reviews' `statusAfter`).
+
+**3D charts**: `#lib/components/charts/echarts/Bar3DChart.svelte` draws stacked 3D bars with
+echarts-gl (WebGL), imported on mount so other pages do not load it; listed in Vite's
+`optimizeDeps.include`, or the first chart re-optimizes and reloads the page. Props `data`
+(`Bar3DChartData` from `bar3DOptions.ts`: `xLabels`, `yLabels`, axis names, `series` of
+`{ name, color, data: { x, y, value }[] }`), `label` (the canvas's accessible name), `height`,
+`fallback` snippet (no WebGL). The camera turns slowly unless `prefers-reduced-motion`. The canvas
+says nothing to screen readers, so every 3D chart sits next to a "Als Tabelle anzeigen" `<details>`
+table with the same figures (`RoleWishes.svelte`, `PaperReviewTimeline.svelte`). Use 3D only for
+real three-dimensional data; flat breakdowns stay 2D.
 
 ## Team Management Components
 
