@@ -48,12 +48,14 @@
 		}
 	});
 
-	const changes = $derived(committeeChanges({ stored: committee, draft }));
+	const changes = $derived(committeeChanges({ base, draft }));
 	const valid = $derived(committeeDraftValid(draft));
 
 	async function save() {
 		if (!changes) return;
 		saving = true;
+		// what is sent becomes the base: fields edited while saving stay edits
+		const submitted = { ...draft };
 		try {
 			const promise = client.mutate.updateCommittee({
 				__args: { id: committee.id, ...changes },
@@ -61,7 +63,7 @@
 			});
 			toast.promise(promise, { ...genericPromiseToastMessages, error: errorToastMessage });
 			await promise;
-			base = { ...draft };
+			base = submitted;
 		} catch {
 			// the toast shows what went wrong; the fields keep the edit
 		} finally {

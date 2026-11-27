@@ -48,13 +48,15 @@
 		}
 	});
 
-	const changes = $derived(agendaItemChanges({ stored: item, draft }));
+	const changes = $derived(agendaItemChanges({ stored: base, draft }));
 	const changed = $derived(Object.values(changes).some((value) => value !== undefined));
 	const valid = $derived(!!draft.title.trim());
 	const points = $derived(item.discussionPoints.length);
 
 	async function save() {
 		saving = true;
+		// what is sent becomes the base: fields edited while saving stay edits
+		const submitted = { ...draft, discussionPoints: [...draft.discussionPoints] };
 		try {
 			const promise = client.mutate.updateAgendaItem({
 				__args: { id: item.id, ...changes },
@@ -62,7 +64,7 @@
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			base = { ...draft, discussionPoints: [...draft.discussionPoints] };
+			base = submitted;
 		} catch {
 			// the toast shows what went wrong; the fields keep the edit
 		} finally {

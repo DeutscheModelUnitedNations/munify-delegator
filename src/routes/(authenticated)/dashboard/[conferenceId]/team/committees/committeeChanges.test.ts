@@ -15,15 +15,15 @@ const stored = {
 	numOfSeatsPerDelegation: 1
 };
 
+const base = committeeDraftOf(stored);
+
 describe('committeeChanges', () => {
 	test('nothing changed sends nothing', () => {
-		expect(committeeChanges({ stored, draft: committeeDraftOf(stored) })).toBeUndefined();
+		expect(committeeChanges({ base, draft: committeeDraftOf(stored) })).toBeUndefined();
 	});
 
 	test('sends only the changed fields, trimmed', () => {
-		expect(
-			committeeChanges({ stored, draft: { ...committeeDraftOf(stored), name: ' Rat ', seats: 2 } })
-		).toEqual({
+		expect(committeeChanges({ base, draft: { ...base, name: ' Rat ', seats: 2 } })).toEqual({
 			name: 'Rat',
 			abbreviation: undefined,
 			resolutionHeadline: undefined,
@@ -33,9 +33,19 @@ describe('committeeChanges', () => {
 
 	test('an emptied headline clears it', () => {
 		expect(
-			committeeChanges({ stored, draft: { ...committeeDraftOf(stored), resolutionHeadline: ' ' } })
-				?.resolutionHeadline
+			committeeChanges({ base, draft: { ...base, resolutionHeadline: ' ' } })?.resolutionHeadline
 		).toBeNull();
+	});
+
+	test('a field left alone is not sent, even when it was saved elsewhere meanwhile', () => {
+		// the name changed elsewhere; the form still shows the old one and only edited the seats
+		const draft = { ...base, seats: 3 };
+		expect(committeeChanges({ base, draft })).toEqual({
+			name: undefined,
+			abbreviation: undefined,
+			resolutionHeadline: undefined,
+			numOfSeatsPerDelegation: 3
+		});
 	});
 
 	test('a headline added to a committee without one', () => {
@@ -43,7 +53,7 @@ describe('committeeChanges', () => {
 		expect(committeeDraftOf(without).resolutionHeadline).toBe('');
 		expect(
 			committeeChanges({
-				stored: without,
+				base: committeeDraftOf(without),
 				draft: { ...committeeDraftOf(without), resolutionHeadline: 'Die Versammlung' }
 			})?.resolutionHeadline
 		).toBe('Die Versammlung');

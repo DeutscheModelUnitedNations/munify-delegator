@@ -23,30 +23,20 @@ export function committeeDraftOf(
 }
 
 /**
- * What saving the committee's settings sends: only the fields that differ from the stored
- * committee, so a field left alone keeps what someone else may have saved meanwhile. Names are
- * trimmed; an emptied resolution headline clears it (`null`). `undefined` when nothing changed.
+ * What saving the committee's settings sends: only the fields edited since the form took over the
+ * stored values (`base`), so a field left alone keeps what someone else may have saved meanwhile,
+ * even when the form still shows the older value. Names are trimmed; an emptied resolution headline
+ * clears it (`null`). `undefined` when nothing changed.
  */
-export function committeeChanges({
-	stored,
-	draft
-}: {
-	stored: Pick<
-		ManagedCommittee,
-		'name' | 'abbreviation' | 'resolutionHeadline' | 'numOfSeatsPerDelegation'
-	>;
-	draft: CommitteeDraft;
-}) {
+export function committeeChanges({ base, draft }: { base: CommitteeDraft; draft: CommitteeDraft }) {
 	const name = draft.name.trim();
 	const abbreviation = draft.abbreviation.trim();
 	const headline = draft.resolutionHeadline.trim();
 	const changes = {
-		name: name !== stored.name ? name : undefined,
-		abbreviation: abbreviation !== stored.abbreviation ? abbreviation : undefined,
-		resolutionHeadline:
-			headline !== (stored.resolutionHeadline ?? '') ? headline || null : undefined,
-		numOfSeatsPerDelegation:
-			draft.seats !== stored.numOfSeatsPerDelegation ? draft.seats : undefined
+		name: name !== base.name ? name : undefined,
+		abbreviation: abbreviation !== base.abbreviation ? abbreviation : undefined,
+		resolutionHeadline: headline !== base.resolutionHeadline ? headline || null : undefined,
+		numOfSeatsPerDelegation: draft.seats !== base.seats ? draft.seats : undefined
 	};
 	return Object.values(changes).some((value) => value !== undefined) ? changes : undefined;
 }
