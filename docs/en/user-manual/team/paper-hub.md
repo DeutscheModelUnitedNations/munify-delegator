@@ -161,4 +161,4 @@ In the list you edit or delete a snippet with the buttons in its row.
 
 ## Exporting {#export}
 
-On a paper's page, **Export PDF** or **Export Typst** downloads it. A working paper is set as a resolution with its header, every other paper as a text document. The export takes the text currently in the editor, including unsaved changes in edit mode.
+On a paper's page, **Export PDF** or **Export Typst** downloads it. A working paper is set as a resolution with its header, every other paper as a text document in the conference's design (logo, accent colour of the conference series). The export takes the text currently in the editor, including unsaved changes in edit mode.

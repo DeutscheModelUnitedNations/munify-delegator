@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { db } from '#api/db/db';
@@ -8,35 +8,13 @@ import { logger } from '#lib/logger';
 import { m } from '#lib/paraglide/messages';
 import { committeeTextToTypst, imageFileIdsOf } from '#lib/guide/guideTypst';
 import { fillPlaceholders, type GuideDocument } from '#lib/guide/document';
-import { readStoredFile, storeGeneratedFile } from '../storedFile/storedFileService';
+import { storeGeneratedFile } from '../storedFile/storedFileService';
+import { typstBrandingOf, writeTypstImage } from '#api/services/typstBranding';
 
 /**
  * The committee text of an agenda item (`docs/plans/guide.md`, "Committee text PDF"): its guide
  * page rendered with Typst when the page is published, stored and offered on the page.
  */
-
-/** The image types Typst 0.10 reads, by the extension it needs. */
-const IMAGE_EXTENSIONS: Record<string, string> = {
-	'image/png': 'png',
-	'image/jpeg': 'jpg',
-	'image/gif': 'gif',
-	'image/svg+xml': 'svg'
-};
-
-/** Writes the stored file under `name` plus its extension; undefined for a type Typst cannot read. */
-async function writeImage({ dir, fileId, name }: { dir: string; fileId: string; name: string }) {
-	const file = await db.query.storedFile.findFirst({
-		where: { id: fileId },
-		columns: { key: true, mimeType: true }
-	});
-	const extension = file ? IMAGE_EXTENSIONS[file.mimeType] : undefined;
-	if (!file || !extension) return undefined;
-	const bytes = await readStoredFile(file.key);
-	if (!bytes) return undefined;
-	const path = `${name}.${extension}`;
-	await writeFile(join(dir, path), bytes);
-	return path;
-}
 
 /**
  * Renders the committee text of an agenda item page and stores it; answers the file's id. A
@@ -55,7 +33,7 @@ export async function renderCommitteeText(page: {
 			committee: {
 				columns: { name: true, abbreviation: true },
 				with: {
-					conference: { columns: { id: true, title: true, emblemFileId: true } },
+					conference: { columns: { id: true, title: true } },
 					agendaItems: { columns: { title: true } }
 				}
 			}
@@ -74,12 +52,10 @@ export async function renderCommitteeText(page: {
 	try {
 		const images = new Map<string, string>();
 		for (const [index, fileId] of imageFileIdsOf(doc).entries()) {
-			const path = await writeImage({ dir, fileId, name: `image-${index}` });
+			const path = await writeTypstImage({ dir, fileId, name: `image-${index}` });
 			if (path) images.set(fileId, path);
 		}
-		const emblemPath = committee.conference.emblemFileId
-			? await writeImage({ dir, fileId: committee.conference.emblemFileId, name: 'emblem' })
-			: undefined;
+		const branding = await typstBrandingOf({ conferenceId: committee.conference.id, dir });
 		const source = committeeTextToTypst({
 			doc,
 			images,
@@ -87,9 +63,10 @@ export async function renderCommitteeText(page: {
 				conference: committee.conference.title,
 				committee: `${committee.name} (${committee.abbreviation})`,
 				agendaItem: item.title,
-				emblemPath,
-				committeeLabel: m.committee(),
-				agendaItemLabel: m.guideAgendaItemLabel()
+				logoPath: branding?.logoPath,
+				agendaItemLabel: m.guideAgendaItemLabel(),
+				brand: branding?.brand ?? 'dmun',
+				lang: branding?.lang ?? 'de'
 			}
 		});
 		const pdf = await compileTypst({ dir, source });

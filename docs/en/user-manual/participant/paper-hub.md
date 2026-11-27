@@ -135,7 +135,7 @@ A click opens the paper in read-only mode (**You are viewing this paper as a sup
 
 ## Exporting {#export}
 
-On a paper's page, **Export PDF** downloads it. **Export Typst** downloads the source for the Typst typesetting program. A working paper is set as a resolution with its header, every other paper as a text document with a note that it was written as part of a simulation. The export takes the text currently in the editor, even if it is not saved yet.
+On a paper's page, **Export PDF** downloads it. **Export Typst** downloads the source for the Typst typesetting program. A working paper is set as a resolution with its header, every other paper as a text document in the conference's design: its logo, your delegation, committee and topic on the first page and a note in the footer that it was written as part of a simulation. The export takes the text currently in the editor, even if it is not saved yet.
 
 The buttons are there for you as the author and for supervisors. The read-only view under **Conference Papers** has no export.
 

@@ -2,11 +2,11 @@ import { unEmblemSvg } from '@deutschemodelunitednations/munify-resolution-edito
 import type { ResolutionHeaderData } from '@deutschemodelunitednations/munify-resolution-editor/schema';
 import { error } from '@sveltejs/kit';
 import { z } from 'zod';
+import type { TipTapNode } from '#lib/helpers/paperTypst';
 
 // Fast-fail limits — this endpoint shells out to a compiler, so reject
 // oversized inputs before any heavy processing.
 const MAX_BODY_BYTES = 5_000_000; // 5 MB raw request body
-const MAX_TYPST_CHARS = 2_000_000; // ~2 MB of Typst source
 const MAX_SVG_BYTES = 2_000_000; // 2 MB decoded emblem SVG
 
 const jsonObject = z.record(z.string(), z.unknown());
@@ -120,16 +120,51 @@ export function compileErrorDetail(e: unknown): string {
 	return String(e);
 }
 
+/** A label or name the paper page prints: plain text of a sane length. */
+const paperText = z.string().max(2_000);
+
+/** The labels of a position or introduction paper, as `paperTypstMeta` builds them in the browser. */
+const paperMeta = z.object({
+	paperType: paperText,
+	entityName: paperText.optional(),
+	committeeLine: paperText.optional(),
+	committeeLabel: paperText,
+	topic: paperText.optional(),
+	topicLabel: paperText,
+	disclaimer: paperText,
+	documentNumber: paperText.optional()
+});
+
+/** The editor's ProseMirror JSON, reduced to the fields `paperToTypst` reads. */
+const tipTapNode: z.ZodType<TipTapNode> = z.lazy(() =>
+	z.object({
+		type: z.string().optional(),
+		text: z.string().optional(),
+		attrs: jsonObject.optional(),
+		marks: z.array(z.object({ type: z.string(), attrs: jsonObject.optional() })).optional(),
+		content: z.array(tipTapNode).optional()
+	})
+);
+
+/** A position or introduction paper to set: its conference, its editor content and labels. */
+const paperRequest = z.object({
+	conferenceId: z.string().min(1).max(100),
+	content: tipTapNode,
+	meta: paperMeta
+});
+
+export type PaperRequest = z.infer<typeof paperRequest>;
+
 /**
- * The raw, self-contained Typst source of a position or introduction paper, or undefined when the
- * request carries a structured resolution instead.
+ * The position or introduction paper the request asks for (`{ paper: { conferenceId, content,
+ * meta } }`), or undefined when it carries a structured resolution instead. The server builds its
+ * Typst source, so only the conference's own logo and the paper's text reach the compiler.
  */
-export function readRawTypst(body: Record<string, unknown>): string | undefined {
-	const parsed = z.string().min(1).safeParse(body.typst);
-	if (!parsed.success) return undefined;
-	const typst = parsed.data;
-	if (typst.length > MAX_TYPST_CHARS) throw error(413, 'Typst source too large');
-	return typst;
+export function readPaperRequest(body: Record<string, unknown>): PaperRequest | undefined {
+	if (body.paper === undefined) return undefined;
+	const parsed = paperRequest.safeParse(body.paper);
+	if (!parsed.success) throw error(400, 'Invalid paper data');
+	return parsed.data;
 }
 
 /**

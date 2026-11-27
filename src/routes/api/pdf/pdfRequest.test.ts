@@ -14,7 +14,7 @@ import {
 	emblemSvgFor,
 	readBody,
 	readHeader,
-	readRawTypst
+	readPaperRequest
 } from './pdfRequest';
 
 const svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
@@ -115,19 +115,54 @@ describe('readBody', () => {
 	});
 });
 
-describe('readRawTypst', () => {
-	test('returns raw Typst source', () => {
-		expect(readRawTypst({ typst: '= Title' })).toBe('= Title');
+describe('readPaperRequest', () => {
+	const meta = {
+		paperType: 'Positionspapier',
+		committeeLabel: 'Gremium',
+		topicLabel: 'Thema',
+		disclaimer: 'Simulation'
+	};
+	const content = {
+		type: 'doc',
+		content: [
+			{ type: 'paragraph', content: [{ type: 'text', text: 'a', marks: [{ type: 'bold' }] }] }
+		]
+	};
+
+	test('reads the conference, content and labels of a paper', () => {
+		expect(readPaperRequest({ paper: { conferenceId: 'c1', content, meta } })).toEqual({
+			conferenceId: 'c1',
+			content,
+			meta
+		});
 	});
 
-	test('is undefined for a structured resolution or empty source', () => {
-		expect(readRawTypst({ resolution: {} })).toBeUndefined();
-		expect(readRawTypst({ typst: '' })).toBeUndefined();
-		expect(readRawTypst({ typst: 1 })).toBeUndefined();
+	test('keeps only the node fields the template reads', () => {
+		const read = readPaperRequest({
+			paper: { conferenceId: 'c1', content: { type: 'doc', extra: 1 }, meta }
+		});
+		expect(read?.content).toEqual({ type: 'doc' });
 	});
 
-	test('rejects oversized source', async () => {
-		expect(await statusOf(() => readRawTypst({ typst: 'x'.repeat(2_000_001) }))).toBe(413);
+	test('is undefined for a structured resolution', () => {
+		expect(readPaperRequest({ resolution: {} })).toBeUndefined();
+	});
+
+	test('rejects malformed papers', async () => {
+		expect(await statusOf(() => readPaperRequest({ paper: 'x' }))).toBe(400);
+		expect(await statusOf(() => readPaperRequest({ paper: { content, meta } }))).toBe(400);
+		expect(
+			await statusOf(() =>
+				readPaperRequest({ paper: { conferenceId: 'c1', content: { content: 'x' }, meta } })
+			)
+		).toBe(400);
+		expect(
+			await statusOf(() =>
+				readPaperRequest({
+					paper: { conferenceId: 'c1', content, meta: { ...meta, disclaimer: 'x'.repeat(2_001) } }
+				})
+			)
+		).toBe(400);
 	});
 });
 

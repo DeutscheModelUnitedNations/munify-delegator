@@ -121,6 +121,7 @@ bun run preview
 | `possible-duplicates.md` | Duplicate account matching, decisions, transitive links, seed scenarios                                                                         |
 | `conference-features.md` | Calendar tracks, survey-limited entries, scanner sessions, entrance check, age limits, waiting list, withdrawal, document layouts, certificates |
 | `postal-scans.md`        | Reading scanned paper, taking in scans (browser and server), agreement details, scanners delivering by WebDAV/folder                            |
+| `pdf-templates.md`       | Typst PDFs in the DMUN corporate design: shared template, brands, fonts, papers and committee texts                                             |
 | `bank-payments.md`       | Bank payment sync from BuchhaltungsButler: matching references, `NEEDS_HUMAN_REVIEW`, `bank_transfer`                                           |
 | `files.md`               | S3 bucket, `stored_file`, upload/download flow, cleanup, adding a file field                                                                    |
 | `security.md`            | Signed codes (CWT/COSE, scanners, `/id`), code-guess rate limiting                                                                              |
@@ -502,7 +503,7 @@ condition in `imports` appending `.ts`, plus keys for Paraglide's `.js` and `…
 
 ## Integrations
 
-PDFs `pdf-lib` (custom fonts); barcodes/QR `@bwip-js/browser`, `@svelte-put/qr`,
+PDFs `pdf-lib` (custom fonts) and Typst (papers, committee texts, resolutions; `docs/architecture/pdf-templates.md`); barcodes/QR `@bwip-js/browser`, `@svelte-put/qr`,
 `barcode-detector`; TipTap rich text; maps via `svelte-maplibre` with OpenFreeMap styles
 (`#lib/components/map/`); Listmonk (`src/jobs/apis/`); S3 via `s3mini`. Logos, favicons, manifest,
 launch images: `@deutschemodelunitednations/munify-brand` (`Logo`, `BrandHead`, the `munifyBrand`

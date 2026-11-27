@@ -10,16 +10,26 @@
  * Keep this in sync if the editor extensions change. Unknown nodes degrade
  * gracefully (children are still rendered).
  *
- * The document is text-only (no images/assets), so it compiles with the
- * bundled Typst 0.10 without any side files.
+ * The page follows the DMUN corporate design (`./typstTemplate`). The only side file is the
+ * conference logo (`branding.logoPath`), which the server writes next to the source; without it
+ * (the client-side `.typ` download) the document is self-contained.
  */
 
-interface TipTapMark {
+import {
+	escapeTypstString as escapeString,
+	escapeTypstText as escapeText,
+	typstFactBox,
+	typstFooter,
+	typstPreamble,
+	type TypstBrand
+} from './typstTemplate';
+
+export interface TipTapMark {
 	type: string;
 	attrs?: Record<string, unknown>;
 }
 
-interface TipTapNode {
+export interface TipTapNode {
 	type?: string;
 	content?: TipTapNode[];
 	text?: string;
@@ -28,9 +38,7 @@ interface TipTapNode {
 }
 
 export interface PaperTypstMeta {
-	/** Conference display name (shown large, centered). */
-	conferenceName: string;
-	/** Already-translated paper type label. */
+	/** Already-translated paper type label, the page's title. */
 	paperType: string;
 	/** Authoring nation / NSA display name. */
 	entityName?: string;
@@ -44,19 +52,19 @@ export interface PaperTypstMeta {
 	topicLabel: string;
 	/** Pre-composed disclaimer sentence for the page footer. */
 	disclaimer: string;
+	/** Shown top right under the conference name, e.g. "PP-2026-A3F9C1". */
+	documentNumber?: string;
 }
 
-/**
- * Escape text for use inside a Typst content block (`[ … ]`). Backslash first,
- * then every character that would otherwise start inline/structural markup.
- */
-function escapeText(value: string): string {
-	return value.replace(/[\\#$*_`<>@~[\]]/g, (c) => `\\${c}`);
-}
-
-/** Escape a string for use inside a Typst double-quoted string literal. */
-function escapeString(value: string): string {
-	return value.replace(/[\\"]/g, (c) => `\\${c}`);
+/** What the conference decides about the page: its name, brand, language and logo. */
+export interface PaperTypstBranding {
+	/** Conference display name (top right, running header). */
+	conferenceName: string;
+	brand: TypstBrand;
+	/** Typst `lang` (`typstLang`). */
+	lang: string;
+	/** The logo's file name next to the source, if there is one. */
+	logoPath?: string;
 }
 
 function attrString({
@@ -156,7 +164,7 @@ const BLOCK_RENDERERS = new Map<string, (node: TipTapNode) => string>([
 	[
 		'heading',
 		(node) =>
-			`#heading(level: ${attrNumber({ attrs: node.attrs, key: 'level' }) ?? 2})[${renderInline(node.content)}]`
+			`#heading(level: ${Math.max(1, (attrNumber({ attrs: node.attrs, key: 'level' }) ?? 2) - 1)})[${renderInline(node.content)}]`
 	],
 	['bulletList', (node) => `#list(${renderListItems(node)})`],
 	['orderedList', (node) => `#enum(${renderListItems(node)})`],
@@ -177,45 +185,63 @@ function renderBlock(node: TipTapNode): string {
 	return render ? render(node) : renderBlocks({ nodes: childrenOf(node), separator: '\n\n' });
 }
 
+/** The first page's head: logo and conference left/right, the stripe, title, delegation, facts. */
+function titleBlock({ meta, branding }: { meta: PaperTypstMeta; branding: PaperTypstBranding }) {
+	const logo = branding.logoPath
+		? `image("${escapeString(branding.logoPath)}", height: 1.3cm)`
+		: '[]';
+	const corner = [`#strong[${escapeText(branding.conferenceName)}]`];
+	if (meta.documentNumber) corner.push(escapeText(meta.documentNumber));
+	const facts: { label: string; value: string }[] = [];
+	if (meta.committeeLine) facts.push({ label: meta.committeeLabel, value: meta.committeeLine });
+	if (meta.topic) facts.push({ label: meta.topicLabel, value: meta.topic });
+	const entity = meta.entityName
+		? `#block(above: 24pt, below: 0pt)[#text(size: 15pt, weight: "bold")[${escapeText(meta.entityName)}]]\n`
+		: '';
+	return `#grid(columns: (1fr, auto), align(left + horizon, ${logo}), align(right + horizon, text(size: 9pt)[${corner.join(' #linebreak() ')}]))
+#v(30pt)
+#dmun-stripe()
+#block(above: 20pt, below: 0pt)[#set par(leading: 0.15em)
+  #text(size: 50pt, weight: "extralight")[${escapeText(meta.paperType)}]]
+${entity}#v(20pt)
+${typstFactBox(facts)}
+#v(10pt)`;
+}
+
+/** The running header of every page but the first: who, what, where. */
+function runningHeader({ meta, branding }: { meta: PaperTypstMeta; branding: PaperTypstBranding }) {
+	const parts = [
+		meta.entityName ? `#strong[${escapeText(meta.entityName)}]` : '',
+		escapeText(meta.paperType)
+	];
+	if (meta.committeeLine) parts.push(escapeText(meta.committeeLine));
+	const left = parts.filter((part) => part.length > 0).join(' · ');
+	return `locate(loc => if counter(page).at(loc).first() > 1 [
+  #set text(size: 9pt)
+  #grid(columns: (1fr, auto), column-gutter: 24pt, [${left}], [${escapeText(branding.conferenceName)}])
+  #v(-4pt)
+  #line(length: 100%, stroke: 0.75pt + black)
+])`;
+}
+
 /** Serialize TipTap document JSON + metadata into a full Typst source string. */
 export function paperToTypst({
 	content,
-	meta
+	meta,
+	branding
 }: {
 	content: TipTapNode | null | undefined;
 	meta: PaperTypstMeta;
+	branding: PaperTypstBranding;
 }): string {
 	const body = renderBlocks({ nodes: childrenOf(content ?? {}), separator: '\n\n' });
 
-	const headerLines: string[] = [];
-	if (meta.entityName) headerLines.push(`#strong[${escapeText(meta.entityName)}]`);
-	if (meta.committeeLine) {
-		headerLines.push(`${escapeText(meta.committeeLabel)}: ${escapeText(meta.committeeLine)}`);
-	}
-	if (meta.topic) {
-		headerLines.push(`${escapeText(meta.topicLabel)}: ${escapeText(meta.topic)}`);
-	}
+	return `${typstPreamble({ brand: branding.brand, lang: branding.lang })}
+#set page(paper: "a4", margin: (x: 25mm, top: 22mm, bottom: 30mm),
+  header: ${runningHeader({ meta, branding })},
+  footer: ${typstFooter(escapeText(meta.disclaimer))})
 
-	return `#set page(paper: "a4", margin: 2.5cm, numbering: "1")
-#set par(justify: true, leading: 0.65em)
-#set text(size: 11pt)
-#set heading(numbering: none)
-#set page(footer: [
-  #set text(size: 8pt, fill: luma(40%))
-  #align(center)[${escapeText(meta.disclaimer)}]
-])
-
-#align(center)[
-  #text(size: 15pt, weight: "bold")[${escapeText(meta.conferenceName)}]
-  #linebreak()
-  #text(size: 11pt)[${escapeText(meta.paperType)}]
-]
-
-#v(6pt)
-${headerLines.join(' #linebreak()\n')}
-#v(4pt)
-#line(length: 100%)
-#v(8pt)
+${titleBlock({ meta, branding })}
 
 ${body}
 `;
