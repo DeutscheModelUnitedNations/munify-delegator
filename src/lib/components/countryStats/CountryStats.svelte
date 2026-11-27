@@ -1,100 +1,63 @@
 <script lang="ts">
+	import Flag from '#lib/components/Flag.svelte';
+	import LoadError from '#lib/components/LoadError.svelte';
+	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import numeral from 'numeral';
-	import SingleStatFromWb from './SingleStatFromWB.svelte';
+	import { countryFactsOf } from '#lib/countryStats/countryFacts';
+	import CountryFacts from './CountryFacts.svelte';
+	import CountryGlobe from './CountryGlobe.svelte';
+	import CountryIndicatorStats from './CountryIndicatorStats.svelte';
 
-	interface Props {
-		countryCode: string;
-	}
+	/**
+	 * Everything the app knows about a country for preparing its delegation: a globe with the
+	 * country and its neighbours, facts from world-countries and figures from the World Bank. Each
+	 * part loads on its own, so a slow World Bank holds up nothing else.
+	 */
+	let { countryCode }: { countryCode: string } = $props();
 
-	let { countryCode }: Props = $props();
-
-	/** German short scales; no population reaches a trillion, so one table serves every stat. */
-	const scales = [
-		{ factor: 10 ** 12, suffix: ' Bio.' },
-		{ factor: 10 ** 9, suffix: ' Mrd.' },
-		{ factor: 10 ** 6, suffix: ' Mio.' }
-	];
-
-	const formatLargeNumber = (value: number) => {
-		const scale = scales.find(({ factor }) => value >= factor);
-		if (!scale) return numeral(value).format('0.0a');
-		return numeral(value / scale.factor).format('0.0a') + scale.suffix;
-	};
-
-	const stats = [
-		{
-			icon: 'users',
-			title: 'Bevölkerung',
-			desc: 'Einwohnerzahl',
-			wbIndicator: 'SP.POP.TOTL',
-			formatter: formatLargeNumber
-		},
-		{
-			icon: 'chart-line-up',
-			title: 'Bruttoinlandsprodukt (BIP)',
-			desc: 'US-Dollar',
-			wbIndicator: 'NY.GDP.MKTP.CD',
-			formatter: formatLargeNumber
-		},
-		{
-			icon: 'chart-line-up',
-			title: 'BIP pro Kopf',
-			desc: 'US-Dollar',
-			wbIndicator: 'NY.GDP.PCAP.CD',
-			formatter: (value: number) => {
-				return numeral(value).format('0.0a');
-			}
-		},
-		{
-			icon: 'heartbeat',
-			title: 'Lebenserwartung',
-			desc: 'Jahre bei Geburt',
-			wbIndicator: 'SP.DYN.LE00.IN',
-			formatter: (value: number) => {
-				return numeral(value).format('0.0a');
-			}
-		},
-
-		{
-			icon: 'graduation-cap',
-			title: 'Alphabetisierungsrate',
-			desc: 'Anteil der Lesefähigen',
-			wbIndicator: 'SE.ADT.LITR.ZS',
-			formatter: (value: number) => {
-				return numeral(value).format('0.0a') + ' %';
-			}
-		},
-		{
-			icon: 'file-text',
-			title: 'Arbeitslosenquote',
-			desc: 'der Erwerbsfähigen',
-			wbIndicator: 'SL.UEM.TOTL.ZS',
-			formatter: (value: number) => {
-				return numeral(value).format('0.0a') + ' %';
-			}
-		}
-	];
+	const facts = $derived(countryFactsOf(countryCode));
 </script>
 
-<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-	<div class="stats col-span-1 shadow md:col-span-2 xl:col-span-3">
-		<div class="stat bg-base-200">
-			<div class="stat-figure text-primary">
-				<i aria-hidden="true" class="ph-duotone ph-flag text-3xl"></i>
-			</div>
-			<div class="stat-title">{m.countryOfficialName()}</div>
-			<div class="stat-value">{getFullTranslatedCountryNameFromISO3Code(countryCode)}</div>
+<div class="flex flex-col gap-6">
+	<div class="flex items-center gap-4">
+		{#if facts}
+			<Flag alpha2Code={facts.alpha2Code.toLowerCase()} size="sm" />
+		{/if}
+		<div>
+			<div class="text-base-content/60 text-xs">{m.countryOfficialName()}</div>
+			<div class="text-xl font-bold">{getFullTranslatedCountryNameFromISO3Code(countryCode)}</div>
 		</div>
 	</div>
-	{#each stats as stat (stat.wbIndicator)}
-		<SingleStatFromWb {...stat} {countryCode} />
-	{/each}
+
+	{#if facts}
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<svelte:boundary onerror={(error) => logger.warn('Loading the country globe failed', error)}>
+				<CountryGlobe {facts} />
+				{#snippet pending()}
+					<div class="skeleton h-80 w-full md:h-96"></div>
+				{/snippet}
+				{#snippet failed(_error, reset)}
+					<LoadError onretry={reset} />
+				{/snippet}
+			</svelte:boundary>
+			<CountryFacts {facts} />
+		</div>
+	{/if}
+
+	<svelte:boundary onerror={(error) => logger.warn('Loading the World Bank figures failed', error)}>
+		<CountryIndicatorStats {countryCode} />
+		{#snippet pending()}
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+				{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}
+					<div class="skeleton h-28 w-full"></div>
+				{/each}
+			</div>
+		{/snippet}
+		{#snippet failed(_error, reset)}
+			<LoadError onretry={reset} />
+		{/snippet}
+	</svelte:boundary>
+
+	<p class="text-base-content/60 text-xs">{m.countryStatsSources()}</p>
 </div>
-<h5 class="mt-4 text-xs">
-	Die Daten stammen zum großen Teil von der offenen Datenschnittstelle (API) der World Bank. Da es
-	sich um einen Drittanbieterdienst handelt, kann das Abrufen kann manchmal etwas Zeit in Anspruch
-	nehmen und die Daten sind nicht immer aktuell. Es gibt keine Garantie für Richtigkeit. Wir freuen
-	uns über Anregungen, welche weiteren Daten wir hier anzeigen sollen.
-</h5>

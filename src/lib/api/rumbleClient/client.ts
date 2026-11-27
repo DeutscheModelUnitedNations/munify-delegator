@@ -2609,6 +2609,14 @@ export type ConferencesupervisorWhereInputArgument = {
   user?: UserWhereInputArgument | null | undefined    
 };
 		
+export type CountryIndicator = {
+  alpha3Code: String,
+  id: ID,
+  indicator: String,
+  value: Float | null,
+  year: Int | null    
+};
+		
 export type CreateInvitationInput = {
   email: String,
   role: TeamroleEnum    
@@ -6003,6 +6011,9 @@ export type Query = {
     search?: ConferenceSearchInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
   }) => Conference[],
+  countryIndicators: (p: {
+    alpha3Code: String
+  }) => CountryIndicator[],
   dataTableGroups: (p: {
     conferenceId: ID,
     query: JSON,

@@ -666,6 +666,8 @@ const FIELDS: Record<string, TypeClassification> = {
 		]
 	},
 	Nation: { visible: ['createdAt', 'updatedAt', 'search_distance', 'alpha2Code', 'alpha3Code'] },
+	// Public World Bank figures about a country, nobody's data.
+	CountryIndicator: { visible: ['id', 'alpha3Code', 'indicator', 'value', 'year'] },
 	Calendarday: { visible: [...ROW, 'conferenceId', 'date', 'name'] },
 	Calendarentry: {
 		visible: [

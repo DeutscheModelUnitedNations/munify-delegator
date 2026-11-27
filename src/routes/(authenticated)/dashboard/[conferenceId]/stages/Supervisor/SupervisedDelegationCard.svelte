@@ -4,6 +4,8 @@
 	import { m } from '#lib/paraglide/messages';
 	import codenamize from '#lib/helpers/codenamize';
 	import Flag from '#lib/components/Flag.svelte';
+	import Drawer from '#lib/components/Drawer.svelte';
+	import CountryStats from '#lib/components/countryStats/CountryStats.svelte';
 	import InfoGrid from '#lib/components/infoGrid/index';
 	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
@@ -72,6 +74,9 @@
 	);
 	const roleApplications = $derived(delegation.appliedForRoles.toSorted((a, b) => a.rank - b.rank));
 	const assignedRole = $derived(splitRole(delegation.assignedRole));
+	const assignedAlpha3 = $derived(assignedRole.nation?.alpha3Code);
+
+	let countryInfoOpen = $state(false);
 </script>
 
 <SupervisorContentCard
@@ -106,6 +111,14 @@
 						/>
 						{#if assignedRole.nation}
 							{getFullTranslatedCountryNameFromISO3Code(assignedRole.nation.alpha3Code)}
+							<button
+								type="button"
+								class="btn btn-ghost btn-xs"
+								onclick={() => (countryInfoOpen = true)}
+							>
+								<i aria-hidden="true" class="ph-duotone ph-globe-hemisphere-west"></i>
+								{m.countryInfoButton()}
+							</button>
 						{:else if assignedRole.nonStateActor}
 							{assignedRole.nonStateActor.name}
 						{/if}
@@ -163,3 +176,18 @@
 		</DelegationStatusTableWrapper>
 	{/snippet}
 </SupervisorContentCard>
+
+{#if assignedAlpha3}
+	<Drawer
+		bind:open={countryInfoOpen}
+		category={m.countryInfoButton()}
+		title={m.countryInfoAbout({
+			country: getFullTranslatedCountryNameFromISO3Code(assignedAlpha3)
+		})}
+		loading={false}
+		width="min(56rem, 100vw)"
+	>
+		<!-- The drawer renders its content only while open, so nothing loads before -->
+		<CountryStats countryCode={assignedAlpha3} />
+	</Drawer>
+{/if}

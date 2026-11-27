@@ -3164,6 +3164,21 @@ input ConferencesupervisorWhereInputArgument {
   user: UserWhereInputArgument
 }
 
+"""The most recent World Bank figure of one indicator for one country."""
+type CountryIndicator {
+  alpha3Code: String!
+  id: ID!
+
+  """The World Bank's indicator code, e.g. SP.POP.TOTL."""
+  indicator: String!
+
+  """Null when the World Bank has no figure from the last ten years."""
+  value: Float
+
+  """The year the value is for."""
+  year: Int
+}
+
 input CreateInvitationInput {
   email: String!
   role: TeamroleEnum!
@@ -5534,7 +5549,7 @@ type Mutation {
   importPostalScan(code: String, conferenceId: ID!, contentKey: String!, fileId: ID, readings: [PaperReadingInput!], source: PostalscansourceEnum!, userId: ID!): PostalScanOutcome
 
   """
-  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
     conferenceId: ID!
@@ -8085,6 +8100,11 @@ type Query {
   conferences(limit: Int, offset: Int, orderBy: ConferenceOrderInputArgument, search: ConferenceSearchInputArgument, where: ConferenceWhereInputArgument): [Conference!]!
 
   """
+  The World Bank figures of the country information for a country (ISO alpha-3), in display order. Served from a cache: a figure is at most a week old, or older while the World Bank does not answer. INVALID_INPUT for a code that names no country.
+  """
+  countryIndicators(alpha3Code: String!): [CountryIndicator!]!
+
+  """
   The groups of the level below `query.path` of a grouped team table, with how many rows each holds, at most 1000; empty when the query groups no further. Who may ask is as for `dataTablePage`.
   """
   dataTableGroups(
@@ -8218,7 +8238,7 @@ type Query {
   getAllConferenceNations(conferenceId: ID!): [Nation!]!
 
   """
-  Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
+  Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
   """
   getCertificate(
     conferenceId: ID!

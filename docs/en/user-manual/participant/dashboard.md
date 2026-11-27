@@ -108,7 +108,7 @@ With the release you see whom you represent. This is a head delegate's dashboard
 - **Delegation Status:** the country or non-state actor your delegation represents, the committees you sit in, the number of members and the delegation name.
 - **Delegation Members:** every member with their committee, email address, payment and registration status, so you can reach each other outside the app too.
 - **Supervisors:** your supervisors, and you can still connect one.
-- **Information on your country** or **Information on your NSA**.
+- **Information on your country** or **Information on your NSA**. For a country, a globe shows it with its neighbouring countries (hover over a neighbour for its name, the crosshair takes you back to the country). Next to it are facts such as capital, area, region, languages, currency and calling code, below it World Bank figures such as population, GDP and life expectancy, each with the year it is for.
 
 As a single participant you see your **Role** instead of the delegation status and members.
 
@@ -291,7 +291,7 @@ As a supervisor you follow how your students are doing. For privacy reasons you 
 
 After the deadline you see which of your students take part in the selection process. Until the release it then says **The assignment is still in progress**. Depending on the conference's settings you get a single email with the release, listing the role of every student you supervise.
 
-After that the dashboard only lists the students with a seat, with their committee, payment and registration status and the number of their papers. Once postal registration is unlocked, **Download documents for postal registration** gives you each person's documents. The **Delegation Statistics** show how many have paid, sent their documents and submitted papers. The **Personal Status** section shows your own steps if you come along, until everyone has paid.
+After that the dashboard only lists the students with a seat, with their committee, payment and registration status and the number of their papers. Once postal registration is unlocked, **Download documents for postal registration** gives you each person's documents. If a delegation represents a country, **Country information** next to its role opens the same information on the country the delegation sees. The **Delegation Statistics** show how many have paid, sent their documents and submitted papers. The **Personal Status** section shows your own steps if you come along, until everyone has paid.
 
 Once at least one student has a seat, you get the **Quick Links**. Through **Fee Payment** you can also pay for your students and for other supervisors of the same students, and you see the **Paper Hub** from the supervisor's side (see [Paper Hub](./paper-hub)). Messages and surveys are not for supervisors. If a committee assignment is still missing in one of your delegations, the dashboard points it out.
 
