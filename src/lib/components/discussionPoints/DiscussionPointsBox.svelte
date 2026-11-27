@@ -29,7 +29,7 @@
 
 {#if points.length > 0}
 	<section
-		class="border-warning rounded-box border border-s-8 bg-[color-mix(in_oklab,var(--color-warning)_12%,var(--color-base-100))] shadow-sm {size.box}"
+		class="border-warning rounded-box border border-s-8 bg-base-100 from-warning/15 to-warning/10 bg-linear-to-r shadow-sm {size.box}"
 		aria-labelledby={headingId}
 		data-testid="discussion-points"
 	>
