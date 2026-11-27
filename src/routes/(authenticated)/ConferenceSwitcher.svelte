@@ -41,6 +41,11 @@
 		return resolve(path ? `dashboard/${targetId}/${path}` : `dashboard/${targetId}`);
 	}
 	const groups = $derived(groupConferencesByState(conferences));
+	// worked out here, not in the menu item's snippet: that renders later, where reading an
+	// awaited $derived compiles into an async block that never renders
+	const hrefs = $derived(
+		new Map(conferences.map((conference) => [conference.id, hrefFor(conference.id)]))
+	);
 	const current = $derived(conferences.find((conference) => conference.id === conferenceId));
 </script>
 
@@ -71,7 +76,7 @@
 							{#snippet child({ props })}
 								<a
 									{...props}
-									href={hrefFor(conference.id)}
+									href={hrefs.get(conference.id)}
 									class="flex items-center gap-2 rounded-field px-3 py-2 text-sm data-highlighted:bg-base-200 {conference.id ===
 									conferenceId
 										? 'bg-primary/10 text-primary font-semibold'
