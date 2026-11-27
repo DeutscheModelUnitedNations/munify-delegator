@@ -13,6 +13,7 @@
 	import AgendaItemFields from './AgendaItemFields.svelte';
 	import SaveDiscardButtons from './SaveDiscardButtons.svelte';
 	import { agendaItemChanges, type AgendaItemDraft } from './agendaItemChanges';
+	import { takeOverStored } from './inlineDraft';
 	import type { AgendaItem } from './types';
 
 	interface Props {
@@ -30,21 +31,19 @@
 		teaserText: stored.teaserText ?? '',
 		discussionPoints: [...stored.discussionPoints]
 	});
-	const same = (a: AgendaItemDraft, b: AgendaItemDraft) => JSON.stringify(a) === JSON.stringify(b);
-
 	const stored = $derived(draftOf(item));
 	// Seeded from the stored values right away (effects do not run while rendering on the server);
 	// the effect below only takes over later changes.
 	let base = $state<AgendaItemDraft>(untrack(() => draftOf(item)));
 	let draft = $state<AgendaItemDraft>(untrack(() => draftOf(item)));
 	let saving = $state(false);
+	/** The stored values from before the last save, ignored until newer ones arrive. */
+	let stale = $state<AgendaItemDraft>();
 
-	// take over what was saved elsewhere, unless the fields hold an edit; not while this form's own
-	// save runs (its result may arrive first), after it the base is what was sent
+	// take over what was saved elsewhere, unless the fields hold an edit (`takeOverStored`)
 	$effect.pre(() => {
-		const next = stored;
-		if (saving) return;
-		if (same(draft, base) && !same(next, base)) {
+		const next = takeOverStored({ draft, base, next: stored, stale, saving });
+		if (next) {
 			base = draftOf(item);
 			draft = draftOf(item);
 		}
@@ -59,6 +58,7 @@
 		saving = true;
 		// what is sent becomes the base: fields edited while saving stay edits
 		const submitted = { ...draft, discussionPoints: [...draft.discussionPoints] };
+		const before = draftOf(item);
 		try {
 			const promise = client.mutate.updateAgendaItem({
 				__args: { id: item.id, ...changes },
@@ -66,6 +66,7 @@
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
+			stale = before;
 			base = submitted;
 		} catch {
 			// the toast shows what went wrong; the fields keep the edit

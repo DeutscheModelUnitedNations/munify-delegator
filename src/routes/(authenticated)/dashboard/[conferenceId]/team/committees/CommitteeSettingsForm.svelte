@@ -20,6 +20,7 @@
 		committeeDraftValid,
 		type CommitteeDraft
 	} from './committeeChanges';
+	import { takeOverStored } from './inlineDraft';
 	import type { ManagedCommittee } from './types';
 
 	interface Props {
@@ -36,15 +37,13 @@
 	let base = $state<CommitteeDraft>(untrack(() => committeeDraftOf(committee)));
 	let draft = $state<CommitteeDraft>(untrack(() => committeeDraftOf(committee)));
 	let saving = $state(false);
+	/** The stored values from before the last save, ignored until newer ones arrive. */
+	let stale = $state<CommitteeDraft>();
 
-	const same = (a: CommitteeDraft, b: CommitteeDraft) => JSON.stringify(a) === JSON.stringify(b);
-
-	// take over what was saved elsewhere, unless the fields hold an edit; not while this form's own
-	// save runs (its result may arrive first), after it the base is what was sent
+	// take over what was saved elsewhere, unless the fields hold an edit (`takeOverStored`)
 	$effect.pre(() => {
-		const next = stored;
-		if (saving) return;
-		if (same(draft, base) && !same(next, base)) {
+		const next = takeOverStored({ draft, base, next: stored, stale, saving });
+		if (next) {
 			base = { ...next };
 			draft = { ...next };
 		}
@@ -58,6 +57,7 @@
 		saving = true;
 		// what is sent becomes the base: fields edited while saving stay edits
 		const submitted = { ...draft };
+		const before = { ...stored };
 		try {
 			const promise = client.mutate.updateCommittee({
 				__args: { id: committee.id, ...changes },
@@ -65,6 +65,7 @@
 			});
 			toast.promise(promise, { ...genericPromiseToastMessages, error: errorToastMessage });
 			await promise;
+			stale = before;
 			base = submitted;
 		} catch {
 			// the toast shows what went wrong; the fields keep the edit
