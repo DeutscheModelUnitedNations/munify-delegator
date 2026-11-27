@@ -120,11 +120,13 @@ Every committee and every topic has a page of its own. They belong to the confer
 
 ### The editor {#guide-editor}
 
-The editor shows the page as it looks. The toolbar has headings, lists, quotes, links, images and downloads, callouts, toggles, buttons and videos. With the cursor in a callout, the toolbar picks its icon (a search over all Phosphor icons) and its colour. Placeholders put in the name of the conference, of the committee or the list of topics when read; the latter two only in pages of the committee template.
+The editor shows the page as it looks. The toolbar has headings, lists, quotes, links, images and downloads, callouts, toggles, buttons and videos. With the cursor in a callout, the toolbar picks its icon (a search over all Phosphor icons) and its colour. Placeholders put in the name of the conference, of the committee or the list of topics when read; the latter two only in pages of the committee template. `{{Diskussionspunkte}}` puts a topic's **points for discussion** onto its page as a highlighted box.
 
 Beside the text are the page's settings: its scope, **In the guide** (which sections it stands in, under which title and for whom) and its versions.
 
 Changes are a draft until you choose **Publish**. Before that the app shows which conferences the page reaches afterwards and which it no longer reaches. Every publish stays as a version; **Restore** copies it back into the draft. Publishing a topic's page renders the **committee text** as a PDF in the conference's design, with its logo and the topic as title, which participants download on the page.
+
+On a topic's page you also keep its **points for discussion** on the right: what papers on this topic should answer. They belong to the topic, not the page, and are the same as under [Committees and agenda items](./configuration#committees-and-seats). **Save** makes them apply at once, without publishing, to papers, reviews and the page. There they show as a highlighted box where `{{Diskussionspunkte}}` stands, else right below the title, and in the table of contents. The committee text takes them on the page's next publish. The **Preview** shows them already.
 
 ### Visibility {#guide-visibility}
 

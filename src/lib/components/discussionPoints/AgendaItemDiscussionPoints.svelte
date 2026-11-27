@@ -4,7 +4,7 @@
 
 	/**
 	 * The points for discussion of an agenda item, live, as the highlighted box; nothing without an
-	 * agenda item or points. For the paper forms and the paper page (authors and reviewers).
+	 * agenda item or points. For the paper forms, while the author picks the agenda item.
 	 */
 	let { agendaItemId, compact = false }: { agendaItemId?: string | null; compact?: boolean } =
 		$props();

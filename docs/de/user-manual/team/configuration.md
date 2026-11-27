@@ -219,6 +219,7 @@ Jede Karte zeigt neben dem Namen die Zahl der Staaten und die Sitze pro Delegati
 - **Gremium hinzufügen** legt ein Gremium mit **Name**, **Kürzel** und **Sitze pro Delegation** an.
 - **Bearbeiten** öffnet **Gremium bearbeiten** für Name und Kürzel, die **Sitze pro Delegation** und die **Resolutions-Überschrift**, eine eigene Überschrift für Resolutionen, etwa für den richtigen Artikel („Der Sicherheitsrat“). Leer gelassen entfällt sie.
 - **Tagesordnungspunkt hinzufügen** legt ein Thema mit **Titel** und **Teaser-Text** an. Zu den Themen reichen Delegationen ihre Papiere ein. Der Stift an einem Thema öffnet **Thema bearbeiten**, der Papierkorb **Thema löschen**.
+- Unter **Punkte zur Diskussion** hältst du fest, was Papiere zu einem Thema beantworten sollen, ein Punkt pro Feld und in der Reihenfolge, in der sie erscheinen. **Punkt hinzufügen** oder Enter beginnt den nächsten Punkt, die Pfeile verschieben ihn, das Kreuz entfernt ihn; leere Punkte fallen beim Speichern weg. Teilnehmende sehen die Punkte beim Schreiben und auf ihrem Papier, Begutachtende neben dem Papier, und der [Leitfaden](./communication#guide-editor) zeigt sie auf der Seite des Themas. Die Zeile des Themas nennt, wie viele es hat.
 - **Löschen** entfernt ein Gremium nach einer Rückfrage.
 
 **Sitze pro Delegation** bestimmt, wie viele Delegierte einer Delegation in diesem Gremium sitzen. Zusammen über alle Gremien ergibt das die Größe der Delegation, die einen Staat vertritt.

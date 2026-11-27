@@ -66,7 +66,7 @@ Crawled on 2026-11-20.
 | Committee / TOP pages  | Owned by the committee and the agenda item (`committee`, `committee_agenda_item`), edited in the guide editor, filling the template's slots automatically.                                                                                                   |
 | Committee text PDF     | **Generated with Typst from the agenda item page when it is published**, stored as a file and offered on the page (and reusable by the paper hub and MCP). No upload.                                                                                        |
 | Shared edits           | **Draft and publish.** Page content, page scope and the sidebar (incl. the committee template) are drafts until published. Every publish keeps a **version** to view and restore.                                                                            |
-| Placeholders           | A few fixed ones in pages: `{{Konferenz}}`, `{{Gremium}}`, `{{Themen}}` (list of the committee's agenda items).                                                                                                                                              |
+| Placeholders           | A few fixed ones in pages: `{{Konferenz}}`, `{{Gremium}}`, `{{Themen}}` (list of the committee's agenda items), `{{Diskussionspunkte}}` (agenda item pages: the points for discussion as a box; without it the box goes below the title).                    |
 | Editing rights         | New team permission `editGuide` (content lead, project management). Pages beyond one conference may be edited and published by holders of `editGuide` in **any conference the page reaches**. System admins always.                                          |
 | Editor                 | TipTap with the guide blocks (below). Rich blocks are fine in the editor even where Markdown has no syntax for them.                                                                                                                                         |
 | Participant view       | Sidebar, page, **table of contents** from headings, **previous/next** following the sidebar. No search, progress tracking or section PDFs in the first version.                                                                                              |
@@ -215,6 +215,16 @@ conference's logo/emblem, committee, agenda item title, the page content incl. i
 sources) via `compileTypst` (`src/api/services/typst.ts`). A TipTap → Typst converter (unit tested)
 covers every block; images are written next to the source. The PDF is stored (`stored_file`) on the
 version and linked on the page. A failed render fails the publish with a message.
+
+**Points for discussion** (`committee_agenda_item.discussion_points`, ordered lines) belong to the
+agenda item, not the page: they are live, not versioned, and edited both in the committee
+configuration (`planSeats`) and beside the page in the workspace (`setAgendaItemDiscussionPoints`,
+`planSeats` or `editGuide`). `fillPlaceholders` turns them into a reader-only `discussionPoints`
+node (heading + points; `parseReaderDocument` accepts it, `guideDocumentSchema` refuses it, so no
+stored text holds one) where `{{Diskussionspunkte}}` stands alone in a paragraph, else first on the
+page; it is a heading of the table of contents. The reader draws it with `DiscussionPointsBox`
+(the box authors and reviewers see in the paper hub too), the PDF as a tinted box with a DMUN-Blau
+rule; the PDF keeps the points of its publish.
 
 ## Permissions
 

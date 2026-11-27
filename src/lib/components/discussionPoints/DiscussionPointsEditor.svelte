@@ -33,7 +33,7 @@
 	}
 </script>
 
-<fieldset class="fieldset" data-tour="discussionPoints.editor" aria-label={m.discussionPoints()}>
+<fieldset class="fieldset" aria-label={m.discussionPoints()}>
 	{#if !bare}
 		<legend class="fieldset-legend">
 			<i class="ph-duotone ph-chats-circle" aria-hidden="true"></i>

@@ -219,6 +219,7 @@ Each card shows the number of states and the seats per delegation next to the na
 - **Add committee** creates a committee with **Name**, **Abbreviation** and **Seats per delegation**.
 - **Edit** opens **Edit Committee** for the name and abbreviation, the **Seats per delegation** and the **Resolution Headline**, a custom headline for resolutions, for example to get a gendered article right in some languages ("Der Sicherheitsrat"). Left empty, there is none.
 - **Create new Agenda Item** adds a topic with **Title** and **Teaser Text**. Delegations submit their papers on these topics. The pencil on a topic opens **Edit Agenda Item**, the bin **Delete Agenda Item**.
+- Under **Points for discussion** you note what papers on a topic should answer, one point per field, in the order they appear. **Add point** or Enter starts the next point, the arrows move it, the cross removes it; empty points are dropped when saving. Participants see the points while writing and on their paper, reviewers next to the paper, and the [guide](./communication#guide-editor) shows them on the topic's page. The topic's row says how many it has.
 - **Delete** removes a committee after confirming.
 
 **Seats per delegation** sets how many delegates of one delegation sit in this committee. Added up over all committees, this is the size of the delegation representing a state.
