@@ -13,3 +13,12 @@ export function fetchSelectableConferences() {
 		startConference: true
 	});
 }
+
+/** The caller's team roles in every conference, to tell which team pages they may open where */
+export function fetchMyTeamRoles(userId: string) {
+	return client.liveQuery.teamMembers({
+		__args: { where: { userId: { eq: userId } } },
+		conferenceId: true,
+		role: true
+	});
+}

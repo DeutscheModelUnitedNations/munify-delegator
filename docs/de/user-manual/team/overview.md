@@ -20,6 +20,8 @@ Danach folgen Karten:
 
 Auf der Startseite führt ein Knopf mit dem Namen der Konferenz direkt zurück zur Übersicht der Konferenz, in deren Team du in diesem Browser zuletzt warst, solange du noch in ihrem Team bist.
 
+Über den Namen der Konferenz oben in der Leiste wechselst du zu einer anderen Konferenz. Bist du gerade auf einer Seite des Teams, landest du auf derselben Seite der anderen Konferenz, wenn du sie dort öffnen darfst, sonst auf ihrer Übersicht. Von einer einzelnen Schule, Umfrage oder Seite des Vorbereitungsleitfadens geht es zur Liste dazu, von der Karte einer Person zur Übersicht. Filter und Suche der Seite werden nicht übernommen.
+
 Was sich die Teilnehmenden ansehen, öffnest du von der Seite des Teams aus: **Plätze** und **Kalender** haben oben den Link **Ansicht für Teilnehmende**.
 
 ### Die Seitennavigation
