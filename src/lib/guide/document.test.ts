@@ -147,6 +147,25 @@ describe('fillPlaceholders', () => {
 			expect(filled.content?.map((node) => node.type)).toEqual(['discussionPoints']);
 		});
 
+		test('are filled in a sentence when formatting split the placeholder', () => {
+			const filled = fillPlaceholders(
+				page({
+					type: 'paragraph',
+					content: [
+						{ type: 'text', text: 'Fragen: ', marks: [{ type: 'italic' }] },
+						{ type: 'text', text: '{{Diskussions' },
+						{ type: 'text', text: 'punkte}} und mehr', marks: [{ type: 'bold' }] }
+					]
+				}),
+				{ conference: 'MUN-SH 2027', discussionPoints: points }
+			);
+			expect(filled.content).toHaveLength(1);
+			const parts = filled.content?.[0].content;
+			// the sentence's own formatting stays, the placeholder is filled in its place
+			expect(parts?.[0]).toEqual({ type: 'text', text: 'Fragen: ', marks: [{ type: 'italic' }] });
+			expect(parts?.[1].text).toBe('Finanzierung?; Mandat? und mehr');
+		});
+
 		test('stay as they are off agenda item pages', () => {
 			const filled = fillPlaceholders(page(paragraph('{{Diskussionspunkte}}')), {
 				conference: 'MUN-SH 2027'

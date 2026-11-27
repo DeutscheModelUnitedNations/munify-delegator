@@ -265,6 +265,58 @@ function isPlaceholderParagraph(node: GuideNode, name: Placeholder) {
 	);
 }
 
+const textOfNodes = (nodes: readonly GuideNode[]) => nodes.map((node) => node.text ?? '').join('');
+
+/**
+ * The ranges of text nodes (first, last) that placeholders split by formatting span, merged where
+ * they touch.
+ */
+function splitPlaceholderRanges(children: readonly GuideNode[]) {
+	let length = 0;
+	const ends = children.map((child) => (length += (child.text ?? '').length));
+	const nodeAt = (offset: number) => ends.findIndex((end) => offset < end);
+	return [...textOfNodes(children).matchAll(PLACEHOLDER_PATTERN)]
+		.map((match): [number, number] => [
+			nodeAt(match.index),
+			nodeAt(match.index + match[0].length - 1)
+		])
+		.filter(([first, last]) => first !== last)
+		.reduce<[number, number][]>((merged, range) => {
+			const previous = merged.at(-1);
+			if (previous && range[0] <= previous[1]) previous[1] = Math.max(previous[1], range[1]);
+			else merged.push(range);
+			return merged;
+		}, []);
+}
+
+/** The text nodes with each range joined into one, which keeps the marks of its first. */
+function joinRanges({
+	children,
+	ranges
+}: {
+	children: readonly GuideNode[];
+	ranges: readonly [number, number][];
+}) {
+	return children.flatMap((child, index) => {
+		if (ranges.some(([first, last]) => index > first && index <= last)) return [];
+		const range = ranges.find(([first]) => first === index);
+		return range
+			? [{ ...child, text: textOfNodes(children.slice(range[0], range[1] + 1)) }]
+			: [child];
+	});
+}
+
+/**
+ * A text block whose placeholders formatting split over text nodes, with the nodes each of them
+ * spans joined into one, so they can be filled like any other.
+ */
+function joinSplitPlaceholders(node: GuideNode): GuideNode {
+	const children = node.content ?? [];
+	if (!TEXT_BLOCKS.has(node.type) || children.some((child) => child.type !== 'text')) return node;
+	const ranges = splitPlaceholderRanges(children);
+	return ranges.length === 0 ? node : { ...node, content: joinRanges({ children, ranges }) };
+}
+
 /**
  * Fills in the placeholders. `{{Themen}}` alone in a paragraph becomes a list of the agenda items;
  * elsewhere it lists them in one line. Without a committee the committee placeholders stay.
@@ -291,7 +343,7 @@ export function fillPlaceholders(doc: GuideDocument, values: PlaceholderValues):
 		box && hasPoints && !placeholdersIn(doc).includes('Diskussionspunkte')
 			? { ...doc, content: [box, ...(doc.content ?? [])] }
 			: doc;
-	const withLists = mapNodes(placed, (node) => {
+	const withLists = mapNodes(mapNodes(placed, joinSplitPlaceholders), (node) => {
 		if (committee && isPlaceholderParagraph(node, 'Themen')) {
 			return {
 				type: 'bulletList',
