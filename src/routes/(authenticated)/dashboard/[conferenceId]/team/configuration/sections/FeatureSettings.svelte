@@ -24,7 +24,7 @@
 	import FeatureCard from './FeatureCard.svelte';
 
 	/** Where a feature's requirements are set up: a tab of this page or another team page. */
-	type SetUp = { tab: 'payments' | 'documents' | 'committees' } | { page: 'calendar' | 'guide' };
+	type SetUp = { tab: 'payments' | 'documents' } | { page: 'calendar' | 'guide' | 'committees' };
 
 	let {
 		form,
@@ -41,7 +41,7 @@
 			mediaConsentFile?: unknown;
 			termsAndConditionsFile?: unknown;
 		};
-		onOpenTab: (tab: 'payments' | 'documents' | 'committees') => void;
+		onOpenTab: (tab: 'payments' | 'documents') => void;
 	} = $props();
 	let formData = $derived(form.form);
 
@@ -97,7 +97,7 @@
 		isOpenPaperSubmission: {
 			icon: 'files',
 			description: m.featurePaperSubmissionDescription,
-			setUp: { tab: 'committees' }
+			setUp: { page: 'committees' }
 		},
 		showCalendar: {
 			icon: 'calendar-dots',

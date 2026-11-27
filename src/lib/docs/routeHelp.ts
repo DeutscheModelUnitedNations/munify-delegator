@@ -171,13 +171,13 @@ export const routeHelp: Partial<Record<RouteId, RouteHelp>> = {
 		docs: 'user-manual/team/configuration',
 		tour: async () => (await import('./tours/team/configuration.tour')).configurationTour
 	},
-	'/(authenticated)/dashboard/[conferenceId]/team/configuration/committees': {
-		docs: 'user-manual/team/configuration#committees-and-seats',
-		tour: async () => (await import('./tours/team/committees.tour')).committeesTour
-	},
 	'/(authenticated)/dashboard/[conferenceId]/team/seat-planning': {
 		docs: 'user-manual/team/configuration#seat-planning',
 		tour: async () => (await import('./tours/team/seatPlanning.tour')).seatPlanningTour
+	},
+	'/(authenticated)/dashboard/[conferenceId]/team/committees': {
+		docs: 'user-manual/team/configuration#committees-and-seats',
+		tour: async () => (await import('./tours/team/committees.tour')).committeesTour
 	},
 
 	// Team: people

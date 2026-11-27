@@ -103,10 +103,10 @@ describe('resultTarget', () => {
 			})
 		});
 	});
-	test('a committee opens the committees tab', () => {
+	test('a committee opens the committees page', () => {
 		expect(
 			resultTarget({ item: { type: 'committee', data: committee }, conferenceId })
-		).toHaveProperty('href', expect.stringContaining('/conf-1/team/configuration?tab=committees'));
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/committees'));
 	});
 	test('users open their card', () => {
 		expect(resultTarget({ item: { type: 'user', data: user }, conferenceId })).toEqual({

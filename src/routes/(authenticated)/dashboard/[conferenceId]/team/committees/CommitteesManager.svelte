@@ -1,13 +1,17 @@
 <!--
 	@component
 	The committees of a conference with their agenda items: create, edit and delete a committee, edit
-	or delete an agenda item, create a new one. Used by the configuration page's committees tab and
-	by the standalone committees page.
+	or delete an agenda item, create a new one. The team's committees page (`team/committees`).
 -->
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { canEditCommittees, canEditConference, canPlanSeats } from '#lib/helpers/teamAccess';
+	import {
+		canCreateCommittees,
+		canDeleteCommittees,
+		canEditCommittees,
+		canPlanSeats
+	} from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { m } from '#lib/paraglide/messages';
 	import AddAgendaItemModal from './AddAgendaItemModal.svelte';
@@ -48,8 +52,10 @@
 	);
 	/** Editing committees, their seats and agenda items: project management and the content lead */
 	const canEdit = $derived(canEditCommittees(access));
-	/** Creating and deleting committees stays with project management */
-	const canCreateAndDelete = $derived(canEditConference(access));
+	/** Creating committees: project management and the content lead */
+	const canCreate = $derived(canCreateCommittees(access));
+	/** Deleting a committee stays with project management */
+	const canDelete = $derived(canDeleteCommittees(access));
 	/** Seats, non-state actors and single roles live on the seat planning page */
 	const showSeatPlanningHint = $derived(canPlanSeats(access));
 
@@ -62,6 +68,12 @@
 </script>
 
 <div class="flex flex-col gap-10 sm:gap-20">
+	{#if !canEdit}
+		<div role="status" class="alert alert-info alert-soft text-sm">
+			<i aria-hidden="true" class="ph-duotone ph-lock"></i>
+			<span>{m.committeesReadOnly()}</span>
+		</div>
+	{/if}
 	{#if showSeatPlanningHint}
 		<div
 			role="note"
@@ -82,7 +94,7 @@
 		</div>
 	{/if}
 
-	{#if canCreateAndDelete}
+	{#if canCreate}
 		<button
 			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"
 			data-tour="team.committees.add"
@@ -97,7 +109,7 @@
 		<CommitteeCard
 			{committee}
 			{canEdit}
-			canDelete={canCreateAndDelete}
+			{canDelete}
 			onAddAgendaItem={() => (committeeToAddAgendaItem = committee)}
 			onEdit={() => (committeeToEdit = committee)}
 			onDelete={() => (committeeToDelete = committee)}

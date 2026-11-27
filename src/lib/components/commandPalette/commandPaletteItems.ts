@@ -152,10 +152,9 @@ export function resultTarget({
 			};
 		case 'committee':
 			return {
-				href: resolve(
-					'/(authenticated)/dashboard/[conferenceId]/team/configuration?tab=committees',
-					{ conferenceId }
-				)
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/team/committees', {
+					conferenceId
+				})
 			};
 		case 'config':
 			return {

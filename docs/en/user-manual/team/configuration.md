@@ -23,7 +23,7 @@ This order follows from what DELEGATOR allows in each stage.
 
 1. Invite the team. Without one, nobody but system admins can set the conference up. The settings are open to **Project Management**, **Participant Care** and **Content Lead**.
 2. Fill in **General** (Project Management): name, location, conference language, images, the end of the application period, grace period, conference dates and time zone. Add the [age limits](#age-limits) and the [school rules](#school-rules).
-3. Create committees and agenda items: Project Management creates committees, Content Lead also adds agenda items. Delegations later submit their papers on these agenda items.
+3. Create committees and agenda items on the [Committees and Agenda Items](#committees-and-seats) page (Project Management, Content Lead). Delegations later submit their papers on these agenda items.
 4. Plan the seats (Project Management, Content Lead): the states in the committees, the non-state actors and the individual roles. This is best done now, while the conference is **Before registration starts**. After that, every change is public at once and can remove applications.
 5. Enter the links, above all the link to the preparation guide, which visitors see without signing in too.
 6. Enter the **Banking Information** (Project Management) before you allow payments.
@@ -34,7 +34,7 @@ What comes next is described in [Typical sequence](#typical-sequence).
 
 ## The settings {#general-settings}
 
-The **Settings** page splits the configuration into tabs: **General**, **Committees and Agenda Items**, **Status & Features**, **Links & Content**, **Banking Information**, **Documents & Templates**. Each tab briefly explains at the top what it is for.
+The **Settings** page splits the configuration into tabs: **General**, **Status & Features**, **Links & Content**, **Banking Information**, **Documents & Templates**. Each tab briefly explains at the top what it is for. Committees and agenda items have [their own page](#committees-and-seats).
 
 ![The conference settings with their tabs and the save button](shot:team/configuration)
 
@@ -55,7 +55,7 @@ If the end of the application period lies after the conference starts, the start
 If saving made emails due, the page then asks **Send emails now?** and names which kinds are open and how many. This happens with **Payments**, **Postal registration**, the status **After the conference** and a new certificate template. **Send {count} emails now** sends them, with **Later** you find them again on the [Emails](./communication#emails) page. Only Project Management and Participant Care, who may manage the emails, are asked.
 
 :::note Outside the form
-Committees and agenda items, resolutions and the layout on the templates save right away in their own windows. The save button only covers the form fields.
+Resolutions and the layout on the templates save right away in their own windows. The save button only covers the form fields.
 :::
 
 ### General {#general}
@@ -210,7 +210,7 @@ Participants with a seat download the resolutions on their dashboard once the co
 
 ## Committees and agenda items {#committees-and-seats}
 
-In the **Committees and Agenda Items** tab you manage the conference's committees and their agenda items. **Project Management** creates and deletes committees, **Content Lead** also edits them and maintains the agenda items. Participant Care only views them. Every change saves right away.
+On the **Committees and Agenda Items** page, right below **Seat planning** in the navigation, you manage the conference's committees and their agenda items. **Project Management** and **Content Lead** create committees, edit them and maintain the agenda items. Only **Project Management** deletes a committee. **Participant Care** only views the page, with a note at the top. Every change saves right away.
 
 ![The committees of a conference with their agenda items](shot:team/committees)
 

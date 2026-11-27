@@ -112,7 +112,7 @@ const settings = {
 		{
 			class: 'bg-base-100 dark:bg-base-200 rounded-box flex w-full flex-col p-4 sm:p-8',
 			children: [
-				tabs({ count: 7, margin: 'mb-4' }),
+				tabs({ count: 5, margin: 'mb-4' }),
 				{
 					class: 'mb-6 flex items-center gap-4',
 					children: [block('h-4 max-w-md flex-1 rounded-full'), block('ml-auto h-8 w-8')]
@@ -125,6 +125,30 @@ const settings = {
 		}
 	]
 };
+
+/** One committee's card: its name and actions, then its agenda items */
+const committeeCard: SkeletonNode = {
+	class: 'flex flex-col gap-4',
+	children: [
+		{
+			class: 'flex items-center gap-4',
+			children: [block('h-7 w-64 rounded-full'), block('ml-auto h-6 w-32')]
+		},
+		block('h-16 w-full'),
+		block('h-16 w-full')
+	]
+};
+
+/** The committees and their agenda items (`team/committees`) */
+const committees = {
+	name: 'committees',
+	nodes: [
+		{
+			class: 'flex w-full flex-col gap-10 py-4 sm:gap-20 sm:p-10',
+			children: [alert(), block('h-10 w-full'), committeeCard, committeeCard]
+		}
+	]
+} satisfies SkeletonLayout;
 
 /** One row of the seats overview: the nation, then a seat button per committee */
 const seatRow = (): SkeletonNode => ({
@@ -1459,6 +1483,7 @@ export const TEAM_SKELETONS = {
 	members,
 	paperHub,
 	seatPlanning,
+	committees,
 	assignment: assignment('sighting'),
 	checkIn,
 	postalRegistration,
