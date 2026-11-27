@@ -11,8 +11,10 @@ let columns: string;
 
 const heights = new Map<Element, number>();
 
+type Frame = (time: number) => void;
+
 /** Animation frames wait until the test runs them */
-let frames: (time: number) => void[] = [];
+let frames: Frame[] = [];
 function nextFrame() {
 	const due = frames;
 	frames = [];
@@ -42,7 +44,7 @@ describe('masonry', () => {
 		disconnected = 0;
 		columns = '100px 100px';
 		frames = [];
-		vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => {
+		vi.stubGlobal('requestAnimationFrame', (callback: Frame) => {
 			frames.push(callback);
 			return frames.length;
 		});
