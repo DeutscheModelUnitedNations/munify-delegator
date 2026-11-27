@@ -59,12 +59,32 @@ export const masonry: Attachment<HTMLElement> = (grid) => {
 		});
 	}
 
-	// Watching the items is enough: they change their width with the grid
-	const sizes = new ResizeObserver(layOut);
+	// Measuring happens in the next frame, once the DOM settled: a mutation is seen in a microtask
+	// while Svelte is still updating, when an item can measure 0 for a moment. Placed with that
+	// height, the next item covered it, and as the item's size had not changed between two frames
+	// the ResizeObserver never told.
+	let frame: number | undefined;
+	let resized = false;
+	function schedule() {
+		frame ??= requestAnimationFrame(() => {
+			frame = undefined;
+			const changed = collect();
+			if (changed || resized) layOut();
+			resized = false;
+		});
+	}
 
+	// Watching the items is enough: they change their width with the grid
+	const sizes = new ResizeObserver(() => {
+		resized = true;
+		schedule();
+	});
+
+	/** Follows the items that came and went; whether there were any */
 	function collect() {
 		const current = gridItems(grid);
-		if (current.length === items.length && current.every((item, i) => item === items[i])) return;
+		if (current.length === items.length && current.every((item, i) => item === items[i]))
+			return false;
 		for (const item of items) {
 			if (current.includes(item)) continue;
 			sizes.unobserve(item);
@@ -74,14 +94,16 @@ export const masonry: Attachment<HTMLElement> = (grid) => {
 			if (!items.includes(item)) sizes.observe(item);
 		}
 		items = current;
-		layOut();
+		return true;
 	}
 
-	const changes = new MutationObserver(collect);
+	const changes = new MutationObserver(schedule);
 	changes.observe(grid, { childList: true, subtree: true });
 	collect();
+	layOut();
 
 	return () => {
+		if (frame !== undefined) cancelAnimationFrame(frame);
 		changes.disconnect();
 		sizes.disconnect();
 	};
