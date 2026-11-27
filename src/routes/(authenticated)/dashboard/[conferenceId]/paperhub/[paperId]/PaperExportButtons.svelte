@@ -14,11 +14,12 @@
 
 	interface Props {
 		paper: PaperDetail;
+		conferenceId: string;
 		/** Built once by the page, which hands the same header to the resolution editor. */
 		resolutionHeaderData: ResolutionHeaderData | undefined;
 	}
 
-	let { paper, resolutionHeaderData }: Props = $props();
+	let { paper, conferenceId, resolutionHeaderData }: Props = $props();
 
 	// The live editor state, so unsaved edits are included, falling back to the latest saved
 	// version while the editor has no content yet.
@@ -41,7 +42,12 @@
 				documentNumber: job.docNumber
 			});
 		} else {
-			downloadPaperTypst({ content: exportContent, meta: job.meta, documentNumber: job.docNumber });
+			downloadPaperTypst({
+				content: exportContent,
+				meta: job.meta,
+				branding: job.branding,
+				documentNumber: job.docNumber
+			});
 		}
 	}
 
@@ -53,7 +59,7 @@
 					header: job.header,
 					documentNumber: job.docNumber
 				})
-			: downloadPaperPdf({ content, meta: job.meta, documentNumber: job.docNumber });
+			: downloadPaperPdf({ conferenceId, content, meta: job.meta, documentNumber: job.docNumber });
 	}
 
 	async function exportPdf() {

@@ -13,8 +13,9 @@ import {
 	decodeEmblemDataUrl,
 	emblemSvgFor,
 	readBody,
+	nestingDepth,
 	readHeader,
-	readRawTypst
+	readPaperRequest
 } from './pdfRequest';
 
 const svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
@@ -115,19 +116,71 @@ describe('readBody', () => {
 	});
 });
 
-describe('readRawTypst', () => {
-	test('returns raw Typst source', () => {
-		expect(readRawTypst({ typst: '= Title' })).toBe('= Title');
+describe('nestingDepth', () => {
+	test('counts nested objects and arrays', () => {
+		expect(nestingDepth('x')).toBe(0);
+		expect(nestingDepth({})).toBe(1);
+		expect(nestingDepth({ content: [{ text: 'a' }] })).toBe(3);
+		expect(nestingDepth([[], [[{}]]])).toBe(4);
+	});
+});
+
+describe('readPaperRequest', () => {
+	const meta = {
+		paperType: 'Positionspapier',
+		committeeLabel: 'Gremium',
+		topicLabel: 'Thema',
+		disclaimer: 'Simulation'
+	};
+	const content = {
+		type: 'doc',
+		content: [
+			{ type: 'paragraph', content: [{ type: 'text', text: 'a', marks: [{ type: 'bold' }] }] }
+		]
+	};
+
+	test('reads the conference, content and labels of a paper', () => {
+		expect(readPaperRequest({ paper: { conferenceId: 'c1', content, meta } })).toEqual({
+			conferenceId: 'c1',
+			content,
+			meta
+		});
 	});
 
-	test('is undefined for a structured resolution or empty source', () => {
-		expect(readRawTypst({ resolution: {} })).toBeUndefined();
-		expect(readRawTypst({ typst: '' })).toBeUndefined();
-		expect(readRawTypst({ typst: 1 })).toBeUndefined();
+	test('keeps only the node fields the template reads', () => {
+		const read = readPaperRequest({
+			paper: { conferenceId: 'c1', content: { type: 'doc', extra: 1 }, meta }
+		});
+		expect(read?.content).toEqual({ type: 'doc' });
 	});
 
-	test('rejects oversized source', async () => {
-		expect(await statusOf(() => readRawTypst({ typst: 'x'.repeat(2_000_001) }))).toBe(413);
+	test('is undefined for a structured resolution', () => {
+		expect(readPaperRequest({ resolution: {} })).toBeUndefined();
+	});
+
+	test('refuses content nested deeper than any editor produces, without recursing', async () => {
+		let deep: Record<string, unknown> = { type: 'text', text: 'x' };
+		for (let i = 0; i < 50_000; i++) deep = { type: 'paragraph', content: [deep] };
+		expect(
+			await statusOf(() => readPaperRequest({ paper: { conferenceId: 'c1', content: deep, meta } }))
+		).toBe(400);
+	});
+
+	test('rejects malformed papers', async () => {
+		expect(await statusOf(() => readPaperRequest({ paper: 'x' }))).toBe(400);
+		expect(await statusOf(() => readPaperRequest({ paper: { content, meta } }))).toBe(400);
+		expect(
+			await statusOf(() =>
+				readPaperRequest({ paper: { conferenceId: 'c1', content: { content: 'x' }, meta } })
+			)
+		).toBe(400);
+		expect(
+			await statusOf(() =>
+				readPaperRequest({
+					paper: { conferenceId: 'c1', content, meta: { ...meta, disclaimer: 'x'.repeat(2_001) } }
+				})
+			)
+		).toBe(400);
 	});
 });
 

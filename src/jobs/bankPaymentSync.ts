@@ -1,7 +1,8 @@
 import {
 	handleIncomingTransfer,
 	lastHandledTransferId,
-	type IncomingTransfer
+	type IncomingTransfer,
+	type TransferOutcome
 } from '#api/handlers/bankTransfer/bankTransferService';
 import { logger } from '#lib/logger';
 import {
@@ -32,10 +33,97 @@ export function incomingTransfer(transaction: BankTransaction): IncomingTransfer
 	};
 }
 
+/**
+ * What one run did, in counts only, so the closing log line shows the sync works even on a day
+ * without a matching transfer. Nothing in it names a person or a single transfer: the amount is the
+ * sum of the payments it settled, the booking days are the range the run read.
+ */
 export interface SyncSummary {
+	/** Transactions BuchhaltungsButler returned, in `pages` requests. */
 	read: number;
+	pages: number;
+	/** Money going out or none at all, which cannot pay anything. */
+	outgoing: number;
+	/** Incoming, but without a booking date that can be read. */
+	unreadable: number;
+	/** Incoming transfers handed to the payment matching. */
+	incoming: number;
+	/** Incoming transfers whose purpose names no known payment. */
+	withoutReference: number;
+	/** Transfers a run before already handled, left as they are. */
+	handledBefore: number;
+	/** Transfers that named at least one payment and were handled now. */
+	matchedTransfers: number;
+	/** Payments marked received, and the sum of their transfers in euros. */
 	received: number;
+	receivedAmount: number;
+	/** Payments set to `NEEDS_HUMAN_REVIEW`: `alreadyReceived` + `amountMismatch`. */
 	flagged: number;
+	alreadyReceived: number;
+	amountMismatch: number;
+	/** The earliest and latest booking day of the transactions read, `YYYY-MM-DD`. */
+	bookedFrom?: string;
+	bookedTo?: string;
+}
+
+function emptySummary(): SyncSummary {
+	return {
+		read: 0,
+		pages: 0,
+		outgoing: 0,
+		unreadable: 0,
+		incoming: 0,
+		withoutReference: 0,
+		handledBefore: 0,
+		matchedTransfers: 0,
+		received: 0,
+		receivedAmount: 0,
+		flagged: 0,
+		alreadyReceived: 0,
+		amountMismatch: 0
+	};
+}
+
+function countBookingDay({ summary, bookingDate }: { summary: SyncSummary; bookingDate: string }) {
+	const day = bookingDate.slice(0, 10);
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+	if (!summary.bookedFrom || day < summary.bookedFrom) summary.bookedFrom = day;
+	if (!summary.bookedTo || day > summary.bookedTo) summary.bookedTo = day;
+}
+
+/** Counts what came of one incoming transfer into `summary`, and logs the payments it named. */
+function countOutcome({
+	transfer,
+	outcome,
+	dryRun,
+	summary
+}: {
+	transfer: IncomingTransfer;
+	outcome: TransferOutcome;
+	dryRun: boolean;
+	summary: SyncSummary;
+}) {
+	if (outcome.kind !== 'handled') {
+		summary[outcome.kind === 'noReference' ? 'withoutReference' : 'handledBefore']++;
+		return;
+	}
+	summary.matchedTransfers++;
+	if (outcome.results.some(({ result }) => result === 'RECEIVED')) {
+		summary.receivedAmount += transfer.amount;
+	}
+	for (const { paymentId, result } of outcome.results) {
+		if (result === 'RECEIVED') summary.received++;
+		else {
+			summary.flagged++;
+			summary[result === 'ALREADY_RECEIVED' ? 'alreadyReceived' : 'amountMismatch']++;
+		}
+		logger.info('Matched a bank transfer', {
+			externalId: transfer.externalId,
+			paymentId,
+			result,
+			dryRun
+		});
+	}
 }
 
 /** Hands one page's incoming transfers on, counting what came of them into `summary`. */
@@ -48,19 +136,16 @@ async function handlePage({
 	dryRun: boolean;
 	summary: SyncSummary;
 }) {
-	for (const transfer of transactions.map(incomingTransfer)) {
-		if (!transfer) continue;
-		const outcome = await handleIncomingTransfer({ transfer, dryRun });
-		if (outcome.kind !== 'handled') continue;
-		for (const { paymentId, result } of outcome.results) {
-			summary[result === 'RECEIVED' ? 'received' : 'flagged']++;
-			logger.info('Matched a bank transfer', {
-				externalId: transfer.externalId,
-				paymentId,
-				result,
-				dryRun
-			});
+	for (const transaction of transactions) {
+		countBookingDay({ summary, bookingDate: transaction.booking_date });
+		const transfer = incomingTransfer(transaction);
+		if (!transfer) {
+			summary[transaction.amount > 0 ? 'unreadable' : 'outgoing']++;
+			continue;
 		}
+		summary.incoming++;
+		const outcome = await handleIncomingTransfer({ transfer, dryRun });
+		countOutcome({ transfer, outcome, dryRun, summary });
 	}
 }
 
@@ -85,7 +170,7 @@ export async function runBankPaymentSync({
 }): Promise<SyncSummary> {
 	const dateFrom = lookbackStart({ now, days: lookbackDays });
 	const afterId = await lastHandledTransferId();
-	const summary: SyncSummary = { read: 0, received: 0, flagged: 0 };
+	const summary = emptySummary();
 
 	let page = 0;
 	for (; page < MAX_PAGES; page++) {
@@ -94,6 +179,7 @@ export async function runBankPaymentSync({
 			afterId,
 			offset: page * MAX_PAGE_SIZE
 		});
+		summary.pages++;
 		summary.read += transactions.length;
 		await handlePage({ transactions, dryRun, summary });
 		if (transactions.length < MAX_PAGE_SIZE) break;
@@ -102,6 +188,8 @@ export async function runBankPaymentSync({
 		logger.warn('Stopped reading bank transactions after the page limit', { pages: MAX_PAGES });
 	}
 
+	// cents, as a sum of floats drifts
+	summary.receivedAmount = Math.round(summary.receivedAmount * 100) / 100;
 	logger.info('Bank payment sync done', { ...summary, dateFrom, afterId, dryRun });
 	return summary;
 }

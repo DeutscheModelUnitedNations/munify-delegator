@@ -47,7 +47,7 @@ The team decides by when papers should be submitted and tells you. DELEGATOR its
 ## Writing a paper {#writing-a-paper}
 
 1. Open **My Papers** and, under **Submit paper**, click **Create** for the paper type you want.
-2. Under **Paper details** you see your **Delegation** and your **Committee**. Choose the **Agenda item**. An introduction paper has none.
+2. Under **Paper details** you see your **Delegation** and your **Committee**. Choose the **Agenda item**. An introduction paper has none. If the topic has **points for discussion**, they show below it: your paper should answer them. You also find them above your paper and on the topic's page in the preparation guide.
 3. Write the text in the editor. Below the editor, DELEGATOR counts words, characters and paragraphs and estimates the reading time.
 4. Click **Save draft** to continue later, or **Submit paper** to hand it to the team. You then return to the overview.
 
@@ -135,7 +135,7 @@ A click opens the paper in read-only mode (**You are viewing this paper as a sup
 
 ## Exporting {#export}
 
-On a paper's page, **Export PDF** downloads it. **Export Typst** downloads the source for the Typst typesetting program. A working paper is set as a resolution with its header, every other paper as a text document with a note that it was written as part of a simulation. The export takes the text currently in the editor, even if it is not saved yet.
+On a paper's page, **Export PDF** downloads it. **Export Typst** downloads the source for the Typst typesetting program. A working paper is set as a resolution with its header, every other paper as a text document in the conference's design: its logo, your delegation, committee and topic on the first page and a note in the footer that it was written as part of a simulation. The export takes the text currently in the editor, even if it is not saved yet.
 
 The buttons are there for you as the author and for supervisors. The read-only view under **Conference Papers** has no export.
 

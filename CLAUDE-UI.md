@@ -412,6 +412,9 @@ The preparation guide (`docs/plans/guide.md`) lives in `src/lib/components/guide
 - **`editor/GuideEditor`** — the WYSIWYG editor (TipTap, `guideExtensions.ts`): marks, headings
   2–4, lists, quotes, rules, links (`guide:<id>`, `file:<id>`), uploads as guide files, callouts (Phosphor icon via `IconPicker` + colour, `CalloutControls.svelte`),
   toggles, buttons, embeds, placeholders. Block attributes are changed through `promptDialog`.
+- **`nodes/GuideDiscussionPoints`** — the reader-only `discussionPoints` node that
+  `{{Diskussionspunkte}}` becomes, drawn as `DiscussionPointsBox`. Reader pages are parsed with
+  `parseReaderDocument` (stored pages may not hold such nodes).
 - **`ScopePicker`** — the four sharing modes as a 2×2 grid (series × year); shared modes are
   disabled without a series. `guideLabels.ts` names scopes and their badge colours.
 
@@ -429,14 +432,30 @@ of `#lib/guide/outlineEditing` and reads `#lib/guide/workspace`.
   `TreeMenuItem`). Page state shows as `StateDot` (green published, orange changed, ring draft).
   No sticky or scrolling box around the tree: it would trap its dialogs and menus below the
   footer.
-- **`page/[pageId]`** — the editor with the page's settings beside it (scope, `GuideEntries`:
-  where the draft lists the page, with label and audience, versions).
+- **`page/[pageId]`** — the editor with the page's settings beside it (scope, an agenda item
+  page's points for discussion in `DiscussionPointsSection`, saved at once; `GuideEntries`: where
+  the draft lists the page, with label and audience, versions). The preview fills in the points.
 - **`visibility/`** — reader groups as buttons (`aria-pressed`); the group's sidebar from the
   draft (`expandOutline` + `guideForReader`) beside the table of sections × groups
   (`visibilityRows`, icons from `visibilityCells.ts`, each with screen reader text); the topic
   overview's row opens `TopicReadersModal`.
 - **`committees/`** — the template as a matrix (`committeeMatrix`): shared pages span the columns,
   missing committee/agenda item pages are created in place (`ensureGuidePageOf`).
+
+## Points for Discussion (`#lib/components/discussionPoints/`)
+
+An agenda item's points for discussion, one look everywhere:
+
+- **`DiscussionPointsBox`** — the box that stands out: warning-toned frame with a thick start
+  border, the `chats-circle` badge, heading and a numbered list in body colour (4.5:1). `compact`
+  for narrow columns; `anchor` gives the heading the guide's TOC id. Renders nothing without
+  points. Used by the guide reader, the paper page (authors, supervisors, reviewers) and the
+  paper forms.
+- **`AgendaItemDiscussionPoints`** — fetches one agenda item's points live and shows the box; for
+  the paper forms, under the agenda item select.
+- **`DiscussionPointsEditor`** — the list editor (`bind:points`): one auto-growing field per point,
+  Enter starts the next, up/down/remove per point. Save through `withoutBlankPoints`. `bare` leaves
+  out its legend and hint where the section has its own.
 
 ## Chat Components
 

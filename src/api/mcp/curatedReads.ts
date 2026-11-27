@@ -558,3 +558,114 @@ export function assignmentOverview({
 		}))
 	};
 }
+
+// --- Agenda item context ------------------------------------------------------------------------
+
+export const AGENDA_ITEM_QUERY = `
+query McpAgendaItem($agendaItemId: ID!) {
+	committeeAgendaItem(id: $agendaItemId) {
+		id
+		title
+		teaserText
+		discussionPoints
+		reviewHelpStatus
+		committee { id name abbreviation conferenceId }
+	}
+	agendaItemCommitteeText(agendaItemId: $agendaItemId) {
+		pageId
+		title
+		versionNumber
+		publishedAt
+		markdown
+		omittedBlocks
+		pdfUrl
+	}
+}`;
+
+export const agendaItemDataSchema = z.object({
+	committeeAgendaItem: z.object({
+		id: z.string(),
+		title: z.string(),
+		teaserText: nullableString,
+		discussionPoints: z.array(z.string()),
+		reviewHelpStatus: z.string(),
+		committee: z.object({
+			id: z.string(),
+			name: z.string(),
+			abbreviation: z.string(),
+			conferenceId: z.string()
+		})
+	}),
+	agendaItemCommitteeText: z
+		.object({
+			pageId: z.string(),
+			title: z.string(),
+			versionNumber: z.number(),
+			publishedAt: z.union([z.string(), z.date()]),
+			markdown: z.string(),
+			omittedBlocks: z.array(z.string()),
+			pdfUrl: nullableString
+		})
+		.nullable()
+});
+
+/** The heading, also bold or italic (`guideDocumentToMarkdown` writes the marks of a heading). */
+const DISCUSSION_POINTS_HEADING =
+	/^#{1,6}\s+[*_]{0,3}(punkte zur diskussion|points for discussion)[*_]{0,3}\s*$/i;
+
+/**
+ * The points for discussion a committee text lists under its own heading ("Punkte zur Diskussion",
+ * as pages taken over from the old guide have them): the list items up to the next heading.
+ */
+export function discussionPointsFromMarkdown(markdown: string) {
+	const lines = markdown.split('\n');
+	const start = lines.findIndex((line) => DISCUSSION_POINTS_HEADING.test(line.trim()));
+	if (start === -1) return [];
+	const points: string[] = [];
+	for (const line of lines.slice(start + 1)) {
+		if (/^#{1,6}\s/.test(line.trim())) break;
+		const item = /^\s{0,3}(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
+		if (item) points.push(item[1].trim());
+		else if (points.length > 0 && /^\s{2,}\S/.test(line)) {
+			points[points.length - 1] = `${points[points.length - 1]} ${line.trim()}`;
+		}
+	}
+	return points.filter((point) => point.length > 0);
+}
+
+/**
+ * What an assistant needs to judge a paper on an agenda item: the agenda item, its points for
+ * discussion (its own, else those its committee text lists) and the published committee text.
+ */
+export function agendaItemContext(data: z.infer<typeof agendaItemDataSchema>) {
+	const item = data.committeeAgendaItem;
+	const text = data.agendaItemCommitteeText;
+	const fromText = text ? discussionPointsFromMarkdown(text.markdown) : [];
+	const source =
+		item.discussionPoints.length > 0
+			? 'agendaItem'
+			: fromText.length > 0
+				? 'committeeText'
+				: 'none';
+	const notes = [
+		...(text
+			? []
+			: [
+					'The agenda item has no published committee text: ask the user for it, do not make one up.'
+				]),
+		...(source === 'none' ? ['No points for discussion are set for this agenda item.'] : [])
+	];
+	return {
+		agendaItem: {
+			id: item.id,
+			title: item.title,
+			teaserText: item.teaserText ?? null,
+			reviewHelpStatus: item.reviewHelpStatus,
+			committee: item.committee
+		},
+		discussionPoints: source === 'agendaItem' ? item.discussionPoints : fromText,
+		discussionPointsSource: source,
+		committeeText: text,
+		...(notes.length > 0 ? { note: notes.join(' ') } : {})
+	};
+}

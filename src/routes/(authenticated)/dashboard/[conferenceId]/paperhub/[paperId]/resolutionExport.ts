@@ -3,7 +3,11 @@ import type {
 	Resolution,
 	ResolutionHeaderData
 } from '@deutschemodelunitednations/munify-resolution-editor/schema';
-import { paperToTypst, type PaperTypstMeta } from '#lib/helpers/paperTypst';
+import {
+	paperToTypst,
+	type PaperTypstBranding,
+	type PaperTypstMeta
+} from '#lib/helpers/paperTypst';
 
 /** Build a filesystem-safe base filename from a resolution document number. */
 function safeBaseName(documentNumber: string | null | undefined): string {
@@ -70,13 +74,15 @@ export async function downloadResolutionPdf({
 export function downloadPaperTypst({
 	content,
 	meta,
+	branding,
 	documentNumber
 }: {
 	content: Parameters<typeof paperToTypst>[0]['content'];
 	meta: PaperTypstMeta;
+	branding: PaperTypstBranding;
 	documentNumber?: string | null;
 }) {
-	const typst = paperToTypst({ content, meta });
+	const typst = paperToTypst({ content, meta, branding });
 	triggerDownload({
 		blob: new Blob([typst], { type: 'text/plain;charset=utf-8' }),
 		filename: `${safeBaseName(documentNumber)}.typ`
@@ -84,24 +90,24 @@ export function downloadPaperTypst({
 }
 
 /**
- * Generate Typst for a position/introduction paper client-side, request a
- * server-compiled PDF and download it. Throws on a non-OK response so callers
- * can surface an error toast.
+ * Request a server-set PDF of a position/introduction paper (in its conference's branding, with
+ * its logo) and download it. Throws on a non-OK response so callers can surface an error toast.
  */
 export async function downloadPaperPdf({
+	conferenceId,
 	content,
 	meta,
 	documentNumber
 }: {
+	conferenceId: string;
 	content: Parameters<typeof paperToTypst>[0]['content'];
 	meta: PaperTypstMeta;
 	documentNumber?: string | null;
 }) {
-	const typst = paperToTypst({ content, meta });
 	const res = await fetch('/api/pdf', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ typst })
+		body: JSON.stringify({ paper: { conferenceId, content: content ?? {}, meta } })
 	});
 	if (!res.ok) {
 		throw new Error(`PDF request failed (${res.status})`);

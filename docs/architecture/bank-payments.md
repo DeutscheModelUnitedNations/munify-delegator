@@ -42,6 +42,14 @@ BuchhaltungsButler, which pulls DMUN's bank accounts, and settles the payments i
   the first run, so the API answers in id order), but never
   before `--lookback-days` (default 60) ago, so a first run reads two months, not the whole history.
   Daily is enough; `--dry-run` logs what would happen without writing.
+- **What a run logs:** a `Matched a bank transfer` line per payment a transfer named (transfer
+  and payment ids, result), and always one closing `Bank payment sync done` line in counts only
+  (`SyncSummary`): transactions `read` in `pages`, `outgoing`, `unreadable`, `incoming`,
+  `withoutReference`, `handledBefore`, `matchedTransfers`, `received` with `receivedAmount` (euros),
+  `flagged` split into `alreadyReceived` / `amountMismatch`, the booking range `bookedFrom`–`bookedTo`
+  and where it started (`dateFrom`, `afterId`). No sender, purpose or single amount reaches the log.
+  `read: 0` on a weekend is normal; `incoming` with all `withoutReference` means the connection
+  works and nobody paid with a reference yet.
 
 ## The payments page
 

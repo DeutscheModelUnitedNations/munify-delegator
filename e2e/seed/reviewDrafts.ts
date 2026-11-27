@@ -19,6 +19,7 @@ import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertCommittee, upsertConference } from './conference';
 import { seatNations, upsertNationRole } from './conferenceRole';
 import { upsertParticipant } from './participant';
+import { upsertSubmittedPaper } from './paper';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 
 export const E2E_DRAFTS_CONFERENCE_ID = 'e2e00000conference0000015';
@@ -163,25 +164,13 @@ async function seedConference(
 		.where(inArray(schema.paperReviewDraft.paperId, paperIds));
 	await db.delete(schema.paperVersion).where(inArray(schema.paperVersion.paperId, paperIds));
 	for (const paperId of paperIds) {
-		const paper = {
+		// its version is `firstVersionId(paperId)`
+		await upsertSubmittedPaper(db, {
 			id: paperId,
 			authorParticipantId,
 			delegationId: delegation.id,
 			agendaItemId: agendaItem.id,
-			status: 'SUBMITTED' as const,
-			type: 'POSITION_PAPER' as const,
-			firstSubmittedAt: new Date()
-		};
-		await db
-			.insert(schema.paper)
-			.values(paper)
-			.onConflictDoUpdate({ target: schema.paper.id, set: paper });
-		await db.insert(schema.paperVersion).values({
-			id: firstVersionId(paperId),
-			version: 1,
-			content: paperContent(),
-			paperId,
-			status: 'SUBMITTED'
+			content: paperContent()
 		});
 	}
 }

@@ -79,7 +79,7 @@ In front of every agenda item is a button the team uses to agree where reviewers
 ## Reviewing a paper {#reviewing}
 
 1. Open the paper from the list. At the top are the delegation, status, type, version and the dates it was created and submitted.
-2. Read the text. When you select a passage, **Quote** inserts it into your review as a quote. Next to every quote, **Find in paper** jumps back to the passage in the paper.
+2. Read the text. If the topic has **points for discussion**, they stand above the paper: what papers on this topic should answer; the delegation sees the same points. When you select a passage, **Quote** inserts it into your review as a quote. Next to every quote, **Find in paper** jumps back to the passage in the paper.
 3. Write your comments under **Add Review**. Nothing can be submitted without comments (**Review comments are required**). Insert [snippets](#snippets) through the bookmark in the toolbar or by typing `/` and the name.
 4. Under **New Status**, choose either **Revisions requested** or **Accepted**.
 5. If your name should not appear on the review, switch on **Publish anonymously** and pick **Secretariat**, **Research Service** or **Custom name**. With **Custom name** you enter the name the review appears under. Your browser remembers the choice.
@@ -161,4 +161,4 @@ In the list you edit or delete a snippet with the buttons in its row.
 
 ## Exporting {#export}
 
-On a paper's page, **Export PDF** or **Export Typst** downloads it. A working paper is set as a resolution with its header, every other paper as a text document. The export takes the text currently in the editor, including unsaved changes in edit mode.
+On a paper's page, **Export PDF** or **Export Typst** downloads it. A working paper is set as a resolution with its header, every other paper as a text document in the conference's design (logo, accent colour of the conference series). The export takes the text currently in the editor, including unsaved changes in edit mode.

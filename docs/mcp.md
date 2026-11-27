@@ -33,6 +33,7 @@ The rules live in `src/api/mcp/` (see CLAUDE.md, "MCP server"). How the team use
 | `participant_overview`                              | Participants with their paperwork, filtered and paged, plus a summary |
 | `participant_counts`                                | Participants counted by up to three attributes                        |
 | `assignment_overview`                               | Seats and holders per role, warnings, a page of the applications      |
+| `agenda_item_context`                               | An agenda item's points for discussion and published committee text   |
 | `graphql_query` / `graphql_schema`                  | Any read-only query, and the schema with redacted fields marked       |
 | `read_skill`                                        | A file of an offered skill, for clients without MCP skills support    |
 | `createCommittee`, `assignDelegation`, … (about 69) | The mutations that opted in, one tool each                            |
@@ -91,6 +92,17 @@ sidebar, like "publish changes" in the app) reach participants and preview first
 `importGuideFile` downloads an image or PDF from the allowed hosts (`GUIDE_IMPORT_HOSTS`, by
 default guide.dmun.de and cdn.dmun.de) and answers its id for `file:<id>` in a page. Deleting
 pages and restoring sidebar versions stay in the app.
+
+### Agenda item context
+
+`agenda_item_context` (`reviewPapers` or `editGuide`) is what a paper is judged against: the
+agenda item, its `discussionPoints` and its published committee text (`agendaItemCommitteeText`:
+the published version of its guide page as Markdown, placeholders filled but `{{Diskussionspunkte}}`
+left, with a short-lived PDF link; null while nothing is published). An agenda item without points
+of its own gets those its committee text lists under "Punkte zur Diskussion" (pages taken over from
+the old guide); `discussionPointsSource` says which (`agendaItem`, `committeeText`, `none`). The
+points are set with `create`/`updateAgendaItem` or `setAgendaItemDiscussionPoints` (which guide
+editors may call too).
 
 ## Skills
 

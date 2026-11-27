@@ -1,17 +1,18 @@
 import { describe, expect, test } from 'vitest';
-import { paperToTypst, type PaperTypstMeta } from './paperTypst';
+import { paperToTypst, type PaperTypstBranding, type PaperTypstMeta } from './paperTypst';
 
 const meta: PaperTypstMeta = {
-	conferenceName: 'MUN-SH 2026',
 	paperType: 'Positionspapier',
 	committeeLabel: 'Gremium',
 	topicLabel: 'Thema',
 	disclaimer: 'Kein offizielles Dokument'
 };
 
-/** The body of the document: everything after the rule that ends the header. */
+const branding: PaperTypstBranding = { conferenceName: 'MUN-SH 2026', brand: 'mun-sh', lang: 'de' };
+
+/** The body of the document: everything after the head of the first page. */
 function body(content: Parameters<typeof paperToTypst>[0]['content']) {
-	return paperToTypst({ content, meta }).split('#v(8pt)\n\n')[1].trimEnd();
+	return paperToTypst({ content, meta, branding }).split('#v(10pt)\n\n')[1].trimEnd();
 }
 
 const text = (value: string, marks?: { type: string; attrs?: Record<string, unknown> }[]) => ({
@@ -23,18 +24,35 @@ const text = (value: string, marks?: { type: string; attrs?: Record<string, unkn
 const paragraph = (...content: object[]) => ({ type: 'paragraph', content });
 
 describe('paperToTypst', () => {
-	test('renders the conference, paper type and disclaimer', () => {
-		const source = paperToTypst({ content: null, meta });
-		expect(source).toContain('#text(size: 15pt, weight: "bold")[MUN-SH 2026]');
-		expect(source).toContain('#text(size: 11pt)[Positionspapier]');
-		expect(source).toContain('#align(center)[Kein offizielles Dokument]');
+	test('renders the conference, paper type and disclaimer in the brand', () => {
+		const source = paperToTypst({ content: null, meta, branding });
+		expect(source).toContain('#let dmun-accent = rgb("#C81111")');
+		expect(source).toContain('lang: "de"');
+		expect(source).toContain('#strong[MUN\\-SH 2026]');
+		expect(source).toContain('#text(size: 50pt, weight: "extralight")[Positionspapier]');
+		expect(source).toContain('[Kein offizielles Dokument]');
+		expect(source).toContain('counter(page).display("1 / 1", both: true)');
 		expect(body(undefined)).toBe('');
 	});
 
-	test('lists only the header lines that are given', () => {
-		const withoutDetails = paperToTypst({ content: null, meta });
-		expect(withoutDetails).not.toContain('#strong[');
-		expect(withoutDetails).not.toContain('Gremium:');
+	test('shows the logo only when there is one', () => {
+		expect(paperToTypst({ content: null, meta, branding })).not.toContain('image(');
+		expect(
+			paperToTypst({
+				content: null,
+				meta,
+				branding: {
+					...branding,
+					logo: { path: 'mun-sh-lang.svg', darkPath: 'mun-sh-lang-darkmode.svg', clearSpace: true }
+				}
+			})
+		).toContain('image("mun-sh-lang.svg", height: 2.1cm)');
+	});
+
+	test('lists only the facts and header parts that are given', () => {
+		const withoutDetails = paperToTypst({ content: null, meta, branding });
+		expect(withoutDetails).not.toContain('inset: (x: 14pt, y: 11pt)');
+		expect(withoutDetails).not.toContain('Gremium');
 
 		const source = paperToTypst({
 			content: null,
@@ -42,20 +60,30 @@ describe('paperToTypst', () => {
 				...meta,
 				entityName: 'Deutschland',
 				committeeLine: 'General Assembly (GA)',
-				topic: 'Klima'
-			}
+				topic: 'Klima',
+				documentNumber: 'PP-2026-ABCDEF'
+			},
+			branding
 		});
-		expect(source).toContain(
-			'#strong[Deutschland] #linebreak()\nGremium: General Assembly (GA) #linebreak()\nThema: Klima'
-		);
+		expect(source).toContain('#text(size: 15pt, weight: "bold")[Deutschland]]');
+		expect(source).toContain('[Gremium] #linebreak() #text(size: 9.5pt)[General Assembly (GA)]');
+		expect(source).toContain('[Thema] #linebreak() #text(size: 9.5pt)[Klima]');
+		expect(source).toContain('PP\\-2026\\-ABCDEF');
+		// the running header from the second page on
+		expect(source).toContain('[#strong[Deutschland] · Positionspapier · General Assembly (GA)]');
 	});
 
 	test('escapes markup characters in text and metadata', () => {
 		expect(body({ type: 'doc', content: [paragraph(text('a#b*c_[d]\\e'))] })).toBe(
 			'a\\#b\\*c\\_\\[d\\]\\\\e'
 		);
+		expect(body({ content: [paragraph(text('- = + // x'))] })).toBe('\\- \\= \\+ \\/\\/ x');
 		expect(
-			paperToTypst({ content: null, meta: { ...meta, conferenceName: '$100 @ <home>' } })
+			paperToTypst({
+				content: null,
+				meta,
+				branding: { ...branding, conferenceName: '$100 @ <home>' }
+			})
 		).toContain('[\\$100 \\@ \\<home\\>]');
 	});
 
@@ -100,7 +128,7 @@ describe('paperToTypst', () => {
 		).toBe('a\n\nb');
 	});
 
-	test('renders headings with their level, defaulting to 2', () => {
+	test('renders the editor headings (H2, H3) as the first two heading levels', () => {
 		expect(
 			body({
 				content: [
@@ -108,7 +136,7 @@ describe('paperToTypst', () => {
 					{ type: 'heading', content: [text('Zwei')] }
 				]
 			})
-		).toBe('#heading(level: 3)[Drei]\n\n#heading(level: 2)[Zwei]');
+		).toBe('#heading(level: 2)[Drei]\n\n#heading(level: 1)[Zwei]');
 	});
 
 	test('renders bullet and ordered lists, with multi-paragraph and empty items', () => {

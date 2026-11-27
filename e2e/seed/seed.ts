@@ -43,6 +43,7 @@ import { seedFeatureRequirements } from './featureRequirements';
 import { seedInvitations } from './invitations';
 import { seedMcp } from './mcp';
 import { seedReviewDrafts } from './reviewDrafts';
+import { seedDiscussionPoints } from './discussionPoints';
 import { seedGuide } from './guide';
 import { seedMessages } from './messages';
 import { seedGroupChats } from './groupChats';
@@ -1070,6 +1071,7 @@ export default async function seed() {
 	await seedMakeSupervisor(db);
 	await seedMcp(db);
 	await seedReviewDrafts(db);
+	await seedDiscussionPoints(db);
 	await seedGuide(db);
 	await seedMessages(db);
 	await seedGroupChats(db);

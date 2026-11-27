@@ -79,7 +79,7 @@ Vor jedem Tagesordnungspunkt steht ein Knopf, mit dem das Team sich abstimmt, wo
 ## Ein Papier begutachten {#reviewing}
 
 1. Öffne das Papier aus der Liste. Oben stehen Delegation, Status, Typ, Version und die Daten der Erstellung und Einreichung.
-2. Lies den Text. Markierst du eine Stelle, fügt **Zitieren** sie als Zitat in dein Feedback ein. Neben jedem Zitat springt **Im Papier finden** zurück zur Stelle im Papier.
+2. Lies den Text. Hat das Thema **Punkte zur Diskussion**, stehen sie über dem Papier: Darauf sollen Papiere zu diesem Thema eingehen, die Delegation sieht dieselben Punkte. Markierst du eine Stelle, fügt **Zitieren** sie als Zitat in dein Feedback ein. Neben jedem Zitat springt **Im Papier finden** zurück zur Stelle im Papier.
 3. Schreibe deine Kommentare unter **Bewerten**. Ohne Kommentar lässt sich nichts abgeben (**Kommentare sind erforderlich**). [Textbausteine](#snippets) fügst du über das Lesezeichen in der Werkzeugleiste ein oder indem du `/` und den Namen tippst.
 4. Wähle unter **Neuer Status** entweder **Überarbeitungen angefordert** oder **Akzeptiert**.
 5. Soll dein Name nicht beim Feedback stehen, schalte **Anonym veröffentlichen** ein und wähle **Sekretariat**, **Wissenschaftlicher Dienst** oder **Eigener Name**. Bei **Eigener Name** gibst du den Namen ein, unter dem das Feedback erscheinen soll. Dein Browser merkt sich die Wahl.
@@ -161,4 +161,4 @@ In der Liste bearbeitest oder löschst du einen Baustein über die Knöpfe in se
 
 ## Exportieren {#export}
 
-Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** oder **Typst exportieren** herunter. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument. Der Export nimmt den Text, der gerade im Editor steht, auch ungespeicherte Änderungen im Bearbeitungsmodus.
+Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** oder **Typst exportieren** herunter. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument im Design der Konferenz (Logo, Akzentfarbe der Konferenzreihe). Der Export nimmt den Text, der gerade im Editor steht, auch ungespeicherte Änderungen im Bearbeitungsmodus.

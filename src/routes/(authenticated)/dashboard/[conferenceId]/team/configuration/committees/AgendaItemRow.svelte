@@ -21,6 +21,14 @@
 		class="text-base-content/60 order-last col-span-2 text-xs whitespace-pre-wrap md:order-none md:col-span-1 md:text-sm"
 	>
 		{item.teaserText ?? ''}
+		{#if item.discussionPoints.length > 0}
+			<span
+				class="text-base-content/70 ms-2 inline-flex items-center gap-1 text-xs whitespace-nowrap"
+			>
+				<i aria-hidden="true" class="ph-duotone ph-chats-circle"></i>
+				{m.discussionPointsCount({ count: item.discussionPoints.length })}
+			</span>
+		{/if}
 	</p>
 	<span
 		class="text-base-content/70 hidden items-center gap-1 text-sm md:flex {item.papers.length === 0

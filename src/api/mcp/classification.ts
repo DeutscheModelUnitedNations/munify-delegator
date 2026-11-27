@@ -600,6 +600,17 @@ const FIELDS: Record<string, TypeClassification> = {
 		]
 	},
 	GuideMarkdown: { visible: ['markdown', 'omittedBlocks'] },
+	AgendaItemCommitteeText: {
+		visible: [
+			'markdown',
+			'omittedBlocks',
+			'pageId',
+			'pdfUrl',
+			'publishedAt',
+			'title',
+			'versionNumber'
+		]
+	},
 	GuideConferenceTitle: { visible: ['id', 'title'] },
 	GuidePagePublishPreview: {
 		visible: ['firstPublish', 'scope', 'scopeChanges', 'textChanges', 'titleChanges']
@@ -639,7 +650,7 @@ const FIELDS: Record<string, TypeClassification> = {
 		]
 	},
 	Committeeagendaitem: {
-		visible: [...ROW, 'committeeId', 'reviewHelpStatus', 'teaserText', 'title']
+		visible: [...ROW, 'committeeId', 'discussionPoints', 'reviewHelpStatus', 'teaserText', 'title']
 	},
 	Conferencerole: {
 		visible: [

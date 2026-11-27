@@ -42,11 +42,11 @@ Ein Assistent kennt Personen nur als IDs und kann dir nicht sagen, wer gemeint i
 
 ## Was ein Assistent tun kann {#what-an-assistant-can-do}
 
-Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Teilnehmenden mit ihren Formalitäten, Zählungen nach bis zu drei Merkmalen und eine Übersicht der Zuteilung mit Plätzen, Inhaber\*innen, dem Umfang des Entwurfs und Warnungen. Darüber hinaus kann er jede lesende Abfrage stellen, die auch die Seiten des Team-Bereichs nutzen.
+Für häufige Fragen hat ein Assistent eigene Werkzeuge: eine Übersicht der Teilnehmenden mit ihren Formalitäten, Zählungen nach bis zu drei Merkmalen, eine Übersicht der Zuteilung mit Plätzen, Inhaber\*innen, dem Umfang des Entwurfs und Warnungen und, wer Papiere begutachtet oder den Leitfaden pflegt, ein Thema mit seinen **Punkten zur Diskussion** und dem veröffentlichten Gremientext aus dem Leitfaden. Darüber hinaus kann er jede lesende Abfrage stellen, die auch die Seiten des Team-Bereichs nutzen.
 
 Ändern kann er vieles, was die Seiten des Teams ändern, jeweils mit einem eigenen Werkzeug:
 
-- Gremien, Themen, Rollen und Sitzplanung
+- Gremien, Themen mit ihren Punkten zur Diskussion, Rollen und Sitzplanung
 - die [Zuteilung](./assignment#draft-apply-release) im Entwurf: Sichtung (Sterne, Markierung, **Muss einen Platz bekommen**, Ausschließen, Priorität), Gewichtung, Rollen planen, Delegationen aufteilen, Einzelteilnehmende umwandeln, automatisch zuteilen, zurücksetzen und den Entwurf verwerfen
 - Gremien und Plätze einzelner Delegierter
 - den Zeitplan mit Tagen, Tracks, Einträgen und Orten
@@ -65,7 +65,7 @@ Wer Papiere begutachtet, kann sich vom Assistenten Feedback vorbereiten lassen. 
 
 ### Anleitung zur Papierkorrektur {#paper-correction-skill}
 
-Der Server gibt dem Assistenten außerdem die DMUN-Anleitung zur Papierkorrektur mit (den Skill **papierkorrektur**): wie er das nächste Papier findet, wo der Gremientext auf guide.dmun.de steht, den Korrekturleitfaden und eine Vorlage für das Feedback. Bittest du ihn, ein Papier zu korrigieren, schlägt er vor, ihr zu folgen. Claude lädt sie selbst, andere Assistenten lesen sie über ein eigenes Werkzeug. Die Anleitung wird in einem eigenen Repository gepflegt. DELEGATOR behält eine Kopie eine Stunde lang. Die erste Anfrage eines Assistenten danach bekommt noch die alte Kopie und lässt DELEGATOR die Anleitung neu lesen. Sobald das geklappt hat, bekommen spätere Anfragen die Änderung; bis dahin, oder wenn es scheitert, weiter die alte Kopie.
+Der Server gibt dem Assistenten außerdem die DMUN-Anleitung zur Papierkorrektur mit (den Skill **papierkorrektur**): wie er das nächste Papier findet, wie er Gremientext und Punkte zur Diskussion aus dem Leitfaden in DELEGATOR liest, den Korrekturleitfaden und eine Vorlage für das Feedback. Bittest du ihn, ein Papier zu korrigieren, schlägt er vor, ihr zu folgen. Claude lädt sie selbst, andere Assistenten lesen sie über ein eigenes Werkzeug. Die Anleitung wird in einem eigenen Repository gepflegt. DELEGATOR behält eine Kopie eine Stunde lang. Die erste Anfrage eines Assistenten danach bekommt noch die alte Kopie und lässt DELEGATOR die Anleitung neu lesen. Sobald das geklappt hat, bekommen spätere Anfragen die Änderung; bis dahin, oder wenn es scheitert, weiter die alte Kopie.
 
 :::warning Erst Vorschau, dann ausführen
 Was Menschen außerhalb des Teams erreicht, führt ein Assistent nicht sofort aus. Dazu gehören der Konferenzstatus, der Kalender für Teilnehmende, die Nachrichten zwischen Delegationen, das Freischalten von Zahlungen, der postalischen Anmeldung und der Papiereinreichung, Status von Teilnehmenden wie Zahlung, Dokumente und Anwesenheit, der Status von Zahlungen, die Anwesenheit aller auf einmal und das Verteilen einer Umfrage. Ohne ausdrückliche Bestätigung im Aufruf ändert DELEGATOR nichts und antwortet nur mit einer Vorschau. Die Bestätigung setzt der Assistent selbst. Ob er dich vorher fragt, liegt also an ihm. Ein guter Assistent tut das. Bestätige nur, was du selbst so tun würdest.

@@ -35,6 +35,16 @@ export function downloadUrl(file: { key: string; fileName: string | null }) {
 	return storage().presignDownload({ key: file.key, fileName: file.fileName ?? undefined });
 }
 
+/** The download URL (`downloadUrl`) of a stored file by id, or null for none or one that is gone. */
+export async function downloadUrlOf(fileId: string | null) {
+	if (!fileId) return null;
+	const file = await db.query.storedFile.findFirst({
+		where: { id: fileId },
+		columns: { key: true, fileName: true }
+	});
+	return file ? downloadUrl(file) : null;
+}
+
 /**
  * Records an upload of a file for the field `source` of a row of the conference, as uploaded by
  * `uploaderId`, and returns its id. The browser then PUTs the bytes to the file's `uploadUrl`.

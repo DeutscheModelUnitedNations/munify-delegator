@@ -47,7 +47,7 @@ Bis wann Papiere eingereicht sein sollen, legt das Team fest und teilt es dir mi
 ## Ein Papier schreiben {#writing-a-paper}
 
 1. Öffne **Meine Papiere** und klicke unter **Papier einreichen** bei der gewünschten Papierart auf **Erstellen**.
-2. Unter **Papier-Details** stehen deine **Delegation** und dein **Gremium**. Wähle den **Tagesordnungspunkt**. Bei einem Vorstellungspapier entfällt er.
+2. Unter **Papier-Details** stehen deine **Delegation** und dein **Gremium**. Wähle den **Tagesordnungspunkt**. Bei einem Vorstellungspapier entfällt er. Hat das Thema **Punkte zur Diskussion**, erscheinen sie darunter: Darauf sollte dein Papier eingehen. Du findest sie auch über deinem Papier und auf der Seite des Themas im Vorbereitungsleitfaden.
 3. Schreibe den Text im Editor. Unter dem Editor zählt DELEGATOR Wörter, Zeichen und Absätze und schätzt die Lesezeit.
 4. Klicke auf **Entwurf speichern**, um später weiterzuschreiben, oder auf **Papier einreichen**, um es dem Team zu geben. Danach kommst du zurück zur Übersicht.
 
@@ -135,7 +135,7 @@ Ein Klick öffnet das Papier im Lesemodus (**Du siehst dieses Paper als Betreuer
 
 ## Exportieren {#export}
 
-Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** herunter. **Typst exportieren** lädt den Quelltext für das Satzprogramm Typst. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument mit einem Hinweis, dass es im Rahmen einer Simulation entstanden ist. Der Export nimmt den Text, der gerade im Editor steht, auch wenn er noch nicht gespeichert ist.
+Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** herunter. **Typst exportieren** lädt den Quelltext für das Satzprogramm Typst. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument im Design der Konferenz: mit ihrem Logo, deiner Delegation, Gremium und Thema auf der ersten Seite und einem Hinweis im Fuß, dass es im Rahmen einer Simulation entstanden ist. Der Export nimmt den Text, der gerade im Editor steht, auch wenn er noch nicht gespeichert ist.
 
 Die Knöpfe gibt es für dich als Verfasser\*in und für Betreuende. In der Leseansicht unter **Konferenz-Papiere** gibt es keinen Export.
 

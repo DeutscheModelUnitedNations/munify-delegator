@@ -15,7 +15,13 @@ export function fetchPaperDetail(paperId: string) {
 		firstSubmittedAt: true,
 		author: { id: true },
 		authorParticipantId: true,
-		conference: { title: true, longTitle: true, emblemFile: { url: true } },
+		conference: {
+			title: true,
+			longTitle: true,
+			language: true,
+			series: { abbreviation: true },
+			emblemFile: { url: true }
+		},
 		delegation: {
 			id: true,
 			assignedRole: {
@@ -28,6 +34,7 @@ export function fetchPaperDetail(paperId: string) {
 		agendaItem: {
 			id: true,
 			title: true,
+			discussionPoints: true,
 			committee: { abbreviation: true, name: true, resolutionHeadline: true }
 		},
 		versions: {

@@ -25,6 +25,12 @@ export const paperhubAuthorTour: Tour = {
 			side: 'bottom'
 		},
 		{
+			anchor: 'paperhub.paper.discussion-points',
+			title: () => m.tourPaperhubDiscussionPointsTitle(),
+			body: () => m.tourPaperhubAuthorDiscussionPointsBody(),
+			side: 'bottom'
+		},
+		{
 			anchor: 'paperhub.paper.content',
 			title: () => m.tourPaperhubAuthorContentTitle(),
 			body: () => m.tourPaperhubAuthorContentBody(),

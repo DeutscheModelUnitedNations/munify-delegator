@@ -9,6 +9,7 @@
 	import GuideToggle from './nodes/GuideToggle.svelte';
 	import GuideButton from './nodes/GuideButton.svelte';
 	import GuideVideo from './nodes/GuideVideo.svelte';
+	import GuideDiscussionPoints from './nodes/GuideDiscussionPoints.svelte';
 
 	/**
 	 * Renders guide nodes for readers (`GuideContent.svelte`), one component per node type: the API
@@ -31,7 +32,8 @@
 		callout: GuideCallout,
 		toggle: GuideToggle,
 		button: GuideButton,
-		embed: GuideVideo
+		embed: GuideVideo,
+		discussionPoints: GuideDiscussionPoints
 	};
 </script>
 
