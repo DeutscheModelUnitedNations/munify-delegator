@@ -168,12 +168,13 @@ test('a content lead adds committees on their page, but only project management 
 	);
 	const created = committees.data?.committees.find((c) => c.abbreviation === abbreviation);
 	expect(created).toBeDefined();
-	const refused = await graphql(page, `mutation { deleteCommittee(id: "${created?.id}") { id } }`);
+	const refused = await graphql(page, `mutation { deleteCommittee(id: "${created?.id}") }`);
+	expect(refused.errors?.[0]?.message).not.toMatch(/must not have a selection|Cannot query field/);
 	expect(refused.errors?.length).toBeGreaterThan(0);
 
 	// project management removes it again, so the fixture stays as it was
 	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), { startUrl: COMMITTEES });
-	const removed = await graphql(page, `mutation { deleteCommittee(id: "${created?.id}") { id } }`);
+	const removed = await graphql(page, `mutation { deleteCommittee(id: "${created?.id}") }`);
 	expect(removed.errors).toBeUndefined();
 });
 
