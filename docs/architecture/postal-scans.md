@@ -117,7 +117,7 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
 ## Before it is sent (`#lib/components/postalGuide/`)
 
 Whoever downloads the documents first watches what makes them hard to scan (staples, sleeves, crumpled,
-odd or double-sided paper, covered marks); see "Postal Guide" in CLAUDE-UI.md. Only the app
+odd paper, covered marks); see "Postal Guide" in CLAUDE-UI.md. Only the app
 asks for it, `issueDocumentCodes` does not.
 
 ## Data

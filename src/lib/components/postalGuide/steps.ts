@@ -9,7 +9,6 @@ import PaperKind from './scenes/PaperKind.svelte';
 import Print from './scenes/Print.svelte';
 import Read from './scenes/Read.svelte';
 import Signature from './scenes/Signature.svelte';
-import SingleSided from './scenes/SingleSided.svelte';
 import Sleeve from './scenes/Sleeve.svelte';
 import Staple from './scenes/Staple.svelte';
 import { SCENE_MS } from './timing';
@@ -52,7 +51,10 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
 		scene: Print,
 		title: m.postalGuidePrintTitle,
 		text: m.postalGuidePrintText,
-		done: [{ icon: 'x-circle', text: m.postalGuideDoneTerms, dont: true }]
+		done: [
+			{ icon: 'printer', text: m.postalGuideDoneActualSize },
+			{ icon: 'x-circle', text: m.postalGuideDoneTerms, dont: true }
+		]
 	},
 	{
 		id: 'paper',
@@ -60,13 +62,6 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
 		title: m.postalGuidePaperTitle,
 		text: m.postalGuidePaperText,
 		done: [{ icon: 'file', text: m.postalGuideDonePaper }]
-	},
-	{
-		id: 'single-sided',
-		scene: SingleSided,
-		title: m.postalGuideSingleSidedTitle,
-		text: m.postalGuideSingleSidedText,
-		done: [{ icon: 'printer', text: m.postalGuideDoneSingleSided }]
 	},
 	{
 		id: 'signature',

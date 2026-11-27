@@ -5,7 +5,7 @@ import { POSTAL_GUIDE } from '../seed/postalGuide';
 // The postal registration goes step by step: what it is about, one's details and age, how to send
 // the documents (to be watched the first time, skippable from then on), then the download.
 
-const GUIDE_STEPS = 12;
+const GUIDE_STEPS = 11;
 /** Longer than a step of the guide has to be watched (`SCENE_MS`). */
 const STEP_WATCHED = 6500;
 
