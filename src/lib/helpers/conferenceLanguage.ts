@@ -1,4 +1,4 @@
-import allNations from 'world-countries';
+import allNations from '@deutschemodelunitednations/world-countries';
 
 /** The language a conference falls back to, and the one older free-text values read as. */
 const DEFAULT_CONFERENCE_LANGUAGE = 'deu';

@@ -1,4 +1,4 @@
-import worldCountries from 'world-countries';
+import worldCountries from '@deutschemodelunitednations/world-countries';
 
 /**
  * Retrieves the UN regional group for a nation based on its ISO alpha-3 code.

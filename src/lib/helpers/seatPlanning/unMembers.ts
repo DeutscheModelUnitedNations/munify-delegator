@@ -1,4 +1,4 @@
-import worldCountries from 'world-countries';
+import worldCountries from '@deutschemodelunitednations/world-countries';
 
 /** The five UN regional groups, in the order the seat planning matrix lists them */
 export const regionalGroups = [

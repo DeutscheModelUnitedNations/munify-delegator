@@ -1,6 +1,6 @@
 import { m } from '#lib/paraglide/messages';
 import { z } from 'zod';
-import allNations from 'world-countries';
+import allNations from '@deutschemodelunitednations/world-countries';
 
 /**
  * Nametag handout: participants with a nation are split into a few bins by the first letter of

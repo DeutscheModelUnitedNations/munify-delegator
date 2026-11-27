@@ -1,7 +1,7 @@
 // world-countries
 
 import { getLocale, locales } from '#lib/paraglide/runtime';
-import allNations from 'world-countries';
+import allNations from '@deutschemodelunitednations/world-countries';
 import { logger } from '#lib/logger';
 
 const addressNations = [

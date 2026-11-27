@@ -1,5 +1,15 @@
-import { describe, expect, test } from 'vitest';
-import { nationCodesMatching } from './nationTranslationHelper.svelte';
+import { describe, expect, test, vi } from 'vitest';
+
+vi.mock('#lib/paraglide/runtime', () => ({ locales: ['de', 'en'], getLocale: () => 'de' }));
+
+const { getFullTranslatedCountryNameFromISO3Code, nationCodesMatching } =
+	await import('./nationTranslationHelper.svelte');
+
+describe('getFullTranslatedCountryNameFromISO3Code', () => {
+	test('uses the corrected German name of Eswatini, not "Swasiland"', () => {
+		expect(getFullTranslatedCountryNameFromISO3Code('swz')).toBe('Eswatini');
+	});
+});
 
 describe('nationCodesMatching', () => {
 	test('finds a nation by its code, ignoring case and surrounding space', () => {
