@@ -9,6 +9,7 @@
 	import GenderMatrix from './widgets/GenderMatrix.svelte';
 	import RoleStats from './widgets/RoleStats.svelte';
 	import CommitteeFillRates from './widgets/CommitteeFillRates.svelte';
+	import RoleWishes from './widgets/RoleWishes.svelte';
 	import RegistrationTimeline from './widgets/RegistrationTimeline.svelte';
 	import NationalityChart from './widgets/NationalityChart.svelte';
 	import SchoolStats from './widgets/SchoolStats.svelte';
@@ -52,6 +53,8 @@
 	<DistributionChart conferenceId={params.conferenceId} />
 
 	<IndividualRoles conferenceId={params.conferenceId} />
+
+	<RoleWishes conferenceId={params.conferenceId} />
 
 	<PostalPaymentProgress conferenceId={params.conferenceId} />
 

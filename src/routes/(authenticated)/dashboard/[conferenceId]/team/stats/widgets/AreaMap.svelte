@@ -3,24 +3,51 @@
 		MapLibre,
 		GeoJSON,
 		CircleLayer,
+		FillExtrusionLayer,
 		SymbolLayer,
 		Popup,
 		NavigationControl,
 		type LayerClickInfo
 	} from 'svelte-maplibre';
-	import { GeoJSONSource } from 'maplibre-gl';
+	import { GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl';
 	import type { FeatureCollection, Point } from 'geojson';
+	import { untrack } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
 	import { mapStyle } from '#lib/components/map/mapStyle.svelte.js';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { alpha3ToAlpha2 } from '#lib/helpers/countryCodes';
-	import { clickedAreas, type ZipArea } from './mapAreas';
+	import { TALLEST_COLUMN_METRES, areaColumns, clickedAreas, type ZipArea } from './mapAreas';
 
 	// A component of its own on purpose: inside `Maps.svelte` the layers would read the awaited
 	// `stats`, and Svelte (5.57) wraps such reads in an async block that never renders when it
 	// is created later, in the map's children (they appear once the map exists). Here `areas` is
 	// a plain prop.
-	let { areas }: { areas: FeatureCollection<Point, ZipArea> } = $props();
+	let {
+		areas,
+		extruded = false
+	}: {
+		areas: FeatureCollection<Point, ZipArea>;
+		/** Columns per ZIP area on a tilted map instead of clustered circles. */
+		extruded?: boolean;
+	} = $props();
+
+	let map = $state<MapLibreMap>();
+	// About the spacing of German three-digit ZIP areas, so neighbouring columns barely touch.
+	const columns = $derived(areaColumns({ areas, radiusKm: 7 }));
+
+	// Tilting into 3D and back, without the animation for those who asked for less motion. Only
+	// `map` and `extruded` are dependencies: the move writes svelte-maplibre's own camera state,
+	// which read here would restart this effect.
+	$effect(() => {
+		const target = map;
+		const pitch = extruded ? 55 : 0;
+		const bearing = extruded ? -15 : 0;
+		untrack(() => {
+			if (!target || (target.getPitch() === pitch && target.getBearing() === bearing)) return;
+			const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			target.easeTo({ pitch, bearing, duration: reducedMotion ? 0 : 1200 });
+		});
+	});
 
 	// The ZIP area centres come from GeoNames, whose licence asks for this credit.
 	const attribution =
@@ -51,80 +78,115 @@
 	}
 </script>
 
+{#snippet areaPopup(features: Parameters<typeof clickedAreas>[0])}
+	<!-- Every area under the click: some ZIP areas share their centre, no zoom splits them. -->
+	{#each clickedAreas(features) as area, index (`${area.country}:${area.zipPrefix}`)}
+		<p class:mt-2={index > 0}>
+			{#if area.zipPrefix}
+				<strong>{m.zipCode()}: {area.zipPrefix}xx</strong><br />
+			{:else}
+				<strong>{countryName(area.country)}</strong><br />
+				{m.statsZipAreaUnknown()}<br />
+			{/if}
+			{m.participants()}: {area.count}
+		</p>
+	{/each}
+{/snippet}
+
 <MapLibre
+	bind:map
 	style={mapStyle()}
 	class="w-full h-[400px] rounded-box overflow-hidden"
 	center={[10.27, 51.15]}
 	zoom={5}
 	cooperativeGestures
 >
-	<NavigationControl showCompass={false} />
-	<GeoJSON
-		data={areas}
-		cluster={{ radius: 50, properties: { total: ['+', ['get', 'count']] } }}
-		{attribution}
-	>
-		<!-- Cluster size and colour by participants, not by number of ZIP areas. -->
-		<CircleLayer
-			applyToClusters
-			hoverCursor="pointer"
-			onclick={zoomIntoCluster}
-			paint={{
-				'circle-color': ['step', ['get', 'total'], '#4fa3d9', 10, '#f1b434', 50, '#e0513b'],
-				'circle-radius': ['step', ['get', 'total'], 16, 10, 20, 50, 26],
-				'circle-opacity': 0.85,
-				'circle-stroke-width': 2,
-				'circle-stroke-color': '#ffffff'
-			}}
-		/>
-		<!-- Labels pass clicks through to the circles below them. -->
-		<SymbolLayer
-			interactive={false}
-			applyToClusters
-			layout={{
-				'text-field': ['to-string', ['get', 'total']],
-				'text-font': ['Noto Sans Bold'],
-				'text-size': 12
-			}}
-			paint={{ 'text-color': '#1b1837' }}
-		/>
-		<CircleLayer
-			applyToClusters={false}
-			hoverCursor="pointer"
-			paint={{
-				'circle-color': '#4fa3d9',
-				'circle-radius': 12,
-				'circle-opacity': 0.85,
-				'circle-stroke-width': 2,
-				'circle-stroke-color': '#ffffff'
-			}}
+	<!-- In 3D the compass turns and tilts the map back. -->
+	<NavigationControl showCompass={extruded} visualizePitch />
+	{#if extruded}
+		<GeoJSON data={columns} {attribution}>
+			<FillExtrusionLayer
+				hoverCursor="pointer"
+				paint={{
+					'fill-extrusion-height': ['get', 'height'],
+					'fill-extrusion-color': [
+						'interpolate',
+						['linear'],
+						['get', 'height'],
+						0,
+						'#4fa3d9',
+						TALLEST_COLUMN_METRES / 4,
+						'#f1b434',
+						TALLEST_COLUMN_METRES,
+						'#e0513b'
+					],
+					'fill-extrusion-opacity': 0.9
+				}}
+			>
+				<Popup openOn="click">
+					{#snippet children({ features })}
+						{@render areaPopup(features)}
+					{/snippet}
+				</Popup>
+			</FillExtrusionLayer>
+		</GeoJSON>
+	{:else}
+		<GeoJSON
+			data={areas}
+			cluster={{ radius: 50, properties: { total: ['+', ['get', 'count']] } }}
+			{attribution}
 		>
-			<Popup openOn="click">
-				<!-- Every area under the click: some ZIP areas share their centre, no zoom splits them. -->
-				{#snippet children({ features })}
-					{#each clickedAreas(features) as area, index (`${area.country}:${area.zipPrefix}`)}
-						<p class:mt-2={index > 0}>
-							{#if area.zipPrefix}
-								<strong>{m.zipCode()}: {area.zipPrefix}xx</strong><br />
-							{:else}
-								<strong>{countryName(area.country)}</strong><br />
-								{m.statsZipAreaUnknown()}<br />
-							{/if}
-							{m.participants()}: {area.count}
-						</p>
-					{/each}
-				{/snippet}
-			</Popup>
-		</CircleLayer>
-		<SymbolLayer
-			interactive={false}
-			applyToClusters={false}
-			layout={{
-				'text-field': ['to-string', ['get', 'count']],
-				'text-font': ['Noto Sans Bold'],
-				'text-size': 11
-			}}
-			paint={{ 'text-color': '#1b1837' }}
-		/>
-	</GeoJSON>
+			<!-- Cluster size and colour by participants, not by number of ZIP areas. -->
+			<CircleLayer
+				applyToClusters
+				hoverCursor="pointer"
+				onclick={zoomIntoCluster}
+				paint={{
+					'circle-color': ['step', ['get', 'total'], '#4fa3d9', 10, '#f1b434', 50, '#e0513b'],
+					'circle-radius': ['step', ['get', 'total'], 16, 10, 20, 50, 26],
+					'circle-opacity': 0.85,
+					'circle-stroke-width': 2,
+					'circle-stroke-color': '#ffffff'
+				}}
+			/>
+			<!-- Labels pass clicks through to the circles below them. -->
+			<SymbolLayer
+				interactive={false}
+				applyToClusters
+				layout={{
+					'text-field': ['to-string', ['get', 'total']],
+					'text-font': ['Noto Sans Bold'],
+					'text-size': 12
+				}}
+				paint={{ 'text-color': '#1b1837' }}
+			/>
+			<CircleLayer
+				applyToClusters={false}
+				hoverCursor="pointer"
+				paint={{
+					'circle-color': '#4fa3d9',
+					'circle-radius': 12,
+					'circle-opacity': 0.85,
+					'circle-stroke-width': 2,
+					'circle-stroke-color': '#ffffff'
+				}}
+			>
+				<Popup openOn="click">
+					{#snippet children({ features })}
+						{@render areaPopup(features)}
+					{/snippet}
+				</Popup>
+			</CircleLayer>
+			<SymbolLayer
+				interactive={false}
+				applyToClusters={false}
+				layout={{
+					'text-field': ['to-string', ['get', 'count']],
+					'text-font': ['Noto Sans Bold'],
+					'text-size': 11
+				}}
+				paint={{ 'text-color': '#1b1837' }}
+			/>
+		</GeoJSON>
+	{/if}
 </MapLibre>

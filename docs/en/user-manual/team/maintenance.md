@@ -36,6 +36,7 @@ These always show the whole conference, whatever the filter says: **Supervisor O
 - **Supervisor Overview**: a supervisor counts as **Accepted** once someone they supervise has a role. **Plans Attendance** means they want to come to the conference themselves. The **Detailed Breakdown** combines both.
 - **Waiting List**: all entries, of which **Assigned** (with a seat) and **Unassigned**, plus **Visible** and **Hidden**.
 - **Participant Distribution**: delegation members, single participants and supervisors.
+- **Role wishes**: a rotatable 3D chart of how often delegations named a nation or non-state actor at which place of their wish list. Along the front are the 15 most wanted roles (most first wishes first), going back the wish places. Green is the share of delegations that got the role. Drag to turn and scroll to zoom; left alone, the chart turns slowly by itself (not when your system asks for less motion). **Show as table** lists all roles with the same figures.
 - **Single Participants**: for each individual role, how many applied for it. It counts the wishes, not the assigned roles.
 - **Postal & Payment Progress**: how far [postal registration](./formalities#postal-registration) and the [payment](./formalities#payments) are, as **Done**, **Pending** and **Problem**. It counts everyone who is expected to complete both: delegation members and single participants with a role, and supervisors who attend themselves. Someone with no status at all counts as pending. The **Completion Overview** shows who completed **Neither**, **Postal Only**, **Payment Only** or **Both**.
 - **Committee Fill Rates**: for each committee, its seats (nations times seats per delegation) and how many of them members of applied delegations hold.
@@ -45,7 +46,7 @@ These always show the whole conference, whatever the filter says: **Supervisor O
 - **Nationality Distribution**: the country of the address, not the citizenship. People without an address are left out. The pie chart shows the ten most common countries and groups the rest as **Other**, the bar chart the 15 most common.
 - **School Statistics**: delegation members and single participants by their own school, as a bar chart of the 15 largest or as a table of all.
 - **Diet** and **Gender**: each for delegation members, single participants, supervisors who attend themselves, and all team members. Team members count whatever the filter.
-- **Geographic Distribution**: a map with markers per postal code area (the first three digits).
+- **Geographic Distribution**: a map with markers per postal code area (the first three digits). With **3D columns** the map tilts and every area becomes a column whose height and colour show how many people live there. **Points** switches back.
 
 ### Historical comparison {#history}
 

@@ -2,6 +2,7 @@ import { snakeCase, text, timestamp, integer, date, boolean } from 'drizzle-orm/
 import { foodPreference, gender } from './users';
 import { administrativeStatus } from './participants';
 import { paperStatus, paperType } from './papers';
+import { conferenceRoleKind } from './roles';
 
 /**
  * The statistics dashboard's materialized views, created by hand in the
@@ -69,6 +70,22 @@ export const statisticsRoleApplications = snakeCase
 		icon: text(),
 		total: integer().notNull(),
 		applied: integer().notNull()
+	})
+	.existing();
+
+/** Delegations' role wishes per role and wish rank (`statistics_role_wishes` migration). */
+export const statisticsRoleWishes = snakeCase
+	.materializedView('statistics_role_wishes', {
+		conferenceId: text().notNull(),
+		roleId: text().notNull(),
+		kind: conferenceRoleKind().notNull(),
+		nationAlpha3Code: text(),
+		name: text(),
+		rank: integer().notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		granted: boolean().notNull(),
+		count: integer().notNull()
 	})
 	.existing();
 

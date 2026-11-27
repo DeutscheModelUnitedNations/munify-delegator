@@ -5534,7 +5534,7 @@ type Mutation {
   importPostalScan(code: String, conferenceId: ID!, contentKey: String!, fileId: ID, readings: [PaperReadingInput!], source: PostalscansourceEnum!, userId: ID!): PostalScanOutcome
 
   """
-  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
     conferenceId: ID!
@@ -8218,7 +8218,7 @@ type Query {
   getAllConferenceNations(conferenceId: ID!): [Nation!]!
 
   """
-  Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
+  Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
   """
   getCertificate(
     conferenceId: ID!
@@ -9765,6 +9765,11 @@ type StatisticsResult {
   roleBased: StatisticsResultRoleBased!
 
   """
+  The nations and non-state actors delegations the filter selects wished for, most first wishes first. Roles nobody wished for are left out.
+  """
+  roleWishes: [StatisticsResultRoleWishes!]!
+
+  """
   The schools of the delegation members and single participants the filter selects, most people first.
   """
   schoolStats: [StatisticsResultSchool!]!
@@ -10279,6 +10284,46 @@ type StatisticsResultRoleBased {
 
   """Single participants without a custom role."""
   singleParticipantsWithoutRole: Int!
+}
+
+"""The delegations that put a role at one place of their wish list."""
+type StatisticsResultRoleWishRank {
+  """Delegations wishing for the role at this place."""
+  count: Int!
+
+  """Of them, the delegations that got the role."""
+  granted: Int!
+
+  """The wish's place in the delegation's list; 1 is the first wish."""
+  rank: Int!
+}
+
+"""
+How often delegations the filter selects wished for one nation or non-state actor, by place in their wish list.
+"""
+type StatisticsResultRoleWishes {
+  """
+  The wishes by place, first wishes first; places nobody chose are left out.
+  """
+  byRank: [StatisticsResultRoleWishRank!]!
+
+  """Of them, the delegations that got the role."""
+  granted: Int!
+
+  """Nation or non-state actor."""
+  kind: ConferencerolekindEnum!
+
+  """A non-state actor's name; null for a nation."""
+  name: String
+
+  """A nation's alpha-3 code; null for a non-state actor."""
+  nationAlpha3Code: String
+
+  """The role's id."""
+  roleId: ID!
+
+  """Delegations wishing for the role at any place."""
+  total: Int!
 }
 
 """The people of one school."""

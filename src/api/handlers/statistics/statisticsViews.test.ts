@@ -9,6 +9,7 @@ import {
 	registrationStatisticsOf,
 	registrationTimelineOf,
 	roleBasedOf,
+	roleWishesOf,
 	supervisorStatsOf
 } from './statisticsViews';
 import { matchesStatsFilter } from './statisticsFilters';
@@ -433,5 +434,70 @@ describe('schoolStatsOf', () => {
 		expect(
 			schoolStatsOf({ schools: [row('Kiel', 2), row('Kiel', 4, false)], filter: 'NOT_APPLIED' })
 		).toEqual([{ school: 'Kiel', people: 4 }]);
+	});
+});
+
+describe('roleWishesOf', () => {
+	type WishRow = Parameters<typeof roleWishesOf>[0]['wishes'][number];
+	const wish = (overrides: Partial<WishRow>): WishRow => ({
+		conferenceId: 'c',
+		roleId: 'deu',
+		kind: 'NATION',
+		nationAlpha3Code: 'DEU',
+		name: null,
+		rank: 1,
+		applied: true,
+		hasRole: false,
+		granted: false,
+		count: 1,
+		...overrides
+	});
+
+	test('sums the rows of a role by rank and counts who got it', () => {
+		const [germany] = roleWishesOf({
+			wishes: [
+				wish({ rank: 2, count: 3 }),
+				wish({ rank: 1, count: 2, hasRole: true, granted: true }),
+				wish({ rank: 1, count: 4 })
+			],
+			filter: 'ALL'
+		});
+		expect(germany).toEqual({
+			roleId: 'deu',
+			kind: 'NATION',
+			nationAlpha3Code: 'DEU',
+			name: null,
+			total: 9,
+			granted: 2,
+			byRank: [
+				{ rank: 1, count: 6, granted: 2 },
+				{ rank: 2, count: 3, granted: 0 }
+			]
+		});
+	});
+
+	test('puts the roles with the most first wishes first, then by all wishes and name', () => {
+		const order = roleWishesOf({
+			wishes: [
+				wish({ roleId: 'fra', nationAlpha3Code: 'FRA', rank: 2, count: 10 }),
+				wish({ roleId: 'usa', nationAlpha3Code: 'USA', rank: 1, count: 3 }),
+				wish({ roleId: 'deu', nationAlpha3Code: 'DEU', rank: 1, count: 3 }),
+				wish({ roleId: 'deu', nationAlpha3Code: 'DEU', rank: 3, count: 1 }),
+				wish({ roleId: 'chn', nationAlpha3Code: 'CHN', rank: 1, count: 3 })
+			],
+			filter: 'ALL'
+		}).map((role) => role.roleId);
+		expect(order).toEqual(['deu', 'chn', 'usa', 'fra']);
+	});
+
+	test('follows the filter and leaves out roles nobody selected wished for', () => {
+		const roles = roleWishesOf({
+			wishes: [
+				wish({ roleId: 'deu', applied: true, count: 2 }),
+				wish({ roleId: 'fra', nationAlpha3Code: 'FRA', applied: false, count: 5 })
+			],
+			filter: 'APPLIED'
+		});
+		expect(roles.map((role) => [role.roleId, role.total])).toEqual([['deu', 2]]);
 	});
 });

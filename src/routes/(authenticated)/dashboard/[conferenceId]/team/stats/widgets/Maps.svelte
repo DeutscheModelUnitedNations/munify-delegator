@@ -22,14 +22,39 @@
 		})
 	);
 	const areas = $derived(mapAreas(stats.addresses));
+	let extruded = $state(false);
 </script>
 
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-12">
 	<div class="card-body p-4">
-		<h2 class="card-title text-base font-semibold">
-			<i aria-hidden="true" class="ph-duotone ph-map-trifold text-base-content/70"></i>
-			{m.statsGeographicDistribution()}
-		</h2>
-		<AreaMap {areas} />
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<h2 class="card-title text-base font-semibold">
+				<i aria-hidden="true" class="ph-duotone ph-map-trifold text-base-content/70"></i>
+				{m.statsGeographicDistribution()}
+			</h2>
+			<div class="join" role="group" aria-label={m.statsMapView()}>
+				<button
+					type="button"
+					class="btn btn-sm join-item"
+					class:btn-primary={!extruded}
+					aria-pressed={!extruded}
+					onclick={() => (extruded = false)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-map-pin"></i>
+					{m.statsMapClusters()}
+				</button>
+				<button
+					type="button"
+					class="btn btn-sm join-item"
+					class:btn-primary={extruded}
+					aria-pressed={extruded}
+					onclick={() => (extruded = true)}
+				>
+					<i aria-hidden="true" class="ph-duotone ph-cube"></i>
+					{m.statsMapColumns()}
+				</button>
+			</div>
+		</div>
+		<AreaMap {areas} {extruded} />
 	</div>
 </section>

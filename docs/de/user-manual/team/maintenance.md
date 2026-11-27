@@ -36,6 +36,7 @@ Immer die ganze Konferenz zeigen, egal was der Filter sagt: **Betreuer\*innen-Ü
 - **Betreuer\*innen-Übersicht**: Eine Betreuungsperson gilt als **Angenommen**, sobald eine betreute Person eine Rolle hat. **Plant Anwesenheit** heißt, dass sie selbst zur Konferenz kommen will. Die **Detaillierte Aufschlüsselung** kombiniert beides.
 - **Warteliste**: Einträge insgesamt, davon **Zugewiesen** (mit Platz) und **Nicht zugewiesen**, dazu **Sichtbar** und **Versteckt**.
 - **Teilnehmerverteilung**: Delegationsmitglieder, Einzelteilnehmende und Betreuer\*innen.
+- **Rollenwünsche**: ein drehbares 3D-Diagramm, wie oft Delegationen eine Nation oder einen nichtstaatlichen Akteur an welcher Stelle ihrer Wunschliste genannt haben. Vorne stehen die 15 meistgewünschten Rollen (die mit den meisten Erstwünschen zuerst), nach hinten die Wunschplätze. Grün ist der Teil der Delegationen, der die Rolle bekommen hat. Mit der Maus drehst und zoomst du, ohne Bewegung dreht sich das Diagramm langsam von selbst (nicht, wenn dein System weniger Bewegung wünscht). **Als Tabelle anzeigen** listet alle Rollen mit denselben Zahlen.
 - **Einzelteilnehmer\*innen**: für jede Einzelrolle, wie viele sich auf sie beworben haben. Gezählt werden die Wünsche, nicht die zugeteilten Rollen.
 - **Post- & Zahlungsfortschritt**: der Stand der [postalischen Anmeldung](./formalities#postal-registration) und der [Beitragszahlung](./formalities#payments) als **Erledigt**, **Ausstehend** und **Problem**. Gezählt werden alle, die beides erledigen sollen: Delegationsmitglieder und Einzelteilnehmende mit Rolle und Betreuer\*innen, die selbst kommen. Wer noch gar keinen Status hat, zählt als ausstehend. Die **Abschlussübersicht** zeigt, wer **Keines**, **Nur Post**, **Nur Zahlung** oder **Beides** erledigt hat.
 - **Gremien-Auslastung**: je Gremium die Sitze (Staaten mal Sitze pro Delegation) und wie viele davon Mitglieder beworbener Delegationen innehaben.
@@ -45,7 +46,7 @@ Immer die ganze Konferenz zeigen, egal was der Filter sagt: **Betreuer\*innen-Ü
 - **Herkunftsverteilung**: das Land der Anschrift, nicht die Staatsangehörigkeit. Personen ohne Anschrift fehlen. Das Kreisdiagramm zeigt die zehn häufigsten Länder und fasst den Rest als **Sonstige** zusammen, das Balkendiagramm die 15 häufigsten.
 - **Schulstatistik**: Delegationsmitglieder und Einzelteilnehmende nach ihrer eigenen Schule, als Balkendiagramm der 15 größten oder als Tabelle aller.
 - **Ernährungsweise** und **Geschlecht**: je für Delegationsmitglieder, Einzelteilnehmer\*innen, Betreuer\*innen, die selbst kommen, und alle Teammitglieder. Die Teammitglieder zählen unabhängig vom Filter.
-- **Geografische Verteilung**: eine Karte mit Markierungen je Postleitzahlbereich (die ersten drei Ziffern).
+- **Geografische Verteilung**: eine Karte mit Markierungen je Postleitzahlbereich (die ersten drei Ziffern). Unter **3D-Säulen** kippt die Karte, und jeder Bereich wird zu einer Säule, deren Höhe und Farbe die Zahl der Personen zeigen. **Punkte** schaltet zurück.
 
 ### Historienvergleich {#history}
 

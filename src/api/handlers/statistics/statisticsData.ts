@@ -19,6 +19,7 @@ export function statisticsRowsOf(conferenceId: string) {
 			| typeof schema.statisticsSchools
 			| typeof schema.statisticsRegistrationDays
 			| typeof schema.statisticsRoleApplications
+			| typeof schema.statisticsRoleWishes
 			| typeof schema.statisticsAges
 			| typeof schema.statisticsAddresses
 			| typeof schema.statisticsParticipantStatus
@@ -35,6 +36,7 @@ export function statisticsRowsOf(conferenceId: string) {
 		schools: rowsOf(schema.statisticsSchools),
 		registrationDays: rowsOf(schema.statisticsRegistrationDays),
 		roleApplications: rowsOf(schema.statisticsRoleApplications),
+		roleWishes: rowsOf(schema.statisticsRoleWishes),
 		ages: rowsOf(schema.statisticsAges),
 		addresses: rowsOf(schema.statisticsAddresses),
 		participantStatus: rowsOf(schema.statisticsParticipantStatus),

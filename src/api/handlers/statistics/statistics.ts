@@ -16,6 +16,7 @@ import {
 	registrationStatisticsOf,
 	registrationTimelineOf,
 	roleBasedOf,
+	roleWishesOf,
 	schoolStatsOf,
 	supervisorStatsOf,
 	waitingListOf
@@ -27,7 +28,8 @@ import {
 	countdownsType,
 	registeredType,
 	registrationTimelineEntry,
-	roleBasedStats
+	roleBasedStats,
+	roleWishStats
 } from './registrationTypes';
 import {
 	addressesType,
@@ -131,6 +133,12 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 			description: 'Who got a role, among the registrations the filter selects.',
 			resolve: async ({ rows, filter }) =>
 				roleBasedOf({ people: await rows.people(), delegations: await rows.delegations(), filter })
+		}),
+		roleWishes: t.field({
+			type: [roleWishStats],
+			description:
+				'The nations and non-state actors delegations the filter selects wished for, most first wishes first. Roles nobody wished for are left out.',
+			resolve: async ({ rows, filter }) => roleWishesOf({ wishes: await rows.roleWishes(), filter })
 		}),
 		committeeFillRates: t.field({
 			type: [committeeFillRate],
