@@ -180,7 +180,7 @@
 					paperId={paper.id}
 				/>
 			{/if}
-			<PaperExportButtons {paper} {resolutionHeaderData} />
+			<PaperExportButtons {paper} conferenceId={params.conferenceId} {resolutionHeaderData} />
 		{/snippet}
 	</PaperHeaderCard>
 

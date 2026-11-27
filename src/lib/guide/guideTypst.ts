@@ -1,10 +1,20 @@
 import { calloutColor } from './blocks';
 import { fileIdOf, type GuideDocument, type GuideMark, type GuideNode } from './document';
+import {
+	escapeTypstString as escapeString,
+	escapeTypstText as escapeText,
+	typstFooter,
+	typstLogoImage,
+	typstPreamble,
+	type TypstBrand,
+	type TypstLogo
+} from '#lib/helpers/typstTemplate';
 
 /**
  * A guide page as Typst source (`docs/plans/guide.md`, "Committee text PDF"): the committee text
- * of an agenda item, rendered when its page is published. Covers every block of the guide: images
- * come as files next to the source (`images`, by file id), callouts as tinted boxes, toggles open,
+ * of an agenda item, rendered when its page is published, in the DMUN corporate design
+ * (`#lib/helpers/typstTemplate`). Covers every block of the guide: images
+ * come as files next to the source (`images`, by file id), callouts between two Akzentstreifen, toggles open,
  * buttons and embeds as links. Links to other guide pages and files read as plain text: a PDF
  * cannot open them.
  */
@@ -13,20 +23,14 @@ export type CommitteeTextHeader = {
 	conference: string;
 	committee: string;
 	agendaItem: string;
-	/** The emblem's file name next to the source, if there is one. */
-	emblemPath?: string;
-	/** "Gremium", "Thema", the footer: the labels in the conference's language. */
-	committeeLabel: string;
+	/** The conference logo next to the source, if there is one. */
+	logo?: TypstLogo;
+	/** "Thema": the label in front of the agenda item in the footer. */
 	agendaItemLabel: string;
+	brand: TypstBrand;
+	/** Typst `lang` (`typstLang`). */
+	lang: string;
 };
-
-function escapeText(value: string) {
-	return value.replace(/[\\#$*_`<>@~[\]=/+-]/g, (c) => `\\${c}`);
-}
-
-function escapeString(value: string) {
-	return value.replace(/[\\"]/g, (c) => `\\${c}`);
-}
 
 function hrefOf(mark: GuideMark) {
 	const href = mark.attrs?.href;
@@ -72,13 +76,13 @@ function inline(nodes: readonly GuideNode[] | undefined): string {
 		.join('');
 }
 
-const CALLOUT_FILLS: Record<ReturnType<typeof calloutColor>, string> = {
-	info: 'rgb("#e8f1fd")',
-	success: 'rgb("#e7f6ec")',
-	warning: 'rgb("#fdf4e3")',
-	error: 'rgb("#fde8e8")',
-	neutral: 'rgb("#f1f1f1")'
-};
+/**
+ * The Akzentstreifen colour of a callout: the brand accent, DMUN-Blau for warnings and errors
+ * (the CD has no signal colours; on print DMUN-Blau doubles as the attention colour).
+ */
+function calloutStripe(color: ReturnType<typeof calloutColor>) {
+	return color === 'warning' || color === 'error' ? 'dmun-blue' : 'dmun-accent';
+}
 
 function blocks({
 	nodes,
@@ -118,10 +122,10 @@ function image({ node, images }: { node: GuideNode; images: Images }) {
 }
 
 function callout({ node, images }: { node: GuideNode; images: Images }) {
-	const fill = CALLOUT_FILLS[calloutColor(node.attrs?.color)];
-	// the icon is a Phosphor glyph, which the PDF has no font for: the tint carries the callout
+	const stripe = `#dmun-stripe(color: ${calloutStripe(calloutColor(node.attrs?.color))}, length: 100%)`;
+	// the icon is a Phosphor glyph, which the PDF has no font for: the stripes carry the callout
 	const body = blocks({ nodes: node.content, images });
-	return `#block(fill: ${fill}, inset: 10pt, radius: 4pt, width: 100%)[${body}]`;
+	return `#block(width: 100%, above: 16pt, below: 16pt)[${stripe}\n#v(2pt)\n${body}\n#v(2pt)\n${stripe}]`;
 }
 
 function button({ node }: { node: GuideNode }) {
@@ -146,7 +150,7 @@ const BLOCKS: Record<string, (args: { node: GuideNode; images: Images }) => stri
 	orderedList: ({ node, images }) => `#enum(${listItems({ node, images })})`,
 	blockquote: ({ node, images }) =>
 		`#quote(block: true)[${blocks({ nodes: node.content, images })}]`,
-	horizontalRule: () => '#line(length: 100%, stroke: 0.5pt + gray)',
+	horizontalRule: () => '#line(length: 100%, stroke: 0.75pt + black)',
 	image,
 	callout,
 	toggle: ({ node, images }) =>
@@ -176,6 +180,25 @@ export function imageFileIdsOf(doc: GuideDocument) {
 	return ids;
 }
 
+/**
+ * The head of the first page: the title on the dark background, with the white logo in it. A logo
+ * without a white version (an uploaded one) sits above the block on white: it cannot be recoloured.
+ */
+function titleBlock(header: CommitteeTextHeader) {
+	const { logo } = header;
+	const onWhite = logo && !logo.darkPath ? `#${typstLogoImage({ logo })}\n#v(14pt)\n` : '';
+	const inBlock = logo?.darkPath ? `#${typstLogoImage({ logo, dark: true })}\n  #v(10pt)\n  ` : '';
+	return `${onWhite}#pad(x: -25mm, top: ${logo?.darkPath ? '-20mm' : '0mm'})[#block(fill: dmun-navy, width: 100%, inset: (x: 25mm, top: ${logo?.darkPath ? '10mm' : '14mm'}, bottom: 15mm))[
+  #set text(fill: white)
+  ${inBlock}#text(size: 15pt, weight: "bold")[${escapeText(header.committee)}]
+  #v(12pt)
+  #dmun-stripe(color: white)
+  #block(above: 16pt)[#set par(leading: 0.15em)
+    #text(size: 50pt, weight: "extralight")[${escapeText(header.agendaItem)}]]
+]]
+#v(18pt)`;
+}
+
 /** The whole Typst source of a committee text. `images` maps file ids to their file names. */
 export function committeeTextToTypst({
 	doc,
@@ -186,17 +209,17 @@ export function committeeTextToTypst({
 	header: CommitteeTextHeader;
 	images: ReadonlyMap<string, string>;
 }) {
-	const emblem = header.emblemPath
-		? `#align(center)[#image("${escapeString(header.emblemPath)}", height: 2.2cm)]\n`
-		: '';
-	return `#set page(paper: "a4", margin: 2.5cm, numbering: "1")
-#set par(justify: true, leading: 0.65em)
-#set text(lang: "de", size: 11pt)
-#set heading(numbering: none)
-${emblem}#align(center)[#text(size: 16pt, weight: "bold")[${escapeText(header.conference)}]]
-#align(center)[${escapeText(header.committeeLabel)}: ${escapeText(header.committee)}]
-#align(center)[#text(size: 14pt, weight: "bold")[${escapeText(header.agendaItemLabel)}: ${escapeText(header.agendaItem)}]]
-#v(1em)
+	const footer = [
+		header.conference,
+		header.committee,
+		`${header.agendaItemLabel}: ${header.agendaItem}`
+	]
+		.map(escapeText)
+		.join(' · ');
+	return `${typstPreamble({ brand: header.brand, lang: header.lang })}
+#set page(paper: "a4", margin: (x: 25mm, top: 20mm, bottom: 30mm), footer: ${typstFooter(footer)})
+
+${titleBlock(header)}
 
 ${blocks({ nodes: doc.content, images })}
 `;

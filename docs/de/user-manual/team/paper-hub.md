@@ -161,4 +161,4 @@ In der Liste bearbeitest oder löschst du einen Baustein über die Knöpfe in se
 
 ## Exportieren {#export}
 
-Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** oder **Typst exportieren** herunter. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument. Der Export nimmt den Text, der gerade im Editor steht, auch ungespeicherte Änderungen im Bearbeitungsmodus.
+Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** oder **Typst exportieren** herunter. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument im Design der Konferenz (Logo, Akzentfarbe der Konferenzreihe). Der Export nimmt den Text, der gerade im Editor steht, auch ungespeicherte Änderungen im Bearbeitungsmodus.

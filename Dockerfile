@@ -30,6 +30,8 @@ RUN apt-get update \
 WORKDIR /app
 COPY package.json drizzle.config.ts ./
 COPY drizzle ./drizzle
+# Outfit and DMUN's logos for the PDFs set with Typst (src/api/services/typst.ts)
+COPY typst-assets ./typst-assets
 COPY --from=runtime-dependencies /build/node_modules ./node_modules
 COPY --from=builder /build/build ./build
 

@@ -124,7 +124,7 @@ The editor shows the page as it looks. The toolbar has headings, lists, quotes, 
 
 Beside the text are the page's settings: its scope, **In the guide** (which sections it stands in, under which title and for whom) and its versions.
 
-Changes are a draft until you choose **Publish**. Before that the app shows which conferences the page reaches afterwards and which it no longer reaches. Every publish stays as a version; **Restore** copies it back into the draft. Publishing a topic's page renders the **committee text** as a PDF, which participants download on the page.
+Changes are a draft until you choose **Publish**. Before that the app shows which conferences the page reaches afterwards and which it no longer reaches. Every publish stays as a version; **Restore** copies it back into the draft. Publishing a topic's page renders the **committee text** as a PDF in the conference's design, with its logo and the topic as title, which participants download on the page.
 
 ### Visibility {#guide-visibility}
 

@@ -40,8 +40,8 @@
 	],
 	// Used without ever being imported, so fallow cannot see them. Verified before suppressing;
 	// do not "clean these up".
-	//   typst              - src/routes/api/pdf/+server.ts executes the binary at
-	//                        node_modules/.bin/typst to render PDFs at runtime.
+	//   typst              - src/api/services/typst.ts executes the platform binary the
+	//                        package installs to render PDFs at runtime.
 	//   pg                 - the driver drizzle-orm/node-postgres loads for `drizzle(DATABASE_URL)`.
 	//   @typescript/native - TypeScript 7, providing the `tsc` binary `bun run typecheck` runs
 	//                        (svelte-check needs the TypeScript 6 `typescript` package).

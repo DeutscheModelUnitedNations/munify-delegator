@@ -124,7 +124,7 @@ Der Editor zeigt die Seite, wie sie aussieht. In der Leiste findest du Überschr
 
 Rechts neben dem Text stehen die Einstellungen der Seite: ihre Freigabe, **Im Leitfaden** (in welchen Abschnitten sie steht, unter welchem Titel und für wen) und ihre Versionen.
 
-Änderungen sind ein Entwurf, bis du **Veröffentlichen** wählst. Vorher zeigt die App, welche Konferenzen die Seite danach erreichen und welche nicht mehr. Jede Veröffentlichung bleibt als Version erhalten; **Wiederherstellen** holt sie in den Entwurf zurück. Beim Veröffentlichen der Seite eines Themas entsteht der **Gremientext** als PDF; die Teilnehmenden laden ihn auf der Seite herunter.
+Änderungen sind ein Entwurf, bis du **Veröffentlichen** wählst. Vorher zeigt die App, welche Konferenzen die Seite danach erreichen und welche nicht mehr. Jede Veröffentlichung bleibt als Version erhalten; **Wiederherstellen** holt sie in den Entwurf zurück. Beim Veröffentlichen der Seite eines Themas entsteht der **Gremientext** als PDF im Design der Konferenz, mit ihrem Logo und dem Thema als Titel; die Teilnehmenden laden ihn auf der Seite herunter.
 
 ### Sichtbarkeit {#guide-visibility}
 

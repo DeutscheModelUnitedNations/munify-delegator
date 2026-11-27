@@ -135,7 +135,7 @@ Ein Klick öffnet das Papier im Lesemodus (**Du siehst dieses Paper als Betreuer
 
 ## Exportieren {#export}
 
-Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** herunter. **Typst exportieren** lädt den Quelltext für das Satzprogramm Typst. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument mit einem Hinweis, dass es im Rahmen einer Simulation entstanden ist. Der Export nimmt den Text, der gerade im Editor steht, auch wenn er noch nicht gespeichert ist.
+Auf der Seite eines Papiers lädst du es mit **Als PDF exportieren** herunter. **Typst exportieren** lädt den Quelltext für das Satzprogramm Typst. Ein Arbeitspapier wird als Resolution mit ihrem Kopf gesetzt, alle anderen Papiere als Textdokument im Design der Konferenz: mit ihrem Logo, deiner Delegation, Gremium und Thema auf der ersten Seite und einem Hinweis im Fuß, dass es im Rahmen einer Simulation entstanden ist. Der Export nimmt den Text, der gerade im Editor steht, auch wenn er noch nicht gespeichert ist.
 
 Die Knöpfe gibt es für dich als Verfasser\*in und für Betreuende. In der Leseansicht unter **Konferenz-Papiere** gibt es keinen Export.
 

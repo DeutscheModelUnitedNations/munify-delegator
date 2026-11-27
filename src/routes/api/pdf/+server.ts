@@ -16,11 +16,14 @@ import {
 	emblemSvgFor,
 	readBody,
 	readHeader,
-	readRawTypst
+	readPaperRequest,
+	type PaperRequest
 } from './pdfRequest';
 import type { RequestHandler } from './$types';
 import { logger } from '#lib/logger';
 import { compileTypst } from '#api/services/typst';
+import { typstBrandingOf } from '#api/services/typstBranding';
+import { paperToTypst } from '#lib/helpers/paperTypst';
 
 /**
  * Compiles one account may start in ten minutes. People export a paper or resolution now and then;
@@ -64,42 +67,53 @@ async function resolutionSource({
 	return resolutionToTypst(parsed.data, header, { emblemPath });
 }
 
+/**
+ * Generates the Typst source of a position or introduction paper in `dir`, in the conference's
+ * branding, writing its logo next to it.
+ */
+async function paperSource({ paper, dir }: { paper: PaperRequest; dir: string }): Promise<string> {
+	const branding = await typstBrandingOf({ conferenceId: paper.conferenceId, dir });
+	if (!branding) throw error(404, 'Conference not found');
+	return paperToTypst({ content: paper.content, meta: paper.meta, branding });
+}
+
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const caller = assertSignedIn(locals);
 	const body = await readBody(request);
+	// Before validating the content: a refused request costs the allowance too
+	await compileLimiter.take(caller);
 
-	// Two input shapes:
-	//  - { typst }            raw, self-contained Typst source (position/intro
-	//                         papers — text only, no assets)
-	//  - { resolution, header } structured resolution; the source is generated
-	//                         server-side so the emblem can be referenced via a
-	//                         file path (`#image(...)`), required for Typst 0.10
-	const rawTypst = readRawTypst(body);
+	// Two input shapes, both turned into Typst here so the compiler only sees generated source:
+	//  - { paper: { conferenceId, content, meta } }  position/introduction paper, set in the
+	//                                                conference's branding with its logo
+	//  - { resolution, header }                      structured resolution with its emblem
+	const paper = readPaperRequest(body);
 	const header = readHeader(body.header);
 
-	await compileLimiter.take(caller);
 	const release = compileSlots.take();
 	if (!release) throw error(503, 'PDF generation is busy, please try again in a moment');
 	try {
-		return await renderPdf({ rawTypst, resolution: body.resolution, header });
+		return await renderPdf({ paper, resolution: body.resolution, header });
 	} finally {
 		release();
 	}
 };
 
-/** Renders the raw Typst source, or else the structured resolution, in a temporary directory. */
+/** Renders the paper, or else the structured resolution, in a temporary directory. */
 async function renderPdf({
-	rawTypst,
+	paper,
 	resolution,
 	header
 }: {
-	rawTypst: string | undefined;
+	paper: PaperRequest | undefined;
 	resolution: unknown;
 	header: ResolutionHeaderData;
 }): Promise<Response> {
 	const dir = await mkdtemp(join(tmpdir(), 'mun-'));
 	try {
-		const source = rawTypst ?? (await resolutionSource({ resolution, header, dir }));
+		const source = paper
+			? await paperSource({ paper, dir })
+			: await resolutionSource({ resolution, header, dir });
 		const pdf = await compileTypst({ dir, source });
 		return new Response(new Uint8Array(pdf), {
 			headers: {
