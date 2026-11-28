@@ -3,6 +3,7 @@
  *
  * A conference of its own, with participant care and Grace, an adult single participant with a seat, and
  * a second one with the same participant care and Alan, whose pages come in one stack with hers.
+ * Ada, in Grace's conference, has her contract read with the camera.
  * Every run resets their postal status to nothing in, removes the scanner logins, and resets the
  * conferences to no templates and the default layouts, since the spec scans their pages and uploads
  * templates.
@@ -23,6 +24,8 @@ export const E2E_PAPER_SECOND_CONFERENCE_ID = 'e2e00000conference0000018';
 export const E2E_PAPER_CARE_ID = 'e2e-paper-care';
 export const E2E_PAPER_GRACE_ID = 'e2e-paper-grace';
 export const E2E_PAPER_ALAN_ID = 'e2e-paper-alan';
+/** Read with the camera (e2e/team/paper-camera.spec.ts), beside Grace in her conference. */
+export const E2E_PAPER_ADA_ID = 'e2e-paper-ada';
 
 /** Who takes part where, in a seat of the conference's own role. */
 const PARTS = [
@@ -39,6 +42,13 @@ const PARTS = [
 		title: 'E2E Second Paper Conference',
 		roleId: 'e2e00000paperrole00000002',
 		singleParticipantId: 'e2e00000papersingle000002'
+	},
+	{
+		userId: E2E_PAPER_ADA_ID,
+		conferenceId: E2E_PAPER_CONFERENCE_ID,
+		title: 'E2E Paper Scanning Conference',
+		roleId: 'e2e00000paperrole00000003',
+		singleParticipantId: 'e2e00000papersingle000003'
 	}
 ];
 
@@ -67,6 +77,14 @@ export async function seedPaperScanning(db: NodePgDatabase) {
 			givenName: 'Alan',
 			familyName: 'Turing',
 			birthday: new Date('1991-06-23')
+		},
+		{
+			...makeSeedUser(),
+			...COMPLETE_PROFILE,
+			id: E2E_PAPER_ADA_ID,
+			givenName: 'Ada',
+			familyName: 'Lovelace',
+			birthday: new Date('1992-12-10')
 		}
 	]);
 	await db.delete(schema.scannerAccess).where(eq(schema.scannerAccess.userId, E2E_PAPER_CARE_ID));
@@ -110,7 +128,7 @@ async function seedPart({
 	const role = {
 		...makeSeedCustomConferenceRole({ conferenceId }),
 		id: roleId,
-		name: 'E2E Paper Role'
+		name: `E2E Paper Role ${roleId.slice(-1)}`
 	};
 	await db
 		.insert(schema.conferenceRole)
