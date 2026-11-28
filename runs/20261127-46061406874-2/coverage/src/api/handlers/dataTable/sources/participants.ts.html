@@ -1,0 +1,619 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/api/handlers/dataTable/sources/participants.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../../../prettify.css" />
+    <link rel="stylesheet" href="../../../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../../../index.html">All files</a> / <a href="index.html">src/api/handlers/dataTable/sources</a> participants.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">26.31% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>5/19</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/12</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/7</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">29.41% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>5/17</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { sql, type SQL } from 'drizzle-orm';
+import type { ColumnMeta } from '#lib/dataGrid/columnTypes';
+import { PARTICIPANTS_COLUMNS } from '#lib/dataGrid/tables/participants';
+import { col, wordsIn, type DataTableSource, type SourceArgs } from '../source';
+import { participationCountJoin } from './participationCount';
+&nbsp;
+/**
+ * The participants table: everyone with a part in the conference - delegation members, single
+ * participants, supervisors, the team, and the people waiting without any registration - one row
+ * per person, with the state of their paperwork. A row's id is the user id.
+ */
+&nbsp;
+/**
+ * Every registration of the conference as one row: the person, how they take part, their own
+ * school, whether seated. Delegates, singles and supervisors name their conference and person
+ * through their `conference_participant` (`p`); a supervisor is seated once someone they supervise
+ * is. People still waiting on the waiting list without any registration are rows too
+ * (`WAITING_LIST`).
+ */
+function <span class="fstat-no" title="function not covered" >registrations(c</span>onferenceId: string) {
+	const seated = <span class="cstat-no" title="statement not covered" >sql`(d.assigned_role_id is not null)`;</span>
+	const <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >schoolOf = (i</span>d: SQL) =&gt; <span class="cstat-no" title="statement not covered" >sql`(select sc.name from school sc where sc.id = ${id})`;</span></span>
+	// a nation role has no name of its own, so `dr.name` is the non-state actor's
+<span class="cstat-no" title="statement not covered" >	return sql`</span>
+		select p.user_id, 'DELEGATION_MEMBER' as role, dr.nation_alpha3_code as nation_code,
+			dr.name as nsa_name, com.name as committee, ${schoolOf(sql`p.school_id`)} as school,
+			dm.is_head_delegate as is_head_delegate, null::text as assigned_role_name,
+			null::text as team_role, null::boolean as plans_own_attendance, ${seated} as accepted
+		from delegation_member dm
+		join conference_participant p on p.id = dm.conference_participant_id
+		join delegation d on d.id = dm.delegation_id
+		left join conference_role dr on dr.id = d.assigned_role_id
+		left join committee com on com.id = dm.assigned_committee_id
+		where p.conference_id = ${conferenceId}
+		union all
+		select p.user_id, 'SUPERVISOR', null, null, null, ${schoolOf(sql`p.school_id`)}, null, null,
+			null, cs.plans_own_attendence_at_conference,
+			(exists (
+				select 1 from supervision j
+				join delegation_member dm2 on dm2.conference_participant_id = j.b
+				join delegation d on d.id = dm2.delegation_id
+				where j.a = cs.id and ${seated}
+			) or exists (
+				select 1 from supervision j
+				join single_participant sp2 on sp2.conference_participant_id = j.b
+				where j.a = cs.id and sp2.assigned_role_id is not null
+			))
+		from conference_supervisor cs
+		join conference_participant p on p.id = cs.conference_participant_id
+		where p.conference_id = ${conferenceId}
+		union all
+		select p.user_id, 'SINGLE_PARTICIPANT', null, null, null, ${schoolOf(sql`p.school_id`)}, null,
+			role.name, null, null, sp.assigned_role_id is not null
+		from single_participant sp
+		join conference_participant p on p.id = sp.conference_participant_id
+		left join conference_role role on role.id = sp.assigned_role_id
+		where p.conference_id = ${conferenceId}
+		union all
+		select tm.user_id, 'TEAM_MEMBER', null, null, null, null, null, null, tm.role::text, null, true
+		from team_member tm
+		where tm.conference_id = ${conferenceId}
+		union all
+		select w.user_id, 'WAITING_LIST', null, null, null, ${schoolOf(sql`w.school_id`)}, null, null,
+			null, null, false
+		from waiting_list_entry w
+		where w.conference_id = ${conferenceId} and w.assigned_at is null
+			and not exists (
+				select 1 from conference_participant p
+				where p.user_id = w.user_id and p.conference_id = w.conference_id and (
+					exists (select 1 from delegation_member dm where dm.conference_participant_id = p.id)
+					or exists (select 1 from single_participant sp where sp.conference_participant_id = p.id)
+					or exists (select 1 from conference_supervisor cs where cs.conference_participant_id = p.id)
+				)
+			)
+	`;
+}
+&nbsp;
+/** The paperwork as the table has always summed it up: a problem anywhere, else done or pending. */
+const postalStatus = sql`(case
+	when s.id is null then 'PENDING'
+	when s.terms_and_conditions = 'PROBLEM' or s.media_consent = 'PROBLEM' or s.guardian_consent = 'PROBLEM' then 'PROBLEM'
+	when s.terms_and_conditions = 'DONE' and s.media_consent = 'DONE'
+		and (s.guardian_consent = 'DONE' or coalesce(date_part('year', age(c.start_conference, u.birthday)), 0) &gt;= 18) then 'DONE'
+	else 'PENDING' end)`;
+&nbsp;
+const paymentStatus = sql`coalesce(s.payment_status::text, 'PENDING')`;
+&nbsp;
+/** A birthday (rolling Feb 29 over to March 1, like a JS date) within the days of the conference. */
+const birthdayDuringConference = sql`(u.birthday is not null and exists (
+	select 1 from generate_series(
+		extract(year from c.start_conference)::int,
+		extract(year from c.end_conference)::int
+	) as y
+	where make_date(y, extract(month from u.birthday)::int, 1) + (extract(day from u.birthday)::int - 1)
+		between c.start_conference::date and c.end_conference::date
+))`;
+&nbsp;
+/**
+ * Each column's value. `teammatePrivate` marks the profile fields a team member may not read of a
+ * teammate (only team admins do): blank on the team's rows for a caller who may not.
+ */
+const VALUES: Record&lt;string, { expr: SQL; teammatePrivate?: true }&gt; = {
+	userId: { expr: sql`reg.user_id` },
+	family_name: { expr: sql`u.family_name` },
+	given_name: { expr: sql`u.given_name` },
+	email: { expr: sql`u.email` },
+	phone: { expr: sql`u.phone` },
+	birthday: { expr: sql`u.birthday::date` },
+	pronouns: { expr: sql`u.pronouns` },
+	city: { expr: sql`u.city`, teammatePrivate: true },
+	country: { expr: sql`u.country`, teammatePrivate: true },
+	gender: { expr: sql`u.gender::text`, teammatePrivate: true },
+	foodPreference: { expr: sql`u.food_preference::text`, teammatePrivate: true },
+	ageAtConference: { expr: sql`date_part('year', age(c.start_conference, u.birthday))::int` },
+	hasBirthdayDuringConference: { expr: birthdayDuringConference },
+	role: { expr: sql`reg.role` },
+	nation: { expr: sql`coalesce(reg.nsa_name, reg.nation_code)` },
+	committee: { expr: sql`reg.committee` },
+	school: { expr: sql`reg.school` },
+	isHeadDelegate: { expr: sql`reg.is_head_delegate` },
+	assignedRoleName: { expr: sql`reg.assigned_role_name` },
+	teamRole: { expr: sql`reg.team_role` },
+	plansOwnAttendance: { expr: sql`reg.plans_own_attendance` },
+	paymentStatus: { expr: paymentStatus },
+	termsAndConditions: { expr: sql`coalesce(s.terms_and_conditions::text, 'PENDING')` },
+	guardianConsent: { expr: sql`coalesce(s.guardian_consent::text, 'PENDING')` },
+	mediaConsent: { expr: sql`coalesce(s.media_consent::text, 'PENDING')` },
+	postalRegistrationStatus: { expr: postalStatus },
+	didAttend: { expr: sql`s.did_attend` },
+	documentNumber: { expr: sql`s.assigend_document_number::text` },
+	accessCardId: { expr: sql`s.access_card_id` },
+	accepted: { expr: sql`reg.accepted` },
+	waitingListSince: { expr: sql`wl.created_at` },
+	seatedFromWaitingListAt: { expr: sql`wl.assigned_at` },
+	onWaitingList: { expr: sql`(wl.id is not null and wl.assigned_at is null)` },
+	hasOpenIssue: {
+		expr: sql`(reg.accepted and reg.role &lt;&gt; 'TEAM_MEMBER' and (${paymentStatus} &lt;&gt; 'DONE' or ${postalStatus} &lt;&gt; 'DONE'))`
+	},
+	// seats actually held in any conference: joined only when asked for (see `rows`)
+	participationCount: { expr: sql`coalesce(pc.n, 0)::int` }
+};
+&nbsp;
+function <span class="fstat-no" title="function not covered" >valueOf({</span> id, args }: { id: string; args: SourceArgs }): SQL {
+	const value = <span class="cstat-no" title="statement not covered" >Object.hasOwn(VALUES, id) ? VALUES[id] : undefined;</span>
+<span class="cstat-no" title="statement not covered" >	if (!value) <span class="cstat-no" title="statement not covered" >return sql`null`;</span></span>
+<span class="cstat-no" title="statement not covered" >	return value.teammatePrivate &amp;&amp; !args.access.teamDetails</span>
+		? sql`(case when reg.role = 'TEAM_MEMBER' then null else ${value.expr} end)`
+		: value.expr;
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >rows(a</span>rgs: SourceArgs) {
+	const columns = <span class="cstat-no" title="statement not covered" >PARTICIPANTS_COLUMNS.<span class="fstat-no" title="function not covered" >filter(</span></span>
+		(column) =&gt; <span class="cstat-no" title="statement not covered" >column.id !== 'participationCount' || args.uses.has('participationCount')</span>
+	);
+	const values = <span class="cstat-no" title="statement not covered" >columns.<span class="fstat-no" title="function not covered" >map(</span></span>
+		(column: ColumnMeta) =&gt; <span class="cstat-no" title="statement not covered" >sql`${valueOf({ id: column.id, args })} as ${sql.identifier(column.id)}`</span>
+	);
+<span class="cstat-no" title="statement not covered" >	return sql`</span>
+		select reg.user_id as id, ${sql.join(values, sql`, `)}
+		from (${registrations(args.conferenceId)}) as reg
+		join "user" u on u.id = reg.user_id
+		${args.uses.has('participationCount') ? participationCountJoin(sql`reg.user_id`) : sql``}
+		join conference c on c.id = ${args.conferenceId}
+		left join conference_participant s
+			on s.user_id = reg.user_id and s.conference_id = ${args.conferenceId}
+		left join waiting_list_entry wl
+			on wl.user_id = reg.user_id and wl.conference_id = ${args.conferenceId}
+	`;
+}
+&nbsp;
+export const participantsSource: DataTableSource = {
+	key: 'participants',
+	columns: PARTICIPANTS_COLUMNS,
+	rows,
+	// the name as written (given name first) or the email
+<span class="fstat-no" title="function not covered" >	search: (t</span>erm) =&gt; <span class="cstat-no" title="statement not covered" >wordsIn({ term, exprs: [col('given_name'), col('family_name'), col('email')] }),</span>
+	tieBreak: [{ id: 'family_name', desc: false }]
+};
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-27T20:15:43.846Z
+            </div>
+        <script src="../../../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../../../sorter.js"></script>
+        <script src="../../../../../block-navigation.js"></script>
+    </body>
+</html>
+    
