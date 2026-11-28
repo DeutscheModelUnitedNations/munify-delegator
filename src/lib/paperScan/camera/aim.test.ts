@@ -5,6 +5,7 @@ import { PDFDocument } from 'pdf-lib';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { defaultLayout } from '#lib/helpers/documentLayout';
 import { drawPaperPage } from '../drawPaper';
+import { AIM_SIDE, aimingVariants } from '../picture';
 import { renderPdfPage, simulatePhoto, type Pixels } from '../scanSimulation';
 import {
 	aimAt,
@@ -70,13 +71,14 @@ describe('aimAt', () => {
 		expect(aim.dark).toBe(true);
 	});
 
-	test('is quick enough to aim by many times a second', () => {
+	test('aims by two small pictures at most, however large the preview', () => {
+		// what keeps the aiming quick, many times a second; a clock would measure the machine instead
 		const photo = simulatePhoto({ picture: page, tilt: 0.03, shadow: 0.4, noise: 15 });
-		aimAt(photo);
-		const started = performance.now();
-		for (let round = 0; round < 3; round++) aimAt(photo);
-		// a phone takes several times as long; this keeps the aiming from growing slow unnoticed
-		expect((performance.now() - started) / 3).toBeLessThan(250);
+		const tried = [...aimingVariants(photo)];
+		expect(tried.length).toBeLessThanOrEqual(2);
+		for (const { picture } of tried) {
+			expect(Math.max(picture.width, picture.height)).toBeLessThanOrEqual(AIM_SIDE);
+		}
 	});
 });
 
