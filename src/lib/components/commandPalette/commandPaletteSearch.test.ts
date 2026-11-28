@@ -247,7 +247,7 @@ describe('searchConference', () => {
 				{ id: 'c1', name: 'Security Council', abbreviation: 'SC' }
 			]);
 			mocks.committeeAgendaItems.mockResolvedValueOnce([
-				{ id: 'a1', title: 'Sanctions', committee: { abbreviation: 'SC' } }
+				{ id: 'a1', title: 'Sanctions', committee: { id: 'c1', abbreviation: 'SC' } }
 			]);
 
 			const { committees } = await searchConference({ conferenceId, searchTerm: 'sec' });
@@ -255,8 +255,14 @@ describe('searchConference', () => {
 			expect(argsOf(mocks.committees).search).toEqual({ term: 'sec' });
 			expect(argsOf(mocks.committeeAgendaItems).where).toEqual({ committee: inConference });
 			expect(committees).toEqual([
-				{ id: 'c1', title: 'Security Council', subtitle: 'SC' },
-				{ id: 'a1', title: 'Sanctions', subtitle: 'SC' }
+				{
+					id: 'c1',
+					title: 'Security Council',
+					subtitle: 'SC',
+					committeeId: 'c1',
+					agendaItemId: null
+				},
+				{ id: 'a1', title: 'Sanctions', subtitle: 'SC', committeeId: 'c1', agendaItemId: 'a1' }
 			]);
 		});
 	});

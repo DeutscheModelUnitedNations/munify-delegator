@@ -23,7 +23,7 @@ This order follows from what DELEGATOR allows in each stage.
 
 1. Invite the team. Without one, nobody but system admins can set the conference up. The settings are open to **Project Management**, **Participant Care** and **Content Lead**.
 2. Fill in **General** (Project Management): name, location, conference language, images, the end of the application period, grace period, conference dates and time zone. Add the [age limits](#age-limits) and the [school rules](#school-rules).
-3. Create committees and agenda items: Project Management creates committees, Content Lead also adds agenda items. Delegations later submit their papers on these agenda items.
+3. Create committees and agenda items on the [Committees and Agenda Items](#committees-and-seats) page (Project Management, Content Lead). Delegations later submit their papers on these agenda items.
 4. Plan the seats (Project Management, Content Lead): the states in the committees, the non-state actors and the individual roles. This is best done now, while the conference is **Before registration starts**. After that, every change is public at once and can remove applications.
 5. Enter the links, above all the link to the preparation guide, which visitors see without signing in too.
 6. Enter the **Banking Information** (Project Management) before you allow payments.
@@ -34,7 +34,7 @@ What comes next is described in [Typical sequence](#typical-sequence).
 
 ## The settings {#general-settings}
 
-The **Settings** page splits the configuration into tabs: **General**, **Committees and Agenda Items**, **Status & Features**, **Links & Content**, **Banking Information**, **Documents & Templates**. Each tab briefly explains at the top what it is for.
+The **Settings** page splits the configuration into tabs: **General**, **Status & Features**, **Links & Content**, **Banking Information**, **Documents & Templates**. Each tab briefly explains at the top what it is for. Committees and agenda items have [their own page](#committees-and-seats).
 
 ![The conference settings with their tabs and the save button](shot:team/configuration)
 
@@ -55,7 +55,7 @@ If the end of the application period lies after the conference starts, the start
 If saving made emails due, the page then asks **Send emails now?** and names which kinds are open and how many. This happens with **Payments**, **Postal registration**, the status **After the conference** and a new certificate template. **Send {count} emails now** sends them, with **Later** you find them again on the [Emails](./communication#emails) page. Only Project Management and Participant Care, who may manage the emails, are asked.
 
 :::note Outside the form
-Committees and agenda items, resolutions and the layout on the templates save right away in their own windows. The save button only covers the form fields.
+Resolutions and the layout on the templates save right away in their own windows. The save button only covers the form fields.
 :::
 
 ### General {#general}
@@ -210,17 +210,17 @@ Participants with a seat download the resolutions on their dashboard once the co
 
 ## Committees and agenda items {#committees-and-seats}
 
-In the **Committees and Agenda Items** tab you manage the conference's committees and their agenda items. **Project Management** creates and deletes committees, **Content Lead** also edits them and maintains the agenda items. Participant Care only views them. Every change saves right away.
+On the **Committees and Agenda Items** page, right below **Seat planning** in the navigation, you manage the conference's committees and their agenda items. **Project Management** and **Content Lead** create committees, edit them and maintain the agenda items. Only **Project Management** deletes a committee. **Participant Care** only views the page, with a note at the top.
 
 ![The committees of a conference with their agenda items](shot:team/committees)
 
-Each card shows the number of states and the seats per delegation next to the name. At the top, **Open seat planning** leads to where you decide which states sit in a committee.
+On the left is the list of committees, each with its number of states and agenda items. When an agenda item still lacks points for discussion, it says so underneath. A click shows the committee on the right; the address remembers which one, so you can share a link to it. At the top, **Open seat planning** leads to where you decide which states sit in a committee.
 
-- **Add committee** creates a committee with **Name**, **Abbreviation** and **Seats per delegation**.
-- **Edit** opens **Edit Committee** for the name and abbreviation, the **Seats per delegation** and the **Resolution Headline**, a custom headline for resolutions, for example to get a gendered article right in some languages ("Der Sicherheitsrat"). Left empty, there is none.
-- **Create new Agenda Item** adds a topic with **Title** and **Teaser Text**. Delegations submit their papers on these topics. The pencil on a topic opens **Edit Agenda Item**, the bin **Delete Agenda Item**.
+- **Add committee** below the list creates a committee with **Name**, **Abbreviation** and **Seats per delegation** and picks it right away.
+- **Committee settings** show the name and abbreviation, the **Seats per delegation** and the **Resolution Headline**, a custom headline for resolutions, for example to get a gendered article right in some languages ("Der Sicherheitsrat"). Left empty, there is none. You change them right in the fields; **Save** keeps them, **Discard** brings back what is saved.
+- Under **Agenda items** each topic is a row with its number of points for discussion and papers. Delegations submit their papers on these topics. A click opens the topic in place with **Title**, **Teaser Text** and points; **Save** keeps the changes, a topic with unsaved changes says **Not saved**. **Delete Agenda Item** removes it after confirming. **Create new Agenda Item** opens the fields for a new topic below.
 - Under **Points for discussion** you note what papers on a topic should answer, one point per field, in the order they appear. **Add point** or Enter starts the next point, the arrows move it, the cross removes it; empty points are dropped when saving. Participants see the points while writing and on their paper, reviewers next to the paper, and the [guide](./communication#guide-editor) shows them on the topic's page. The topic's row says how many it has.
-- **Delete** removes a committee after confirming.
+- **Delete committee** at the end removes the committee after confirming (Project Management only).
 
 **Seats per delegation** sets how many delegates of one delegation sit in this committee. Added up over all committees, this is the size of the delegation representing a state.
 

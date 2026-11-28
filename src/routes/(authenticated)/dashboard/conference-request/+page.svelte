@@ -1,7 +1,7 @@
 <script lang="ts">
 	import IconPicker from '#lib/components/IconPicker.svelte';
 	import { onMount } from 'svelte';
-	import worldCountries from 'world-countries';
+	import worldCountries from '@deutschemodelunitednations/world-countries';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';

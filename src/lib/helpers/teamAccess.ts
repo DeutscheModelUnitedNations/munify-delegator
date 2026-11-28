@@ -40,9 +40,15 @@ export const canEditConference = (access: TeamAccess) =>
 export const canEditConferenceContent = (access: TeamAccess) =>
 	hasAnyRole({ access, roles: CONFERENCE_CONTENT_ROLES });
 
-/** Editing committees, their seats and agenda items; creating and deleting is `canEditConference` */
+/** Editing committees, their seats and agenda items */
 export const canEditCommittees = (access: TeamAccess) =>
 	hasAnyRole({ access, roles: SEAT_PLANNING_ROLES });
+
+/** Adding a committee: who edits them (`planSeats`) */
+export const canCreateCommittees = canEditCommittees;
+
+/** Deleting a committee: only project management (`manageConference`), it takes its agenda items */
+export const canDeleteCommittees = canEditConference;
 
 /** Planning which nations sit where */
 export const canPlanSeats = (access: TeamAccess) =>

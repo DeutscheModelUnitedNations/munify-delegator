@@ -28,7 +28,7 @@ const ROUTES = [
 	'/invitations',
 	'/attendance',
 	'/configuration',
-	'/configuration/committees',
+	'/committees',
 	'/seat-planning',
 	'/assignment/introduction',
 	'/assignment/sighting',

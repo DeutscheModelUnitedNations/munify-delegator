@@ -49,13 +49,14 @@ test.describe('points for discussion', () => {
 
 	test('the content lead edits them with the agenda item', async ({ page }) => {
 		await loginAs(page, fixedTestUser(P.contentLead), {
-			startUrl: `/dashboard/${C}/team/configuration/committees`
+			startUrl: `/dashboard/${C}/team/committees`
 		});
-		const row = page.getByRole('listitem').filter({ hasText: E2E_POINTS_TITLES.withPoints });
-		await expect(row).toContainText(/Punkte zur Diskussion: 2|Points for discussion: 2/);
-		await row.getByRole('button', { name: /Bearbeiten|Edit/ }).click();
-
-		const dialog = page.getByRole('dialog');
+		// the agenda item opens in place on the committees page
+		const dialog = page.locator('details').filter({ hasText: E2E_POINTS_TITLES.withPoints });
+		await expect(dialog.locator('summary')).toContainText(
+			/Punkte zur Diskussion: 2|Points for discussion: 2/
+		);
+		await dialog.locator('summary').click();
 		const first = dialog.getByRole('textbox', {
 			name: /Punkt zur Diskussion 1|Point for discussion 1/
 		});

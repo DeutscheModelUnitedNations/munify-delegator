@@ -1,4 +1,4 @@
-import worldCountries from 'world-countries';
+import worldCountries from '@deutschemodelunitednations/world-countries';
 
 const alpha2ByAlpha3 = new Map(worldCountries.map((c) => [c.cca3, c.cca2]));
 const alpha3ByAlpha2 = new Map(worldCountries.map((c) => [c.cca2, c.cca3]));

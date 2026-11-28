@@ -1,7 +1,10 @@
+import { readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import {
 	groupedTeamRoutes,
 	mayOpenTeamRoute,
+	pathInOtherConference,
 	teamRelativePath,
 	teamRouteForPath,
 	teamRoutes,
@@ -75,6 +78,7 @@ describe('who sees what', () => {
 			'stats',
 			'settings',
 			'seatPlanning',
+			'committees',
 			'attendance',
 			'announcement',
 			'guide',
@@ -104,6 +108,18 @@ describe('who sees what', () => {
 		expect(care).not.toContain('members');
 	});
 
+	test('the committees have their own page right after the seat planning', () => {
+		const workflows = teamRoutes.filter((entry) => entry.group === 'workflows').map((e) => e.id);
+		expect(workflows.indexOf('committees')).toBe(workflows.indexOf('seatPlanning') + 1);
+		expect(teamRouteForPath('team/committees')?.id).toBe('committees');
+		for (const role of ['PROJECT_MANAGEMENT', 'CONTENT_LEAD', 'PARTICIPANT_CARE'] as const) {
+			expect(ids(as(role))).toContain('committees');
+		}
+		for (const role of ['REVIEWER', 'MEMBER', 'TEAM_COORDINATOR'] as const) {
+			expect(ids(as(role))).not.toContain('committees');
+		}
+	});
+
 	test('the navigation sections leave out what is empty', () => {
 		const sections = groupedTeamRoutes(as('CONTENT_LEAD')).map((section) => section.group);
 		// nothing of the maintenance section is the content lead's
@@ -123,7 +139,7 @@ describe('teamRouteForPath', () => {
 	test('finds a page and the pages below it', () => {
 		expect(teamRouteForPath('team/participants')?.id).toBe('participants');
 		expect(teamRouteForPath('team/user/abc')?.id).toBe('participants');
-		expect(teamRouteForPath('team/configuration/committees')?.id).toBe('settings');
+		expect(teamRouteForPath('team/configuration/x')?.id).toBe('settings');
 		expect(teamRouteForPath('team/assignment/finish')?.id).toBe('assignment');
 		expect(teamRouteForPath('team/invitations')?.id).toBe('members');
 		expect(teamRouteForPath('team/survey/xyz')?.id).toBe('survey');
@@ -176,5 +192,56 @@ describe('teamRelativePath', () => {
 		expect(teamRelativePath({ pathname: '/dashboard/conf-1/', conferenceId })).toBe('');
 		expect(teamRelativePath({ pathname: '/dashboard/conf-12/team/stats', conferenceId })).toBe('');
 		expect(teamRelativePath({ pathname: '/dashboard/other/team/stats', conferenceId })).toBe('');
+	});
+});
+
+describe('pathInOtherConference', () => {
+	const care = as('PARTICIPANT_CARE');
+	const reviewer = as('REVIEWER');
+	const go = (relativePath: string, access: TeamAccess = care) =>
+		pathInOtherConference({ relativePath, access });
+
+	test('keeps a team page the caller may open there', () => {
+		expect(go('team/participants')).toBe('team/participants');
+		expect(go('team/assignment/singles')).toBe('team/assignment/singles');
+		expect(go('team/configuration/committees', as('PROJECT_MANAGEMENT'))).toBe(
+			'team/configuration/committees'
+		);
+		expect(go('/team/stats/', reviewer)).toBe('team/stats');
+		expect(go('team/waiting-list', { isAdmin: true, roles: [] })).toBe('team/waiting-list');
+	});
+
+	test('leads to the overview where the roles there do not reach the page', () => {
+		expect(go('team/participants', reviewer)).toBe('');
+		expect(go('team/stats', NO_TEAM_ACCESS)).toBe('');
+	});
+
+	test('leads from a detail page to its list, or to the overview for a person', () => {
+		expect(go('team/schools/s1')).toBe('team/schools');
+		expect(go('team/survey/q1')).toBe('team/survey');
+		expect(go('team/guide/page/p1', as('PROJECT_MANAGEMENT'))).toBe('team/guide');
+		expect(go('team/user/u1')).toBe('');
+		expect(go('team/schools/s1', reviewer)).toBe('');
+	});
+
+	test('leads to the overview from every page outside the team area', () => {
+		for (const path of ['', 'payment', 'paperhub', 'paperhub/p1', 'calendar', 'guide/g1']) {
+			expect(go(path, { isAdmin: true, roles: [] })).toBe('');
+		}
+	});
+
+	test('never carries an id of the old conference along', () => {
+		const teamDirectory = join(
+			import.meta.dirname,
+			'../../routes/(authenticated)/dashboard/[conferenceId]/team'
+		);
+		const parameterPages = readdirSync(teamDirectory, { recursive: true, encoding: 'utf8' })
+			.filter((file) => file.endsWith('+page.svelte') && file.includes('['))
+			.map((file) => `team/${relative('.', file).replace(/\/+page\.svelte$/, '')}`);
+		expect(parameterPages.length).toBeGreaterThan(0);
+		for (const page of parameterPages) {
+			const target = go(page.replace(/\[[^\]]+\]/g, 'old-id'), { isAdmin: true, roles: [] });
+			expect(target, page).not.toContain('old-id');
+		}
 	});
 });

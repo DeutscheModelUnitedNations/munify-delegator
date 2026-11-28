@@ -47,7 +47,13 @@ const config: ConfigEntry = {
 	keywords: []
 };
 const seat = { id: 's1', title: 'Frankreich', subtitle: 'Gym', holderUserId: 'u9' };
-const committee = { id: 'c1', title: 'Sicherheitsrat', subtitle: 'SC' };
+const committee = {
+	id: 'c1',
+	title: 'Sicherheitsrat',
+	subtitle: 'SC',
+	committeeId: 'c1',
+	agendaItemId: null
+};
 const school = { id: 'sch1', name: 'Goethe-Gymnasium', city: 'Berlin' };
 const foreignUser = { id: 'f1', email: 'f@b.c', givenName: 'Fo', familyName: 'Reign' };
 
@@ -103,10 +109,16 @@ describe('resultTarget', () => {
 			})
 		});
 	});
-	test('a committee opens the committees tab', () => {
+	test('a committee opens the committees page with it picked', () => {
 		expect(
 			resultTarget({ item: { type: 'committee', data: committee }, conferenceId })
-		).toHaveProperty('href', expect.stringContaining('/conf-1/team/configuration?tab=committees'));
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/committees?committee=c1'));
+	});
+	test('an agenda item opens on the committees page', () => {
+		const agendaItem = { ...committee, id: 'a1', agendaItemId: 'a1' };
+		expect(
+			resultTarget({ item: { type: 'committee', data: agendaItem }, conferenceId })
+		).toHaveProperty('href', expect.stringContaining('/team/committees?committee=c1&item=a1'));
 	});
 	test('users open their card', () => {
 		expect(resultTarget({ item: { type: 'user', data: user }, conferenceId })).toEqual({

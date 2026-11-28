@@ -1,8 +1,8 @@
 <!--
 	@component
 	The conference settings: one form spread over tabs, saved in one go after a preview of what
-	changes. The committees tab sits outside that form and edits its rows directly. The automatic
-	mails have their own page (`team/emails`).
+	changes. The committees and agenda items (`team/committees`) and the automatic mails
+	(`team/emails`) have their own pages.
 
 	Seeds its form once from `conferenceId`, so the parent must remount it (`{#key}`) when the
 	conference changes.
@@ -26,7 +26,6 @@
 	import { collectConfigChanges, type ChangeGroupKey } from './changePreview';
 	import { uploadConferenceFiles } from './conferenceFiles';
 	import ConfigSave from './ConfigSave.svelte';
-	import CommitteesManager from './committees/CommitteesManager.svelte';
 	import TabIntro from './sections/TabIntro.svelte';
 	import GeneralSettings from './sections/GeneralSettings.svelte';
 	import StatusSettings from './sections/StatusSettings.svelte';
@@ -359,7 +358,7 @@
 		return counts;
 	});
 
-	const validTabs = ['general', 'committees', 'status', 'links', 'payments', 'documents'] as const;
+	const validTabs = ['general', 'status', 'links', 'payments', 'documents'] as const;
 	type TabType = (typeof validTabs)[number];
 	// The tab is kept here and mirrored into the URL without a navigation, like the assignment
 	// board's size: `sveltekit-search-params` reads `page`, which is still the placeholder while the
@@ -382,7 +381,6 @@
 
 	const tabs: { value: TabType; label: string; icon: string }[] = $derived([
 		{ value: 'general', label: m.general(), icon: 'ph-gear' },
-		{ value: 'committees', label: m.committeesAndAgendaItems(), icon: 'ph-lectern' },
 		{ value: 'status', label: m.statusAndFeatures(), icon: 'ph-toggle-right' },
 		{ value: 'links', label: m.linksAndContent(), icon: 'ph-link' },
 		{ value: 'payments', label: m.bankingInformation(), icon: 'ph-credit-card' },
@@ -391,7 +389,6 @@
 
 	const tabIntros: Record<TabType, () => string> = {
 		general: m.tabExplanationGeneral,
-		committees: m.tabExplanationCommittees,
 		status: m.tabExplanationStatus,
 		links: m.tabExplanationLinks,
 		payments: m.tabExplanationPayments,
@@ -467,13 +464,6 @@
 		>
 			<i aria-hidden="true" class="ph-fill ph-floppy-disk"></i>
 		</button>
-	</div>
-
-	<!-- Committees Tab (outside main form) -->
-	<div class:hidden={currentTab !== 'committees'}>
-		<div class="flex flex-col gap-4">
-			<CommitteesManager {conferenceId} />
-		</div>
 	</div>
 
 	<!-- A disabled fieldset disables every control inside it, whichever form component renders it. -->

@@ -10,9 +10,11 @@
 	interface Props {
 		conferenceId: string;
 		open: boolean;
+		/** The new committee's id, once it is saved. */
+		onCreated?: (id: string) => void;
 	}
 
-	let { conferenceId, open = $bindable() }: Props = $props();
+	let { conferenceId, open = $bindable(), onCreated }: Props = $props();
 
 	let name = $state('');
 	let abbreviation = $state('');
@@ -31,8 +33,9 @@
 			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
+		const created = await promise;
 		open = false;
+		onCreated?.(created.id);
 		name = '';
 		abbreviation = '';
 		numOfSeatsPerDelegation = 1;

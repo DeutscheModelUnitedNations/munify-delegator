@@ -21,9 +21,11 @@ async function graphql(page: Page, query: string) {
 test('a live list shows rows created and deleted elsewhere', async ({ page }) => {
 	test.setTimeout(90_000);
 	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
-		startUrl: `/dashboard/${E2E_SEAT_CONFERENCE_ID}/team/configuration?tab=committees`
+		startUrl: `/dashboard/${E2E_SEAT_CONFERENCE_ID}/team/committees?committee=${E2E_SEAT_SR_ID}`
 	});
-	await page.getByRole('heading', { name: /Generalversammlung/ }).waitFor({ timeout: 15_000 });
+	await page.getByRole('heading', { name: /Sicherheitsrat/ }).waitFor({ timeout: 15_000 });
+	const headline = page.getByRole('textbox', { name: /Resolutions-Überschrift/ });
+	const committeeList = page.getByRole('navigation', { name: 'Gremien' });
 
 	// A change made while the page's subscription is still computing its first result is lost
 	// (the server answers with what it read before the change). So first make sure it is live:
@@ -34,7 +36,8 @@ test('a live list shows rows created and deleted elsewhere', async ({ page }) =>
 			page,
 			`mutation { updateCommittee(id: "${E2E_SEAT_SR_ID}", resolutionHeadline: "${marker}") { id } }`
 		);
-		await expect(page.getByText(marker)).toBeVisible({ timeout: 3_000 });
+		// the field holds no edit, so it follows what was saved elsewhere
+		await expect(headline).toHaveValue(marker, { timeout: 3_000 });
 	}).toPass({ timeout: 30_000 });
 
 	try {
@@ -47,7 +50,7 @@ test('a live list shows rows created and deleted elsewhere', async ({ page }) =>
 		const id =
 			typeof committee === 'object' && committee && 'id' in committee ? String(committee.id) : '';
 
-		const heading = page.getByRole('heading', { name: `Live (${abbreviation})` });
+		const heading = committeeList.getByRole('button', { name: new RegExp(abbreviation) });
 		await expect(heading).toHaveCount(1, { timeout: 15_000 });
 		// It used to flicker in and vanish again when the stale query result came back.
 		await page.waitForTimeout(2_000);

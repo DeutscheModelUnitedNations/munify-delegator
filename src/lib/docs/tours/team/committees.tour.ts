@@ -1,7 +1,7 @@
 import type { Tour } from '@deutschemodelunitednations/docs-kit';
 import { m } from '#lib/paraglide/messages';
 
-/** The committees and their agenda items (`CommitteesManager`). */
+/** The committees and their agenda items (`CommitteesManager`): list, picked committee, its topics. */
 export const committeesTour: Tour = {
 	id: 'team.committees',
 	steps: [
@@ -16,15 +16,21 @@ export const committeesTour: Tour = {
 			side: 'bottom'
 		},
 		{
+			anchor: 'team.committees.list',
+			title: () => m.tourTeamCommitteesListTitle(),
+			body: () => m.tourTeamCommitteesListBody(),
+			side: 'right'
+		},
+		{
 			anchor: 'team.committees.add',
 			title: () => m.tourTeamCommitteesAddTitle(),
 			body: () => m.tourTeamCommitteesAddBody(),
 			side: 'bottom'
 		},
 		{
-			anchor: 'team.committees.card',
-			title: () => m.tourTeamCommitteesCardTitle(),
-			body: () => m.tourTeamCommitteesCardBody(),
+			anchor: 'team.committees.settings',
+			title: () => m.tourTeamCommitteesSettingsTitle(),
+			body: () => m.tourTeamCommitteesSettingsBody(),
 			side: 'bottom'
 		},
 		{
