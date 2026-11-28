@@ -59,7 +59,8 @@ vi.mock('#lib/paperScan/readScan', () => ({
 	fieldsOfCode: (code: string) => (code === 'blank' ? [] : ['termsSignature'])
 }));
 
-const { deletePostalScan, keepPostalScan, printedPage } = await import('./postalScanService');
+const { deletePostalScan, importArgsSchema, keepPostalScan, printedPage } =
+	await import('./postalScanService');
 
 const refused = { extensions: { code: 'INVALID_INPUT' } };
 
@@ -68,6 +69,18 @@ beforeEach(() => {
 	Object.assign(state, { known: undefined, scan: undefined, removed: [] });
 	writes.length = 0;
 	published.length = 0;
+});
+
+describe('importArgsSchema', () => {
+	const args = (source: string) => ({ source, contentKey: `${'a'.repeat(64)}:1` });
+
+	test.each(['UPLOAD', 'FOLDER', 'CAMERA'])('takes a scan the app brings (%s)', (source) => {
+		expect(importArgsSchema.safeParse(args(source)).success).toBe(true);
+	});
+
+	test('leaves what scanners deliver to them', () => {
+		expect(importArgsSchema.safeParse(args('WEBDAV')).success).toBe(false);
+	});
 });
 
 describe('printedPage', () => {

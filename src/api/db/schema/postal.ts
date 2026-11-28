@@ -21,8 +21,13 @@ import { user } from './users';
  * automation read off them, and the logins scanners deliver with.
  */
 
-/** Where a scan came from: dropped in, a watched folder, or a scanner's WebDAV upload. */
-export const postalScanSource = pgEnum('postal_scan_source', ['UPLOAD', 'FOLDER', 'WEBDAV']);
+/** Where a scan came from: dropped in, a watched folder, a scanner's WebDAV upload, or a photo of the camera. */
+export const postalScanSource = pgEnum('postal_scan_source', [
+	'UPLOAD',
+	'FOLDER',
+	'WEBDAV',
+	'CAMERA'
+]);
 
 /**
  * A scanned page of a person's documents. It hangs on their part in the conference and goes with it;

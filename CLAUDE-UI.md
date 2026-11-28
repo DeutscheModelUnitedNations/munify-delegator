@@ -326,10 +326,15 @@ browsers give unasked cannot read a signed code printed on paper.
 - `manualPlaceholder`, `scanPromptText`: Texts for the manual field and while scanning
 - `cameraZIndex`: z-index class of the preview (default `'z-30'`)
 - `extraControls`: Snippet between camera settings and input
-- `readPage`: `({ frame, code }) => Promise<boolean>`: reads the whole page a code is on (the
-  postal registration's "whole page" mode, `#lib/paperScan`). Given, the camera asks for 4K and a
-  code counts only once this answers true for the picture it was read in; `ScanFlowPage` passes it
-  through, with `scanPrompt`
+- `takePage`: `(page: CameraPage) => Promise<string | undefined>`: the postal registration's "whole
+  page" mode, a scanner the pages are slid under (`pageCamera.svelte.ts`, see "Camera" in
+  `docs/architecture/postal-scans.md`). Given, the camera reads pages instead of codes and hands
+  each on here, never to `scannedCode`; the answer is what a person has to look at, if anything.
+  `ScanViewfinder` then shows the corner marks it sees (`AimMarks`, a dashed one where one is
+  missing), the hint (`pageCameraHints.ts`, `ScanStatus`) instead of `scanPromptText`, green frame
+  corners once the page lies right, a green flash for a page done with and, while something is wrong,
+  a red `ScanAlert` with **Weiter** that the camera waits for. Tapping the picture focuses there.
+  `ScanFlowPage` passes it through
 
 Exposes `reset()` (clears the code, restarts camera or refocuses input); call it via `bind:this`
 after saving. Typical binding into URL state:

@@ -137,7 +137,7 @@ async function imagePicture<C>({
  * What one page's picture shows: its codes and their fields, and how many quarter turns it is off standing
  * upright.
  */
-async function readPicture({
+export async function readPicture({
 	picture,
 	readCodes
 }: {

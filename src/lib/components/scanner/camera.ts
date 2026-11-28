@@ -1,4 +1,5 @@
 import { logger } from '#lib/logger';
+import { AIM_SIDE } from '#lib/paperScan/picture';
 
 /**
  * The camera as the scanners open it. Asked for nothing, browsers hand out 640×480, in which a
@@ -6,8 +7,9 @@ import { logger } from '#lib/logger';
  * closer than the camera can focus. So the scanners ask for full HD (`ideal`: a camera with less
  * gives what it has), keep focusing continuously where the camera can, and offer its zoom, so the
  * paper can be held at a distance the camera focuses at and zoomed in on, and its light. Reading a whole page
- * (`page`: its fields too, `#lib/paperScan`) asks for 4K, where the camera has it: the page then
- * fills the picture with a few pixels to each millimetre.
+ * (`page`: its fields too, `#lib/paperScan`) is aimed by small pictures of the preview and read off one
+ * photo (`takePhoto`): a still of the camera's own (Image Capture, sharper and fuller than any frame of the
+ * video) where the browser takes one, else a frame of a 4K stream.
  */
 
 /** One set of constraints `applyConstraints` takes. */
@@ -20,6 +22,7 @@ interface CameraConstraintSet extends ConstraintSet {
 	focusMode?: string;
 	zoom?: number;
 	torch?: boolean;
+	pointsOfInterest?: { x: number; y: number }[];
 }
 
 /** What the camera's zoom can do and where it stands. */
@@ -81,16 +84,105 @@ export async function openScannerCamera({
 	page?: boolean;
 }) {
 	// `ideal` falls back to whatever camera exists, e.g. a laptop's single webcam
+	// a photo of the camera's own needs no large stream; a frame of the video is all there is otherwise
+	const large = page && !takesStills();
 	const stream = await navigator.mediaDevices.getUserMedia({
 		video: {
 			facingMode: { ideal: facingMode },
-			width: { ideal: page ? 3840 : 1920 },
-			height: { ideal: page ? 2160 : 1080 }
+			width: { ideal: large ? 3840 : 1920 },
+			height: { ideal: large ? 2160 : 1080 }
 		}
 	});
 	const track = videoTrackOf(stream);
 	if (track) await focusContinuously(track);
 	return stream;
+}
+
+/** Whether the browser takes photos of the camera's own (Image Capture: Chromium). */
+const takesStills = () => typeof ImageCapture !== 'undefined';
+
+/** The video's track, while it shows a stream. */
+function trackOf(video: HTMLVideoElement | undefined) {
+	const stream = video?.srcObject;
+	return stream instanceof MediaStream ? videoTrackOf(stream) : undefined;
+}
+
+/** What the camera shows right now, small, to aim by (`#lib/paperScan/camera/aim`); none before it has a picture. */
+export async function previewPicture(video: HTMLVideoElement): Promise<ImageBitmap | undefined> {
+	const { videoWidth: width, videoHeight: height } = video;
+	if (width === 0 || height === 0) return undefined;
+	const scale = Math.min(1, AIM_SIDE / Math.max(width, height));
+	return createImageBitmap(video, {
+		resizeWidth: Math.round(width * scale),
+		resizeHeight: Math.round(height * scale),
+		resizeQuality: 'low'
+	});
+}
+
+/** The camera's own photo, at its largest, without the flash (glare on paper hides ink). */
+async function stillOf({ track, torch }: { track: MediaStreamTrack; torch: boolean }) {
+	const capture = new ImageCapture(track);
+	const capabilities = await capture.getPhotoCapabilities();
+	const width = capabilities.imageWidth?.max;
+	const noFlash = !torch && capabilities.fillLightMode?.includes('off');
+	return capture.takePhoto({
+		...(width ? { imageWidth: width } : {}),
+		...(noFlash ? { fillLightMode: 'off' } : {})
+	});
+}
+
+/**
+ * A photo of what the camera `video` shows, to read a page off: the camera's own where the browser
+ * takes one, else the video's picture as it is. None before it has a picture.
+ */
+export async function takePhoto(video: HTMLVideoElement): Promise<Blob | ImageBitmap | undefined> {
+	const track = trackOf(video);
+	if (track && takesStills() && track.readyState === 'live') {
+		try {
+			return await stillOf({ track, torch: torchOf(track) === true });
+		} catch (error) {
+			// some cameras refuse while the preview runs: its picture does too
+			logger.warn('Taking a photo failed', error);
+		}
+	}
+	if (video.videoWidth === 0 || video.videoHeight === 0) return undefined;
+	return createImageBitmap(video);
+}
+
+/**
+ * Where in the picture `box` (as the page lays it out) a tap at `at` went, as shares of its width and
+ * height; its middle for a click of the keyboard, which has no place.
+ */
+export function tappedPoint({
+	box,
+	at,
+	byPointer
+}: {
+	box: { left: number; top: number; width: number; height: number };
+	at: { x: number; y: number };
+	byPointer: boolean;
+}) {
+	if (!byPointer || box.width <= 0 || box.height <= 0) return { x: 0.5, y: 0.5 };
+	return { x: (at.x - box.left) / box.width, y: (at.y - box.top) / box.height };
+}
+
+/**
+ * Focuses the camera `video` shows on a point of it (shares of its width and height), where the camera
+ * can; one that cannot keeps focusing as it does.
+ */
+export async function focusAt({
+	video,
+	x,
+	y
+}: {
+	video: HTMLVideoElement | undefined;
+	x: number;
+	y: number;
+}) {
+	const track = trackOf(video);
+	if (!track) return;
+	const advanced: CameraConstraintSet[] = [{ pointsOfInterest: [{ x, y }] }];
+	await track.applyConstraints({ advanced }).catch(() => undefined);
 }
 
 /** The zoom of the stream's camera, when it has one. */
@@ -159,19 +251,6 @@ export async function zoomVideo({
 	if (!(stream instanceof MediaStream)) return undefined;
 	const zoom = await zoomStream({ stream, value });
 	return video?.srcObject === stream ? zoom : undefined;
-}
-
-/** The picture `video` shows right now, at the camera's full resolution; none before it has one. */
-export function captureFrame(video: HTMLVideoElement): ImageData | undefined {
-	const { videoWidth: width, videoHeight: height } = video;
-	if (width === 0 || height === 0) return undefined;
-	const canvas = document.createElement('canvas');
-	canvas.width = width;
-	canvas.height = height;
-	const context = canvas.getContext('2d', { willReadFrequently: true });
-	if (!context) return undefined;
-	context.drawImage(video, 0, 0, width, height);
-	return context.getImageData(0, 0, width, height);
 }
 
 /** Turns off the camera `video` shows. */

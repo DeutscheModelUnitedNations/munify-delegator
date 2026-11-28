@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	captureFrame,
+	focusAt,
 	openScannerCamera,
+	previewPicture,
 	stopVideoStream,
 	streamTorch,
 	streamZoom,
 	switchTorch,
+	takePhoto,
+	tappedPoint,
 	zoomStream,
 	zoomVideo
 } from './camera';
@@ -160,7 +163,20 @@ describe('openScannerCamera', () => {
 		expect(track.applied).toEqual([{ advanced: [{ focusMode: 'continuous' }] }]);
 	});
 
-	it('asks for 4K to read a whole page', async () => {
+	it('asks for full HD to read a whole page where the camera takes photos of its own', async () => {
+		vi.stubGlobal('ImageCapture', class {});
+		const getUserMedia = fakeCamera(fakeTrack({ capabilities: {} }));
+		await openScannerCamera({ facingMode: 'environment', page: true });
+		expect(getUserMedia).toHaveBeenCalledWith({
+			video: {
+				facingMode: { ideal: 'environment' },
+				width: { ideal: 1920 },
+				height: { ideal: 1080 }
+			}
+		});
+	});
+
+	it('asks for 4K to read a whole page off the video', async () => {
 		const getUserMedia = fakeCamera(fakeTrack({ capabilities: {} }));
 		await openScannerCamera({ facingMode: 'environment', page: true });
 		expect(getUserMedia).toHaveBeenCalledWith({
@@ -184,30 +200,129 @@ describe('openScannerCamera', () => {
 	});
 });
 
-describe('captureFrame', () => {
-	/** A video showing a picture of `width` × `height`, and the canvas a frame is drawn on. */
-	function videoOf({ width, height }: { width: number; height: number }) {
-		const frame = { width, height, data: new Uint8ClampedArray(width * height * 4) };
-		const drawImage = vi.fn();
-		const context = { drawImage, getImageData: vi.fn(() => frame) };
-		vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
-			// TYPE-SAFETY-EXCEPTION: jsdom has no canvas; the fake answers what captureFrame uses
-			() => context as unknown as CanvasRenderingContext2D
-		);
-		const video = document.createElement('video');
-		Object.defineProperty(video, 'videoWidth', { value: width });
-		Object.defineProperty(video, 'videoHeight', { value: height });
-		return { video, frame, drawImage };
-	}
+/** A video of `width` × `height` showing `stream`. */
+function sizedVideo({
+	stream,
+	width,
+	height
+}: {
+	stream: MediaStream | null;
+	width: number;
+	height: number;
+}) {
+	const video = videoOf(stream);
+	Object.defineProperty(video, 'videoWidth', { value: width });
+	Object.defineProperty(video, 'videoHeight', { value: height });
+	return video;
+}
 
-	it("takes the picture at the camera's full resolution", () => {
-		const { video, frame, drawImage } = videoOf({ width: 3840, height: 2160 });
-		expect(captureFrame(video)).toBe(frame);
-		expect(drawImage).toHaveBeenCalledWith(video, 0, 0, 3840, 2160);
+describe('previewPicture', () => {
+	it('takes the picture small enough to aim by', async () => {
+		const createImageBitmap = vi.fn(async () => 'bitmap');
+		vi.stubGlobal('createImageBitmap', createImageBitmap);
+		const video = sizedVideo({ stream: null, width: 3840, height: 2160 });
+		expect(await previewPicture(video)).toBe('bitmap');
+		expect(createImageBitmap).toHaveBeenCalledWith(video, {
+			resizeWidth: 1280,
+			resizeHeight: 720,
+			resizeQuality: 'low'
+		});
 	});
 
-	it('takes nothing before the video shows a picture', () => {
-		expect(captureFrame(videoOf({ width: 0, height: 0 }).video)).toBeUndefined();
+	it('takes nothing before the video shows a picture', async () => {
+		expect(await previewPicture(sizedVideo({ stream: null, width: 0, height: 0 }))).toBeUndefined();
+	});
+});
+
+describe('takePhoto', () => {
+	/** A camera whose photos are `photo`, or that refuses; `settings` records what it was asked. */
+	function fakeImageCapture({ photo, refuse = false }: { photo: Blob; refuse?: boolean }) {
+		const settings: unknown[] = [];
+		vi.stubGlobal(
+			'ImageCapture',
+			class {
+				getPhotoCapabilities = async () => ({
+					imageWidth: { max: 4032 },
+					fillLightMode: ['auto', 'off', 'flash']
+				});
+				takePhoto = async (asked: unknown) => {
+					settings.push(asked);
+					if (refuse) throw new Error('busy');
+					return photo;
+				};
+			}
+		);
+		return settings;
+	}
+
+	const liveTrack = (torch = false) =>
+		Object.assign(fakeTrack({ capabilities: { torch: true }, settings: { torch } }), {
+			readyState: 'live'
+		});
+
+	it("takes the camera's own photo, at its largest and without the flash", async () => {
+		const photo = new Blob(['jpeg']);
+		const settings = fakeImageCapture({ photo });
+		const video = sizedVideo({ stream: streamOf(liveTrack()), width: 1920, height: 1080 });
+		expect(await takePhoto(video)).toBe(photo);
+		expect(settings).toEqual([{ imageWidth: 4032, fillLightMode: 'off' }]);
+	});
+
+	it('leaves the light alone while it is on', async () => {
+		const settings = fakeImageCapture({ photo: new Blob(['jpeg']) });
+		await takePhoto(sizedVideo({ stream: streamOf(liveTrack(true)), width: 1920, height: 1080 }));
+		expect(settings).toEqual([{ imageWidth: 4032 }]);
+	});
+
+	it("takes the video's picture where the camera refuses, or takes no photos", async () => {
+		fakeImageCapture({ photo: new Blob(['jpeg']), refuse: true });
+		const createImageBitmap = vi.fn(async () => 'frame');
+		vi.stubGlobal('createImageBitmap', createImageBitmap);
+		const video = sizedVideo({ stream: streamOf(liveTrack()), width: 3840, height: 2160 });
+		expect(await takePhoto(video)).toBe('frame');
+		vi.stubGlobal('ImageCapture', undefined);
+		expect(await takePhoto(video)).toBe('frame');
+		expect(createImageBitmap).toHaveBeenCalledWith(video);
+	});
+
+	it('takes nothing before the video shows a picture', async () => {
+		expect(await takePhoto(sizedVideo({ stream: null, width: 0, height: 0 }))).toBeUndefined();
+	});
+});
+
+describe('tappedPoint', () => {
+	const box = { left: 100, top: 50, width: 400, height: 200 };
+
+	it('answers where in the picture it was tapped', () => {
+		expect(tappedPoint({ box, at: { x: 200, y: 100 }, byPointer: true })).toEqual({
+			x: 0.25,
+			y: 0.25
+		});
+	});
+
+	it('takes the middle from the keyboard, or of a picture not laid out', () => {
+		expect(tappedPoint({ box, at: { x: 0, y: 0 }, byPointer: false })).toEqual({ x: 0.5, y: 0.5 });
+		const flat = { ...box, width: 0 };
+		expect(tappedPoint({ box: flat, at: { x: 0, y: 0 }, byPointer: true })).toEqual({
+			x: 0.5,
+			y: 0.5
+		});
+	});
+});
+
+describe('focusAt', () => {
+	it('focuses on the point tapped', async () => {
+		const track = fakeTrack({});
+		await focusAt({ video: videoOf(streamOf(track)), x: 0.25, y: 0.75 });
+		expect(track.applied).toEqual([{ advanced: [{ pointsOfInterest: [{ x: 0.25, y: 0.75 }] }] }]);
+	});
+
+	it('does nothing where the camera refuses, or is off', async () => {
+		const refusing = fakeTrack({ refuse: true });
+		await expect(
+			focusAt({ video: videoOf(streamOf(refusing)), x: 0, y: 0 })
+		).resolves.toBeUndefined();
+		await expect(focusAt({ video: undefined, x: 0, y: 0 })).resolves.toBeUndefined();
 	});
 });
 

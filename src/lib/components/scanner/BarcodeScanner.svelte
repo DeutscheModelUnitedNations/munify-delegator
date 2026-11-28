@@ -17,8 +17,9 @@
 	} from './suggestions';
 	import { searchUsers } from './userSearch';
 	import { acceptScan, type ScanAcceptance } from './scanAcceptance';
-	import { captureFrame, openScannerCamera } from './camera';
+	import { focusAt, openScannerCamera } from './camera';
 	import { createCameraControls } from './cameraControls.svelte.js';
+	import { createPageCamera, type CameraPage } from './pageCamera.svelte.js';
 
 	interface Props {
 		/** Barcode formats to detect */
@@ -54,12 +55,11 @@
 		 */
 		collapsed?: boolean;
 		/**
-		 * Reads the whole page a code was scanned on (`#lib/paperScan`): given, the camera asks for
-		 * its highest resolution, and a code read by it is handed on only once this answers true
-		 * for the picture it was read in (the page wholly in view); otherwise the next picture is
-		 * tried.
+		 * Keeps a whole page the camera read (`pageCamera`): given, the camera is a scanner the pages
+		 * are slid under, one after the other, and hands each on here instead of to `scannedCode`.
+		 * Answers what a person has to look at, if anything: the camera then waits for them.
 		 */
-		readPage?: (args: { frame: ImageData; code: string }) => Promise<boolean>;
+		takePage?: (page: CameraPage) => Promise<string | undefined>;
 	}
 
 	let {
@@ -74,7 +74,7 @@
 		belowCamera,
 		cameraOverlay,
 		collapsed = false,
-		readPage
+		takePage
 	}: Props = $props();
 
 	// Internal state
@@ -100,8 +100,22 @@
 	let detecting = false;
 	/** Set while a code is being checked, so the next one waits for the verdict. */
 	let checking = false;
-	/** Whether the camera was opened to read whole pages, at its highest resolution. */
+	/** Whether the camera was opened to read whole pages. */
 	let streamedForPage = false;
+	const readsPages = $derived(takePage !== undefined);
+
+	const pageCamera = createPageCamera({
+		video: () => videoElem,
+		async accept(text) {
+			const verdict = await acceptScan({ text, format: 'qr_code', acceptance });
+			return verdict.accepted ? { code: verdict.code } : { refused: verdict.message };
+		},
+		onPage: async (page) => takePage?.(page),
+		onFailed(error) {
+			logger.error('The page reader failed', error);
+			toast.error(m.paperCameraFailed());
+		}
+	});
 
 	// Created on first use: the polyfill cannot be constructed during SSR
 	let barcodeDetector: BarcodeDetector | undefined;
@@ -141,7 +155,7 @@
 			cameraWanted.current = false;
 			return;
 		}
-		streamedForPage = readPage !== undefined;
+		streamedForPage = readsPages;
 		const stream = await openScannerCamera({ facingMode, page: streamedForPage });
 		video.srcObject = stream;
 		await video.play();
@@ -202,27 +216,13 @@
 	 * the code was read as, `null` for one typed or picked by hand.
 	 */
 	// fallow-ignore-next-line complexity
-	async function take({
-		text,
-		format,
-		frame
-	}: {
-		text: string;
-		format: string | null;
-		/** The picture the code was read in, to read its page from (`readPage`). */
-		frame?: ImageData;
-	}) {
+	async function take({ text, format }: { text: string; format: string | null }) {
 		if (checking) return;
 		checking = true;
 		try {
 			const verdict = await acceptScan({ text, format, acceptance });
 			if (!verdict.accepted) {
 				toast.error(verdict.message);
-				return;
-			}
-			if (frame && readPage && !(await readPage({ frame, code: verdict.code }))) {
-				// the page was not wholly readable in this picture: try the next one
-				blockedCode = null;
 				return;
 			}
 			// The scan may have been answered by hand while it was being checked
@@ -232,18 +232,12 @@
 		}
 	}
 
-	async function acceptScanned({
-		barcode,
-		frame
-	}: {
-		barcode: { rawValue: string; format: string } | undefined;
-		frame?: ImageData;
-	}) {
+	async function acceptScanned(barcode: { rawValue: string; format: string } | undefined) {
 		// The scan may have been answered by hand while the detector was running
 		if (!barcode || scannedCode || checking) return;
 		// Blocked at once, so a refused code is reported once rather than on every frame
 		blockedCode = barcode.rawValue;
-		await take({ text: barcode.rawValue, format: barcode.format, frame });
+		await take({ text: barcode.rawValue, format: barcode.format });
 	}
 
 	// fallow-ignore-next-line complexity
@@ -252,10 +246,7 @@
 		if (!video) return;
 		detecting = true;
 		try {
-			const barcode = await detectNewCode(video);
-			// the picture the code was read in, before the video moves on
-			const frame = barcode && readPage ? captureFrame(video) : undefined;
-			acceptScanned({ barcode, frame });
+			acceptScanned(await detectNewCode(video));
 		} catch (error) {
 			toast.error(m.barcodeDetectError({ error: String(error) }));
 		} finally {
@@ -300,17 +291,23 @@
 
 	// --- Effects ---
 
-	// Scan while streaming and no code is being handled
+	// Scan codes while streaming and no code is being handled
 	$effect(() => {
-		if (!streaming || scannedCode) return;
+		if (!streaming || readsPages || scannedCode) return;
 		const intervalId = setInterval(scanForCode, 300);
 		return () => clearInterval(intervalId);
 	});
 
-	// Reading whole pages wants the camera at its highest resolution, codes alone do not
+	// Read pages while streaming, one after the other, also while one person's are shown
 	$effect(() => {
-		const forPage = readPage !== undefined;
-		if (streaming && forPage !== streamedForPage) untrack(() => void startVideo());
+		if (!streaming || !readsPages) return;
+		untrack(() => pageCamera.start());
+		return () => pageCamera.stop();
+	});
+
+	// Reading whole pages may want another stream (`openScannerCamera`)
+	$effect(() => {
+		if (streaming && readsPages !== streamedForPage) untrack(() => void startVideo());
 	});
 
 	// Suggest people while typing, once the typing pauses; a scanned id needs no search
@@ -414,7 +411,17 @@
 				onswitch={switchCamera}
 				onstop={turnCameraOff}
 				onstart={startVideo}
-				page={readPage !== undefined}
+				page={readsPages}
+				aim={readsPages
+					? {
+							hint: pageCamera.hint,
+							marks: pageCamera.marks,
+							flash: pageCamera.flash,
+							problem: pageCamera.problem,
+							onresume: pageCamera.resume
+						}
+					: undefined}
+				onfocus={(x, y) => void focusAt({ video: videoElem, x, y })}
 				overlay={cameraOverlay}
 			/>
 		</div>

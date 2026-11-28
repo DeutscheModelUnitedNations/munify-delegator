@@ -169,6 +169,20 @@ export function sharpen(picture: Picture): Picture {
 /** A picture to try, and how many pixels of the original one of its pixels stands for. */
 export type ReadingVariant = { picture: Picture; scale: number };
 
+/** The longer side of a picture a camera is aimed by: the marks are a few pixels a cell there, and quick to find. */
+export const AIM_SIDE = 1280;
+
+/**
+ * The pictures tried while a camera is aimed, many times a second: small, then with the light evened
+ * out. Fewer variants than a page is read with (`readingVariants`), so a page held badly is told quickly.
+ */
+export function* aimingVariants(picture: Picture): Generator<ReadingVariant> {
+	const small = shrink({ picture, maxSide: AIM_SIDE });
+	const variant = (tried: Picture) => ({ picture: tried, scale: picture.width / tried.width });
+	yield variant(small);
+	yield variant(flatten(small));
+}
+
 /**
  * The pictures tried in turn until one of them reads, the quick and likely ones first: at a moderate
  * size, the light evened out, less noise, sharper, small, and at last at its full size.

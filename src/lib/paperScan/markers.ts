@@ -1,6 +1,6 @@
 import aruco from 'js-aruco2';
 import type { Point } from './markerGeometry';
-import { readingVariants, type Picture, type ReadingVariant } from './picture';
+import { aimingVariants, readingVariants, type Picture, type ReadingVariant } from './picture';
 
 /**
  * The alignment marks printed on every main page of the application documents: ArUco markers,
@@ -157,9 +157,14 @@ function markersIn({ picture, scale }: ReadingVariant): FoundMarker[] {
  * The page's markers in `picture`, at most one a corner, looked for in one `readingVariants` after
  * the other until all four are found: a marker one variant shows and the next does not still counts.
  */
-export function locateMarkers(picture: Picture): FoundMarker[] {
+export const locateMarkers = (picture: Picture) => collectMarkers(readingVariants(picture));
+
+/** The page's markers in a picture a camera is being aimed by: quicker, and found less often. */
+export const aimMarkers = (picture: Picture) => collectMarkers(aimingVariants(picture));
+
+function collectMarkers(variants: Iterable<ReadingVariant>): FoundMarker[] {
 	const best = new Map<number, FoundMarker>();
-	for (const variant of readingVariants(picture)) {
+	for (const variant of variants) {
 		for (const marker of markersIn(variant)) {
 			const known = best.get(marker.corner);
 			if (!known || marker.wrongBits < known.wrongBits) best.set(marker.corner, marker);
@@ -185,7 +190,7 @@ export function uprightTurn(found: readonly FoundMarker[]): number {
 }
 
 /** Where a marker's diagonals cross: its centre, also where it is seen at an angle. */
-function centerOf([a, b, c, d]: readonly Point[]): Point {
+export function centerOf([a, b, c, d]: readonly Point[]): Point {
 	const across = { x: c.x - a.x, y: c.y - a.y };
 	const down = { x: d.x - b.x, y: d.y - b.y };
 	const turn = across.x * down.y - across.y * down.x;

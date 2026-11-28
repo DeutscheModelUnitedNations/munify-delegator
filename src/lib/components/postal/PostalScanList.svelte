@@ -39,7 +39,8 @@
 	const sourceLabel: Record<PostalscansourceEnum, () => string> = {
 		UPLOAD: () => m.postalScanSourceUpload(),
 		FOLDER: () => m.postalScanSourceFolder(),
-		WEBDAV: () => m.postalScanSourceWebdav()
+		WEBDAV: () => m.postalScanSourceWebdav(),
+		CAMERA: () => m.postalScanSourceCamera()
 	};
 
 	let openId = $state<string>();

@@ -9,6 +9,7 @@
 	import ScanHistory, { type ScanHistoryEntry } from '#lib/components/scanner/ScanHistory.svelte';
 	import type { ScannedUserData, ScannedUserFlow } from './scannedUserFlow.svelte';
 	import { userIdOfCode, type ScanAcceptance } from './scanAcceptance';
+	import type { CameraPage } from './pageCamera.svelte';
 
 	interface Props {
 		flow: ScannedUserFlow<S>;
@@ -37,8 +38,8 @@
 		children: Snippet<[user: NonNullable<ScannedUserData<S>['user']>, status: S | null]>;
 		/** What the camera's picture asks for, when not a code */
 		scanPrompt?: string;
-		/** Reads the whole page a code is scanned on (`BarcodeScanner`'s `readPage`). */
-		readPage?: (args: { frame: ImageData; code: string }) => Promise<boolean>;
+		/** Takes whole pages the camera read (`BarcodeScanner`'s `takePage`). */
+		takePage?: (page: CameraPage) => Promise<string | undefined>;
 	}
 
 	let {
@@ -58,7 +59,7 @@
 		onClose,
 		children,
 		scanPrompt,
-		readPage
+		takePage
 	}: Props = $props();
 
 	const HISTORY_LENGTH = 5;
@@ -106,7 +107,7 @@
 		{acceptance}
 		{persistKey}
 		{conferenceId}
-		{readPage}
+		{takePage}
 		{cameraOverlay}
 		manualPlaceholder={m.enterPostalRegistrationCode()}
 		scanPromptText={scanPrompt ?? m.scanPostalRegistrationCodePrompt()}

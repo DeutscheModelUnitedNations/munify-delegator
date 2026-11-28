@@ -220,6 +220,9 @@ export default defineConfig({
 	build: {
 		sourcemap: true // Required for Bugsink error tracking
 	},
+	// The camera's page reader (`#lib/paperScan/camera/pageReader.worker.ts`) loads what it reads with
+	// lazily, which a classic worker script cannot
+	worker: { format: 'es' },
 	test: {
 		// Two projects over the same sources: tests of components that are mounted into a document
 		// (`*.dom.svelte.test.ts`) resolve Svelte's browser build - its server build has no `mount` -

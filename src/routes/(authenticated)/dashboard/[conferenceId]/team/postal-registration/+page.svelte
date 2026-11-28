@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { logger } from '#lib/logger';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { m } from '#lib/paraglide/messages';
 	import { client, type MediaconsentstatusEnum } from '#lib/api/rumbleClient/client';
@@ -17,15 +16,12 @@
 		type StatusChange
 	} from '#lib/components/scanner/scannedUserFlow.svelte.js';
 	import type { PageProps } from './$types';
-	import { confirmAllChange, postalStatusOf, scannedUserWithStatus } from './postalConfirm';
+	import { confirmAllChange, scannedUserWithStatus } from './postalConfirm';
 	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
-	import { userIdOfCode } from '#lib/components/scanner/scanAcceptance';
-	import { addPicture, mergeFrames, type TakenPage } from '#lib/paperScan/frames';
-	import { readPageOfCode } from '#lib/paperScan/readScan';
-	import { changesAnything, proposePaperChange } from '#lib/paperScan/proposal';
-	import type { FieldReading } from '#lib/paperScan/readPaper';
-	import PaperReading from './PaperReading.svelte';
+	import type { CameraPage } from '#lib/components/scanner/pageCamera.svelte';
+	import { nameOfUser, takeCameraPage, type CameraLogEntry } from './cameraIntake';
+	import CameraLog from './CameraLog.svelte';
 	import PaperBatch from './PaperBatch.svelte';
 	import AgreementDetails from '#lib/components/postal/AgreementDetails.svelte';
 	import PostalScans from '#lib/components/postal/PostalScans.svelte';
@@ -95,85 +91,25 @@
 	const pageMode = createPersistedState({ key: 'postalRegistrationReadsPages', initial: true });
 	const readsPages = $derived(pageMode.current);
 
-	/** What was read off each person's pages so far, by user id: a later page adds to it. */
-	let readings = $state<Record<string, FieldReading[]>>({});
-	/** The pictures taken of each code's page so far. */
-	const taken: Record<string, TakenPage> = {};
+	/** The pages the camera read, the latest first, those that went wrong listed apart. */
+	let cameraLog = $state<CameraLogEntry[]>([]);
+	/** The camera's pages are kept one after the other, in the order they were read. */
+	let keeping: Promise<unknown> = Promise.resolve();
+	const LOG_LENGTH = 200;
 
-	/**
-	 * Reads the page a code was scanned on, over several pictures that have to agree; true once it
-	 * is done with, settled or given up on.
-	 */
-	async function readPage({ frame, code }: { frame: ImageData; code: string }) {
-		const page = addPicture({
-			taken: taken[code],
-			read: readPageOfCode({ picture: frame, code })
-		});
-		taken[code] = page;
-		if (!page.done) return false;
-		delete taken[code];
-		keepReadings({ code, frames: page.frames });
-		return true;
+	/** Keeps a page the camera read and lists it; answers what the camera has to say of it. */
+	async function keepPage(page: CameraPage) {
+		const taken = await takeCameraPage({ page, conferenceId: routeParams.conferenceId });
+		const entry = { ...taken, id: cameraLog.length + 1, name: await nameOfUser(taken.userId) };
+		cameraLog = [entry, ...cameraLog].slice(0, LOG_LENGTH);
+		return taken.newProblem ? taken.problem : undefined;
 	}
 
-	/** Adds what a page's pictures say to its person's readings. */
-	function keepReadings({ code, frames }: { code: string; frames: FieldReading[][] }) {
-		if (frames.length === 0) {
-			toast.info(m.paperPageNotReadable());
-			return;
-		}
-		const userId = userIdOfCode(code);
-		readings[userId] = [...(readings[userId] ?? []), ...mergeFrames(frames)];
+	function takePage(page: CameraPage) {
+		const kept = keeping.then(() => keepPage(page));
+		keeping = kept.catch(() => undefined);
+		return kept;
 	}
-
-	/** What the scanned person's pages say, against their status as it stands. */
-	// fallow-ignore-next-line complexity
-	const proposal = $derived.by(() => {
-		const current = flow.current;
-		const read = current?.user ? readings[current.user.id] : undefined;
-		if (!readsPages || !current || !read || read.length === 0) return undefined;
-		return proposePaperChange({
-			readings: read,
-			known: current.status?.agreementDetails ?? [],
-			status: postalStatusOf(current.status),
-			confirm: true,
-			minor: needsGuardian(current.user?.birthday)
-		});
-	});
-
-	/** Keeps the details behind the statuses; failing that does not stop the scanning. */
-	async function recordDetails(userId: string) {
-		try {
-			await client.mutate.recordPaperReadings({
-				__args: {
-					conferenceId: routeParams.conferenceId,
-					userId,
-					readings: readings[userId] ?? [],
-					confirm: true
-				}
-			});
-		} catch (error) {
-			logger.warn('Saving the details of a page failed', error);
-			toast.error(m.genericToastError());
-		}
-	}
-
-	/** Saves what the paper says and readies the scanner for the next page. */
-	const confirmPaper = () =>
-		flow.runExclusive(async () => {
-			const scanned = scannedUserWithStatus(flow.data);
-			if (scanned && proposal) {
-				if (changesAnything(proposal.change)) {
-					await changeAdministrativestatusEnum({
-						statusId: scanned.status.id,
-						userId: scanned.user.id,
-						change: proposal.change
-					});
-				}
-				await recordDetails(scanned.user.id);
-			}
-			flow.reset();
-		});
 
 	const confirmAllStatuses = () =>
 		flow.runExclusive(async () => {
@@ -203,10 +139,10 @@
 	notFoundMessage={m.userNotFoundForPostalRegistration()}
 	drawerTitle={m.postalRegistration()}
 	drawerIcon="ph-envelope-simple"
-	confirmLabel={readsPages ? m.paperConfirm() : m.confirmAll()}
-	onConfirm={readsPages ? confirmPaper : confirmAllStatuses}
+	confirmLabel={m.confirmAll()}
+	onConfirm={confirmAllStatuses}
 	onClose={() => flow.reset()}
-	readPage={readsPages ? readPage : undefined}
+	takePage={readsPages ? takePage : undefined}
 	scanPrompt={readsPages ? m.paperScanPrompt() : undefined}
 >
 	{#snippet cameraOverlay()}
@@ -231,6 +167,7 @@
 	{/snippet}
 
 	{#snippet footer()}
+		<CameraLog entries={cameraLog} />
 		<PaperBatch conferenceId={routeParams.conferenceId} />
 	{/snippet}
 
@@ -269,16 +206,6 @@
 				</p>
 			</div>
 		</div>
-
-		{#if proposal}
-			<div class="bg-info/10 rounded-box mb-4 flex flex-col gap-2 p-3" role="status">
-				<span class="flex items-center gap-2 font-semibold">
-					<i aria-hidden="true" class="ph-duotone ph-file-magnifying-glass"></i>
-					{m.paperReadTitle()}
-				</span>
-				<PaperReading change={proposal.change} notes={proposal.notes} />
-			</div>
-		{/if}
 
 		<!-- Status widgets grid -->
 		<div class="grid grid-cols-1 gap-2 md:gap-4">

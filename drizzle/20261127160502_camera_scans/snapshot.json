@@ -1,0 +1,39 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "87882793-a778-4040-ad2d-0856d0109035",
+  "prevIds": [
+    "0b4c54fb-ff1f-4716-b9bf-964256318b21"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "postal_scan_source"
+      ],
+      "writes": [
+        "s|enum|public.postal_scan_source"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"postal_scan_source\"]",
+      "set": {
+        "values": [
+          "UPLOAD",
+          "FOLDER",
+          "WEBDAV",
+          "CAMERA"
+        ]
+      }
+    }
+  ]
+}

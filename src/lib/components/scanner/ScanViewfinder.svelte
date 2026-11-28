@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages';
-	import type { CameraZoom } from './camera';
+	import { tappedPoint, type CameraZoom } from './camera';
 	import ScanCameraButtons from './ScanCameraButtons.svelte';
 	import ScanFrame from './ScanFrame.svelte';
+	import type { PageAim } from './pageCamera.svelte';
+	import { pageInPlace } from './pageCameraHints';
+	import ScanStatus from './ScanStatus.svelte';
+	import PageAimOverlay from './PageAimOverlay.svelte';
 
 	interface Props {
 		/** The element the camera stream is attached to */
@@ -25,6 +29,13 @@
 		onstart: () => void;
 		/** Frames a whole A4 page, upright, instead of a square for the code alone. */
 		page?: boolean;
+		/**
+		 * While pages are read: what to tell the person, the page's marks in the picture, how it
+		 * flashes, and what is wrong, with the way to go on.
+		 */
+		aim?: PageAim;
+		/** Focuses on a point of the picture (shares of its width and height), tapped on. */
+		onfocus?: (x: number, y: number) => void;
 		/** Laid over the top left corner, under the zoom, whether the camera runs or not. */
 		overlay?: Snippet;
 	}
@@ -44,8 +55,20 @@
 		onstop,
 		onstart,
 		page = false,
+		aim,
+		onfocus,
 		overlay
 	}: Props = $props();
+
+	/** Focuses where the picture was tapped; from the keyboard, on its middle. */
+	function focusTapped(event: MouseEvent & { currentTarget: HTMLButtonElement }) {
+		const { x, y } = tappedPoint({
+			box: event.currentTarget.getBoundingClientRect(),
+			at: { x: event.clientX, y: event.clientY },
+			byPointer: event.detail > 0
+		});
+		onfocus?.(x, y);
+	}
 
 	/** Width over height of the camera's picture, once it sends one; the box takes its shape. */
 	let pictureAspect = $state<number>();
@@ -83,22 +106,23 @@
 	</video>
 
 	{#if streaming}
-		<ScanFrame {page} />
+		{#if onfocus}
+			<button
+				type="button"
+				class="absolute inset-0 cursor-crosshair"
+				aria-label={m.cameraTapToFocus()}
+				onclick={focusTapped}
+			></button>
+		{/if}
+		<ScanFrame {page} ready={aim ? pageInPlace(aim.hint) : false} />
 
 		<ScanCameraButtons {canSwitchCamera} {torch} {ontorch} {onswitch} {onstop} />
 
-		<div
-			class="absolute bottom-4 left-1/2 flex max-w-[90%] -translate-x-1/2 items-center gap-2 rounded-full bg-black/60 px-4 py-1.5 text-sm text-white"
-		>
-			{#if scannedCode}
-				<!-- Scanning pauses while a code is handled, whether it came from the camera or by hand -->
-				<i aria-hidden="true" class="ph-duotone ph-pause-circle"></i>
-				<span class="truncate font-mono">{scannedCode}</span>
-			{:else}
-				<i aria-hidden="true" class="ph-duotone ph-barcode icon-beat-fade"></i>
-				<span class="truncate">{scanPromptText}</span>
-			{/if}
-		</div>
+		<ScanStatus hint={aim?.hint} {scannedCode} {scanPromptText} />
+
+		{#if aim}
+			<PageAimOverlay {aim} />
+		{/if}
 	{:else}
 		<div
 			class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center md:gap-4 md:p-4"

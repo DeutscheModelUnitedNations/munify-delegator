@@ -5529,12 +5529,12 @@ type Mutation {
   importGuideFile(conferenceId: ID!, url: String!): ImportedGuideFile!
 
   """
-  Keeps an uploaded file (`postalScan`/`scan`) as the scan of one page of a person's application documents (participant care) and takes in what was read off it, unattended (`recordPaperReadings` without `confirm`). `code` is the code printed on the page, which says which page it is: the same paper scanned again is kept only if it says more. It has to be one of this person's documents in this conference (INVALID_INPUT otherwise); without one the page is named by its file (`contentKey`, the file's SHA-256 and the page's number). `readings` is null when the fields were not readable; `source` is UPLOAD or FOLDER. Asked without `fileId` first, so nothing is uploaded in vain: null then means that the file is needed, and nothing was changed. Somebody without a part in the conference answers NOT_FOUND.
+  Keeps an uploaded file (`postalScan`/`scan`) as the scan of one page of a person's application documents (participant care) and takes in what was read off it, unattended (`recordPaperReadings` without `confirm`). `code` is the code printed on the page, which says which page it is: the same paper scanned again is kept only if it says more. It has to be one of this person's documents in this conference (INVALID_INPUT otherwise); without one the page is named by its file (`contentKey`, the file's SHA-256 and the page's number). `readings` is null when the fields were not readable; `source` is UPLOAD, FOLDER or CAMERA. Asked without `fileId` first, so nothing is uploaded in vain: null then means that the file is needed, and nothing was changed. Somebody without a part in the conference answers NOT_FOUND.
   """
   importPostalScan(code: String, conferenceId: ID!, contentKey: String!, fileId: ID, readings: [PaperReadingInput!], source: PostalscansourceEnum!, userId: ID!): PostalScanOutcome
 
   """
-  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
+  The codes printed on the pages of a person's application documents in the conference, one per page in the order given, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). Each carries where its page's alignment marks and fields are. `layouts` stand in for the stored ones in a test print of a layout being edited, for those who may edit it (FORBIDDEN otherwise). It writes nothing, so it publishes nothing.
   """
   issueDocumentCodes(
     conferenceId: ID!
@@ -7780,6 +7780,7 @@ input PostalscanWhereInputArgument {
 }
 
 enum PostalscansourceEnum {
+  CAMERA
   FOLDER
   UPLOAD
   WEBDAV
@@ -8218,7 +8219,7 @@ type Query {
   getAllConferenceNations(conferenceId: ID!): [Nation!]!
 
   """
-  Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
+  Issues a signed participation certificate, for the holder themselves, their supervisors and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".
   """
   getCertificate(
     conferenceId: ID!

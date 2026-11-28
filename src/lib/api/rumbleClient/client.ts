@@ -5678,7 +5678,7 @@ export type PostalscanWhereInputArgument = {
   uploadedById?: IDWhereInputArgument | null | undefined    
 };
 		
-export type PostalscansourceEnum = "FOLDER" | "UPLOAD" | "WEBDAV";
+export type PostalscansourceEnum = "CAMERA" | "FOLDER" | "UPLOAD" | "WEBDAV";
 		
 export type PreviewConferenceSupervisor = {
   different_school: Boolean,

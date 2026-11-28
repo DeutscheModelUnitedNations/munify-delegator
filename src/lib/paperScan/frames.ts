@@ -23,12 +23,16 @@ export interface TakenPage {
 	frames: FieldReading[][];
 }
 
-/** About three seconds of pictures: then a page is done with whatever was read of it, if anything. */
-const MAX_PICTURES = 10;
+/**
+ * How many photos of a page are taken at most: each is a still the camera took when the page lay
+ * whole and still in view (`camera/aim`), so a third rarely tells what two did not.
+ */
+const MAX_PICTURES = 3;
 
 /**
- * One more picture of a page, and what was read off it (`null`: not readable in it): answers the
- * pictures so far, and whether the page is done, because they settle it or no more are waited for.
+ * One more photo of a page, and what was read off it (`null`: not readable in it): answers the
+ * photos so far, and whether the page is done, because they settle it or no more are taken. A page
+ * done with fields still unclear leaves those to a person.
  */
 export function addPicture({
 	taken = { pictures: 0, frames: [] },
@@ -42,15 +46,12 @@ export function addPicture({
 	return { pictures, frames, done: framesSettled(frames) || pictures >= MAX_PICTURES };
 }
 
-/** How many pictures of a page have to agree before it counts as read. */
-const AGREEING_FRAMES = 2;
-
 /**
- * Whether the pictures of a page taken so far tell all of it: two of them (or one, of a page
- * without fields), and no field left unclear between them.
+ * Whether the photos of a page taken so far tell all of it: one that leaves no field unclear is
+ * enough, as a reading that cannot tell says "unclear" rather than guess (`readPaper`). Photos that
+ * disagree leave the field unclear.
  */
 export function framesSettled(frames: readonly (readonly FieldReading[])[]) {
-	const merged = mergeFrames(frames);
-	if (frames.length > 0 && merged.length === 0) return true;
-	return frames.length >= AGREEING_FRAMES && merged.every(({ state }) => state !== 'unclear');
+	if (frames.length === 0) return false;
+	return mergeFrames(frames).every(({ state }) => state !== 'unclear');
 }

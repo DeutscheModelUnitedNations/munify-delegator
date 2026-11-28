@@ -16,7 +16,7 @@ import {
 import { verifyCode } from '#api/handlers/signedCode/signedCodeService';
 
 /** Where a person in the app may say a scan came from; scanners deliver by themselves. */
-const APP_SOURCES: readonly string[] = ['UPLOAD', 'FOLDER'];
+const APP_SOURCES: readonly string[] = ['UPLOAD', 'FOLDER', 'CAMERA'];
 
 /** The arguments of `importPostalScan`. */
 export const importArgsSchema = z.looseObject({

@@ -18,7 +18,8 @@ own boxes and lines (placed in the layout editor).
   outside the triangle they span are left unclear, since the perspective drifts there. A picture
   too small, noisy or blurred never says a field is _empty_, only "unclear". A box counts as ticked
   only with ink in its middle, so the frame of a page aligned a little off is no consent.
-- `frames.ts`: the camera wants two pictures that agree.
+- `frames.ts`: the camera's photos of a page: one that leaves nothing unclear settles it, photos that
+  disagree leave the field unclear, and after three the page goes with what it says.
 - `pipeline.test.ts` + `scanSimulation.ts` read DMUN's templates back through simulated scans and
   photos (shadow, blur, noise, covered corner). **A wrong answer is worse than "unclear"**: add a case
   there for every misreading found.
@@ -44,6 +45,42 @@ skip; clean fields (all of DMUN's 2026 forms) take no room in the code.
 Fields not placed for the conference's template are read where they are not: an empty form can then
 read as signed. The layout editor checks that (`layoutCheck.ts`).
 
+## Camera (`src/lib/paperScan/camera/`, `#lib/components/scanner/pageCamera.svelte.ts`)
+
+The postal registration's "whole page" mode, for whoever has no scanner: the phone is laid over the pages
+and becomes one. Pages are slid under it one after the other; each is read, kept and beeped for, and
+nobody touches anything unless something went wrong. Nothing of it runs on the page's thread but the
+camera: a worker (`pageReader.worker.ts`, ES module, `worker.format` in `vite.config.ts`) does the reading,
+so the preview stays smooth.
+
+- **Aiming** (`aim.ts`): about eight times a second a small picture of the preview (`AIM_SIDE`, 1280 px,
+  `previewPicture`) is looked at for the corner marks only, with two variants (`aimMarkers`), no code. What
+  the marks say is the hint (`trackAim`): no page, too dark, closer, farther (the missing mark would lie
+  outside the picture), which corner is covered (three marks), hold still. The marks are drawn over the
+  preview, a dashed one where the missing one should be (`missingMark`).
+- **One photo** once the page lay still (marks moved less than 1.2 % of the picture) for 350 ms, 1.2 s with one
+  mark covered; two missing never. `takePhoto` takes the camera's own still (Image Capture, Chromium: full
+  sensor, focused, without the flash), else a frame of the video, which is then streamed at 4K
+  (`openScannerCamera`). The worker reads it as a scan is read (`readPicture`, at most 3600 px) and gives it
+  back as the JPEG it read, turned upright.
+- **Settling** (`frames.ts`): more photos only while fields stay unclear, three at most; three without a code
+  give the page up.
+- **The next page**: once a page is taken, the camera waits for one that left the picture or whose marks
+  moved more than 5 % (`MOVED`, the marks both pictures show): a page slid away, or the next slid over it.
+  A photo that shows the page taken last again is nothing new and says nothing.
+- **Taking in** (`cameraIntake.ts` beside the route): each page by itself, as it comes, in the order read:
+  its photo is kept as the person's scan (`keepScan`, source `CAMERA`, through `importPostalScan`, so
+  unattended as a batch: what is clear is entered, nothing set back), also unreadable (`readings: null`), as
+  the evidence. Nobody confirms anything. The page's line goes into the list under the scanner
+  (`CameraLog`), those that went wrong first; a line opens the person.
+- **Telling**: a page read clearly beeps (`scanSounds.ts`, Web Audio, woken by the person's first gesture)
+  and flashes green; then it may go. Unclear fields, no readable code, a refused code, a page not kept
+  (`differs`, not registered, offline) sound a low double tone, and the picture turns red with what is
+  wrong (`ScanAlert`): the camera reads nothing more until **Weiter** is pressed, so the page is taken out of
+  the stack first. The screen stays on while it reads (`wakeLock.ts`).
+- Measured on a desktop with simulated photos: aiming ~100 ms a picture in the worker, a photo read ~150–250 ms.
+  `aim.test.ts` keeps the aiming from growing slow unnoticed.
+
 ## Taking a file in (`src/lib/paperScan/intake/`)
 
 A file may be gigabytes and mix people and conferences, so **the page is the unit**, and no more than one is
@@ -56,6 +93,7 @@ whose it is (`people.ts`, only signatures checked), keep it, name what came to n
 | `PaperBatch`                       | `readScanPage` with `browserPlatform`         | upload, `importPostalScan`    |
 | `scanQueue` (`pageTask`)           | a process of its own (`scanReader.worker.ts`) | `takeInPage`, the page's file |
 | `uploadScanFor` (participant card) | as `PaperBatch`, with an `owner`              | as `PaperBatch`               |
+| camera (`pageCamera`)              | `readPicture` in `pageReader.worker.ts`       | `keepScan`, page by page      |
 
 - **Splitting** (`pdf/`): a PDF is read by its table, object by object, from a `ScanSource` (ranges of a bucket
   object, a `Blob`): 2.7 GB with 3,000 pages take 5 s and 110 MB. Only a file with a broken table is read as a

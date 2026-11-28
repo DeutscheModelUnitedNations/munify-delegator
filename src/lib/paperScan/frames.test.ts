@@ -20,11 +20,14 @@ describe('mergeFrames', () => {
 });
 
 describe('framesSettled', () => {
-	test('wants two pictures that leave nothing unclear', () => {
+	test('takes one picture that leaves nothing unclear', () => {
 		expect(framesSettled([])).toBe(false);
-		expect(framesSettled([frame('yes', 'yes')])).toBe(false);
-		expect(framesSettled([frame('yes', 'yes'), frame('yes', 'yes')])).toBe(true);
+		expect(framesSettled([frame('yes', 'yes')])).toBe(true);
+		expect(framesSettled([frame('yes', 'unclear')])).toBe(false);
 		expect(framesSettled([frame('yes', 'unclear'), frame('yes', 'yes')])).toBe(true);
+	});
+
+	test('leaves a field two pictures disagree on unclear', () => {
 		expect(framesSettled([frame('yes', 'no'), frame('yes', 'yes')])).toBe(false);
 	});
 
@@ -34,17 +37,15 @@ describe('framesSettled', () => {
 });
 
 describe('addPicture', () => {
-	test('is done once the pictures settle the page', () => {
-		const first = addPicture({ taken: undefined, read: frame('yes', 'yes') });
-		expect(first).toMatchObject({ pictures: 1, done: false });
-		const blurred = addPicture({ taken: first, read: null });
-		expect(blurred).toMatchObject({ pictures: 2, done: false });
+	test('is done with the first picture that settles the page', () => {
+		const blurred = addPicture({ taken: undefined, read: null });
+		expect(blurred).toMatchObject({ pictures: 1, done: false });
 		expect(addPicture({ taken: blurred, read: frame('yes', 'yes') }).done).toBe(true);
 	});
 
-	test('gives up after a few seconds, with what was read', () => {
+	test('gives up after three pictures, with what was read', () => {
 		let taken = addPicture({ taken: undefined, read: frame('yes', 'unclear') });
-		for (let picture = 2; picture < 10; picture++) taken = addPicture({ taken, read: null });
+		taken = addPicture({ taken, read: null });
 		expect(taken.done).toBe(false);
 		taken = addPicture({ taken, read: null });
 		expect(taken).toMatchObject({ done: true, frames: [frame('yes', 'unclear')] });

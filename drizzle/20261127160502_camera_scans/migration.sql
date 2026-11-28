@@ -1,0 +1,1 @@
+ALTER TYPE "postal_scan_source" ADD VALUE 'CAMERA';
